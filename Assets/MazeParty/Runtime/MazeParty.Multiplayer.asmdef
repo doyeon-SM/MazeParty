@@ -1,0 +1,15 @@
+{
+  "name": "MazeParty.Multiplayer",
+  "rootNamespace": "MazeParty.Multiplayer",
+  "references": [
+    "Unity.Netcode.Runtime",
+    "Unity.Networking.Transport",
+    "Unity.Services.Core",
+    "Unity.Services.Core.Environments",
+    "Unity.Services.Authentication",
+    "Unity.Services.Multiplayer",
+    "Unity.InputSystem",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}
