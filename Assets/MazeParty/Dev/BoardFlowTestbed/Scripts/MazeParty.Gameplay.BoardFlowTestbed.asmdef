@@ -1,0 +1,13 @@
+{
+  "name": "MazeParty.Gameplay.BoardFlowTestbed",
+  "rootNamespace": "MazeParty.Gameplay.BoardFlowTestbed",
+  "references": [
+    "MazeParty.Gameplay",
+    "Unity.InputSystem",
+    "UnityEngine.UI"
+  ],
+  "defineConstraints": [
+    "UNITY_EDITOR"
+  ],
+  "autoReferenced": true
+}

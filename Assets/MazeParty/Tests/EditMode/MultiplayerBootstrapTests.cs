@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -89,6 +90,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(prefab.GetComponent<Unity.Netcode.Components.NetworkTransform>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<CharacterController>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<NetworkPlayerAvatar>(), Is.Not.Null);
+            Assert.That(prefab.GetComponent<PlayerBoardBoundaryWalls>(), Is.Not.Null);
         }
 
         [Test]
@@ -109,6 +111,49 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(networkObject, Is.Not.Null);
                 Assert.That(networkObject.PrefabIdHash, Is.Not.EqualTo(0u));
                 Assert.That(networkObject.InScenePlaced, Is.True);
+            }
+            finally
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        [Test]
+        public void BoardScene_HasFourServerOwnedWorldDiceAndUniqueDynamicShopPresenter()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                BoardScene,
+                UnityEditor.SceneManagement.OpenSceneMode.Additive);
+
+            try
+            {
+                var roots = scene.GetRootGameObjects();
+                var dice = roots
+                    .SelectMany(root => root.GetComponentsInChildren<NetworkWorldDie>(true))
+                    .OrderBy(die => die.ConfiguredSlot)
+                    .ToArray();
+                Assert.That(dice, Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+                Assert.That(
+                    dice.Select(die => die.ConfiguredSlot),
+                    Is.EqualTo(new[] { 0, 1, 2, 3 }));
+                Assert.That(
+                    dice.All(die => die.GetComponent<NetworkObject>() != null &&
+                                    die.GetComponent<NetworkObject>().InScenePlaced &&
+                                    die.GetComponent<NetworkObject>().PrefabIdHash != 0u),
+                    Is.True);
+
+                var coordinators = roots
+                    .SelectMany(root => root.GetComponentsInChildren<NetworkWorldDiceCoordinator>(true))
+                    .ToArray();
+                Assert.That(coordinators, Has.Length.EqualTo(1));
+                var shopMarkers = roots
+                    .SelectMany(root => root.GetComponentsInChildren<KeyShopWorldMarker>(true))
+                    .ToArray();
+                Assert.That(shopMarkers, Has.Length.EqualTo(1));
+                var staticShops = roots
+                    .SelectMany(root => root.GetComponentsInChildren<BoardTile>(true))
+                    .Count(tile => tile.TileType == BoardTileType.KeyShop);
+                Assert.That(staticShops, Is.Zero);
             }
             finally
             {

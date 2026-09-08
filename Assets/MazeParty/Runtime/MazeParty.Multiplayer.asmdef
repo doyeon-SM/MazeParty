@@ -9,7 +9,9 @@
     "Unity.Services.Authentication",
     "Unity.Services.Multiplayer",
     "Unity.InputSystem",
-    "UnityEngine.UI"
+    "UnityEngine.UI",
+    "MazeParty.Gameplay",
+    "Unity.Cinemachine"
   ],
   "autoReferenced": true
 }

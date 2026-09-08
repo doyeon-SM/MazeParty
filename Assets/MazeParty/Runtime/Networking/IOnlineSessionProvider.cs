@@ -14,7 +14,9 @@ namespace MazeParty.Multiplayer
 
         Task CreateAsync(string roomName, string displayName);
         Task JoinByCodeAsync(string code, string displayName);
+        Task ReconnectToSessionAsync(string sessionId, string displayName);
         Task PublishLocalNetworkClientIdAsync(ulong clientId);
+        bool TryGetAuthoritativeSlot(ulong clientId, out int slot);
         Task<bool> RemoveDisconnectedLobbyPlayerAsync(
             string expectedSessionId,
             ulong clientId,

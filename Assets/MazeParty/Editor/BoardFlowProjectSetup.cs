@@ -1,0 +1,1013 @@
+using System;
+using System.Collections.Generic;
+using MazeParty.Gameplay;
+using MazeParty.Gameplay.BoardFlowTestbed;
+using MazeParty.Multiplayer;
+using Unity.Cinemachine;
+using Unity.Netcode;
+using Unity.Netcode.Components;
+using UnityEditor;
+using UnityEditor.SceneManagement;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+using UnityEngine.UI;
+
+namespace MazeParty.Editor
+{
+    public static class BoardFlowProjectSetup
+    {
+        private const string Root = "Assets/MazeParty";
+        private const string BoardFolder = Root + "/Board";
+        private const string MaterialFolder = BoardFolder + "/Materials";
+        private const string BoardPath = Root + "/Scenes/Board.unity";
+        private const string TestbedPath = Root + "/Dev/BoardFlowTestbed/BoardFlowTestbed.unity";
+        private const float RoomSize = BoardTile.RoomSize;
+
+        private static readonly Vector2Int[] MainLoop =
+        {
+            new Vector2Int(1, 1), new Vector2Int(2, 1), new Vector2Int(3, 1),
+            new Vector2Int(4, 1), new Vector2Int(5, 1), new Vector2Int(5, 2),
+            new Vector2Int(5, 3), new Vector2Int(5, 4), new Vector2Int(5, 5),
+            new Vector2Int(4, 5), new Vector2Int(3, 5), new Vector2Int(2, 5),
+            new Vector2Int(1, 5), new Vector2Int(1, 4), new Vector2Int(1, 3),
+            new Vector2Int(1, 2)
+        };
+
+        private static readonly Vector2Int[][] Branches =
+        {
+            new[]
+            {
+                new Vector2Int(1, 1), new Vector2Int(1, 0), new Vector2Int(2, 0),
+                new Vector2Int(3, 0), new Vector2Int(4, 0), new Vector2Int(4, 1)
+            },
+            new[]
+            {
+                new Vector2Int(5, 1), new Vector2Int(6, 1), new Vector2Int(6, 2),
+                new Vector2Int(6, 3), new Vector2Int(6, 4), new Vector2Int(5, 4)
+            },
+            new[]
+            {
+                new Vector2Int(5, 5), new Vector2Int(5, 6), new Vector2Int(4, 6),
+                new Vector2Int(3, 6), new Vector2Int(2, 6), new Vector2Int(2, 5)
+            },
+            new[]
+            {
+                new Vector2Int(1, 5), new Vector2Int(0, 5), new Vector2Int(0, 4),
+                new Vector2Int(0, 3), new Vector2Int(0, 2), new Vector2Int(1, 2)
+            }
+        };
+
+        [MenuItem("MazeParty/Gameplay/Rebuild Board Flow Prototype")]
+        public static void RebuildBoardFlowPrototype()
+        {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.Log("Board flow prototype rebuild canceled; open scene changes were left untouched.");
+                return;
+            }
+
+            BuildBoardSceneBase();
+            BuildLocalTestbedFromBoard();
+            EnsureBoardInBuildSettings();
+            AddNetworkStateAndSave();
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            EditorSceneManager.OpenScene(BoardPath, OpenSceneMode.Single);
+            Debug.Log(
+                "Board flow prototype rebuilt: 32 rooms, directed branches, Canvas HUD, " +
+                "perspective staged cameras, and the network match state.");
+        }
+
+        [MenuItem("MazeParty/Gameplay/Rebuild Board Flow Prototype", true)]
+        private static bool CanRebuildBoardFlowPrototype()
+        {
+            return !EditorApplication.isPlayingOrWillChangePlaymode;
+        }
+
+        internal static void BuildBoardSceneBase()
+        {
+            EnsureFolders();
+            var previousActive = SceneManager.GetActiveScene();
+            var loadedBoard = SceneManager.GetSceneByPath(BoardPath);
+            var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Additive);
+            SceneManager.SetActiveScene(scene);
+            if (loadedBoard.IsValid() && loadedBoard.isLoaded)
+            {
+                if (loadedBoard.isDirty)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                    throw new InvalidOperationException(
+                        "Board.unity has unsaved changes. Save or discard them before rebuilding the generated board.");
+                }
+                EditorSceneManager.CloseScene(loadedBoard, true);
+            }
+
+            var materials = CreateMaterials();
+            CreateLighting();
+            CreateBoardBackdrop(materials.Backdrop);
+            var topology = CreateTopology(materials);
+            var cameras = CreateCameraRig();
+            CreateBoardCanvas(cameras);
+
+            var validation = topology.ValidateTopology();
+            if (!validation.IsValid)
+            {
+                var messages = new List<string>();
+                for (var i = 0; i < validation.Issues.Count; i++)
+                {
+                    messages.Add(validation.Issues[i].Code + ": " + validation.Issues[i].Message);
+                }
+                throw new InvalidOperationException("Generated board topology is invalid:\n" + string.Join("\n", messages));
+            }
+
+            EditorSceneManager.SaveScene(scene, BoardPath);
+            if (previousActive.IsValid() && previousActive.isLoaded && previousActive.path != BoardPath)
+            {
+                SceneManager.SetActiveScene(previousActive);
+                EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        internal static void AddNetworkStateAndSave()
+        {
+            var scene = EditorSceneManager.OpenScene(BoardPath, OpenSceneMode.Single);
+            var existing = GameObject.Find("Network Match State");
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing);
+            }
+
+            // NGO assigns a stable in-scene object hash because Board is already an
+            // enabled build scene when this method runs.
+            var matchState = new GameObject("Network Match State");
+            matchState.AddComponent<NetworkObject>();
+            matchState.AddComponent<KeyShopRuntimeState>();
+            matchState.AddComponent<NetworkMatchState>();
+            var topology = UnityEngine.Object.FindAnyObjectByType<BoardTopology>();
+            if (topology == null)
+            {
+                throw new InvalidOperationException("Board scene is missing its topology.");
+            }
+
+            var dice = CreateNetworkWorldDice();
+            var diceCoordinator = matchState.AddComponent<NetworkWorldDiceCoordinator>();
+            diceCoordinator.ConfigureSceneDice(dice, topology);
+            EditorSceneManager.SaveScene(scene, BoardPath);
+        }
+
+        internal static void BuildLocalTestbedFromBoard()
+        {
+            var scene = SceneManager.GetSceneByPath(BoardPath);
+            if (!scene.IsValid() || !scene.isLoaded)
+            {
+                scene = EditorSceneManager.OpenScene(BoardPath, OpenSceneMode.Single);
+            }
+            SceneManager.SetActiveScene(scene);
+            var canvas = GameObject.Find("Board Canvas");
+            var rig = GameObject.Find("Board Camera Rig");
+            var topology = UnityEngine.Object.FindAnyObjectByType<BoardTopology>();
+            var director = UnityEngine.Object.FindAnyObjectByType<GameplayCameraDirector>();
+            if (canvas == null || rig == null || topology == null || director == null)
+            {
+                throw new InvalidOperationException("Board scene is missing testbed prerequisites.");
+            }
+
+            var networkView = canvas.GetComponent<BoardFlowView>();
+            if (networkView != null)
+            {
+                UnityEngine.Object.DestroyImmediate(networkView);
+            }
+            var networkPresenter = rig.GetComponent<BoardFlowCameraPresenter>();
+            if (networkPresenter != null)
+            {
+                UnityEngine.Object.DestroyImmediate(networkPresenter);
+            }
+
+            var starts = new List<BoardTile>();
+            for (var i = 0; i < topology.Tiles.Count; i++)
+            {
+                var tile = topology.Tiles[i];
+                if (tile != null && tile.TileType == BoardTileType.Start)
+                {
+                    starts.Add(tile);
+                }
+            }
+            starts.Sort((left, right) =>
+            {
+                var x = left.Coordinate.x.CompareTo(right.Coordinate.x);
+                return x != 0 ? x : left.Coordinate.y.CompareTo(right.Coordinate.y);
+            });
+            if (starts.Count != MultiplayerConstants.MaxPlayers)
+            {
+                throw new InvalidOperationException("Board flow testbed requires exactly four Start tiles.");
+            }
+
+            var localPlayerObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            localPlayerObject.name = "Local Editor Player";
+            var capsule = localPlayerObject.GetComponent<CapsuleCollider>();
+            if (capsule != null)
+            {
+                UnityEngine.Object.DestroyImmediate(capsule);
+            }
+            localPlayerObject.GetComponent<Renderer>().sharedMaterial =
+                AssetDatabase.LoadAssetAtPath<Material>(MaterialFolder + "/RoomStart.mat");
+            localPlayerObject.transform.position = starts[0].GetRecoveryCenter(1f);
+            var controller = localPlayerObject.AddComponent<CharacterController>();
+            controller.center = Vector3.zero;
+            controller.height = 2f;
+            controller.radius = 0.5f;
+            var localBoundaryWalls = localPlayerObject.AddComponent<PlayerBoardBoundaryWalls>();
+            localBoundaryWalls.Configure(0, controller, topology);
+            localBoundaryWalls.SetPresentationVisible(true);
+
+            var eye = new GameObject("CameraPivot").transform;
+            eye.SetParent(localPlayerObject.transform, false);
+            eye.localPosition = new Vector3(0f, 0.75f, 0f);
+
+            var markerColors = new[]
+            {
+                new Color(0.95f, 0.25f, 0.25f), new Color(0.25f, 0.55f, 1f),
+                new Color(0.25f, 0.85f, 0.4f), new Color(1f, 0.75f, 0.2f)
+            };
+            for (var i = 1; i < starts.Count; i++)
+            {
+                var marker = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                marker.name = "Simulated Remote Player " + (i + 1);
+                marker.transform.position = starts[i].GetRecoveryCenter(1f);
+                var markerCollider = marker.GetComponent<Collider>();
+                if (markerCollider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(markerCollider);
+                }
+                var renderer = marker.GetComponent<Renderer>();
+                var properties = new MaterialPropertyBlock();
+                properties.SetColor("_BaseColor", markerColors[i]);
+                properties.SetColor("_Color", markerColors[i]);
+                renderer.SetPropertyBlock(properties);
+                var remoteController = marker.AddComponent<CharacterController>();
+                remoteController.center = Vector3.zero;
+                remoteController.height = 2f;
+                remoteController.radius = 0.5f;
+                remoteController.enabled = false;
+                var remoteWalls = marker.AddComponent<PlayerBoardBoundaryWalls>();
+                remoteWalls.Configure(i, remoteController, topology);
+                remoteWalls.SetPresentationVisible(false);
+            }
+
+            CreateEditorTools(canvas.transform,
+                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+            var simulator = rig.AddComponent<BoardFlowLocalSimulator>();
+            simulator.Configure(controller, eye, topology, director);
+
+            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            {
+                var choiceButton = FindDescendant(canvas.transform, "ItemChoiceButton" + i);
+                if (choiceButton == null)
+                {
+                    continue;
+                }
+
+                var onlineHover = choiceButton.GetComponent<BoardItemChoiceButton>();
+                if (onlineHover != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(onlineHover);
+                }
+
+                var localHover = choiceButton.AddComponent<BoardFlowLocalItemChoiceButton>();
+                localHover.Configure(simulator, i);
+            }
+
+            EditorSceneManager.SaveScene(scene, TestbedPath);
+            ExcludeTestbedFromBuildSettings();
+        }
+
+        private static BoardTopology CreateTopology(BoardMaterials materials)
+        {
+            var root = new GameObject("Board Topology");
+            var tileRoot = new GameObject("Rooms").transform;
+            tileRoot.SetParent(root.transform);
+            var gateRoot = new GameObject("Directed Gates").transform;
+            gateRoot.SetParent(root.transform);
+
+            var coordinates = new List<Vector2Int>(MainLoop);
+            for (var branchIndex = 0; branchIndex < Branches.Length; branchIndex++)
+            {
+                var branch = Branches[branchIndex];
+                for (var i = 1; i < branch.Length - 1; i++)
+                {
+                    if (!coordinates.Contains(branch[i]))
+                    {
+                        coordinates.Add(branch[i]);
+                    }
+                }
+            }
+
+            var tilesByCoordinate = new Dictionary<Vector2Int, BoardTile>();
+            var tiles = new List<BoardTile>();
+            for (var i = 0; i < coordinates.Count; i++)
+            {
+                var coordinate = coordinates[i];
+                var type = TileTypeFor(coordinate);
+                var tile = CreateTile(tileRoot, coordinate, type, materials, i);
+                tilesByCoordinate.Add(coordinate, tile);
+                tiles.Add(tile);
+            }
+
+            var edges = new List<DirectedEdge>();
+            for (var i = 0; i < MainLoop.Length; i++)
+            {
+                edges.Add(new DirectedEdge(MainLoop[i], MainLoop[(i + 1) % MainLoop.Length]));
+            }
+            for (var branchIndex = 0; branchIndex < Branches.Length; branchIndex++)
+            {
+                var branch = Branches[branchIndex];
+                for (var i = 0; i < branch.Length - 1; i++)
+                {
+                    edges.Add(new DirectedEdge(branch[i], branch[i + 1]));
+                }
+            }
+
+            var gates = new List<BoardGate>();
+            for (var i = 0; i < edges.Count; i++)
+            {
+                var edge = edges[i];
+                gates.Add(CreateGate(
+                    gateRoot,
+                    tilesByCoordinate[edge.Source],
+                    tilesByCoordinate[edge.Destination],
+                    i));
+            }
+
+            var topology = root.AddComponent<BoardTopology>();
+            topology.Configure(tiles.ToArray(), gates.ToArray());
+            root.AddComponent<KeyShopWorldMarker>();
+            EditorUtility.SetDirty(topology);
+            return topology;
+        }
+
+        private static NetworkWorldDie[] CreateNetworkWorldDice()
+        {
+            var existing = UnityEngine.Object.FindObjectsByType<NetworkWorldDie>(
+                FindObjectsInactive.Include);
+            for (var i = 0; i < existing.Length; i++)
+            {
+                if (existing[i] != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(existing[i].gameObject);
+                }
+            }
+
+            var dice = new NetworkWorldDie[MultiplayerConstants.MaxPlayers];
+            var colors = new[]
+            {
+                new Color(0.95f, 0.25f, 0.25f),
+                new Color(0.25f, 0.55f, 1f),
+                new Color(0.25f, 0.85f, 0.4f),
+                new Color(1f, 0.75f, 0.2f)
+            };
+
+            for (var slot = 0; slot < dice.Length; slot++)
+            {
+                var dieObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                dieObject.name = "World Die P" + (slot + 1);
+                dieObject.transform.position = new Vector3(slot * 1.5f, -20f, 0f);
+                dieObject.transform.localScale = Vector3.one * 0.8f;
+
+                var dieRenderer = dieObject.GetComponent<MeshRenderer>();
+                var colorProperties = new MaterialPropertyBlock();
+                colorProperties.SetColor("_BaseColor", colors[slot]);
+                colorProperties.SetColor("_Color", colors[slot]);
+                dieRenderer.SetPropertyBlock(colorProperties);
+
+                dieObject.AddComponent<NetworkObject>();
+                var networkTransform = dieObject.AddComponent<NetworkTransform>();
+                networkTransform.Interpolate = true;
+                var body = dieObject.AddComponent<Rigidbody>();
+                body.mass = 0.8f;
+                body.linearDamping = 1.1f;
+                body.angularDamping = 1.4f;
+                body.maxAngularVelocity = 24f;
+                dieObject.AddComponent<NetworkRigidbody>();
+
+                var markers = new WorldDieFaceMarker[WorldDieAuthorityModel.MaximumFace];
+                const float goldenAngle = 2.39996323f;
+                for (var faceIndex = 0; faceIndex < markers.Length; faceIndex++)
+                {
+                    var y = 1f - 2f * ((faceIndex + 0.5f) / markers.Length);
+                    var ringRadius = Mathf.Sqrt(Mathf.Max(0f, 1f - y * y));
+                    var angle = faceIndex * goldenAngle;
+                    var normal = new Vector3(
+                        Mathf.Cos(angle) * ringRadius,
+                        y,
+                        Mathf.Sin(angle) * ringRadius).normalized;
+                    var markerObject = new GameObject("Face " + (faceIndex + 1));
+                    markerObject.transform.SetParent(dieObject.transform, false);
+                    markerObject.transform.localPosition = normal * 0.49f;
+                    markerObject.transform.localRotation =
+                        Quaternion.FromToRotation(Vector3.up, normal);
+                    var marker = markerObject.AddComponent<WorldDieFaceMarker>();
+                    marker.Configure(faceIndex + 1);
+                    markers[faceIndex] = marker;
+
+                    var faceTextObject = new GameObject("Value");
+                    faceTextObject.transform.SetParent(markerObject.transform, false);
+                    faceTextObject.transform.localRotation =
+                        Quaternion.FromToRotation(Vector3.forward, Vector3.up);
+                    var faceText = faceTextObject.AddComponent<TextMesh>();
+                    faceText.text = (faceIndex + 1).ToString();
+                    faceText.anchor = TextAnchor.MiddleCenter;
+                    faceText.alignment = TextAlignment.Center;
+                    faceText.fontSize = 42;
+                    faceText.characterSize = 0.035f;
+                    faceText.color = Color.white;
+                }
+
+                var resultObject = new GameObject("Public World Result");
+                resultObject.transform.SetParent(dieObject.transform, false);
+                var resultText = resultObject.AddComponent<TextMesh>();
+                resultText.text = "?";
+                resultText.anchor = TextAnchor.MiddleCenter;
+                resultText.alignment = TextAlignment.Center;
+                resultText.fontSize = 64;
+                resultText.characterSize = 0.045f;
+                resultText.color = Color.white;
+
+                var die = dieObject.AddComponent<NetworkWorldDie>();
+                var renderers = dieObject.GetComponentsInChildren<Renderer>(true);
+                die.ConfigureSceneDie(slot, renderers, markers, resultText);
+                for (var i = 0; i < renderers.Length; i++)
+                {
+                    renderers[i].enabled = false;
+                }
+                dice[slot] = die;
+            }
+
+            return dice;
+        }
+
+        private static BoardTile CreateTile(
+            Transform parent,
+            Vector2Int coordinate,
+            BoardTileType type,
+            BoardMaterials materials,
+            int index)
+        {
+            var tileObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            tileObject.name = "Room " + coordinate.x + "," + coordinate.y + " - " + type;
+            tileObject.transform.SetParent(parent);
+            tileObject.transform.position = GridToWorld(coordinate);
+            tileObject.transform.localScale = new Vector3(7.72f, 0.2f, 7.72f);
+            tileObject.GetComponent<Renderer>().sharedMaterial = MaterialFor(type, materials, index);
+
+            var tile = tileObject.AddComponent<BoardTile>();
+            tile.Configure(coordinate, type);
+
+            var labelObject = new GameObject("Room Label");
+            labelObject.transform.SetParent(tileObject.transform, false);
+            labelObject.transform.localPosition = new Vector3(0f, 0.56f, 0f);
+            labelObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            labelObject.transform.localScale = Vector3.one * 0.05f;
+            var label = labelObject.AddComponent<TextMesh>();
+            label.text = coordinate.x + "," + coordinate.y + "\n" + TileTypeLabel(type);
+            label.anchor = TextAnchor.MiddleCenter;
+            label.alignment = TextAlignment.Center;
+            label.fontSize = 30;
+            label.characterSize = 0.35f;
+            label.color = Color.white;
+            return tile;
+        }
+
+        private static BoardGate CreateGate(
+            Transform parent,
+            BoardTile source,
+            BoardTile destination,
+            int index)
+        {
+            var direction = (destination.WorldCenter - source.WorldCenter).normalized;
+            var gateObject = new GameObject(
+                "Gate " + index.ToString("00") + " - " + source.Coordinate + " to " + destination.Coordinate);
+            gateObject.transform.SetParent(parent);
+            gateObject.transform.SetPositionAndRotation(
+                (source.WorldCenter + destination.WorldCenter) * 0.5f + Vector3.up * 0.15f,
+                Quaternion.LookRotation(direction, Vector3.up));
+            var gate = gateObject.AddComponent<BoardGate>();
+            // A reused boundary wall represents the whole side of one square room.
+            // Blue means this directed side is passable, so traversal validation uses
+            // the full room width instead of the earlier narrow prototype gateway.
+            gate.Configure(source, destination, BoardTile.RoomSize);
+            return gate;
+        }
+
+        private static GameplayCameraDirector CreateCameraRig()
+        {
+            var root = new GameObject("Board Camera Rig");
+            var framingObject = new GameObject("Board Framing Anchor");
+            framingObject.transform.SetParent(root.transform);
+            var framing = framingObject.AddComponent<BoardCameraFramingAnchor>();
+            var settings = new BoardCameraFramingSettings(
+                new Vector2(56f, 56f), 0.15f, 50f, 20f, 0f);
+            framing.Configure(settings);
+
+            var cameraObject = new GameObject("Main Camera");
+            cameraObject.tag = "MainCamera";
+            cameraObject.transform.SetParent(root.transform);
+            var output = cameraObject.AddComponent<Camera>();
+            output.clearFlags = CameraClearFlags.SolidColor;
+            output.backgroundColor = new Color(0.018f, 0.026f, 0.045f);
+            output.nearClipPlane = 0.05f;
+            output.farClipPlane = 500f;
+            cameraObject.AddComponent<AudioListener>();
+            var brain = cameraObject.AddComponent<CinemachineBrain>();
+            brain.DefaultBlend = new CinemachineBlendDefinition(
+                CinemachineBlendDefinition.Styles.EaseInOut, 0.4f);
+            brain.IgnoreTimeScale = true;
+
+            var boardPose = settings.Evaluate(Vector3.zero, 16f / 9f);
+            var boardCamera = CreateCinemachineCamera(
+                root.transform, "CM_BoardWide", boardPose.Position, boardPose.Rotation, boardPose.FieldOfView, 100);
+            var firstPerson = CreateCinemachineCamera(
+                root.transform, "CM_FirstPerson", new Vector3(0f, 2f, 0f), Quaternion.identity, 70f, 0);
+            var minigame = CreateCinemachineCamera(
+                root.transform, "CM_MinigamePlaceholder", boardPose.Position, boardPose.Rotation, 55f, 0);
+
+            var director = root.AddComponent<GameplayCameraDirector>();
+            director.Configure(output, firstPerson, boardCamera, minigame);
+            director.SetBoardFramingAnchor(framing);
+            var presenter = root.AddComponent<BoardFlowCameraPresenter>();
+            presenter.Configure(director);
+            return director;
+        }
+
+        private static CinemachineCamera CreateCinemachineCamera(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Quaternion rotation,
+            float fieldOfView,
+            int priority)
+        {
+            var cameraObject = new GameObject(name);
+            cameraObject.transform.SetParent(parent);
+            cameraObject.transform.SetPositionAndRotation(position, rotation);
+            var camera = cameraObject.AddComponent<CinemachineCamera>();
+            camera.Priority = priority;
+            var lens = camera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = fieldOfView;
+            lens.NearClipPlane = 0.05f;
+            lens.FarClipPlane = 500f;
+            camera.Lens = lens;
+            return camera;
+        }
+
+        private static void CreateBoardCanvas(GameplayCameraDirector cameraDirector)
+        {
+            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            if (font == null)
+            {
+                throw new InvalidOperationException("Unity LegacyRuntime.ttf was not found.");
+            }
+
+            var root = new GameObject(
+                "Board Canvas",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster),
+                typeof(BoardEventSystemBootstrap),
+                typeof(BoardFlowView));
+            root.layer = LayerMask.NameToLayer("UI");
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 20;
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            CreateHeader(root.transform, font);
+            CreatePlayerPanel(root.transform, font);
+            CreateInventory(root.transform, font);
+            CreateStatus(root.transform, font);
+            CreateSelectionPanel(root.transform, font);
+            CreateReadyPanel(root.transform, font);
+            CreateResultPanel(root.transform, font);
+            CreateReticle(root.transform, font);
+            CreateReconnectOverlay(root.transform, font);
+            root.GetComponent<BoardFlowView>().Configure(cameraDirector);
+        }
+
+        private static void CreateHeader(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("Header Panel", canvas, new Vector2(0.5f, 1f),
+                new Vector2(0.5f, 1f), new Vector2(0f, -18f), new Vector2(820f, 108f),
+                new Vector2(0.5f, 1f), new Color(0.025f, 0.045f, 0.08f, 0.94f));
+            CreateText("TurnText", panel.transform, "TURN --", font, 27,
+                new Vector2(-300f, -30f), new Vector2(180f, 42f), TextAnchor.MiddleCenter);
+            CreateText("PhaseText", panel.transform, "WAITING FOR 4 PLAYERS", font, 25,
+                new Vector2(0f, -30f), new Vector2(420f, 42f), TextAnchor.MiddleCenter);
+            CreateText("PhaseTimerText", panel.transform, "--:--", font, 30,
+                new Vector2(305f, -30f), new Vector2(170f, 42f), TextAnchor.MiddleCenter);
+            CreateText("BoardChoiceTimerText", panel.transform, "CHOICE --", font, 17,
+                new Vector2(-205f, -74f), new Vector2(250f, 30f), TextAnchor.MiddleCenter);
+            CreateText("BoardShieldText", panel.transform, "SHIELD OFF", font, 17,
+                new Vector2(90f, -74f), new Vector2(220f, 30f), TextAnchor.MiddleCenter);
+        }
+
+        private static void CreatePlayerPanel(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("Player State Panel", canvas, new Vector2(0f, 1f),
+                new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(260f, 190f),
+                new Vector2(0f, 1f), new Color(0.025f, 0.045f, 0.08f, 0.9f));
+            CreateText("Players Title", panel.transform, "ONLINE PLAYERS", font, 19,
+                new Vector2(0f, -24f), new Vector2(230f, 32f), TextAnchor.MiddleCenter);
+            for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
+            {
+                CreateText("PlayerState" + i, panel.transform, "P" + (i + 1) + "  WAITING", font, 18,
+                    new Vector2(0f, -61f - i * 30f), new Vector2(220f, 27f), TextAnchor.MiddleLeft);
+            }
+        }
+
+        private static void CreateInventory(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("Inventory Panel", canvas, new Vector2(0.5f, 0f),
+                new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(690f, 132f),
+                new Vector2(0.5f, 0f), new Color(0.025f, 0.045f, 0.08f, 0.92f));
+            CreateText("Inventory Title", panel.transform, "ITEM SLOTS", font, 17,
+                new Vector2(0f, 105f), new Vector2(300f, 25f), TextAnchor.MiddleCenter);
+            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            {
+                var slot = CreatePanel("BoardInventorySlot" + i, panel.transform, new Vector2(0.5f, 0f),
+                    new Vector2(0.5f, 0f), new Vector2((i - 1) * 210f, 14f), new Vector2(194f, 78f),
+                    new Vector2(0.5f, 0f), new Color(0.18f, 0.36f, 0.58f, 0.94f));
+                CreateText("BoardInventorySlotLabel" + i, slot.transform, "EMPTY", font, 17,
+                    Vector2.zero, new Vector2(180f, 64f), TextAnchor.MiddleCenter);
+            }
+
+            CreateText("BoardAmmoText", canvas, "CHARGE --", font, 24,
+                new Vector2(-160f, 44f), new Vector2(280f, 74f), TextAnchor.MiddleRight,
+                new Vector2(1f, 0f), new Vector2(1f, 0f));
+            CreateText("DiceText", canvas, "DICE --", font, 23,
+                new Vector2(185f, 120f), new Vector2(330f, 38f), TextAnchor.MiddleLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f));
+            CreateText("MovesText", canvas, "MOVES --", font, 23,
+                new Vector2(150f, 80f), new Vector2(260f, 38f), TextAnchor.MiddleLeft,
+                new Vector2(0f, 0f), new Vector2(0f, 0f));
+        }
+
+        private static void CreateStatus(Transform canvas, Font font)
+        {
+            CreateText("BoardStatusText", canvas, "Waiting for the board flow.", font, 18,
+                new Vector2(0f, 164f), new Vector2(900f, 38f), TextAnchor.MiddleCenter,
+                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
+        }
+
+        private static void CreateSelectionPanel(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("ItemSelectionPanel", canvas, new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(820f, 390f),
+                new Vector2(0.5f, 0.5f), new Color(0.02f, 0.035f, 0.07f, 0.98f));
+            CreateText("Selection Title", panel.transform, "CHOOSE AN ITEM", font, 32,
+                new Vector2(0f, 150f), new Vector2(600f, 46f), TextAnchor.MiddleCenter);
+            CreateText("Selection Rule", panel.transform,
+                "Personal 30-second limit. The shared 3:00 action clock continues.", font, 18,
+                new Vector2(0f, 112f), new Vector2(720f, 32f), TextAnchor.MiddleCenter);
+            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            {
+                var button = CreateButton("ItemChoiceButton" + i, panel.transform, "ITEM", font,
+                    new Vector2((i - 1) * 240f, 22f), new Vector2(215f, 105f));
+                button.gameObject.AddComponent<BoardItemChoiceButton>();
+                button.GetComponentInChildren<Text>().gameObject.name = "ItemChoiceLabel" + i;
+            }
+            CreateText("BoardTooltipText", panel.transform, "Hover an item for details.", font, 17,
+                new Vector2(0f, -76f), new Vector2(700f, 58f), TextAnchor.MiddleCenter);
+            CreateButton("NoItemButton", panel.transform, "DO NOT USE", font,
+                new Vector2(0f, -145f), new Vector2(300f, 52f));
+            panel.SetActive(false);
+        }
+
+        private static void CreateReadyPanel(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("MinigameReadyPanel", canvas, new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(610f, 245f),
+                new Vector2(0.5f, 0.5f), new Color(0.03f, 0.055f, 0.09f, 0.98f));
+            CreateText("Ready Title", panel.transform, "MINIGAME INTRO / READY", font, 28,
+                new Vector2(0f, 73f), new Vector2(540f, 44f), TextAnchor.MiddleCenter);
+            CreateText("Ready Note", panel.transform,
+                "Minigame selection is TODO. Ready from all four players triggers the development skip.",
+                font, 17, new Vector2(0f, 20f), new Vector2(520f, 62f), TextAnchor.MiddleCenter);
+            CreateButton("ReadyButton", panel.transform, "READY / SKIP", font,
+                new Vector2(0f, -74f), new Vector2(280f, 58f));
+            panel.SetActive(false);
+        }
+
+        private static void CreateResultPanel(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("SkippedResultPanel", canvas, new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(570f, 170f),
+                new Vector2(0.5f, 0.5f), new Color(0.08f, 0.045f, 0.1f, 0.98f));
+            CreateText("Result Title", panel.transform, "RESULT PLACEHOLDER", font, 30,
+                new Vector2(0f, 42f), new Vector2(500f, 44f), TextAnchor.MiddleCenter);
+            CreateText("Result Note", panel.transform,
+                "No minigame reward or currency transfer. Next turn begins in 3 seconds.", font, 18,
+                new Vector2(0f, -25f), new Vector2(490f, 60f), TextAnchor.MiddleCenter);
+            panel.SetActive(false);
+        }
+
+        private static void CreateReticle(Transform canvas, Font font)
+        {
+            var reticle = CreateText("BoardReticle", canvas, "+", font, 30,
+                Vector2.zero, new Vector2(40f, 40f), TextAnchor.MiddleCenter,
+                new Vector2(0.5f, 0.5f), new Vector2(0.5f, 0.5f));
+            reticle.gameObject.SetActive(false);
+        }
+
+        private static void CreateReconnectOverlay(Transform canvas, Font font)
+        {
+            var overlay = CreatePanel("ReconnectOverlay", canvas, Vector2.zero, Vector2.one,
+                Vector2.zero, Vector2.zero, new Vector2(0.5f, 0.5f),
+                new Color(0.015f, 0.02f, 0.035f, 0.9f));
+            var rect = overlay.GetComponent<RectTransform>();
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            CreateText("ReconnectText", overlay.transform,
+                "PLAYER DISCONNECTED\nMATCH PAUSED\n01:00 remaining", font, 34,
+                Vector2.zero, new Vector2(720f, 190f), TextAnchor.MiddleCenter);
+            overlay.SetActive(false);
+        }
+
+        private static GameObject CreatePanel(
+            string name, Transform parent, Vector2 anchorMin, Vector2 anchorMax,
+            Vector2 anchoredPosition, Vector2 size, Vector2 pivot, Color color)
+        {
+            var panel = CreateUiObject(name, parent);
+            var rect = panel.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin;
+            rect.anchorMax = anchorMax;
+            rect.pivot = pivot;
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+            panel.AddComponent<Image>().color = color;
+            return panel;
+        }
+
+        private static Text CreateText(
+            string name, Transform parent, string value, Font font, int fontSize,
+            Vector2 position, Vector2 size, TextAnchor alignment,
+            Vector2? anchorMin = null, Vector2? anchorMax = null)
+        {
+            var textObject = CreateUiObject(name, parent);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = anchorMin ?? new Vector2(0.5f, 0.5f);
+            rect.anchorMax = anchorMax ?? rect.anchorMin;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var text = textObject.AddComponent<Text>();
+            text.font = font;
+            text.text = value;
+            text.fontSize = fontSize;
+            text.color = new Color(0.93f, 0.96f, 1f);
+            text.alignment = alignment;
+            text.raycastTarget = false;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
+        }
+
+        private static Button CreateButton(
+            string name, Transform parent, string label, Font font,
+            Vector2 position, Vector2 size)
+        {
+            var buttonObject = CreateUiObject(name, parent);
+            var rect = buttonObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0.13f, 0.39f, 0.68f, 1f);
+            var button = buttonObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            CreateText("Label", buttonObject.transform, label, font, 18,
+                Vector2.zero, size - new Vector2(12f, 10f), TextAnchor.MiddleCenter);
+            return button;
+        }
+
+        private static GameObject CreateUiObject(string name, Transform parent)
+        {
+            var result = new GameObject(name, typeof(RectTransform));
+            result.layer = LayerMask.NameToLayer("UI");
+            result.transform.SetParent(parent, false);
+            return result;
+        }
+
+        private static void CreateLighting()
+        {
+            var lightObject = new GameObject("Board Directional Light");
+            lightObject.transform.rotation = Quaternion.Euler(52f, -32f, 0f);
+            var light = lightObject.AddComponent<Light>();
+            light.type = LightType.Directional;
+            light.color = new Color(1f, 0.95f, 0.86f);
+            light.intensity = 1.25f;
+            light.shadows = LightShadows.Soft;
+        }
+
+        private static void CreateBoardBackdrop(Material material)
+        {
+            var backdrop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            backdrop.name = "Board Backdrop (No Gameplay Collision)";
+            backdrop.transform.position = new Vector3(0f, -0.42f, 0f);
+            backdrop.transform.localScale = new Vector3(60f, 0.4f, 60f);
+            backdrop.GetComponent<Renderer>().sharedMaterial = material;
+            var collider = backdrop.GetComponent<Collider>();
+            if (collider != null)
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+        }
+
+        private static BoardMaterials CreateMaterials()
+        {
+            return new BoardMaterials
+            {
+                NormalA = CreateOrUpdateMaterial("RoomNormalA", new Color(0.12f, 0.28f, 0.42f)),
+                NormalB = CreateOrUpdateMaterial("RoomNormalB", new Color(0.14f, 0.36f, 0.43f)),
+                Start = CreateOrUpdateMaterial("RoomStart", new Color(0.16f, 0.58f, 0.3f)),
+                KeyShop = CreateOrUpdateMaterial("RoomKeyShop", new Color(0.76f, 0.52f, 0.08f)),
+                Respawn = CreateOrUpdateMaterial("RoomRespawn", new Color(0.1f, 0.58f, 0.68f)),
+                Backdrop = CreateOrUpdateMaterial("BoardBackdrop", new Color(0.025f, 0.04f, 0.065f))
+            };
+        }
+
+        private static Material CreateOrUpdateMaterial(string name, Color color)
+        {
+            var path = MaterialFolder + "/" + name + ".mat";
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                if (shader == null)
+                {
+                    throw new InvalidOperationException("No supported Lit shader is available.");
+                }
+                material = new Material(shader) { name = name };
+                AssetDatabase.CreateAsset(material, path);
+            }
+            material.color = color;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material MaterialFor(
+            BoardTileType type, BoardMaterials materials, int index)
+        {
+            switch (type)
+            {
+                case BoardTileType.Start: return materials.Start;
+                case BoardTileType.KeyShop: return materials.KeyShop;
+                case BoardTileType.Respawn: return materials.Respawn;
+                default: return index % 2 == 0 ? materials.NormalA : materials.NormalB;
+            }
+        }
+
+        private static BoardTileType TileTypeFor(Vector2Int coordinate)
+        {
+            if (coordinate == new Vector2Int(1, 1) || coordinate == new Vector2Int(5, 1) ||
+                coordinate == new Vector2Int(5, 5) || coordinate == new Vector2Int(1, 5))
+            {
+                return BoardTileType.Start;
+            }
+            // The only Key Shop is a runtime marker selected at turn-two overview.
+            // Static shop rooms would violate the unique-shop and turn-one-hidden rules.
+            if (coordinate == new Vector2Int(3, 0) || coordinate == new Vector2Int(6, 3) ||
+                coordinate == new Vector2Int(3, 6) || coordinate == new Vector2Int(0, 3))
+            {
+                return BoardTileType.Respawn;
+            }
+            return BoardTileType.Normal;
+        }
+
+        private static string TileTypeLabel(BoardTileType type)
+        {
+            switch (type)
+            {
+                case BoardTileType.Start: return "START";
+                case BoardTileType.KeyShop: return "KEY SHOP";
+                case BoardTileType.Respawn: return "RESPAWN";
+                default: return "NORMAL";
+            }
+        }
+
+        private static Vector3 GridToWorld(Vector2Int coordinate)
+        {
+            return new Vector3((coordinate.x - 3) * RoomSize, 0f, (coordinate.y - 3) * RoomSize);
+        }
+
+        private static void EnsureFolders()
+        {
+            EnsureFolder(Root);
+            EnsureFolder(BoardFolder);
+            EnsureFolder(MaterialFolder);
+        }
+
+        private static void EnsureFolder(string path)
+        {
+            if (AssetDatabase.IsValidFolder(path))
+            {
+                return;
+            }
+            var separator = path.LastIndexOf('/');
+            var parent = path.Substring(0, separator);
+            EnsureFolder(parent);
+            AssetDatabase.CreateFolder(parent, path.Substring(separator + 1));
+        }
+
+        private static void EnsureBoardInBuildSettings()
+        {
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            var found = false;
+            for (var i = 0; i < scenes.Count; i++)
+            {
+                if (scenes[i].path == BoardPath)
+                {
+                    scenes[i] = new EditorBuildSettingsScene(BoardPath, true);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                scenes.Add(new EditorBuildSettingsScene(BoardPath, true));
+            }
+            EditorBuildSettings.scenes = scenes.ToArray();
+        }
+
+        private static void ExcludeTestbedFromBuildSettings()
+        {
+            var scenes = new List<EditorBuildSettingsScene>(EditorBuildSettings.scenes);
+            for (var i = 0; i < scenes.Count; i++)
+            {
+                if (scenes[i].path == TestbedPath)
+                {
+                    scenes[i] = new EditorBuildSettingsScene(TestbedPath, false);
+                    EditorBuildSettings.scenes = scenes.ToArray();
+                    return;
+                }
+            }
+        }
+
+        private static void CreateEditorTools(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("Editor Flow Tools", canvas, new Vector2(1f, 1f),
+                new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 270f),
+                new Vector2(1f, 1f), new Color(0.08f, 0.035f, 0.11f, 0.95f));
+            CreateText("Editor Tools Title", panel.transform, "EDITOR LOCAL TOOLS", font, 20,
+                new Vector2(0f, -28f), new Vector2(270f, 32f), TextAnchor.MiddleCenter);
+            CreateText("Editor Tools Help", panel.transform,
+                "No network required. Other players are simulated.\nTAB toggles the pointer during action.", font, 14,
+                new Vector2(0f, -63f), new Vector2(270f, 46f), TextAnchor.MiddleCenter);
+            CreateButton("EditorFinishActionButton", panel.transform, "FINISH ACTION (ALL ARRIVED)", font,
+                new Vector2(0f, -105f), new Vector2(270f, 42f));
+            CreateButton("EditorSpeedButton", panel.transform, "FLOW SPEED  x1", font,
+                new Vector2(0f, -154f), new Vector2(270f, 42f));
+            CreateButton("EditorPauseButton", panel.transform, "PAUSE / RESUME MODEL", font,
+                new Vector2(0f, -203f), new Vector2(270f, 42f));
+        }
+
+        private static GameObject FindDescendant(Transform root, string objectName)
+        {
+            var descendants = root.GetComponentsInChildren<Transform>(true);
+            for (var i = 0; i < descendants.Length; i++)
+            {
+                if (descendants[i].gameObject.name == objectName)
+                {
+                    return descendants[i].gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private readonly struct DirectedEdge
+        {
+            public DirectedEdge(Vector2Int source, Vector2Int destination)
+            {
+                Source = source;
+                Destination = destination;
+            }
+            public Vector2Int Source { get; }
+            public Vector2Int Destination { get; }
+        }
+
+        private sealed class BoardMaterials
+        {
+            public Material NormalA;
+            public Material NormalB;
+            public Material Start;
+            public Material KeyShop;
+            public Material Respawn;
+            public Material Backdrop;
+        }
+    }
+}

@@ -125,6 +125,59 @@ namespace MazeParty.Multiplayer
             AttachSession(joinedSession);
         }
 
+        public async Task ReconnectToSessionAsync(string sessionId, string displayName)
+        {
+            ThrowIfAlreadyInSession();
+
+            var normalizedSessionId = string.IsNullOrWhiteSpace(sessionId)
+                ? string.Empty
+                : sessionId.Trim();
+            if (normalizedSessionId.Length == 0)
+            {
+                throw new ArgumentException("A reconnect session ID is required.", nameof(sessionId));
+            }
+
+            await _identity.SignInAsync(displayName);
+
+            var joinedSessionIds = await MultiplayerService.Instance.GetJoinedSessionIdsAsync();
+            if (joinedSessionIds == null ||
+                !joinedSessionIds.Contains(normalizedSessionId, StringComparer.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    "The saved reconnect session is no longer joined by this authenticated player.");
+            }
+
+            // Reconnect is intentionally distinct from JoinByCode. Playing sessions are
+            // locked, and only the already-authenticated member may reclaim that seat.
+            var options = new ReconnectSessionOptions
+            {
+                Type = MultiplayerConstants.SessionType
+            };
+            var reconnectedSession = await MultiplayerService.Instance.ReconnectToSessionAsync(
+                normalizedSessionId,
+                options);
+
+            if (!HasCompatibleBuild(reconnectedSession))
+            {
+                AttachSession(reconnectedSession);
+                try
+                {
+                    await LeaveAsync();
+                }
+                catch (Exception cleanupException)
+                {
+                    throw new InvalidOperationException(
+                        "The reconnect target uses a different game build and automatic cleanup failed.",
+                        cleanupException);
+                }
+
+                throw new InvalidOperationException(
+                    "The reconnect target uses a different game build.");
+            }
+
+            AttachSession(reconnectedSession);
+        }
+
         public async Task PublishLocalNetworkClientIdAsync(ulong clientId)
         {
             var session = RequireSession();
@@ -142,6 +195,45 @@ namespace MazeParty.Multiplayer
             {
                 RebuildSnapshot();
             }
+        }
+
+        public bool TryGetAuthoritativeSlot(ulong clientId, out int slot)
+        {
+            slot = -1;
+            var session = _session;
+            if (session == null)
+            {
+                return false;
+            }
+
+            var clientIdText = clientId.ToString(CultureInfo.InvariantCulture);
+            var matches = session.Players
+                .Where(player =>
+                    GetPlayerProperty(
+                        player,
+                        MultiplayerConstants.NetworkClientIdProperty,
+                        string.Empty) == clientIdText)
+                .ToArray();
+            if (matches.Length != 1)
+            {
+                return false;
+            }
+
+            var playerId = matches[0].Id;
+            for (var candidate = 0; candidate < MultiplayerConstants.MaxPlayers; candidate++)
+            {
+                if (session.Properties.TryGetValue(
+                        MultiplayerConstants.SlotProperty(candidate),
+                        out var property) &&
+                    property != null &&
+                    string.Equals(property.Value, playerId, StringComparison.Ordinal))
+                {
+                    slot = candidate;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public async Task<bool> RemoveDisconnectedLobbyPlayerAsync(

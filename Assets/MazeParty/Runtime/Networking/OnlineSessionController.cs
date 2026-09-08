@@ -14,6 +14,8 @@ namespace MazeParty.Multiplayer
         private const int LobbyDisconnectForcedCleanupGraceMilliseconds = 5000;
         private const int NetworkIdentityPublishAttempts = 3;
         private const int NetworkIdentityPublishRetryBaseMilliseconds = 250;
+        private const string PlayingReconnectTicketPrefix =
+            "MazeParty.PlayingReconnectSession.";
 
         [SerializeField] private Camera lobbyCamera;
         [SerializeField] private Light lobbyLight;
@@ -34,12 +36,21 @@ namespace MazeParty.Multiplayer
             new HashSet<string>();
         private bool _applicationQuitting;
         private bool _destroyed;
+        private string _playingReconnectTicketKey;
 
         public static OnlineSessionController Instance { get; private set; }
 
         public int LocalSlot => _sessions != null ? _sessions.Current.LocalSlot : -1;
         public SessionSnapshot CurrentSession =>
             _sessions != null ? _sessions.Current : SessionSnapshot.Empty;
+
+        public bool TryResolveAuthoritativeSlot(ulong clientId, out int slot)
+        {
+            slot = -1;
+            return _sessions != null &&
+                   _sessions.IsInSession &&
+                   _sessions.TryGetAuthoritativeSlot(clientId, out slot);
+        }
 
         public void ConfigureSceneReferences(
             Camera camera,
@@ -62,6 +73,7 @@ namespace MazeParty.Multiplayer
             Instance = this;
             Application.quitting += OnApplicationQuitting;
 
+            _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
             var displayName = "Player " + UnityEngine.Random.Range(1000, 10000);
             if (lobbyView == null)
             {
@@ -94,6 +106,13 @@ namespace MazeParty.Multiplayer
 
             BindLobbyView();
             RenderLobby();
+
+            if (TryGetPlayingReconnectTicket(out var reconnectSessionId))
+            {
+                RunAsync(
+                    () => ReconnectAndPublishAsync(reconnectSessionId, displayName),
+                    "Reconnecting to the interrupted online game...");
+            }
         }
 
         private void OnDestroy()
@@ -211,6 +230,7 @@ namespace MazeParty.Multiplayer
 
         private async Task CreateAndPublishAsync(string displayName)
         {
+            ClearPlayingReconnectTicket();
             _networkIdentityPublished = false;
             await _sessions.CreateAsync("MazeParty Room", displayName);
             await PublishLocalNetworkClientIdWhenReadyAsync();
@@ -218,9 +238,33 @@ namespace MazeParty.Multiplayer
 
         private async Task JoinAndPublishAsync(string code, string displayName)
         {
+            ClearPlayingReconnectTicket();
             _networkIdentityPublished = false;
             await _sessions.JoinByCodeAsync(code, displayName);
             await PublishLocalNetworkClientIdWhenReadyAsync();
+        }
+
+        private async Task ReconnectAndPublishAsync(string sessionId, string displayName)
+        {
+            _networkIdentityPublished = false;
+            try
+            {
+                await _sessions.ReconnectToSessionAsync(sessionId, displayName);
+                var snapshot = _sessions.Current;
+                if (snapshot.IsHost || snapshot.Phase != MultiplayerConstants.PlayingPhase)
+                {
+                    await _sessions.LeaveAsync();
+                    throw new InvalidOperationException(
+                        "The saved reconnect target is no longer an active client game.");
+                }
+
+                await PublishLocalNetworkClientIdWhenReadyAsync();
+            }
+            catch
+            {
+                ClearPlayingReconnectTicket();
+                throw;
+            }
         }
 
         private Task PublishLocalNetworkClientIdWhenReadyAsync()
@@ -332,6 +376,7 @@ namespace MazeParty.Multiplayer
 
         private async Task LeaveSessionAsync()
         {
+            ClearPlayingReconnectTicket();
             _explicitLeaveQueued = true;
             try
             {
@@ -340,6 +385,7 @@ namespace MazeParty.Multiplayer
             finally
             {
                 _explicitLeaveQueued = false;
+                ClearPlayingReconnectTicket();
             }
         }
 
@@ -421,6 +467,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSessionChanged()
         {
+            UpdatePlayingReconnectTicket();
             if (_networkManager != null)
             {
                 ObserveNetworkSceneManager(_networkManager.SceneManager);
@@ -437,6 +484,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSessionEnded(string reason)
         {
+            ClearPlayingReconnectTicket();
             SetStatus(reason);
         }
 
@@ -589,8 +637,9 @@ namespace MazeParty.Multiplayer
                 }
                 else
                 {
+                    NetworkMatchState.Instance?.PauseForReconnectOnServer(clientId);
                     SetStatus(
-                        "A player disconnected. Gameplay is keeping the service reconnect window.");
+                        "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
                 }
             }
             else if (localClientLost)
@@ -775,6 +824,11 @@ namespace MazeParty.Multiplayer
             return false;
         }
 
+        public void EndActiveMatchForNetworkFailure(string reason)
+        {
+            EndSessionAfterNetworkFailure(reason);
+        }
+
         private async void EndSessionAfterNetworkFailure(string reason)
         {
             if (_networkTerminationQueued ||
@@ -785,6 +839,7 @@ namespace MazeParty.Multiplayer
             }
 
             _networkTerminationQueued = true;
+            ClearPlayingReconnectTicket();
             SetStatus(reason);
             try
             {
@@ -873,6 +928,75 @@ namespace MazeParty.Multiplayer
             // MPS owns its Application.quitting LeaveAsync. Suppress controller callbacks
             // so a second project-side Leave cannot stop the same network session twice.
             _applicationQuitting = true;
+            // MPS treats graceful application quit as a normal Leave. Keep the
+            // reconnect ticket only for a process/network loss that skips this callback.
+            ClearPlayingReconnectTicket();
+        }
+
+        private void UpdatePlayingReconnectTicket()
+        {
+            if (!_applicationQuitting &&
+                !_explicitLeaveQueued &&
+                !_networkTerminationQueued &&
+                _sessions != null &&
+                _sessions.IsInSession &&
+                !_sessions.Current.IsHost &&
+                _sessions.Current.Phase == MultiplayerConstants.PlayingPhase &&
+                !string.IsNullOrWhiteSpace(_sessions.CurrentSessionId))
+            {
+                PlayerPrefs.SetString(
+                    _playingReconnectTicketKey,
+                    _sessions.CurrentSessionId);
+                PlayerPrefs.Save();
+                return;
+            }
+
+            ClearPlayingReconnectTicket();
+        }
+
+        private bool TryGetPlayingReconnectTicket(out string sessionId)
+        {
+            sessionId = string.IsNullOrWhiteSpace(_playingReconnectTicketKey)
+                ? string.Empty
+                : PlayerPrefs.GetString(_playingReconnectTicketKey, string.Empty).Trim();
+            return sessionId.Length > 0;
+        }
+
+        private void ClearPlayingReconnectTicket()
+        {
+            if (string.IsNullOrWhiteSpace(_playingReconnectTicketKey) ||
+                !PlayerPrefs.HasKey(_playingReconnectTicketKey))
+            {
+                return;
+            }
+
+            PlayerPrefs.DeleteKey(_playingReconnectTicketKey);
+            PlayerPrefs.Save();
+        }
+
+        private static string BuildPlayingReconnectTicketKey()
+        {
+            var profile = "default";
+            var arguments = Environment.GetCommandLineArgs();
+            for (var index = 0; index < arguments.Length - 1; index++)
+            {
+                if (!string.Equals(
+                        arguments[index],
+                        "-auth-profile",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var candidate = arguments[index + 1].Trim();
+                if (candidate.Length > 0)
+                {
+                    profile = candidate;
+                }
+                break;
+            }
+
+            return PlayingReconnectTicketPrefix + Hash128.Compute(profile);
         }
 
         // TODO(STEAM-LIFECYCLE): Steam lobby callbacks should forward host departure to

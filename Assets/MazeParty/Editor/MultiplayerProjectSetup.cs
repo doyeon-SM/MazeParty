@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using MazeParty.Gameplay;
 using MazeParty.Multiplayer;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -26,20 +27,27 @@ namespace MazeParty.Editor
         [MenuItem("MazeParty/Multiplayer/Rebuild Online Prototype")]
         public static void BuildOnlinePrototype()
         {
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                Debug.Log("Online prototype rebuild canceled; open scene changes were left untouched.");
+                return;
+            }
+
             EnsureFolders();
 
             var playerPrefab = CreatePlayerPrefab();
             CreateBootstrapScene(playerPrefab);
-            CreateBoardScene();
+            BoardFlowProjectSetup.BuildBoardSceneBase();
+            BoardFlowProjectSetup.BuildLocalTestbedFromBoard();
             ConfigureBuildSettings();
-            CreateBoardNetworkState();
+            BoardFlowProjectSetup.AddNetworkStateAndSave();
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorSceneManager.OpenScene(BootstrapPath, OpenSceneMode.Single);
             Debug.Log(
                 "MazeParty online prototype rebuilt: 4-player NetworkManager, Relay lobby, " +
-                "NetworkPlayer prefab, and Board vertical slice.");
+                "NetworkPlayer prefab, and the 32-room Board flow vertical slice.");
         }
 
 
@@ -89,6 +97,9 @@ namespace MazeParty.Editor
             networkTransform.SyncScaleZ = false;
 
             player.AddComponent<NetworkPlayerAvatar>();
+            // Four reusable boundaries are created by this component per player
+            // instance (16 total for the fixed four-player match).
+            player.AddComponent<PlayerBoardBoundaryWalls>();
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             Object.DestroyImmediate(player);
@@ -124,6 +135,8 @@ namespace MazeParty.Editor
             var transport = runtime.AddComponent<UnityTransport>();
             // This limits Relay/UTP disconnect detection for force-closed lobby clients.
             // It is separate from the MPS gameplay reconnection retention window.
+            // Keep the backend Disconnect Removal Time at 75-90 seconds so this
+            // detection delay plus the 60-second gameplay grace cannot evict the seat.
             transport.DisconnectTimeoutMS = 15000;
             var networkManager = runtime.AddComponent<NetworkManager>();
             networkManager.RunInBackground = true;
