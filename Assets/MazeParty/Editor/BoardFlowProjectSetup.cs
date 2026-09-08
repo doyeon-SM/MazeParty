@@ -20,7 +20,13 @@ namespace MazeParty.Editor
         private const string BoardFolder = Root + "/Board";
         private const string MaterialFolder = BoardFolder + "/Materials";
         private const string BoardPath = Root + "/Scenes/Board.unity";
-        private const string TestbedPath = Root + "/Dev/BoardFlowTestbed/BoardFlowTestbed.unity";
+
+        private const string UiFolder = Root + "/UI";
+        private const string UiPrefabFolder = UiFolder + "/Prefabs";
+        internal const string BoardCanvasPrefabPath =
+            UiPrefabFolder + "/BoardCanvas.prefab";
+        private const string TestbedPath =
+            Root + "/Dev/BoardFlowTestbed/BoardFlowTestbed.unity";
         private const float RoomSize = BoardTile.RoomSize;
 
         private static readonly Vector2Int[] MainLoop =
@@ -82,6 +88,16 @@ namespace MazeParty.Editor
         private static bool CanRebuildBoardFlowPrototype()
         {
             return !EditorApplication.isPlayingOrWillChangePlaymode;
+        }
+
+        [MenuItem("MazeParty/UI/Open Board Canvas Prefab")]
+        public static void OpenBoardCanvasPrefab()
+        {
+            EnsureFolders();
+            var prefab = LoadOrCreateBoardCanvasPrefab();
+            Selection.activeObject = prefab;
+            EditorGUIUtility.PingObject(prefab);
+            AssetDatabase.OpenAsset(prefab);
         }
 
         internal static void BuildBoardSceneBase()
@@ -277,6 +293,24 @@ namespace MazeParty.Editor
                 localHover.Configure(simulator, i);
             }
 
+            for (var i = 0; i < ItemShopRules.OfferCount; i++)
+            {
+                var shopButton = FindDescendant(canvas.transform, "ItemShopOffer" + i);
+                if (shopButton == null)
+                {
+                    continue;
+                }
+
+                var onlineHover = shopButton.GetComponent<BoardItemChoiceButton>();
+                if (onlineHover != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(onlineHover);
+                }
+
+                var localHover = shopButton.AddComponent<BoardFlowLocalItemChoiceButton>();
+                localHover.ConfigureShop(simulator, i);
+            }
+
             EditorSceneManager.SaveScene(scene, TestbedPath);
             ExcludeTestbedFromBuildSettings();
         }
@@ -341,6 +375,7 @@ namespace MazeParty.Editor
             var topology = root.AddComponent<BoardTopology>();
             topology.Configure(tiles.ToArray(), gates.ToArray());
             root.AddComponent<KeyShopWorldMarker>();
+            root.AddComponent<ItemShopWorldMarker>();
             EditorUtility.SetDirty(topology);
             return topology;
         }
@@ -560,7 +595,7 @@ namespace MazeParty.Editor
             return camera;
         }
 
-        private static void CreateBoardCanvas(GameplayCameraDirector cameraDirector)
+        private static GameObject CreateBoardCanvasTemplate()
         {
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (font == null)
@@ -591,11 +626,176 @@ namespace MazeParty.Editor
             CreateInventory(root.transform, font);
             CreateStatus(root.transform, font);
             CreateSelectionPanel(root.transform, font);
+            CreateItemShopPanel(root.transform, font);
             CreateReadyPanel(root.transform, font);
             CreateResultPanel(root.transform, font);
             CreateReticle(root.transform, font);
             CreateReconnectOverlay(root.transform, font);
-            root.GetComponent<BoardFlowView>().Configure(cameraDirector);
+            return root;
+        }
+
+        private static void CreateBoardCanvas(GameplayCameraDirector cameraDirector)
+        {
+            var prefab = LoadOrCreateBoardCanvasPrefab();
+            var root = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (root == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas prefab could not be instantiated.");
+            }
+
+            root.name = "Board Canvas";
+            var view = root.GetComponent<BoardFlowView>();
+            if (view == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas prefab is missing BoardFlowView.");
+            }
+
+            view.Configure(cameraDirector);
+        }
+
+        private static GameObject LoadOrCreateBoardCanvasPrefab()
+        {
+            EnsureFolder(UiPrefabFolder);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+            if (prefab == null)
+            {
+                var template = CreateBoardCanvasTemplate();
+                try
+                {
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        template,
+                        BoardCanvasPrefabPath);
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(template);
+                }
+
+                if (prefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to create the Board Canvas prefab.");
+                }
+
+                AssetDatabase.SaveAssets();
+            }
+
+            ValidateBoardCanvasPrefab(prefab);
+            return prefab;
+        }
+
+        private static void ValidateBoardCanvasPrefab(GameObject prefab)
+        {
+            if (prefab == null ||
+                prefab.GetComponent<Canvas>() == null ||
+                prefab.GetComponent<CanvasScaler>() == null ||
+                prefab.GetComponent<GraphicRaycaster>() == null ||
+                prefab.GetComponent<BoardEventSystemBootstrap>() == null ||
+                prefab.GetComponent<BoardFlowView>() == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas prefab root contract is incomplete. " +
+                    "Keep its Canvas, scaler, raycaster, event bootstrap, and BoardFlowView.");
+            }
+
+            var requiredPanels = new[]
+            {
+                "Header Panel",
+                "Player State Panel",
+                "Inventory Panel",
+                "ItemSelectionPanel",
+                "ItemShopPanel",
+                "MinigameReadyPanel",
+                "SkippedResultPanel",
+                "ReconnectOverlay",
+                "BoardReticle"
+            };
+            for (var i = 0; i < requiredPanels.Length; i++)
+            {
+                if (FindDescendant(prefab.transform, requiredPanels[i]) == null)
+                {
+                    throw new InvalidOperationException(
+                        "Board Canvas prefab is missing UI anchor '" +
+                        requiredPanels[i] + "'.");
+                }
+            }
+
+            var requiredTexts = new[]
+            {
+                "TurnText",
+                "PhaseText",
+                "PhaseTimerText",
+                "BoardChoiceTimerText",
+                "BoardShieldText",
+                "DiceText",
+                "MovesText",
+                "BoardAmmoText",
+                "BoardStatusText",
+                "BoardTooltipText",
+                "ReconnectText",
+                "ItemShopTitle",
+                "ItemShopTooltip",
+                "ItemShopStatus"
+            };
+            for (var i = 0; i < requiredTexts.Length; i++)
+            {
+                RequireBoardUiComponent<Text>(prefab, requiredTexts[i]);
+            }
+
+            RequireBoardUiComponent<Button>(prefab, "NoItemButton");
+            RequireBoardUiComponent<Button>(prefab, "ReadyButton");
+            RequireBoardUiComponent<Button>(prefab, "ItemShopCloseButton");
+
+            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            {
+                RequireBoardUiComponent<Image>(prefab, "BoardInventorySlot" + i);
+                RequireBoardUiComponent<Text>(prefab, "BoardInventorySlotLabel" + i);
+                RequireBoardUiComponent<Button>(prefab, "ItemChoiceButton" + i);
+                RequireBoardUiComponent<Text>(prefab, "ItemChoiceLabel" + i);
+                RequireBoardUiComponent<BoardItemChoiceButton>(
+                    prefab,
+                    "ItemChoiceButton" + i);
+            }
+
+            for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
+            {
+                RequireBoardUiComponent<Image>(prefab, "PlayerCard" + i);
+                RequireBoardUiComponent<Text>(prefab, "PlayerState" + i);
+                RequireBoardUiComponent<Image>(prefab, "PlayerHealthFill" + i);
+                RequireBoardUiComponent<Text>(prefab, "PlayerHealthText" + i);
+                RequireBoardUiComponent<Text>(prefab, "PlayerCurrency" + i);
+                RequireBoardUiComponent<Text>(prefab, "PlayerActionIcon" + i);
+                RequireBoardUiComponent<Text>(prefab, "PlayerRank" + i);
+            }
+
+            for (var i = 0; i < ItemShopRules.OfferCount; i++)
+            {
+                RequireBoardUiComponent<Button>(prefab, "ItemShopOffer" + i);
+                RequireBoardUiComponent<Text>(prefab, "ItemShopOfferLabel" + i);
+                RequireBoardUiComponent<BoardItemChoiceButton>(
+                    prefab,
+                    "ItemShopOffer" + i);
+            }
+        }
+
+        private static T RequireBoardUiComponent<T>(
+            GameObject prefab,
+            string objectName)
+            where T : Component
+        {
+            var target = FindDescendant(prefab.transform, objectName);
+            var component = target != null ? target.GetComponent<T>() : null;
+            if (component == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas prefab anchor '" + objectName +
+                    "' must keep its " + typeof(T).Name + " component.");
+            }
+
+            return component;
         }
 
         private static void CreateHeader(Transform canvas, Font font)
@@ -643,6 +843,17 @@ namespace MazeParty.Editor
                     new Vector2(88f, -15f),
                     new Vector2(150f, 24f),
                     TextAnchor.MiddleLeft,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f));
+                CreateText(
+                    "PlayerRank" + i,
+                    card.transform,
+                    "RANK 1",
+                    font,
+                    15,
+                    new Vector2(289f, -15f),
+                    new Vector2(90f, 24f),
+                    TextAnchor.MiddleCenter,
                     new Vector2(0f, 1f),
                     new Vector2(0f, 1f));
 
@@ -773,6 +984,47 @@ namespace MazeParty.Editor
                 font, 17, new Vector2(0f, 20f), new Vector2(520f, 62f), TextAnchor.MiddleCenter);
             CreateButton("ReadyButton", panel.transform, "READY / SKIP", font,
                 new Vector2(0f, -74f), new Vector2(280f, 58f));
+            panel.SetActive(false);
+        }
+
+        private static void CreateItemShopPanel(Transform canvas, Font font)
+        {
+            var panel = CreatePanel("ItemShopPanel", canvas, new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1030f, 570f),
+                new Vector2(0.5f, 0.5f), new Color(0.025f, 0.035f, 0.075f, 0.985f));
+            CreateText("ItemShopTitle", panel.transform, "ITEM SHOP", font, 32,
+                new Vector2(0f, 240f), new Vector2(720f, 46f), TextAnchor.MiddleCenter);
+            CreateText("ItemShopRule", panel.transform,
+                "Each offer has one shared copy. The action clock continues.", font, 17,
+                new Vector2(0f, 200f), new Vector2(850f, 30f), TextAnchor.MiddleCenter);
+
+            for (var i = 0; i < ItemShopRules.OfferCount; i++)
+            {
+                var row = i < 3 ? 0 : 1;
+                var column = row == 0 ? i : i - 3;
+                var x = row == 0
+                    ? (column - 1) * 290f
+                    : (column - 0.5f) * 290f;
+                var y = row == 0 ? 105f : -25f;
+                var button = CreateButton(
+                    "ItemShopOffer" + i,
+                    panel.transform,
+                    "ITEM\n0 GOLD",
+                    font,
+                    new Vector2(x, y),
+                    new Vector2(260f, 105f));
+                button.gameObject.AddComponent<BoardItemChoiceButton>();
+                button.GetComponentInChildren<Text>().gameObject.name = "ItemShopOfferLabel" + i;
+            }
+
+            CreateText("ItemShopTooltip", panel.transform,
+                "Hover an item for details.", font, 17,
+                new Vector2(0f, -130f), new Vector2(880f, 62f), TextAnchor.MiddleCenter);
+            CreateText("ItemShopStatus", panel.transform,
+                "Select an available item to buy it immediately.", font, 17,
+                new Vector2(0f, -190f), new Vector2(880f, 35f), TextAnchor.MiddleCenter);
+            CreateButton("ItemShopCloseButton", panel.transform, "CLOSE", font,
+                new Vector2(0f, -245f), new Vector2(260f, 48f));
             panel.SetActive(false);
         }
 
@@ -982,6 +1234,9 @@ namespace MazeParty.Editor
         {
             EnsureFolder(Root);
             EnsureFolder(BoardFolder);
+
+            EnsureFolder(UiFolder);
+            EnsureFolder(UiPrefabFolder);
             EnsureFolder(MaterialFolder);
         }
 

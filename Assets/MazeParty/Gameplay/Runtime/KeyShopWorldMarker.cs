@@ -195,15 +195,7 @@ namespace MazeParty.Gameplay
             baseObject.transform.localPosition = new Vector3(0f, 0.12f, 0f);
             baseObject.transform.localScale = new Vector3(1.65f, 0.12f, 1.65f);
             baseObject.layer = gameObject.layer;
-
-            var collider = baseObject.GetComponent<Collider>();
-            if (collider != null)
-            {
-                if (Application.isPlaying)
-                    Destroy(collider);
-                else
-                    DestroyImmediate(collider);
-            }
+            baseObject.AddComponent<KeyShopWorldTarget>();
 
             var renderer = baseObject.GetComponent<Renderer>();
             if (renderer != null)
@@ -214,17 +206,33 @@ namespace MazeParty.Gameplay
                 renderer.SetPropertyBlock(properties);
             }
 
+            var bodyObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            bodyObject.name = "Key Shop Target";
+            bodyObject.transform.SetParent(_markerObject.transform, false);
+            bodyObject.transform.localPosition = new Vector3(0f, 0.9f, 0f);
+            bodyObject.transform.localScale = new Vector3(1.35f, 1.7f, 1.35f);
+            bodyObject.layer = gameObject.layer;
+            bodyObject.AddComponent<KeyShopWorldTarget>();
+            var bodyRenderer = bodyObject.GetComponent<Renderer>();
+            if (bodyRenderer != null)
+            {
+                var bodyProperties = new MaterialPropertyBlock();
+                bodyProperties.SetColor("_BaseColor", markerColor);
+                bodyProperties.SetColor("_Color", markerColor);
+                bodyRenderer.SetPropertyBlock(bodyProperties);
+            }
+
             var textObject = new GameObject("Key Shop World Text");
             textObject.transform.SetParent(_markerObject.transform, false);
-            textObject.transform.localPosition = new Vector3(0f, 0.28f, 0f);
-            textObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            textObject.transform.localPosition = new Vector3(0f, 1.95f, 0f);
+            textObject.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
             textObject.layer = gameObject.layer;
             _worldText = textObject.AddComponent<TextMesh>();
-            _worldText.text = WorldLabel;
+            _worldText.text = WorldLabel + "\nRMB BUY  20 GOLD";
             _worldText.anchor = TextAnchor.MiddleCenter;
             _worldText.alignment = TextAlignment.Center;
             _worldText.fontSize = 48;
-            _worldText.characterSize = 0.12f;
+            _worldText.characterSize = 0.09f;
             _worldText.color = labelColor;
 
             _markerObject.SetActive(false);

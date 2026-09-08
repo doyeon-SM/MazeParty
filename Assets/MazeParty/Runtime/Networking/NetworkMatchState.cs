@@ -16,6 +16,7 @@ namespace MazeParty.Multiplayer
         // The MPS/Lobby backend Disconnect Removal Time must outlive transport
         // detection plus this grace. Configure 75-90 seconds, not exactly 60.
         public const double ReconnectGraceSeconds = 60d;
+        public const double KeyShopRevealSeconds = 5d;
         private const int AllPlayersMask = (1 << MultiplayerConstants.MaxPlayers) - 1;
 
         private readonly NetworkVariable<bool> _gameplayEnabled = new NetworkVariable<bool>();
@@ -46,6 +47,13 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<Vector2Int> _keyShopLocation =
             new NetworkVariable<Vector2Int>();
         private readonly NetworkVariable<int> _keyShopRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<bool> _keyShopRevealActive = new NetworkVariable<bool>();
+        private readonly NetworkVariable<double> _keyShopRevealEndsAt = new NetworkVariable<double>();
+        private readonly NetworkVariable<int> _keyShopRevealRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<ItemShopSnapshot> _itemShop0 =
+            new NetworkVariable<ItemShopSnapshot>();
+        private readonly NetworkVariable<ItemShopSnapshot> _itemShop1 =
+            new NetworkVariable<ItemShopSnapshot>();
         private readonly NetworkVariable<int> _boardEffectSeed = new NetworkVariable<int>();
         private readonly NetworkVariable<int> _boardEffectRevision = new NetworkVariable<int>();
 
@@ -56,6 +64,9 @@ namespace MazeParty.Multiplayer
         private KeyShopRuntimeState _keyShopRuntime;
         private BoardTopology _boardTopology;
         private double _keyShopAppearanceEndsAt;
+        private double _keyShopRevealRemainingDuringReconnect;
+        private readonly ItemShopStock[] _itemShopStocks =
+            new ItemShopStock[ItemShopRules.ShopCount];
         private NetworkWorldDiceCoordinator _diceCoordinator;
         private BoardLandingEffectLayout _boardEffectLayout;
         private int _cachedBoardEffectSeed;
@@ -69,23 +80,26 @@ namespace MazeParty.Multiplayer
         public int Turn => _turn.Value;
         public int StateRevision => _stateRevision.Value;
         public bool IsReconnectPaused => _reconnectPaused.Value;
+        public bool IsKeyShopRevealActive => _keyShopRevealActive.Value;
+        public bool IsGlobalSimulationPaused => IsReconnectPaused || IsKeyShopRevealActive;
         public BoardActionEndReason LastActionEndReason =>
             (BoardActionEndReason)_lastActionEndReason.Value;
         public bool IsActionPhase => GameplayEnabled && FlowState == BoardFlowState.Action;
         public bool CanAcceptActionInput =>
-            IsActionPhase && !IsReconnectPaused && ActionRemaining > 0d;
+            IsActionPhase && !IsGlobalSimulationPaused && ActionRemaining > 0d;
         public bool IsOpeningProtectionActive => ShieldRemaining > 0d;
         public KeyShopLifecycleState KeyShopLifecycle =>
             (KeyShopLifecycleState)_keyShopLifecycle.Value;
         public bool KeyShopHasLocation => _keyShopHasLocation.Value;
         public Vector2Int KeyShopLocation => _keyShopLocation.Value;
         public int KeyShopRevision => _keyShopRevision.Value;
+        public int KeyShopRevealRevision => _keyShopRevealRevision.Value;
         public int BoardEffectSeed => _boardEffectSeed.Value;
         public int BoardEffectRevision => _boardEffectRevision.Value;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
-            !Instance.IsReconnectPaused;
+            !Instance.IsGlobalSimulationPaused;
 
         public double StateRemaining => RemainingUntil(_stateEndsAt.Value, _pausedStateRemaining.Value);
         public double ActionRemaining => RemainingUntil(_actionEndsAt.Value, _pausedActionRemaining.Value);
@@ -94,6 +108,21 @@ namespace MazeParty.Multiplayer
         public double ReconnectRemaining => _reconnectPaused.Value
             ? Math.Max(0d, _reconnectGraceEndsAt.Value - ServerNow)
             : 0d;
+        public double KeyShopRevealRemaining => _keyShopRevealActive.Value
+            ? _reconnectPaused.Value
+                ? Math.Max(0d, _keyShopRevealRemainingDuringReconnect)
+                : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
+            : 0d;
+
+        public ItemShopSnapshot GetItemShopSnapshot(int shopIndex)
+        {
+            switch (shopIndex)
+            {
+                case 0: return _itemShop0.Value;
+                case 1: return _itemShop1.Value;
+                default: return default;
+            }
+        }
 
         public override void OnNetworkSpawn()
         {
@@ -164,6 +193,18 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (_keyShopRevealActive.Value)
+            {
+                StopAllAvatarInputOnServer();
+                AdvanceKeyShopLifecycleOnServer(now);
+                if (_keyShopRevealEndsAt.Value > 0d && now >= _keyShopRevealEndsAt.Value)
+                {
+                    CompleteKeyShopRevealOnServer(now);
+                }
+
+                return;
+            }
+
             EnsureFlowModel();
             _flow.Tick(now);
             AdvanceLandingEffectResolutionOnServer(now);
@@ -182,6 +223,13 @@ namespace MazeParty.Multiplayer
             EnsureKeyShopRuntime();
             _keyShopRuntime.ResetToInactive();
             _keyShopAppearanceEndsAt = 0d;
+            _keyShopRevealActive.Value = false;
+            _keyShopRevealEndsAt.Value = 0d;
+            _keyShopRevealRemainingDuringReconnect = 0d;
+            _itemShopStocks[0] = null;
+            _itemShopStocks[1] = null;
+            _itemShop0.Value = default;
+            _itemShop1.Value = default;
             SyncKeyShopSnapshot();
             InitializeBoardLandingEffectsOnServer();
             var now = ServerNow;
@@ -193,6 +241,8 @@ namespace MazeParty.Multiplayer
             _snapshotRestoredMask.Value = AllPlayersMask;
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
             InitializeAllAvatarsOnBoard();
+            ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
+            RefreshItemShopsForTurnOnServer(1);
             SyncFlowSnapshot(now);
         }
 
@@ -253,6 +303,111 @@ namespace MazeParty.Multiplayer
             // TODO(ITEM-COMBAT): execute the concrete authoritative effect before
             // consuming the selected prototype item/charge.
             return avatar.ConsumeSelectedItemOnServer();
+        }
+
+        public bool TryPurchaseKeyOnServer(
+            NetworkPlayerAvatar avatar,
+            int expectedRevision)
+        {
+            if (!CanProcessActionRequest(avatar) || _keyShopRuntime == null ||
+                !_keyShopRuntime.IsActive || expectedRevision != _keyShopRevision.Value ||
+                !PlayerStatRules.CanPurchaseKey(avatar.Gold) ||
+                !CanAccessCoordinateOnServer(avatar, _keyShopRuntime.Location))
+            {
+                return false;
+            }
+
+            var blocked = GetOccupiedAndItemShopCoordinates();
+            if (!_keyShopRuntime.TryBeginPurchaseRelocation(
+                    _boardTopology.Tiles,
+                    blocked,
+                    out _))
+            {
+                return false;
+            }
+
+            if (!avatar.TryPurchaseKeyOnServer())
+            {
+                throw new InvalidOperationException(
+                    "A validated key purchase failed after reserving its relocation.");
+            }
+
+            SyncKeyShopSnapshot();
+            var now = ServerNow;
+            _keyShopAppearanceEndsAt = now + 0.75d;
+            BeginKeyShopRevealOnServer(now);
+            return true;
+        }
+
+        public bool TryPurchaseItemOnServer(
+            NetworkPlayerAvatar avatar,
+            int shopIndex,
+            int offerIndex,
+            int expectedRevision)
+        {
+            if (!CanProcessActionRequest(avatar) ||
+                shopIndex < 0 || shopIndex >= ItemShopRules.ShopCount ||
+                offerIndex < 0 || offerIndex >= ItemShopRules.OfferCount)
+            {
+                return false;
+            }
+
+            var snapshot = GetItemShopSnapshot(shopIndex);
+            var stock = _itemShopStocks[shopIndex];
+            if (!snapshot.Active || stock == null || snapshot.Revision != expectedRevision ||
+                snapshot.IsSold(offerIndex) || stock.IsSold(offerIndex) ||
+                !CanAccessCoordinateOnServer(avatar, snapshot.Location) ||
+                !avatar.HasFreeItemSlotOnServer)
+            {
+                return false;
+            }
+
+            var itemId = snapshot.GetOffer(offerIndex);
+            if (!PrototypeItemCatalog.IsValid(itemId))
+            {
+                return false;
+            }
+
+            var price = PrototypeItemCatalog.Get(itemId).Price;
+            if (!avatar.CanAfford(price) || !stock.TrySell(offerIndex))
+            {
+                return false;
+            }
+
+            if (!avatar.TryAddItemOnServer(itemId) || !avatar.TrySpendGoldOnServer(price))
+            {
+                throw new InvalidOperationException(
+                    "A validated item-shop transaction failed after reserving its stock.");
+            }
+
+            SetItemShopSnapshot(shopIndex, snapshot.WithSoldMask(stock.SoldMask));
+            return true;
+        }
+
+        public bool CanLocalAvatarAccessItemShop(NetworkPlayerAvatar avatar, int shopIndex)
+        {
+            if (avatar == null || !avatar.IsOwner || !CanAcceptActionInput ||
+                shopIndex < 0 || shopIndex >= ItemShopRules.ShopCount)
+            {
+                return false;
+            }
+
+            var snapshot = GetItemShopSnapshot(shopIndex);
+            if (!snapshot.Active || !avatar.HasLogicalBoardTile ||
+                avatar.LogicalBoardTileCoordinate != snapshot.Location)
+            {
+                return false;
+            }
+
+            if (_boardTopology == null)
+            {
+                _boardTopology = FindAnyObjectByType<BoardTopology>();
+            }
+
+            return _boardTopology != null &&
+                   _boardTopology.TryGetTile(snapshot.Location, out var tile) && tile != null &&
+                   HorizontalDistance(avatar.transform.position, tile.WorldCenter) <=
+                   ItemShopRules.InteractionDistance;
         }
 
         public bool TryReportPlayerArrivedOnServer(NetworkPlayerAvatar avatar)
@@ -319,11 +474,23 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             var now = ServerNow;
-            _flow.Pause(now);
-            _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
-            _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
-            _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
-            _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
+            if (_keyShopRevealActive.Value)
+            {
+                _keyShopRevealRemainingDuringReconnect =
+                    Math.Max(0d, _keyShopRevealEndsAt.Value - now);
+                _keyShopRevealEndsAt.Value = 0d;
+                // The flow was already paused for the reveal. Preserve the
+                // original action, choice, and shield remainders so nesting a
+                // reconnect pause cannot consume any of those clocks.
+            }
+            else
+            {
+                _flow.Pause(now);
+                _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
+                _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
+                _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
+                _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
+            }
             RefreshPresentMask();
             _snapshotRestoredMask.Value = (byte)(_presentMask.Value & AllPlayersMask);
             _reconnectPaused.Value = true;
@@ -428,6 +595,7 @@ namespace MazeParty.Multiplayer
                     _arrivedMask.Value = 0;
                     _readyMask.Value = 0;
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
+                    RefreshItemShopsForTurnOnServer(transition.Turn);
                     TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     break;
                 case BoardFlowState.Action:
@@ -472,10 +640,19 @@ namespace MazeParty.Multiplayer
             }
 
             EnsureFlowModel();
-            _flow.Resume(now);
             _reconnectPaused.Value = false;
             _reconnectGraceEndsAt.Value = 0d;
             _endingForReconnectTimeout = false;
+            if (_keyShopRevealActive.Value)
+            {
+                _keyShopRevealEndsAt.Value = now +
+                                             Math.Max(0d, _keyShopRevealRemainingDuringReconnect);
+                _keyShopRevealRemainingDuringReconnect = 0d;
+            }
+            else
+            {
+                _flow.Resume(now);
+            }
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
         }
@@ -549,7 +726,7 @@ namespace MazeParty.Multiplayer
 
         private bool CanProcessAvatarRequest(NetworkPlayerAvatar avatar)
         {
-            return IsServer && _gameplayEnabled.Value && !_reconnectPaused.Value &&
+            return IsServer && _gameplayEnabled.Value && !IsGlobalSimulationPaused &&
                    avatar != null && avatar.IsSpawned && avatar.IsBoardReady &&
                    avatar.AssignedSlot >= 0 && avatar.AssignedSlot < MultiplayerConstants.MaxPlayers;
         }
@@ -723,10 +900,27 @@ namespace MazeParty.Multiplayer
             var slot = _nextLandingEffectSlot++;
             var avatar = GetAvatarForSlot(slot);
             var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
-            if (tile != null)
+            if (tile == null || !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
             {
-                avatar.ApplyGoldDeltaOnServer(
-                    _boardEffectLayout.GetGoldDelta(tile.Coordinate));
+                return;
+            }
+
+            switch (effect)
+            {
+                case BoardLandingEffectType.GoldGain:
+                case BoardLandingEffectType.GoldLoss:
+                    avatar.ApplyGoldDeltaOnServer(
+                        BoardLandingEffectLayout.GetGoldDelta(effect));
+                    break;
+                case BoardLandingEffectType.Healing:
+                    avatar.HealOnServer(BoardLandingEffectLayout.HealingAmount);
+                    break;
+                case BoardLandingEffectType.ItemReward:
+                    var random = new System.Random(unchecked(
+                        _boardEffectSeed.Value ^ (_turn.Value * 486187739) ^
+                        (slot * 16777619)));
+                    avatar.TryAddItemOnServer(PrototypeItemCatalog.GetRandomId(random));
+                    break;
             }
         }
 
@@ -773,6 +967,155 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void RefreshItemShopsForTurnOnServer(int turn)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            EnsureKeyShopRuntime();
+            if (_boardTopology == null)
+            {
+                return;
+            }
+
+            for (var shopIndex = 0; shopIndex < ItemShopRules.ShopCount; shopIndex++)
+            {
+                var snapshot = GetItemShopSnapshot(shopIndex);
+                var requiresPlacement = !snapshot.Active || snapshot.IsSoldOut ||
+                                        turn - snapshot.AppearedTurn >=
+                                        ItemShopRules.TurnsBeforeRefresh;
+                if (requiresPlacement)
+                {
+                    TryPlaceItemShopOnServer(shopIndex, turn, snapshot);
+                }
+            }
+        }
+
+        private bool TryPlaceItemShopOnServer(
+            int shopIndex,
+            int turn,
+            ItemShopSnapshot previous)
+        {
+            var occupied = GetOccupiedPlayerCoordinates();
+            var reserved = GetReservedShopCoordinates(shopIndex);
+            if (!ItemShopPlacementPolicy.TryChoose(
+                    _boardTopology.Tiles,
+                    occupied,
+                    reserved,
+                    UnityKeyShopRandomSource.Shared,
+                    out var selectedTile,
+                    previous.Active,
+                    previous.Location))
+            {
+                return false;
+            }
+
+            var stock = new ItemShopStock(UnityEngine.Random.Range(1, int.MaxValue));
+            _itemShopStocks[shopIndex] = stock;
+            SetItemShopSnapshot(
+                shopIndex,
+                ItemShopSnapshot.Create(
+                    selectedTile.Coordinate,
+                    previous.Revision + 1,
+                    turn,
+                    stock));
+            return true;
+        }
+
+        private void SetItemShopSnapshot(int shopIndex, ItemShopSnapshot snapshot)
+        {
+            if (shopIndex == 0)
+            {
+                _itemShop0.Value = snapshot;
+            }
+            else if (shopIndex == 1)
+            {
+                _itemShop1.Value = snapshot;
+            }
+        }
+
+        private List<Vector2Int> GetOccupiedPlayerCoordinates()
+        {
+            var occupied = new List<Vector2Int>(MultiplayerConstants.MaxPlayers);
+            ForEachAvatar(avatar =>
+            {
+                var currentTile = avatar.CurrentBoardTileOnServer;
+                AddUnique(occupied, currentTile != null ? currentTile.Coordinate : default,
+                    currentTile != null);
+            });
+            return occupied;
+        }
+
+        private List<Vector2Int> GetReservedShopCoordinates(int excludedItemShop = -1)
+        {
+            var reserved = new List<Vector2Int>(ItemShopRules.ShopCount + 1);
+            if (_keyShopRuntime != null && _keyShopRuntime.HasLocation)
+            {
+                AddUnique(reserved, _keyShopRuntime.Location, true);
+            }
+
+            for (var shopIndex = 0; shopIndex < ItemShopRules.ShopCount; shopIndex++)
+            {
+                if (shopIndex == excludedItemShop)
+                {
+                    continue;
+                }
+
+                var snapshot = GetItemShopSnapshot(shopIndex);
+                AddUnique(reserved, snapshot.Location, snapshot.Active);
+            }
+
+            return reserved;
+        }
+
+        private List<Vector2Int> GetOccupiedAndItemShopCoordinates()
+        {
+            var blocked = GetOccupiedPlayerCoordinates();
+            for (var shopIndex = 0; shopIndex < ItemShopRules.ShopCount; shopIndex++)
+            {
+                var snapshot = GetItemShopSnapshot(shopIndex);
+                AddUnique(blocked, snapshot.Location, snapshot.Active);
+            }
+            return blocked;
+        }
+
+        private bool CanAccessCoordinateOnServer(
+            NetworkPlayerAvatar avatar,
+            Vector2Int coordinate)
+        {
+            if (avatar == null || !avatar.HasLogicalBoardTile ||
+                avatar.LogicalBoardTileCoordinate != coordinate)
+            {
+                return false;
+            }
+
+            EnsureKeyShopRuntime();
+            return _boardTopology != null &&
+                   _boardTopology.TryGetTile(coordinate, out var tile) && tile != null &&
+                   HorizontalDistance(avatar.transform.position, tile.WorldCenter) <=
+                   ItemShopRules.InteractionDistance;
+        }
+
+        private static float HorizontalDistance(Vector3 left, Vector3 right)
+        {
+            left.y = 0f;
+            right.y = 0f;
+            return Vector3.Distance(left, right);
+        }
+
+        private static void AddUnique(
+            List<Vector2Int> coordinates,
+            Vector2Int coordinate,
+            bool shouldAdd)
+        {
+            if (shouldAdd && !coordinates.Contains(coordinate))
+            {
+                coordinates.Add(coordinate);
+            }
+        }
+
         private void TryBeginInitialKeyShopPlacementOnServer(int turn)
         {
             if (!IsServer || turn != KeyShopRuntimeState.InitialPlacementTurn)
@@ -786,15 +1129,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var occupied = new List<Vector2Int>(MultiplayerConstants.MaxPlayers);
-            ForEachAvatar(avatar =>
-            {
-                var currentTile = avatar.CurrentBoardTileOnServer;
-                if (currentTile != null && !occupied.Contains(currentTile.Coordinate))
-                {
-                    occupied.Add(currentTile.Coordinate);
-                }
-            });
+            var occupied = GetOccupiedAndItemShopCoordinates();
 
             if (_keyShopRuntime.TryBeginInitialPlacement(
                     turn,
@@ -823,6 +1158,40 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void BeginKeyShopRevealOnServer(double now)
+        {
+            EnsureFlowModel();
+            if (_keyShopRevealActive.Value || !_flow.Pause(now))
+            {
+                return;
+            }
+
+            _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
+            _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
+            _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
+            _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
+            _keyShopRevealActive.Value = true;
+            _keyShopRevealEndsAt.Value = now + KeyShopRevealSeconds;
+            _keyShopRevealRevision.Value++;
+            StopAllAvatarInputOnServer();
+            SyncFlowSnapshot(now);
+        }
+
+        private void CompleteKeyShopRevealOnServer(double now)
+        {
+            if (!IsServer || !_keyShopRevealActive.Value || _reconnectPaused.Value)
+            {
+                return;
+            }
+
+            _keyShopRevealActive.Value = false;
+            _keyShopRevealEndsAt.Value = 0d;
+            _keyShopRevealRemainingDuringReconnect = 0d;
+            _flow.Resume(now);
+            SyncFlowSnapshot(now);
+            StopAllAvatarInputOnServer();
+        }
+
         private void SyncKeyShopSnapshot()
         {
             if (!IsServer || _keyShopRuntime == null)
@@ -838,7 +1207,7 @@ namespace MazeParty.Multiplayer
 
         private double RemainingUntil(double deadline, double pausedRemaining)
         {
-            if (_reconnectPaused.Value)
+            if (IsGlobalSimulationPaused)
             {
                 return Math.Max(0d, pausedRemaining);
             }
@@ -877,10 +1246,14 @@ namespace MazeParty.Multiplayer
         public ItemChoiceResolution ChoiceResolution;
         public int SelectedItemSlot;
         public byte OccupiedItemMask;
+        public byte ItemSlot0;
+        public byte ItemSlot1;
+        public byte ItemSlot2;
         public int MaxHealth;
         public int CurrentHealth;
         public int KeyCount;
         public int Gold;
+        public int MinigameWins;
         public PlayerBoardActionState ActionState;
         public bool HasLogicalCurrentTile;
         public Vector2Int LogicalCurrentTileCoordinate;

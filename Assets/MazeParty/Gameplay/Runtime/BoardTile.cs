@@ -63,12 +63,27 @@ namespace MazeParty.Gameplay
 
             _landingEffectProperties ??= new MaterialPropertyBlock();
             landingEffectRenderer.GetPropertyBlock(_landingEffectProperties);
-            var color = _landingEffect == BoardLandingEffectType.GoldGain
-                ? new Color(0.08f, 0.38f, 0.92f, 1f)
-                : new Color(0.78f, 0.08f, 0.12f, 1f);
+            var color = LandingEffectColor(_landingEffect);
             _landingEffectProperties.SetColor("_BaseColor", color);
             _landingEffectProperties.SetColor("_Color", color);
             landingEffectRenderer.SetPropertyBlock(_landingEffectProperties);
+        }
+
+        private static Color LandingEffectColor(BoardLandingEffectType effect)
+        {
+            switch (effect)
+            {
+                case BoardLandingEffectType.GoldGain:
+                    return new Color(0.08f, 0.38f, 0.92f, 1f);
+                case BoardLandingEffectType.GoldLoss:
+                    return new Color(0.78f, 0.08f, 0.12f, 1f);
+                case BoardLandingEffectType.ItemReward:
+                    return new Color(0.62f, 0.16f, 0.82f, 1f);
+                case BoardLandingEffectType.Healing:
+                    return new Color(0.08f, 0.68f, 0.3f, 1f);
+                default:
+                    return Color.white;
+            }
         }
 
         public bool ContainsHorizontalPoint(Vector3 worldPoint, float tolerance = 0f)

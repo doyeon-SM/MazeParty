@@ -9,21 +9,44 @@ namespace MazeParty.Multiplayer
     {
         [SerializeField] private BoardFlowView view;
         [SerializeField] private int slotIndex;
+        [SerializeField] private bool shopOffer;
 
         public void Configure(BoardFlowView owner, int slot)
         {
             view = owner;
             slotIndex = slot;
+            shopOffer = false;
+        }
+
+        public void ConfigureShop(BoardFlowView owner, int offerIndex)
+        {
+            view = owner;
+            slotIndex = offerIndex;
+            shopOffer = true;
         }
 
         public void OnPointerEnter(PointerEventData eventData)
         {
-            view?.ShowItemTooltip(slotIndex);
+            if (shopOffer)
+            {
+                view?.ShowShopItemTooltip(slotIndex);
+            }
+            else
+            {
+                view?.ShowItemTooltip(slotIndex);
+            }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
-            view?.HideItemTooltip();
+            if (shopOffer)
+            {
+                view?.HideShopItemTooltip();
+            }
+            else
+            {
+                view?.HideItemTooltip();
+            }
         }
     }
 }

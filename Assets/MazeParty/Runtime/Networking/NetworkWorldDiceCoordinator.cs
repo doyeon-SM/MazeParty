@@ -107,10 +107,10 @@ namespace MazeParty.Multiplayer
                 _observedFlowState = match.FlowState;
             }
 
-            SetAllPausedOnServer(match.IsReconnectPaused);
+            SetAllPausedOnServer(match.IsGlobalSimulationPaused);
             if (autoPrepareAfterItemChoice &&
                 match.FlowState == BoardFlowState.Action &&
-                !match.IsReconnectPaused)
+                !match.IsGlobalSimulationPaused)
             {
                 PrepareResolvedChoicesOnServer(match);
             }

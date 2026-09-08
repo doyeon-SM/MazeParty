@@ -20,18 +20,6 @@ namespace MazeParty.Multiplayer
             new Color(1f, 0.75f, 0.2f)
         };
 
-        private static readonly string[] PrototypeItemNames =
-        {
-            "Pulse Blaster", "Push Mine", "Med Kit"
-        };
-
-        private static readonly string[] PrototypeItemDescriptions =
-        {
-            "Prototype ranged item. LMB consumes its test charge.",
-            "Prototype area item. LMB consumes it; combat effect is TODO.",
-            "Prototype recovery item. LMB consumes it; healing is TODO."
-        };
-
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
         [SerializeField] private Transform eyePivot;
@@ -57,9 +45,12 @@ namespace MazeParty.Multiplayer
             NetworkVariableReadPermission.Owner,
             NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<byte> _occupiedItemMask = new NetworkVariable<byte>(
-            0b0000_0111,
+            0,
             NetworkVariableReadPermission.Owner,
             NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<byte> _itemSlot0 = CreatePrivateItemSlot();
+        private readonly NetworkVariable<byte> _itemSlot1 = CreatePrivateItemSlot();
+        private readonly NetworkVariable<byte> _itemSlot2 = CreatePrivateItemSlot();
         private readonly NetworkVariable<bool> _boardReady = new NetworkVariable<bool>(
             false,
             NetworkVariableReadPermission.Everyone,
@@ -87,6 +78,10 @@ namespace MazeParty.Multiplayer
             NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<int> _gold = new NetworkVariable<int>(
             PlayerStatRules.DefaultStartingGold,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _minigameWins = new NetworkVariable<int>(
+            0,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<byte> _actionState = new NetworkVariable<byte>(
@@ -134,6 +129,7 @@ namespace MazeParty.Multiplayer
         public int CurrentHealth => _currentHealth.Value;
         public int KeyCount => _keyCount.Value;
         public int Gold => _gold.Value;
+        public int MinigameWins => _minigameWins.Value;
         public PlayerBoardActionState ActionState =>
             (PlayerBoardActionState)_actionState.Value;
         public BoardTile CurrentBoardTileOnServer =>
@@ -290,14 +286,36 @@ namespace MazeParty.Multiplayer
 
         public string GetLocalItemName(int slotIndex)
         {
-            return IsLocalItemOccupied(slotIndex) ? PrototypeItemNames[slotIndex] : "EMPTY";
+            return IsLocalItemOccupied(slotIndex)
+                ? PrototypeItemCatalog.Get(GetLocalItemId(slotIndex)).DisplayName
+                : "EMPTY";
         }
 
         public string GetLocalItemDescription(int slotIndex)
         {
             return IsLocalItemOccupied(slotIndex)
-                ? PrototypeItemDescriptions[slotIndex]
+                ? PrototypeItemCatalog.Get(GetLocalItemId(slotIndex)).Description
                 : "This slot is empty.";
+        }
+
+        public PrototypeItemId GetLocalItemId(int slotIndex)
+        {
+            return IsLocalItemOccupied(slotIndex)
+                ? GetItemSlotValue(slotIndex)
+                : PrototypeItemId.None;
+        }
+
+        public bool HasFreeItemSlot =>
+            IsOwner && (_occupiedItemMask.Value & 0b0000_0111) != 0b0000_0111;
+        public bool HasFreeItemSlotOnServer =>
+            IsServer && (_occupiedItemMask.Value & 0b0000_0111) != 0b0000_0111;
+
+        public void PurchaseItemFromShop(int shopIndex, int offerIndex, int expectedRevision)
+        {
+            if (IsOwner)
+            {
+                PurchaseItemFromShopRpc(shopIndex, offerIndex, expectedRevision);
+            }
         }
 
         public void ResetMatchStatsOnServer()
@@ -311,6 +329,12 @@ namespace MazeParty.Multiplayer
             _currentHealth.Value = PlayerStatRules.DefaultMaxHealth;
             _keyCount.Value = PlayerStatRules.DefaultStartingKeys;
             _gold.Value = PlayerStatRules.DefaultStartingGold;
+            _minigameWins.Value = 0;
+            _occupiedItemMask.Value = 0;
+            SetItemSlotValue(0, PrototypeItemId.None);
+            SetItemSlotValue(1, PrototypeItemId.None);
+            SetItemSlotValue(2, PrototypeItemId.None);
+            _selectedItemSlot.Value = -1;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
         }
 
@@ -343,7 +367,7 @@ namespace MazeParty.Multiplayer
 
             var previous = _currentHealth.Value;
             _currentHealth.Value = PlayerStatRules.ClampHealth(
-                _currentHealth.Value + amount,
+                (int)Math.Min(int.MaxValue, (long)_currentHealth.Value + amount),
                 _maxHealth.Value);
             return _currentHealth.Value - previous;
         }
@@ -385,6 +409,52 @@ namespace MazeParty.Multiplayer
                 -PlayerStatRules.KeyShopGoldPrice);
             _keyCount.Value = PlayerStatRules.AddKeys(_keyCount.Value, 1);
             return true;
+        }
+
+        public bool CanAfford(int amount)
+        {
+            return amount >= 0 && _gold.Value >= amount;
+        }
+
+        public bool TrySpendGoldOnServer(int amount)
+        {
+            if (!IsServer || amount < 0 || _gold.Value < amount)
+            {
+                return false;
+            }
+
+            _gold.Value = PlayerStatRules.ApplyGoldDelta(_gold.Value, -amount);
+            return true;
+        }
+
+        public bool TryAddItemOnServer(PrototypeItemId itemId)
+        {
+            if (!IsServer || !PrototypeItemCatalog.IsValid(itemId))
+            {
+                return false;
+            }
+
+            for (var slot = 0; slot < GameplayInventory.Capacity; slot++)
+            {
+                if ((_occupiedItemMask.Value & (1 << slot)) != 0)
+                {
+                    continue;
+                }
+
+                SetItemSlotValue(slot, itemId);
+                _occupiedItemMask.Value = (byte)(_occupiedItemMask.Value | (1 << slot));
+                return true;
+            }
+
+            return false;
+        }
+
+        public void AddMinigameWinOnServer()
+        {
+            if (IsServer && _minigameWins.Value < int.MaxValue)
+            {
+                _minigameWins.Value++;
+            }
         }
 
         public void SetActionStateOnServer(PlayerBoardActionState state)
@@ -536,6 +606,7 @@ namespace MazeParty.Multiplayer
             }
 
             _occupiedItemMask.Value = (byte)(_occupiedItemMask.Value & ~(1 << selected));
+            SetItemSlotValue(selected, PrototypeItemId.None);
             _selectedItemSlot.Value = -1;
             return true;
         }
@@ -587,10 +658,14 @@ namespace MazeParty.Multiplayer
                 ChoiceResolution = (ItemChoiceResolution)_choiceResolution.Value,
                 SelectedItemSlot = _selectedItemSlot.Value,
                 OccupiedItemMask = _occupiedItemMask.Value,
+                ItemSlot0 = _itemSlot0.Value,
+                ItemSlot1 = _itemSlot1.Value,
+                ItemSlot2 = _itemSlot2.Value,
                 MaxHealth = _maxHealth.Value,
                 CurrentHealth = _currentHealth.Value,
                 KeyCount = _keyCount.Value,
                 Gold = _gold.Value,
+                MinigameWins = _minigameWins.Value,
                 ActionState = (PlayerBoardActionState)_actionState.Value,
                 HasLogicalCurrentTile = logicalTile != null,
                 LogicalCurrentTileCoordinate = logicalTile != null
@@ -625,12 +700,16 @@ namespace MazeParty.Multiplayer
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
             _occupiedItemMask.Value = snapshot.OccupiedItemMask;
+            _itemSlot0.Value = snapshot.ItemSlot0;
+            _itemSlot1.Value = snapshot.ItemSlot1;
+            _itemSlot2.Value = snapshot.ItemSlot2;
             _maxHealth.Value = Mathf.Max(1, snapshot.MaxHealth);
             _currentHealth.Value = PlayerStatRules.ClampHealth(
                 snapshot.CurrentHealth,
                 _maxHealth.Value);
             _keyCount.Value = Mathf.Max(0, snapshot.KeyCount);
             _gold.Value = Mathf.Max(0, snapshot.Gold);
+            _minigameWins.Value = Mathf.Max(0, snapshot.MinigameWins);
             _actionState.Value = (byte)snapshot.ActionState;
             _serverYaw = snapshot.Rotation.eulerAngles.y;
             TeleportController(snapshot.Position, snapshot.Rotation);
@@ -654,6 +733,7 @@ namespace MazeParty.Multiplayer
         {
             var match = NetworkMatchState.Instance;
             var canLook = match != null && match.CanAcceptActionInput &&
+                          !BoardFlowView.IsItemShopOpen &&
                           HasResolvedItemChoice && Cursor.lockState == CursorLockMode.Locked;
             var mouse = Mouse.current;
             if (!canLook || mouse == null)
@@ -671,7 +751,7 @@ namespace MazeParty.Multiplayer
         {
             var match = NetworkMatchState.Instance;
             if (match == null || !match.CanAcceptActionInput ||
-                !HasResolvedItemChoice || IsPointerOverUi())
+                !HasResolvedItemChoice || BoardFlowView.IsItemShopOpen || IsPointerOverUi())
             {
                 return;
             }
@@ -684,6 +764,23 @@ namespace MazeParty.Multiplayer
 
             if (mouse.rightButton.wasPressedThisFrame)
             {
+                if (TryGetAimedBoardShop(out var shopHit))
+                {
+                    var keyTarget = shopHit.collider.GetComponentInParent<KeyShopWorldTarget>();
+                    if (keyTarget != null)
+                    {
+                        RequestKeyShopPurchaseRpc(match.KeyShopRevision);
+                        return;
+                    }
+
+                    var itemTarget = shopHit.collider.GetComponentInParent<ItemShopWorldTarget>();
+                    if (itemTarget != null)
+                    {
+                        BoardFlowView.Instance?.OpenItemShop(itemTarget.ShopIndex);
+                        return;
+                    }
+                }
+
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay) &&
                     aimedDie.AssignedSlot == AssignedSlot && !HasRolled)
                 {
@@ -715,7 +812,7 @@ namespace MazeParty.Multiplayer
             var keyboard = Keyboard.current;
             var match = NetworkMatchState.Instance;
             if (keyboard != null && match != null && match.CanAcceptActionInput &&
-                HasResolvedItemChoice)
+                HasResolvedItemChoice && !BoardFlowView.IsItemShopOpen)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
                           (keyboard.aKey.isPressed ? 1f : 0f);
@@ -797,6 +894,20 @@ namespace MazeParty.Multiplayer
 
             die = hit.collider.GetComponentInParent<NetworkWorldDie>();
             return die != null;
+        }
+
+        private bool TryGetAimedBoardShop(out RaycastHit hit)
+        {
+            var origin = eyePivot != null
+                ? eyePivot.position
+                : transform.position + Vector3.up * 0.75f;
+            var direction = eyePivot != null ? eyePivot.forward : transform.forward;
+            return Physics.Raycast(
+                new Ray(origin, direction),
+                out hit,
+                ItemShopRules.InteractionDistance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
         }
 
         private void RefreshLocalBoundaryPresentation()
@@ -1212,6 +1323,67 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TrySetMinigameReadyOnServer(this);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestKeyShopPurchaseRpc(int expectedRevision, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.TryPurchaseKeyOnServer(this, expectedRevision);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void PurchaseItemFromShopRpc(
+            int shopIndex,
+            int offerIndex,
+            int expectedRevision,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.TryPurchaseItemOnServer(
+                    this,
+                    shopIndex,
+                    offerIndex,
+                    expectedRevision);
+            }
+        }
+
+        private static NetworkVariable<byte> CreatePrivateItemSlot()
+        {
+            return new NetworkVariable<byte>(
+                (byte)PrototypeItemId.None,
+                NetworkVariableReadPermission.Owner,
+                NetworkVariableWritePermission.Server);
+        }
+
+        private PrototypeItemId GetItemSlotValue(int slotIndex)
+        {
+            switch (slotIndex)
+            {
+                case 0: return (PrototypeItemId)_itemSlot0.Value;
+                case 1: return (PrototypeItemId)_itemSlot1.Value;
+                case 2: return (PrototypeItemId)_itemSlot2.Value;
+                default: return PrototypeItemId.None;
+            }
+        }
+
+        private void SetItemSlotValue(int slotIndex, PrototypeItemId value)
+        {
+            switch (slotIndex)
+            {
+                case 0:
+                    _itemSlot0.Value = (byte)value;
+                    break;
+                case 1:
+                    _itemSlot1.Value = (byte)value;
+                    break;
+                case 2:
+                    _itemSlot2.Value = (byte)value;
+                    break;
             }
         }
 

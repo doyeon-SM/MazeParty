@@ -19,7 +19,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Layout_AssignsExactSixToFourRatio_AndExcludesRespawnTiles()
+        public void Layout_AssignsExactFiveThreeOneOneRatio_AndExcludesRespawnTiles()
         {
             var tiles = new List<BoardTile>();
             for (var i = 0; i < 10; i++)
@@ -35,8 +35,10 @@ namespace MazeParty.Gameplay.Tests
             var layout = BoardLandingEffectLayout.Create(tiles, 12345);
 
             Assert.That(layout.EligibleCount, Is.EqualTo(10));
-            Assert.That(layout.GainCount, Is.EqualTo(6));
-            Assert.That(layout.LossCount, Is.EqualTo(4));
+            Assert.That(layout.GainCount, Is.EqualTo(5));
+            Assert.That(layout.LossCount, Is.EqualTo(3));
+            Assert.That(layout.ItemRewardCount, Is.EqualTo(1));
+            Assert.That(layout.HealingCount, Is.EqualTo(1));
             Assert.That(
                 layout.TryGetEffect(respawn.Coordinate, out _),
                 Is.False);

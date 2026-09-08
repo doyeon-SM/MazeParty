@@ -54,7 +54,9 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var targetMode = ModeFor(match.FlowState);
+            var targetMode = match.IsKeyShopRevealActive
+                ? GameplayMode.BoardTopDown
+                : ModeFor(match.FlowState);
             if (!_hasObservedState || _wasReconnectPaused)
             {
                 cameraDirector.SnapTo(targetMode, _localAvatar != null ? _localAvatar.EyePivot : null);

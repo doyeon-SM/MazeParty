@@ -62,7 +62,8 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(marker.IsVisible, Is.True);
             Assert.That(marker.MarkerObject, Is.Not.Null);
             Assert.That(marker.WorldTextMesh, Is.Not.Null);
-            Assert.That(marker.WorldTextMesh.text, Is.EqualTo("KEY SHOP"));
+            Assert.That(marker.WorldTextMesh.text, Does.StartWith("KEY SHOP"));
+            Assert.That(marker.WorldTextMesh.text, Does.Contain("20 GOLD"));
             Assert.That(
                 marker.MarkerObject.transform.position,
                 Is.EqualTo(tile.WorldCenter + Vector3.up * KeyShopWorldMarker.DefaultVerticalOffset));

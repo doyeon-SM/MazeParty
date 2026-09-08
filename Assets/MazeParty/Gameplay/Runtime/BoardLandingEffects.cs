@@ -8,7 +8,9 @@ namespace MazeParty.Gameplay
     {
         None,
         GoldGain,
-        GoldLoss
+        GoldLoss,
+        ItemReward,
+        Healing
     }
 
     public enum PlayerBoardActionState : byte
@@ -60,8 +62,11 @@ namespace MazeParty.Gameplay
     {
         public const int GoldGainAmount = 3;
         public const int GoldLossAmount = 3;
-        public const int GainWeight = 6;
-        public const int LossWeight = 4;
+        public const int HealingAmount = 50;
+        public const int GainWeight = 5;
+        public const int LossWeight = 3;
+        public const int ItemRewardWeight = 1;
+        public const int HealingWeight = 1;
 
         private readonly Dictionary<Vector2Int, BoardLandingEffectType> _effects;
 
@@ -69,18 +74,24 @@ namespace MazeParty.Gameplay
             int seed,
             Dictionary<Vector2Int, BoardLandingEffectType> effects,
             int gainCount,
-            int lossCount)
+            int lossCount,
+            int itemRewardCount,
+            int healingCount)
         {
             Seed = seed;
             _effects = effects;
             GainCount = gainCount;
             LossCount = lossCount;
+            ItemRewardCount = itemRewardCount;
+            HealingCount = healingCount;
         }
 
         public int Seed { get; }
         public int GainCount { get; }
         public int LossCount { get; }
-        public int EligibleCount => GainCount + LossCount;
+        public int ItemRewardCount { get; }
+        public int HealingCount { get; }
+        public int EligibleCount => GainCount + LossCount + ItemRewardCount + HealingCount;
         public IReadOnlyDictionary<Vector2Int, BoardLandingEffectType> Effects => _effects;
 
         public static BoardLandingEffectLayout Create(
@@ -108,24 +119,29 @@ namespace MazeParty.Gameplay
                 (eligible[i], eligible[swapIndex]) = (eligible[swapIndex], eligible[i]);
             }
 
-            var totalWeight = GainWeight + LossWeight;
-            var gainCount = eligible.Count == 0
-                ? 0
-                : Mathf.RoundToInt(eligible.Count * (GainWeight / (float)totalWeight));
-            gainCount = Mathf.Clamp(gainCount, 0, eligible.Count);
+            var counts = AllocateCounts(eligible.Count);
+            var gainCount = counts[0];
+            var lossCount = counts[1];
+            var itemRewardCount = counts[2];
             var effects = new Dictionary<Vector2Int, BoardLandingEffectType>(eligible.Count);
             for (var i = 0; i < eligible.Count; i++)
             {
                 effects[eligible[i].Coordinate] = i < gainCount
                     ? BoardLandingEffectType.GoldGain
-                    : BoardLandingEffectType.GoldLoss;
+                    : i < gainCount + lossCount
+                        ? BoardLandingEffectType.GoldLoss
+                        : i < gainCount + lossCount + itemRewardCount
+                            ? BoardLandingEffectType.ItemReward
+                            : BoardLandingEffectType.Healing;
             }
 
             return new BoardLandingEffectLayout(
                 seed,
                 effects,
                 gainCount,
-                eligible.Count - gainCount);
+                lossCount,
+                itemRewardCount,
+                counts[3]);
         }
 
         public bool TryGetEffect(
@@ -159,6 +175,40 @@ namespace MazeParty.Gameplay
         {
             var x = left.Coordinate.x.CompareTo(right.Coordinate.x);
             return x != 0 ? x : left.Coordinate.y.CompareTo(right.Coordinate.y);
+        }
+
+        private static int[] AllocateCounts(int total)
+        {
+            var weights = new[] { GainWeight, LossWeight, ItemRewardWeight, HealingWeight };
+            var counts = new int[weights.Length];
+            var remainders = new int[weights.Length];
+            var totalWeight = GainWeight + LossWeight + ItemRewardWeight + HealingWeight;
+            var allocated = 0;
+            for (var i = 0; i < weights.Length; i++)
+            {
+                var weighted = total * weights[i];
+                counts[i] = weighted / totalWeight;
+                remainders[i] = weighted % totalWeight;
+                allocated += counts[i];
+            }
+
+            while (allocated < total)
+            {
+                var bestIndex = 0;
+                for (var i = 1; i < remainders.Length; i++)
+                {
+                    if (remainders[i] > remainders[bestIndex])
+                    {
+                        bestIndex = i;
+                    }
+                }
+
+                counts[bestIndex]++;
+                remainders[bestIndex] = -1;
+                allocated++;
+            }
+
+            return counts;
         }
     }
 }

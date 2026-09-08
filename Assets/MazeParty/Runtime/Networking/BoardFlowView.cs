@@ -23,12 +23,16 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerCurrencyTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
+        private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
         private GameObject _resultPanel;
         private GameObject _reconnectOverlay;
         private GameObject _reticle;
+        private GameObject _itemShopPanel;
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
@@ -40,15 +44,25 @@ namespace MazeParty.Multiplayer
         private Text _statusText;
         private Text _tooltipText;
         private Text _reconnectText;
+        private Text _itemShopTitle;
+        private Text _itemShopTooltip;
+        private Text _itemShopStatus;
         private Button _noItemButton;
         private Button _readyButton;
+        private Button _itemShopCloseButton;
         private NetworkPlayerAvatar _localAvatar;
         private KeyShopWorldMarker _keyShopMarker;
+        private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
         private int _lastRevision = -1;
         private int _lastBoardEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private bool _wired;
+        private int _openItemShopIndex = -1;
+
+        public static BoardFlowView Instance { get; private set; }
+        public static bool IsItemShopOpen =>
+            Instance != null && Instance._openItemShopIndex >= 0;
 
         public void Configure(GameplayCameraDirector director)
         {
@@ -58,12 +72,17 @@ namespace MazeParty.Multiplayer
 
         private void Awake()
         {
+            Instance = this;
             BindUi();
         }
 
         private void OnDestroy()
         {
             UnwireButtons();
+            if (Instance == this)
+            {
+                Instance = null;
+            }
         }
 
         private void Update()
@@ -83,6 +102,8 @@ namespace MazeParty.Multiplayer
             RefreshPlayerRows(match);
             RefreshBoardEffects(match);
             RefreshKeyShop(match);
+            RefreshItemShops(match);
+            RefreshItemShopPanel(match);
             RefreshCursor(match);
             RefreshStatusOnStateChange(match);
         }
@@ -124,6 +145,95 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void OpenItemShop(int shopIndex)
+        {
+            var match = NetworkMatchState.Instance;
+            if (_localAvatar == null || match == null ||
+                !match.CanLocalAvatarAccessItemShop(_localAvatar, shopIndex))
+            {
+                return;
+            }
+
+            _openItemShopIndex = shopIndex;
+            SetActive(_itemShopPanel, true);
+            HideShopItemTooltip();
+            SetText(_itemShopStatus, _localAvatar.HasFreeItemSlot
+                ? "Select an available item to buy it immediately."
+                : "INVENTORY FULL - Browse only; purchases are disabled.");
+        }
+
+        public void CloseItemShop()
+        {
+            _openItemShopIndex = -1;
+            SetActive(_itemShopPanel, false);
+            HideShopItemTooltip();
+        }
+
+        public void PurchaseShopItem(int offerIndex)
+        {
+            var match = NetworkMatchState.Instance;
+            if (_localAvatar == null || match == null || _openItemShopIndex < 0)
+            {
+                return;
+            }
+
+            var snapshot = match.GetItemShopSnapshot(_openItemShopIndex);
+            var itemId = snapshot.GetOffer(offerIndex);
+            if (snapshot.IsSold(offerIndex) || !PrototypeItemCatalog.IsValid(itemId))
+            {
+                SetText(_itemShopStatus, "That item is already sold.");
+                return;
+            }
+
+            var definition = PrototypeItemCatalog.Get(itemId);
+            if (!_localAvatar.HasFreeItemSlot)
+            {
+                SetText(_itemShopStatus, "INVENTORY FULL - No gold was spent.");
+                return;
+            }
+            if (_localAvatar.Gold < definition.Price)
+            {
+                SetText(_itemShopStatus, "NOT ENOUGH GOLD - No gold was spent.");
+                return;
+            }
+
+            _localAvatar.PurchaseItemFromShop(
+                _openItemShopIndex,
+                offerIndex,
+                snapshot.Revision);
+            SetText(_itemShopStatus, "Purchase requested. Server stock decides the winner.");
+        }
+
+        public void ShowShopItemTooltip(int offerIndex)
+        {
+            var match = NetworkMatchState.Instance;
+            if (_itemShopTooltip == null || match == null || _openItemShopIndex < 0)
+            {
+                return;
+            }
+
+            var snapshot = match.GetItemShopSnapshot(_openItemShopIndex);
+            var itemId = snapshot.GetOffer(offerIndex);
+            if (!PrototypeItemCatalog.IsValid(itemId))
+            {
+                return;
+            }
+
+            var definition = PrototypeItemCatalog.Get(itemId);
+            _itemShopTooltip.text = definition.DisplayName + "  /  " +
+                                    definition.Price + " GOLD\n" +
+                                    definition.Description;
+            _itemShopTooltip.gameObject.SetActive(true);
+        }
+
+        public void HideShopItemTooltip()
+        {
+            if (_itemShopTooltip != null)
+            {
+                _itemShopTooltip.gameObject.SetActive(false);
+            }
+        }
+
         private void BindUi()
         {
             _selectionPanel = FindNamed("ItemSelectionPanel");
@@ -131,6 +241,7 @@ namespace MazeParty.Multiplayer
             _resultPanel = FindNamed("SkippedResultPanel");
             _reconnectOverlay = FindNamed("ReconnectOverlay");
             _reticle = FindNamed("BoardReticle");
+            _itemShopPanel = FindNamed("ItemShopPanel");
             _turnText = FindNamedComponent<Text>("TurnText");
             _phaseText = FindNamedComponent<Text>("PhaseText");
             _phaseTimerText = FindNamedComponent<Text>("PhaseTimerText");
@@ -142,8 +253,12 @@ namespace MazeParty.Multiplayer
             _statusText = FindNamedComponent<Text>("BoardStatusText");
             _tooltipText = FindNamedComponent<Text>("BoardTooltipText");
             _reconnectText = FindNamedComponent<Text>("ReconnectText");
+            _itemShopTitle = FindNamedComponent<Text>("ItemShopTitle");
+            _itemShopTooltip = FindNamedComponent<Text>("ItemShopTooltip");
+            _itemShopStatus = FindNamedComponent<Text>("ItemShopStatus");
             _noItemButton = FindNamedComponent<Button>("NoItemButton");
             _readyButton = FindNamedComponent<Button>("ReadyButton");
+            _itemShopCloseButton = FindNamedComponent<Button>("ItemShopCloseButton");
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -155,6 +270,14 @@ namespace MazeParty.Multiplayer
                 hover?.Configure(this, i);
             }
 
+            for (var i = 0; i < ItemShopRules.OfferCount; i++)
+            {
+                _shopOfferButtons[i] = FindNamedComponent<Button>("ItemShopOffer" + i);
+                _shopOfferLabels[i] = FindNamedComponent<Text>("ItemShopOfferLabel" + i);
+                var hover = FindNamedComponent<BoardItemChoiceButton>("ItemShopOffer" + i);
+                hover?.ConfigureShop(this, i);
+            }
+
             for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
             {
                 _playerRows[i] = FindNamedComponent<Text>("PlayerState" + i);
@@ -163,6 +286,7 @@ namespace MazeParty.Multiplayer
                 _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
                 _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
                 _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
+                _playerRankTexts[i] = FindNamedComponent<Text>("PlayerRank" + i);
             }
 
             WireButtons();
@@ -183,6 +307,12 @@ namespace MazeParty.Multiplayer
 
             _noItemButton?.onClick.AddListener(ChooseNoItem);
             _readyButton?.onClick.AddListener(SetReady);
+            for (var i = 0; i < _shopOfferButtons.Length; i++)
+            {
+                var offerIndex = i;
+                _shopOfferButtons[i]?.onClick.AddListener(() => PurchaseShopItem(offerIndex));
+            }
+            _itemShopCloseButton?.onClick.AddListener(CloseItemShop);
             _wired = true;
         }
 
@@ -199,6 +329,11 @@ namespace MazeParty.Multiplayer
             }
             _noItemButton?.onClick.RemoveListener(ChooseNoItem);
             _readyButton?.onClick.RemoveListener(SetReady);
+            for (var i = 0; i < _shopOfferButtons.Length; i++)
+            {
+                _shopOfferButtons[i]?.onClick.RemoveAllListeners();
+            }
+            _itemShopCloseButton?.onClick.RemoveListener(CloseItemShop);
             _wired = false;
         }
 
@@ -223,15 +358,16 @@ namespace MazeParty.Multiplayer
             var choicePending = match.FlowState == BoardFlowState.Action &&
                                 _localAvatar != null &&
                                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending &&
-                                !match.IsReconnectPaused;
+                                !match.IsGlobalSimulationPaused;
             SetActive(_selectionPanel, choicePending);
             SetActive(_readyPanel,
-                match.FlowState == BoardFlowState.MinigameIntroReady && !match.IsReconnectPaused);
+                match.FlowState == BoardFlowState.MinigameIntroReady && !match.IsGlobalSimulationPaused);
             SetActive(_resultPanel,
-                match.FlowState == BoardFlowState.SkippedResult && !match.IsReconnectPaused);
+                match.FlowState == BoardFlowState.SkippedResult && !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
             SetActive(_reticle,
-                match.FlowState == BoardFlowState.Action && !choicePending && !match.IsReconnectPaused);
+                match.FlowState == BoardFlowState.Action && !choicePending &&
+                !match.IsGlobalSimulationPaused && !IsItemShopOpen);
 
             if (_reconnectText != null)
             {
@@ -243,11 +379,15 @@ namespace MazeParty.Multiplayer
         private void RefreshHeader(NetworkMatchState match)
         {
             SetText(_turnText, "TURN " + match.Turn);
-            SetText(_phaseText, PhaseLabel(match.FlowState));
+            SetText(_phaseText, match.IsKeyShopRevealActive
+                ? "KEY SHOP MOVING"
+                : PhaseLabel(match.FlowState));
 
-            var remaining = match.FlowState == BoardFlowState.Action
-                ? match.ActionRemaining
-                : match.StateRemaining;
+            var remaining = match.IsKeyShopRevealActive
+                ? match.KeyShopRevealRemaining
+                : match.FlowState == BoardFlowState.Action
+                    ? match.ActionRemaining
+                    : match.StateRemaining;
             SetText(_phaseTimerText,
                 HasCountdown(match.FlowState) ? FormatClock(remaining) : "--:--");
 
@@ -327,6 +467,19 @@ namespace MazeParty.Multiplayer
 
         private void RefreshPlayerRows(NetworkMatchState match)
         {
+            var rankingStats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < rankingStats.Length; slot++)
+            {
+                var rankedAvatar = match.GetAvatarForSlot(slot);
+                rankingStats[slot] = rankedAvatar != null
+                    ? new PlayerRankingStats(
+                        rankedAvatar.KeyCount,
+                        rankedAvatar.Gold,
+                        rankedAvatar.MinigameWins)
+                    : default;
+            }
+            var ranks = PlayerRankingRules.Calculate(rankingStats);
+
             for (var slot = 0; slot < _playerRows.Length; slot++)
             {
                 var isPresent = match.IsPlayerPresent(slot);
@@ -370,8 +523,11 @@ namespace MazeParty.Multiplayer
                 SetText(_playerCurrencyTexts[slot], avatar != null
                     ? "KEY  " + avatar.KeyCount + "    GOLD  " + avatar.Gold
                     : "KEY  --    GOLD  --");
+                SetText(_playerRankTexts[slot], avatar != null
+                    ? "RANK " + ranks[slot]
+                    : "RANK --");
 
-                var actionState = avatar != null && isPresent && !match.IsReconnectPaused
+                var actionState = avatar != null && isPresent && !match.IsGlobalSimulationPaused
                     ? avatar.ActionState
                     : PlayerBoardActionState.Hidden;
                 SetText(_playerActionIcons[slot], ActionIconLabel(actionState));
@@ -435,6 +591,78 @@ namespace MazeParty.Multiplayer
                 Mathf.Max(0, match.KeyShopRevision));
         }
 
+        private void RefreshItemShops(NetworkMatchState match)
+        {
+            if (_itemShopMarker == null)
+            {
+                _itemShopMarker = FindAnyObjectByType<ItemShopWorldMarker>();
+            }
+            if (_topology == null)
+            {
+                _topology = FindAnyObjectByType<BoardTopology>();
+            }
+
+            for (var shopIndex = 0; shopIndex < ItemShopRules.ShopCount; shopIndex++)
+            {
+                var snapshot = match.GetItemShopSnapshot(shopIndex);
+                _itemShopMarker?.ApplyReplicatedState(
+                    shopIndex,
+                    snapshot.Active,
+                    snapshot.Location,
+                    snapshot.IsSoldOut,
+                    _topology,
+                    Mathf.Max(0, snapshot.Revision));
+            }
+        }
+
+        private void RefreshItemShopPanel(NetworkMatchState match)
+        {
+            if (_openItemShopIndex < 0)
+            {
+                SetActive(_itemShopPanel, false);
+                return;
+            }
+
+            if (_localAvatar == null ||
+                !match.CanLocalAvatarAccessItemShop(_localAvatar, _openItemShopIndex))
+            {
+                CloseItemShop();
+                return;
+            }
+
+            var snapshot = match.GetItemShopSnapshot(_openItemShopIndex);
+            SetActive(_itemShopPanel, true);
+            SetText(_itemShopTitle, "ITEM SHOP " + (_openItemShopIndex + 1));
+            for (var offerIndex = 0; offerIndex < ItemShopRules.OfferCount; offerIndex++)
+            {
+                var itemId = snapshot.GetOffer(offerIndex);
+                var sold = snapshot.IsSold(offerIndex);
+                var valid = PrototypeItemCatalog.IsValid(itemId);
+                var definition = valid ? PrototypeItemCatalog.Get(itemId) : default;
+                SetText(_shopOfferLabels[offerIndex], sold
+                    ? "SOLD\n" + (valid ? definition.DisplayName : "ITEM")
+                    : valid
+                        ? definition.DisplayName + "\n" + definition.Price + " GOLD"
+                        : "UNAVAILABLE");
+                if (_shopOfferButtons[offerIndex] != null)
+                {
+                    _shopOfferButtons[offerIndex].interactable =
+                        !sold && valid && _localAvatar.HasFreeItemSlot &&
+                        _localAvatar.Gold >= definition.Price;
+                }
+            }
+
+            if (snapshot.IsSoldOut)
+            {
+                SetText(_itemShopStatus,
+                    "SOLD OUT - This shop moves and restocks next overview.");
+            }
+            else if (!_localAvatar.HasFreeItemSlot)
+            {
+                SetText(_itemShopStatus, "INVENTORY FULL - Browse only; purchases are disabled.");
+            }
+        }
+
         private void RefreshCursor(NetworkMatchState match)
         {
             if (cameraDirector == null)
@@ -445,8 +673,9 @@ namespace MazeParty.Multiplayer
             var choicePending = _localAvatar != null &&
                                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending;
             var pointerVisible = match.IsReconnectPaused ||
+                                 match.IsKeyShopRevealActive ||
                                  match.FlowState != BoardFlowState.Action ||
-                                 choicePending;
+                                 choicePending || IsItemShopOpen;
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
 
@@ -462,6 +691,12 @@ namespace MazeParty.Multiplayer
 
             _lastRevision = match.StateRevision;
             _lastChoiceResolution = choice;
+            if (match.IsKeyShopRevealActive)
+            {
+                SetText(_statusText,
+                    "Key purchased. Match paused while every player confirms the new shop location.");
+                return;
+            }
             if (choice == ItemChoiceResolution.TimedOut)
             {
                 SetText(_statusText, "Choice timed out. DO NOT USE selected automatically.");
@@ -503,6 +738,7 @@ namespace MazeParty.Multiplayer
             SetActive(_resultPanel, false);
             SetActive(_reconnectOverlay, false);
             SetActive(_reticle, false);
+            CloseItemShop();
             SetText(_turnText, "TURN --");
             SetText(_phaseText, "WAITING FOR 4 PLAYERS");
             SetText(_phaseTimerText, "--:--");

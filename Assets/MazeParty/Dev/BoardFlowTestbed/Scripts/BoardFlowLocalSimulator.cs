@@ -36,10 +36,16 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly Text[] _playerHealthTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerCurrencyTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerActionIcons = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerRankTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly PrototypeItemId[] _itemSlots =
+            new PrototypeItemId[GameplayInventory.Capacity];
+        private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
+        private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
         private readonly int[] _maxHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly int[] _currentHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly int[] _keys = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly int[] _gold = new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _minigameWins = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly PlayerBoardActionState[] _actionStates =
             new PlayerBoardActionState[BoardFlowStateMachine.RequiredPlayerCount];
 
@@ -66,6 +72,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Button _damagePlayerButton;
         private Button _addGoldButton;
         private Button _buyKeyButton;
+        private Button _itemShopCloseButton;
+        private GameObject _itemShopPanel;
+        private Text _itemShopTitle;
+        private Text _itemShopTooltip;
+        private Text _itemShopStatus;
 
         private double _simulationNow;
         private float _simulationSpeed = 1f;
@@ -74,13 +85,26 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private int _roll;
         private int _remainingMoves;
         private int _selectedSlot = -1;
-        private byte _occupiedMask = 0b0000_0111;
+        private byte _occupiedMask;
         private bool _paused;
         private bool _editorPointerVisible;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private PlayerBoardBoundaryWalls _boundaryWalls;
         private KeyShopRuntimeState _keyShopState;
         private KeyShopWorldMarker _keyShopMarker;
+        private ItemShopWorldMarker _itemShopMarker;
+        private readonly ItemShopStock[] _itemShopStocks =
+            new ItemShopStock[ItemShopRules.ShopCount];
+        private readonly Vector2Int[] _itemShopLocations =
+            new Vector2Int[ItemShopRules.ShopCount];
+        private readonly int[] _itemShopAppearedTurns =
+            new int[ItemShopRules.ShopCount];
+        private readonly int[] _itemShopRevisions =
+            new int[ItemShopRules.ShopCount];
+        private readonly bool[] _itemShopActive = new bool[ItemShopRules.ShopCount];
+        private int _openItemShopIndex = -1;
+        private bool _keyShopRevealActive;
+        private double _keyShopRevealEndsAt;
         private GameObject _worldDie;
         private Collider _worldDieCollider;
         private Rigidbody _worldDieBody;
@@ -143,6 +167,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _keyShopMarker = topology != null
                 ? topology.GetComponent<KeyShopWorldMarker>()
                 : null;
+            _itemShopMarker = topology != null
+                ? topology.GetComponent<ItemShopWorldMarker>()
+                : null;
             _keyShopState = GetComponent<KeyShopRuntimeState>();
             if (_keyShopState == null)
             {
@@ -158,6 +185,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             InitializeTraversal();
             InitializePlayerStatsAndBoardEffects();
             _flow.Start(_simulationNow, 1);
+            RefreshLocalItemShops(1);
+            TryPlaceLocalKeyShop(1);
             SetStatus("EDITOR LOCAL SIMULATION: board overview started.");
             RefreshUi();
         }
@@ -173,6 +202,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
             _flow.Tick(_simulationNow);
+            AdvanceLocalKeyShopReveal();
             AdvanceLocalLandingEffects();
             if (_lastChoiceResolution != _flow.ActionClock.ChoiceResolution)
             {
@@ -192,6 +222,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void FixedUpdate()
         {
+            if (_paused || _keyShopRevealActive)
+            {
+                return;
+            }
+
             UpdateLocalWorldDiePhysics();
         }
 
@@ -313,6 +348,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     ResetActionState();
                     SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
+                    RefreshLocalItemShops(transition.Turn);
                     TryPlaceLocalKeyShop(transition.Turn);
                     SetStatus("Board overview for turn " + transition.Turn + ".");
                     break;
@@ -335,7 +371,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLocalLandingEffects();
-                    SetStatus("Combat placeholder completed. Resolving landing gold effects in P1-P4 order.");
+                    SetStatus("Combat placeholder completed. Resolving landing effects in P1-P4 order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLocalLandingEffects();
@@ -352,7 +388,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void HandleInput()
         {
-            if (_paused || _flow.State != BoardFlowState.Action || player == null)
+            if (_paused || _keyShopRevealActive || _openItemShopIndex >= 0 ||
+                _flow.State != BoardFlowState.Action || player == null)
             {
                 return;
             }
@@ -378,8 +415,24 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             if (mouse != null && !IsPointerOverUi())
             {
-                if (mouse.rightButton.wasPressedThisFrame && _roll <= 0 &&
-                    TryGetAimedLocalWorldDie(out _))
+                if (mouse.rightButton.wasPressedThisFrame &&
+                    TryGetAimedBoardShop(out var shopHit))
+                {
+                    if (shopHit.collider.GetComponentInParent<KeyShopWorldTarget>() != null)
+                    {
+                        TryPurchaseLocalKey();
+                        return;
+                    }
+
+                    var itemTarget = shopHit.collider.GetComponentInParent<ItemShopWorldTarget>();
+                    if (itemTarget != null)
+                    {
+                        OpenLocalItemShop(itemTarget.ShopIndex);
+                        return;
+                    }
+                }
+                else if (mouse.rightButton.wasPressedThisFrame && _roll <= 0 &&
+                         TryGetAimedLocalWorldDie(out _))
                 {
                     _roll = UnityEngine.Random.Range(1, 11);
                     _remainingMoves = _roll;
@@ -414,6 +467,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 else if (mouse.leftButton.wasPressedThisFrame && _selectedSlot >= 0)
                 {
                     _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
+                    _itemSlots[_selectedSlot] = PrototypeItemId.None;
                     _selectedSlot = -1;
                     SetStatus("Prototype item consumed. Concrete combat/effect is TODO.");
                 }
@@ -442,7 +496,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 return;
             }
 
-            if (_paused || _flow.State != BoardFlowState.Action || _flow.ActionClock.IsChoicePending)
+            if (_paused || _keyShopRevealActive || _openItemShopIndex >= 0 ||
+                _flow.State != BoardFlowState.Action || _flow.ActionClock.IsChoicePending)
             {
                 _editorPointerVisible = false;
                 return;
@@ -536,6 +591,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (_selectedSlot >= 0)
             {
                 _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
+                _itemSlots[_selectedSlot] = PrototypeItemId.None;
             }
             _selectedSlot = -1;
             _boundaryWalls?.Hide();
@@ -671,6 +727,26 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                        Physics.DefaultRaycastLayers,
                        QueryTriggerInteraction.Ignore) &&
                    hit.collider == _worldDieCollider;
+        }
+
+        private bool TryGetAimedBoardShop(out RaycastHit hit)
+        {
+            var origin = eyePivot != null
+                ? eyePivot.position
+                : player.transform.position + Vector3.up * 0.75f;
+            var direction = eyePivot != null ? eyePivot.forward : player.transform.forward;
+            if (!Physics.Raycast(
+                    new Ray(origin, direction),
+                    out hit,
+                    ItemShopRules.InteractionDistance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide))
+            {
+                return false;
+            }
+
+            return hit.collider.GetComponentInParent<KeyShopWorldTarget>() != null ||
+                   hit.collider.GetComponentInParent<ItemShopWorldTarget>() != null;
         }
 
         private void NudgeLocalWorldDie(Ray ray)
@@ -816,12 +892,20 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void InitializePlayerStatsAndBoardEffects()
         {
+            _occupiedMask = 0;
+            _selectedSlot = -1;
+            for (var itemSlot = 0; itemSlot < _itemSlots.Length; itemSlot++)
+            {
+                _itemSlots[itemSlot] = PrototypeItemId.None;
+            }
+
             for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
             {
                 _maxHealth[slot] = PlayerStatRules.DefaultMaxHealth;
                 _currentHealth[slot] = PlayerStatRules.DefaultMaxHealth;
                 _keys[slot] = PlayerStatRules.DefaultStartingKeys;
                 _gold[slot] = PlayerStatRules.DefaultStartingGold;
+                _minigameWins[slot] = 0;
                 _actionStates[slot] = PlayerBoardActionState.Hidden;
             }
 
@@ -894,11 +978,47 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             var slot = _nextLandingEffectSlot++;
             var tile = GetLocalSimulationTile(slot);
-            if (tile != null)
+            if (tile == null ||
+                !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
             {
-                _gold[slot] = PlayerStatRules.ApplyGoldDelta(
-                    _gold[slot],
-                    _boardEffectLayout.GetGoldDelta(tile.Coordinate));
+                return;
+            }
+
+            switch (effect)
+            {
+                case BoardLandingEffectType.GoldGain:
+                case BoardLandingEffectType.GoldLoss:
+                    var goldDelta = BoardLandingEffectLayout.GetGoldDelta(effect);
+                    _gold[slot] = PlayerStatRules.ApplyGoldDelta(_gold[slot], goldDelta);
+                    SetStatus("P" + (slot + 1) + " landing effect: " +
+                              (goldDelta >= 0 ? "+" : string.Empty) + goldDelta + " gold.");
+                    break;
+                case BoardLandingEffectType.Healing:
+                    var before = _currentHealth[slot];
+                    _currentHealth[slot] = PlayerStatRules.ClampHealth(
+                        before + BoardLandingEffectLayout.HealingAmount,
+                        _maxHealth[slot]);
+                    SetStatus("P" + (slot + 1) + " landing effect: healed " +
+                              (_currentHealth[slot] - before) + " HP.");
+                    break;
+                case BoardLandingEffectType.ItemReward:
+                    if (slot != 0)
+                    {
+                        SetStatus("P" + (slot + 1) +
+                                  " landing effect: simulated random item reward.");
+                        break;
+                    }
+
+                    var seed = unchecked(
+                        _boardEffectLayout.Seed * 397 ^
+                        _flow.CurrentTurn * 31 ^
+                        tile.Coordinate.GetHashCode());
+                    var reward = PrototypeItemCatalog.GetRandomId(new System.Random(seed));
+                    SetStatus(TryAddLocalItem(reward)
+                        ? "P1 landing effect: received " +
+                          PrototypeItemCatalog.Get(reward).DisplayName + "."
+                        : "P1 landing effect: inventory full; item reward was not received.");
+                    break;
             }
         }
 
@@ -931,26 +1051,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 return;
             }
 
-            var occupied = new List<Vector2Int>();
-            if (_traversal.IsInitialized)
-            {
-                occupied.Add(_traversal.CurrentTile.Coordinate);
-            }
-            var transforms = FindObjectsByType<Transform>(
-                FindObjectsInactive.Exclude);
-            for (var i = 0; i < transforms.Length; i++)
-            {
-                if (!transforms[i].name.StartsWith("Simulated Remote Player", StringComparison.Ordinal))
-                {
-                    continue;
-                }
-                var tile = topology.FindContainingTile(transforms[i].position, 0.1f);
-                if (tile != null && !occupied.Contains(tile.Coordinate))
-                {
-                    occupied.Add(tile.Coordinate);
-                }
-            }
-
+            var occupied = GetOccupiedBoardCoordinates(true);
             if (_keyShopState.TryBeginInitialPlacement(
                     turn,
                     topology.Tiles,
@@ -960,7 +1061,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 ApplyLocalKeyShopState();
                 _keyShopState.TryCompleteAppearance();
                 ApplyLocalKeyShopState();
-                SetStatus("A single Key Shop appeared on an unoccupied random Normal room.");
+                SetStatus("A single Key Shop appeared on an unoccupied random room.");
             }
         }
 
@@ -974,22 +1075,427 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 Mathf.Max(0, _keyShopState.PlacementRevision));
         }
 
+        private void RefreshLocalItemShops(int turn)
+        {
+            if (topology == null || turn < 1)
+            {
+                return;
+            }
+
+            for (var shopIndex = 0; shopIndex < ItemShopRules.ShopCount; shopIndex++)
+            {
+                var stock = _itemShopStocks[shopIndex];
+                var expired = _itemShopActive[shopIndex] &&
+                              turn - _itemShopAppearedTurns[shopIndex] >=
+                              ItemShopRules.TurnsBeforeRefresh;
+                if (!_itemShopActive[shopIndex] || stock == null ||
+                    stock.IsSoldOut || expired)
+                {
+                    TryPlaceLocalItemShop(shopIndex, turn);
+                }
+                else
+                {
+                    ApplyLocalItemShopState(shopIndex);
+                }
+            }
+        }
+
+        private bool TryPlaceLocalItemShop(int shopIndex, int turn)
+        {
+            if (topology == null || shopIndex < 0 ||
+                shopIndex >= ItemShopRules.ShopCount)
+            {
+                return false;
+            }
+
+            var occupied = GetOccupiedBoardCoordinates(false);
+            var reserved = new List<Vector2Int>();
+            if (_keyShopState != null && _keyShopState.HasLocation)
+            {
+                reserved.Add(_keyShopState.Location);
+            }
+            for (var other = 0; other < ItemShopRules.ShopCount; other++)
+            {
+                if (other != shopIndex && _itemShopActive[other])
+                {
+                    reserved.Add(_itemShopLocations[other]);
+                }
+            }
+
+            var hadPrevious = _itemShopActive[shopIndex];
+            var previous = _itemShopLocations[shopIndex];
+            if (!ItemShopPlacementPolicy.TryChoose(
+                    topology.Tiles,
+                    occupied,
+                    reserved,
+                    UnityKeyShopRandomSource.Shared,
+                    out var selectedTile,
+                    hadPrevious,
+                    previous))
+            {
+                return false;
+            }
+
+            _itemShopStocks[shopIndex] = new ItemShopStock(
+                UnityEngine.Random.Range(1, int.MaxValue));
+            _itemShopLocations[shopIndex] = selectedTile.Coordinate;
+            _itemShopAppearedTurns[shopIndex] = turn;
+            _itemShopRevisions[shopIndex]++;
+            _itemShopActive[shopIndex] = true;
+            ApplyLocalItemShopState(shopIndex);
+            return true;
+        }
+
+        private List<Vector2Int> GetOccupiedBoardCoordinates(bool includeItemShops)
+        {
+            var occupied = new List<Vector2Int>();
+            if (_traversal.IsInitialized)
+            {
+                occupied.Add(_traversal.CurrentTile.Coordinate);
+            }
+
+            var transforms = FindObjectsByType<Transform>(FindObjectsInactive.Exclude);
+            for (var i = 0; i < transforms.Length; i++)
+            {
+                if (!transforms[i].name.StartsWith(
+                        "Simulated Remote Player",
+                        StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                var tile = topology != null
+                    ? topology.FindContainingTile(transforms[i].position, 0.1f)
+                    : null;
+                if (tile != null && !occupied.Contains(tile.Coordinate))
+                {
+                    occupied.Add(tile.Coordinate);
+                }
+            }
+
+            if (includeItemShops)
+            {
+                for (var shopIndex = 0;
+                     shopIndex < ItemShopRules.ShopCount;
+                     shopIndex++)
+                {
+                    if (_itemShopActive[shopIndex] &&
+                        !occupied.Contains(_itemShopLocations[shopIndex]))
+                    {
+                        occupied.Add(_itemShopLocations[shopIndex]);
+                    }
+                }
+            }
+
+            return occupied;
+        }
+
+        private void ApplyLocalItemShopState(int shopIndex)
+        {
+            if (shopIndex < 0 || shopIndex >= ItemShopRules.ShopCount)
+            {
+                return;
+            }
+
+            var stock = _itemShopStocks[shopIndex];
+            _itemShopMarker?.ApplyReplicatedState(
+                shopIndex,
+                _itemShopActive[shopIndex],
+                _itemShopLocations[shopIndex],
+                stock != null && stock.IsSoldOut,
+                topology,
+                Mathf.Max(0, _itemShopRevisions[shopIndex]));
+        }
+
+        private void TryPurchaseLocalKey()
+        {
+            if (_keyShopState == null || !_keyShopState.IsActive ||
+                topology == null || !_traversal.IsInitialized ||
+                _traversal.CurrentTile.Coordinate != _keyShopState.Location)
+            {
+                SetStatus("Key Shop purchase failed: stand in the shop room and aim at it.");
+                return;
+            }
+            if (!PlayerStatRules.CanPurchaseKey(_gold[0]))
+            {
+                SetStatus("Key Shop purchase failed: P1 needs 20 gold.");
+                return;
+            }
+            if (!_flow.Pause(_simulationNow))
+            {
+                return;
+            }
+
+            var occupied = GetOccupiedBoardCoordinates(true);
+            if (!_keyShopState.TryBeginPurchaseRelocation(
+                    topology.Tiles,
+                    occupied,
+                    out _))
+            {
+                _flow.Resume(_simulationNow);
+                SetStatus("Key Shop could not find a valid relocation room.");
+                return;
+            }
+
+            _gold[0] = PlayerStatRules.ApplyGoldDelta(
+                _gold[0],
+                -PlayerStatRules.KeyShopGoldPrice);
+            _keys[0] = PlayerStatRules.AddKeys(_keys[0], 1);
+            _keyShopRevealActive = true;
+            _keyShopRevealEndsAt = _simulationNow + 5d;
+            _editorPointerVisible = false;
+            StopLocalWorldDieNudge();
+            ApplyLocalKeyShopState();
+            cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
+            SetStatus("Key purchased. Global action paused for the five-second shop relocation view.");
+        }
+
+        private void AdvanceLocalKeyShopReveal()
+        {
+            if (!_keyShopRevealActive || _simulationNow < _keyShopRevealEndsAt)
+            {
+                return;
+            }
+
+            _keyShopState?.TryCompleteAppearance();
+            ApplyLocalKeyShopState();
+            _keyShopRevealActive = false;
+            _keyShopRevealEndsAt = 0d;
+            _flow.Resume(_simulationNow);
+            cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
+            RefreshBoundaryWalls();
+            SetStatus("Key Shop relocation complete. The exact action state resumed.");
+        }
+
+        private bool CanAccessLocalItemShop(int shopIndex)
+        {
+            if (shopIndex < 0 || shopIndex >= ItemShopRules.ShopCount ||
+                !_itemShopActive[shopIndex] || _itemShopStocks[shopIndex] == null ||
+                !_traversal.IsInitialized ||
+                _traversal.CurrentTile.Coordinate != _itemShopLocations[shopIndex] ||
+                player == null)
+            {
+                return false;
+            }
+
+            var marker = _itemShopMarker?.GetMarkerObject(shopIndex);
+            return marker != null &&
+                   Vector3.Distance(player.transform.position, marker.transform.position) <=
+                   ItemShopRules.InteractionDistance;
+        }
+
+        private void OpenLocalItemShop(int shopIndex)
+        {
+            if (!CanAccessLocalItemShop(shopIndex))
+            {
+                SetStatus("Item Shop is out of interaction range.");
+                return;
+            }
+
+            _openItemShopIndex = shopIndex;
+            _editorPointerVisible = false;
+            SetStatus("Item Shop opened. The global timer continues; movement and attacks are locked.");
+        }
+
+        public void CloseLocalItemShop()
+        {
+            _openItemShopIndex = -1;
+            HideLocalShopTooltip();
+        }
+
+        public void PurchaseLocalShopItem(int offerIndex)
+        {
+            if (!CanAccessLocalItemShop(_openItemShopIndex))
+            {
+                CloseLocalItemShop();
+                return;
+            }
+
+            var stock = _itemShopStocks[_openItemShopIndex];
+            if (stock == null || stock.IsSold(offerIndex))
+            {
+                SetStatus("That one-copy offer is already sold.");
+                return;
+            }
+
+            var itemId = stock.GetOffer(offerIndex);
+            if (!PrototypeItemCatalog.IsValid(itemId))
+            {
+                return;
+            }
+
+            var definition = PrototypeItemCatalog.Get(itemId);
+            if (!HasFreeLocalItemSlot())
+            {
+                SetStatus("Purchase failed: inventory is full.");
+                return;
+            }
+            if (_gold[0] < definition.Price)
+            {
+                SetStatus("Purchase failed: not enough gold.");
+                return;
+            }
+            if (!stock.TrySell(offerIndex) || !TryAddLocalItem(itemId))
+            {
+                return;
+            }
+
+            _gold[0] = PlayerStatRules.ApplyGoldDelta(_gold[0], -definition.Price);
+            ApplyLocalItemShopState(_openItemShopIndex);
+            SetStatus(stock.IsSoldOut
+                ? "Purchased " + definition.DisplayName +
+                  ". SOLD OUT; this shop moves and restocks next overview."
+                : "Purchased " + definition.DisplayName + ".");
+        }
+
+        public void ShowLocalShopTooltip(int offerIndex)
+        {
+            if (_itemShopTooltip == null || _openItemShopIndex < 0 ||
+                _openItemShopIndex >= ItemShopRules.ShopCount)
+            {
+                return;
+            }
+
+            var stock = _itemShopStocks[_openItemShopIndex];
+            if (stock == null)
+            {
+                return;
+            }
+
+            var itemId = stock.GetOffer(offerIndex);
+            if (!PrototypeItemCatalog.IsValid(itemId))
+            {
+                return;
+            }
+
+            var definition = PrototypeItemCatalog.Get(itemId);
+            _itemShopTooltip.text = definition.DisplayName + "\n" +
+                                    definition.Description + "\nPRICE  " +
+                                    definition.Price + " GOLD";
+            _itemShopTooltip.gameObject.SetActive(true);
+        }
+
+        public void HideLocalShopTooltip()
+        {
+            if (_itemShopTooltip != null)
+            {
+                _itemShopTooltip.gameObject.SetActive(false);
+            }
+        }
+
+        private bool HasFreeLocalItemSlot()
+        {
+            return _occupiedMask != (1 << GameplayInventory.Capacity) - 1;
+        }
+
+        private bool TryAddLocalItem(PrototypeItemId itemId)
+        {
+            if (!PrototypeItemCatalog.IsValid(itemId))
+            {
+                return false;
+            }
+
+            for (var slot = 0; slot < GameplayInventory.Capacity; slot++)
+            {
+                if ((_occupiedMask & (1 << slot)) != 0)
+                {
+                    continue;
+                }
+
+                _itemSlots[slot] = itemId;
+                _occupiedMask = (byte)(_occupiedMask | (1 << slot));
+                return true;
+            }
+
+            return false;
+        }
+
+        private void RefreshLocalItemShopUi()
+        {
+            if (_openItemShopIndex >= 0 &&
+                !CanAccessLocalItemShop(_openItemShopIndex))
+            {
+                CloseLocalItemShop();
+                SetStatus("Item Shop closed because P1 left its interaction range.");
+            }
+
+            var isOpen = _openItemShopIndex >= 0 &&
+                         _openItemShopIndex < ItemShopRules.ShopCount;
+            SetActive(_itemShopPanel, isOpen);
+            if (!isOpen)
+            {
+                return;
+            }
+
+            var stock = _itemShopStocks[_openItemShopIndex];
+            SetText(_itemShopTitle, "ITEM SHOP " + (_openItemShopIndex + 1));
+            var hasSpace = HasFreeLocalItemSlot();
+            for (var offerIndex = 0;
+                 offerIndex < ItemShopRules.OfferCount;
+                 offerIndex++)
+            {
+                var sold = stock == null || stock.IsSold(offerIndex);
+                var itemId = stock != null
+                    ? stock.GetOffer(offerIndex)
+                    : PrototypeItemId.None;
+                var valid = PrototypeItemCatalog.IsValid(itemId);
+                var definition = valid
+                    ? PrototypeItemCatalog.Get(itemId)
+                    : default;
+                SetText(_shopOfferLabels[offerIndex], sold
+                    ? "SOLD"
+                    : definition.DisplayName + "\n" + definition.Price + " GOLD");
+                if (_shopOfferButtons[offerIndex] != null)
+                {
+                    _shopOfferButtons[offerIndex].interactable =
+                        !sold && valid && hasSpace && _gold[0] >= definition.Price;
+                }
+            }
+
+            SetText(_itemShopStatus,
+                stock != null && stock.IsSoldOut
+                    ? "SOLD OUT - moves and restocks next overview."
+                    : !hasSpace
+                        ? "Inventory full. Offers remain visible."
+                        : "Click one-copy offers to buy. Timer is still running.");
+        }
+
+
         private void RefreshUi()
         {
+            var globallyPaused = _paused || _keyShopRevealActive;
+            RefreshLocalItemShopUi();
+            var shopOpen = _openItemShopIndex >= 0;
+
             SetActive(_selectionPanel,
-                _flow.State == BoardFlowState.Action && _flow.ActionClock.IsChoicePending && !_paused);
-            SetActive(_readyPanel, _flow.State == BoardFlowState.MinigameIntroReady && !_paused);
-            SetActive(_resultPanel, _flow.State == BoardFlowState.SkippedResult && !_paused);
+                _flow.State == BoardFlowState.Action &&
+                _flow.ActionClock.IsChoicePending &&
+                !globallyPaused && !shopOpen);
+            SetActive(_readyPanel,
+                _flow.State == BoardFlowState.MinigameIntroReady && !globallyPaused);
+            SetActive(_resultPanel,
+                _flow.State == BoardFlowState.SkippedResult && !globallyPaused);
             SetActive(_reticle,
-                _flow.State == BoardFlowState.Action && !_flow.ActionClock.IsChoicePending && !_paused);
+                _flow.State == BoardFlowState.Action &&
+                !_flow.ActionClock.IsChoicePending &&
+                !globallyPaused && !shopOpen);
 
             SetText(_turnText, "TURN " + _flow.CurrentTurn);
-            SetText(_phaseText, _paused ? "RECONNECT PAUSE" : PhaseLabel(_flow.State));
-            var remaining = _flow.State == BoardFlowState.Action
-                ? _flow.GetActionRemaining(_simulationNow)
-                : _flow.GetStateRemaining(_simulationNow);
+            SetText(_phaseText,
+                _paused
+                    ? "RECONNECT PAUSE"
+                    : _keyShopRevealActive
+                        ? "KEY SHOP MOVING"
+                        : PhaseLabel(_flow.State));
+            var remaining = _keyShopRevealActive
+                ? Math.Max(0d, _keyShopRevealEndsAt - _simulationNow)
+                : _flow.State == BoardFlowState.Action
+                    ? _flow.GetActionRemaining(_simulationNow)
+                    : _flow.GetStateRemaining(_simulationNow);
             SetText(_phaseTimerText,
-                _flow.State == BoardFlowState.MinigameIntroReady ? "--:--" : FormatClock(remaining));
+                _flow.State == BoardFlowState.MinigameIntroReady && !_keyShopRevealActive
+                    ? "--:--"
+                    : FormatClock(remaining));
             SetText(_choiceText, _flow.ActionClock.IsChoicePending
                 ? "CHOOSE  " + FormatClock(_flow.GetChoiceRemaining(_simulationNow))
                 : "CHOICE  " + _flow.ActionClock.ChoiceResolution.ToString().ToUpperInvariant());
@@ -1006,11 +1512,22 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             SetText(_ammoText, _selectedSlot >= 0 ? "CHARGE  1\nLMB  USE ITEM" : "CHARGE  --");
             SetText(_speedButtonLabel, "FLOW SPEED  x" + _simulationSpeed.ToString("0"));
 
+            var rankingStats = new PlayerRankingStats[_playerRows.Length];
+            for (var playerIndex = 0; playerIndex < rankingStats.Length; playerIndex++)
+            {
+                rankingStats[playerIndex] = new PlayerRankingStats(
+                    _keys[playerIndex],
+                    _gold[playerIndex],
+                    _minigameWins[playerIndex]);
+            }
+            var ranks = PlayerRankingRules.Calculate(rankingStats);
+
             for (var playerIndex = 0; playerIndex < _playerRows.Length; playerIndex++)
             {
                 SetText(_playerRows[playerIndex], playerIndex == 0
                     ? "P1  LOCAL"
                     : "P" + (playerIndex + 1) + "  SIMULATED");
+                SetText(_playerRankTexts[playerIndex], "#" + ranks[playerIndex]);
                 if (_playerRows[playerIndex] != null)
                 {
                     _playerRows[playerIndex].color = PlayerColor(playerIndex);
@@ -1037,7 +1554,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     _currentHealth[playerIndex] + "/" + maxHealth);
                 SetText(_playerCurrencyTexts[playerIndex],
                     "KEY  " + _keys[playerIndex] + "    GOLD  " + _gold[playerIndex]);
-                var actionState = _paused
+                var actionState = globallyPaused
                     ? PlayerBoardActionState.Hidden
                     : _actionStates[playerIndex];
                 SetText(_playerActionIcons[playerIndex], ActionIconLabel(actionState));
@@ -1049,13 +1566,16 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
-                var occupied = (_occupiedMask & (1 << i)) != 0;
+                var occupied = (_occupiedMask & (1 << i)) != 0 &&
+                               PrototypeItemCatalog.IsValid(_itemSlots[i]);
                 SetText(_slotLabels[i], occupied ? ItemName(i) : "EMPTY");
                 if (_slotImages[i] != null)
                 {
                     _slotImages[i].color = i == _selectedSlot
                         ? new Color(1f, 0.72f, 0.15f, 0.97f)
-                        : occupied ? new Color(0.18f, 0.36f, 0.58f, 0.94f) : new Color(0.1f, 0.12f, 0.16f, 0.88f);
+                        : occupied
+                            ? new Color(0.18f, 0.36f, 0.58f, 0.94f)
+                            : new Color(0.1f, 0.12f, 0.16f, 0.88f);
                 }
                 if (_choiceButtons[i] != null)
                 {
@@ -1069,7 +1589,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             cameraDirector?.SetUiPointerVisible(
-                _paused || _editorPointerVisible || _flow.State != BoardFlowState.Action ||
+                globallyPaused || shopOpen || _editorPointerVisible ||
+                _flow.State != BoardFlowState.Action ||
                 _flow.ActionClock.IsChoicePending);
         }
 
@@ -1079,6 +1600,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _readyPanel = FindNamed("MinigameReadyPanel");
             _resultPanel = FindNamed("SkippedResultPanel");
             _reticle = FindNamed("BoardReticle");
+            _itemShopPanel = FindNamed("ItemShopPanel");
             _turnText = FindNamedComponent<Text>("TurnText");
             _phaseText = FindNamedComponent<Text>("PhaseText");
             _phaseTimerText = FindNamedComponent<Text>("PhaseTimerText");
@@ -1089,6 +1611,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _ammoText = FindNamedComponent<Text>("BoardAmmoText");
             _statusText = FindNamedComponent<Text>("BoardStatusText");
             _tooltipText = FindNamedComponent<Text>("BoardTooltipText");
+            _itemShopTitle = FindNamedComponent<Text>("ItemShopTitle");
+            _itemShopTooltip = FindNamedComponent<Text>("ItemShopTooltip");
+            _itemShopStatus = FindNamedComponent<Text>("ItemShopStatus");
             _noItemButton = FindNamedComponent<Button>("NoItemButton");
             _readyButton = FindNamedComponent<Button>("ReadyButton");
             _finishActionButton = FindNamedComponent<Button>("EditorFinishActionButton");
@@ -1097,6 +1622,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _damagePlayerButton = FindNamedComponent<Button>("EditorDamagePlayerButton");
             _addGoldButton = FindNamedComponent<Button>("EditorAddGoldButton");
             _buyKeyButton = FindNamedComponent<Button>("EditorBuyKeyButton");
+            _itemShopCloseButton = FindNamedComponent<Button>("ItemShopCloseButton");
             _speedButtonLabel = _speedButton != null ? _speedButton.GetComponentInChildren<Text>() : null;
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -1112,6 +1638,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
                 _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
                 _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
+                _playerRankTexts[i] = FindNamedComponent<Text>("PlayerRank" + i);
+            }
+            for (var i = 0; i < ItemShopRules.OfferCount; i++)
+            {
+                _shopOfferButtons[i] = FindNamedComponent<Button>("ItemShopOffer" + i);
+                _shopOfferLabels[i] = FindNamedComponent<Text>("ItemShopOfferLabel" + i);
             }
         }
 
@@ -1122,6 +1654,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 var slot = i;
                 _choiceButtons[i]?.onClick.AddListener(() => SelectItem(slot));
             }
+            for (var i = 0; i < _shopOfferButtons.Length; i++)
+            {
+                var offer = i;
+                _shopOfferButtons[i]?.onClick.AddListener(
+                    () => PurchaseLocalShopItem(offer));
+            }
             _noItemButton?.onClick.AddListener(ChooseNoItem);
             _readyButton?.onClick.AddListener(ReadyAllAndSkip);
             _finishActionButton?.onClick.AddListener(FinishActionForAllPlayers);
@@ -1130,6 +1668,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _damagePlayerButton?.onClick.AddListener(DamageLocalPlayer);
             _addGoldButton?.onClick.AddListener(AddLocalGold);
             _buyKeyButton?.onClick.AddListener(BuyLocalKey);
+            _itemShopCloseButton?.onClick.AddListener(CloseLocalItemShop);
         }
 
         private void UnwireButtons()
@@ -1137,6 +1676,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             for (var i = 0; i < _choiceButtons.Length; i++)
             {
                 _choiceButtons[i]?.onClick.RemoveAllListeners();
+            }
+            for (var i = 0; i < _shopOfferButtons.Length; i++)
+            {
+                _shopOfferButtons[i]?.onClick.RemoveAllListeners();
             }
             _noItemButton?.onClick.RemoveListener(ChooseNoItem);
             _readyButton?.onClick.RemoveListener(ReadyAllAndSkip);
@@ -1146,6 +1689,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _damagePlayerButton?.onClick.RemoveListener(DamageLocalPlayer);
             _addGoldButton?.onClick.RemoveListener(AddLocalGold);
             _buyKeyButton?.onClick.RemoveListener(BuyLocalKey);
+            _itemShopCloseButton?.onClick.RemoveListener(CloseLocalItemShop);
         }
 
         private void ApplyBodyVisibility(bool firstPerson)
@@ -1207,18 +1751,20 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             Debug.Log("[Board Flow Testbed] " + message, this);
         }
 
-        private static string ItemName(int slot)
+        private string ItemName(int slot)
         {
-            return slot == 0 ? "Pulse Blaster" : slot == 1 ? "Push Mine" : "Med Kit";
+            return slot >= 0 && slot < _itemSlots.Length &&
+                   PrototypeItemCatalog.IsValid(_itemSlots[slot])
+                ? PrototypeItemCatalog.Get(_itemSlots[slot]).DisplayName
+                : "EMPTY";
         }
 
-        private static string ItemDescription(int slot)
+        private string ItemDescription(int slot)
         {
-            return slot == 0
-                ? "Prototype ranged item. LMB consumes its test charge."
-                : slot == 1
-                    ? "Prototype area item. Its combat effect is still TODO."
-                    : "Prototype recovery item. Its healing effect is still TODO.";
+            return slot >= 0 && slot < _itemSlots.Length &&
+                   PrototypeItemCatalog.IsValid(_itemSlots[slot])
+                ? PrototypeItemCatalog.Get(_itemSlots[slot]).Description
+                : "No item in this slot.";
         }
 
         private static string PhaseLabel(BoardFlowState state)
