@@ -56,6 +56,21 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<ItemShopSnapshot>();
         private readonly NetworkVariable<int> _boardEffectSeed = new NetworkVariable<int>();
         private readonly NetworkVariable<int> _boardEffectRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<bool> _combatActive = new NetworkVariable<bool>();
+        private readonly NetworkVariable<Vector2Int> _combatTile =
+            new NetworkVariable<Vector2Int>();
+        private readonly NetworkVariable<byte> _combatParticipantMask =
+            new NetworkVariable<byte>();
+        private readonly NetworkVariable<byte> _combatAliveMask =
+            new NetworkVariable<byte>();
+        private readonly NetworkVariable<int> _combatSequenceIndex =
+            new NetworkVariable<int>();
+        private readonly NetworkVariable<int> _combatQueueCount =
+            new NetworkVariable<int>();
+        private readonly NetworkVariable<double> _combatEndsAt =
+            new NetworkVariable<double>();
+        private readonly NetworkVariable<double> _pausedCombatRemaining =
+            new NetworkVariable<double>();
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
@@ -72,6 +87,16 @@ namespace MazeParty.Multiplayer
         private int _cachedBoardEffectSeed;
         private int _cachedBoardEffectRevision = -1;
         private int _nextLandingEffectSlot;
+        private readonly Queue<BoardCombatGroup> _combatQueue =
+            new Queue<BoardCombatGroup>();
+        private readonly double[] _arrivalTimes =
+            new double[MultiplayerConstants.MaxPlayers];
+        private readonly double[] _combatEliminatedAt =
+            new double[MultiplayerConstants.MaxPlayers];
+        private readonly double[] _nextPunchAllowedAt =
+            new double[MultiplayerConstants.MaxPlayers];
+        private int[] _combatOverallRanks = new int[MultiplayerConstants.MaxPlayers];
+        private int _fightsResolvedThisTurn;
 
         public static NetworkMatchState Instance { get; private set; }
 
@@ -96,6 +121,14 @@ namespace MazeParty.Multiplayer
         public int KeyShopRevealRevision => _keyShopRevealRevision.Value;
         public int BoardEffectSeed => _boardEffectSeed.Value;
         public int BoardEffectRevision => _boardEffectRevision.Value;
+        public bool IsCombatActive => _combatActive.Value;
+        public Vector2Int CombatTile => _combatTile.Value;
+        public byte CombatParticipantMask => _combatParticipantMask.Value;
+        public byte CombatAliveMask => _combatAliveMask.Value;
+        public int CombatSequenceIndex => _combatSequenceIndex.Value;
+        public int CombatQueueCount => _combatQueueCount.Value;
+        public bool IsCombatPhase =>
+            GameplayEnabled && FlowState == BoardFlowState.CombatResolve;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
@@ -105,6 +138,9 @@ namespace MazeParty.Multiplayer
         public double ActionRemaining => RemainingUntil(_actionEndsAt.Value, _pausedActionRemaining.Value);
         public double ChoiceRemaining => RemainingUntil(_choiceEndsAt.Value, _pausedChoiceRemaining.Value);
         public double ShieldRemaining => RemainingUntil(_shieldEndsAt.Value, _pausedShieldRemaining.Value);
+        public double CombatRemaining => RemainingUntil(
+            _combatEndsAt.Value,
+            _pausedCombatRemaining.Value);
         public double ReconnectRemaining => _reconnectPaused.Value
             ? Math.Max(0d, _reconnectGraceEndsAt.Value - ServerNow)
             : 0d;
@@ -113,6 +149,7 @@ namespace MazeParty.Multiplayer
                 ? Math.Max(0d, _keyShopRevealRemainingDuringReconnect)
                 : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
             : 0d;
+        public double SynchronizedNow => ServerNow;
 
         public ItemShopSnapshot GetItemShopSnapshot(int shopIndex)
         {
@@ -207,6 +244,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             _flow.Tick(now);
+            AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
             ResolveExpiredPersonalChoicesOnServer(now);
             AdvanceKeyShopLifecycleOnServer(now);
@@ -230,6 +268,7 @@ namespace MazeParty.Multiplayer
             _itemShopStocks[1] = null;
             _itemShop0.Value = default;
             _itemShop1.Value = default;
+            ResetCombatRuntimeOnServer();
             SyncKeyShopSnapshot();
             InitializeBoardLandingEffectsOnServer();
             var now = ServerNow;
@@ -240,6 +279,7 @@ namespace MazeParty.Multiplayer
             _readyMask.Value = 0;
             _snapshotRestoredMask.Value = AllPlayersMask;
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
+            ResetArrivalTimes();
             InitializeAllAvatarsOnBoard();
             ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
             RefreshItemShopsForTurnOnServer(1);
@@ -418,12 +458,17 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            if (!_flow.TryReportPlayerArrived(avatar.AssignedSlot, ServerNow))
+            var slot = avatar.AssignedSlot;
+            var arrivalTime = ServerNow;
+            var previousArrival = _arrivalTimes[slot];
+            _arrivalTimes[slot] = arrivalTime;
+            if (!_flow.TryReportPlayerArrived(slot, arrivalTime))
             {
+                _arrivalTimes[slot] = previousArrival;
                 return false;
             }
 
-            _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << avatar.AssignedSlot));
+            _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << slot));
             if (FlowState == BoardFlowState.Action)
             {
                 avatar.MarkArrivedOnServer();
@@ -474,6 +519,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             var now = ServerNow;
+            PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
                 _keyShopRevealRemainingDuringReconnect =
@@ -570,6 +616,24 @@ namespace MazeParty.Multiplayer
         public bool IsMinigameReady(int slot) => IsSlotSet(_readyMask.Value, slot);
         public bool IsPlayerPresent(int slot) => IsSlotSet(_presentMask.Value, slot);
 
+        public bool IsCombatParticipant(int slot)
+        {
+            return IsSlotSet(_combatParticipantMask.Value, slot);
+        }
+
+        public bool IsCombatAlive(int slot)
+        {
+            return IsSlotSet(_combatAliveMask.Value, slot);
+        }
+
+        public bool CanAvatarUseCombatInput(NetworkPlayerAvatar avatar)
+        {
+            return avatar != null && avatar.IsSpawned &&
+                   IsCombatPhase && IsCombatActive && !IsGlobalSimulationPaused &&
+                   IsCombatParticipant(avatar.AssignedSlot) &&
+                   IsCombatAlive(avatar.AssignedSlot) && avatar.IsCombatAlive;
+        }
+
         private void EnsureFlowModel()
         {
             if (_flow != null)
@@ -591,6 +655,7 @@ namespace MazeParty.Multiplayer
             switch (transition.Current)
             {
                 case BoardFlowState.TurnOverview:
+                    ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
                     _readyMask.Value = 0;
@@ -599,16 +664,21 @@ namespace MazeParty.Multiplayer
                     TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
                     break;
                 case BoardFlowState.Action:
+                    ResetArrivalTimes();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
                     _readyMask.Value = 0;
                     ForEachAvatar(avatar => avatar.BeginActionOnServer(transition.Turn));
                     break;
                 case BoardFlowState.AscendingResolve:
+                    FillMissingArrivalTimes(transition.OccurredAt);
                     ForEachAvatar(avatar => avatar.EndActionOnServer());
                     break;
+                case BoardFlowState.CombatResolve:
+                    BeginCombatSequenceOnServer(transition.OccurredAt);
+                    break;
                 case BoardFlowState.LandingEffectResolve:
-                    BeginCombatCompletionAndLandingEffectsOnServer();
+                    BeginLandingEffectsOnServer();
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLandingEffectsOnServer();
@@ -652,6 +722,7 @@ namespace MazeParty.Multiplayer
             else
             {
                 _flow.Resume(now);
+                ResumeCombatAndPersonalProtectionOnServer(now);
             }
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
@@ -845,10 +916,396 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
-        private void BeginCombatCompletionAndLandingEffectsOnServer()
+        private void ResetArrivalTimes()
         {
-            // TODO(COMBAT): replace this automatic completion with the authoritative
-            // final-room combat completion signal, then call this same settlement seam.
+            for (var slot = 0; slot < _arrivalTimes.Length; slot++)
+            {
+                _arrivalTimes[slot] = double.NaN;
+            }
+        }
+
+        private void FillMissingArrivalTimes(double now)
+        {
+            for (var slot = 0; slot < _arrivalTimes.Length; slot++)
+            {
+                if (double.IsNaN(_arrivalTimes[slot]) ||
+                    double.IsInfinity(_arrivalTimes[slot]))
+                {
+                    _arrivalTimes[slot] = now;
+                }
+            }
+        }
+
+        private void BeginCombatSequenceOnServer(double now)
+        {
+            ResetCombatRuntimeOnServer();
+            FillMissingArrivalTimes(now);
+            CalculateOverallRanksOnServer();
+
+            var placements = new List<BoardCombatPlacement>(
+                MultiplayerConstants.MaxPlayers);
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.HasLogicalBoardTile)
+                {
+                    continue;
+                }
+
+                placements.Add(new BoardCombatPlacement(
+                    slot,
+                    avatar.LogicalBoardTileCoordinate,
+                    _arrivalTimes[slot]));
+            }
+
+            var initialQueue = BoardCombatRules.BuildInitialQueue(
+                placements,
+                _combatOverallRanks);
+            for (var i = 0; i < initialQueue.Count; i++)
+            {
+                _combatQueue.Enqueue(initialQueue[i]);
+            }
+
+            _combatQueueCount.Value = _combatQueue.Count;
+            BeginNextCombatOrFinishOnServer(now);
+        }
+
+        private void CalculateOverallRanksOnServer()
+        {
+            var stats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < stats.Length; slot++)
+            {
+                var avatar = GetAvatarForSlot(slot);
+                stats[slot] = avatar != null
+                    ? new PlayerRankingStats(
+                        avatar.KeyCount,
+                        avatar.Gold,
+                        avatar.MinigameWins)
+                    : default;
+            }
+
+            _combatOverallRanks = PlayerRankingRules.Calculate(stats);
+        }
+
+        private void BeginNextCombatOrFinishOnServer(double now)
+        {
+            while (_combatQueue.Count > 0 &&
+                   _fightsResolvedThisTurn < BoardCombatRules.MaximumFightsPerTurn)
+            {
+                var group = _combatQueue.Dequeue();
+                var participantMask = GetOccupantMaskAt(group.Coordinate);
+                _combatQueueCount.Value = _combatQueue.Count;
+                if (!HasMultipleSlots(participantMask))
+                {
+                    continue;
+                }
+
+                _combatTile.Value = group.Coordinate;
+                _combatParticipantMask.Value = participantMask;
+                _combatAliveMask.Value = participantMask;
+                _combatSequenceIndex.Value++;
+                _combatEndsAt.Value = now + BoardCombatRules.FightDurationSeconds;
+                _pausedCombatRemaining.Value = 0d;
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    _combatEliminatedAt[slot] = double.NaN;
+                    _nextPunchAllowedAt[slot] = now;
+                }
+
+                _combatActive.Value = true;
+                ForEachAvatar(avatar =>
+                    avatar.BeginCombatOnServer(IsSlotSet(
+                        participantMask,
+                        avatar.AssignedSlot)));
+                StopAllAvatarInputOnServer();
+                _stateRevision.Value++;
+                return;
+            }
+
+            ResetCurrentCombatOnServer();
+            _combatQueue.Clear();
+            _combatQueueCount.Value = 0;
+            _flow.TryCompleteCombat(now);
+        }
+
+        public bool TryCombatPunchOnServer(
+            NetworkPlayerAvatar attacker,
+            Vector3 claimedOrigin,
+            Vector3 claimedDirection)
+        {
+            if (!IsServer || attacker == null ||
+                !CanAvatarUseCombatInput(attacker) ||
+                !IsFinite(claimedOrigin) || !IsFinite(claimedDirection))
+            {
+                return false;
+            }
+
+            var slot = attacker.AssignedSlot;
+            var now = ServerNow;
+            if (now < _nextPunchAllowedAt[slot] ||
+                claimedDirection.sqrMagnitude < 0.0001f ||
+                !attacker.HasLogicalBoardTile ||
+                attacker.LogicalBoardTileCoordinate != _combatTile.Value)
+            {
+                return false;
+            }
+
+            var authoritativeOrigin = attacker.EyePivot != null
+                ? attacker.EyePivot.position
+                : attacker.transform.position + Vector3.up * 0.75f;
+            if (Vector3.Distance(authoritativeOrigin, claimedOrigin) > 1.5f)
+            {
+                return false;
+            }
+
+            _nextPunchAllowedAt[slot] = now + BoardCombatRules.PunchCooldownSeconds;
+            var direction = claimedDirection.normalized;
+            var hits = Physics.SphereCastAll(
+                authoritativeOrigin,
+                BoardCombatRules.PunchRadius,
+                direction,
+                BoardCombatRules.PunchRange,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            NetworkPlayerAvatar target = null;
+            var closestDistance = float.MaxValue;
+            for (var i = 0; i < hits.Length; i++)
+            {
+                var candidate = hits[i].collider != null
+                    ? hits[i].collider.GetComponentInParent<NetworkPlayerAvatar>()
+                    : null;
+                if (candidate == null || candidate == attacker ||
+                    !IsCombatParticipant(candidate.AssignedSlot) ||
+                    !IsCombatAlive(candidate.AssignedSlot) ||
+                    candidate.LogicalBoardTileCoordinate != _combatTile.Value ||
+                    hits[i].distance >= closestDistance)
+                {
+                    continue;
+                }
+
+                target = candidate;
+                closestDistance = hits[i].distance;
+            }
+
+            if (target == null)
+            {
+                return true;
+            }
+
+            var knockbackDirection = direction;
+            knockbackDirection.y = 0f;
+            if (knockbackDirection.sqrMagnitude < 0.0001f)
+            {
+                knockbackDirection = attacker.transform.forward;
+                knockbackDirection.y = 0f;
+            }
+            knockbackDirection.Normalize();
+
+            // TODO(COMBAT-PRESENTATION): publish the authored character motion,
+            // hit impact, audio and camera feedback from this validated hit seam.
+            var eliminated = target.ApplyCombatPunchOnServer(
+                knockbackDirection * BoardCombatRules.PunchKnockbackSpeed);
+            if (!eliminated)
+            {
+                return true;
+            }
+
+            var targetSlot = target.AssignedSlot;
+            _combatEliminatedAt[targetSlot] = now;
+            _combatAliveMask.Value = (byte)(
+                _combatAliveMask.Value & ~(1 << targetSlot));
+            _stateRevision.Value++;
+            if (BoardCombatRules.IsFightComplete(
+                    _combatParticipantMask.Value,
+                    _combatAliveMask.Value))
+            {
+                ResolveCurrentCombatOnServer(now);
+            }
+            return true;
+        }
+
+        private void AdvanceCombatOnServer(double now)
+        {
+            if (!IsServer || !_combatActive.Value || IsGlobalSimulationPaused ||
+                _combatEndsAt.Value <= 0d || now < _combatEndsAt.Value)
+            {
+                return;
+            }
+
+            ResolveCurrentCombatOnServer(now);
+        }
+
+        private void ResolveCurrentCombatOnServer(double now)
+        {
+            if (!IsServer || !_combatActive.Value)
+            {
+                return;
+            }
+
+            var entries = new List<BoardCombatRankingEntry>(
+                MultiplayerConstants.MaxPlayers);
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if (!IsCombatParticipant(slot))
+                {
+                    continue;
+                }
+
+                var avatar = GetAvatarForSlot(slot);
+                entries.Add(new BoardCombatRankingEntry(
+                    slot,
+                    avatar != null ? avatar.CombatHealth : 0,
+                    _combatEliminatedAt[slot],
+                    _arrivalTimes[slot],
+                    _combatOverallRanks[slot]));
+            }
+
+            var standings = BoardCombatRules.ResolveStandings(entries);
+            var possibleChainTiles = new List<Vector2Int>(standings.Length);
+            for (var index = 0; index < standings.Length; index++)
+            {
+                var standing = standings[index];
+                var avatar = GetAvatarForSlot(standing.Slot);
+                if (avatar == null)
+                {
+                    continue;
+                }
+
+                avatar.ApplyCombatRetreatOnServer(standing.RetreatDistance);
+                if (avatar.HasLogicalBoardTile &&
+                    !possibleChainTiles.Contains(avatar.LogicalBoardTileCoordinate))
+                {
+                    possibleChainTiles.Add(avatar.LogicalBoardTileCoordinate);
+                }
+                avatar.EndCombatOnServer(true);
+            }
+
+            _fightsResolvedThisTurn++;
+            ResetCurrentCombatOnServer();
+            for (var i = 0; i < possibleChainTiles.Count; i++)
+            {
+                EnqueueChainFightIfNeeded(possibleChainTiles[i], now);
+            }
+            _combatQueueCount.Value = _combatQueue.Count;
+            BeginNextCombatOrFinishOnServer(now);
+        }
+
+        private void EnqueueChainFightIfNeeded(Vector2Int coordinate, double formedAt)
+        {
+            var mask = GetOccupantMaskAt(coordinate);
+            if (!HasMultipleSlots(mask) || QueueContainsCoordinate(coordinate))
+            {
+                return;
+            }
+
+            var lowestOverallRank = 1;
+            for (var slot = 0; slot < _combatOverallRanks.Length; slot++)
+            {
+                lowestOverallRank = Math.Max(
+                    lowestOverallRank,
+                    _combatOverallRanks[slot]);
+            }
+
+            var containsLowestRank = false;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                containsLowestRank |= IsSlotSet(mask, slot) &&
+                                      _combatOverallRanks[slot] == lowestOverallRank;
+            }
+            _combatQueue.Enqueue(new BoardCombatGroup(
+                coordinate,
+                mask,
+                formedAt,
+                containsLowestRank));
+        }
+
+        private bool QueueContainsCoordinate(Vector2Int coordinate)
+        {
+            foreach (var queued in _combatQueue)
+            {
+                if (queued.Coordinate == coordinate)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private byte GetOccupantMaskAt(Vector2Int coordinate)
+        {
+            byte mask = 0;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar != null && avatar.HasLogicalBoardTile &&
+                    avatar.LogicalBoardTileCoordinate == coordinate)
+                {
+                    mask = (byte)(mask | (1 << slot));
+                }
+            }
+            return mask;
+        }
+
+        private void ResetCombatRuntimeOnServer()
+        {
+            _combatQueue.Clear();
+            _fightsResolvedThisTurn = 0;
+            _combatSequenceIndex.Value = 0;
+            _combatQueueCount.Value = 0;
+            ResetCurrentCombatOnServer();
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                _combatEliminatedAt[slot] = double.NaN;
+                _nextPunchAllowedAt[slot] = 0d;
+            }
+            ForEachAvatar(avatar => avatar.EndCombatOnServer(false));
+        }
+
+        private void ResetCurrentCombatOnServer()
+        {
+            _combatActive.Value = false;
+            _combatParticipantMask.Value = 0;
+            _combatAliveMask.Value = 0;
+            _combatEndsAt.Value = 0d;
+            _pausedCombatRemaining.Value = 0d;
+        }
+
+        private void PauseCombatAndPersonalProtectionOnServer(double now)
+        {
+            if (_combatActive.Value && _combatEndsAt.Value > 0d)
+            {
+                _pausedCombatRemaining.Value = Math.Max(
+                    0d,
+                    _combatEndsAt.Value - now);
+                _combatEndsAt.Value = 0d;
+            }
+            ForEachAvatar(avatar => avatar.PausePersonalProtectionOnServer(now));
+        }
+
+        private void ResumeCombatAndPersonalProtectionOnServer(double now)
+        {
+            if (_combatActive.Value && _pausedCombatRemaining.Value > 0d)
+            {
+                _combatEndsAt.Value = now + _pausedCombatRemaining.Value;
+                _pausedCombatRemaining.Value = 0d;
+            }
+            ForEachAvatar(avatar => avatar.ResumePersonalProtectionOnServer(now));
+        }
+
+        private static bool HasMultipleSlots(byte mask)
+        {
+            return mask != 0 && (mask & (mask - 1)) != 0;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
+                   !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
+                   !float.IsNaN(value.z) && !float.IsInfinity(value.z);
+        }
+
+        private void BeginLandingEffectsOnServer()
+        {
             _nextLandingEffectSlot = 0;
             ResolveNextLandingEffectOnServer();
         }
@@ -1170,6 +1627,7 @@ namespace MazeParty.Multiplayer
             _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
             _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
             _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
+            PauseCombatAndPersonalProtectionOnServer(now);
             _keyShopRevealActive.Value = true;
             _keyShopRevealEndsAt.Value = now + KeyShopRevealSeconds;
             _keyShopRevealRevision.Value++;
@@ -1188,6 +1646,7 @@ namespace MazeParty.Multiplayer
             _keyShopRevealEndsAt.Value = 0d;
             _keyShopRevealRemainingDuringReconnect = 0d;
             _flow.Resume(now);
+            ResumeCombatAndPersonalProtectionOnServer(now);
             SyncFlowSnapshot(now);
             StopAllAvatarInputOnServer();
         }
@@ -1255,7 +1714,12 @@ namespace MazeParty.Multiplayer
         public int Gold;
         public int MinigameWins;
         public PlayerBoardActionState ActionState;
+        public NetworkCombatState CombatState;
+        public int CombatHealth;
+        public bool PendingCombatProtection;
+        public double PersonalProtectionRemaining;
         public bool HasLogicalCurrentTile;
         public Vector2Int LogicalCurrentTileCoordinate;
+        public Vector2Int[] TraversalHistory;
     }
 }

@@ -48,6 +48,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly int[] _minigameWins = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly PlayerBoardActionState[] _actionStates =
             new PlayerBoardActionState[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _combatHealth =
+            new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly double[] _arrivalTimes =
+            new double[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly double[] _combatEliminatedAt =
+            new double[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Queue<BoardCombatGroup> _combatQueue =
+            new Queue<BoardCombatGroup>();
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
@@ -67,6 +75,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Button _noItemButton;
         private Button _readyButton;
         private Button _finishActionButton;
+        private Button _stageFightButton;
         private Button _speedButton;
         private Button _pauseButton;
         private Button _damagePlayerButton;
@@ -116,6 +125,20 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private double _worldDieHideDeadline = -1d;
         private BoardLandingEffectLayout _boardEffectLayout;
         private int _nextLandingEffectSlot;
+        private bool _stageTwoPlayerFightAtFinish;
+        private bool _localCombatActive;
+        private byte _localCombatParticipantMask;
+        private byte _localCombatAliveMask;
+        private Vector2Int _localCombatTile;
+        private double _localCombatEndsAt;
+        private double _nextLocalPunchAllowedAt;
+        private int _localCombatSequenceIndex;
+        private int _localFightsResolved;
+        private bool _pendingLocalCombatProtection;
+        private double _personalProtectionEndsAtFlowTime;
+        private FootstepAudioEmitter _localFootstepEmitter;
+        private readonly FootstepCadenceTracker _localFootstepCadence =
+            new FootstepCadenceTracker();
 
         public void Configure(
             CharacterController localPlayer,
@@ -157,6 +180,15 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (_boundaryWalls == null && player != null)
             {
                 _boundaryWalls = player.gameObject.AddComponent<PlayerBoardBoundaryWalls>();
+            }
+            if (player != null)
+            {
+                _localFootstepEmitter = player.GetComponent<FootstepAudioEmitter>();
+                if (_localFootstepEmitter == null)
+                {
+                    _localFootstepEmitter =
+                        player.gameObject.AddComponent<FootstepAudioEmitter>();
+                }
             }
             if (_boundaryWalls != null && player != null && topology != null)
             {
@@ -203,6 +235,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
             _flow.Tick(_simulationNow);
             AdvanceLocalKeyShopReveal();
+            AdvanceLocalCombat();
             AdvanceLocalLandingEffects();
             if (_lastChoiceResolution != _flow.ActionClock.ChoiceResolution)
             {
@@ -255,12 +288,29 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         public void FinishActionForAllPlayers()
         {
+            if (_stageTwoPlayerFightAtFinish)
+            {
+                StageRemotePlayerTwoAtLocalTile();
+            }
             for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
             {
                 _actionStates[slot] = PlayerBoardActionState.Arrived;
-                _flow.TryReportPlayerArrived(slot, _simulationNow);
+                _arrivalTimes[slot] = _simulationNow + slot * 0.001d;
+                _flow.TryReportPlayerArrived(slot, _arrivalTimes[slot]);
             }
             SetStatus("EDITOR: all four arrival reports submitted.");
+        }
+
+        public void StageTwoPlayerFight()
+        {
+            if (_flow.State != BoardFlowState.Action)
+            {
+                SetStatus("EDITOR: stage a fight during FIRST-PERSON ACTION.");
+                return;
+            }
+
+            _stageTwoPlayerFightAtFinish = true;
+            SetStatus("EDITOR: P2 will finish in P1's room when FINISH ACTION is pressed.");
         }
 
         public void ReadyAllAndSkip()
@@ -279,6 +329,13 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         public void DamageLocalPlayer()
         {
+            if (_localCombatActive && IsLocalCombatAlive(0))
+            {
+                ApplyLocalCombatDamage(0);
+                SetStatus("EDITOR: simulated P2 punch dealt 5 temporary HP damage to P1.");
+                return;
+            }
+
             _currentHealth[0] = PlayerStatRules.ClampHealth(
                 _currentHealth[0] - 20,
                 _maxHealth[0]);
@@ -345,6 +402,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             switch (transition.Current)
             {
                 case BoardFlowState.TurnOverview:
+                    ResetLocalCombat();
+                    _stageTwoPlayerFightAtFinish = false;
                     ResetActionState();
                     SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
@@ -357,6 +416,17 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     SetStatus("Descending through the local overhead bridge.");
                     break;
                 case BoardFlowState.Action:
+                    for (var slot = 0; slot < _arrivalTimes.Length; slot++)
+                    {
+                        _arrivalTimes[slot] = double.NaN;
+                    }
+                    if (_pendingLocalCombatProtection)
+                    {
+                        _personalProtectionEndsAtFlowTime =
+                            _flow.ToFlowTime(_simulationNow) +
+                            BoardCombatRules.NextActionItemProtectionSeconds;
+                        _pendingLocalCombatProtection = false;
+                    }
                     ResetActionState();
                     SetAllActionStates(PlayerBoardActionState.Dice);
                     InitializeTraversal();
@@ -369,9 +439,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
                     SetStatus("Input closed. Five-second effect settle window.");
                     break;
+                case BoardFlowState.CombatResolve:
+                    BeginLocalCombatSequence();
+                    break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLocalLandingEffects();
-                    SetStatus("Combat placeholder completed. Resolving landing effects in P1-P4 order.");
+                    SetStatus("All fights completed. Resolving landing effects in P1-P4 order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLocalLandingEffects();
@@ -383,13 +456,26 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             ApplyBodyVisibility(transition.Current == BoardFlowState.Descending ||
-                                transition.Current == BoardFlowState.Action);
+                                transition.Current == BoardFlowState.Action ||
+                                transition.Current == BoardFlowState.CombatResolve &&
+                                _localCombatActive && IsLocalCombatAlive(0));
         }
 
         private void HandleInput()
         {
             if (_paused || _keyShopRevealActive || _openItemShopIndex >= 0 ||
-                _flow.State != BoardFlowState.Action || player == null)
+                player == null)
+            {
+                return;
+            }
+
+            if (_flow.State == BoardFlowState.CombatResolve)
+            {
+                HandleLocalCombatInput();
+                return;
+            }
+
+            if (_flow.State != BoardFlowState.Action)
             {
                 return;
             }
@@ -482,10 +568,70 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f),
                 (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f));
             input = Vector2.ClampMagnitude(input, 1f);
+            var quietWalking = keyboard.leftCtrlKey.isPressed &&
+                               FootstepRules.HasMovementIntent(input);
             var movement = player.transform.TransformDirection(new Vector3(input.x, 0f, input.y));
             movement.y = 0f;
-            player.Move(movement * (moveSpeed * Time.unscaledDeltaTime));
+            var previousPosition = player.transform.position;
+            player.Move(movement *
+                        (moveSpeed * FootstepRules.SpeedMultiplier(quietWalking) *
+                         Time.unscaledDeltaTime));
+            RecordLocalFootsteps(previousPosition, input, quietWalking);
             ResolveTraversal();
+        }
+
+        private void HandleLocalCombatInput()
+        {
+            if (!_localCombatActive || !IsLocalCombatAlive(0))
+            {
+                return;
+            }
+
+            var mouse = Mouse.current;
+            if (mouse != null && Cursor.lockState == CursorLockMode.Locked)
+            {
+                var delta = mouse.delta.ReadValue() * lookSensitivity;
+                _yaw += delta.x;
+                _pitch = Mathf.Clamp(_pitch - delta.y, -85f, 85f);
+                player.transform.rotation = Quaternion.Euler(0f, _yaw, 0f);
+                if (eyePivot != null)
+                {
+                    eyePivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+                }
+            }
+
+            if (mouse != null && mouse.leftButton.wasPressedThisFrame &&
+                !IsPointerOverUi())
+            {
+                TryLocalCombatPunch();
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return;
+            }
+
+            var input = new Vector2(
+                (keyboard.dKey.isPressed ? 1f : 0f) -
+                (keyboard.aKey.isPressed ? 1f : 0f),
+                (keyboard.wKey.isPressed ? 1f : 0f) -
+                (keyboard.sKey.isPressed ? 1f : 0f));
+            input = Vector2.ClampMagnitude(input, 1f);
+            var quietWalking = keyboard.leftCtrlKey.isPressed &&
+                               FootstepRules.HasMovementIntent(input);
+            var movement = player.transform.TransformDirection(
+                new Vector3(input.x, 0f, input.y));
+            movement.y = 0f;
+            var previousPosition = player.transform.position;
+            player.Move(movement *
+                        (moveSpeed * FootstepRules.SpeedMultiplier(quietWalking) *
+                         Time.unscaledDeltaTime));
+            RecordLocalFootsteps(previousPosition, input, quietWalking);
+            if (_traversal.IsInitialized)
+            {
+                ClampPlayerInsideTile(_traversal.CurrentTile);
+            }
         }
 
         private void HandleEditorPointerToggle()
@@ -496,8 +642,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 return;
             }
 
+            var canToggleDuringAction = _flow.State == BoardFlowState.Action &&
+                                        !_flow.ActionClock.IsChoicePending;
+            var canToggleDuringCombat = _flow.State == BoardFlowState.CombatResolve &&
+                                        _localCombatActive && IsLocalCombatAlive(0);
             if (_paused || _keyShopRevealActive || _openItemShopIndex >= 0 ||
-                _flow.State != BoardFlowState.Action || _flow.ActionClock.IsChoicePending)
+                (!canToggleDuringAction && !canToggleDuringCombat))
             {
                 _editorPointerVisible = false;
                 return;
@@ -578,6 +728,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _remainingMoves = 0;
             _selectedSlot = -1;
             _editorPointerVisible = false;
+            _localFootstepCadence.Reset();
             if (_traversal.IsInitialized)
             {
                 _traversal.ResetMoves(0);
@@ -601,13 +752,17 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private void RefreshBoundaryWalls()
         {
             if (_boundaryWalls == null || !_traversal.IsInitialized ||
-                _flow.State != BoardFlowState.Action)
+                (_flow.State != BoardFlowState.Action &&
+                 !(_flow.State == BoardFlowState.CombatResolve &&
+                   _localCombatActive && IsLocalCombatAlive(0))))
             {
                 _boundaryWalls?.Hide();
                 return;
             }
 
-            _boundaryWalls.Refresh(_traversal.CurrentTile, _remainingMoves);
+            _boundaryWalls.Refresh(
+                _traversal.CurrentTile,
+                _flow.State == BoardFlowState.CombatResolve ? 0 : _remainingMoves);
         }
 
         private void ClampPlayerInsideTile(BoardTile tile)
@@ -928,6 +1083,434 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     ? assigned
                     : BoardLandingEffectType.None;
                 tile.ApplyLandingEffectPresentation(effect);
+            }
+        }
+
+        private void StageRemotePlayerTwoAtLocalTile()
+        {
+            if (!_traversal.IsInitialized || player == null)
+            {
+                return;
+            }
+
+            var marker = GetRemoteMarker(1);
+            if (marker == null)
+            {
+                return;
+            }
+
+            var forward = Vector3.ProjectOnPlane(
+                player.transform.forward,
+                _traversal.CurrentTile.transform.up);
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = _traversal.CurrentTile.transform.forward;
+            }
+            marker.position = ClampPointInsideTile(
+                player.transform.position + forward.normalized * 1.5f,
+                _traversal.CurrentTile,
+                0.6f);
+            marker.position = new Vector3(
+                marker.position.x,
+                _traversal.CurrentTile.GetRecoveryCenter(1f).y,
+                marker.position.z);
+            _stageTwoPlayerFightAtFinish = false;
+        }
+
+        private void BeginLocalCombatSequence()
+        {
+            ResetLocalCombat();
+            var rankingStats = new PlayerRankingStats[_playerRows.Length];
+            var placements = new List<BoardCombatPlacement>(_playerRows.Length);
+            for (var slot = 0; slot < _playerRows.Length; slot++)
+            {
+                rankingStats[slot] = new PlayerRankingStats(
+                    _keys[slot],
+                    _gold[slot],
+                    _minigameWins[slot]);
+                var tile = GetLocalSimulationTile(slot);
+                if (tile == null)
+                {
+                    continue;
+                }
+                if (double.IsNaN(_arrivalTimes[slot]))
+                {
+                    _arrivalTimes[slot] = _simulationNow + slot * 0.001d;
+                }
+                placements.Add(new BoardCombatPlacement(
+                    slot,
+                    tile.Coordinate,
+                    _arrivalTimes[slot]));
+            }
+
+            var ranks = PlayerRankingRules.Calculate(rankingStats);
+            var groups = BoardCombatRules.BuildInitialQueue(placements, ranks);
+            for (var i = 0; i < groups.Count; i++)
+            {
+                _combatQueue.Enqueue(groups[i]);
+            }
+            BeginNextLocalCombatOrFinish();
+        }
+
+        private void BeginNextLocalCombatOrFinish()
+        {
+            while (_combatQueue.Count > 0 &&
+                   _localFightsResolved < BoardCombatRules.MaximumFightsPerTurn)
+            {
+                var group = _combatQueue.Dequeue();
+                var mask = GetLocalOccupantMask(group.Coordinate);
+                if (!HasMultipleLocalCombatants(mask))
+                {
+                    continue;
+                }
+
+                _localCombatActive = true;
+                _localCombatParticipantMask = mask;
+                _localCombatAliveMask = mask;
+                _localCombatTile = group.Coordinate;
+                _localCombatEndsAt = _flow.ToFlowTime(_simulationNow) +
+                                     BoardCombatRules.FightDurationSeconds;
+                _nextLocalPunchAllowedAt = _flow.ToFlowTime(_simulationNow);
+                _localCombatSequenceIndex++;
+                for (var slot = 0; slot < _combatHealth.Length; slot++)
+                {
+                    _combatEliminatedAt[slot] = double.NaN;
+                    _combatHealth[slot] = IsLocalCombatParticipant(slot)
+                        ? BoardCombatRules.TemporaryHealth
+                        : 0;
+                    _actionStates[slot] = IsLocalCombatParticipant(slot)
+                        ? PlayerBoardActionState.Fighting
+                        : PlayerBoardActionState.Hidden;
+                }
+
+                if (topology != null &&
+                    topology.TryGetTile(_localCombatTile, out var tile) && tile != null)
+                {
+                    cameraDirector?.SetCombatSpectatorFocus(tile.WorldCenter);
+                }
+                var localFighting = IsLocalCombatAlive(0);
+                cameraDirector?.SwitchTo(localFighting
+                    ? GameplayMode.FirstPerson
+                    : GameplayMode.CombatSpectator);
+                ApplyBodyVisibility(localFighting);
+                RefreshBoundaryWalls();
+                SetStatus(localFighting
+                    ? "EDITOR FIGHT: WASD moves in-room. LMB punches P2 for 5 temporary HP."
+                    : "EDITOR SPECTATOR: input locked while the current fight resolves.");
+                return;
+            }
+
+            _localCombatActive = false;
+            _localCombatParticipantMask = 0;
+            _localCombatAliveMask = 0;
+            _localCombatEndsAt = 0d;
+            _combatQueue.Clear();
+            _boundaryWalls?.Hide();
+            _flow.TryCompleteCombat(_simulationNow);
+        }
+
+        private void AdvanceLocalCombat()
+        {
+            if (!_localCombatActive || _paused || _keyShopRevealActive ||
+                _flow.ToFlowTime(_simulationNow) < _localCombatEndsAt)
+            {
+                return;
+            }
+
+            ResolveCurrentLocalCombat();
+        }
+
+        private void TryLocalCombatPunch()
+        {
+            var flowNow = _flow.ToFlowTime(_simulationNow);
+            if (!_localCombatActive || !IsLocalCombatAlive(0) ||
+                flowNow < _nextLocalPunchAllowedAt)
+            {
+                return;
+            }
+
+            _nextLocalPunchAllowedAt = flowNow + BoardCombatRules.PunchCooldownSeconds;
+            var origin = eyePivot != null
+                ? eyePivot.position
+                : player.transform.position + Vector3.up * 0.75f;
+            var direction = eyePivot != null
+                ? eyePivot.forward.normalized
+                : player.transform.forward.normalized;
+            var targetSlot = -1;
+            var bestDistance = float.MaxValue;
+            for (var slot = 1; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
+            {
+                if (!IsLocalCombatAlive(slot))
+                {
+                    continue;
+                }
+                var marker = GetRemoteMarker(slot);
+                if (marker == null)
+                {
+                    continue;
+                }
+                var toTarget = marker.position + Vector3.up * 0.5f - origin;
+                var distance = toTarget.magnitude;
+                if (distance > BoardCombatRules.PunchRange + 0.5f ||
+                    distance >= bestDistance ||
+                    Vector3.Dot(direction, toTarget.normalized) < 0.72f)
+                {
+                    continue;
+                }
+                targetSlot = slot;
+                bestDistance = distance;
+            }
+
+            if (targetSlot < 0)
+            {
+                SetStatus("EDITOR FIGHT: punch missed.");
+                return;
+            }
+
+            var target = GetRemoteMarker(targetSlot);
+            var push = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (push.sqrMagnitude > 0.0001f && target != null && topology != null &&
+                topology.TryGetTile(_localCombatTile, out var combatTile))
+            {
+                target.position = ClampPointInsideTile(
+                    target.position + push.normalized * 0.28f,
+                    combatTile,
+                    0.6f);
+            }
+            ApplyLocalCombatDamage(targetSlot);
+            SetStatus("EDITOR FIGHT: P" + (targetSlot + 1) +
+                      " took 5 temporary HP damage.");
+        }
+
+        private void ApplyLocalCombatDamage(int slot)
+        {
+            if (!IsLocalCombatAlive(slot))
+            {
+                return;
+            }
+
+            _combatHealth[slot] = Mathf.Max(
+                0,
+                _combatHealth[slot] - BoardCombatRules.PunchDamage);
+            if (_combatHealth[slot] > 0)
+            {
+                return;
+            }
+
+            _combatEliminatedAt[slot] = _flow.ToFlowTime(_simulationNow);
+            _localCombatAliveMask = (byte)(_localCombatAliveMask & ~(1 << slot));
+            _actionStates[slot] = PlayerBoardActionState.Hidden;
+            if (slot == 0)
+            {
+                cameraDirector?.SwitchTo(GameplayMode.CombatSpectator);
+                ApplyBodyVisibility(false);
+            }
+            if (BoardCombatRules.IsFightComplete(
+                    _localCombatParticipantMask,
+                    _localCombatAliveMask))
+            {
+                ResolveCurrentLocalCombat();
+            }
+        }
+
+        private void ResolveCurrentLocalCombat()
+        {
+            if (!_localCombatActive)
+            {
+                return;
+            }
+
+            var rankingStats = new PlayerRankingStats[_playerRows.Length];
+            for (var slot = 0; slot < rankingStats.Length; slot++)
+            {
+                rankingStats[slot] = new PlayerRankingStats(
+                    _keys[slot],
+                    _gold[slot],
+                    _minigameWins[slot]);
+            }
+            var overallRanks = PlayerRankingRules.Calculate(rankingStats);
+            var entries = new List<BoardCombatRankingEntry>();
+            for (var slot = 0; slot < _combatHealth.Length; slot++)
+            {
+                if (IsLocalCombatParticipant(slot))
+                {
+                    entries.Add(new BoardCombatRankingEntry(
+                        slot,
+                        _combatHealth[slot],
+                        _combatEliminatedAt[slot],
+                        _arrivalTimes[slot],
+                        overallRanks[slot]));
+                }
+            }
+
+            var standings = BoardCombatRules.ResolveStandings(entries);
+            var chainCandidates = new List<Vector2Int>();
+            for (var i = 0; i < standings.Length; i++)
+            {
+                var standing = standings[i];
+                RetreatLocalSimulationPlayer(
+                    standing.Slot,
+                    standing.RetreatDistance);
+                var tile = GetLocalSimulationTile(standing.Slot);
+                if (tile != null && !chainCandidates.Contains(tile.Coordinate))
+                {
+                    chainCandidates.Add(tile.Coordinate);
+                }
+                if (standing.Slot == 0)
+                {
+                    _pendingLocalCombatProtection = true;
+                }
+                _actionStates[standing.Slot] = PlayerBoardActionState.Hidden;
+                _combatHealth[standing.Slot] = 0;
+            }
+
+            _localCombatActive = false;
+            _localCombatParticipantMask = 0;
+            _localCombatAliveMask = 0;
+            _localCombatEndsAt = 0d;
+            _localFightsResolved++;
+            for (var i = 0; i < chainCandidates.Count; i++)
+            {
+                var mask = GetLocalOccupantMask(chainCandidates[i]);
+                if (HasMultipleLocalCombatants(mask) &&
+                    !LocalQueueContains(chainCandidates[i]))
+                {
+                    _combatQueue.Enqueue(new BoardCombatGroup(
+                        chainCandidates[i],
+                        mask,
+                        _flow.ToFlowTime(_simulationNow),
+                        false));
+                }
+            }
+            BeginNextLocalCombatOrFinish();
+        }
+
+        private void RetreatLocalSimulationPlayer(int slot, int distance)
+        {
+            if (distance <= 0 || topology == null)
+            {
+                return;
+            }
+
+            if (slot == 0 && _traversal.IsInitialized)
+            {
+                var actual = _traversal.Retreat(distance).Length;
+                while (actual < distance &&
+                       TryGetDeterministicIncoming(_traversal.CurrentTile, out var previous))
+                {
+                    _traversal.Relocate(previous);
+                    actual++;
+                }
+                Teleport(_traversal.CurrentTile.GetRecoveryCenter(1f));
+                return;
+            }
+
+            var marker = GetRemoteMarker(slot);
+            var tile = marker != null
+                ? topology.FindContainingTile(marker.position, 0.1f)
+                : null;
+            for (var step = 0; step < distance && tile != null; step++)
+            {
+                if (!TryGetDeterministicIncoming(tile, out tile))
+                {
+                    break;
+                }
+            }
+            if (marker != null && tile != null)
+            {
+                marker.position = tile.GetRecoveryCenter(1f);
+            }
+        }
+
+        private bool TryGetDeterministicIncoming(BoardTile tile, out BoardTile previous)
+        {
+            previous = null;
+            var incoming = topology.GetIncomingGates(tile);
+            for (var i = 0; i < incoming.Count; i++)
+            {
+                var candidate = incoming[i] != null ? incoming[i].Source : null;
+                if (candidate == null || previous != null &&
+                    CompareCoordinates(candidate.Coordinate, previous.Coordinate) >= 0)
+                {
+                    continue;
+                }
+                previous = candidate;
+            }
+            return previous != null;
+        }
+
+        private byte GetLocalOccupantMask(Vector2Int coordinate)
+        {
+            byte mask = 0;
+            for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
+            {
+                var tile = GetLocalSimulationTile(slot);
+                if (tile != null && tile.Coordinate == coordinate)
+                {
+                    mask = (byte)(mask | (1 << slot));
+                }
+            }
+            return mask;
+        }
+
+        private bool LocalQueueContains(Vector2Int coordinate)
+        {
+            foreach (var group in _combatQueue)
+            {
+                if (group.Coordinate == coordinate)
+                {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        private bool IsLocalCombatParticipant(int slot)
+        {
+            return slot >= 0 && slot < BoardFlowStateMachine.RequiredPlayerCount &&
+                   (_localCombatParticipantMask & (1 << slot)) != 0;
+        }
+
+        private bool IsLocalCombatAlive(int slot)
+        {
+            return slot >= 0 && slot < BoardFlowStateMachine.RequiredPlayerCount &&
+                   (_localCombatAliveMask & (1 << slot)) != 0;
+        }
+
+        private static bool HasMultipleLocalCombatants(byte mask)
+        {
+            return mask != 0 && (mask & (mask - 1)) != 0;
+        }
+
+        private static int CompareCoordinates(Vector2Int left, Vector2Int right)
+        {
+            var x = left.x.CompareTo(right.x);
+            return x != 0 ? x : left.y.CompareTo(right.y);
+        }
+
+        private Transform GetRemoteMarker(int slot)
+        {
+            if (slot <= 0 || slot >= BoardFlowStateMachine.RequiredPlayerCount)
+            {
+                return null;
+            }
+            var marker = GameObject.Find("Simulated Remote Player " + (slot + 1));
+            return marker != null ? marker.transform : null;
+        }
+
+        private void ResetLocalCombat()
+        {
+            _combatQueue.Clear();
+            _localCombatActive = false;
+            _localCombatParticipantMask = 0;
+            _localCombatAliveMask = 0;
+            _localCombatEndsAt = 0d;
+            _localCombatSequenceIndex = 0;
+            _localFightsResolved = 0;
+            for (var slot = 0; slot < _combatHealth.Length; slot++)
+            {
+                _combatHealth[slot] = 0;
+                _combatEliminatedAt[slot] = double.NaN;
             }
         }
 
@@ -1476,8 +2059,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             SetActive(_resultPanel,
                 _flow.State == BoardFlowState.SkippedResult && !globallyPaused);
             SetActive(_reticle,
-                _flow.State == BoardFlowState.Action &&
-                !_flow.ActionClock.IsChoicePending &&
+                ((_flow.State == BoardFlowState.Action &&
+                  !_flow.ActionClock.IsChoicePending) ||
+                 (_flow.State == BoardFlowState.CombatResolve &&
+                  _localCombatActive && IsLocalCombatAlive(0))) &&
                 !globallyPaused && !shopOpen);
 
             SetText(_turnText, "TURN " + _flow.CurrentTurn);
@@ -1486,11 +2071,18 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     ? "RECONNECT PAUSE"
                     : _keyShopRevealActive
                         ? "KEY SHOP MOVING"
+                        : _flow.State == BoardFlowState.CombatResolve &&
+                          _localCombatActive
+                            ? "FIGHT " + _localCombatSequenceIndex +
+                              " / " + (_localCombatSequenceIndex + _combatQueue.Count)
                         : PhaseLabel(_flow.State));
             var remaining = _keyShopRevealActive
                 ? Math.Max(0d, _keyShopRevealEndsAt - _simulationNow)
                 : _flow.State == BoardFlowState.Action
                     ? _flow.GetActionRemaining(_simulationNow)
+                    : _flow.State == BoardFlowState.CombatResolve
+                        ? Math.Max(0d, _localCombatEndsAt -
+                          _flow.ToFlowTime(_simulationNow))
                     : _flow.GetStateRemaining(_simulationNow);
             SetText(_phaseTimerText,
                 _flow.State == BoardFlowState.MinigameIntroReady && !_keyShopRevealActive
@@ -1499,16 +2091,35 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             SetText(_choiceText, _flow.ActionClock.IsChoicePending
                 ? "CHOOSE  " + FormatClock(_flow.GetChoiceRemaining(_simulationNow))
                 : "CHOICE  " + _flow.ActionClock.ChoiceResolution.ToString().ToUpperInvariant());
-            var shield = _flow.GetOpeningProtectionRemaining(_simulationNow);
+            var shield = Math.Max(
+                _flow.GetOpeningProtectionRemaining(_simulationNow),
+                Math.Max(
+                    0d,
+                    _personalProtectionEndsAtFlowTime -
+                    _flow.ToFlowTime(_simulationNow)));
             SetText(_shieldText, shield > 0d ? "SHIELD  " + shield.ToString("0.0") + "s" : "SHIELD  OFF");
-            SetText(_diceText, _roll > 0
+            SetText(_diceText, _flow.State == BoardFlowState.CombatResolve
+                ? IsLocalCombatAlive(0) ? "LMB  PUNCH" : "FIGHT  SPECTATING"
+                : _roll > 0
                 ? "DICE  " + _roll
                 : _flow.ActionClock.IsChoicePending
                     ? "DICE  CHOOSE ITEM FIRST"
                     : "AIM AT WORLD DIE / RMB ROLL");
-            SetText(_movesText, _roll > 0 && _remainingMoves == 0
-                ? "MOVES  0  /  FREE MOVE IN ROOM"
-                : "MOVES  " + _remainingMoves);
+            var movementLabel = _flow.State == BoardFlowState.CombatResolve
+                ? IsLocalCombatAlive(0) ? "WASD  MOVE" : "INPUT  LOCKED"
+                : _roll > 0 && _remainingMoves == 0
+                ? "MOVES  0 / FREE IN ROOM"
+                : "MOVES  " + _remainingMoves;
+            var keyboard = Keyboard.current;
+            var quietWalkHeld = keyboard != null && keyboard.leftCtrlKey.isPressed;
+            SetText(_movesText, movementLabel +
+                ((_flow.State == BoardFlowState.Action ||
+                  _flow.State == BoardFlowState.CombatResolve) &&
+                 movementLabel != "INPUT  LOCKED"
+                    ? quietWalkHeld
+                        ? "  /  QUIET WALK 6m"
+                        : "  /  LCTRL QUIET 6m"
+                    : string.Empty));
             SetText(_ammoText, _selectedSlot >= 0 ? "CHARGE  1\nLMB  USE ITEM" : "CHARGE  --");
             SetText(_speedButtonLabel, "FLOW SPEED  x" + _simulationSpeed.ToString("0"));
 
@@ -1539,8 +2150,15 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                         : new Color(0.055f, 0.085f, 0.13f, 0.94f);
                 }
 
-                var maxHealth = Mathf.Max(1, _maxHealth[playerIndex]);
-                var healthRatio = Mathf.Clamp01(_currentHealth[playerIndex] / (float)maxHealth);
+                var showCombatHealth = _flow.State == BoardFlowState.CombatResolve &&
+                                       IsLocalCombatParticipant(playerIndex);
+                var maxHealth = showCombatHealth
+                    ? BoardCombatRules.TemporaryHealth
+                    : Mathf.Max(1, _maxHealth[playerIndex]);
+                var shownHealth = showCombatHealth
+                    ? _combatHealth[playerIndex]
+                    : _currentHealth[playerIndex];
+                var healthRatio = Mathf.Clamp01(shownHealth / (float)maxHealth);
                 if (_playerHealthFills[playerIndex] != null)
                 {
                     _playerHealthFills[playerIndex].fillAmount = healthRatio;
@@ -1551,16 +2169,21 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                             : new Color(0.95f, 0.2f, 0.2f, 1f);
                 }
                 SetText(_playerHealthTexts[playerIndex],
-                    _currentHealth[playerIndex] + "/" + maxHealth);
+                    shownHealth + "/" + maxHealth);
                 SetText(_playerCurrencyTexts[playerIndex],
                     "KEY  " + _keys[playerIndex] + "    GOLD  " + _gold[playerIndex]);
                 var actionState = globallyPaused
                     ? PlayerBoardActionState.Hidden
                     : _actionStates[playerIndex];
-                SetText(_playerActionIcons[playerIndex], ActionIconLabel(actionState));
+                var combatOut = showCombatHealth && !IsLocalCombatAlive(playerIndex);
+                SetText(_playerActionIcons[playerIndex], combatOut
+                    ? "OUT"
+                    : ActionIconLabel(actionState));
                 if (_playerActionIcons[playerIndex] != null)
                 {
-                    _playerActionIcons[playerIndex].color = ActionIconColor(actionState);
+                    _playerActionIcons[playerIndex].color = combatOut
+                        ? new Color(1f, 0.25f, 0.2f)
+                        : ActionIconColor(actionState);
                 }
             }
 
@@ -1590,7 +2213,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             cameraDirector?.SetUiPointerVisible(
                 globallyPaused || shopOpen || _editorPointerVisible ||
-                _flow.State != BoardFlowState.Action ||
+                (_flow.State != BoardFlowState.Action &&
+                 !(_flow.State == BoardFlowState.CombatResolve &&
+                   _localCombatActive && IsLocalCombatAlive(0))) ||
                 _flow.ActionClock.IsChoicePending);
         }
 
@@ -1617,6 +2242,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _noItemButton = FindNamedComponent<Button>("NoItemButton");
             _readyButton = FindNamedComponent<Button>("ReadyButton");
             _finishActionButton = FindNamedComponent<Button>("EditorFinishActionButton");
+            _stageFightButton = FindNamedComponent<Button>("EditorStageFightButton");
             _speedButton = FindNamedComponent<Button>("EditorSpeedButton");
             _pauseButton = FindNamedComponent<Button>("EditorPauseButton");
             _damagePlayerButton = FindNamedComponent<Button>("EditorDamagePlayerButton");
@@ -1663,6 +2289,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _noItemButton?.onClick.AddListener(ChooseNoItem);
             _readyButton?.onClick.AddListener(ReadyAllAndSkip);
             _finishActionButton?.onClick.AddListener(FinishActionForAllPlayers);
+            _stageFightButton?.onClick.AddListener(StageTwoPlayerFight);
             _speedButton?.onClick.AddListener(CycleSimulationSpeed);
             _pauseButton?.onClick.AddListener(TogglePause);
             _damagePlayerButton?.onClick.AddListener(DamageLocalPlayer);
@@ -1684,6 +2311,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _noItemButton?.onClick.RemoveListener(ChooseNoItem);
             _readyButton?.onClick.RemoveListener(ReadyAllAndSkip);
             _finishActionButton?.onClick.RemoveListener(FinishActionForAllPlayers);
+            _stageFightButton?.onClick.RemoveListener(StageTwoPlayerFight);
             _speedButton?.onClick.RemoveListener(CycleSimulationSpeed);
             _pauseButton?.onClick.RemoveListener(TogglePause);
             _damagePlayerButton?.onClick.RemoveListener(DamageLocalPlayer);
@@ -1716,6 +2344,31 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (wasEnabled)
             {
                 player.enabled = true;
+            }
+            _localFootstepCadence.Reset();
+        }
+
+        private void RecordLocalFootsteps(
+            Vector3 previousPosition,
+            Vector2 movementInput,
+            bool quietWalking)
+        {
+            if (!FootstepRules.HasMovementIntent(movementInput) ||
+                !player.isGrounded)
+            {
+                return;
+            }
+
+            var delta = player.transform.position - previousPosition;
+            delta.y = 0f;
+            var stepCount = _localFootstepCadence.RecordMovement(
+                delta.magnitude,
+                quietWalking);
+            for (var step = 0; step < stepCount; step++)
+            {
+                _localFootstepEmitter?.PresentFootstep(
+                    player.transform.position,
+                    quietWalking);
             }
         }
 
@@ -1775,6 +2428,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 case BoardFlowState.Descending: return "DESCENDING";
                 case BoardFlowState.Action: return "ACTION";
                 case BoardFlowState.AscendingResolve: return "ASCENDING / RESOLVE";
+                case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
                 case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
                 case BoardFlowState.MinigameIntroReady: return "MINIGAME READY";
                 case BoardFlowState.SkippedResult: return "RESULT";

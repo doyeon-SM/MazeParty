@@ -315,7 +315,12 @@ namespace MazeParty.Gameplay.Testbed
             var selectionOpen = _phaseClock.IsChoicePending;
             var directInputAllowed = !selectionOpen && !_manualPointerRelease;
             var allowMouseLook = cameraDirector.ActiveMode == GameplayMode.FirstPerson;
-            playerMotor.Tick(inputSource.Move, inputSource.Look, directInputAllowed, allowMouseLook);
+            playerMotor.Tick(
+                inputSource.Move,
+                inputSource.Look,
+                inputSource.WalkHeld,
+                directInputAllowed,
+                allowMouseLook);
 
             if (!directInputAllowed || IsPointerOverUi())
                 return;
@@ -456,7 +461,8 @@ namespace MazeParty.Gameplay.Testbed
                 _manualPointerRelease = false;
 
             cameraDirector.SetUiPointerVisible(_phaseClock.IsChoicePending || _manualPointerRelease);
-            SetStatus("CAMERA MODE: " + ModeLabel(mode) + ". WASD movement remains active.");
+            SetStatus("CAMERA MODE: " + ModeLabel(mode) +
+                      ". WASD move; hold LCTRL for quiet walk (6m sound radius).");
         }
 
         private void ApplySelectionVisibility()

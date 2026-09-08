@@ -1289,25 +1289,27 @@ namespace MazeParty.Editor
         private static void CreateEditorTools(Transform canvas, Font font)
         {
             var panel = CreatePanel("Editor Flow Tools", canvas, new Vector2(1f, 1f),
-                new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 430f),
+                new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 480f),
                 new Vector2(1f, 1f), new Color(0.08f, 0.035f, 0.11f, 0.95f));
             CreateText("Editor Tools Title", panel.transform, "EDITOR LOCAL TOOLS", font, 20,
                 new Vector2(0f, -28f), new Vector2(270f, 32f), TextAnchor.MiddleCenter);
             CreateText("Editor Tools Help", panel.transform,
                 "No network required. Other players are simulated.\nTAB toggles the pointer during action.", font, 14,
                 new Vector2(0f, -63f), new Vector2(270f, 46f), TextAnchor.MiddleCenter);
-            CreateButton("EditorFinishActionButton", panel.transform, "FINISH ACTION (ALL ARRIVED)", font,
+            CreateButton("EditorStageFightButton", panel.transform, "STAGE P1 / P2 FIGHT", font,
                 new Vector2(0f, -105f), new Vector2(270f, 42f));
-            CreateButton("EditorSpeedButton", panel.transform, "FLOW SPEED  x1", font,
+            CreateButton("EditorFinishActionButton", panel.transform, "FINISH ACTION (ALL ARRIVED)", font,
                 new Vector2(0f, -154f), new Vector2(270f, 42f));
-            CreateButton("EditorPauseButton", panel.transform, "PAUSE / RESUME MODEL", font,
+            CreateButton("EditorSpeedButton", panel.transform, "FLOW SPEED  x1", font,
                 new Vector2(0f, -203f), new Vector2(270f, 42f));
-            CreateButton("EditorDamagePlayerButton", panel.transform, "DAMAGE P1  -20 HP", font,
+            CreateButton("EditorPauseButton", panel.transform, "PAUSE / RESUME MODEL", font,
                 new Vector2(0f, -252f), new Vector2(270f, 42f));
-            CreateButton("EditorAddGoldButton", panel.transform, "ADD P1 GOLD  +10", font,
+            CreateButton("EditorDamagePlayerButton", panel.transform, "DAMAGE P1 / COMBAT HIT", font,
                 new Vector2(0f, -301f), new Vector2(270f, 42f));
-            CreateButton("EditorBuyKeyButton", panel.transform, "BUY KEY  -20 GOLD", font,
+            CreateButton("EditorAddGoldButton", panel.transform, "ADD P1 GOLD  +10", font,
                 new Vector2(0f, -350f), new Vector2(270f, 42f));
+            CreateButton("EditorBuyKeyButton", panel.transform, "BUY KEY  -20 GOLD", font,
+                new Vector2(0f, -399f), new Vector2(270f, 42f));
         }
 
         private static GameObject FindDescendant(Transform root, string objectName)

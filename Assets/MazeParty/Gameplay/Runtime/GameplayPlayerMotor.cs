@@ -13,15 +13,22 @@ namespace MazeParty.Gameplay
         [SerializeField] private Transform lookPivot;
 
         private CharacterController _controller;
+        private FootstepAudioEmitter _footstepEmitter;
+        private readonly FootstepCadenceTracker _footstepCadence =
+            new FootstepCadenceTracker();
         private Vector3 _externalVelocity;
         private float _verticalVelocity;
         private float _pitch;
 
         public Vector3 ExternalVelocity => _externalVelocity;
+        public bool IsWalkingQuietly { get; private set; }
 
         private void Awake()
         {
             _controller = GetComponent<CharacterController>();
+            _footstepEmitter = GetComponent<FootstepAudioEmitter>();
+            if (_footstepEmitter == null)
+                _footstepEmitter = gameObject.AddComponent<FootstepAudioEmitter>();
             if (lookPivot == null)
                 lookPivot = transform;
         }
@@ -33,6 +40,16 @@ namespace MazeParty.Gameplay
 
         public void Tick(Vector2 move, Vector2 look, bool allowDirectInput, bool allowLook)
         {
+            Tick(move, look, false, allowDirectInput, allowLook);
+        }
+
+        public void Tick(
+            Vector2 move,
+            Vector2 look,
+            bool quietWalkHeld,
+            bool allowDirectInput,
+            bool allowLook)
+        {
             if (_controller == null)
                 _controller = GetComponent<CharacterController>();
 
@@ -43,11 +60,22 @@ namespace MazeParty.Gameplay
                 if (localMove.sqrMagnitude > 1f)
                     localMove.Normalize();
 
-                var worldMove = transform.TransformDirection(localMove) * moveSpeed;
+                IsWalkingQuietly = quietWalkHeld &&
+                                   FootstepRules.HasMovementIntent(move);
+                var worldMove = transform.TransformDirection(localMove) *
+                                (moveSpeed * FootstepRules.SpeedMultiplier(
+                                    IsWalkingQuietly));
+                var previousPosition = transform.position;
                 MoveCharacter(worldMove, deltaTime);
+                RecordFootstepDistance(
+                    previousPosition,
+                    transform.position,
+                    FootstepRules.HasMovementIntent(move),
+                    IsWalkingQuietly);
             }
             else
             {
+                IsWalkingQuietly = false;
                 MoveCharacter(Vector3.zero, deltaTime);
             }
 
@@ -71,6 +99,8 @@ namespace MazeParty.Gameplay
             _externalVelocity = Vector3.zero;
             _verticalVelocity = 0f;
             _pitch = 0f;
+            IsWalkingQuietly = false;
+            _footstepCadence.Reset();
             if (lookPivot != null)
                 lookPivot.localRotation = Quaternion.identity;
         }
@@ -95,6 +125,26 @@ namespace MazeParty.Gameplay
             transform.Rotate(Vector3.up, look.x * mouseSensitivity, Space.World);
             _pitch = Mathf.Clamp(_pitch - look.y * mouseSensitivity, -85f, 85f);
             lookPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+        }
+
+        private void RecordFootstepDistance(
+            Vector3 previousPosition,
+            Vector3 currentPosition,
+            bool hasMovementIntent,
+            bool quietWalking)
+        {
+            if (!hasMovementIntent || !_controller.isGrounded)
+                return;
+
+            var delta = currentPosition - previousPosition;
+            delta.y = 0f;
+            var stepCount = _footstepCadence.RecordMovement(
+                delta.magnitude,
+                quietWalking);
+            for (var step = 0; step < stepCount; step++)
+            {
+                _footstepEmitter?.PresentFootstep(transform.position, quietWalking);
+            }
         }
 
         private void OnControllerColliderHit(ControllerColliderHit hit)

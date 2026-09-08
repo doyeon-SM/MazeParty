@@ -89,6 +89,46 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void TraversalHistory_RetreatsInReverseArrivalOrder()
+        {
+            var start = CreateTile(
+                "Start",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            var middle = CreateTile(
+                "Middle",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * BoardTile.RoomSize);
+            var end = CreateTile(
+                "End",
+                Vector2Int.right * 2,
+                BoardTileType.Normal,
+                Vector3.right * BoardTile.RoomSize * 2f);
+            var firstGate = CreateGate(start, middle);
+            var secondGate = CreateGate(middle, end);
+            var controller = CreateController(new Vector3(4.51f, 0f, 0f));
+            var traversal = CreateTraversal(start, 2);
+
+            Assert.That(
+                firstGate.TryTraverse(traversal, controller),
+                Is.EqualTo(BoardGateTraversalOutcome.Committed));
+            controller.transform.position = new Vector3(12.51f, 0f, 0f);
+            Assert.That(
+                secondGate.TryTraverse(traversal, controller),
+                Is.EqualTo(BoardGateTraversalOutcome.Committed));
+
+            var retreatPath = traversal.Retreat(2);
+
+            Assert.That(retreatPath, Is.EqualTo(new[] { middle, start }));
+            Assert.That(traversal.CurrentTile, Is.SameAs(start));
+            Assert.That(traversal.RemainingMoves, Is.Zero);
+            Assert.That(start.IsOccupiedBy(traversal), Is.True);
+            Assert.That(end.IsOccupiedBy(traversal), Is.False);
+        }
+
+        [Test]
         public void Gate_CrossingCommit_DoesNotDependOnWhetherMovementWasDirectOrPush()
         {
             var source = CreateTile("Source", Vector2Int.zero, BoardTileType.Start, Vector3.zero);

@@ -366,8 +366,12 @@ namespace MazeParty.Multiplayer
                 match.FlowState == BoardFlowState.SkippedResult && !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
             SetActive(_reticle,
-                match.FlowState == BoardFlowState.Action && !choicePending &&
-                !match.IsGlobalSimulationPaused && !IsItemShopOpen);
+                ((match.FlowState == BoardFlowState.Action && !choicePending &&
+                  !IsItemShopOpen) ||
+                 (match.IsCombatPhase && _localAvatar != null &&
+                  match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
+                  match.IsCombatAlive(_localAvatar.AssignedSlot))) &&
+                !match.IsGlobalSimulationPaused);
 
             if (_reconnectText != null)
             {
@@ -381,12 +385,17 @@ namespace MazeParty.Multiplayer
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsKeyShopRevealActive
                 ? "KEY SHOP MOVING"
-                : PhaseLabel(match.FlowState));
+                : match.IsCombatPhase && match.IsCombatActive
+                    ? "FIGHT " + match.CombatSequenceIndex +
+                      "  /  " + (match.CombatSequenceIndex + match.CombatQueueCount)
+                    : PhaseLabel(match.FlowState));
 
             var remaining = match.IsKeyShopRevealActive
                 ? match.KeyShopRevealRemaining
                 : match.FlowState == BoardFlowState.Action
                     ? match.ActionRemaining
+                    : match.IsCombatPhase
+                        ? match.CombatRemaining
                     : match.StateRemaining;
             SetText(_phaseTimerText,
                 HasCountdown(match.FlowState) ? FormatClock(remaining) : "--:--");
@@ -399,10 +408,15 @@ namespace MazeParty.Multiplayer
 
             if (_shieldText != null)
             {
-                _shieldText.text = match.ShieldRemaining > 0d
-                    ? "SHIELD  " + match.ShieldRemaining.ToString("0.0") + "s"
+                var shieldRemaining = Math.Max(
+                    match.ShieldRemaining,
+                    _localAvatar != null
+                        ? _localAvatar.PersonalItemProtectionRemaining
+                        : 0d);
+                _shieldText.text = shieldRemaining > 0d
+                    ? "SHIELD  " + shieldRemaining.ToString("0.0") + "s"
                     : "SHIELD  OFF";
-                _shieldText.color = match.ShieldRemaining > 0d
+                _shieldText.color = shieldRemaining > 0d
                     ? new Color(0.25f, 1f, 0.75f)
                     : new Color(1f, 0.45f, 0.45f);
             }
@@ -414,6 +428,20 @@ namespace MazeParty.Multiplayer
             {
                 SetText(_diceText, "DICE  WAITING FOR PLAYER");
                 SetText(_movesText, "MOVES  --");
+                return;
+            }
+
+            if (match.IsCombatPhase)
+            {
+                var isFighting = match.IsCombatActive &&
+                                 match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
+                                 match.IsCombatAlive(_localAvatar.AssignedSlot);
+                SetText(_diceText, isFighting ? "LMB  PUNCH" : "FIGHT  SPECTATING");
+                SetText(_movesText, isFighting
+                    ? _localAvatar.IsQuietWalking
+                        ? "QUIET WALK  6m"
+                        : "WASD  MOVE / LCTRL QUIET 6m"
+                    : "INPUT  LOCKED");
                 return;
             }
 
@@ -429,9 +457,14 @@ namespace MazeParty.Multiplayer
                 : _localAvatar.HasResolvedItemChoice
                         ? "RMB  AIM AT YOUR DIE TO ROLL"
                     : "DICE  CHOOSE ITEM FIRST");
-            SetText(_movesText, _localAvatar.HasRolled && _localAvatar.LocalRemainingMoves == 0
-                ? "MOVES  0  /  FREE MOVE IN ROOM"
-                : "MOVES  " + _localAvatar.LocalRemainingMoves);
+            var movementLabel = _localAvatar.HasRolled &&
+                                _localAvatar.LocalRemainingMoves == 0
+                ? "MOVES  0 / FREE IN ROOM"
+                : "MOVES  " + _localAvatar.LocalRemainingMoves;
+            SetText(_movesText, movementLabel +
+                (_localAvatar.IsQuietWalking
+                    ? "  /  QUIET WALK 6m"
+                    : "  /  LCTRL QUIET 6m"));
         }
 
         private void RefreshInventory()
@@ -503,8 +536,14 @@ namespace MazeParty.Multiplayer
                         : new Color(0.055f, 0.085f, 0.13f, 0.94f);
                 }
 
-                var maxHealth = avatar != null ? Mathf.Max(1, avatar.MaxHealth) : 1;
-                var currentHealth = avatar != null ? avatar.CurrentHealth : 0;
+                var showCombatHealth = avatar != null && match.IsCombatPhase &&
+                                       match.IsCombatParticipant(slot);
+                var maxHealth = showCombatHealth
+                    ? BoardCombatRules.TemporaryHealth
+                    : avatar != null ? Mathf.Max(1, avatar.MaxHealth) : 1;
+                var currentHealth = showCombatHealth
+                    ? avatar.CombatHealth
+                    : avatar != null ? avatar.CurrentHealth : 0;
                 var healthRatio = avatar != null
                     ? Mathf.Clamp01(currentHealth / (float)maxHealth)
                     : 0f;
@@ -530,10 +569,15 @@ namespace MazeParty.Multiplayer
                 var actionState = avatar != null && isPresent && !match.IsGlobalSimulationPaused
                     ? avatar.ActionState
                     : PlayerBoardActionState.Hidden;
-                SetText(_playerActionIcons[slot], ActionIconLabel(actionState));
+                var isCombatOut = showCombatHealth && !match.IsCombatAlive(slot);
+                SetText(_playerActionIcons[slot], isCombatOut
+                    ? "OUT"
+                    : ActionIconLabel(actionState));
                 if (_playerActionIcons[slot] != null)
                 {
-                    _playerActionIcons[slot].color = ActionIconColor(actionState);
+                    _playerActionIcons[slot].color = isCombatOut
+                        ? new Color(1f, 0.25f, 0.2f)
+                        : ActionIconColor(actionState);
                 }
             }
         }
@@ -672,9 +716,14 @@ namespace MazeParty.Multiplayer
 
             var choicePending = _localAvatar != null &&
                                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending;
+            var localCombatActive = match.IsCombatPhase && match.IsCombatActive &&
+                                    _localAvatar != null &&
+                                    match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
+                                    match.IsCombatAlive(_localAvatar.AssignedSlot);
             var pointerVisible = match.IsReconnectPaused ||
                                  match.IsKeyShopRevealActive ||
-                                 match.FlowState != BoardFlowState.Action ||
+                                 (match.FlowState != BoardFlowState.Action &&
+                                  !localCombatActive) ||
                                  choicePending || IsItemShopOpen;
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
@@ -719,8 +768,16 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve:
                     SetText(_statusText, "Input closed. Camera rising while pending effects settle.");
                     break;
+                case BoardFlowState.CombatResolve:
+                    var isFighting = match.IsCombatActive && _localAvatar != null &&
+                                     match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
+                                     match.IsCombatAlive(_localAvatar.AssignedSlot);
+                    SetText(_statusText, isFighting
+                        ? "FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage."
+                        : "SPECTATING: the camera follows the current fight room. Input is locked.");
+                    break;
                 case BoardFlowState.LandingEffectResolve:
-                    SetText(_statusText, "Combat completion placeholder resolved. Applying landing gold effects in player order.");
+                    SetText(_statusText, "All regular and chain fights resolved. Applying final landing effects in player order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     SetText(_statusText, "Minigame implementation is pending. All four players press READY to skip.");
@@ -800,6 +857,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.Descending: return "DESCENDING";
                 case BoardFlowState.Action: return "FIRST-PERSON ACTION";
                 case BoardFlowState.AscendingResolve: return "RESOLVING / ASCENDING";
+                case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
                 case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
                 case BoardFlowState.MinigameIntroReady: return "MINIGAME READY (DEV SKIP)";
                 case BoardFlowState.SkippedResult: return "RESULT PLACEHOLDER";

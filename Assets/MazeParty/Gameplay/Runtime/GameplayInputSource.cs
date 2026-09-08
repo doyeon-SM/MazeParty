@@ -11,12 +11,14 @@ namespace MazeParty.Gameplay
     {
         private InputAction _move;
         private InputAction _look;
+        private InputAction _walk;
         private InputAction _primary;
         private InputAction _secondary;
         private InputAction _cancel;
 
         public Vector2 Move => _move != null ? _move.ReadValue<Vector2>() : Vector2.zero;
         public Vector2 Look => _look != null ? _look.ReadValue<Vector2>() : Vector2.zero;
+        public bool WalkHeld => _walk != null && _walk.IsPressed();
         public bool PrimaryPressed => _primary != null && _primary.WasPressedThisFrame();
         public bool SecondaryPressed => _secondary != null && _secondary.WasPressedThisFrame();
         public bool CancelPressed => _cancel != null && _cancel.WasPressedThisFrame();
@@ -31,6 +33,7 @@ namespace MazeParty.Gameplay
             CreateActions();
             _move.Enable();
             _look.Enable();
+            _walk.Enable();
             _primary.Enable();
             _secondary.Enable();
             _cancel.Enable();
@@ -40,6 +43,7 @@ namespace MazeParty.Gameplay
         {
             _move?.Disable();
             _look?.Disable();
+            _walk?.Disable();
             _primary?.Disable();
             _secondary?.Disable();
             _cancel?.Disable();
@@ -49,6 +53,7 @@ namespace MazeParty.Gameplay
         {
             _move?.Dispose();
             _look?.Dispose();
+            _walk?.Dispose();
             _primary?.Dispose();
             _secondary?.Dispose();
             _cancel?.Dispose();
@@ -67,6 +72,7 @@ namespace MazeParty.Gameplay
                 .With("Right", "<Keyboard>/d");
 
             _look = new InputAction("Look", InputActionType.Value, "<Mouse>/delta");
+            _walk = new InputAction("Quiet Walk", InputActionType.Button, "<Keyboard>/leftCtrl");
             _primary = new InputAction("Primary", InputActionType.Button, "<Mouse>/leftButton");
             _secondary = new InputAction("Secondary", InputActionType.Button, "<Mouse>/rightButton");
             _cancel = new InputAction("Cancel", InputActionType.Button, "<Keyboard>/escape");

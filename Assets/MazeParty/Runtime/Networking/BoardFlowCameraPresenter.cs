@@ -13,6 +13,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameplayCameraDirector cameraDirector;
 
         private NetworkPlayerAvatar _localAvatar;
+        private BoardTopology _topology;
         private int _observedRevision = -1;
         private bool _wasReconnectPaused;
         private bool _hasObservedState;
@@ -54,9 +55,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RefreshCombatSpectatorFocus(match);
             var targetMode = match.IsKeyShopRevealActive
                 ? GameplayMode.BoardTopDown
-                : ModeFor(match.FlowState);
+                : ModeFor(match, _localAvatar);
             if (!_hasObservedState || _wasReconnectPaused)
             {
                 cameraDirector.SnapTo(targetMode, _localAvatar != null ? _localAvatar.EyePivot : null);
@@ -111,11 +113,43 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static GameplayMode ModeFor(BoardFlowState state)
+        private void RefreshCombatSpectatorFocus(NetworkMatchState match)
         {
-            return state == BoardFlowState.Descending || state == BoardFlowState.Action
-                ? GameplayMode.FirstPerson
-                : GameplayMode.BoardTopDown;
+            if (!match.IsCombatPhase || !match.IsCombatActive)
+            {
+                return;
+            }
+
+            if (_topology == null)
+            {
+                _topology = FindAnyObjectByType<BoardTopology>();
+            }
+
+            if (_topology != null &&
+                _topology.TryGetTile(match.CombatTile, out var tile) && tile != null)
+            {
+                cameraDirector.SetCombatSpectatorFocus(tile.WorldCenter);
+            }
+        }
+
+        private static GameplayMode ModeFor(
+            NetworkMatchState match,
+            NetworkPlayerAvatar localAvatar)
+        {
+            if (match.FlowState == BoardFlowState.CombatResolve && match.IsCombatActive)
+            {
+                return localAvatar != null &&
+                       match.IsCombatParticipant(localAvatar.AssignedSlot) &&
+                       match.IsCombatAlive(localAvatar.AssignedSlot) &&
+                       localAvatar.IsCombatAlive
+                    ? GameplayMode.FirstPerson
+                    : GameplayMode.CombatSpectator;
+            }
+
+            return match.FlowState == BoardFlowState.Descending ||
+                   match.FlowState == BoardFlowState.Action
+                    ? GameplayMode.FirstPerson
+                    : GameplayMode.BoardTopDown;
         }
     }
 }

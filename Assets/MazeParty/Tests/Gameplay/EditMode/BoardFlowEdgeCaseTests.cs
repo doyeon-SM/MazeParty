@@ -15,10 +15,12 @@ namespace MazeParty.Gameplay.Tests
 
             flow.Tick(236d);
             flow.Tick(241d);
+            Assert.That(flow.TryCompleteCombat(241d), Is.True);
+            flow.Tick(245d);
             Assert.That(flow.TrySkipMinigame(250d), Is.True);
             flow.Tick(253d);
 
-            Assert.That(transitions, Has.Count.EqualTo(7));
+            Assert.That(transitions, Has.Count.EqualTo(8));
             AssertTransition(
                 transitions[0],
                 BoardFlowState.TurnOverview,
@@ -40,23 +42,29 @@ namespace MazeParty.Gameplay.Tests
             AssertTransition(
                 transitions[3],
                 BoardFlowState.AscendingResolve,
-                BoardFlowState.LandingEffectResolve,
+                BoardFlowState.CombatResolve,
                 1,
                 241d);
             AssertTransition(
                 transitions[4],
+                BoardFlowState.CombatResolve,
+                BoardFlowState.LandingEffectResolve,
+                1,
+                241d);
+            AssertTransition(
+                transitions[5],
                 BoardFlowState.LandingEffectResolve,
                 BoardFlowState.MinigameIntroReady,
                 1,
                 245d);
             AssertTransition(
-                transitions[5],
+                transitions[6],
                 BoardFlowState.MinigameIntroReady,
                 BoardFlowState.SkippedResult,
                 1,
                 250d);
             AssertTransition(
-                transitions[6],
+                transitions[7],
                 BoardFlowState.SkippedResult,
                 BoardFlowState.TurnOverview,
                 2,

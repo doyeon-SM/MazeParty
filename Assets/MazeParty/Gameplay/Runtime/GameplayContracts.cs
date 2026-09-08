@@ -6,6 +6,7 @@ namespace MazeParty.Gameplay
     {
         FirstPerson,
         BoardTopDown,
+        CombatSpectator,
         Minigame
     }
 
@@ -52,6 +53,7 @@ namespace MazeParty.Gameplay
     {
         Vector2 Move { get; }
         Vector2 Look { get; }
+        bool WalkHeld { get; }
         bool PrimaryPressed { get; }
         bool SecondaryPressed { get; }
         bool CancelPressed { get; }

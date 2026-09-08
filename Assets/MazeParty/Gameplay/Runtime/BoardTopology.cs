@@ -14,6 +14,8 @@ namespace MazeParty.Gameplay
             new Dictionary<Vector2Int, BoardTile>();
         private readonly Dictionary<BoardTile, List<BoardGate>> _outgoingGates =
             new Dictionary<BoardTile, List<BoardGate>>();
+        private readonly Dictionary<BoardTile, List<BoardGate>> _incomingGates =
+            new Dictionary<BoardTile, List<BoardGate>>();
         private readonly HashSet<BoardTile> _registeredTiles = new HashSet<BoardTile>();
 
         public IReadOnlyList<BoardTile> Tiles => tiles;
@@ -35,6 +37,7 @@ namespace MazeParty.Gameplay
         {
             _tilesByCoordinate.Clear();
             _outgoingGates.Clear();
+            _incomingGates.Clear();
             _registeredTiles.Clear();
 
             for (var i = 0; i < tiles.Length; i++)
@@ -47,6 +50,7 @@ namespace MazeParty.Gameplay
                 if (!_tilesByCoordinate.ContainsKey(tile.Coordinate))
                     _tilesByCoordinate.Add(tile.Coordinate, tile);
                 _outgoingGates[tile] = new List<BoardGate>();
+                _incomingGates[tile] = new List<BoardGate>();
             }
 
             for (var i = 0; i < gates.Length; i++)
@@ -57,6 +61,9 @@ namespace MazeParty.Gameplay
 
                 if (_outgoingGates.TryGetValue(gate.Source, out var outgoing))
                     outgoing.Add(gate);
+                if (gate.Destination != null &&
+                    _incomingGates.TryGetValue(gate.Destination, out var incoming))
+                    incoming.Add(gate);
             }
         }
 
@@ -69,6 +76,13 @@ namespace MazeParty.Gameplay
         {
             return tile != null && _outgoingGates.TryGetValue(tile, out var outgoing)
                 ? outgoing
+                : Array.Empty<BoardGate>();
+        }
+
+        public IReadOnlyList<BoardGate> GetIncomingGates(BoardTile tile)
+        {
+            return tile != null && _incomingGates.TryGetValue(tile, out var incoming)
+                ? incoming
                 : Array.Empty<BoardGate>();
         }
 

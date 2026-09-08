@@ -8,6 +8,7 @@ namespace MazeParty.Gameplay
         Descending,
         Action,
         AscendingResolve,
+        CombatResolve,
         LandingEffectResolve,
         MinigameIntroReady,
         SkippedResult
@@ -167,7 +168,7 @@ namespace MazeParty.Gameplay
                         var boundary = _stateStartedAt + AscendingResolveDurationSeconds;
                         if (logicalNow >= boundary)
                         {
-                            TransitionTo(BoardFlowState.LandingEffectResolve, boundary);
+                            TransitionTo(BoardFlowState.CombatResolve, boundary);
                             keepAdvancing = true;
                         }
 
@@ -196,6 +197,7 @@ namespace MazeParty.Gameplay
                         break;
                     }
                     case BoardFlowState.MinigameIntroReady:
+                    case BoardFlowState.CombatResolve:
                         break;
                     default:
                         throw new InvalidOperationException("Unsupported board flow state.");
@@ -243,6 +245,24 @@ namespace MazeParty.Gameplay
             // TODO(BOARD-FLOW): replace this extension point with authoritative
             // minigame selection and result settlement.
             TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
+            return true;
+        }
+
+        public bool TryCompleteCombat(double synchronizedNow)
+        {
+            ValidateTimestamp(synchronizedNow);
+            if (!IsStarted || IsPaused)
+            {
+                return false;
+            }
+
+            Tick(synchronizedNow);
+            if (State != BoardFlowState.CombatResolve)
+            {
+                return false;
+            }
+
+            TransitionTo(BoardFlowState.LandingEffectResolve, ToFlowTime(synchronizedNow));
             return true;
         }
 
@@ -295,6 +315,8 @@ namespace MazeParty.Gameplay
                     return Remaining(_stateStartedAt, DescendingDurationSeconds, logicalNow);
                 case BoardFlowState.Action:
                     return ActionClock.GetActionRemaining(logicalNow);
+                case BoardFlowState.CombatResolve:
+                    return 0d;
                 case BoardFlowState.AscendingResolve:
                     return Remaining(_stateStartedAt, AscendingResolveDurationSeconds, logicalNow);
                 case BoardFlowState.LandingEffectResolve:
