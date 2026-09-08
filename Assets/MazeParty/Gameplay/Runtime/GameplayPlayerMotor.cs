@@ -1,0 +1,118 @@
+using UnityEngine;
+
+namespace MazeParty.Gameplay
+{
+    [RequireComponent(typeof(CharacterController))]
+    public sealed class GameplayPlayerMotor : MonoBehaviour, IPushReceiver
+    {
+        [SerializeField, Min(0f)] private float moveSpeed = 5f;
+        [SerializeField, Min(0f)] private float mouseSensitivity = 0.08f;
+        [SerializeField, Min(0f)] private float externalVelocityDecay = 7f;
+        [SerializeField, Min(0f)] private float contactPushStrength = 1.5f;
+        [SerializeField] private float gravity = -24f;
+        [SerializeField] private Transform lookPivot;
+
+        private CharacterController _controller;
+        private Vector3 _externalVelocity;
+        private float _verticalVelocity;
+        private float _pitch;
+
+        public Vector3 ExternalVelocity => _externalVelocity;
+
+        private void Awake()
+        {
+            _controller = GetComponent<CharacterController>();
+            if (lookPivot == null)
+                lookPivot = transform;
+        }
+
+        public void Configure(Transform pivot)
+        {
+            lookPivot = pivot != null ? pivot : transform;
+        }
+
+        public void Tick(Vector2 move, Vector2 look, bool allowDirectInput, bool allowLook)
+        {
+            if (_controller == null)
+                _controller = GetComponent<CharacterController>();
+
+            var deltaTime = Time.deltaTime;
+            if (allowDirectInput)
+            {
+                var localMove = new Vector3(move.x, 0f, move.y);
+                if (localMove.sqrMagnitude > 1f)
+                    localMove.Normalize();
+
+                var worldMove = transform.TransformDirection(localMove) * moveSpeed;
+                MoveCharacter(worldMove, deltaTime);
+            }
+            else
+            {
+                MoveCharacter(Vector3.zero, deltaTime);
+            }
+
+            if (allowDirectInput && allowLook)
+                ApplyLook(look);
+        }
+
+        public void ApplyPush(Vector3 impulse)
+        {
+            _externalVelocity += new Vector3(impulse.x, Mathf.Max(0f, impulse.y), impulse.z);
+        }
+
+        public void Teleport(Vector3 position, Quaternion rotation)
+        {
+            if (_controller == null)
+                _controller = GetComponent<CharacterController>();
+
+            _controller.enabled = false;
+            transform.SetPositionAndRotation(position, rotation);
+            _controller.enabled = true;
+            _externalVelocity = Vector3.zero;
+            _verticalVelocity = 0f;
+            _pitch = 0f;
+            if (lookPivot != null)
+                lookPivot.localRotation = Quaternion.identity;
+        }
+
+        private void MoveCharacter(Vector3 directVelocity, float deltaTime)
+        {
+            if (_controller.isGrounded && _verticalVelocity < 0f)
+                _verticalVelocity = -2f;
+            else
+                _verticalVelocity += gravity * deltaTime;
+
+            var velocity = directVelocity + _externalVelocity + Vector3.up * _verticalVelocity;
+            _controller.Move(velocity * deltaTime);
+            _externalVelocity = Vector3.MoveTowards(
+                _externalVelocity,
+                Vector3.zero,
+                externalVelocityDecay * deltaTime);
+        }
+
+        private void ApplyLook(Vector2 look)
+        {
+            transform.Rotate(Vector3.up, look.x * mouseSensitivity, Space.World);
+            _pitch = Mathf.Clamp(_pitch - look.y * mouseSensitivity, -85f, 85f);
+            lookPivot.localRotation = Quaternion.Euler(_pitch, 0f, 0f);
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit == null || hit.gameObject == null || hit.moveDirection.y < -0.3f)
+                return;
+
+            var behaviours = hit.gameObject.GetComponentsInParent<MonoBehaviour>();
+            for (var i = 0; i < behaviours.Length; i++)
+            {
+                if (behaviours[i] == this || !(behaviours[i] is IPushReceiver receiver))
+                    continue;
+
+                var planarDirection = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
+                if (planarDirection.sqrMagnitude > 0.001f)
+                    receiver.ApplyPush(planarDirection.normalized * contactPushStrength);
+                return;
+            }
+        }
+    }
+}

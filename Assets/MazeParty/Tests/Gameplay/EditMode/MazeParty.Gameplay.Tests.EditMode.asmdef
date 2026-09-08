@@ -1,0 +1,14 @@
+{
+  "name": "MazeParty.Gameplay.Tests.EditMode",
+  "rootNamespace": "MazeParty.Gameplay.Tests",
+  "references": [
+    "MazeParty.Gameplay"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ],
+  "autoReferenced": false
+}

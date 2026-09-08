@@ -1,0 +1,11 @@
+{
+  "name": "MazeParty.Gameplay.Testbed",
+  "rootNamespace": "MazeParty.Gameplay.Testbed",
+  "references": [
+    "MazeParty.Gameplay",
+    "Unity.InputSystem",
+    "Unity.Cinemachine",
+    "UnityEngine.UI"
+  ],
+  "autoReferenced": true
+}

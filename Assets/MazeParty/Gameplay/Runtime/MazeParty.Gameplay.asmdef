@@ -1,0 +1,9 @@
+{
+  "name": "MazeParty.Gameplay",
+  "rootNamespace": "MazeParty.Gameplay",
+  "references": [
+    "Unity.InputSystem",
+    "Unity.Cinemachine"
+  ],
+  "autoReferenced": true
+}
