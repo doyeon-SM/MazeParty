@@ -46,6 +46,8 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<Vector2Int> _keyShopLocation =
             new NetworkVariable<Vector2Int>();
         private readonly NetworkVariable<int> _keyShopRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<int> _boardEffectSeed = new NetworkVariable<int>();
+        private readonly NetworkVariable<int> _boardEffectRevision = new NetworkVariable<int>();
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
@@ -55,6 +57,10 @@ namespace MazeParty.Multiplayer
         private BoardTopology _boardTopology;
         private double _keyShopAppearanceEndsAt;
         private NetworkWorldDiceCoordinator _diceCoordinator;
+        private BoardLandingEffectLayout _boardEffectLayout;
+        private int _cachedBoardEffectSeed;
+        private int _cachedBoardEffectRevision = -1;
+        private int _nextLandingEffectSlot;
 
         public static NetworkMatchState Instance { get; private set; }
 
@@ -74,6 +80,8 @@ namespace MazeParty.Multiplayer
         public bool KeyShopHasLocation => _keyShopHasLocation.Value;
         public Vector2Int KeyShopLocation => _keyShopLocation.Value;
         public int KeyShopRevision => _keyShopRevision.Value;
+        public int BoardEffectSeed => _boardEffectSeed.Value;
+        public int BoardEffectRevision => _boardEffectRevision.Value;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
@@ -132,6 +140,11 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (_boardEffectRevision.Value <= 0)
+            {
+                InitializeBoardLandingEffectsOnServer();
+            }
+
             RefreshPresentMask();
             var now = ServerNow;
             if (_reconnectPaused.Value)
@@ -153,6 +166,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             _flow.Tick(now);
+            AdvanceLandingEffectResolutionOnServer(now);
             ResolveExpiredPersonalChoicesOnServer(now);
             AdvanceKeyShopLifecycleOnServer(now);
         }
@@ -169,6 +183,7 @@ namespace MazeParty.Multiplayer
             _keyShopRuntime.ResetToInactive();
             _keyShopAppearanceEndsAt = 0d;
             SyncKeyShopSnapshot();
+            InitializeBoardLandingEffectsOnServer();
             var now = ServerNow;
             _flow.Start(now, 1);
             _gameplayEnabled.Value = true;
@@ -217,7 +232,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var avatar = FindAvatarForSlot(slot);
+            var avatar = GetAvatarForSlot(slot);
             if (!CanProcessActionRequest(avatar) || !avatar.HasResolvedItemChoice || avatar.HasRolled)
             {
                 return false;
@@ -254,6 +269,10 @@ namespace MazeParty.Multiplayer
             }
 
             _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << avatar.AssignedSlot));
+            if (FlowState == BoardFlowState.Action)
+            {
+                avatar.MarkArrivedOnServer();
+            }
             return true;
         }
 
@@ -267,7 +286,7 @@ namespace MazeParty.Multiplayer
             _readyMask.Value = (byte)(_readyMask.Value | (1 << avatar.AssignedSlot));
             if ((_readyMask.Value & AllPlayersMask) == AllPlayersMask)
             {
-                // Development-only seam: no reward/economy mutation is performed.
+                // Development-only seam: no minigame reward mutation is performed.
                 _flow.TrySkipMinigame(ServerNow);
             }
 
@@ -420,7 +439,11 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve:
                     ForEachAvatar(avatar => avatar.EndActionOnServer());
                     break;
+                case BoardFlowState.LandingEffectResolve:
+                    BeginCombatCompletionAndLandingEffectsOnServer();
+                    break;
                 case BoardFlowState.MinigameIntroReady:
+                    ResolveAllRemainingLandingEffectsOnServer();
                     _readyMask.Value = 0;
                     break;
             }
@@ -476,7 +499,11 @@ namespace MazeParty.Multiplayer
 
         private void InitializeAllAvatarsOnBoard()
         {
-            ForEachAvatar(avatar => avatar.InitializeBoardStateOnServer());
+            ForEachAvatar(avatar =>
+            {
+                avatar.ResetMatchStatsOnServer();
+                avatar.InitializeBoardStateOnServer();
+            });
             RefreshPresentMask();
         }
 
@@ -552,20 +579,20 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private NetworkPlayerAvatar FindAvatarForSlot(int slot)
+        public NetworkPlayerAvatar GetAvatarForSlot(int slot)
         {
-            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
-                NetworkManager == null || NetworkManager.SpawnManager == null)
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers)
             {
                 return null;
             }
 
-            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            // Client-side ConnectedClientsIds is not a complete remote-avatar
+            // registry. Search spawned scene avatars so every client can render
+            // all four public stat panels.
+            var avatars = FindObjectsByType<NetworkPlayerAvatar>();
+            for (var i = 0; i < avatars.Length; i++)
             {
-                var playerObject = NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
-                var avatar = playerObject != null
-                    ? playerObject.GetComponent<NetworkPlayerAvatar>()
-                    : null;
+                var avatar = avatars[i];
                 if (avatar != null && avatar.IsSpawned && avatar.AssignedSlot == slot)
                 {
                     return avatar;
@@ -573,6 +600,134 @@ namespace MazeParty.Multiplayer
             }
 
             return null;
+        }
+
+        public bool TryGetBoardLandingEffect(
+            Vector2Int coordinate,
+            out BoardLandingEffectType effect)
+        {
+            if (EnsureBoardLandingEffectLayout())
+            {
+                return _boardEffectLayout.TryGetEffect(coordinate, out effect);
+            }
+
+            effect = BoardLandingEffectType.None;
+            return false;
+        }
+
+        private void InitializeBoardLandingEffectsOnServer()
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            if (_boardTopology == null)
+            {
+                _boardTopology = FindAnyObjectByType<BoardTopology>();
+            }
+            if (_boardTopology == null)
+            {
+                return;
+            }
+
+            _boardEffectSeed.Value = UnityEngine.Random.Range(1, int.MaxValue);
+            _boardEffectRevision.Value++;
+            _cachedBoardEffectRevision = -1;
+            EnsureBoardLandingEffectLayout();
+        }
+
+        private bool EnsureBoardLandingEffectLayout()
+        {
+            if (_boardEffectRevision.Value <= 0)
+            {
+                return false;
+            }
+
+            if (_boardTopology == null)
+            {
+                _boardTopology = FindAnyObjectByType<BoardTopology>();
+            }
+            if (_boardTopology == null)
+            {
+                return false;
+            }
+
+            if (_boardEffectLayout != null &&
+                _cachedBoardEffectSeed == _boardEffectSeed.Value &&
+                _cachedBoardEffectRevision == _boardEffectRevision.Value)
+            {
+                return true;
+            }
+
+            _boardEffectLayout = BoardLandingEffectLayout.Create(
+                _boardTopology.Tiles,
+                _boardEffectSeed.Value);
+            _cachedBoardEffectSeed = _boardEffectSeed.Value;
+            _cachedBoardEffectRevision = _boardEffectRevision.Value;
+            return true;
+        }
+
+        private void BeginCombatCompletionAndLandingEffectsOnServer()
+        {
+            // TODO(COMBAT): replace this automatic completion with the authoritative
+            // final-room combat completion signal, then call this same settlement seam.
+            _nextLandingEffectSlot = 0;
+            ResolveNextLandingEffectOnServer();
+        }
+
+        private void AdvanceLandingEffectResolutionOnServer(double now)
+        {
+            if (!IsServer || _flow == null ||
+                _flow.State != BoardFlowState.LandingEffectResolve)
+            {
+                return;
+            }
+
+            var elapsed = Math.Max(0d, _flow.ToFlowTime(now) - _flow.StateStartedAt);
+            var targetResolvedCount = Mathf.Clamp(
+                Mathf.FloorToInt((float)elapsed) + 1,
+                1,
+                MultiplayerConstants.MaxPlayers);
+            while (_nextLandingEffectSlot < targetResolvedCount)
+            {
+                ResolveNextLandingEffectOnServer();
+            }
+        }
+
+        private void ResolveAllRemainingLandingEffectsOnServer()
+        {
+            if (!IsServer || !EnsureBoardLandingEffectLayout())
+            {
+                return;
+            }
+
+            while (_nextLandingEffectSlot < MultiplayerConstants.MaxPlayers)
+            {
+                ResolveNextLandingEffectOnServer();
+            }
+        }
+
+        private void ResolveNextLandingEffectOnServer()
+        {
+            if (!IsServer || _nextLandingEffectSlot >= MultiplayerConstants.MaxPlayers)
+            {
+                return;
+            }
+
+            if (!EnsureBoardLandingEffectLayout())
+            {
+                return;
+            }
+
+            var slot = _nextLandingEffectSlot++;
+            var avatar = GetAvatarForSlot(slot);
+            var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
+            if (tile != null)
+            {
+                avatar.ApplyGoldDeltaOnServer(
+                    _boardEffectLayout.GetGoldDelta(tile.Coordinate));
+            }
         }
 
         private void ResolveWorldDiceCoordinator()
@@ -722,6 +877,11 @@ namespace MazeParty.Multiplayer
         public ItemChoiceResolution ChoiceResolution;
         public int SelectedItemSlot;
         public byte OccupiedItemMask;
+        public int MaxHealth;
+        public int CurrentHealth;
+        public int KeyCount;
+        public int Gold;
+        public PlayerBoardActionState ActionState;
         public bool HasLogicalCurrentTile;
         public Vector2Int LogicalCurrentTileCoordinate;
     }

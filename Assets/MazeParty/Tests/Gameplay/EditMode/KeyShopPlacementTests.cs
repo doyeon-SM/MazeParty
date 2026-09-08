@@ -17,7 +17,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Policy_UsesOnlyUnoccupiedNormalTiles()
+        public void Policy_TreatsStartMarkerAsNormalAndExcludesSpecialTiles()
         {
             var occupiedNormal = CreateTile(new Vector2Int(0, 0), BoardTileType.Normal);
             var start = CreateTile(new Vector2Int(1, 0), BoardTileType.Start);
@@ -34,19 +34,20 @@ namespace MazeParty.Gameplay.Tests
                 out var selectedTile);
 
             Assert.That(selected, Is.True);
-            Assert.That(selectedTile, Is.SameAs(secondEligible));
-            Assert.That(random.LastExclusiveMaximum, Is.EqualTo(2));
+            Assert.That(selectedTile, Is.SameAs(firstEligible));
+            Assert.That(random.LastExclusiveMaximum, Is.EqualTo(3));
         }
 
         [Test]
         public void Policy_NoEligibleTile_ReturnsFalseWithoutUsingRandomSource()
         {
             var occupiedNormal = CreateTile(Vector2Int.zero, BoardTileType.Normal);
-            var start = CreateTile(Vector2Int.right, BoardTileType.Start);
+            var legacyShop = CreateTile(Vector2Int.right, BoardTileType.KeyShop);
+            var respawn = CreateTile(Vector2Int.up, BoardTileType.Respawn);
             var random = new FixedRandomSource(0);
 
             var selected = KeyShopPlacementPolicy.TryChoose(
-                new[] { occupiedNormal, start },
+                new[] { occupiedNormal, legacyShop, respawn },
                 new[] { occupiedNormal.Coordinate },
                 random,
                 out var selectedTile);

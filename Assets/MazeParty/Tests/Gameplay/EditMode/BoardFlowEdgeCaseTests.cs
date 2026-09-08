@@ -18,7 +18,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.TrySkipMinigame(250d), Is.True);
             flow.Tick(253d);
 
-            Assert.That(transitions, Has.Count.EqualTo(6));
+            Assert.That(transitions, Has.Count.EqualTo(7));
             AssertTransition(
                 transitions[0],
                 BoardFlowState.TurnOverview,
@@ -40,17 +40,23 @@ namespace MazeParty.Gameplay.Tests
             AssertTransition(
                 transitions[3],
                 BoardFlowState.AscendingResolve,
-                BoardFlowState.MinigameIntroReady,
+                BoardFlowState.LandingEffectResolve,
                 1,
                 241d);
             AssertTransition(
                 transitions[4],
+                BoardFlowState.LandingEffectResolve,
+                BoardFlowState.MinigameIntroReady,
+                1,
+                245d);
+            AssertTransition(
+                transitions[5],
                 BoardFlowState.MinigameIntroReady,
                 BoardFlowState.SkippedResult,
                 1,
                 250d);
             AssertTransition(
-                transitions[5],
+                transitions[6],
                 BoardFlowState.SkippedResult,
                 BoardFlowState.TurnOverview,
                 2,

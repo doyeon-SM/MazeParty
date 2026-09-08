@@ -8,6 +8,7 @@ namespace MazeParty.Gameplay
         Descending,
         Action,
         AscendingResolve,
+        LandingEffectResolve,
         MinigameIntroReady,
         SkippedResult
     }
@@ -50,6 +51,7 @@ namespace MazeParty.Gameplay
         public const double TurnOverviewDurationSeconds = 5d;
         public const double DescendingDurationSeconds = 1d;
         public const double AscendingResolveDurationSeconds = 5d;
+        public const double LandingEffectResolveDurationSeconds = 4d;
         public const double SkippedResultDurationSeconds = 3d;
 
         private const int AllPlayersMask = (1 << RequiredPlayerCount) - 1;
@@ -165,6 +167,17 @@ namespace MazeParty.Gameplay
                         var boundary = _stateStartedAt + AscendingResolveDurationSeconds;
                         if (logicalNow >= boundary)
                         {
+                            TransitionTo(BoardFlowState.LandingEffectResolve, boundary);
+                            keepAdvancing = true;
+                        }
+
+                        break;
+                    }
+                    case BoardFlowState.LandingEffectResolve:
+                    {
+                        var boundary = _stateStartedAt + LandingEffectResolveDurationSeconds;
+                        if (logicalNow >= boundary)
+                        {
                             TransitionTo(BoardFlowState.MinigameIntroReady, boundary);
                             keepAdvancing = true;
                         }
@@ -226,7 +239,7 @@ namespace MazeParty.Gameplay
             if (State != BoardFlowState.MinigameIntroReady)
                 return false;
 
-            // Development skip deliberately produces no reward or currency mutation.
+            // Development skip deliberately produces no minigame reward mutation.
             // TODO(BOARD-FLOW): replace this extension point with authoritative
             // minigame selection and result settlement.
             TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
@@ -284,6 +297,8 @@ namespace MazeParty.Gameplay
                     return ActionClock.GetActionRemaining(logicalNow);
                 case BoardFlowState.AscendingResolve:
                     return Remaining(_stateStartedAt, AscendingResolveDurationSeconds, logicalNow);
+                case BoardFlowState.LandingEffectResolve:
+                    return Remaining(_stateStartedAt, LandingEffectResolveDurationSeconds, logicalNow);
                 case BoardFlowState.SkippedResult:
                     return Remaining(_stateStartedAt, SkippedResultDurationSeconds, logicalNow);
                 default:

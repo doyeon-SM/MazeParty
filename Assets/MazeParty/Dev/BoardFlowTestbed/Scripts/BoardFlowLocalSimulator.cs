@@ -31,6 +31,17 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Image[] _playerCards = new Image[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Image[] _playerHealthFills = new Image[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerHealthTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerCurrencyTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerActionIcons = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _maxHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _currentHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _keys = new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly int[] _gold = new int[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly PlayerBoardActionState[] _actionStates =
+            new PlayerBoardActionState[BoardFlowStateMachine.RequiredPlayerCount];
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
@@ -52,6 +63,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Button _finishActionButton;
         private Button _speedButton;
         private Button _pauseButton;
+        private Button _damagePlayerButton;
+        private Button _addGoldButton;
+        private Button _buyKeyButton;
 
         private double _simulationNow;
         private float _simulationSpeed = 1f;
@@ -76,6 +90,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private double _worldDieNudgeDeadline = -1d;
         private double _worldDieNudgeBelowThresholdSince = -1d;
         private double _worldDieHideDeadline = -1d;
+        private BoardLandingEffectLayout _boardEffectLayout;
+        private int _nextLandingEffectSlot;
 
         public void Configure(
             CharacterController localPlayer,
@@ -140,6 +156,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             cameraDirector?.SetLocalPlayerEye(eyePivot);
             cameraDirector?.SnapTo(GameplayMode.BoardTopDown, eyePivot);
             InitializeTraversal();
+            InitializePlayerStatsAndBoardEffects();
             _flow.Start(_simulationNow, 1);
             SetStatus("EDITOR LOCAL SIMULATION: board overview started.");
             RefreshUi();
@@ -156,6 +173,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
             _flow.Tick(_simulationNow);
+            AdvanceLocalLandingEffects();
             if (_lastChoiceResolution != _flow.ActionClock.ChoiceResolution)
             {
                 _lastChoiceResolution = _flow.ActionClock.ChoiceResolution;
@@ -204,6 +222,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
             {
+                _actionStates[slot] = PlayerBoardActionState.Arrived;
                 _flow.TryReportPlayerArrived(slot, _simulationNow);
             }
             SetStatus("EDITOR: all four arrival reports submitted.");
@@ -221,6 +240,35 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _simulationSpeed = _simulationSpeed < 2f ? 10f : _simulationSpeed < 20f ? 60f : 1f;
             SetStatus("EDITOR: flow clock speed set to x" + _simulationSpeed.ToString("0") + ".");
+        }
+
+        public void DamageLocalPlayer()
+        {
+            _currentHealth[0] = PlayerStatRules.ClampHealth(
+                _currentHealth[0] - 20,
+                _maxHealth[0]);
+            SetStatus("EDITOR: P1 took 20 damage. The HUD health bar updated immediately.");
+        }
+
+        public void AddLocalGold()
+        {
+            _gold[0] = PlayerStatRules.ApplyGoldDelta(_gold[0], 10);
+            SetStatus("EDITOR: P1 received 10 gold.");
+        }
+
+        public void BuyLocalKey()
+        {
+            if (!PlayerStatRules.CanPurchaseKey(_gold[0]))
+            {
+                SetStatus("EDITOR: P1 needs 20 gold to buy one key.");
+                return;
+            }
+
+            _gold[0] = PlayerStatRules.ApplyGoldDelta(
+                _gold[0],
+                -PlayerStatRules.KeyShopGoldPrice);
+            _keys[0] = PlayerStatRules.AddKeys(_keys[0], 1);
+            SetStatus("EDITOR: P1 bought one key for 20 gold.");
         }
 
         public void TogglePause()
@@ -263,6 +311,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             {
                 case BoardFlowState.TurnOverview:
                     ResetActionState();
+                    SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
                     TryPlaceLocalKeyShop(transition.Turn);
                     SetStatus("Board overview for turn " + transition.Turn + ".");
@@ -273,20 +322,27 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     break;
                 case BoardFlowState.Action:
                     ResetActionState();
+                    SetAllActionStates(PlayerBoardActionState.Dice);
                     InitializeTraversal();
                     RefreshBoundaryWalls();
                     SetStatus("Choose an item within 30 seconds; shield and action clocks started together.");
                     break;
                 case BoardFlowState.AscendingResolve:
                     EndSelectedItemUse();
+                    SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
                     SetStatus("Input closed. Five-second effect settle window.");
                     break;
+                case BoardFlowState.LandingEffectResolve:
+                    BeginLocalLandingEffects();
+                    SetStatus("Combat placeholder completed. Resolving landing gold effects in P1-P4 order.");
+                    break;
                 case BoardFlowState.MinigameIntroReady:
+                    ResolveAllRemainingLocalLandingEffects();
                     SetStatus("Minigame TODO: click READY / SKIP ALL in the editor panel.");
                     break;
                 case BoardFlowState.SkippedResult:
-                    SetStatus("Result placeholder: no economy update. Next turn in three seconds.");
+                    SetStatus("Result placeholder: no minigame reward. Next turn in three seconds.");
                     break;
             }
 
@@ -327,6 +383,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 {
                     _roll = UnityEngine.Random.Range(1, 11);
                     _remainingMoves = _roll;
+                    _actionStates[0] = PlayerBoardActionState.Moving;
                     StopLocalWorldDieNudge();
                     if (_worldDie != null)
                     {
@@ -417,6 +474,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     RefreshBoundaryWalls();
                     if (_remainingMoves == 0)
                     {
+                        _actionStates[0] = PlayerBoardActionState.Arrived;
                         _flow.TryReportPlayerArrived(0, _simulationNow);
                         SetStatus("Moves are spent. You may keep positioning inside this room until all players arrive.");
                     }
@@ -756,6 +814,115 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                    up * Vector3.Dot(offset, up);
         }
 
+        private void InitializePlayerStatsAndBoardEffects()
+        {
+            for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
+            {
+                _maxHealth[slot] = PlayerStatRules.DefaultMaxHealth;
+                _currentHealth[slot] = PlayerStatRules.DefaultMaxHealth;
+                _keys[slot] = PlayerStatRules.DefaultStartingKeys;
+                _gold[slot] = PlayerStatRules.DefaultStartingGold;
+                _actionStates[slot] = PlayerBoardActionState.Hidden;
+            }
+
+            if (topology == null)
+            {
+                return;
+            }
+
+            var seed = UnityEngine.Random.Range(1, int.MaxValue);
+            _boardEffectLayout = BoardLandingEffectLayout.Create(topology.Tiles, seed);
+            for (var i = 0; i < topology.Tiles.Count; i++)
+            {
+                var tile = topology.Tiles[i];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                var effect = _boardEffectLayout.TryGetEffect(tile.Coordinate, out var assigned)
+                    ? assigned
+                    : BoardLandingEffectType.None;
+                tile.ApplyLandingEffectPresentation(effect);
+            }
+        }
+
+        private void BeginLocalLandingEffects()
+        {
+            _nextLandingEffectSlot = 0;
+            ResolveNextLocalLandingEffect();
+        }
+
+        private void AdvanceLocalLandingEffects()
+        {
+            if (_flow.State != BoardFlowState.LandingEffectResolve)
+            {
+                return;
+            }
+
+            var elapsed = Math.Max(0d, _flow.ToFlowTime(_simulationNow) - _flow.StateStartedAt);
+            var targetResolvedCount = Mathf.Clamp(
+                Mathf.FloorToInt((float)elapsed) + 1,
+                1,
+                BoardFlowStateMachine.RequiredPlayerCount);
+            while (_nextLandingEffectSlot < targetResolvedCount)
+            {
+                ResolveNextLocalLandingEffect();
+            }
+        }
+
+        private void ResolveAllRemainingLocalLandingEffects()
+        {
+            if (_boardEffectLayout == null || topology == null)
+            {
+                return;
+            }
+
+            while (_nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount)
+            {
+                ResolveNextLocalLandingEffect();
+            }
+        }
+
+        private void ResolveNextLocalLandingEffect()
+        {
+            if (_boardEffectLayout == null || topology == null ||
+                _nextLandingEffectSlot >= BoardFlowStateMachine.RequiredPlayerCount)
+            {
+                return;
+            }
+
+            var slot = _nextLandingEffectSlot++;
+            var tile = GetLocalSimulationTile(slot);
+            if (tile != null)
+            {
+                _gold[slot] = PlayerStatRules.ApplyGoldDelta(
+                    _gold[slot],
+                    _boardEffectLayout.GetGoldDelta(tile.Coordinate));
+            }
+        }
+
+        private BoardTile GetLocalSimulationTile(int slot)
+        {
+            if (slot == 0)
+            {
+                return _traversal.IsInitialized ? _traversal.CurrentTile : null;
+            }
+
+            var marker = GameObject.Find("Simulated Remote Player " + (slot + 1));
+            return marker != null
+                ? topology.FindContainingTile(marker.transform.position, 0.1f)
+                : null;
+        }
+
+        private void SetAllActionStates(PlayerBoardActionState state)
+        {
+            for (var slot = 0; slot < _actionStates.Length; slot++)
+            {
+                _actionStates[slot] = state;
+            }
+        }
+
         private void TryPlaceLocalKeyShop(int turn)
         {
             if (turn != KeyShopRuntimeState.InitialPlacementTurn ||
@@ -844,6 +1011,40 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 SetText(_playerRows[playerIndex], playerIndex == 0
                     ? "P1  LOCAL"
                     : "P" + (playerIndex + 1) + "  SIMULATED");
+                if (_playerRows[playerIndex] != null)
+                {
+                    _playerRows[playerIndex].color = PlayerColor(playerIndex);
+                }
+                if (_playerCards[playerIndex] != null)
+                {
+                    _playerCards[playerIndex].color = playerIndex == 0
+                        ? new Color(0.16f, 0.3f, 0.5f, 0.98f)
+                        : new Color(0.055f, 0.085f, 0.13f, 0.94f);
+                }
+
+                var maxHealth = Mathf.Max(1, _maxHealth[playerIndex]);
+                var healthRatio = Mathf.Clamp01(_currentHealth[playerIndex] / (float)maxHealth);
+                if (_playerHealthFills[playerIndex] != null)
+                {
+                    _playerHealthFills[playerIndex].fillAmount = healthRatio;
+                    _playerHealthFills[playerIndex].color = healthRatio > 0.5f
+                        ? new Color(0.2f, 0.82f, 0.38f, 1f)
+                        : healthRatio > 0.25f
+                            ? new Color(1f, 0.7f, 0.16f, 1f)
+                            : new Color(0.95f, 0.2f, 0.2f, 1f);
+                }
+                SetText(_playerHealthTexts[playerIndex],
+                    _currentHealth[playerIndex] + "/" + maxHealth);
+                SetText(_playerCurrencyTexts[playerIndex],
+                    "KEY  " + _keys[playerIndex] + "    GOLD  " + _gold[playerIndex]);
+                var actionState = _paused
+                    ? PlayerBoardActionState.Hidden
+                    : _actionStates[playerIndex];
+                SetText(_playerActionIcons[playerIndex], ActionIconLabel(actionState));
+                if (_playerActionIcons[playerIndex] != null)
+                {
+                    _playerActionIcons[playerIndex].color = ActionIconColor(actionState);
+                }
             }
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
@@ -893,6 +1094,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _finishActionButton = FindNamedComponent<Button>("EditorFinishActionButton");
             _speedButton = FindNamedComponent<Button>("EditorSpeedButton");
             _pauseButton = FindNamedComponent<Button>("EditorPauseButton");
+            _damagePlayerButton = FindNamedComponent<Button>("EditorDamagePlayerButton");
+            _addGoldButton = FindNamedComponent<Button>("EditorAddGoldButton");
+            _buyKeyButton = FindNamedComponent<Button>("EditorBuyKeyButton");
             _speedButtonLabel = _speedButton != null ? _speedButton.GetComponentInChildren<Text>() : null;
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -903,6 +1107,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             for (var i = 0; i < _playerRows.Length; i++)
             {
                 _playerRows[i] = FindNamedComponent<Text>("PlayerState" + i);
+                _playerCards[i] = FindNamedComponent<Image>("PlayerCard" + i);
+                _playerHealthFills[i] = FindNamedComponent<Image>("PlayerHealthFill" + i);
+                _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
+                _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
+                _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
             }
         }
 
@@ -918,6 +1127,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _finishActionButton?.onClick.AddListener(FinishActionForAllPlayers);
             _speedButton?.onClick.AddListener(CycleSimulationSpeed);
             _pauseButton?.onClick.AddListener(TogglePause);
+            _damagePlayerButton?.onClick.AddListener(DamageLocalPlayer);
+            _addGoldButton?.onClick.AddListener(AddLocalGold);
+            _buyKeyButton?.onClick.AddListener(BuyLocalKey);
         }
 
         private void UnwireButtons()
@@ -931,6 +1143,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _finishActionButton?.onClick.RemoveListener(FinishActionForAllPlayers);
             _speedButton?.onClick.RemoveListener(CycleSimulationSpeed);
             _pauseButton?.onClick.RemoveListener(TogglePause);
+            _damagePlayerButton?.onClick.RemoveListener(DamageLocalPlayer);
+            _addGoldButton?.onClick.RemoveListener(AddLocalGold);
+            _buyKeyButton?.onClick.RemoveListener(BuyLocalKey);
         }
 
         private void ApplyBodyVisibility(bool firstPerson)
@@ -1014,6 +1229,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 case BoardFlowState.Descending: return "DESCENDING";
                 case BoardFlowState.Action: return "ACTION";
                 case BoardFlowState.AscendingResolve: return "ASCENDING / RESOLVE";
+                case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
                 case BoardFlowState.MinigameIntroReady: return "MINIGAME READY";
                 case BoardFlowState.SkippedResult: return "RESULT";
                 default: return state.ToString().ToUpperInvariant();
@@ -1045,6 +1261,41 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             var whole = Mathf.Max(0, Mathf.CeilToInt((float)seconds));
             return (whole / 60).ToString("00") + ":" + (whole % 60).ToString("00");
+        }
+
+        private static string ActionIconLabel(PlayerBoardActionState state)
+        {
+            switch (state)
+            {
+                case PlayerBoardActionState.Dice: return "DICE";
+                case PlayerBoardActionState.Moving: return "MOVE";
+                case PlayerBoardActionState.Arrived: return "ARRIVED";
+                case PlayerBoardActionState.Fighting: return "FIGHT";
+                default: return string.Empty;
+            }
+        }
+
+        private static Color ActionIconColor(PlayerBoardActionState state)
+        {
+            switch (state)
+            {
+                case PlayerBoardActionState.Dice: return new Color(0.4f, 0.75f, 1f);
+                case PlayerBoardActionState.Moving: return new Color(0.35f, 1f, 0.55f);
+                case PlayerBoardActionState.Arrived: return new Color(1f, 0.82f, 0.3f);
+                case PlayerBoardActionState.Fighting: return new Color(1f, 0.3f, 0.25f);
+                default: return Color.clear;
+            }
+        }
+
+        private static Color PlayerColor(int slot)
+        {
+            switch (slot)
+            {
+                case 0: return new Color(1f, 0.42f, 0.42f);
+                case 1: return new Color(0.42f, 0.7f, 1f);
+                case 2: return new Color(0.42f, 1f, 0.58f);
+                default: return new Color(1f, 0.82f, 0.35f);
+            }
         }
     }
 }

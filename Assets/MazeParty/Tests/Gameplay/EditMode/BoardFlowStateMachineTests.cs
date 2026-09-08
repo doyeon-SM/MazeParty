@@ -86,7 +86,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void AscendingThenDevelopmentSkip_ShowsResultBeforeNextTurn()
+        public void AscendingAndLandingEffectsThenDevelopmentSkip_ShowsResultBeforeNextTurn()
         {
             var flow = StartInAction();
             ReportAllPlayersArrived(flow, 10d);
@@ -95,23 +95,30 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
 
             flow.Tick(15d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            Assert.That(flow.GetStateRemaining(15d), Is.EqualTo(4d));
+
+            flow.Tick(18.999d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+
+            flow.Tick(19d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
             Assert.That(flow.CurrentTurn, Is.EqualTo(1));
 
-            Assert.That(flow.TrySkipMinigame(15d), Is.True);
+            Assert.That(flow.TrySkipMinigame(19d), Is.True);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
             Assert.That(flow.CurrentTurn, Is.EqualTo(1));
-            Assert.That(flow.GetStateRemaining(15d), Is.EqualTo(3d));
+            Assert.That(flow.GetStateRemaining(19d), Is.EqualTo(3d));
 
-            flow.Tick(17.999d);
+            flow.Tick(21.999d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
-            Assert.That(flow.GetStateRemaining(17.999d), Is.EqualTo(0.001d).Within(0.000001d));
+            Assert.That(flow.GetStateRemaining(21.999d), Is.EqualTo(0.001d).Within(0.000001d));
 
-            flow.Tick(18d);
+            flow.Tick(22d);
 
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));
             Assert.That(flow.CurrentTurn, Is.EqualTo(2));
-            Assert.That(flow.GetStateRemaining(18d), Is.EqualTo(5d));
+            Assert.That(flow.GetStateRemaining(22d), Is.EqualTo(5d));
             Assert.That(flow.LastActionEndReason, Is.EqualTo(BoardActionEndReason.None));
         }
 
@@ -122,10 +129,10 @@ namespace MazeParty.Gameplay.Tests
             flow.Start(0d);
             Assert.That(flow.TrySkipMinigame(0d), Is.False);
 
-            flow.Tick(191d);
+            flow.Tick(195d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
 
-            Assert.That(flow.Pause(191d), Is.True);
+            Assert.That(flow.Pause(195d), Is.True);
             Assert.That(flow.TrySkipMinigame(300d), Is.False);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
         }
@@ -210,6 +217,10 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
 
             flow.Tick(115d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            Assert.That(flow.GetStateRemaining(115d), Is.EqualTo(4d));
+
+            flow.Tick(119d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
         }
 
@@ -218,18 +229,18 @@ namespace MazeParty.Gameplay.Tests
         {
             var flow = StartInAction();
             ReportAllPlayersArrived(flow, 10d);
-            flow.Tick(15d);
-            Assert.That(flow.TrySkipMinigame(15d), Is.True);
+            flow.Tick(19d);
+            Assert.That(flow.TrySkipMinigame(19d), Is.True);
 
-            flow.Tick(16d);
-            Assert.That(flow.Pause(16d), Is.True);
-            Assert.That(flow.GetStateRemaining(116d), Is.EqualTo(2d));
+            flow.Tick(20d);
+            Assert.That(flow.Pause(20d), Is.True);
+            Assert.That(flow.GetStateRemaining(120d), Is.EqualTo(2d));
 
-            Assert.That(flow.Resume(116d), Is.True);
-            flow.Tick(117.999d);
+            Assert.That(flow.Resume(120d), Is.True);
+            flow.Tick(121.999d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
 
-            flow.Tick(118d);
+            flow.Tick(122d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));
             Assert.That(flow.CurrentTurn, Is.EqualTo(2));
         }
@@ -244,7 +255,7 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(flow.ActionClock.StartedAt, Is.EqualTo(16d));
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
-            Assert.That(flow.StateStartedAt, Is.EqualTo(201d));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(205d));
             Assert.That(flow.LastActionEndReason, Is.EqualTo(BoardActionEndReason.TimeExpired));
         }
 

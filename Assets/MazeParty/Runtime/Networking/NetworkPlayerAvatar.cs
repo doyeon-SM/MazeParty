@@ -10,7 +10,7 @@ namespace MazeParty.Multiplayer
 {
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(CharacterController))]
-    public sealed class NetworkPlayerAvatar : NetworkBehaviour
+    public sealed class NetworkPlayerAvatar : NetworkBehaviour, IDamageable
     {
         private static readonly Color[] PlayerColors =
         {
@@ -73,6 +73,26 @@ namespace MazeParty.Multiplayer
                 default,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _maxHealth = new NetworkVariable<int>(
+            PlayerStatRules.DefaultMaxHealth,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _currentHealth = new NetworkVariable<int>(
+            PlayerStatRules.DefaultMaxHealth,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _keyCount = new NetworkVariable<int>(
+            PlayerStatRules.DefaultStartingKeys,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _gold = new NetworkVariable<int>(
+            PlayerStatRules.DefaultStartingGold,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<byte> _actionState = new NetworkVariable<byte>(
+            (byte)PlayerBoardActionState.Hidden,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
 
         private CharacterController _characterController;
         private BoardTopology _topology;
@@ -110,6 +130,12 @@ namespace MazeParty.Multiplayer
         public Transform EyePivot => eyePivot;
         public bool HasLogicalBoardTile => _hasLogicalTile.Value;
         public Vector2Int LogicalBoardTileCoordinate => _logicalTileCoordinate.Value;
+        public int MaxHealth => _maxHealth.Value;
+        public int CurrentHealth => _currentHealth.Value;
+        public int KeyCount => _keyCount.Value;
+        public int Gold => _gold.Value;
+        public PlayerBoardActionState ActionState =>
+            (PlayerBoardActionState)_actionState.Value;
         public BoardTile CurrentBoardTileOnServer =>
             IsServer && _traversal.IsInitialized ? _traversal.CurrentTile : null;
 
@@ -274,6 +300,107 @@ namespace MazeParty.Multiplayer
                 : "This slot is empty.";
         }
 
+        public void ResetMatchStatsOnServer()
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            _maxHealth.Value = PlayerStatRules.DefaultMaxHealth;
+            _currentHealth.Value = PlayerStatRules.DefaultMaxHealth;
+            _keyCount.Value = PlayerStatRules.DefaultStartingKeys;
+            _gold.Value = PlayerStatRules.DefaultStartingGold;
+            _actionState.Value = (byte)PlayerBoardActionState.Hidden;
+        }
+
+        public DamageResult ApplyDamage(DamageRequest request)
+        {
+            if (!IsServer || request.Amount <= 0 || _currentHealth.Value <= 0)
+            {
+                return DamageResult.Ignored;
+            }
+
+            var match = NetworkMatchState.Instance;
+            if (request.Kind == DamageKind.Item && match != null &&
+                match.IsOpeningProtectionActive)
+            {
+                return DamageResult.Blocked;
+            }
+
+            _currentHealth.Value = PlayerStatRules.ClampHealth(
+                _currentHealth.Value - request.Amount,
+                _maxHealth.Value);
+            return DamageResult.Applied;
+        }
+
+        public int HealOnServer(int amount)
+        {
+            if (!IsServer || amount <= 0 || _currentHealth.Value <= 0)
+            {
+                return 0;
+            }
+
+            var previous = _currentHealth.Value;
+            _currentHealth.Value = PlayerStatRules.ClampHealth(
+                _currentHealth.Value + amount,
+                _maxHealth.Value);
+            return _currentHealth.Value - previous;
+        }
+
+        public int ApplyGoldDeltaOnServer(int delta)
+        {
+            if (!IsServer || delta == 0)
+            {
+                return 0;
+            }
+
+            var previous = _gold.Value;
+            _gold.Value = PlayerStatRules.ApplyGoldDelta(previous, delta);
+            return _gold.Value - previous;
+        }
+
+        public int AddKeysOnServer(int amount)
+        {
+            if (!IsServer || amount <= 0)
+            {
+                return 0;
+            }
+
+            var previous = _keyCount.Value;
+            _keyCount.Value = PlayerStatRules.AddKeys(previous, amount);
+            return _keyCount.Value - previous;
+        }
+
+        public bool TryPurchaseKeyOnServer()
+        {
+            if (!IsServer ||
+                !PlayerStatRules.CanPurchaseKey(_gold.Value))
+            {
+                return false;
+            }
+
+            _gold.Value = PlayerStatRules.ApplyGoldDelta(
+                _gold.Value,
+                -PlayerStatRules.KeyShopGoldPrice);
+            _keyCount.Value = PlayerStatRules.AddKeys(_keyCount.Value, 1);
+            return true;
+        }
+
+        public void SetActionStateOnServer(PlayerBoardActionState state)
+        {
+            if (IsServer)
+            {
+                _actionState.Value = (byte)state;
+            }
+        }
+
+        // TODO(COMBAT): call this when the final-room combat system starts.
+        public void BeginCombatOnServer()
+        {
+            SetActionStateOnServer(PlayerBoardActionState.Fighting);
+        }
+
         public void InitializeBoardStateOnServer()
         {
             if (!IsServer || _slot.Value < 0 || !IsBoardLoaded())
@@ -313,6 +440,7 @@ namespace MazeParty.Multiplayer
             _remainingMoves.Value = 0;
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _selectedItemSlot.Value = -1;
+            _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             if (_traversal.IsInitialized)
             {
                 _traversal.ResetMoves(0);
@@ -332,6 +460,7 @@ namespace MazeParty.Multiplayer
             _remainingMoves.Value = 0;
             _choiceResolution.Value = (byte)ItemChoiceResolution.Pending;
             _selectedItemSlot.Value = -1;
+            _actionState.Value = (byte)PlayerBoardActionState.Dice;
             EnsureTraversalInitialized();
             if (_traversal.IsInitialized)
             {
@@ -356,6 +485,7 @@ namespace MazeParty.Multiplayer
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _privateRoll.Value = 0;
             _remainingMoves.Value = 0;
+            _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             if (_traversal.IsInitialized)
             {
                 _traversal.ResetMoves(0);
@@ -420,12 +550,20 @@ namespace MazeParty.Multiplayer
             var safeRoll = Mathf.Clamp(roll, 0, 10);
             _privateRoll.Value = safeRoll;
             _remainingMoves.Value = safeRoll;
+            _actionState.Value = safeRoll > 0
+                ? (byte)PlayerBoardActionState.Moving
+                : (byte)PlayerBoardActionState.Dice;
             EnsureTraversalInitialized();
             if (_traversal.IsInitialized)
             {
                 _traversal.ResetMoves(safeRoll);
             }
             RefreshBoundaryWallsOnServer();
+        }
+
+        public void MarkArrivedOnServer()
+        {
+            SetActionStateOnServer(PlayerBoardActionState.Arrived);
         }
 
         public void StopServerInputOnServer()
@@ -449,6 +587,11 @@ namespace MazeParty.Multiplayer
                 ChoiceResolution = (ItemChoiceResolution)_choiceResolution.Value,
                 SelectedItemSlot = _selectedItemSlot.Value,
                 OccupiedItemMask = _occupiedItemMask.Value,
+                MaxHealth = _maxHealth.Value,
+                CurrentHealth = _currentHealth.Value,
+                KeyCount = _keyCount.Value,
+                Gold = _gold.Value,
+                ActionState = (PlayerBoardActionState)_actionState.Value,
                 HasLogicalCurrentTile = logicalTile != null,
                 LogicalCurrentTileCoordinate = logicalTile != null
                     ? logicalTile.Coordinate
@@ -482,6 +625,13 @@ namespace MazeParty.Multiplayer
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
             _occupiedItemMask.Value = snapshot.OccupiedItemMask;
+            _maxHealth.Value = Mathf.Max(1, snapshot.MaxHealth);
+            _currentHealth.Value = PlayerStatRules.ClampHealth(
+                snapshot.CurrentHealth,
+                _maxHealth.Value);
+            _keyCount.Value = Mathf.Max(0, snapshot.KeyCount);
+            _gold.Value = Mathf.Max(0, snapshot.Gold);
+            _actionState.Value = (byte)snapshot.ActionState;
             _serverYaw = snapshot.Rotation.eulerAngles.y;
             TeleportController(snapshot.Position, snapshot.Rotation);
             _restoredFromSnapshot = true;

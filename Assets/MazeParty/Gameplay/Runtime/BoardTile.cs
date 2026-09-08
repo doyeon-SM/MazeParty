@@ -20,19 +20,55 @@ namespace MazeParty.Gameplay
         [SerializeField] private Vector2Int coordinate;
         [SerializeField] private BoardTileType tileType = BoardTileType.Normal;
         [SerializeField] private bool drawDebugBoundary = true;
+        [SerializeField] private Renderer landingEffectRenderer;
 
         private readonly HashSet<BoardTraversalState> _occupants = new HashSet<BoardTraversalState>();
+        private MaterialPropertyBlock _landingEffectProperties;
+        private BoardLandingEffectType _landingEffect;
 
         public Vector2Int Coordinate => coordinate;
         public BoardTileType TileType => tileType;
         public Vector3 WorldCenter => transform.position;
         public int OccupancyCount => _occupants.Count;
         public IReadOnlyCollection<BoardTraversalState> Occupants => _occupants;
+        public BoardLandingEffectType LandingEffect => _landingEffect;
+
+        private void Awake()
+        {
+            ResolveLandingEffectRenderer();
+        }
 
         public void Configure(Vector2Int gridCoordinate, BoardTileType type)
         {
             coordinate = gridCoordinate;
             tileType = type;
+        }
+
+        public void ApplyLandingEffectPresentation(BoardLandingEffectType effect)
+        {
+            _landingEffect = tileType == BoardTileType.Respawn
+                ? BoardLandingEffectType.None
+                : effect;
+            ResolveLandingEffectRenderer();
+            if (landingEffectRenderer == null)
+            {
+                return;
+            }
+
+            if (_landingEffect == BoardLandingEffectType.None)
+            {
+                landingEffectRenderer.SetPropertyBlock(null);
+                return;
+            }
+
+            _landingEffectProperties ??= new MaterialPropertyBlock();
+            landingEffectRenderer.GetPropertyBlock(_landingEffectProperties);
+            var color = _landingEffect == BoardLandingEffectType.GoldGain
+                ? new Color(0.08f, 0.38f, 0.92f, 1f)
+                : new Color(0.78f, 0.08f, 0.12f, 1f);
+            _landingEffectProperties.SetColor("_BaseColor", color);
+            _landingEffectProperties.SetColor("_Color", color);
+            landingEffectRenderer.SetPropertyBlock(_landingEffectProperties);
         }
 
         public bool ContainsHorizontalPoint(Vector3 worldPoint, float tolerance = 0f)
@@ -64,6 +100,14 @@ namespace MazeParty.Gameplay
         {
             if (traversal != null)
                 _occupants.Remove(traversal);
+        }
+
+        private void ResolveLandingEffectRenderer()
+        {
+            if (landingEffectRenderer == null)
+            {
+                landingEffectRenderer = GetComponent<Renderer>();
+            }
         }
 
         private void OnDrawGizmos()

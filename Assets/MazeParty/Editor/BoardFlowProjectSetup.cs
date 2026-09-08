@@ -618,14 +618,88 @@ namespace MazeParty.Editor
         private static void CreatePlayerPanel(Transform canvas, Font font)
         {
             var panel = CreatePanel("Player State Panel", canvas, new Vector2(0f, 1f),
-                new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(260f, 190f),
+                new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(370f, 420f),
                 new Vector2(0f, 1f), new Color(0.025f, 0.045f, 0.08f, 0.9f));
             CreateText("Players Title", panel.transform, "ONLINE PLAYERS", font, 19,
-                new Vector2(0f, -24f), new Vector2(230f, 32f), TextAnchor.MiddleCenter);
+                new Vector2(185f, -20f), new Vector2(330f, 30f), TextAnchor.MiddleCenter,
+                new Vector2(0f, 1f), new Vector2(0f, 1f));
             for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
             {
-                CreateText("PlayerState" + i, panel.transform, "P" + (i + 1) + "  WAITING", font, 18,
-                    new Vector2(0f, -61f - i * 30f), new Vector2(220f, 27f), TextAnchor.MiddleLeft);
+                var card = CreatePanel(
+                    "PlayerCard" + i,
+                    panel.transform,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f),
+                    new Vector2(12f, -44f - i * 90f),
+                    new Vector2(346f, 82f),
+                    new Vector2(0f, 1f),
+                    new Color(0.055f, 0.085f, 0.13f, 0.94f));
+                CreateText(
+                    "PlayerState" + i,
+                    card.transform,
+                    "P" + (i + 1) + "  WAITING",
+                    font,
+                    17,
+                    new Vector2(88f, -15f),
+                    new Vector2(150f, 24f),
+                    TextAnchor.MiddleLeft,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f));
+
+                var healthBar = CreatePanel(
+                    "PlayerHealthBar" + i,
+                    card.transform,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f),
+                    new Vector2(12f, -32f),
+                    new Vector2(220f, 18f),
+                    new Vector2(0f, 1f),
+                    new Color(0.12f, 0.14f, 0.18f, 1f));
+                var healthFill = CreatePanel(
+                    "PlayerHealthFill" + i,
+                    healthBar.transform,
+                    Vector2.zero,
+                    Vector2.one,
+                    Vector2.zero,
+                    Vector2.zero,
+                    new Vector2(0.5f, 0.5f),
+                    new Color(0.2f, 0.82f, 0.38f, 1f));
+                var fillImage = healthFill.GetComponent<Image>();
+                fillImage.type = Image.Type.Filled;
+                fillImage.fillMethod = Image.FillMethod.Horizontal;
+                fillImage.fillOrigin = 0;
+                fillImage.fillAmount = 1f;
+                CreateText(
+                    "PlayerHealthText" + i,
+                    healthBar.transform,
+                    "100/100",
+                    font,
+                    13,
+                    Vector2.zero,
+                    new Vector2(214f, 18f),
+                    TextAnchor.MiddleCenter);
+                CreateText(
+                    "PlayerCurrency" + i,
+                    card.transform,
+                    "KEY  0    GOLD  10",
+                    font,
+                    15,
+                    new Vector2(116f, -65f),
+                    new Vector2(220f, 22f),
+                    TextAnchor.MiddleLeft,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f));
+                CreateText(
+                    "PlayerActionIcon" + i,
+                    card.transform,
+                    string.Empty,
+                    font,
+                    16,
+                    new Vector2(288f, -52f),
+                    new Vector2(100f, 38f),
+                    TextAnchor.MiddleCenter,
+                    new Vector2(0f, 1f),
+                    new Vector2(0f, 1f));
             }
         }
 
@@ -960,7 +1034,7 @@ namespace MazeParty.Editor
         private static void CreateEditorTools(Transform canvas, Font font)
         {
             var panel = CreatePanel("Editor Flow Tools", canvas, new Vector2(1f, 1f),
-                new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 270f),
+                new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 430f),
                 new Vector2(1f, 1f), new Color(0.08f, 0.035f, 0.11f, 0.95f));
             CreateText("Editor Tools Title", panel.transform, "EDITOR LOCAL TOOLS", font, 20,
                 new Vector2(0f, -28f), new Vector2(270f, 32f), TextAnchor.MiddleCenter);
@@ -973,6 +1047,12 @@ namespace MazeParty.Editor
                 new Vector2(0f, -154f), new Vector2(270f, 42f));
             CreateButton("EditorPauseButton", panel.transform, "PAUSE / RESUME MODEL", font,
                 new Vector2(0f, -203f), new Vector2(270f, 42f));
+            CreateButton("EditorDamagePlayerButton", panel.transform, "DAMAGE P1  -20 HP", font,
+                new Vector2(0f, -252f), new Vector2(270f, 42f));
+            CreateButton("EditorAddGoldButton", panel.transform, "ADD P1 GOLD  +10", font,
+                new Vector2(0f, -301f), new Vector2(270f, 42f));
+            CreateButton("EditorBuyKeyButton", panel.transform, "BUY KEY  -20 GOLD", font,
+                new Vector2(0f, -350f), new Vector2(270f, 42f));
         }
 
         private static GameObject FindDescendant(Transform root, string objectName)

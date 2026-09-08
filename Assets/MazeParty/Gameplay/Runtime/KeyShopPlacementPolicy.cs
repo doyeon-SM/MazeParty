@@ -55,7 +55,11 @@ namespace MazeParty.Gameplay
             for (var i = 0; i < tiles.Count; i++)
             {
                 var tile = tiles[i];
-                if (tile == null || tile.TileType != BoardTileType.Normal)
+                // Start is only an authoring marker for the initial spawn position;
+                // it has no special board-rule meaning once play begins.
+                if (tile == null ||
+                    (tile.TileType != BoardTileType.Normal &&
+                     tile.TileType != BoardTileType.Start))
                     continue;
                 if (!seenCoordinates.Add(tile.Coordinate))
                     continue;

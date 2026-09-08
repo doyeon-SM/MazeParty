@@ -18,6 +18,11 @@ namespace MazeParty.Multiplayer
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Image[] _playerCards = new Image[MultiplayerConstants.MaxPlayers];
+        private readonly Image[] _playerHealthFills = new Image[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerCurrencyTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
@@ -41,6 +46,7 @@ namespace MazeParty.Multiplayer
         private KeyShopWorldMarker _keyShopMarker;
         private BoardTopology _topology;
         private int _lastRevision = -1;
+        private int _lastBoardEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private bool _wired;
 
@@ -75,6 +81,7 @@ namespace MazeParty.Multiplayer
             RefreshLocalPlayer(match);
             RefreshInventory();
             RefreshPlayerRows(match);
+            RefreshBoardEffects(match);
             RefreshKeyShop(match);
             RefreshCursor(match);
             RefreshStatusOnStateChange(match);
@@ -151,6 +158,11 @@ namespace MazeParty.Multiplayer
             for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
             {
                 _playerRows[i] = FindNamedComponent<Text>("PlayerState" + i);
+                _playerCards[i] = FindNamedComponent<Image>("PlayerCard" + i);
+                _playerHealthFills[i] = FindNamedComponent<Image>("PlayerHealthFill" + i);
+                _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
+                _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
+                _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
             }
 
             WireButtons();
@@ -317,23 +329,91 @@ namespace MazeParty.Multiplayer
         {
             for (var slot = 0; slot < _playerRows.Length; slot++)
             {
-                if (_playerRows[slot] == null)
+                var isPresent = match.IsPlayerPresent(slot);
+                var avatar = match.GetAvatarForSlot(slot);
+                var isLocal = _localAvatar != null && _localAvatar.AssignedSlot == slot;
+                var connectionLabel = !isPresent
+                    ? "RECONNECTING"
+                    : isLocal ? "LOCAL" : "ONLINE";
+                SetText(_playerRows[slot], "P" + (slot + 1) + "  " + connectionLabel);
+                if (_playerRows[slot] != null)
+                {
+                    _playerRows[slot].color = isPresent
+                    ? PlayerColor(slot)
+                    : new Color(1f, 0.45f, 0.35f);
+                }
+
+                if (_playerCards[slot] != null)
+                {
+                    _playerCards[slot].color = isLocal
+                        ? new Color(0.16f, 0.3f, 0.5f, 0.98f)
+                        : new Color(0.055f, 0.085f, 0.13f, 0.94f);
+                }
+
+                var maxHealth = avatar != null ? Mathf.Max(1, avatar.MaxHealth) : 1;
+                var currentHealth = avatar != null ? avatar.CurrentHealth : 0;
+                var healthRatio = avatar != null
+                    ? Mathf.Clamp01(currentHealth / (float)maxHealth)
+                    : 0f;
+                if (_playerHealthFills[slot] != null)
+                {
+                    _playerHealthFills[slot].fillAmount = healthRatio;
+                    _playerHealthFills[slot].color = healthRatio > 0.5f
+                        ? new Color(0.2f, 0.82f, 0.38f, 1f)
+                        : healthRatio > 0.25f
+                            ? new Color(1f, 0.7f, 0.16f, 1f)
+                            : new Color(0.95f, 0.2f, 0.2f, 1f);
+                }
+                SetText(_playerHealthTexts[slot], avatar != null
+                    ? currentHealth + "/" + maxHealth
+                    : "--/--");
+                SetText(_playerCurrencyTexts[slot], avatar != null
+                    ? "KEY  " + avatar.KeyCount + "    GOLD  " + avatar.Gold
+                    : "KEY  --    GOLD  --");
+
+                var actionState = avatar != null && isPresent && !match.IsReconnectPaused
+                    ? avatar.ActionState
+                    : PlayerBoardActionState.Hidden;
+                SetText(_playerActionIcons[slot], ActionIconLabel(actionState));
+                if (_playerActionIcons[slot] != null)
+                {
+                    _playerActionIcons[slot].color = ActionIconColor(actionState);
+                }
+            }
+        }
+
+        private void RefreshBoardEffects(NetworkMatchState match)
+        {
+            if (match.BoardEffectRevision <= 0 ||
+                _lastBoardEffectRevision == match.BoardEffectRevision)
+            {
+                return;
+            }
+
+            if (_topology == null)
+            {
+                _topology = FindAnyObjectByType<BoardTopology>();
+            }
+            if (_topology == null)
+            {
+                return;
+            }
+
+            for (var i = 0; i < _topology.Tiles.Count; i++)
+            {
+                var tile = _topology.Tiles[i];
+                if (tile == null)
                 {
                     continue;
                 }
 
-                var state = !match.IsPlayerPresent(slot)
-                    ? "RECONNECTING"
-                    : match.FlowState == BoardFlowState.MinigameIntroReady
-                        ? (match.IsMinigameReady(slot) ? "READY" : "WAITING")
-                        : match.FlowState == BoardFlowState.Action
-                            ? (match.HasArrived(slot) ? "ARRIVED" : match.HasRolled(slot) ? "MOVING" : "CHOOSING")
-                            : "ON BOARD";
-                _playerRows[slot].text = "P" + (slot + 1) + "  " + state;
-                _playerRows[slot].color = match.IsPlayerPresent(slot)
-                    ? PlayerColor(slot)
-                    : new Color(1f, 0.45f, 0.35f);
+                var effect = match.TryGetBoardLandingEffect(tile.Coordinate, out var assigned)
+                    ? assigned
+                    : BoardLandingEffectType.None;
+                tile.ApplyLandingEffectPresentation(effect);
             }
+
+            _lastBoardEffectRevision = match.BoardEffectRevision;
         }
 
         private void RefreshKeyShop(NetworkMatchState match)
@@ -404,11 +484,14 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve:
                     SetText(_statusText, "Input closed. Camera rising while pending effects settle.");
                     break;
+                case BoardFlowState.LandingEffectResolve:
+                    SetText(_statusText, "Combat completion placeholder resolved. Applying landing gold effects in player order.");
+                    break;
                 case BoardFlowState.MinigameIntroReady:
                     SetText(_statusText, "Minigame implementation is pending. All four players press READY to skip.");
                     break;
                 case BoardFlowState.SkippedResult:
-                    SetText(_statusText, "RESULT PLACEHOLDER: no reward or currency change was applied.");
+                    SetText(_statusText, "RESULT PLACEHOLDER: no minigame reward was applied.");
                     break;
             }
         }
@@ -481,6 +564,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.Descending: return "DESCENDING";
                 case BoardFlowState.Action: return "FIRST-PERSON ACTION";
                 case BoardFlowState.AscendingResolve: return "RESOLVING / ASCENDING";
+                case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
                 case BoardFlowState.MinigameIntroReady: return "MINIGAME READY (DEV SKIP)";
                 case BoardFlowState.SkippedResult: return "RESULT PLACEHOLDER";
                 default: return state.ToString().ToUpperInvariant();
@@ -518,6 +602,30 @@ namespace MazeParty.Multiplayer
                 case 1: return new Color(0.42f, 0.7f, 1f);
                 case 2: return new Color(0.42f, 1f, 0.58f);
                 default: return new Color(1f, 0.82f, 0.35f);
+            }
+        }
+
+        private static string ActionIconLabel(PlayerBoardActionState state)
+        {
+            switch (state)
+            {
+                case PlayerBoardActionState.Dice: return "DICE";
+                case PlayerBoardActionState.Moving: return "MOVE";
+                case PlayerBoardActionState.Arrived: return "ARRIVED";
+                case PlayerBoardActionState.Fighting: return "FIGHT";
+                default: return string.Empty;
+            }
+        }
+
+        private static Color ActionIconColor(PlayerBoardActionState state)
+        {
+            switch (state)
+            {
+                case PlayerBoardActionState.Dice: return new Color(0.4f, 0.75f, 1f);
+                case PlayerBoardActionState.Moving: return new Color(0.35f, 1f, 0.55f);
+                case PlayerBoardActionState.Arrived: return new Color(1f, 0.82f, 0.3f);
+                case PlayerBoardActionState.Fighting: return new Color(1f, 0.3f, 0.25f);
+                default: return Color.clear;
             }
         }
     }
