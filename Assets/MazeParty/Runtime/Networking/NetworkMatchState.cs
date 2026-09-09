@@ -19,6 +19,7 @@ namespace MazeParty.Multiplayer
         // detection plus this grace. Configure 75-90 seconds, not exactly 60.
         public const double ReconnectGraceSeconds = 60d;
         public const double KeyShopRevealSeconds = 5d;
+        public const double AllPlayersArrivalGraceSeconds = 3d;
         private const int AllPlayersMask = (1 << MultiplayerConstants.MaxPlayers) - 1;
 
         private readonly NetworkVariable<bool> _gameplayEnabled = new NetworkVariable<bool>();
@@ -30,6 +31,8 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<double> _actionEndsAt = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _choiceEndsAt = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _shieldEndsAt = new NetworkVariable<double>();
+        private readonly NetworkVariable<double> _arrivalGraceEndsAt =
+            new NetworkVariable<double>();
         private readonly NetworkVariable<byte> _rolledMask = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _arrivedMask = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _readyMask = new NetworkVariable<byte>();
@@ -43,6 +46,8 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<double> _pausedActionRemaining = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedChoiceRemaining = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedShieldRemaining = new NetworkVariable<double>();
+        private readonly NetworkVariable<double> _pausedArrivalGraceRemaining =
+            new NetworkVariable<double>();
         private readonly NetworkVariable<byte> _keyShopLifecycle =
             new NetworkVariable<byte>((byte)KeyShopLifecycleState.Inactive);
         private readonly NetworkVariable<bool> _keyShopHasLocation = new NetworkVariable<bool>();
@@ -78,6 +83,7 @@ namespace MazeParty.Multiplayer
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
         private BoardFlowStateMachine _flow;
         private bool _endingForReconnectTimeout;
+        private int _arrivalGracePendingSlot = -1;
         private KeyShopRuntimeState _keyShopRuntime;
         private BoardTopology _boardTopology;
         private double _keyShopAppearanceEndsAt;
@@ -120,6 +126,13 @@ namespace MazeParty.Multiplayer
         public bool CanAcceptActionInput =>
             IsActionPhase && !IsGlobalSimulationPaused && ActionRemaining > 0d;
         public bool IsOpeningProtectionActive => ShieldRemaining > 0d;
+        public double ArrivalGraceRemaining => RemainingUntil(
+            _arrivalGraceEndsAt.Value,
+            _pausedArrivalGraceRemaining.Value);
+        public bool IsArrivalGraceActive =>
+            IsActionPhase &&
+            (_arrivedMask.Value & AllPlayersMask) == AllPlayersMask &&
+            ArrivalGraceRemaining > 0d;
         public KeyShopLifecycleState KeyShopLifecycle =>
             (KeyShopLifecycleState)_keyShopLifecycle.Value;
         public bool KeyShopHasLocation => _keyShopHasLocation.Value;
@@ -275,6 +288,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             _flow.Tick(now);
+            AdvanceArrivalGraceOnServer(now);
             TryStartLoadedMinefieldOnServer(now);
             AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
@@ -308,6 +322,9 @@ namespace MazeParty.Multiplayer
             _gameplayEnabled.Value = true;
             _rolledMask.Value = 0;
             _arrivedMask.Value = 0;
+            _arrivalGracePendingSlot = -1;
+            _arrivalGraceEndsAt.Value = 0d;
+            _pausedArrivalGraceRemaining.Value = 0d;
             _readyMask.Value = 0;
             _snapshotRestoredMask.Value = AllPlayersMask;
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
@@ -545,16 +562,32 @@ namespace MazeParty.Multiplayer
             var arrivalTime = ServerNow;
             var previousArrival = _arrivalTimes[slot];
             _arrivalTimes[slot] = arrivalTime;
-            if (!_flow.TryReportPlayerArrived(slot, arrivalTime))
+            var nextArrivedMask = (byte)(_arrivedMask.Value | (1 << slot));
+            var completesAllPlayers =
+                (nextArrivedMask & AllPlayersMask) == AllPlayersMask;
+            if (!completesAllPlayers &&
+                !_flow.TryReportPlayerArrived(slot, arrivalTime))
             {
                 _arrivalTimes[slot] = previousArrival;
                 return false;
             }
 
-            _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << slot));
+            _arrivedMask.Value = nextArrivedMask;
             if (FlowState == BoardFlowState.Action)
             {
                 avatar.MarkArrivedOnServer();
+            }
+
+            if (completesAllPlayers)
+            {
+                // Keep the board in first-person for a short, visible grace
+                // period. The pure flow model receives the fourth arrival only
+                // when this authoritative deadline expires.
+                _arrivalGracePendingSlot = slot;
+                _arrivalGraceEndsAt.Value =
+                    arrivalTime + AllPlayersArrivalGraceSeconds;
+                _pausedArrivalGraceRemaining.Value = 0d;
+                _stateRevision.Value++;
             }
             return true;
         }
@@ -689,6 +722,11 @@ namespace MazeParty.Multiplayer
                 _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
                 _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
                 _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
+                _pausedArrivalGraceRemaining.Value =
+                    _arrivalGraceEndsAt.Value > 0d
+                        ? Math.Max(0d, _arrivalGraceEndsAt.Value - now)
+                        : 0d;
+                _arrivalGraceEndsAt.Value = 0d;
             }
             RefreshPresentMask();
             _snapshotRestoredMask.Value = (byte)(_presentMask.Value & AllPlayersMask);
@@ -813,6 +851,7 @@ namespace MazeParty.Multiplayer
                     ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
+                    ClearArrivalGraceOnServer();
                     _readyMask.Value = 0;
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);
@@ -822,10 +861,16 @@ namespace MazeParty.Multiplayer
                     ResetArrivalTimes();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
+                    ClearArrivalGraceOnServer();
                     _readyMask.Value = 0;
                     ForEachAvatar(avatar => avatar.BeginActionOnServer(transition.Turn));
                     break;
                 case BoardFlowState.AscendingResolve:
+                    if (_flow.LastActionEndReason == BoardActionEndReason.TimeExpired)
+                    {
+                        ForceTimedOutPlayersOneTileOnServer();
+                    }
+                    ClearArrivalGraceOnServer();
                     FillMissingArrivalTimes(transition.OccurredAt);
                     ForEachAvatar(avatar => avatar.EndActionOnServer());
                     break;
@@ -888,6 +933,13 @@ namespace MazeParty.Multiplayer
             {
                 _flow.Resume(now);
                 ResumeCombatAndPersonalProtectionOnServer(now);
+                if (_arrivalGracePendingSlot >= 0 &&
+                    _pausedArrivalGraceRemaining.Value > 0d)
+                {
+                    _arrivalGraceEndsAt.Value =
+                        now + _pausedArrivalGraceRemaining.Value;
+                }
+                _pausedArrivalGraceRemaining.Value = 0d;
             }
             NetworkMinefieldState.Instance?.ResumeOnServer(now);
             SyncFlowSnapshot(now);
@@ -1002,6 +1054,42 @@ namespace MazeParty.Multiplayer
         private void StopAllAvatarInputOnServer()
         {
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
+        }
+
+        private void AdvanceArrivalGraceOnServer(double now)
+        {
+            if (!IsServer || FlowState != BoardFlowState.Action ||
+                _arrivalGracePendingSlot < 0 ||
+                _arrivalGraceEndsAt.Value <= 0d ||
+                now < _arrivalGraceEndsAt.Value)
+            {
+                return;
+            }
+
+            var pendingSlot = _arrivalGracePendingSlot;
+            ClearArrivalGraceOnServer();
+            _flow.TryReportPlayerArrived(pendingSlot, now);
+        }
+
+        private void ClearArrivalGraceOnServer()
+        {
+            _arrivalGracePendingSlot = -1;
+            _arrivalGraceEndsAt.Value = 0d;
+            _pausedArrivalGraceRemaining.Value = 0d;
+        }
+
+        private void ForceTimedOutPlayersOneTileOnServer()
+        {
+            ForEachAvatar(avatar =>
+            {
+                var slot = avatar.AssignedSlot;
+                if (!HasArrived(slot))
+                {
+                    avatar.ForceAdvanceOneTileOnServer(_turn.Value);
+                    _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << slot));
+                    avatar.MarkArrivedOnServer();
+                }
+            });
         }
 
         private void RefreshPresentMask()

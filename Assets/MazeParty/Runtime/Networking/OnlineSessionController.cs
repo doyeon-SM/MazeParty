@@ -189,6 +189,7 @@ namespace MazeParty.Multiplayer
             lobbyView.ReadyRequested += OnReadyRequested;
             lobbyView.StartRequested += OnStartRequested;
             lobbyView.LeaveRequested += OnLeaveRequested;
+            lobbyView.QuitRequested += OnQuitRequested;
             lobbyView.AppearanceChanged += OnAppearanceChanged;
         }
 
@@ -205,6 +206,7 @@ namespace MazeParty.Multiplayer
             lobbyView.ReadyRequested -= OnReadyRequested;
             lobbyView.StartRequested -= OnStartRequested;
             lobbyView.LeaveRequested -= OnLeaveRequested;
+            lobbyView.QuitRequested -= OnQuitRequested;
             lobbyView.AppearanceChanged -= OnAppearanceChanged;
         }
 
@@ -288,6 +290,15 @@ namespace MazeParty.Multiplayer
         private void OnLeaveRequested()
         {
             RunAsync(LeaveSessionAsync, "Leaving the session...");
+        }
+
+        private void OnQuitRequested()
+        {
+#if UNITY_EDITOR
+            UnityEditor.EditorApplication.isPlaying = false;
+#else
+            Application.Quit();
+#endif
         }
 
         private async Task CreateAndPublishAsync(string displayName)
@@ -937,6 +948,8 @@ namespace MazeParty.Multiplayer
 
         private void SetLobbyRendering(bool enabled)
         {
+            lobbyView?.SetPresentationVisible(enabled);
+
             if (lobbyCamera != null)
             {
                 lobbyCamera.enabled = enabled;

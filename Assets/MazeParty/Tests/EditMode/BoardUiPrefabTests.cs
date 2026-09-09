@@ -39,6 +39,33 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(anchorNames, Does.Contain("ItemShopOffer4"));
         }
 
+        [Test]
+        public void BoardCanvas_CanHideAllBoardUiDuringMinefieldGameplay()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var view = instance.GetComponent<BoardFlowView>();
+                var canvas = instance.GetComponent<Canvas>();
+                var raycaster = instance.GetComponent<GraphicRaycaster>();
+
+                view.SetBoardUiVisible(false);
+                Assert.That(view.BoardUiVisible, Is.False);
+                Assert.That(canvas.enabled, Is.False);
+                Assert.That(raycaster.enabled, Is.False);
+
+                view.SetBoardUiVisible(true);
+                Assert.That(view.BoardUiVisible, Is.True);
+                Assert.That(canvas.enabled, Is.True);
+                Assert.That(raycaster.enabled, Is.True);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
         [TestCase(BoardScenePath)]
         [TestCase(TestbedScenePath)]
         public void GeneratedScene_UsesSharedBoardCanvasPrefab(string scenePath)

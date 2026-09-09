@@ -5,7 +5,10 @@ using UnityEngine;
 
 namespace MazeParty.Gameplay
 {
-    [DefaultExecutionOrder(-100)]
+    // Evaluate after the local avatar has restored its owner-only eye rotation.
+    // NetworkTransform and the server motor may update the body earlier in the
+    // frame, but the rendered camera must always use the final local look pose.
+    [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class GameplayCameraDirector : MonoBehaviour, IGameplayCameraService
     {
@@ -34,6 +37,7 @@ namespace MazeParty.Gameplay
             BoardCameraFramingSettings.Default;
 
         [Header("Transition Timing")]
+        [SerializeField] private bool smoothCameraTransitions;
         [SerializeField, Min(0f)] private float boardToOverheadDuration = 0.35f;
         [SerializeField, Min(0f)] private float overheadToFirstPersonDuration = 0.65f;
         [SerializeField, Min(0f)] private float directTransitionDuration = 0.4f;
@@ -69,6 +73,7 @@ namespace MazeParty.Gameplay
         public Transform LocalPlayerEye => ResolveLocalPlayerEye();
         public BoardCameraFramingAnchor BoardFramingAnchor => boardFramingAnchor;
         public bool IsTransitioning => _isTransitioning;
+        public bool SmoothCameraTransitions => smoothCameraTransitions;
 
         public void Configure(
             Camera cameraOutput,
@@ -172,6 +177,12 @@ namespace MazeParty.Gameplay
             }
 
             EnsureRuntimeCameraSystem();
+
+            if (!smoothCameraTransitions)
+            {
+                SnapTo(mode);
+                return;
+            }
 
             if (!isActiveAndEnabled)
             {
@@ -403,6 +414,13 @@ namespace MazeParty.Gameplay
                     _brain = outputCamera.gameObject.AddComponent<CinemachineBrain>();
             }
 
+            if (_brain != null && !smoothCameraTransitions)
+            {
+                _brain.DefaultBlend = new CinemachineBlendDefinition(
+                    CinemachineBlendDefinition.Styles.Cut,
+                    0f);
+            }
+
             if (!Application.isPlaying)
                 return;
 
@@ -462,6 +480,17 @@ namespace MazeParty.Gameplay
             firstPersonCamera.ForceCameraPosition(
                 eye.position,
                 eye.rotation);
+
+            // CinemachineBrain commonly evaluates earlier in LateUpdate. Apply
+            // the same final pose to the render camera so a corrected network
+            // body transform cannot leak through for one frame as visible shake.
+            if (!_isTransitioning && activeMode == GameplayMode.FirstPerson &&
+                outputCamera != null)
+            {
+                outputCamera.transform.SetPositionAndRotation(
+                    eye.position,
+                    eye.rotation);
+            }
         }
 
         private void PreparePlayerOverheadPose()

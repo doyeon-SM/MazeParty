@@ -46,6 +46,8 @@ namespace MazeParty.Gameplay
 
         private GameObject _markerObject;
         private TextMesh _worldText;
+        private GameObject _topViewHighlight;
+        private bool _topViewHighlightRequested;
         private bool _hasAppliedSnapshot;
         private KeyShopLifecycleState _appliedState = KeyShopLifecycleState.Inactive;
         private bool _appliedHasLocation;
@@ -67,6 +69,15 @@ namespace MazeParty.Gameplay
         public Vector2Int AppliedCoordinate => _appliedCoordinate;
         public int LastAppliedRevision => _lastAppliedRevision;
         public bool IsVisible => _markerObject != null && _markerObject.activeSelf;
+
+        public void SetTopViewHighlight(bool highlighted)
+        {
+            _topViewHighlightRequested = highlighted;
+            if (_topViewHighlight != null)
+            {
+                _topViewHighlight.SetActive(highlighted);
+            }
+        }
 
         /// <summary>
         /// Applies a complete replicated snapshot. Calls with an older revision,
@@ -237,6 +248,14 @@ namespace MazeParty.Gameplay
             _worldText.characterSize = 0.09f;
             _worldText.color = labelColor;
             WorldTextOcclusion.Apply(_worldText);
+
+            _topViewHighlight = TopViewHighlightUtility.CreateSquareOutline(
+                _markerObject.transform,
+                "Key Shop Top View Highlight",
+                1.12f,
+                0.1f,
+                0.04f);
+            _topViewHighlight.SetActive(_topViewHighlightRequested);
 
             _markerObject.SetActive(false);
         }

@@ -107,6 +107,10 @@ namespace MazeParty.Multiplayer
 
             _localAvatar.AvatarVisual?.SetOwnerFirstPerson(
                 targetMode == GameplayMode.FirstPerson);
+            _localAvatar.AvatarVisual?.SetTopViewHighlight(
+                targetMode == GameplayMode.BoardTopDown);
+            BoardFlowView.Instance?.SetTopViewShopHighlights(
+                targetMode == GameplayMode.BoardTopDown);
         }
 
         private void RefreshCombatSpectatorFocus(NetworkMatchState match)

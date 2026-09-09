@@ -327,6 +327,18 @@ namespace MazeParty.Multiplayer
             RefreshLocalBoundaryPresentation();
         }
 
+        private void LateUpdate()
+        {
+            if (IsSpawned && IsOwner)
+            {
+                // The server-authoritative body yaw can arrive after input was
+                // sampled. Rebuild the owner-only eye offset every frame so the
+                // view keeps the yaw/pitch chosen by the player instead of
+                // snapping back toward the replicated body rotation.
+                ApplyLocalEyeRotation();
+            }
+        }
+
         private void FixedUpdate()
         {
             if (!IsSpawned || !IsServer || _slot.Value < 0)
@@ -1025,6 +1037,51 @@ namespace MazeParty.Multiplayer
         public void MarkArrivedOnServer()
         {
             SetActionStateOnServer(PlayerBoardActionState.Arrived);
+        }
+
+        public bool ForceAdvanceOneTileOnServer(int turn)
+        {
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            ResolveTopology();
+            EnsureTraversalInitialized();
+            if (_topology == null || !_traversal.IsInitialized)
+            {
+                return false;
+            }
+
+            var source = _traversal.CurrentTile;
+            var outgoing = _topology.GetOutgoingGates(source);
+            if (outgoing.Count == 0)
+            {
+                return false;
+            }
+
+            // Stable selection keeps every peer/replay deterministic while still
+            // distributing timed-out players across branching exits.
+            var gateIndex = Mathf.Abs(turn + _slot.Value) % outgoing.Count;
+            var destination = outgoing[gateIndex].Destination;
+            if (destination == null)
+            {
+                return false;
+            }
+
+            var direction = destination.WorldCenter - source.WorldCenter;
+            direction.y = 0f;
+            var rotation = direction.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
+                : transform.rotation;
+            _traversal.Relocate(destination, 0);
+            _remainingMoves.Value = 0;
+            TeleportController(destination.GetRecoveryCenter(1f), rotation);
+            _serverYaw = rotation.eulerAngles.y;
+            _serverPitch = 0f;
+            SyncLogicalTileOnServer();
+            RefreshBoundaryWallsOnServer();
+            return true;
         }
 
         public void StopServerInputOnServer()

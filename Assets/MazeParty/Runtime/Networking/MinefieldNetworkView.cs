@@ -15,8 +15,9 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class MinefieldNetworkView : MonoBehaviour
     {
-        private const float CameraHeight = 38f;
-        private const float CameraOrthographicSize = 24.5f;
+        public const float PlayerCameraHeight = 18f;
+        public const float PlayerCameraOrthographicSize = 9f;
+        public const float PlayerCameraTiltDegrees = 10f;
         private const float RunnerInterpolationSpeed = 16f;
 
         [SerializeField] private NetworkMinefieldState state;
@@ -35,6 +36,22 @@ namespace MazeParty.Multiplayer
         private Text _instructionText;
         private Text[] _scoreRows;
         private int _mineLayoutHash;
+        private bool _cameraConfigured;
+
+        public static Quaternion PlayerCameraRotation => Quaternion.Euler(
+            90f - PlayerCameraTiltDegrees,
+            0f,
+            0f);
+
+        public static Vector3 CalculatePlayerCameraPosition(Vector3 focus)
+        {
+            var backwardOffset = Mathf.Tan(
+                PlayerCameraTiltDegrees * Mathf.Deg2Rad) *
+                PlayerCameraHeight;
+            return focus +
+                   Vector3.up * PlayerCameraHeight +
+                   Vector3.back * backwardOffset;
+        }
 
         private void Awake()
         {
@@ -99,6 +116,7 @@ namespace MazeParty.Multiplayer
 
             SetWorldPresentationActive(true);
             RefreshRunners(match);
+            RefreshPlayerCamera(match);
             RefreshMines();
             RefreshCrusher();
             RefreshHud(match);
@@ -143,11 +161,15 @@ namespace MazeParty.Multiplayer
 
             var lens = topDownCamera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
-            lens.OrthographicSize = CameraOrthographicSize;
+            lens.OrthographicSize = PlayerCameraOrthographicSize;
             topDownCamera.Lens = lens;
             topDownCamera.ForceCameraPosition(
-                new Vector3(NetworkMinefieldState.ArenaCenterX, CameraHeight, 0f),
-                Quaternion.Euler(90f, 0f, 0f));
+                CalculatePlayerCameraPosition(new Vector3(
+                    NetworkMinefieldState.ArenaCenterX,
+                    0f,
+                    0f)),
+                PlayerCameraRotation);
+            _cameraConfigured = true;
         }
 
         private void RegisterCamera()
@@ -159,9 +181,46 @@ namespace MazeParty.Multiplayer
 
             if (_cameraDirector != null && topDownCamera != null)
             {
-                ConfigureCamera();
+                if (!_cameraConfigured)
+                {
+                    ConfigureCamera();
+                }
                 _cameraDirector.SetMinigameCamera(topDownCamera);
             }
+        }
+
+        private void RefreshPlayerCamera(NetworkMatchState match)
+        {
+            if (topDownCamera == null || match == null)
+            {
+                return;
+            }
+
+            var localSlot = -1;
+            for (var slot = 0; slot < _runners.Length; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar != null && avatar.IsOwner)
+                {
+                    localSlot = slot;
+                    break;
+                }
+            }
+
+            if (localSlot < 0 || localSlot >= _runners.Length)
+            {
+                return;
+            }
+
+            var runner = _runners[localSlot];
+            if (runner == null || runner.Root == null)
+            {
+                return;
+            }
+
+            topDownCamera.ForceCameraPosition(
+                CalculatePlayerCameraPosition(runner.Root.position),
+                PlayerCameraRotation);
         }
 
         private void EnsurePresentation()
@@ -235,14 +294,8 @@ namespace MazeParty.Multiplayer
             pulse.positionCount = 65;
             pulse.startColor = new Color(1f, 0.2f, 0.15f, 0.9f);
             pulse.endColor = pulse.startColor;
-            var pulseShader = Shader.Find("Universal Render Pipeline/Unlit");
-            if (pulseShader == null)
-            {
-                pulseShader = Shader.Find("Sprites/Default");
-            }
-            var pulseMaterial = pulseShader != null
-                ? new Material(pulseShader) { name = "Minefield Sonar Pulse (Runtime)" }
-                : null;
+            var pulseMaterial = WorldTextOcclusion.CreateBuildSafeLitMaterial(
+                "Minefield Sonar Pulse (Runtime)");
             if (pulseMaterial != null)
             {
                 pulse.material = pulseMaterial;
@@ -476,26 +529,38 @@ namespace MazeParty.Multiplayer
 
         private void RefreshHud(NetworkMatchState match)
         {
-            switch (state.Phase)
+            if (match.IsReconnectPaused)
             {
-                case NetworkMinefieldPhase.Countdown:
-                    _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  START IN " +
-                                      Mathf.CeilToInt((float)state.Remaining);
-                    break;
-                case NetworkMinefieldPhase.Running:
-                    _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  " +
-                                      FormatClock(state.Remaining);
-                    break;
-                case NetworkMinefieldPhase.RoundResult:
-                    _phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
-                                      Mathf.CeilToInt((float)state.Remaining);
-                    break;
-                case NetworkMinefieldPhase.Complete:
-                    _phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
-                    break;
-                default:
-                    _phaseText.text = "MINEFIELD";
-                    break;
+                _phaseText.text = "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
+                                  FormatClock(match.ReconnectRemaining);
+                _instructionText.text =
+                    "Waiting up to 60 seconds for the player to reconnect.";
+            }
+            else
+            {
+                _instructionText.text =
+                    "WASD MOVE   |   STOP + RMB SONAR   |   FIRST MINE: CRIPPLED   |   SECOND: OUT";
+                switch (state.Phase)
+                {
+                    case NetworkMinefieldPhase.Countdown:
+                        _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  START IN " +
+                                          Mathf.CeilToInt((float)state.Remaining);
+                        break;
+                    case NetworkMinefieldPhase.Running:
+                        _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  " +
+                                          FormatClock(state.Remaining);
+                        break;
+                    case NetworkMinefieldPhase.RoundResult:
+                        _phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
+                                          Mathf.CeilToInt((float)state.Remaining);
+                        break;
+                    case NetworkMinefieldPhase.Complete:
+                        _phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
+                        break;
+                    default:
+                        _phaseText.text = "MINEFIELD";
+                        break;
+                }
             }
 
             for (var slot = 0; slot < _scoreRows.Length; slot++)
@@ -664,6 +729,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            WorldTextOcclusion.ApplyBuildSafeSurface(renderer);
             var properties = new MaterialPropertyBlock();
             renderer.GetPropertyBlock(properties);
             properties.SetColor("_BaseColor", color);

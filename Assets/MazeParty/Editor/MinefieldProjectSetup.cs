@@ -357,14 +357,16 @@ namespace MazeParty.Editor
             var cameraObject = new GameObject("CM_MinefieldTopDown");
             cameraObject.transform.SetParent(parent);
             cameraObject.transform.SetPositionAndRotation(
-                new Vector3(NetworkMinefieldState.ArenaCenterX, 50f, 0f),
-                Quaternion.Euler(90f, 0f, 0f));
+                MinefieldNetworkView.CalculatePlayerCameraPosition(
+                    new Vector3(NetworkMinefieldState.ArenaCenterX, 0f, 0f)),
+                MinefieldNetworkView.PlayerCameraRotation);
 
             var camera = cameraObject.AddComponent<CinemachineCamera>();
             camera.Priority = 200;
             var lens = camera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
-            lens.OrthographicSize = 25f;
+            lens.OrthographicSize =
+                MinefieldNetworkView.PlayerCameraOrthographicSize;
             lens.NearClipPlane = 0.1f;
             lens.FarClipPlane = 100f;
             camera.Lens = lens;

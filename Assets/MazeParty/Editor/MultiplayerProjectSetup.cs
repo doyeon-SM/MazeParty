@@ -452,6 +452,14 @@ namespace MazeParty.Editor
                 TextAnchor.UpperLeft,
                 52f);
 
+            var quitButton = CreateButton(
+                "Quit Game Button",
+                window.transform,
+                "Quit Game",
+                font,
+                out _);
+            quitButton.targetGraphic.color = new Color(0.62f, 0.14f, 0.16f, 1f);
+
             sessionPanel.SetActive(false);
             runningText.gameObject.SetActive(false);
 
@@ -468,6 +476,7 @@ namespace MazeParty.Editor
                 readyButton,
                 startButton,
                 leaveButton,
+                quitButton,
                 inviteCodeText,
                 sessionSummaryText,
                 readyButtonText,

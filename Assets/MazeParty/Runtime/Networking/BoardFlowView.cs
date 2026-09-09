@@ -35,6 +35,8 @@ namespace MazeParty.Multiplayer
         private GameObject _reconnectOverlay;
         private GameObject _reticle;
         private GameObject _itemShopPanel;
+        private Canvas _boardCanvas;
+        private GraphicRaycaster _boardRaycaster;
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
@@ -72,15 +74,45 @@ namespace MazeParty.Multiplayer
         private int _lastMinefieldRound = -1;
         private bool _wired;
         private int _openItemShopIndex = -1;
+        private bool _topViewShopHighlightsVisible;
 
         public static BoardFlowView Instance { get; private set; }
         public static bool IsItemShopOpen =>
             Instance != null && Instance._openItemShopIndex >= 0;
+        public bool BoardUiVisible => _boardCanvas == null || _boardCanvas.enabled;
+
+        public void SetTopViewShopHighlights(bool visible)
+        {
+            _topViewShopHighlightsVisible = visible;
+            _keyShopMarker?.SetTopViewHighlight(visible);
+            _itemShopMarker?.SetTopViewHighlight(visible);
+        }
 
         public void Configure(GameplayCameraDirector director)
         {
             cameraDirector = director;
             BindUi();
+        }
+
+        public void SetBoardUiVisible(bool visible)
+        {
+            if (_boardCanvas == null)
+            {
+                _boardCanvas = GetComponent<Canvas>();
+            }
+            if (_boardRaycaster == null)
+            {
+                _boardRaycaster = GetComponent<GraphicRaycaster>();
+            }
+
+            if (_boardCanvas != null)
+            {
+                _boardCanvas.enabled = visible;
+            }
+            if (_boardRaycaster != null)
+            {
+                _boardRaycaster.enabled = visible;
+            }
         }
 
         private void Awake()
@@ -108,6 +140,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            SetBoardUiVisible(match.FlowState != BoardFlowState.MinigamePlaying);
             RefreshPanels(match);
             RefreshHeader(match);
             RefreshLocalPlayer(match);
@@ -249,6 +282,8 @@ namespace MazeParty.Multiplayer
 
         private void BindUi()
         {
+            _boardCanvas = GetComponent<Canvas>();
+            _boardRaycaster = GetComponent<GraphicRaycaster>();
             _selectionPanel = FindNamed("ItemSelectionPanel");
             _readyPanel = FindNamed("MinigameReadyPanel");
             _resultPanel = FindNamed("SkippedResultPanel");
@@ -418,7 +453,9 @@ namespace MazeParty.Multiplayer
         {
             var minefield = NetworkMinefieldState.Instance;
             SetText(_turnText, "TURN " + match.Turn);
-            SetText(_phaseText, match.IsKeyShopRevealActive
+            SetText(_phaseText, match.IsArrivalGraceActive
+                ? "DEBUG  ·  TOP VIEW DELAY"
+                : match.IsKeyShopRevealActive
                 ? "KEY SHOP MOVING"
                 : match.IsCombatPhase && match.IsCombatActive
                     ? "FIGHT " + match.CombatSequenceIndex +
@@ -428,7 +465,12 @@ namespace MazeParty.Multiplayer
                         : PhaseLabel(match.FlowState));
 
             string timerLabel;
-            if (match.IsKeyShopRevealActive)
+            if (match.IsArrivalGraceActive)
+            {
+                timerLabel = "TOP VIEW  " +
+                             match.ArrivalGraceRemaining.ToString("0.0") + "s";
+            }
+            else if (match.IsKeyShopRevealActive)
             {
                 timerLabel = FormatClock(match.KeyShopRevealRemaining);
             }
@@ -677,6 +719,8 @@ namespace MazeParty.Multiplayer
             if (_keyShopMarker == null)
             {
                 _keyShopMarker = FindAnyObjectByType<KeyShopWorldMarker>();
+                _keyShopMarker?.SetTopViewHighlight(
+                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {
@@ -696,6 +740,8 @@ namespace MazeParty.Multiplayer
             if (_itemShopMarker == null)
             {
                 _itemShopMarker = FindAnyObjectByType<ItemShopWorldMarker>();
+                _itemShopMarker?.SetTopViewHighlight(
+                    _topViewShopHighlightsVisible);
             }
             if (_topology == null)
             {
@@ -827,7 +873,9 @@ namespace MazeParty.Multiplayer
                     SetText(_statusText, "Camera descending to your first-person view.");
                     break;
                 case BoardFlowState.Action:
-                    SetText(_statusText, choice == ItemChoiceResolution.Pending
+                    SetText(_statusText, match.IsArrivalGraceActive
+                        ? "DEBUG: all players arrived. Top view starts after the 3-second grace timer."
+                        : choice == ItemChoiceResolution.Pending
                         ? "Choose an item or DO NOT USE. Your personal limit is 30 seconds."
                         : "WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item.");
                     break;
@@ -1033,6 +1081,7 @@ namespace MazeParty.Multiplayer
 
         private void SetWaitingState()
         {
+            SetBoardUiVisible(true);
             SetActive(_selectionPanel, false);
             SetActive(_readyPanel, false);
             SetActive(_resultPanel, false);

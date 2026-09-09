@@ -30,6 +30,8 @@ namespace MazeParty.Gameplay
         [SerializeField] private Color blockedColor = new Color(0.005f, 0.008f, 0.012f, 1f);
 
         private readonly WallRuntime[] _walls = new WallRuntime[WallsPerSlot];
+        private readonly List<Vector2Int> _connectedCoordinates =
+            new List<Vector2Int>(4);
         private readonly List<Vector2Int> _outgoingCoordinates = new List<Vector2Int>(2);
         private GameObject _wallRoot;
         private Collider[] _ownerColliders = Array.Empty<Collider>();
@@ -94,6 +96,7 @@ namespace MazeParty.Gameplay
                 return;
             }
 
+            _connectedCoordinates.Clear();
             _outgoingCoordinates.Clear();
             if (topology != null)
             {
@@ -102,12 +105,26 @@ namespace MazeParty.Gameplay
                 {
                     var gate = outgoing[i];
                     if (gate != null && gate.Destination != null)
+                    {
+                        _connectedCoordinates.Add(gate.Destination.Coordinate);
                         _outgoingCoordinates.Add(gate.Destination.Coordinate);
+                    }
+                }
+
+                var incoming = topology.GetIncomingGates(logicalTile);
+                for (var i = 0; i < incoming.Count; i++)
+                {
+                    var gate = incoming[i];
+                    if (gate != null && gate.Source != null)
+                    {
+                        _connectedCoordinates.Add(gate.Source.Coordinate);
+                    }
                 }
             }
 
             _currentLayout = BoardBoundaryWallPolicy.Evaluate(
                 logicalTile.Coordinate,
+                _connectedCoordinates,
                 _outgoingCoordinates,
                 remainingMoves);
             PlaceWalls(logicalTile, _currentLayout);

@@ -56,6 +56,21 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(layout.IsPhysicallyBlocked((BoardBoundarySide)i), Is.True);
         }
 
+        [Test]
+        public void IncomingOnlyConnection_RemainsVisibleAndBlocked()
+        {
+            var layout = BoardBoundaryWallPolicy.Evaluate(
+                Vector2Int.zero,
+                new[] { Vector2Int.left },
+                new Vector2Int[0],
+                3);
+
+            Assert.That(layout.HasExit(BoardBoundarySide.West), Is.True);
+            Assert.That(layout.IsPassable(BoardBoundarySide.West), Is.False);
+            Assert.That(layout.IsPhysicallyBlocked(BoardBoundarySide.West), Is.True);
+            Assert.That(layout.HasExit(BoardBoundarySide.North), Is.False);
+        }
+
         [TestCase(0, 1, BoardBoundarySide.North)]
         [TestCase(1, 0, BoardBoundarySide.East)]
         [TestCase(0, -1, BoardBoundarySide.South)]
@@ -118,6 +133,41 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(eastCollider.enabled, Is.True);
             Assert.That(walls.TryGetWall(BoardBoundarySide.North, out var north, out var northCollider), Is.True);
             Assert.That(north.activeSelf, Is.False);
+            Assert.That(northCollider.enabled, Is.False);
+        }
+
+        [Test]
+        public void Refresh_IncomingOnlyPathKeepsBlackBlockingVeilActive()
+        {
+            var source = CreateTile("Source", Vector2Int.zero, Vector3.zero);
+            var west = CreateTile(
+                "West",
+                Vector2Int.left,
+                Vector3.left * BoardTile.RoomSize);
+            var incomingGate = CreateGate(west, source);
+            var topology = CreateTopology(source, west, incomingGate);
+            var controller = CreateController("P1");
+            var walls = controller.gameObject.AddComponent<PlayerBoardBoundaryWalls>();
+            walls.Configure(0, controller, topology);
+
+            walls.Refresh(source, 3);
+
+            Assert.That(walls.TryGetWall(
+                BoardBoundarySide.West,
+                out var westWall,
+                out var westCollider), Is.True);
+            Assert.That(westWall.activeSelf, Is.True);
+            Assert.That(westCollider.enabled, Is.True);
+            var color = ReadWallColor(westWall);
+            Assert.That(color.r, Is.LessThan(0.05f));
+            Assert.That(color.g, Is.LessThan(0.05f));
+            Assert.That(color.b, Is.LessThan(0.05f));
+
+            Assert.That(walls.TryGetWall(
+                BoardBoundarySide.North,
+                out var northWall,
+                out var northCollider), Is.True);
+            Assert.That(northWall.activeSelf, Is.False);
             Assert.That(northCollider.enabled, Is.False);
         }
 

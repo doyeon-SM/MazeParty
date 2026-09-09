@@ -22,6 +22,64 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab";
 
         [Test]
+        public void Minefield_UsesThreeColumnsAndTwentyContinuousMines()
+        {
+            Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(3));
+            Assert.That(NetworkMinefieldState.MineCount, Is.EqualTo(20));
+
+            var first = NetworkMinefieldState.GenerateMineWorldPositions(
+                0x123456789ABCDEF0UL,
+                1);
+            var second = NetworkMinefieldState.GenerateMineWorldPositions(
+                0x123456789ABCDEF0UL,
+                1);
+            Assert.That(second, Is.EqualTo(first));
+            Assert.That(first.Length, Is.EqualTo(20));
+
+            var cellWidth = (NetworkMinefieldState.ArenaMaxX -
+                             NetworkMinefieldState.ArenaMinX) /
+                            NetworkMinefieldState.GridWidth;
+            var cellDepth = (NetworkMinefieldState.ArenaMaxZ -
+                             NetworkMinefieldState.ArenaMinZ) /
+                            NetworkMinefieldState.GridHeight;
+            var occupiedCells = first.Select(position => new Vector2Int(
+                Mathf.FloorToInt((position.x - NetworkMinefieldState.ArenaMinX) /
+                                 cellWidth),
+                Mathf.FloorToInt((position.z - NetworkMinefieldState.ArenaMinZ) /
+                                 cellDepth))).ToArray();
+
+            Assert.That(occupiedCells.Distinct().Count(), Is.LessThan(first.Length),
+                "Continuous placement must permit more than one mine in a logical cell.");
+            Assert.That(first.Any(position =>
+                Mathf.Abs((position.x - NetworkMinefieldState.ArenaMinX) /
+                          cellWidth - 0.5f -
+                          Mathf.Floor((position.x - NetworkMinefieldState.ArenaMinX) /
+                                      cellWidth)) > 0.01f),
+                Is.True,
+                "Mines must not be locked to cell centers.");
+
+            for (var index = 0; index < first.Length; index++)
+            {
+                Assert.That(first[index].x, Is.InRange(
+                    NetworkMinefieldState.ArenaMinX +
+                    NetworkMinefieldState.MineSpawnHorizontalPadding,
+                    NetworkMinefieldState.ArenaMaxX -
+                    NetworkMinefieldState.MineSpawnHorizontalPadding));
+                Assert.That(first[index].z, Is.InRange(
+                    NetworkMinefieldState.ArenaMinZ +
+                    NetworkMinefieldState.MineSafeZoneDepth,
+                    NetworkMinefieldState.ArenaMaxZ -
+                    NetworkMinefieldState.MineSafeZoneDepth));
+                for (var other = index + 1; other < first.Length; other++)
+                {
+                    Assert.That(Vector3.Distance(first[index], first[other]),
+                        Is.GreaterThanOrEqualTo(
+                            NetworkMinefieldState.MinimumMineSpacing - 0.0001f));
+                }
+            }
+        }
+
+        [Test]
         public void Minefield_IsThirdEnabledBuildScene()
         {
             var enabled = EditorBuildSettings.scenes
@@ -133,6 +191,26 @@ namespace MazeParty.Multiplayer.Tests
                 stateType.GetField("_revealedMinePositions", PrivateInstance)?.FieldType,
                 Is.EqualTo(typeof(NetworkList<Vector3>)),
                 "Only sonar-authorized mine positions should be replicated.");
+        }
+
+        [Test]
+        public void PlayerCamera_IsLocalTopViewTiltedTenDegreesFromVertical()
+        {
+            var focus = new Vector3(12f, 0f, -5f);
+            var position = MinefieldNetworkView.CalculatePlayerCameraPosition(focus);
+            var rotation = MinefieldNetworkView.PlayerCameraRotation;
+            var forward = rotation * Vector3.forward;
+
+            Assert.That(position.y, Is.EqualTo(
+                focus.y + MinefieldNetworkView.PlayerCameraHeight).Within(0.001f));
+            Assert.That(position.z, Is.LessThan(focus.z));
+            Assert.That(
+                Vector3.Angle(forward, Vector3.down),
+                Is.EqualTo(MinefieldNetworkView.PlayerCameraTiltDegrees).Within(0.001f));
+            Assert.That(
+                MinefieldNetworkView.PlayerCameraOrthographicSize,
+                Is.LessThan(12f),
+                "Each client should frame its own runner rather than the full course.");
         }
 
         private static Transform FindDescendant(Transform root, string name)

@@ -67,6 +67,14 @@ namespace MazeParty.Multiplayer.Tests
 
     public sealed class MultiplayerAssetConfigurationTests
     {
+        [Test]
+        public void BoardArrivalGrace_IsThreeSeconds()
+        {
+            Assert.That(
+                NetworkMatchState.AllPlayersArrivalGraceSeconds,
+                Is.EqualTo(3d));
+        }
+
         private const string BootstrapScene = "Assets/MazeParty/Scenes/OnlineBootstrap.unity";
         private const string BoardScene = "Assets/MazeParty/Scenes/Board.unity";
         private const string PlayerPrefab = "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
@@ -261,6 +269,28 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     lobbyView.PlayerRowCount,
                     Is.EqualTo(MultiplayerConstants.MaxPlayers));
+
+                var quitButtonTransform = lobbyView.transform.Find(
+                    "Lobby Window/Quit Game Button");
+                Assert.That(quitButtonTransform, Is.Not.Null);
+                var quitButton = quitButtonTransform.GetComponent<Button>();
+                Assert.That(quitButton, Is.Not.Null);
+                Assert.That(
+                    quitButton.GetComponentInChildren<Text>(true).text,
+                    Is.EqualTo("Quit Game"));
+                var serializedView = new SerializedObject(lobbyView);
+                Assert.That(
+                    serializedView.FindProperty("quitButton").objectReferenceValue,
+                    Is.SameAs(quitButton));
+
+                var lobbyCanvasGroup = lobbyView.GetComponent<CanvasGroup>();
+                lobbyView.SetPresentationVisible(false);
+                Assert.That(lobbyView.PresentationVisible, Is.False);
+                Assert.That(lobbyCanvasGroup.alpha, Is.Zero);
+                Assert.That(lobbyCanvasGroup.interactable, Is.False);
+                Assert.That(lobbyCanvasGroup.blocksRaycasts, Is.False);
+                lobbyView.SetPresentationVisible(true);
+                Assert.That(lobbyCanvasGroup.alpha, Is.EqualTo(1f));
 
                 var eventSystems = roots
                     .SelectMany(root => root.GetComponentsInChildren<EventSystem>(true))

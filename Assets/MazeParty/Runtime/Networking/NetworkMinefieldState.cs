@@ -23,9 +23,9 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkMinefieldState : NetworkBehaviour
     {
-        public const int GridWidth = 5;
+        public const int GridWidth = 3;
         public const int GridHeight = 12;
-        public const int MineCount = 24;
+        public const int MineCount = 20;
         public const double CountdownSeconds = 3d;
         public const double RunSeconds = 40d;
         public const double RoundResultSeconds = 4d;
@@ -36,6 +36,10 @@ namespace MazeParty.Multiplayer
         public const float ArenaMaxZ = 22f;
         public const float RunnerSpeed = 5f;
         public const float SonarRadius = 6f;
+        public const float MineSafeZoneDepth =
+            (ArenaMaxZ - ArenaMinZ) / GridHeight;
+        public const float MineSpawnHorizontalPadding = 0.75f;
+        public const float MinimumMineSpacing = 0.8f;
 
         private const float RunnerStartZ = ArenaMinZ + 0.75f;
         private const float FinishWorldZ = ArenaMaxZ - 0.5f;
@@ -47,9 +51,6 @@ namespace MazeParty.Multiplayer
         private const float CrusherSpeed = 1.1625f;
         private const double SonarDurationSeconds = 0.75d;
         private const float StationaryInputThreshold = 0.0001f;
-
-        private static readonly MinefieldCell[] ForbiddenMineCells =
-            BuildForbiddenMineCells();
 
         private readonly NetworkVariable<bool> _matchActive =
             new NetworkVariable<bool>(
@@ -158,7 +159,6 @@ namespace MazeParty.Multiplayer
         private readonly List<Vector3> _sensorRevealScratch =
             new List<Vector3>(MineCount);
 
-        private MinefieldCell[] _cachedMineCells = Array.Empty<MinefieldCell>();
         private Vector3[] _cachedMineWorldPositions = Array.Empty<Vector3>();
         private Vector3[] _cachedActiveMineWorldPositions = Array.Empty<Vector3>();
         private ulong _cachedLayoutSeed;
@@ -1111,7 +1111,6 @@ namespace MazeParty.Multiplayer
 
             if (round < 1 || round > MinefieldRules.RoundCount)
             {
-                _cachedMineCells = Array.Empty<MinefieldCell>();
                 _cachedMineWorldPositions = Array.Empty<Vector3>();
                 _cachedActiveMineWorldPositions = Array.Empty<Vector3>();
                 _cachedLayoutRound = round;
@@ -1122,22 +1121,9 @@ namespace MazeParty.Multiplayer
 
             if (_cachedLayoutRound != round || _cachedLayoutSeed != seed)
             {
-                _cachedMineCells = MinefieldLayoutGenerator.Generate(
-                    GridWidth,
-                    GridHeight,
-                    MineCount,
+                _cachedMineWorldPositions = GenerateMineWorldPositions(
                     seed,
-                    round,
-                    ForbiddenMineCells);
-                _cachedMineWorldPositions =
-                    new Vector3[_cachedMineCells.Length];
-                for (var index = 0;
-                     index < _cachedMineCells.Length;
-                     index++)
-                {
-                    _cachedMineWorldPositions[index] =
-                        CellToWorld(_cachedMineCells[index]);
-                }
+                    round);
             }
 
             var activeMines = new List<Vector3>(_cachedMineWorldPositions.Length);
@@ -1157,14 +1143,72 @@ namespace MazeParty.Multiplayer
             _cachedDetonatedMask = detonatedMask;
         }
 
-        private static Vector3 CellToWorld(MinefieldCell cell)
+        public static Vector3[] GenerateMineWorldPositions(
+            ulong serverSeed,
+            int roundNumber)
         {
-            var cellWidth = (ArenaMaxX - ArenaMinX) / GridWidth;
-            var cellDepth = (ArenaMaxZ - ArenaMinZ) / GridHeight;
-            return new Vector3(
-                ArenaMinX + (cell.X + 0.5f) * cellWidth,
-                0f,
-                ArenaMinZ + (cell.Y + 0.5f) * cellDepth);
+            var random = new MinePositionRandom(
+                MinefieldLayoutGenerator.DeriveRoundSeed(
+                    serverSeed,
+                    roundNumber));
+            var positions = new Vector3[MineCount];
+            var minimumSpacingSquared = MinimumMineSpacing * MinimumMineSpacing;
+            var minX = ArenaMinX + MineSpawnHorizontalPadding;
+            var maxX = ArenaMaxX - MineSpawnHorizontalPadding;
+            var minZ = ArenaMinZ + MineSafeZoneDepth;
+            var maxZ = ArenaMaxZ - MineSafeZoneDepth;
+
+            for (var index = 0; index < positions.Length; index++)
+            {
+                var accepted = false;
+                for (var attempt = 0; attempt < 128; attempt++)
+                {
+                    var candidate = new Vector3(
+                        Mathf.Lerp(minX, maxX, random.NextUnitFloat()),
+                        0f,
+                        Mathf.Lerp(minZ, maxZ, random.NextUnitFloat()));
+                    if (IsFarEnoughFromExisting(
+                            positions,
+                            index,
+                            candidate,
+                            minimumSpacingSquared))
+                    {
+                        positions[index] = candidate;
+                        accepted = true;
+                        break;
+                    }
+                }
+
+                if (!accepted)
+                {
+                    // The arena is far larger than the requested density, so this
+                    // is only a deterministic safety fallback for extreme future
+                    // rule changes.
+                    positions[index] = new Vector3(
+                        Mathf.Lerp(minX, maxX, random.NextUnitFloat()),
+                        0f,
+                        Mathf.Lerp(minZ, maxZ, random.NextUnitFloat()));
+                }
+            }
+
+            return positions;
+        }
+
+        private static bool IsFarEnoughFromExisting(
+            IReadOnlyList<Vector3> positions,
+            int count,
+            Vector3 candidate,
+            float minimumSpacingSquared)
+        {
+            for (var index = 0; index < count; index++)
+            {
+                if ((positions[index] - candidate).sqrMagnitude <
+                    minimumSpacingSquared)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void InvalidateLayoutCache()
@@ -1225,7 +1269,6 @@ namespace MazeParty.Multiplayer
                 _hasRoundOutcome[slot] = false;
             }
 
-            _cachedMineCells = Array.Empty<MinefieldCell>();
             _cachedMineWorldPositions = Array.Empty<Vector3>();
             _cachedActiveMineWorldPositions = Array.Empty<Vector3>();
             _revealedMineCache.Clear();
@@ -1249,16 +1292,26 @@ namespace MazeParty.Multiplayer
                 NetworkVariableWritePermission.Server);
         }
 
-        private static MinefieldCell[] BuildForbiddenMineCells()
+        private struct MinePositionRandom
         {
-            var cells = new MinefieldCell[GridWidth * 2];
-            for (var x = 0; x < GridWidth; x++)
+            private ulong _state;
+
+            public MinePositionRandom(ulong seed)
             {
-                cells[x] = new MinefieldCell(x, 0);
-                cells[GridWidth + x] = new MinefieldCell(x, GridHeight - 1);
+                _state = seed;
             }
 
-            return cells;
+            public float NextUnitFloat()
+            {
+                _state = unchecked(_state + 0x9E3779B97F4A7C15UL);
+                var value = _state;
+                value = unchecked(
+                    (value ^ (value >> 30)) * 0xBF58476D1CE4E5B9UL);
+                value = unchecked(
+                    (value ^ (value >> 27)) * 0x94D049BB133111EBUL);
+                value ^= value >> 31;
+                return (value >> 40) * (1f / 16777216f);
+            }
         }
 
         private static byte SetMaskBit(byte mask, int slot, bool enabled)

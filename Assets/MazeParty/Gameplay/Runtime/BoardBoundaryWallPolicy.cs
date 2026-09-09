@@ -13,7 +13,8 @@ namespace MazeParty.Gameplay
 
     /// <summary>
     /// Immutable four-wall decision for one player's current logical room.
-    /// ExitMask describes topology; PassableMask additionally accounts for moves.
+    /// ExitMask describes physical topology in either direction. PassableMask
+    /// describes outgoing directions that can currently consume a move.
     /// </summary>
     public readonly struct BoardBoundaryWallLayout
     {
@@ -60,19 +61,43 @@ namespace MazeParty.Gameplay
             IReadOnlyList<Vector2Int> outgoingDestinations,
             int remainingMoves)
         {
+            return Evaluate(
+                source,
+                outgoingDestinations,
+                outgoingDestinations,
+                remainingMoves);
+        }
+
+        public static BoardBoundaryWallLayout Evaluate(
+            Vector2Int source,
+            IReadOnlyList<Vector2Int> connectedDestinations,
+            IReadOnlyList<Vector2Int> outgoingDestinations,
+            int remainingMoves)
+        {
             byte exitMask = 0;
-            if (outgoingDestinations != null)
+            if (connectedDestinations != null)
             {
-                for (var i = 0; i < outgoingDestinations.Count; i++)
+                for (var i = 0; i < connectedDestinations.Count; i++)
                 {
-                    if (TryGetSide(source, outgoingDestinations[i], out var side))
+                    if (TryGetSide(source, connectedDestinations[i], out var side))
                     {
                         exitMask |= ToMask(side);
                     }
                 }
             }
 
-            var passableMask = remainingMoves > 0 ? exitMask : (byte)0;
+            byte passableMask = 0;
+            if (remainingMoves > 0 && outgoingDestinations != null)
+            {
+                for (var i = 0; i < outgoingDestinations.Count; i++)
+                {
+                    if (TryGetSide(source, outgoingDestinations[i], out var side))
+                    {
+                        passableMask |= ToMask(side);
+                    }
+                }
+            }
+
             return new BoardBoundaryWallLayout(exitMask, passableMask);
         }
 

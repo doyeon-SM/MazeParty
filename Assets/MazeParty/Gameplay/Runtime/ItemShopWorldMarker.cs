@@ -12,6 +12,21 @@ namespace MazeParty.Gameplay
         private readonly GameObject[] _markers = new GameObject[ItemShopRules.ShopCount];
         private readonly TextMesh[] _labels = new TextMesh[ItemShopRules.ShopCount];
         private readonly int[] _revisions = { -1, -1 };
+        private readonly GameObject[] _topViewHighlights =
+            new GameObject[ItemShopRules.ShopCount];
+        private bool _topViewHighlightRequested;
+
+        public void SetTopViewHighlight(bool highlighted)
+        {
+            _topViewHighlightRequested = highlighted;
+            for (var index = 0; index < _topViewHighlights.Length; index++)
+            {
+                if (_topViewHighlights[index] != null)
+                {
+                    _topViewHighlights[index].SetActive(highlighted);
+                }
+            }
+        }
 
         public GameObject GetMarkerObject(int shopIndex)
         {
@@ -91,6 +106,15 @@ namespace MazeParty.Gameplay
             label.characterSize = 0.09f;
             label.color = Color.white;
             WorldTextOcclusion.Apply(label);
+
+            _topViewHighlights[shopIndex] =
+                TopViewHighlightUtility.CreateSquareOutline(
+                    root.transform,
+                    "Item Shop Top View Highlight " + (shopIndex + 1),
+                    1.05f,
+                    0.1f,
+                    0.04f);
+            _topViewHighlights[shopIndex].SetActive(_topViewHighlightRequested);
 
             _markers[shopIndex] = root;
             _labels[shopIndex] = label;

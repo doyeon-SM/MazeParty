@@ -43,6 +43,7 @@ namespace MazeParty.Gameplay
         private Transform _firstPersonRightHand;
         private Transform _worldItemRoot;
         private Transform _firstPersonItemRoot;
+        private GameObject _topViewHighlight;
         private readonly Transform[] _worldItemModels = new Transform[4];
         private readonly Transform[] _firstPersonItemModels = new Transform[4];
         private CapsuleCollider _bodyHitbox;
@@ -213,6 +214,26 @@ namespace MazeParty.Gameplay
             EnsureBuilt();
             _ownerFirstPerson = firstPerson;
             RefreshVisibility();
+        }
+
+        public void SetTopViewHighlight(bool highlighted)
+        {
+            EnsureBuilt();
+            if (highlighted && _topViewHighlight == null)
+            {
+                _topViewHighlight = TopViewHighlightUtility.CreateSquareOutline(
+                    transform,
+                    "Local Player Top View Highlight",
+                    0.72f,
+                    0.09f,
+                    -0.98f);
+            }
+
+            if (_topViewHighlight != null &&
+                _topViewHighlight.activeSelf != highlighted)
+            {
+                _topViewHighlight.SetActive(highlighted);
+            }
         }
 
         public void TriggerPunch()

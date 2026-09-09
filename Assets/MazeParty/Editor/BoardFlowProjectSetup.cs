@@ -556,7 +556,7 @@ namespace MazeParty.Editor
             cameraObject.AddComponent<AudioListener>();
             var brain = cameraObject.AddComponent<CinemachineBrain>();
             brain.DefaultBlend = new CinemachineBlendDefinition(
-                CinemachineBlendDefinition.Styles.EaseInOut, 0.4f);
+                CinemachineBlendDefinition.Styles.Cut, 0f);
             brain.IgnoreTimeScale = true;
 
             var boardPose = settings.Evaluate(Vector3.zero, 16f / 9f);

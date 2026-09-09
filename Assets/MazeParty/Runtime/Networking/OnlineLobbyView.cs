@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button readyButton;
         [SerializeField] private Button startButton;
         [SerializeField] private Button leaveButton;
+        [SerializeField] private Button quitButton;
         [SerializeField] private Text inviteCodeText;
         [SerializeField] private Text sessionSummaryText;
         [SerializeField] private Text readyButtonText;
@@ -42,6 +43,8 @@ namespace MazeParty.Multiplayer
         private int _selectedPaletteIndex;
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
+        private bool _presentationVisible = true;
+        private bool _lastBusy;
 
         public event Action<string> CreateRequested;
         public event Action<string, string> JoinRequested;
@@ -49,6 +52,7 @@ namespace MazeParty.Multiplayer
         public event Action ReadyRequested;
         public event Action StartRequested;
         public event Action LeaveRequested;
+        public event Action QuitRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
 
         public bool HasRequiredReferences =>
@@ -63,6 +67,7 @@ namespace MazeParty.Multiplayer
             readyButton != null &&
             startButton != null &&
             leaveButton != null &&
+            quitButton != null &&
             inviteCodeText != null &&
             sessionSummaryText != null &&
             readyButtonText != null &&
@@ -75,6 +80,7 @@ namespace MazeParty.Multiplayer
             statusText != null;
 
         public int PlayerRowCount => playerRows != null ? playerRows.Length : 0;
+        public bool PresentationVisible => _presentationVisible;
 
         public void Configure(
             CanvasGroup configuredCanvasGroup,
@@ -88,6 +94,7 @@ namespace MazeParty.Multiplayer
             Button configuredReadyButton,
             Button configuredStartButton,
             Button configuredLeaveButton,
+            Button configuredQuitButton,
             Text configuredInviteCodeText,
             Text configuredSessionSummaryText,
             Text configuredReadyButtonText,
@@ -108,6 +115,7 @@ namespace MazeParty.Multiplayer
             readyButton = configuredReadyButton;
             startButton = configuredStartButton;
             leaveButton = configuredLeaveButton;
+            quitButton = configuredQuitButton;
             inviteCodeText = configuredInviteCodeText;
             sessionSummaryText = configuredSessionSummaryText;
             readyButtonText = configuredReadyButtonText;
@@ -142,6 +150,12 @@ namespace MazeParty.Multiplayer
             RefreshPaletteAvailability();
         }
 
+        public void SetPresentationVisible(bool visible)
+        {
+            _presentationVisible = visible;
+            ApplyPresentationState();
+        }
+
         public void Render(
             SessionSnapshot snapshot,
             bool isInSession,
@@ -154,10 +168,13 @@ namespace MazeParty.Multiplayer
             }
 
             snapshot = snapshot ?? SessionSnapshot.Empty;
-            canvasGroup.interactable = !busy;
+            _lastBusy = busy;
+            ApplyPresentationState();
 
             connectionPanel.SetActive(!isInSession);
             sessionPanel.SetActive(isInSession);
+            quitButton.gameObject.SetActive(
+                !isInSession || snapshot.Phase == MultiplayerConstants.LobbyPhase);
             statusText.text = busy ? "Working..." : status ?? string.Empty;
 
             if (!isInSession)
@@ -217,6 +234,7 @@ namespace MazeParty.Multiplayer
             EnsureCustomizationUi();
             ApplyPlayerNameFont();
             BindButtonEvents();
+            ApplyPresentationState();
         }
 
         private void Update()
@@ -236,6 +254,18 @@ namespace MazeParty.Multiplayer
             UnbindButtonEvents();
         }
 
+        private void ApplyPresentationState()
+        {
+            if (canvasGroup == null)
+            {
+                return;
+            }
+
+            canvasGroup.alpha = _presentationVisible ? 1f : 0f;
+            canvasGroup.interactable = _presentationVisible && !_lastBusy;
+            canvasGroup.blocksRaycasts = _presentationVisible;
+        }
+
         private void BindButtonEvents()
         {
             if (_buttonEventsBound)
@@ -249,6 +279,7 @@ namespace MazeParty.Multiplayer
             readyButton.onClick.AddListener(OnReadyClicked);
             startButton.onClick.AddListener(OnStartClicked);
             leaveButton.onClick.AddListener(OnLeaveClicked);
+            quitButton.onClick.AddListener(OnQuitClicked);
             _buttonEventsBound = true;
         }
 
@@ -265,6 +296,7 @@ namespace MazeParty.Multiplayer
             readyButton.onClick.RemoveListener(OnReadyClicked);
             startButton.onClick.RemoveListener(OnStartClicked);
             leaveButton.onClick.RemoveListener(OnLeaveClicked);
+            quitButton.onClick.RemoveListener(OnQuitClicked);
             _buttonEventsBound = false;
         }
 
@@ -563,6 +595,11 @@ namespace MazeParty.Multiplayer
         private void OnLeaveClicked()
         {
             LeaveRequested?.Invoke();
+        }
+
+        private void OnQuitClicked()
+        {
+            QuitRequested?.Invoke();
         }
 
         private string NormalizeDisplayName()
