@@ -65,6 +65,19 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(marker.WorldTextMesh.text, Does.StartWith("KEY SHOP"));
             Assert.That(marker.WorldTextMesh.text, Does.Contain("20 GOLD"));
             Assert.That(
+                marker.WorldTextMesh.GetComponent<WorldTextOcclusion>(),
+                Is.Not.Null);
+            Assert.That(
+                marker.WorldTextMesh.GetComponent<MeshRenderer>().sharedMaterial.shader.name,
+                Is.EqualTo("MazeParty/WorldTextOccluded"));
+            var bodyRenderer = marker.MarkerObject.transform
+                .Find("Key Shop Target")
+                .GetComponent<MeshRenderer>();
+            Assert.That(bodyRenderer.sharedMaterial, Is.Not.Null);
+            Assert.That(
+                bodyRenderer.sharedMaterial.shader.name,
+                Is.EqualTo("Universal Render Pipeline/Lit"));
+            Assert.That(
                 marker.MarkerObject.transform.position,
                 Is.EqualTo(tile.WorldCenter + Vector3.up * KeyShopWorldMarker.DefaultVerticalOffset));
             Assert.That(observed.Tile, Is.SameAs(tile));

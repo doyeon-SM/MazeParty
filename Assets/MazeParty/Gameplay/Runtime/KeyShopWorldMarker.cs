@@ -200,6 +200,7 @@ namespace MazeParty.Gameplay
             var renderer = baseObject.GetComponent<Renderer>();
             if (renderer != null)
             {
+                WorldTextOcclusion.ApplyBuildSafeSurface(renderer);
                 var properties = new MaterialPropertyBlock();
                 properties.SetColor("_BaseColor", markerColor);
                 properties.SetColor("_Color", markerColor);
@@ -216,6 +217,7 @@ namespace MazeParty.Gameplay
             var bodyRenderer = bodyObject.GetComponent<Renderer>();
             if (bodyRenderer != null)
             {
+                WorldTextOcclusion.ApplyBuildSafeSurface(bodyRenderer);
                 var bodyProperties = new MaterialPropertyBlock();
                 bodyProperties.SetColor("_BaseColor", markerColor);
                 bodyProperties.SetColor("_Color", markerColor);
@@ -234,6 +236,7 @@ namespace MazeParty.Gameplay
             _worldText.fontSize = 48;
             _worldText.characterSize = 0.09f;
             _worldText.color = labelColor;
+            WorldTextOcclusion.Apply(_worldText);
 
             _markerObject.SetActive(false);
         }

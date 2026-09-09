@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -90,8 +91,52 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(prefab.GetComponent<Unity.Netcode.Components.NetworkTransform>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<CharacterController>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<NetworkPlayerAvatar>(), Is.Not.Null);
-            Assert.That(prefab.GetComponent<PlayerBoardBoundaryWalls>(), Is.Not.Null);
+            var boundaryWalls = prefab.GetComponent<PlayerBoardBoundaryWalls>();
+            Assert.That(boundaryWalls, Is.Not.Null);
+            Assert.That(boundaryWalls.WallMaterial, Is.Not.Null);
+            Assert.That(boundaryWalls.WallMaterial.shader.name,
+                Is.EqualTo("Universal Render Pipeline/Lit"));
             Assert.That(prefab.GetComponent<PlayerAvatarVisual>(), Is.Not.Null);
+        }
+
+        [Test]
+        public void LobbyArena_RuntimeFactoryCreatesVisibleFourPlayerRoom()
+        {
+            var cameraObject = new GameObject("Lobby Arena Test Camera");
+            var camera = cameraObject.AddComponent<Camera>();
+            var existedBeforeTest = Object.FindAnyObjectByType<LobbyArena>(
+                FindObjectsInactive.Include) != null;
+            var arena = LobbyArena.EnsureRuntimeCreated(camera);
+
+            try
+            {
+                Assert.That(arena, Is.Not.Null);
+                Assert.That(arena.SpawnCount, Is.EqualTo(MultiplayerConstants.MaxPlayers));
+                Assert.That(arena.InnerSize.x, Is.GreaterThan(8f));
+                Assert.That(arena.InnerSize.y, Is.GreaterThan(6f));
+                Assert.That(arena.transform.Find("Floor"), Is.Not.Null);
+                Assert.That(camera.fieldOfView, Is.EqualTo(48f));
+
+                for (var left = 0; left < MultiplayerConstants.MaxPlayers; left++)
+                {
+                    for (var right = left + 1; right < MultiplayerConstants.MaxPlayers; right++)
+                    {
+                        Assert.That(
+                            Vector3.Distance(
+                                arena.GetSpawnPosition(left),
+                                arena.GetSpawnPosition(right)),
+                            Is.GreaterThan(2f));
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(cameraObject);
+                if (!existedBeforeTest && arena != null)
+                {
+                    Object.DestroyImmediate(arena.gameObject);
+                }
+            }
         }
 
         [Test]
@@ -269,7 +314,73 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(appearance.MouthId, Is.Zero);
             Assert.That(appearance.HatId, Is.Zero);
             Assert.That(appearance.OutfitId, Is.Zero);
-            Assert.That(appearance.BodyColor, Is.EqualTo((Color)new Color32(0, 255, 255, 255)));
+            Assert.That(
+                (Color32)appearance.BodyColor,
+                Is.EqualTo(LobbyColorPalette.GetColor(4)));
+        }
+
+        [Test]
+        public void LobbyPalette_HasEightDistinctRequestedColors()
+        {
+            Assert.That(LobbyColorPalette.Count, Is.EqualTo(8));
+            var colors = Enumerable.Range(0, LobbyColorPalette.Count)
+                .Select(LobbyColorPalette.GetColor)
+                .ToArray();
+
+            Assert.That(colors.Distinct().Count(), Is.EqualTo(8));
+            Assert.That(LobbyColorPalette.GetDisplayName(0), Is.EqualTo("Red"));
+            Assert.That(LobbyColorPalette.GetDisplayName(7), Is.EqualTo("Black"));
+        }
+
+        [Test]
+        public void LobbyPalette_FirstAvailableSkipsOccupiedColors()
+        {
+            const byte occupied = 0b0010_1111;
+
+            Assert.That(LobbyColorPalette.FindFirstAvailable(occupied), Is.EqualTo(4));
+        }
+    }
+
+    public sealed class NetworkBoardTraversalRegressionTests
+    {
+        [Test]
+        public void EnsureTraversalInitialized_DoesNotRebindAnActiveGateCrossing()
+        {
+            var avatarObject = new GameObject("Traversal Regression Avatar");
+            var tileObject = new GameObject("Logical Source Tile");
+
+            try
+            {
+                var avatar = avatarObject.AddComponent<NetworkPlayerAvatar>();
+                var sourceTile = tileObject.AddComponent<BoardTile>();
+                sourceTile.Configure(Vector2Int.zero, BoardTileType.Normal);
+
+                var traversalField = typeof(NetworkPlayerAvatar).GetField(
+                    "_traversal",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                var ensureMethod = typeof(NetworkPlayerAvatar).GetMethod(
+                    "EnsureTraversalInitialized",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(traversalField, Is.Not.Null);
+                Assert.That(ensureMethod, Is.Not.Null);
+
+                var traversal = (BoardTraversalState)traversalField.GetValue(avatar);
+                traversal.Begin(sourceTile, 4);
+
+                // This method runs every server physics frame. While a capsule is
+                // between rooms it must preserve the logical source until the gate
+                // itself commits and decrements RemainingMoves.
+                avatarObject.transform.position = new Vector3(8f, 0f, 0f);
+                ensureMethod.Invoke(avatar, null);
+
+                Assert.That(traversal.CurrentTile, Is.SameAs(sourceTile));
+                Assert.That(traversal.RemainingMoves, Is.EqualTo(4));
+            }
+            finally
+            {
+                Object.DestroyImmediate(avatarObject);
+                Object.DestroyImmediate(tileObject);
+            }
         }
     }
 }

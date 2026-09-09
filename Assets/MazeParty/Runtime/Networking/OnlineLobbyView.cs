@@ -36,11 +36,11 @@ namespace MazeParty.Multiplayer
 
         private bool _buttonEventsBound;
         private GameObject _customizationPanel;
-        private Slider _redSlider;
-        private Slider _greenSlider;
-        private Slider _blueSlider;
+        private Button[] _paletteButtons = Array.Empty<Button>();
+        private Outline[] _paletteOutlines = Array.Empty<Outline>();
         private Toggle _testHatToggle;
-        private Image _colorPreview;
+        private int _selectedPaletteIndex;
+        private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
 
         public event Action<string> CreateRequested;
@@ -129,18 +129,17 @@ namespace MazeParty.Multiplayer
         public void SetAppearance(PlayerAppearanceState appearance)
         {
             EnsureCustomizationUi();
-            if (_redSlider == null)
+            if (_paletteButtons.Length == 0)
             {
                 return;
             }
 
             _suppressAppearanceEvents = true;
-            _redSlider.SetValueWithoutNotify(appearance.BodyRed);
-            _greenSlider.SetValueWithoutNotify(appearance.BodyGreen);
-            _blueSlider.SetValueWithoutNotify(appearance.BodyBlue);
+            _selectedPaletteIndex = LobbyColorPalette.FindClosestIndex(
+                (Color32)appearance.BodyColor);
             _testHatToggle.SetIsOnWithoutNotify(appearance.HatId == 1);
             _suppressAppearanceEvents = false;
-            RefreshColorPreview();
+            RefreshPaletteAvailability();
         }
 
         public void Render(
@@ -220,6 +219,18 @@ namespace MazeParty.Multiplayer
             BindButtonEvents();
         }
 
+        private void Update()
+        {
+            if (_customizationPanel == null || !_customizationPanel.activeInHierarchy ||
+                Time.unscaledTime < _nextPaletteAvailabilityRefresh)
+            {
+                return;
+            }
+
+            _nextPaletteAvailabilityRefresh = Time.unscaledTime + 0.15f;
+            RefreshPaletteAvailability();
+        }
+
         private void OnDestroy()
         {
             UnbindButtonEvents();
@@ -284,18 +295,66 @@ namespace MazeParty.Multiplayer
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             var panelSize = _customizationPanel.AddComponent<LayoutElement>();
-            panelSize.preferredHeight = 176f;
+            panelSize.preferredHeight = 164f;
 
             CreateRuntimeText(
                 "Customization Label",
                 _customizationPanel.transform,
-                "Character - Body Color / Test Hat",
+                "Character - Unique Body Color / Test Hat",
                 font,
                 17,
                 26f);
-            _redSlider = CreateColorSlider("R", _customizationPanel.transform, font);
-            _greenSlider = CreateColorSlider("G", _customizationPanel.transform, font);
-            _blueSlider = CreateColorSlider("B", _customizationPanel.transform, font);
+
+            var paletteGrid = CreateUiObject("Body Color Palette", _customizationPanel.transform);
+            var grid = paletteGrid.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(102f, 36f);
+            grid.spacing = new Vector2(8f, 8f);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 4;
+            grid.childAlignment = TextAnchor.MiddleLeft;
+            var gridSize = paletteGrid.AddComponent<LayoutElement>();
+            gridSize.preferredHeight = 80f;
+
+            _paletteButtons = new Button[LobbyColorPalette.Count];
+            _paletteOutlines = new Outline[LobbyColorPalette.Count];
+            for (var index = 0; index < LobbyColorPalette.Count; index++)
+            {
+                var capturedIndex = index;
+                var buttonObject = CreateUiObject(
+                    LobbyColorPalette.GetDisplayName(index) + " Color Button",
+                    paletteGrid.transform);
+                var image = buttonObject.AddComponent<Image>();
+                image.color = LobbyColorPalette.GetColor(index);
+                var outline = buttonObject.AddComponent<Outline>();
+                outline.effectColor = Color.white;
+                outline.effectDistance = new Vector2(3f, -3f);
+                var button = buttonObject.AddComponent<Button>();
+                button.targetGraphic = image;
+                var colors = button.colors;
+                colors.normalColor = Color.white;
+                colors.highlightedColor = new Color(1f, 1f, 1f, 0.82f);
+                colors.pressedColor = new Color(0.72f, 0.72f, 0.72f, 1f);
+                colors.selectedColor = colors.highlightedColor;
+                colors.disabledColor = new Color(0.2f, 0.2f, 0.2f, 0.32f);
+                button.colors = colors;
+
+                var label = CreateRuntimeText(
+                    "Label",
+                    buttonObject.transform,
+                    LobbyColorPalette.GetDisplayName(index),
+                    font,
+                    14,
+                    36f);
+                Destroy(label.GetComponent<LayoutElement>());
+                Stretch(label.rectTransform, 0f, 0f, 1f, 1f, 4f, 2f, -4f, -2f);
+                label.alignment = TextAnchor.MiddleCenter;
+                label.raycastTarget = false;
+                label.color = index == 2 ? Color.black : Color.white;
+
+                button.onClick.AddListener(() => OnPaletteColorClicked(capturedIndex));
+                _paletteButtons[index] = button;
+                _paletteOutlines[index] = outline;
+            }
 
             var footer = CreateUiObject("Customization Footer", _customizationPanel.transform);
             var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
@@ -306,16 +365,10 @@ namespace MazeParty.Multiplayer
             var footerSize = footer.AddComponent<LayoutElement>();
             footerSize.preferredHeight = 32f;
 
-            _colorPreview = CreateUiObject("Body Color Preview", footer.transform).AddComponent<Image>();
-            var previewSize = _colorPreview.gameObject.AddComponent<LayoutElement>();
-            previewSize.preferredWidth = 54f;
-            previewSize.preferredHeight = 28f;
             _testHatToggle = CreateToggle("Test Hat", footer.transform, font);
 
-            _redSlider.onValueChanged.AddListener(OnAppearanceControlChanged);
-            _greenSlider.onValueChanged.AddListener(OnAppearanceControlChanged);
-            _blueSlider.onValueChanged.AddListener(OnAppearanceControlChanged);
             _testHatToggle.onValueChanged.AddListener(OnHatControlChanged);
+            RefreshPaletteAvailability();
         }
 
         private void ApplyPlayerNameFont()
@@ -333,87 +386,77 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void OnAppearanceControlChanged(float _)
+        private void OnPaletteColorClicked(int paletteIndex)
         {
-            PublishAppearance();
+            PublishAppearance(paletteIndex);
         }
 
         private void OnHatControlChanged(bool _)
         {
-            PublishAppearance();
+            PublishAppearance(_selectedPaletteIndex);
         }
 
-        private void PublishAppearance()
+        private void PublishAppearance(int paletteIndex)
         {
-            if (_suppressAppearanceEvents || _redSlider == null)
+            if (_suppressAppearanceEvents || _paletteButtons.Length == 0 ||
+                paletteIndex < 0 || paletteIndex >= LobbyColorPalette.Count)
             {
                 return;
             }
 
-            RefreshColorPreview();
             AppearanceChanged?.Invoke(PlayerAppearanceState.FromColor(
-                new Color(
-                    _redSlider.value / 255f,
-                    _greenSlider.value / 255f,
-                    _blueSlider.value / 255f),
+                LobbyColorPalette.GetColor(paletteIndex),
                 0,
                 0,
                 (byte)(_testHatToggle.isOn ? 1 : 0),
                 0));
         }
 
-        private void RefreshColorPreview()
+        private void RefreshPaletteAvailability()
         {
-            if (_colorPreview != null && _redSlider != null)
+            if (_paletteButtons.Length == 0)
             {
-                _colorPreview.color = new Color(
-                    _redSlider.value / 255f,
-                    _greenSlider.value / 255f,
-                    _blueSlider.value / 255f);
+                return;
             }
-        }
 
-        private static Slider CreateColorSlider(string label, Transform parent, Font font)
-        {
-            var row = CreateUiObject(label + " Color Row", parent);
-            var rowLayout = row.AddComponent<HorizontalLayoutGroup>();
-            rowLayout.spacing = 8f;
-            rowLayout.childAlignment = TextAnchor.MiddleLeft;
-            rowLayout.childControlWidth = false;
-            rowLayout.childControlHeight = true;
-            var rowSize = row.AddComponent<LayoutElement>();
-            rowSize.preferredHeight = 25f;
+            byte occupiedMask = 0;
+            var localIndex = _selectedPaletteIndex;
+            var avatars = FindObjectsByType<NetworkPlayerAvatar>();
+            for (var avatarIndex = 0; avatarIndex < avatars.Length; avatarIndex++)
+            {
+                var avatar = avatars[avatarIndex];
+                if (avatar == null || !avatar.IsSpawned || avatar.AssignedSlot < 0 ||
+                    !LobbyColorPalette.TryGetIndex(
+                        (Color32)avatar.Appearance.BodyColor,
+                        out var paletteIndex))
+                {
+                    continue;
+                }
 
-            var labelText = CreateRuntimeText(label, row.transform, label, font, 15, 25f);
-            var labelSize = labelText.gameObject.GetComponent<LayoutElement>();
-            labelSize.preferredWidth = 22f;
+                if (avatar.IsOwner)
+                {
+                    localIndex = paletteIndex;
+                }
+                else
+                {
+                    occupiedMask = (byte)(occupiedMask | (1 << paletteIndex));
+                }
+            }
 
-            var sliderObject = CreateUiObject(label + " Slider", row.transform);
-            var sliderSize = sliderObject.AddComponent<LayoutElement>();
-            sliderSize.preferredWidth = 360f;
-            sliderSize.preferredHeight = 22f;
-            var background = CreateUiObject("Background", sliderObject.transform);
-            Stretch(background.GetComponent<RectTransform>(), 0f, 0f, 1f, 1f, 0f, 5f, 0f, -5f);
-            var backgroundImage = background.AddComponent<Image>();
-            backgroundImage.color = new Color(0.12f, 0.15f, 0.2f, 1f);
-            var fill = CreateUiObject("Fill", sliderObject.transform);
-            Stretch(fill.GetComponent<RectTransform>(), 0f, 0f, 1f, 1f, 0f, 6f, 0f, -6f);
-            var fillImage = fill.AddComponent<Image>();
-            fillImage.color = new Color(0.3f, 0.65f, 1f, 1f);
-            var handle = CreateUiObject("Handle", sliderObject.transform);
-            var handleRect = handle.GetComponent<RectTransform>();
-            handleRect.sizeDelta = new Vector2(16f, 22f);
-            var handleImage = handle.AddComponent<Image>();
-            handleImage.color = Color.white;
-            var slider = sliderObject.AddComponent<Slider>();
-            slider.minValue = 0f;
-            slider.maxValue = 255f;
-            slider.wholeNumbers = true;
-            slider.fillRect = fill.GetComponent<RectTransform>();
-            slider.handleRect = handleRect;
-            slider.targetGraphic = handleImage;
-            slider.direction = Slider.Direction.LeftToRight;
-            return slider;
+            _selectedPaletteIndex = Mathf.Clamp(
+                localIndex,
+                0,
+                LobbyColorPalette.Count - 1);
+            for (var index = 0; index < _paletteButtons.Length; index++)
+            {
+                var selected = index == _selectedPaletteIndex;
+                _paletteButtons[index].interactable =
+                    selected || (occupiedMask & (1 << index)) == 0;
+                if (_paletteOutlines[index] != null)
+                {
+                    _paletteOutlines[index].enabled = selected;
+                }
+            }
         }
 
         private static Toggle CreateToggle(string label, Transform parent, Font font)

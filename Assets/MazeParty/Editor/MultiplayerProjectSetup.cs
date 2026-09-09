@@ -24,6 +24,10 @@ namespace MazeParty.Editor
         private const string BoardPath = ScenesFolder + "/Board.unity";
         private const string MinefieldPath = ScenesFolder + "/Minefield.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
+        private const string LobbyFloorMaterialPath =
+            Root + "/Board/Materials/RoomNormalA.mat";
+        private const string LobbyWallMaterialPath =
+            Root + "/Board/Materials/RoomNormalB.mat";
 
         [MenuItem("MazeParty/Multiplayer/Rebuild Online Prototype")]
         public static void BuildOnlinePrototype()
@@ -102,7 +106,9 @@ namespace MazeParty.Editor
             player.AddComponent<NetworkPlayerAvatar>();
             // Four reusable boundaries are created by this component per player
             // instance (16 total for the fixed four-player match).
-            player.AddComponent<PlayerBoardBoundaryWalls>();
+            var boundaryWalls = player.AddComponent<PlayerBoardBoundaryWalls>();
+            boundaryWalls.ConfigureVisualMaterial(
+                LoadRequiredMaterial(LobbyWallMaterialPath));
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             Object.DestroyImmediate(player);
@@ -118,16 +124,18 @@ namespace MazeParty.Editor
             var camera = cameraObject.AddComponent<Camera>();
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.035f, 0.055f, 0.09f);
+            camera.fieldOfView = 48f;
             cameraObject.AddComponent<AudioListener>();
-            cameraObject.transform.SetPositionAndRotation(
-                new Vector3(0f, 10f, -12f),
-                Quaternion.Euler(35f, 0f, 0f));
+            cameraObject.transform.position = new Vector3(3.5f, 11.5f, -10.5f);
+            cameraObject.transform.LookAt(new Vector3(3.5f, 0.65f, 0f));
 
             var lightObject = new GameObject("Lobby Directional Light");
             var light = lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
             light.intensity = 1.2f;
             lightObject.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
+
+            CreateLobbyArena();
 
             var lobbyView = CreateLobbyCanvas();
             CreateEventSystem();
@@ -153,6 +161,87 @@ namespace MazeParty.Editor
             sessionController.ConfigureSceneReferences(camera, light, lobbyView);
 
             EditorSceneManager.SaveScene(scene, BootstrapPath);
+        }
+
+        private static void CreateLobbyArena()
+        {
+            var center = new Vector3(3.5f, 0f, 0f);
+            var innerSize = new Vector2(12f, 8f);
+            var root = new GameObject("Lobby Waiting Room");
+            var arena = root.AddComponent<LobbyArena>();
+            arena.Configure(
+                center,
+                innerSize,
+                new[]
+                {
+                    center + new Vector3(-2.7f, 1f, -1.8f),
+                    center + new Vector3(2.7f, 1f, -1.8f),
+                    center + new Vector3(-2.7f, 1f, 1.8f),
+                    center + new Vector3(2.7f, 1f, 1.8f)
+                });
+
+            var floorMaterial = LoadRequiredMaterial(LobbyFloorMaterialPath);
+            var wallMaterial = LoadRequiredMaterial(LobbyWallMaterialPath);
+            CreateLobbyPrimitive(
+                "Floor",
+                root.transform,
+                center + Vector3.down * 0.25f,
+                new Vector3(innerSize.x + 1f, 0.5f, innerSize.y + 1f),
+                floorMaterial);
+
+            const float thickness = 0.5f;
+            const float height = 0.8f;
+            CreateLobbyPrimitive(
+                "North Wall",
+                root.transform,
+                center + new Vector3(0f, height * 0.5f, innerSize.y * 0.5f + thickness * 0.5f),
+                new Vector3(innerSize.x + thickness * 2f, height, thickness),
+                wallMaterial);
+            CreateLobbyPrimitive(
+                "South Wall",
+                root.transform,
+                center + new Vector3(0f, height * 0.5f, -innerSize.y * 0.5f - thickness * 0.5f),
+                new Vector3(innerSize.x + thickness * 2f, height, thickness),
+                wallMaterial);
+            CreateLobbyPrimitive(
+                "East Wall",
+                root.transform,
+                center + new Vector3(innerSize.x * 0.5f + thickness * 0.5f, height * 0.5f, 0f),
+                new Vector3(thickness, height, innerSize.y),
+                wallMaterial);
+            CreateLobbyPrimitive(
+                "West Wall",
+                root.transform,
+                center + new Vector3(-innerSize.x * 0.5f - thickness * 0.5f, height * 0.5f, 0f),
+                new Vector3(thickness, height, innerSize.y),
+                wallMaterial);
+        }
+
+        private static void CreateLobbyPrimitive(
+            string name,
+            Transform parent,
+            Vector3 position,
+            Vector3 scale,
+            Material material)
+        {
+            var value = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            value.name = name;
+            value.transform.SetParent(parent, false);
+            value.transform.position = position;
+            value.transform.localScale = scale;
+            value.GetComponent<MeshRenderer>().sharedMaterial = material;
+        }
+
+        private static Material LoadRequiredMaterial(string path)
+        {
+            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Required URP material is missing: " + path);
+            }
+
+            return material;
         }
 
         private static OnlineLobbyView CreateLobbyCanvas()

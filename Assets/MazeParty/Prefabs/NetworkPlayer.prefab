@@ -14,9 +14,9 @@ GameObject:
   - component: {fileID: 796472346007224432}
   - component: {fileID: 5939352032377596255}
   - component: {fileID: 8299234884473236850}
+  - component: {fileID: 7169465345029459726}
   - component: {fileID: 5214929391124953187}
   - component: {fileID: 4292104244347041433}
-  - component: {fileID: 7169465345029459726}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -133,16 +133,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3447279005
+  GlobalObjectIdHash: 2612904362
   InScenePlacedSourceGlobalObjectIdHash: 0
   m_InScenePlacedDisabledByDefault: 0
   DeferredDespawnTick: 0
   Ownership: 1
   AlwaysReplicateAsRoot: 0
   SynchronizeTransform: 1
-  m_InScenePlaced: 0
+  m_InScenePlaced: 1
   ActiveSceneSynchronization: 0
-  SceneMigrationSynchronization: 1
+  SceneMigrationSynchronization: 0
   SpawnWithObservers: 1
   DontDestroyWithOwner: 0
   AutoObjectParentSync: 1
@@ -194,6 +194,18 @@ MonoBehaviour:
   SwitchTransformSpaceWhenParented: 0
   Interpolate: 1
   SlerpPosition: 0
+--- !u!114 &7169465345029459726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194173410356949699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual
 --- !u!114 &5214929391124953187
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -227,17 +239,6 @@ MonoBehaviour:
   topology: {fileID: 0}
   wallThickness: 0.16
   wallHeight: 2.5
+  wallMaterial: {fileID: 2100000, guid: 3951dccd0d73efe4e9f16f1d83236235, type: 2}
   passableColor: {r: 0.04, g: 0.32, b: 1, a: 0.72}
   blockedColor: {r: 0.005, g: 0.008, b: 0.012, a: 1}
---- !u!114 &7169465345029459726
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194173410356949699}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual

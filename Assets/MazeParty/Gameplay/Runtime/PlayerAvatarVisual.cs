@@ -477,8 +477,8 @@ namespace MazeParty.Gameplay
             if (font != null)
             {
                 _nameText.font = font;
-                _nameText.GetComponent<MeshRenderer>().sharedMaterial = font.material;
             }
+            WorldTextOcclusion.Apply(_nameText);
         }
 
         private void BuildHitboxes()
@@ -650,9 +650,11 @@ namespace MazeParty.Gameplay
             Color color,
             float smoothness)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ??
-                         Shader.Find("Standard");
-            var material = new Material(shader) { name = name };
+            var material = WorldTextOcclusion.CreateBuildSafeLitMaterial(name);
+            if (material == null)
+            {
+                return null;
+            }
             material.SetColor("_BaseColor", color);
             material.SetColor("_Color", color);
             material.SetFloat("_Metallic", 0f);
