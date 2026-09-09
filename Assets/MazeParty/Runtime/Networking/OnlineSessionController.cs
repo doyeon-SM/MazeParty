@@ -941,6 +941,12 @@ namespace MazeParty.Multiplayer
 
         private void UnloadBoardLocally()
         {
+            var minefield = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
+            if (minefield.IsValid() && minefield.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(minefield);
+            }
+
             var board = SceneManager.GetSceneByName(MultiplayerConstants.BoardScene);
             if (board.IsValid() && board.isLoaded)
             {

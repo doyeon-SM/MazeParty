@@ -1,5 +1,7 @@
 using System;
+using System.Text;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.Minefield;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -47,6 +49,15 @@ namespace MazeParty.Multiplayer
         private Text _itemShopTitle;
         private Text _itemShopTooltip;
         private Text _itemShopStatus;
+        private Text _minigameReadyTitle;
+        private Text _minigameReadyNote;
+        private Text _minigameReadyStatus;
+        private Text _minigameRulePlaceholder;
+        private Text _minefieldResultTitle;
+        private Text _minefieldResultNote;
+        private Text _minefieldResultSummary;
+        private Text _readyButtonLabel;
+        private Image _minefieldRuleImage;
         private Button _noItemButton;
         private Button _readyButton;
         private Button _itemShopCloseButton;
@@ -57,6 +68,8 @@ namespace MazeParty.Multiplayer
         private int _lastRevision = -1;
         private int _lastBoardEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
+        private NetworkMinefieldPhase _lastMinefieldPhase = NetworkMinefieldPhase.Inactive;
+        private int _lastMinefieldRound = -1;
         private bool _wired;
         private int _openItemShopIndex = -1;
 
@@ -256,8 +269,23 @@ namespace MazeParty.Multiplayer
             _itemShopTitle = FindNamedComponent<Text>("ItemShopTitle");
             _itemShopTooltip = FindNamedComponent<Text>("ItemShopTooltip");
             _itemShopStatus = FindNamedComponent<Text>("ItemShopStatus");
+            _minigameReadyTitle = FindNamedComponent<Text>("Ready Title");
+            _minigameReadyNote = FindNamedComponent<Text>("Ready Note");
+            _minigameReadyStatus =
+                FindNamedComponent<Text>("MinigameReadyStatus");
+            _minigameRulePlaceholder =
+                FindNamedComponent<Text>("MinigameRulePlaceholderText");
+            _minefieldResultTitle = FindNamedComponent<Text>("Result Title");
+            _minefieldResultNote = FindNamedComponent<Text>("Result Note");
+            _minefieldResultSummary =
+                FindNamedComponent<Text>("MinefieldResultSummary");
+            _minefieldRuleImage =
+                FindNamedComponent<Image>("MinigameRuleImage");
             _noItemButton = FindNamedComponent<Button>("NoItemButton");
             _readyButton = FindNamedComponent<Button>("ReadyButton");
+            _readyButtonLabel = _readyButton != null
+                ? _readyButton.GetComponentInChildren<Text>(true)
+                : null;
             _itemShopCloseButton = FindNamedComponent<Button>("ItemShopCloseButton");
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
@@ -359,11 +387,15 @@ namespace MazeParty.Multiplayer
                                 _localAvatar != null &&
                                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending &&
                                 !match.IsGlobalSimulationPaused;
+            var showMinefieldReady =
+                (match.FlowState == BoardFlowState.MinigameIntroReady ||
+                 match.FlowState == BoardFlowState.MinigameLoading) &&
+                !match.IsGlobalSimulationPaused;
             SetActive(_selectionPanel, choicePending);
-            SetActive(_readyPanel,
-                match.FlowState == BoardFlowState.MinigameIntroReady && !match.IsGlobalSimulationPaused);
+            SetActive(_readyPanel, showMinefieldReady);
             SetActive(_resultPanel,
-                match.FlowState == BoardFlowState.SkippedResult && !match.IsGlobalSimulationPaused);
+                match.FlowState == BoardFlowState.SkippedResult &&
+                !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
             SetActive(_reticle,
                 ((match.FlowState == BoardFlowState.Action && !choicePending &&
@@ -372,6 +404,8 @@ namespace MazeParty.Multiplayer
                   match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
                   match.IsCombatAlive(_localAvatar.AssignedSlot))) &&
                 !match.IsGlobalSimulationPaused);
+
+            RefreshMinefieldPanelContent(match);
 
             if (_reconnectText != null)
             {
@@ -382,23 +416,45 @@ namespace MazeParty.Multiplayer
 
         private void RefreshHeader(NetworkMatchState match)
         {
+            var minefield = NetworkMinefieldState.Instance;
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsKeyShopRevealActive
                 ? "KEY SHOP MOVING"
                 : match.IsCombatPhase && match.IsCombatActive
                     ? "FIGHT " + match.CombatSequenceIndex +
                       "  /  " + (match.CombatSequenceIndex + match.CombatQueueCount)
-                    : PhaseLabel(match.FlowState));
+                    : match.FlowState == BoardFlowState.MinigamePlaying
+                        ? MinefieldPhaseLabel(minefield)
+                        : PhaseLabel(match.FlowState));
 
-            var remaining = match.IsKeyShopRevealActive
-                ? match.KeyShopRevealRemaining
-                : match.FlowState == BoardFlowState.Action
+            string timerLabel;
+            if (match.IsKeyShopRevealActive)
+            {
+                timerLabel = FormatClock(match.KeyShopRevealRemaining);
+            }
+            else if (match.FlowState == BoardFlowState.MinigameIntroReady ||
+                     match.FlowState == BoardFlowState.MinigameLoading)
+            {
+                timerLabel = "--:--";
+            }
+            else if (match.FlowState == BoardFlowState.MinigamePlaying)
+            {
+                timerLabel = minefield != null
+                    ? FormatClock(minefield.Remaining)
+                    : "--:--";
+            }
+            else
+            {
+                var remaining = match.FlowState == BoardFlowState.Action
                     ? match.ActionRemaining
                     : match.IsCombatPhase
                         ? match.CombatRemaining
-                    : match.StateRemaining;
-            SetText(_phaseTimerText,
-                HasCountdown(match.FlowState) ? FormatClock(remaining) : "--:--");
+                        : match.StateRemaining;
+                timerLabel = HasCountdown(match.FlowState)
+                    ? FormatClock(remaining)
+                    : "--:--";
+            }
+            SetText(_phaseTimerText, timerLabel);
 
             SetText(_choiceTimerText,
                 match.FlowState == BoardFlowState.Action && _localAvatar != null &&
@@ -733,13 +789,23 @@ namespace MazeParty.Multiplayer
             var choice = _localAvatar != null
                 ? _localAvatar.LocalChoiceResolution
                 : ItemChoiceResolution.NotStarted;
-            if (_lastRevision == match.StateRevision && _lastChoiceResolution == choice)
+            var minefield = NetworkMinefieldState.Instance;
+            var minefieldPhase = minefield != null
+                ? minefield.Phase
+                : NetworkMinefieldPhase.Inactive;
+            var minefieldRound = minefield != null ? minefield.RoundNumber : -1;
+            if (_lastRevision == match.StateRevision &&
+                _lastChoiceResolution == choice &&
+                _lastMinefieldPhase == minefieldPhase &&
+                _lastMinefieldRound == minefieldRound)
             {
                 return;
             }
 
             _lastRevision = match.StateRevision;
             _lastChoiceResolution = choice;
+            _lastMinefieldPhase = minefieldPhase;
+            _lastMinefieldRound = minefieldRound;
             if (match.IsKeyShopRevealActive)
             {
                 SetText(_statusText,
@@ -780,13 +846,190 @@ namespace MazeParty.Multiplayer
                     SetText(_statusText, "All regular and chain fights resolved. Applying final landing effects in player order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
-                    SetText(_statusText, "Minigame implementation is pending. All four players press READY to skip.");
+                    SetText(_statusText,
+                        "MINEFIELD: Review the top-down rule image. All four players must press READY.");
+                    break;
+                case BoardFlowState.MinigameLoading:
+                    SetText(_statusText,
+                        "Loading the synchronized Minefield scene. Board movement is locked.");
+                    break;
+                case BoardFlowState.MinigamePlaying:
+                    SetText(_statusText, MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
-                    SetText(_statusText, "RESULT PLACEHOLDER: no minigame reward was applied.");
+                    SetText(_statusText,
+                        "MINEFIELD COMPLETE: Final standings and 3/2/1/0 gold rewards are shown.");
                     break;
             }
         }
+
+        private void RefreshMinefieldPanelContent(NetworkMatchState match)
+        {
+            var readyCount = CountReadyPlayers(match);
+            var hasRuleImage = _minefieldRuleImage != null &&
+                               _minefieldRuleImage.sprite != null;
+            SetText(_minigameReadyTitle, "MINEFIELD / TOP-DOWN");
+            SetText(
+                _minigameReadyNote,
+                (hasRuleImage ? string.Empty : "RULE IMAGE PLACEHOLDER\n") +
+                "Stop and RMB to scan. First mine cripples; second eliminates. " +
+                "Reach the finish before the crusher.\n" +
+                "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4");
+            SetText(_minigameReadyStatus, "READY " + readyCount + " / 4");
+
+            var localReady = _localAvatar != null &&
+                             MinefieldRules.IsValidPlayerSlot(_localAvatar.AssignedSlot) &&
+                             match.IsMinigameReady(_localAvatar.AssignedSlot);
+            if (_readyButton != null)
+            {
+                _readyButton.interactable =
+                    match.FlowState == BoardFlowState.MinigameIntroReady &&
+                    !match.IsGlobalSimulationPaused &&
+                    _localAvatar != null &&
+                    !localReady;
+            }
+            SetText(_readyButtonLabel, "READY");
+
+            SetText(_minefieldResultTitle, "MINEFIELD RESULTS");
+            var resultSummary = BuildMinefieldResultSummary(
+                NetworkMinefieldState.Instance);
+            if (_minefieldResultSummary != null)
+            {
+                SetText(
+                    _minefieldResultNote,
+                    "Final placement awards 3 / 2 / 1 / 0 gold.");
+                SetText(_minefieldResultSummary, resultSummary);
+            }
+            else
+            {
+                SetText(_minefieldResultNote, resultSummary);
+            }
+
+            if (_minefieldRuleImage != null)
+            {
+                _minefieldRuleImage.preserveAspect = true;
+                _minefieldRuleImage.color = hasRuleImage
+                    ? Color.white
+                    : new Color(0.055f, 0.09f, 0.14f, 1f);
+            }
+            SetActive(
+                _minigameRulePlaceholder != null
+                    ? _minigameRulePlaceholder.gameObject
+                    : null,
+                !hasRuleImage);
+        }
+
+        private static int CountReadyPlayers(NetworkMatchState match)
+        {
+            var count = 0;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if (match.IsMinigameReady(slot))
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static string BuildMinefieldResultSummary(
+            NetworkMinefieldState minefield)
+        {
+            if (minefield == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1; rank <= MinefieldRules.PlayerCount; rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0; slot < MinefieldRules.PlayerCount; slot++)
+                {
+                    if (minefield.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null ? match.GetAvatarForSlot(rankedSlot) : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null ? avatar.DisplayName : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(minefield.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(MinefieldRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string MinefieldPhaseLabel(
+            NetworkMinefieldState minefield)
+        {
+            if (minefield == null)
+            {
+                return "MINEFIELD";
+            }
+
+            var round = Mathf.Clamp(
+                minefield.RoundNumber,
+                1,
+                MinefieldRules.RoundCount);
+            switch (minefield.Phase)
+            {
+                case NetworkMinefieldPhase.Countdown:
+                    return "MINEFIELD  ROUND " + round + " / 3  -  COUNTDOWN";
+                case NetworkMinefieldPhase.Running:
+                    return "MINEFIELD  ROUND " + round + " / 3  -  RUN";
+                case NetworkMinefieldPhase.RoundResult:
+                    return "MINEFIELD  ROUND " + round + " / 3  -  RESULT";
+                case NetworkMinefieldPhase.Complete:
+                    return "MINEFIELD COMPLETE";
+                default:
+                    return "MINEFIELD";
+            }
+        }
+
+        private static string MinefieldStatus(NetworkMinefieldState minefield)
+        {
+            if (minefield == null)
+            {
+                return "Synchronizing the Minefield simulation...";
+            }
+
+            switch (minefield.Phase)
+            {
+                case NetworkMinefieldPhase.Countdown:
+                    return "Get ready. Every player respawns and the mine layout changes each round.";
+                case NetworkMinefieldPhase.Running:
+                    return "WASD moves in top view. Stop moving and press RMB to scan nearby mines.";
+                case NetworkMinefieldPhase.RoundResult:
+                    return "Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.";
+                case NetworkMinefieldPhase.Complete:
+                    return "All three rounds complete. Final points determine rank and gold.";
+                default:
+                    return "Preparing Minefield...";
+            }
+        }
+
+
+
+
 
         private void SetWaitingState()
         {
@@ -846,7 +1089,8 @@ namespace MazeParty.Multiplayer
 
         private static bool HasCountdown(BoardFlowState state)
         {
-            return state != BoardFlowState.MinigameIntroReady;
+            return state != BoardFlowState.MinigameIntroReady &&
+                   state != BoardFlowState.MinigameLoading;
         }
 
         private static string PhaseLabel(BoardFlowState state)
@@ -859,8 +1103,10 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve: return "RESOLVING / ASCENDING";
                 case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
                 case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
-                case BoardFlowState.MinigameIntroReady: return "MINIGAME READY (DEV SKIP)";
-                case BoardFlowState.SkippedResult: return "RESULT PLACEHOLDER";
+                case BoardFlowState.MinigameIntroReady: return "MINEFIELD READY";
+                case BoardFlowState.MinigameLoading: return "LOADING MINEFIELD";
+                case BoardFlowState.MinigamePlaying: return "MINEFIELD";
+                case BoardFlowState.SkippedResult: return "MINEFIELD RESULTS";
                 default: return state.ToString().ToUpperInvariant();
             }
         }

@@ -133,6 +133,7 @@ namespace MazeParty.Multiplayer
             new FootstepCadenceTracker();
         private Vector2 _serverInput;
         private Vector2 _lastSentInput;
+        private Vector2 _lastSentMinefieldInput;
         private bool _serverQuietWalkHeld;
         private bool _lastSentQuietWalkHeld;
         private float _serverYaw;
@@ -142,6 +143,7 @@ namespace MazeParty.Multiplayer
         private float _localYaw;
         private float _localPitch;
         private float _nextInputRefresh;
+        private float _nextMinefieldInputRefresh;
         private float _nextSlotResolveAttempt;
         private double _nextLocalPrimaryRepeatAt;
         private bool _boardReadyRequestSent;
@@ -314,8 +316,12 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
+            var handlingMinefield = SubmitLocalMinefieldMovement();
             HandleLocalActionButtons();
-            SubmitLocalMovement();
+            if (!handlingMinefield)
+            {
+                SubmitLocalMovement();
+            }
             RefreshLocalBoundaryPresentation();
         }
 
@@ -1157,7 +1163,7 @@ namespace MazeParty.Multiplayer
         private void HandleLocalActionButtons()
         {
             var match = NetworkMatchState.Instance;
-            if (match == null || IsPointerOverUi())
+            if (match == null)
             {
                 return;
             }
@@ -1167,6 +1173,24 @@ namespace MazeParty.Multiplayer
             {
                 return;
             }
+
+            if (match.IsMinefieldPlaying)
+            {
+                var minefield = NetworkMinefieldState.Instance;
+                if (minefield != null &&
+                    minefield.CanAcceptInputForSlot(AssignedSlot) &&
+                    mouse.rightButton.wasPressedThisFrame)
+                {
+                    RequestMinefieldSonarRpc(_lastSentMinefieldInput);
+                }
+                return;
+            }
+
+            if (IsPointerOverUi())
+            {
+                return;
+            }
+
             var combatInput = match.CanAvatarUseCombatInput(this);
             var repeatPrimary = ShouldRepeatPrimaryAction(
                 mouse,
@@ -1321,6 +1345,38 @@ namespace MazeParty.Multiplayer
                 _nextInputRefresh = Time.unscaledTime + 0.1f;
                 SubmitMovementRpc(input, _localYaw, _localPitch, quietWalkHeld);
             }
+        }
+
+        private bool SubmitLocalMinefieldMovement()
+        {
+            var match = NetworkMatchState.Instance;
+            var minefield = NetworkMinefieldState.Instance;
+            if (match == null || !match.IsMinefieldPlaying || minefield == null)
+            {
+                _lastSentMinefieldInput = Vector2.zero;
+                return false;
+            }
+
+            var input = Vector2.zero;
+            var keyboard = Keyboard.current;
+            if (keyboard != null && minefield.CanAcceptInputForSlot(AssignedSlot))
+            {
+                input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
+                          (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y = (keyboard.wKey.isPressed ? 1f : 0f) -
+                          (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentMinefieldInput ||
+                Time.unscaledTime >= _nextMinefieldInputRefresh)
+            {
+                _lastSentMinefieldInput = input;
+                _nextMinefieldInputRefresh = Time.unscaledTime + 0.1f;
+                SubmitMinefieldInputRpc(input);
+            }
+
+            return true;
         }
 
         private void RecordNetworkFootsteps(
@@ -2051,6 +2107,40 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TrySetMinigameReadyOnServer(this);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitMinefieldInputRpc(
+            Vector2 input,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkMinefieldState.Instance?.ReceiveInputOnServer(
+                this,
+                Vector2.ClampMagnitude(input, 1f));
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestMinefieldSonarRpc(
+            Vector2 currentInput,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId &&
+                !float.IsNaN(currentInput.x) &&
+                !float.IsInfinity(currentInput.x) &&
+                !float.IsNaN(currentInput.y) &&
+                !float.IsInfinity(currentInput.y))
+            {
+                NetworkMinefieldState.Instance?.TrySonarOnServer(
+                    this,
+                    Vector2.ClampMagnitude(currentInput, 1f));
             }
         }
 

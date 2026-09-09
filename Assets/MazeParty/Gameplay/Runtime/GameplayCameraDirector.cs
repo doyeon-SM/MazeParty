@@ -136,6 +136,29 @@ namespace MazeParty.Gameplay
             }
         }
 
+        public void SetMinigameCamera(CinemachineCamera camera)
+        {
+            if (minigameCamera == camera)
+            {
+                return;
+            }
+
+            SetPriority(minigameCamera, StandbyPriority);
+            minigameCamera = camera;
+            ApplyPriorities(activeMode);
+        }
+
+        public void ClearMinigameCamera(CinemachineCamera expectedCamera)
+        {
+            if (minigameCamera != expectedCamera)
+            {
+                return;
+            }
+
+            SetPriority(minigameCamera, StandbyPriority);
+            minigameCamera = null;
+        }
+
         public void SwitchTo(GameplayMode mode)
         {
             if (!Application.isPlaying)

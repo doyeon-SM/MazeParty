@@ -142,6 +142,12 @@ namespace MazeParty.Multiplayer
                     : GameplayMode.CombatSpectator;
             }
 
+            if (match.FlowState == BoardFlowState.MinigamePlaying ||
+                match.FlowState == BoardFlowState.SkippedResult)
+            {
+                return GameplayMode.Minigame;
+            }
+
             return match.FlowState == BoardFlowState.Descending ||
                    match.FlowState == BoardFlowState.Action
                     ? GameplayMode.FirstPerson

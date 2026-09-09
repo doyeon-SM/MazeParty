@@ -22,6 +22,7 @@ namespace MazeParty.Editor
         private const string PrefabsFolder = Root + "/Prefabs";
         private const string BootstrapPath = ScenesFolder + "/OnlineBootstrap.unity";
         private const string BoardPath = ScenesFolder + "/Board.unity";
+        private const string MinefieldPath = ScenesFolder + "/Minefield.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
 
         [MenuItem("MazeParty/Multiplayer/Rebuild Online Prototype")]
@@ -39,6 +40,7 @@ namespace MazeParty.Editor
             CreateBootstrapScene(playerPrefab);
             BoardFlowProjectSetup.BuildBoardSceneBase();
             BoardFlowProjectSetup.BuildLocalTestbedFromBoard();
+            MinefieldProjectSetup.BuildMinefieldAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -622,7 +624,8 @@ namespace MazeParty.Editor
             var scenes = new List<EditorBuildSettingsScene>
             {
                 new EditorBuildSettingsScene(BootstrapPath, true),
-                new EditorBuildSettingsScene(BoardPath, true)
+                new EditorBuildSettingsScene(BoardPath, true),
+                new EditorBuildSettingsScene(MinefieldPath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";
