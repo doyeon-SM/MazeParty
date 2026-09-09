@@ -232,6 +232,7 @@ namespace MazeParty.Editor
             controller.center = Vector3.zero;
             controller.height = 2f;
             controller.radius = 0.5f;
+            localPlayerObject.AddComponent<PlayerAvatarVisual>();
             var localBoundaryWalls = localPlayerObject.AddComponent<PlayerBoardBoundaryWalls>();
             localBoundaryWalls.Configure(0, controller, topology);
             localBoundaryWalls.SetPresentationVisible(true);
@@ -264,6 +265,7 @@ namespace MazeParty.Editor
                 remoteController.center = Vector3.zero;
                 remoteController.height = 2f;
                 remoteController.radius = 0.5f;
+                marker.AddComponent<PlayerAvatarVisual>();
                 remoteController.enabled = false;
                 var remoteWalls = marker.AddComponent<PlayerBoardBoundaryWalls>();
                 remoteWalls.Configure(i, remoteController, topology);

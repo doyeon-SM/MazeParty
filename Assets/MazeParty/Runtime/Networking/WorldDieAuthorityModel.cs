@@ -22,7 +22,8 @@ namespace MazeParty.Multiplayer
         ItemChoicePending,
         AlreadyRolled,
         ReconnectPaused,
-        PlayerOutsideAssignedTile
+        PlayerOutsideAssignedTile,
+        NudgeCooldown
     }
 
     public enum WorldDieMotionDecision : byte

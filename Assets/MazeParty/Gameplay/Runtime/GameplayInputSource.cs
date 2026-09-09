@@ -20,6 +20,7 @@ namespace MazeParty.Gameplay
         public Vector2 Look => _look != null ? _look.ReadValue<Vector2>() : Vector2.zero;
         public bool WalkHeld => _walk != null && _walk.IsPressed();
         public bool PrimaryPressed => _primary != null && _primary.WasPressedThisFrame();
+        public bool PrimaryHeld => _primary != null && _primary.IsPressed();
         public bool SecondaryPressed => _secondary != null && _secondary.WasPressedThisFrame();
         public bool CancelPressed => _cancel != null && _cancel.WasPressedThisFrame();
 

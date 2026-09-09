@@ -16,6 +16,7 @@ GameObject:
   - component: {fileID: 8299234884473236850}
   - component: {fileID: 5214929391124953187}
   - component: {fileID: 4292104244347041433}
+  - component: {fileID: 7169465345029459726}
   m_Layer: 0
   m_Name: NetworkPlayer
   m_TagString: Untagged
@@ -228,3 +229,15 @@ MonoBehaviour:
   wallHeight: 2.5
   passableColor: {r: 0.04, g: 0.32, b: 1, a: 0.72}
   blockedColor: {r: 0.005, g: 0.008, b: 0.012, a: 1}
+--- !u!114 &7169465345029459726
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 194173410356949699}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual

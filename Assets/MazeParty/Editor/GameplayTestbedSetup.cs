@@ -215,6 +215,7 @@ namespace MazeParty.Editor
             controller.radius = 0.45f;
             controller.skinWidth = 0.05f;
             controller.stepOffset = 0.3f;
+            player.AddComponent<PlayerAvatarVisual>();
             return player;
         }
 

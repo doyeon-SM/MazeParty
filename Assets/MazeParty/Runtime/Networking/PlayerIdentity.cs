@@ -49,8 +49,7 @@ namespace MazeParty.Multiplayer
 
         private static string SanitizeDisplayName(string value)
         {
-            var candidate = string.IsNullOrWhiteSpace(value) ? "Player" : value.Trim();
-            return candidate.Substring(0, Math.Min(candidate.Length, 16));
+            return PlayerProfilePreferences.SanitizeDisplayName(value);
         }
 
         // TODO(STEAM-AUTH): Replace or decorate this provider when Steam is enabled.

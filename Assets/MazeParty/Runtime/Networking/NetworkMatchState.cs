@@ -333,16 +333,67 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
-        public bool TryUseSelectedItemOnServer(NetworkPlayerAvatar avatar)
+        public bool TryUseSelectedItemOnServer(
+            NetworkPlayerAvatar avatar,
+            Vector3 claimedOrigin,
+            Vector3 claimedDirection)
         {
             if (!CanProcessActionRequest(avatar))
             {
                 return false;
             }
 
-            // TODO(ITEM-COMBAT): execute the concrete authoritative effect before
-            // consuming the selected prototype item/charge.
-            return avatar.ConsumeSelectedItemOnServer();
+            var item = avatar.GetSelectedItemOnServer();
+            if (item == PrototypeItemId.None)
+            {
+                return false;
+            }
+
+            if (item == PrototypeItemId.PulseBlaster)
+            {
+                if (!IsFinite(claimedOrigin) || !IsFinite(claimedDirection) ||
+                    claimedDirection.sqrMagnitude < 0.0001f)
+                {
+                    return false;
+                }
+
+                var authoritativeOrigin = avatar.EyePivot != null
+                    ? avatar.EyePivot.position
+                    : avatar.transform.position +
+                      Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+                if (Vector3.Distance(authoritativeOrigin, claimedOrigin) > 1.5f)
+                {
+                    return false;
+                }
+
+                var authoritativeDirection = avatar.EyePivot != null
+                    ? avatar.EyePivot.forward.normalized
+                    : avatar.transform.forward.normalized;
+                if (Vector3.Dot(
+                        authoritativeDirection,
+                        claimedDirection.normalized) < 0.94f)
+                {
+                    return false;
+                }
+
+                var direction = authoritativeDirection;
+                FirearmHitResolver.Raycast(
+                    avatar.gameObject,
+                    authoritativeOrigin,
+                    direction,
+                    FirearmDamageRules.PulseBlasterRange,
+                    FirearmDamageRules.PulseBlasterBaseDamage,
+                    direction * FirearmDamageRules.PulseBlasterPush + Vector3.up * 0.5f);
+            }
+
+            // Push Mine and Med Kit still use their existing prototype consume-only
+            // behavior until their authoritative effects are designed.
+            var consumed = avatar.ConsumeSelectedItemOnServer();
+            if (consumed)
+            {
+                avatar.PresentItemUseOnServer(item);
+            }
+            return consumed;
         }
 
         public bool TryPurchaseKeyOnServer(
@@ -1058,8 +1109,19 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            var authoritativeDirection = attacker.EyePivot != null
+                ? attacker.EyePivot.forward.normalized
+                : attacker.transform.forward.normalized;
+            if (Vector3.Dot(
+                    authoritativeDirection,
+                    claimedDirection.normalized) < 0.94f)
+            {
+                return false;
+            }
+
             _nextPunchAllowedAt[slot] = now + BoardCombatRules.PunchCooldownSeconds;
-            var direction = claimedDirection.normalized;
+            attacker.PresentPunchOnServer();
+            var direction = authoritativeDirection;
             var hits = Physics.SphereCastAll(
                 authoritativeOrigin,
                 BoardCombatRules.PunchRadius,
@@ -1101,8 +1163,6 @@ namespace MazeParty.Multiplayer
             }
             knockbackDirection.Normalize();
 
-            // TODO(COMBAT-PRESENTATION): publish the authored character motion,
-            // hit impact, audio and camera feedback from this validated hit seam.
             var eliminated = target.ApplyCombatPunchOnServer(
                 knockbackDirection * BoardCombatRules.PunchKnockbackSpeed);
             if (!eliminated)
@@ -1121,6 +1181,96 @@ namespace MazeParty.Multiplayer
             {
                 ResolveCurrentCombatOnServer(now);
             }
+            return true;
+        }
+
+        public bool TryBoardPunchOnServer(
+            NetworkPlayerAvatar attacker,
+            Vector3 claimedOrigin,
+            Vector3 claimedDirection)
+        {
+            if (!IsServer || !CanProcessActionRequest(attacker) ||
+                attacker.GetSelectedItemOnServer() != PrototypeItemId.None ||
+                !IsFinite(claimedOrigin) || !IsFinite(claimedDirection) ||
+                claimedDirection.sqrMagnitude < 0.0001f)
+            {
+                return false;
+            }
+
+            var slot = attacker.AssignedSlot;
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers)
+            {
+                return false;
+            }
+
+            var authoritativeOrigin = attacker.EyePivot != null
+                ? attacker.EyePivot.position
+                : attacker.transform.position +
+                  Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            if (Vector3.Distance(authoritativeOrigin, claimedOrigin) > 1.5f)
+            {
+                return false;
+            }
+
+            var authoritativeDirection = attacker.EyePivot != null
+                ? attacker.EyePivot.forward.normalized
+                : attacker.transform.forward.normalized;
+            if (Vector3.Dot(authoritativeDirection, claimedDirection.normalized) < 0.94f)
+            {
+                return false;
+            }
+
+            var now = ServerNow;
+            if (now < _nextPunchAllowedAt[slot])
+            {
+                return false;
+            }
+
+            _nextPunchAllowedAt[slot] = now + PlayerUnarmedRules.PunchCooldownSeconds;
+            attacker.PresentPunchOnServer();
+
+            var hits = Physics.SphereCastAll(
+                authoritativeOrigin,
+                PlayerUnarmedRules.PunchRadius,
+                authoritativeDirection,
+                PlayerUnarmedRules.PunchRange,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+            Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+            for (var index = 0; index < hits.Length; index++)
+            {
+                var collider = hits[index].collider;
+                if (collider == null || collider.transform == attacker.transform ||
+                    collider.transform.IsChildOf(attacker.transform))
+                {
+                    continue;
+                }
+
+                var zone = collider.GetComponent<PlayerHitZone>();
+                if (zone != null)
+                {
+                    var target = collider.GetComponentInParent<NetworkPlayerAvatar>();
+                    if (target != null && target != attacker && target.IsSpawned)
+                    {
+                        target.PresentHitReactionOnServer(zone.Region);
+                        return true;
+                    }
+                    continue;
+                }
+
+                // The movement collider is not a hit part. It must not mask the
+                // smaller body/head/hand trigger volumes on the same player.
+                if (collider.GetComponentInParent<PlayerHitZoneOwner>() != null)
+                {
+                    continue;
+                }
+
+                if (!collider.isTrigger)
+                {
+                    break;
+                }
+            }
+
             return true;
         }
 
@@ -1718,6 +1868,8 @@ namespace MazeParty.Multiplayer
         public int CombatHealth;
         public bool PendingCombatProtection;
         public double PersonalProtectionRemaining;
+        public PlayerAppearanceState Appearance;
+        public string DisplayName;
         public bool HasLogicalCurrentTile;
         public Vector2Int LogicalCurrentTileCoordinate;
         public Vector2Int[] TraversalHistory;

@@ -105,12 +105,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var renderers = _localAvatar.GetComponentsInChildren<Renderer>(true);
-            var visible = targetMode != GameplayMode.FirstPerson;
-            for (var i = 0; i < renderers.Length; i++)
-            {
-                renderers[i].enabled = visible;
-            }
+            _localAvatar.AvatarVisual?.SetOwnerFirstPerson(
+                targetMode == GameplayMode.FirstPerson);
         }
 
         private void RefreshCombatSpectatorFocus(NetworkMatchState match)

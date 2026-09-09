@@ -11,7 +11,8 @@
     "Unity.InputSystem",
     "UnityEngine.UI",
     "MazeParty.Gameplay",
-    "Unity.Cinemachine"
+    "Unity.Cinemachine",
+    "Unity.Collections"
   ],
   "autoReferenced": true
 }

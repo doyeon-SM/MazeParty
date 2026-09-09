@@ -91,6 +91,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(prefab.GetComponent<CharacterController>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<NetworkPlayerAvatar>(), Is.Not.Null);
             Assert.That(prefab.GetComponent<PlayerBoardBoundaryWalls>(), Is.Not.Null);
+            Assert.That(prefab.GetComponent<PlayerAvatarVisual>(), Is.Not.Null);
         }
 
         [Test]
@@ -240,5 +241,35 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+    }
+
+    public sealed class PlayerCustomizationRulesTests
+    {
+        [Test]
+        public void KoreanDisplayName_IsPreservedAndLimitedToSixteenCharacters()
+        {
+            var value = PlayerProfilePreferences.SanitizeDisplayName(
+                "미로파티플레이어이름테스트입니다추가문자");
+
+            Assert.That(value, Does.StartWith("미로파티"));
+            Assert.That(value.Length, Is.EqualTo(16));
+        }
+
+        [Test]
+        public void AppearanceSanitizer_AllowsOnlyImplementedTestHat()
+        {
+            var appearance = PlayerAppearanceState.FromColor(
+                Color.cyan,
+                5,
+                4,
+                99,
+                8);
+
+            Assert.That(appearance.EyeId, Is.Zero);
+            Assert.That(appearance.MouthId, Is.Zero);
+            Assert.That(appearance.HatId, Is.Zero);
+            Assert.That(appearance.OutfitId, Is.Zero);
+            Assert.That(appearance.BodyColor, Is.EqualTo((Color)new Color32(0, 255, 255, 255)));
+        }
     }
 }

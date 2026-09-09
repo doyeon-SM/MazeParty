@@ -14,6 +14,8 @@ namespace MazeParty.Gameplay
 
         private CharacterController _controller;
         private FootstepAudioEmitter _footstepEmitter;
+        private PlayerAvatarVisual _avatarVisual;
+        private readonly Collider[] _standingClearanceHits = new Collider[16];
         private readonly FootstepCadenceTracker _footstepCadence =
             new FootstepCadenceTracker();
         private Vector3 _externalVelocity;
@@ -22,6 +24,8 @@ namespace MazeParty.Gameplay
 
         public Vector3 ExternalVelocity => _externalVelocity;
         public bool IsWalkingQuietly { get; private set; }
+        public PlayerAvatarVisual AvatarVisual => _avatarVisual;
+        public bool IsCrouching { get; private set; }
 
         private void Awake()
         {
@@ -31,6 +35,12 @@ namespace MazeParty.Gameplay
                 _footstepEmitter = gameObject.AddComponent<FootstepAudioEmitter>();
             if (lookPivot == null)
                 lookPivot = transform;
+            _avatarVisual = GetComponent<PlayerAvatarVisual>();
+            if (_avatarVisual == null)
+                _avatarVisual = gameObject.AddComponent<PlayerAvatarVisual>();
+            _avatarVisual.EnsureBuilt();
+            _avatarVisual.ConfigureEyePivot(lookPivot);
+            _avatarVisual.SetDisplayName("Local Player");
         }
 
         public void Configure(Transform pivot)
@@ -54,13 +64,14 @@ namespace MazeParty.Gameplay
                 _controller = GetComponent<CharacterController>();
 
             var deltaTime = Time.deltaTime;
+            UpdateCrouch(allowDirectInput && quietWalkHeld);
             if (allowDirectInput)
             {
                 var localMove = new Vector3(move.x, 0f, move.y);
                 if (localMove.sqrMagnitude > 1f)
                     localMove.Normalize();
 
-                IsWalkingQuietly = quietWalkHeld &&
+                IsWalkingQuietly = IsCrouching &&
                                    FootstepRules.HasMovementIntent(move);
                 var worldMove = transform.TransformDirection(localMove) *
                                 (moveSpeed * FootstepRules.SpeedMultiplier(
@@ -100,6 +111,9 @@ namespace MazeParty.Gameplay
             _verticalVelocity = 0f;
             _pitch = 0f;
             IsWalkingQuietly = false;
+            IsCrouching = false;
+            ApplyCrouchState(false);
+            _avatarVisual?.SetCrouching(false);
             _footstepCadence.Reset();
             if (lookPivot != null)
                 lookPivot.localRotation = Quaternion.identity;
@@ -118,6 +132,67 @@ namespace MazeParty.Gameplay
                 _externalVelocity,
                 Vector3.zero,
                 externalVelocityDecay * deltaTime);
+        }
+
+        private void UpdateCrouch(bool crouchHeld)
+        {
+            var crouching = crouchHeld || IsCrouching && !CanStand();
+            if (IsCrouching != crouching)
+            {
+                IsCrouching = crouching;
+                ApplyCrouchState(crouching);
+            }
+            _avatarVisual?.SetCrouching(crouching);
+        }
+
+        private void ApplyCrouchState(bool crouching)
+        {
+            _controller.height = crouching
+                ? PlayerAvatarVisual.CrouchingControllerHeight
+                : PlayerAvatarVisual.StandingControllerHeight;
+            var center = _controller.center;
+            center.y = crouching
+                ? PlayerAvatarVisual.CrouchingControllerCenterY
+                : PlayerAvatarVisual.StandingControllerCenterY;
+            _controller.center = center;
+            if (lookPivot != null && lookPivot != transform)
+            {
+                var position = lookPivot.localPosition;
+                position.y = crouching
+                    ? PlayerAvatarVisual.CrouchingEyeHeight
+                    : PlayerAvatarVisual.StandingEyeHeight;
+                lookPivot.localPosition = position;
+            }
+        }
+
+        private bool CanStand()
+        {
+            var radius = Mathf.Max(0.01f, _controller.radius - 0.02f);
+            var center = transform.TransformPoint(new Vector3(
+                _controller.center.x,
+                PlayerAvatarVisual.StandingControllerCenterY,
+                _controller.center.z));
+            var segment = Mathf.Max(
+                0f,
+                PlayerAvatarVisual.StandingControllerHeight * 0.5f - radius);
+            var count = Physics.OverlapCapsuleNonAlloc(
+                center + transform.up * segment,
+                center - transform.up * segment,
+                radius,
+                _standingClearanceHits,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            for (var index = 0; index < count; index++)
+            {
+                var candidate = _standingClearanceHits[index];
+                if (candidate != null &&
+                    candidate.transform != transform &&
+                    !candidate.transform.IsChildOf(transform))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void ApplyLook(Vector2 look)

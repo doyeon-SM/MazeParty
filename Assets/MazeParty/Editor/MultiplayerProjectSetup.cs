@@ -96,6 +96,7 @@ namespace MazeParty.Editor
             networkTransform.SyncScaleY = false;
             networkTransform.SyncScaleZ = false;
 
+            player.AddComponent<PlayerAvatarVisual>();
             player.AddComponent<NetworkPlayerAvatar>();
             // Four reusable boundaries are created by this component per player
             // instance (16 total for the fixed four-player match).

@@ -112,6 +112,7 @@ namespace MazeParty.Multiplayer
         private bool _nudgeInProgress;
         private double _nudgeDeadline = -1d;
         private double _nudgeBelowThresholdSince = -1d;
+        private double _nextNudgeAllowedAt;
         private double _resultHideDeadline = -1d;
         private double _localPauseStartedAt = -1d;
 
@@ -492,6 +493,7 @@ namespace MazeParty.Multiplayer
             _body.AddTorque(
                 UnityEngine.Random.onUnitSphere * torqueImpulse,
                 ForceMode.Impulse);
+            requester.PresentPunchOnServer();
             return true;
         }
 
@@ -517,6 +519,13 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            var now = ServerNow;
+            if (now < _nextNudgeAllowedAt)
+            {
+                rejectReason = WorldDiePushRejectReason.NudgeCooldown;
+                return false;
+            }
+
             var direction = Vector3.ProjectOnPlane(normalizedRay.direction, _tileFrame.Up);
             if (direction.sqrMagnitude <= 0.000001f)
             {
@@ -532,7 +541,7 @@ namespace MazeParty.Multiplayer
             _body.detectCollisions = true;
             _body.WakeUp();
             _nudgeInProgress = true;
-            _nudgeDeadline = ServerNow + maximumNudgeSeconds;
+            _nudgeDeadline = now + maximumNudgeSeconds;
             _nudgeBelowThresholdSince = -1d;
             var impulse = direction * nudgeHorizontalImpulse +
                           _tileFrame.Up * nudgeUpwardImpulse;
@@ -543,6 +552,8 @@ namespace MazeParty.Multiplayer
                     UnityEngine.Random.onUnitSphere * nudgeTorqueImpulse,
                     ForceMode.Impulse);
             }
+            _nextNudgeAllowedAt = now + PlayerUnarmedRules.PunchCooldownSeconds;
+            requester.PresentPunchOnServer();
             return true;
         }
 

@@ -55,6 +55,7 @@ namespace MazeParty.Gameplay.Testbed
         private ItemChoiceResolution _lastChoiceResolution;
         private bool _manualPointerRelease;
         private bool _actionEnded;
+        private double _nextPrimaryRepeatAt;
 
         public GameplayInventory Inventory => _inventory;
         public GameplayPhaseClock PhaseClock => _phaseClock;
@@ -321,14 +322,43 @@ namespace MazeParty.Gameplay.Testbed
                 inputSource.WalkHeld,
                 directInputAllowed,
                 allowMouseLook);
+            playerMotor.AvatarVisual?.SetOwnerFirstPerson(
+                cameraDirector.ActiveMode == GameplayMode.FirstPerson);
 
             if (!directInputAllowed || IsPointerOverUi())
                 return;
 
-            if (inputSource.PrimaryPressed)
+            var repeatPrimary = ShouldRepeatPrimaryAction();
+            if (_inventory.SelectedSlot != null)
+            {
+                if (inputSource.PrimaryPressed)
+                    UseActiveItem();
+            }
+            else if (repeatPrimary)
+            {
                 UseActiveItem();
+            }
             if (inputSource.SecondaryPressed)
                 TryInteract();
+        }
+
+        private bool ShouldRepeatPrimaryAction()
+        {
+            if (!inputSource.PrimaryHeld)
+            {
+                _nextPrimaryRepeatAt = 0d;
+                return false;
+            }
+
+            var now = Time.unscaledTimeAsDouble;
+            if (!inputSource.PrimaryPressed && now < _nextPrimaryRepeatAt)
+            {
+                return false;
+            }
+
+            _nextPrimaryRepeatAt =
+                now + PlayerUnarmedRules.PunchCooldownSeconds;
+            return true;
         }
 
         private void UseActiveItem()
@@ -336,10 +366,12 @@ namespace MazeParty.Gameplay.Testbed
             var selected = _inventory.SelectedSlot;
             if (selected == null)
             {
-                SetStatus("PRIMARY: no active item. Items can only be activated in the choice UI.");
+                playerMotor.AvatarVisual?.TriggerPunch();
+                SetStatus("PRIMARY: alternating unarmed punch. No item or HP damage applied.");
                 return;
             }
 
+            playerMotor.AvatarVisual?.TriggerItemUse(ToPrototypeItemId(selected.Definition.Id));
             switch (selected.Definition.Id)
             {
                 case "pulse_blaster":
@@ -365,21 +397,35 @@ namespace MazeParty.Gameplay.Testbed
                 SetStatus(_statusText.text + " Active slot cleared.");
         }
 
+        private static PrototypeItemId ToPrototypeItemId(string itemId)
+        {
+            switch (itemId)
+            {
+                case "pulse_blaster": return PrototypeItemId.PulseBlaster;
+                case "push_mine": return PrototypeItemId.PushMine;
+                case "med_kit": return PrototypeItemId.MedKit;
+                default: return PrototypeItemId.None;
+            }
+        }
+
         private void FirePulseBlaster()
         {
             var ray = BuildPointerRay();
-            if (!Physics.Raycast(ray, out var hit, 40f, Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+            var report = FirearmHitResolver.Raycast(
+                playerMotor.gameObject,
+                ray.origin,
+                ray.direction,
+                FirearmDamageRules.PulseBlasterRange,
+                FirearmDamageRules.PulseBlasterBaseDamage,
+                ray.direction * FirearmDamageRules.PulseBlasterPush + Vector3.up * 0.5f);
+            if (!report.Hit)
             {
                 SetStatus("PULSE BLASTER fired: no target. Ammo consumed.");
                 return;
             }
 
-            var report = GameplayHitResolver.Resolve(
-                hit.collider.gameObject,
-                new DamageRequest(20, DamageKind.Item, playerMotor.gameObject),
-                ray.direction * 6f + Vector3.up * 0.5f);
-            SetStatus("PULSE BLASTER hit " + hit.collider.name
-                + ": damage " + report.DamageResult
+            SetStatus("PULSE BLASTER hit " + report.Target.name + " [" + report.Region + "]"
+                + ": damage " + report.Damage + " / " + report.DamageResult
                 + ", push " + (report.PushApplied ? "APPLIED" : "NONE") + ".");
         }
 

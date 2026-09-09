@@ -37,12 +37,14 @@ namespace MazeParty.Multiplayer
         private bool _applicationQuitting;
         private bool _destroyed;
         private string _playingReconnectTicketKey;
+        private PlayerLocalProfile _localProfile;
 
         public static OnlineSessionController Instance { get; private set; }
 
         public int LocalSlot => _sessions != null ? _sessions.Current.LocalSlot : -1;
         public SessionSnapshot CurrentSession =>
             _sessions != null ? _sessions.Current : SessionSnapshot.Empty;
+        public PlayerAppearanceState LocalAppearance => _localProfile.Appearance;
 
         public bool TryResolveAuthoritativeSlot(ulong clientId, out int slot)
         {
@@ -50,6 +52,27 @@ namespace MazeParty.Multiplayer
             return _sessions != null &&
                    _sessions.IsInSession &&
                    _sessions.TryGetAuthoritativeSlot(clientId, out slot);
+        }
+
+        public bool TryResolveAuthoritativeDisplayName(ulong clientId, out string displayName)
+        {
+            displayName = string.Empty;
+            if (!TryResolveAuthoritativeSlot(clientId, out var slot))
+            {
+                return false;
+            }
+
+            var players = CurrentSession.Players;
+            for (var index = 0; index < players.Count; index++)
+            {
+                if (players[index].Slot == slot)
+                {
+                    displayName = PlayerProfilePreferences.SanitizeDisplayName(
+                        players[index].DisplayName);
+                    return true;
+                }
+            }
+            return false;
         }
 
         public void ConfigureSceneReferences(
@@ -74,13 +97,15 @@ namespace MazeParty.Multiplayer
             Application.quitting += OnApplicationQuitting;
 
             _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
-            var displayName = "Player " + UnityEngine.Random.Range(1000, 10000);
+            _localProfile = PlayerProfilePreferences.Load();
+            var displayName = _localProfile.DisplayName;
             if (lobbyView == null)
             {
                 lobbyView = FindAnyObjectByType<OnlineLobbyView>();
             }
 
             lobbyView?.SetDisplayName(displayName);
+            lobbyView?.SetAppearance(_localProfile.Appearance);
 
             _identity = new UnityAnonymousIdentityProvider();
             _sessions = new MpsRelaySessionProvider(_identity);
@@ -163,6 +188,7 @@ namespace MazeParty.Multiplayer
             lobbyView.ReadyRequested += OnReadyRequested;
             lobbyView.StartRequested += OnStartRequested;
             lobbyView.LeaveRequested += OnLeaveRequested;
+            lobbyView.AppearanceChanged += OnAppearanceChanged;
         }
 
         private void UnbindLobbyView()
@@ -178,10 +204,12 @@ namespace MazeParty.Multiplayer
             lobbyView.ReadyRequested -= OnReadyRequested;
             lobbyView.StartRequested -= OnStartRequested;
             lobbyView.LeaveRequested -= OnLeaveRequested;
+            lobbyView.AppearanceChanged -= OnAppearanceChanged;
         }
 
         private void OnCreateRequested(string displayName)
         {
+            SaveLocalProfile(displayName, _localProfile.Appearance);
             RunAsync(
                 () => CreateAndPublishAsync(displayName),
                 "Creating a private Relay session...");
@@ -189,9 +217,28 @@ namespace MazeParty.Multiplayer
 
         private void OnJoinRequested(string code, string displayName)
         {
+            SaveLocalProfile(displayName, _localProfile.Appearance);
             RunAsync(
                 () => JoinAndPublishAsync(code, displayName),
                 "Joining the Relay session...");
+        }
+
+        private void OnAppearanceChanged(PlayerAppearanceState appearance)
+        {
+            SaveLocalProfile(_localProfile.DisplayName, appearance.Sanitized());
+            var playerObject = _networkManager != null &&
+                               _networkManager.SpawnManager != null
+                ? _networkManager.SpawnManager.GetLocalPlayerObject()
+                : null;
+            playerObject?.GetComponent<NetworkPlayerAvatar>()?
+                .RequestLocalAppearance(_localProfile.Appearance);
+        }
+
+        private void SaveLocalProfile(string displayName, PlayerAppearanceState appearance)
+        {
+            var safeName = PlayerProfilePreferences.SanitizeDisplayName(displayName);
+            _localProfile = new PlayerLocalProfile(safeName, appearance.Sanitized());
+            PlayerProfilePreferences.Save(_localProfile.DisplayName, _localProfile.Appearance);
         }
 
         private void OnCopyRequested()

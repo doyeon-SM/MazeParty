@@ -25,16 +25,22 @@ namespace MazeParty.Gameplay
 
     public readonly struct DamageRequest
     {
-        public DamageRequest(int amount, DamageKind kind, GameObject source)
+        public DamageRequest(
+            int amount,
+            DamageKind kind,
+            GameObject source,
+            PlayerHitRegion hitRegion = PlayerHitRegion.Body)
         {
             Amount = Mathf.Max(0, amount);
             Kind = kind;
             Source = source;
+            HitRegion = hitRegion;
         }
 
         public int Amount { get; }
         public DamageKind Kind { get; }
         public GameObject Source { get; }
+        public PlayerHitRegion HitRegion { get; }
     }
 
     public readonly struct GameplayHitReport
@@ -55,6 +61,7 @@ namespace MazeParty.Gameplay
         Vector2 Look { get; }
         bool WalkHeld { get; }
         bool PrimaryPressed { get; }
+        bool PrimaryHeld { get; }
         bool SecondaryPressed { get; }
         bool CancelPressed { get; }
     }

@@ -132,11 +132,16 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Vector2Int _localCombatTile;
         private double _localCombatEndsAt;
         private double _nextLocalPunchAllowedAt;
+        private double _nextLocalBoardPunchAllowedAt;
+        private double _nextLocalPrimaryRepeatAt;
         private int _localCombatSequenceIndex;
         private int _localFightsResolved;
         private bool _pendingLocalCombatProtection;
         private double _personalProtectionEndsAtFlowTime;
         private FootstepAudioEmitter _localFootstepEmitter;
+        private PlayerAvatarVisual _avatarVisual;
+        private bool _localCrouching;
+        private readonly Collider[] _standingClearanceHits = new Collider[16];
         private readonly FootstepCadenceTracker _localFootstepCadence =
             new FootstepCadenceTracker();
 
@@ -172,6 +177,40 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (cameraDirector == null)
             {
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            }
+
+            if (player != null)
+            {
+                _avatarVisual = player.GetComponent<PlayerAvatarVisual>();
+                if (_avatarVisual == null)
+                {
+                    _avatarVisual = player.gameObject.AddComponent<PlayerAvatarVisual>();
+                }
+                _avatarVisual.EnsureBuilt();
+                _avatarVisual.ConfigureEyePivot(eyePivot);
+                _avatarVisual.SetDisplayName("Local Player");
+            }
+            var remoteColors = new[]
+            {
+                new Color(0.25f, 0.55f, 1f),
+                new Color(0.25f, 0.85f, 0.4f),
+                new Color(1f, 0.75f, 0.2f)
+            };
+            for (var slot = 1; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
+            {
+                var marker = GetRemoteMarker(slot);
+                if (marker == null)
+                {
+                    continue;
+                }
+                var visual = marker.GetComponent<PlayerAvatarVisual>();
+                if (visual == null)
+                {
+                    visual = marker.gameObject.AddComponent<PlayerAvatarVisual>();
+                }
+                visual.EnsureBuilt();
+                visual.SetBodyColor(remoteColors[slot - 1]);
+                visual.SetDisplayName("Player " + (slot + 1));
             }
 
             _boundaryWalls = player != null
@@ -234,6 +273,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
             _flow.Tick(_simulationNow);
+            RefreshLocalCrouch();
             AdvanceLocalKeyShopReveal();
             AdvanceLocalCombat();
             AdvanceLocalLandingEffects();
@@ -523,6 +563,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     _roll = UnityEngine.Random.Range(1, 11);
                     _remainingMoves = _roll;
                     _actionStates[0] = PlayerBoardActionState.Moving;
+                    _avatarVisual?.TriggerPunch();
                     StopLocalWorldDieNudge();
                     if (_worldDie != null)
                     {
@@ -541,21 +582,34 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     RefreshBoundaryWalls();
                     SetStatus("Rolled " + _roll + ". Blue walls are passable; black walls physically block entry.");
                 }
-                if (mouse.leftButton.wasPressedThisFrame &&
+                var repeatPrimary = ShouldRepeatLocalPrimaryAction(
+                    mouse,
+                    PlayerUnarmedRules.PunchCooldownSeconds);
+                if (repeatPrimary &&
                     TryGetAimedLocalWorldDie(out var dieRay))
                 {
                     if (_roll <= 0)
                     {
                         NudgeLocalWorldDie(dieRay);
+                        _avatarVisual?.TriggerPunch();
                         SetStatus("Your world die was nudged inside the current room.");
                     }
                 }
-                else if (mouse.leftButton.wasPressedThisFrame && _selectedSlot >= 0)
+                else if (repeatPrimary && _selectedSlot >= 0)
                 {
-                    _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
-                    _itemSlots[_selectedSlot] = PrototypeItemId.None;
-                    _selectedSlot = -1;
-                    SetStatus("Prototype item consumed. Concrete combat/effect is TODO.");
+                    if (mouse.leftButton.wasPressedThisFrame)
+                    {
+                        var item = _itemSlots[_selectedSlot];
+                        _avatarVisual?.TriggerItemUse(item);
+                        _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
+                        _itemSlots[_selectedSlot] = PrototypeItemId.None;
+                        _selectedSlot = -1;
+                        SetStatus("Prototype item consumed. Concrete combat/effect is TODO.");
+                    }
+                }
+                else if (repeatPrimary)
+                {
+                    TryLocalBoardPunch();
                 }
             }
 
@@ -568,8 +622,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 (keyboard.dKey.isPressed ? 1f : 0f) - (keyboard.aKey.isPressed ? 1f : 0f),
                 (keyboard.wKey.isPressed ? 1f : 0f) - (keyboard.sKey.isPressed ? 1f : 0f));
             input = Vector2.ClampMagnitude(input, 1f);
-            var quietWalking = keyboard.leftCtrlKey.isPressed &&
-                               FootstepRules.HasMovementIntent(input);
+            var quietWalking = _localCrouching && FootstepRules.HasMovementIntent(input);
             var movement = player.transform.TransformDirection(new Vector3(input.x, 0f, input.y));
             movement.y = 0f;
             var previousPosition = player.transform.position;
@@ -600,8 +653,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 }
             }
 
-            if (mouse != null && mouse.leftButton.wasPressedThisFrame &&
-                !IsPointerOverUi())
+            if (mouse != null && !IsPointerOverUi() &&
+                ShouldRepeatLocalPrimaryAction(
+                    mouse,
+                    BoardCombatRules.PunchCooldownSeconds))
             {
                 TryLocalCombatPunch();
             }
@@ -618,8 +673,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 (keyboard.wKey.isPressed ? 1f : 0f) -
                 (keyboard.sKey.isPressed ? 1f : 0f));
             input = Vector2.ClampMagnitude(input, 1f);
-            var quietWalking = keyboard.leftCtrlKey.isPressed &&
-                               FootstepRules.HasMovementIntent(input);
+            var quietWalking = _localCrouching && FootstepRules.HasMovementIntent(input);
             var movement = player.transform.TransformDirection(
                 new Vector3(input.x, 0f, input.y));
             movement.y = 0f;
@@ -1230,6 +1284,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             _nextLocalPunchAllowedAt = flowNow + BoardCombatRules.PunchCooldownSeconds;
+            _avatarVisual?.TriggerPunch();
             var origin = eyePivot != null
                 ? eyePivot.position
                 : player.transform.position + Vector3.up * 0.75f;
@@ -1278,8 +1333,90 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     0.6f);
             }
             ApplyLocalCombatDamage(targetSlot);
+            target?.GetComponent<PlayerAvatarVisual>()?.TriggerHit(PlayerHitRegion.Body);
             SetStatus("EDITOR FIGHT: P" + (targetSlot + 1) +
                       " took 5 temporary HP damage.");
+        }
+
+        private bool ShouldRepeatLocalPrimaryAction(
+            Mouse mouse,
+            double intervalSeconds)
+        {
+            if (mouse == null || !mouse.leftButton.isPressed)
+            {
+                _nextLocalPrimaryRepeatAt = 0d;
+                return false;
+            }
+
+            var now = Time.unscaledTimeAsDouble;
+            if (!mouse.leftButton.wasPressedThisFrame &&
+                now < _nextLocalPrimaryRepeatAt)
+            {
+                return false;
+            }
+
+            _nextLocalPrimaryRepeatAt =
+                now + Math.Max(0.01d, intervalSeconds);
+            return true;
+        }
+
+        private void TryLocalBoardPunch()
+        {
+            var flowNow = _flow.ToFlowTime(_simulationNow);
+            if (flowNow < _nextLocalBoardPunchAllowedAt || player == null)
+            {
+                return;
+            }
+
+            _nextLocalBoardPunchAllowedAt =
+                flowNow + PlayerUnarmedRules.PunchCooldownSeconds;
+            _avatarVisual?.TriggerPunch();
+            var origin = eyePivot != null
+                ? eyePivot.position
+                : player.transform.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            var direction = eyePivot != null
+                ? eyePivot.forward.normalized
+                : player.transform.forward.normalized;
+            var hits = Physics.SphereCastAll(
+                origin,
+                PlayerUnarmedRules.PunchRadius,
+                direction,
+                PlayerUnarmedRules.PunchRange,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+            Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
+            for (var index = 0; index < hits.Length; index++)
+            {
+                var collider = hits[index].collider;
+                if (collider == null || collider.transform == player.transform ||
+                    collider.transform.IsChildOf(player.transform))
+                {
+                    continue;
+                }
+
+                var zone = collider.GetComponent<PlayerHitZone>();
+                var targetVisual = zone != null
+                    ? collider.GetComponentInParent<PlayerAvatarVisual>()
+                    : null;
+                if (zone != null && targetVisual != null && targetVisual != _avatarVisual)
+                {
+                    targetVisual.TriggerHit(zone.Region);
+                    SetStatus("EDITOR PUNCH: hit " + zone.Region +
+                              ". HP unchanged; visual wobble only.");
+                    return;
+                }
+
+                if (collider.GetComponentInParent<PlayerHitZoneOwner>() != null)
+                {
+                    continue;
+                }
+                if (!collider.isTrigger)
+                {
+                    break;
+                }
+            }
+
+            SetStatus("EDITOR PUNCH: missed. HP unchanged.");
         }
 
         private void ApplyLocalCombatDamage(int slot)
@@ -2326,11 +2463,85 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             {
                 return;
             }
+            if (_avatarVisual != null)
+            {
+                _avatarVisual.SetOwnerFirstPerson(firstPerson);
+                return;
+            }
             var renderers = player.GetComponentsInChildren<Renderer>(true);
             for (var i = 0; i < renderers.Length; i++)
             {
                 renderers[i].enabled = !firstPerson;
             }
+        }
+
+        private void RefreshLocalCrouch()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            var keyboard = Keyboard.current;
+            var canCrouch = _flow.State == BoardFlowState.Action ||
+                            _flow.State == BoardFlowState.CombatResolve &&
+                            _localCombatActive && IsLocalCombatAlive(0);
+            var held = canCrouch && keyboard != null && keyboard.leftCtrlKey.isPressed;
+            var crouching = held || _localCrouching && !CanLocalPlayerStand();
+            if (_localCrouching == crouching)
+            {
+                _avatarVisual?.SetCrouching(crouching);
+                return;
+            }
+
+            _localCrouching = crouching;
+            player.height = crouching
+                ? PlayerAvatarVisual.CrouchingControllerHeight
+                : PlayerAvatarVisual.StandingControllerHeight;
+            var center = player.center;
+            center.y = crouching
+                ? PlayerAvatarVisual.CrouchingControllerCenterY
+                : PlayerAvatarVisual.StandingControllerCenterY;
+            player.center = center;
+            if (eyePivot != null)
+            {
+                var position = eyePivot.localPosition;
+                position.y = crouching
+                    ? PlayerAvatarVisual.CrouchingEyeHeight
+                    : PlayerAvatarVisual.StandingEyeHeight;
+                eyePivot.localPosition = position;
+            }
+            _avatarVisual?.SetCrouching(crouching);
+        }
+
+        private bool CanLocalPlayerStand()
+        {
+            var radius = Mathf.Max(0.01f, player.radius - 0.02f);
+            var center = player.transform.TransformPoint(new Vector3(
+                player.center.x,
+                PlayerAvatarVisual.StandingControllerCenterY,
+                player.center.z));
+            var segment = Mathf.Max(
+                0f,
+                PlayerAvatarVisual.StandingControllerHeight * 0.5f - radius);
+            var count = Physics.OverlapCapsuleNonAlloc(
+                center + player.transform.up * segment,
+                center - player.transform.up * segment,
+                radius,
+                _standingClearanceHits,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            for (var index = 0; index < count; index++)
+            {
+                var candidate = _standingClearanceHits[index];
+                if (candidate != null &&
+                    candidate.transform != player.transform &&
+                    !candidate.transform.IsChildOf(player.transform))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void Teleport(Vector3 target)

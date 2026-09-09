@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -10,16 +11,8 @@ namespace MazeParty.Multiplayer
 {
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(CharacterController))]
-    public sealed class NetworkPlayerAvatar : NetworkBehaviour, IDamageable
+    public sealed class NetworkPlayerAvatar : NetworkBehaviour, IDamageable, IPushReceiver
     {
-        private static readonly Color[] PlayerColors =
-        {
-            new Color(0.95f, 0.25f, 0.25f),
-            new Color(0.25f, 0.55f, 1f),
-            new Color(0.25f, 0.85f, 0.4f),
-            new Color(1f, 0.75f, 0.2f)
-        };
-
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
         [SerializeField] private Transform eyePivot;
@@ -92,6 +85,20 @@ namespace MazeParty.Multiplayer
             false,
             NetworkVariableReadPermission.Everyone,
             NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<bool> _isCrouching = new NetworkVariable<bool>(
+            false,
+            NetworkVariableReadPermission.Everyone,
+            NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<PlayerAppearanceState> _appearance =
+            new NetworkVariable<PlayerAppearanceState>(
+                PlayerAppearanceState.Default,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<FixedString64Bytes> _displayName =
+            new NetworkVariable<FixedString64Bytes>(
+                new FixedString64Bytes("Player"),
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<byte> _combatState = new NetworkVariable<byte>(
             (byte)NetworkCombatState.None,
             NetworkVariableReadPermission.Everyone,
@@ -119,6 +126,8 @@ namespace MazeParty.Multiplayer
         private FootstepAudioEmitter _footstepEmitter;
         private BoardTopology _topology;
         private PlayerBoardBoundaryWalls _boundaryWalls;
+        private PlayerAvatarVisual _avatarVisual;
+        private bool _nextPunchUsesRightHand = true;
         private readonly BoardTraversalState _traversal = new BoardTraversalState();
         private readonly FootstepCadenceTracker _footstepCadence =
             new FootstepCadenceTracker();
@@ -127,10 +136,14 @@ namespace MazeParty.Multiplayer
         private bool _serverQuietWalkHeld;
         private bool _lastSentQuietWalkHeld;
         private float _serverYaw;
+        private float _serverPitch;
+        private float _lastSentYaw;
+        private float _lastSentPitch;
         private float _localYaw;
         private float _localPitch;
         private float _nextInputRefresh;
         private float _nextSlotResolveAttempt;
+        private double _nextLocalPrimaryRepeatAt;
         private bool _boardReadyRequestSent;
         private bool _boardPositionInitialized;
         private bool _restoredFromSnapshot;
@@ -140,6 +153,7 @@ namespace MazeParty.Multiplayer
         private int _displayedBoundaryMoves = int.MinValue;
         private bool _boundaryWallsActive;
         private Vector3 _combatKnockbackVelocity;
+        private readonly Collider[] _standingClearanceHits = new Collider[16];
 
         public int AssignedSlot => _slot.Value;
         public int LocalVisibleRoll => IsOwner ? _privateRoll.Value : 0;
@@ -165,6 +179,10 @@ namespace MazeParty.Multiplayer
         public PlayerBoardActionState ActionState =>
             (PlayerBoardActionState)_actionState.Value;
         public bool IsQuietWalking => _isQuietWalking.Value;
+        public bool IsCrouching => _isCrouching.Value;
+        public PlayerAppearanceState Appearance => _appearance.Value;
+        public string DisplayName => _displayName.Value.ToString();
+        public PlayerAvatarVisual AvatarVisual => _avatarVisual;
         public NetworkCombatState CombatState => (NetworkCombatState)_combatState.Value;
         public int CombatHealth => _combatHealth.Value;
         public bool IsCombatParticipant => CombatState != NetworkCombatState.None;
@@ -203,17 +221,31 @@ namespace MazeParty.Multiplayer
                 _boundaryWalls = gameObject.AddComponent<PlayerBoardBoundaryWalls>();
             }
             EnsureEyePivot();
+            _avatarVisual = GetComponent<PlayerAvatarVisual>();
+            if (_avatarVisual == null)
+            {
+                _avatarVisual = gameObject.AddComponent<PlayerAvatarVisual>();
+            }
+            _avatarVisual.EnsureBuilt();
+            _avatarVisual.ConfigureEyePivot(eyePivot);
         }
 
         public override void OnNetworkSpawn()
         {
             _slot.OnValueChanged += OnSlotChanged;
             _combatState.OnValueChanged += OnCombatStateChanged;
+            _isCrouching.OnValueChanged += OnCrouchingChanged;
+            _appearance.OnValueChanged += OnAppearanceChanged;
+            _displayName.OnValueChanged += OnDisplayNameChanged;
             SceneManager.sceneLoaded += OnSceneLoaded;
             ApplySlotVisual(_slot.Value);
+            ApplyAppearance(_appearance.Value);
+            ApplyDisplayName(_displayName.Value);
+            ApplyCrouchPresentation(_isCrouching.Value);
             ApplyCombatColliderState(CombatState);
             _localYaw = transform.eulerAngles.y;
             _serverYaw = _localYaw;
+            _serverPitch = 0f;
 
             if (IsServer)
             {
@@ -223,6 +255,14 @@ namespace MazeParty.Multiplayer
             if (IsOwner && IsBoardLoaded())
             {
                 _boardReadyRequestSent = false;
+            }
+
+            if (IsOwner)
+            {
+                var controller = OnlineSessionController.Instance;
+                RequestLocalAppearance(controller != null
+                    ? controller.LocalAppearance
+                    : PlayerProfilePreferences.Load().Appearance);
             }
         }
 
@@ -236,6 +276,9 @@ namespace MazeParty.Multiplayer
 
             _slot.OnValueChanged -= OnSlotChanged;
             _combatState.OnValueChanged -= OnCombatStateChanged;
+            _isCrouching.OnValueChanged -= OnCrouchingChanged;
+            _appearance.OnValueChanged -= OnAppearanceChanged;
+            _displayName.OnValueChanged -= OnDisplayNameChanged;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             _traversal.Dispose();
         }
@@ -301,7 +344,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            UpdateCrouchStateOnServer(_serverQuietWalkHeld);
             transform.rotation = Quaternion.Euler(0f, _serverYaw, 0f);
+            if (eyePivot != null)
+            {
+                eyePivot.localRotation = Quaternion.Euler(_serverPitch, 0f, 0f);
+            }
             var localMovement = new Vector3(_serverInput.x, 0f, _serverInput.y);
             var worldMovement = transform.TransformDirection(localMovement);
             worldMovement.y = 0f;
@@ -311,7 +359,7 @@ namespace MazeParty.Multiplayer
             }
 
             var hasMovementIntent = FootstepRules.HasMovementIntent(_serverInput);
-            var quietWalking = hasMovementIntent && _serverQuietWalkHeld;
+            var quietWalking = hasMovementIntent && _isCrouching.Value;
             if (_isQuietWalking.Value != quietWalking)
             {
                 _isQuietWalking.Value = quietWalking;
@@ -319,7 +367,7 @@ namespace MazeParty.Multiplayer
 
             var velocity = worldMovement *
                            (moveSpeed * FootstepRules.SpeedMultiplier(quietWalking));
-            if (canMoveInCombat)
+            if (_combatKnockbackVelocity.sqrMagnitude > 0.0001f)
             {
                 velocity += _combatKnockbackVelocity;
                 _combatKnockbackVelocity = Vector3.MoveTowards(
@@ -400,6 +448,58 @@ namespace MazeParty.Multiplayer
                 : PrototypeItemId.None;
         }
 
+        public PrototypeItemId GetSelectedItemOnServer()
+        {
+            if (!IsServer)
+            {
+                return PrototypeItemId.None;
+            }
+
+            var selected = _selectedItemSlot.Value;
+            return selected >= 0 && selected < GameplayInventory.Capacity &&
+                   (_occupiedItemMask.Value & (1 << selected)) != 0
+                ? GetItemSlotValue(selected)
+                : PrototypeItemId.None;
+        }
+
+        public void RequestLocalAppearance(PlayerAppearanceState appearance)
+        {
+            if (!IsOwner || !IsSpawned)
+            {
+                return;
+            }
+
+            var sanitized = appearance.Sanitized();
+            ApplyAppearance(sanitized);
+            SubmitAppearanceRpc(sanitized);
+        }
+
+        public void PresentPunchOnServer()
+        {
+            if (IsServer)
+            {
+                var useRightHand = _nextPunchUsesRightHand;
+                _nextPunchUsesRightHand = !_nextPunchUsesRightHand;
+                PresentPunchRpc(useRightHand);
+            }
+        }
+
+        public void PresentHitReactionOnServer(PlayerHitRegion region)
+        {
+            if (IsServer)
+            {
+                PresentHitRpc((byte)region);
+            }
+        }
+
+        public void PresentItemUseOnServer(PrototypeItemId itemId)
+        {
+            if (IsServer && PrototypeItemCatalog.IsValid(itemId))
+            {
+                PresentItemUseRpc((byte)itemId);
+            }
+        }
+
         public bool HasFreeItemSlot =>
             IsOwner && (_occupiedItemMask.Value & 0b0000_0111) != 0b0000_0111;
         public bool HasFreeItemSlotOnServer =>
@@ -440,7 +540,9 @@ namespace MazeParty.Multiplayer
             _serverQuietWalkHeld = false;
             _lastSentQuietWalkHeld = false;
             _isQuietWalking.Value = false;
+            _isCrouching.Value = false;
             _footstepCadence.Reset();
+            ApplyCrouchControllerState(false);
             ApplyCombatColliderState(NetworkCombatState.None);
         }
 
@@ -462,7 +564,21 @@ namespace MazeParty.Multiplayer
             _currentHealth.Value = PlayerStatRules.ClampHealth(
                 _currentHealth.Value - request.Amount,
                 _maxHealth.Value);
+            PresentHitRpc((byte)request.HitRegion);
             return DamageResult.Applied;
+        }
+
+        public void ApplyPush(Vector3 impulse)
+        {
+            if (!IsServer ||
+                float.IsNaN(impulse.x) || float.IsInfinity(impulse.x) ||
+                float.IsNaN(impulse.y) || float.IsInfinity(impulse.y) ||
+                float.IsNaN(impulse.z) || float.IsInfinity(impulse.z))
+            {
+                return;
+            }
+
+            _combatKnockbackVelocity += Vector3.ClampMagnitude(impulse, 12f);
         }
 
         public int HealOnServer(int amount)
@@ -610,6 +726,7 @@ namespace MazeParty.Multiplayer
             _combatHealth.Value = Math.Max(
                 0,
                 _combatHealth.Value - BoardCombatRules.PunchDamage);
+            PresentHitRpc((byte)PlayerHitRegion.Body);
             if (_combatHealth.Value > 0)
             {
                 _combatKnockbackVelocity += Vector3.ClampMagnitude(
@@ -623,6 +740,7 @@ namespace MazeParty.Multiplayer
             StopServerInputOnServer();
             HideBoundaryWalls();
             ApplyCombatColliderState(NetworkCombatState.Eliminated);
+            _avatarVisual?.SetEliminated(true);
             return true;
         }
 
@@ -897,6 +1015,7 @@ namespace MazeParty.Multiplayer
                 _serverInput = Vector2.zero;
                 _serverQuietWalkHeld = false;
                 _isQuietWalking.Value = false;
+                UpdateCrouchStateOnServer(false);
             }
         }
 
@@ -926,6 +1045,8 @@ namespace MazeParty.Multiplayer
                 CombatHealth = _combatHealth.Value,
                 PendingCombatProtection = _pendingCombatProtection.Value,
                 PersonalProtectionRemaining = PersonalItemProtectionRemaining,
+                Appearance = _appearance.Value,
+                DisplayName = _displayName.Value.ToString(),
                 HasLogicalCurrentTile = logicalTile != null,
                 LogicalCurrentTileCoordinate = logicalTile != null
                     ? logicalTile.Coordinate
@@ -983,6 +1104,9 @@ namespace MazeParty.Multiplayer
                     ? NetworkMatchState.Instance.SynchronizedNow
                     : Time.unscaledTimeAsDouble) + snapshot.PersonalProtectionRemaining
                 : 0d;
+            _appearance.Value = snapshot.Appearance.Sanitized();
+            _displayName.Value = new FixedString64Bytes(
+                PlayerProfilePreferences.SanitizeDisplayName(snapshot.DisplayName));
             _serverYaw = snapshot.Rotation.eulerAngles.y;
             TeleportController(snapshot.Position, snapshot.Rotation);
             _restoredFromSnapshot = true;
@@ -1043,10 +1167,16 @@ namespace MazeParty.Multiplayer
             {
                 return;
             }
+            var combatInput = match.CanAvatarUseCombatInput(this);
+            var repeatPrimary = ShouldRepeatPrimaryAction(
+                mouse,
+                combatInput
+                    ? BoardCombatRules.PunchCooldownSeconds
+                    : PlayerUnarmedRules.PunchCooldownSeconds);
 
-            if (match.CanAvatarUseCombatInput(this))
+            if (combatInput)
             {
-                if (mouse.leftButton.wasPressedThisFrame)
+                if (repeatPrimary)
                 {
                     var origin = eyePivot != null
                         ? eyePivot.position
@@ -1089,7 +1219,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (mouse.leftButton.wasPressedThisFrame)
+            if (repeatPrimary)
             {
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay))
                 {
@@ -1102,9 +1232,49 @@ namespace MazeParty.Multiplayer
 
                 if (_selectedItemSlot.Value >= 0)
                 {
-                    UseSelectedItemRpc();
+                    // Item activation remains edge-triggered so holding LMB cannot
+                    // consume several inventory slots as replication catches up.
+                    if (mouse.leftButton.wasPressedThisFrame)
+                    {
+                        var origin = eyePivot != null
+                            ? eyePivot.position
+                            : transform.position +
+                              Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+                        var direction = eyePivot != null
+                            ? eyePivot.forward
+                            : transform.forward;
+                        UseSelectedItemRpc(origin, direction);
+                    }
+                }
+                else
+                {
+                    var origin = eyePivot != null
+                        ? eyePivot.position
+                        : transform.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+                    var direction = eyePivot != null ? eyePivot.forward : transform.forward;
+                    RequestBoardPunchRpc(origin, direction);
                 }
             }
+        }
+
+        private bool ShouldRepeatPrimaryAction(Mouse mouse, double intervalSeconds)
+        {
+            if (mouse == null || !mouse.leftButton.isPressed)
+            {
+                _nextLocalPrimaryRepeatAt = 0d;
+                return false;
+            }
+
+            var now = Time.unscaledTimeAsDouble;
+            if (!mouse.leftButton.wasPressedThisFrame &&
+                now < _nextLocalPrimaryRepeatAt)
+            {
+                return false;
+            }
+
+            _nextLocalPrimaryRepeatAt =
+                now + Math.Max(0.01d, intervalSeconds);
+            return true;
         }
 
         private void SubmitLocalMovement()
@@ -1127,14 +1297,29 @@ namespace MazeParty.Multiplayer
                 quietWalkHeld = keyboard.leftCtrlKey.isPressed;
             }
 
+            var predictedCrouch = quietWalkHeld || _isCrouching.Value;
+            _avatarVisual?.SetCrouching(predictedCrouch);
+            if (eyePivot != null)
+            {
+                var eye = eyePivot.localPosition;
+                eye.y = predictedCrouch
+                    ? PlayerAvatarVisual.CrouchingEyeHeight
+                    : PlayerAvatarVisual.StandingEyeHeight;
+                eyePivot.localPosition = eye;
+            }
+
             if (input != _lastSentInput ||
                 quietWalkHeld != _lastSentQuietWalkHeld ||
+                Mathf.Abs(Mathf.DeltaAngle(_lastSentYaw, _localYaw)) >= 1f ||
+                Mathf.Abs(_lastSentPitch - _localPitch) >= 1f ||
                 Time.unscaledTime >= _nextInputRefresh)
             {
                 _lastSentInput = input;
                 _lastSentQuietWalkHeld = quietWalkHeld;
+                _lastSentYaw = _localYaw;
+                _lastSentPitch = _localPitch;
                 _nextInputRefresh = Time.unscaledTime + 0.1f;
-                SubmitMovementRpc(input, _localYaw, quietWalkHeld);
+                SubmitMovementRpc(input, _localYaw, _localPitch, quietWalkHeld);
             }
         }
 
@@ -1443,6 +1628,15 @@ namespace MazeParty.Multiplayer
             // TODO(STEAM-SESSION): keep this server validation, but resolve the slot
             // from the authenticated Steam lobby member when that provider is enabled.
             _slot.Value = candidate;
+            var controller = OnlineSessionController.Instance;
+            var resolvedName = controller != null &&
+                               controller.TryResolveAuthoritativeDisplayName(
+                                   OwnerClientId,
+                                   out var displayName)
+                ? displayName
+                : "Player " + (candidate + 1);
+            _displayName.Value = new FixedString64Bytes(
+                PlayerProfilePreferences.SanitizeDisplayName(resolvedName));
             NetworkMatchState.Instance?.TryRestoreAvatarOnServer(this);
             if (_boardReady.Value)
             {
@@ -1537,6 +1731,125 @@ namespace MazeParty.Multiplayer
             {
                 _characterController.enabled = state != NetworkCombatState.Eliminated;
             }
+            _avatarVisual?.SetEliminated(state == NetworkCombatState.Eliminated);
+        }
+
+        private void OnCrouchingChanged(bool _, bool current)
+        {
+            ApplyCrouchPresentation(current);
+        }
+
+        private void OnAppearanceChanged(
+            PlayerAppearanceState _,
+            PlayerAppearanceState current)
+        {
+            ApplyAppearance(current);
+        }
+
+        private void OnDisplayNameChanged(FixedString64Bytes _, FixedString64Bytes current)
+        {
+            ApplyDisplayName(current);
+        }
+
+        private void ApplyAppearance(PlayerAppearanceState appearance)
+        {
+            if (_avatarVisual == null)
+            {
+                return;
+            }
+
+            var safe = appearance.Sanitized();
+            _avatarVisual.SetBodyColor(safe.BodyColor);
+            _avatarVisual.ApplyAppearance(safe.EyeId, safe.MouthId, safe.HatId);
+        }
+
+        private void ApplyDisplayName(FixedString64Bytes displayName)
+        {
+            _avatarVisual?.SetDisplayName(displayName.ToString());
+        }
+
+        private void ApplyCrouchPresentation(bool crouching)
+        {
+            _avatarVisual?.SetCrouching(crouching);
+            if (eyePivot != null)
+            {
+                var localPosition = eyePivot.localPosition;
+                localPosition.y = crouching
+                    ? PlayerAvatarVisual.CrouchingEyeHeight
+                    : PlayerAvatarVisual.StandingEyeHeight;
+                eyePivot.localPosition = localPosition;
+            }
+            if (IsServer)
+            {
+                ApplyCrouchControllerState(crouching);
+            }
+        }
+
+        private void UpdateCrouchStateOnServer(bool crouchHeld)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            var target = crouchHeld || _isCrouching.Value && !CanStandOnServer();
+            if (_isCrouching.Value != target)
+            {
+                _isCrouching.Value = target;
+            }
+            ApplyCrouchControllerState(target);
+        }
+
+        private void ApplyCrouchControllerState(bool crouching)
+        {
+            if (_characterController == null)
+            {
+                return;
+            }
+
+            _characterController.height = crouching
+                ? PlayerAvatarVisual.CrouchingControllerHeight
+                : PlayerAvatarVisual.StandingControllerHeight;
+            var center = _characterController.center;
+            center.y = crouching
+                ? PlayerAvatarVisual.CrouchingControllerCenterY
+                : PlayerAvatarVisual.StandingControllerCenterY;
+            _characterController.center = center;
+        }
+
+        private bool CanStandOnServer()
+        {
+            if (_characterController == null)
+            {
+                return true;
+            }
+
+            var radius = Mathf.Max(0.01f, _characterController.radius - 0.02f);
+            var center = transform.TransformPoint(new Vector3(
+                _characterController.center.x,
+                PlayerAvatarVisual.StandingControllerCenterY,
+                _characterController.center.z));
+            var segment = Mathf.Max(
+                0f,
+                PlayerAvatarVisual.StandingControllerHeight * 0.5f - radius);
+            var count = Physics.OverlapCapsuleNonAlloc(
+                center + transform.up * segment,
+                center - transform.up * segment,
+                radius,
+                _standingClearanceHits,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            for (var index = 0; index < count; index++)
+            {
+                var candidate = _standingClearanceHits[index];
+                if (candidate != null &&
+                    candidate.transform != transform &&
+                    !candidate.transform.IsChildOf(transform))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode _)
@@ -1610,17 +1923,7 @@ namespace MazeParty.Multiplayer
         private void ApplySlotVisual(int slot)
         {
             gameObject.name = slot >= 0 ? "NetworkPlayer_" + (slot + 1) : "NetworkPlayer_Unassigned";
-            var meshRenderer = GetComponentInChildren<MeshRenderer>();
-            if (meshRenderer == null || slot < 0 || slot >= PlayerColors.Length)
-            {
-                return;
-            }
-
-            var properties = new MaterialPropertyBlock();
-            meshRenderer.GetPropertyBlock(properties);
-            properties.SetColor("_BaseColor", PlayerColors[slot]);
-            properties.SetColor("_Color", PlayerColors[slot]);
-            meshRenderer.SetPropertyBlock(properties);
+            ApplyAppearance(_appearance.Value);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
@@ -1642,13 +1945,15 @@ namespace MazeParty.Multiplayer
         private void SubmitMovementRpc(
             Vector2 input,
             float yaw,
+            float pitch,
             bool quietWalkHeld,
             RpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId != OwnerClientId ||
                 float.IsNaN(input.x) || float.IsInfinity(input.x) ||
                 float.IsNaN(input.y) || float.IsInfinity(input.y) ||
-                float.IsNaN(yaw) || float.IsInfinity(yaw))
+                float.IsNaN(yaw) || float.IsInfinity(yaw) ||
+                float.IsNaN(pitch) || float.IsInfinity(pitch))
             {
                 _serverInput = Vector2.zero;
                 return;
@@ -1669,6 +1974,7 @@ namespace MazeParty.Multiplayer
             _serverInput = Vector2.ClampMagnitude(input, 1f);
             _serverQuietWalkHeld = quietWalkHeld;
             _serverYaw = Mathf.Repeat(yaw, 360f);
+            _serverPitch = Mathf.Clamp(pitch, -85f, 85f);
         }
 
         [Rpc(SendTo.ClientsAndHost)]
@@ -1696,12 +2002,47 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-        private void UseSelectedItemRpc(RpcParams rpcParams = default)
+        private void UseSelectedItemRpc(
+            Vector3 claimedOrigin,
+            Vector3 claimedDirection,
+            RpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkMatchState.Instance?.TryUseSelectedItemOnServer(this);
+                NetworkMatchState.Instance?.TryUseSelectedItemOnServer(
+                    this,
+                    claimedOrigin,
+                    claimedDirection);
             }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitAppearanceRpc(
+            PlayerAppearanceState appearance,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                _appearance.Value = appearance.Sanitized();
+            }
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentPunchRpc(bool useRightHand)
+        {
+            _avatarVisual?.TriggerPunch(useRightHand);
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentHitRpc(byte region)
+        {
+            _avatarVisual?.TriggerHit((PlayerHitRegion)region);
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentItemUseRpc(byte itemId)
+        {
+            _avatarVisual?.TriggerItemUse((PrototypeItemId)itemId);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
@@ -1748,6 +2089,21 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TryCombatPunchOnServer(
+                    this,
+                    claimedOrigin,
+                    claimedDirection);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestBoardPunchRpc(
+            Vector3 claimedOrigin,
+            Vector3 claimedDirection,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.TryBoardPunchOnServer(
                     this,
                     claimedOrigin,
                     claimedDirection);
