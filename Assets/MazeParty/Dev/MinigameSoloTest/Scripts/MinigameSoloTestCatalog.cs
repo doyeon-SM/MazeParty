@@ -5,7 +5,8 @@ namespace MazeParty.Dev.MinigameSoloTest
 {
     public enum MinigameSoloTestId : byte
     {
-        Minefield
+        Minefield,
+        WrongWay
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -46,13 +47,19 @@ namespace MazeParty.Dev.MinigameSoloTest
     {
         public const string MinefieldScenePath =
             "Assets/MazeParty/Scenes/Minefield.unity";
+        public const string WrongWayScenePath =
+            "Assets/MazeParty/Scenes/WrongWay.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.Minefield,
                 "Minefield",
-                MinefieldScenePath)
+                MinefieldScenePath),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.WrongWay,
+                "WrongWay",
+                WrongWayScenePath)
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>

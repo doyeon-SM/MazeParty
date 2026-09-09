@@ -69,9 +69,31 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
         }
 
-        private static BoardFlowStateMachine AdvanceNormallyToMinigameIntro()
+        [Test]
+        public void FinalTurn_ResultTransitionsToMatchCompleteWithoutTurnSixteen()
         {
-            var flow = new BoardFlowStateMachine();
+            var flow = AdvanceNormallyToMinigameIntro(totalTurns: 1);
+
+            Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
+            Assert.That(flow.TryBeginMinigame(21d), Is.True);
+            Assert.That(flow.TryCompleteMinigame(22d), Is.True);
+
+            flow.Tick(25d);
+
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MatchComplete));
+            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
+            Assert.That(flow.TotalTurns, Is.EqualTo(1));
+
+            flow.Tick(1000d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MatchComplete));
+            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
+        }
+
+        private static BoardFlowStateMachine AdvanceNormallyToMinigameIntro(
+            int totalTurns = BoardFlowStateMachine.DefaultTotalTurns)
+        {
+            var flow = new BoardFlowStateMachine(
+                totalTurns: totalTurns);
             flow.Start(0d);
 
             flow.Tick(6d);

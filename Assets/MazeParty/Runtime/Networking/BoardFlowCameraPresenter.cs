@@ -147,7 +147,9 @@ namespace MazeParty.Multiplayer
             }
 
             if (match.FlowState == BoardFlowState.MinigamePlaying ||
-                match.FlowState == BoardFlowState.SkippedResult)
+                (match.FlowState == BoardFlowState.SkippedResult &&
+                 match.CurrentMinigame !=
+                 MazeParty.Gameplay.Minigames.ScheduledMinigameId.Skip))
             {
                 return GameplayMode.Minigame;
             }

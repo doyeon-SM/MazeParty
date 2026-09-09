@@ -1,7 +1,9 @@
 using System;
 using System.Text;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -72,6 +74,12 @@ namespace MazeParty.Multiplayer
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private NetworkMinefieldPhase _lastMinefieldPhase = NetworkMinefieldPhase.Inactive;
         private int _lastMinefieldRound = -1;
+        private NetworkWrongWayPhase _lastWrongWayPhase =
+            NetworkWrongWayPhase.Inactive;
+        private int _lastWrongWayRound = -1;
+        private int _observedMinigameRevealRevision = -1;
+        private float _minigameRevealObservedAt;
+        private bool _lastMinigameRevealPending;
         private bool _wired;
         private int _openItemShopIndex = -1;
         private bool _topViewShopHighlightsVisible;
@@ -452,6 +460,8 @@ namespace MazeParty.Multiplayer
         private void RefreshHeader(NetworkMatchState match)
         {
             var minefield = NetworkMinefieldState.Instance;
+            var wrongWay = NetworkWrongWayState.Instance;
+            var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
                 ? "DEBUG  ·  TOP VIEW DELAY"
@@ -461,7 +471,15 @@ namespace MazeParty.Multiplayer
                     ? "FIGHT " + match.CombatSequenceIndex +
                       "  /  " + (match.CombatSequenceIndex + match.CombatQueueCount)
                     : match.FlowState == BoardFlowState.MinigamePlaying
-                        ? MinefieldPhaseLabel(minefield)
+                        ? match.CurrentMinigame == ScheduledMinigameId.WrongWay
+                            ? WrongWayPhaseLabel(wrongWay)
+                            : MinefieldPhaseLabel(minefield)
+                        : match.FlowState == BoardFlowState.MinigameIntroReady
+                            ? revealPending
+                                ? "???"
+                                : MinigameName(match.CurrentMinigame) + " READY"
+                        : match.FlowState == BoardFlowState.MinigameLoading
+                            ? "LOADING " + MinigameName(match.CurrentMinigame)
                         : PhaseLabel(match.FlowState));
 
             string timerLabel;
@@ -481,9 +499,18 @@ namespace MazeParty.Multiplayer
             }
             else if (match.FlowState == BoardFlowState.MinigamePlaying)
             {
-                timerLabel = minefield != null
-                    ? FormatClock(minefield.Remaining)
-                    : "--:--";
+                timerLabel =
+                    match.CurrentMinigame == ScheduledMinigameId.WrongWay
+                        ? wrongWay != null
+                            ? FormatClock(wrongWay.Remaining)
+                            : "--:--"
+                        : minefield != null
+                            ? FormatClock(minefield.Remaining)
+                            : "--:--";
+            }
+            else if (match.FlowState == BoardFlowState.MatchComplete)
+            {
+                timerLabel = "--:--";
             }
             else
             {
@@ -840,10 +867,21 @@ namespace MazeParty.Multiplayer
                 ? minefield.Phase
                 : NetworkMinefieldPhase.Inactive;
             var minefieldRound = minefield != null ? minefield.RoundNumber : -1;
+            var wrongWay = NetworkWrongWayState.Instance;
+            var wrongWayPhase = wrongWay != null
+                ? wrongWay.Phase
+                : NetworkWrongWayPhase.Inactive;
+            var wrongWayRound = wrongWay != null
+                ? wrongWay.RoundNumber
+                : -1;
+            var revealPending = IsMinigameRevealPending(match);
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
                 _lastMinefieldPhase == minefieldPhase &&
-                _lastMinefieldRound == minefieldRound)
+                _lastMinefieldRound == minefieldRound &&
+                _lastWrongWayPhase == wrongWayPhase &&
+                _lastWrongWayRound == wrongWayRound &&
+                _lastMinigameRevealPending == revealPending)
             {
                 return;
             }
@@ -852,6 +890,9 @@ namespace MazeParty.Multiplayer
             _lastChoiceResolution = choice;
             _lastMinefieldPhase = minefieldPhase;
             _lastMinefieldRound = minefieldRound;
+            _lastWrongWayPhase = wrongWayPhase;
+            _lastWrongWayRound = wrongWayRound;
+            _lastMinigameRevealPending = revealPending;
             if (match.IsKeyShopRevealActive)
             {
                 SetText(_statusText,
@@ -894,36 +935,98 @@ namespace MazeParty.Multiplayer
                     SetText(_statusText, "All regular and chain fights resolved. Applying final landing effects in player order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
-                    SetText(_statusText,
-                        "MINEFIELD: Review the top-down rule image. All four players must press READY.");
+                    SetText(
+                        _statusText,
+                        revealPending
+                            ? "Opening the top block in the minigame tower..."
+                            : match.CurrentMinigame == ScheduledMinigameId.Skip
+                            ? "No minigame is available for this queue slot. It will advance automatically."
+                            : MinigameName(match.CurrentMinigame) +
+                              ": review the rules. All four players must press READY.");
                     break;
                 case BoardFlowState.MinigameLoading:
                     SetText(_statusText,
-                        "Loading the synchronized Minefield scene. Board movement is locked.");
+                        "Loading the synchronized " +
+                        MinigameName(match.CurrentMinigame) +
+                        " scene. Board movement is locked.");
                     break;
                 case BoardFlowState.MinigamePlaying:
-                    SetText(_statusText, MinefieldStatus(minefield));
+                    SetText(
+                        _statusText,
+                        match.CurrentMinigame == ScheduledMinigameId.WrongWay
+                            ? WrongWayStatus(wrongWay)
+                            : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
-                    SetText(_statusText,
-                        "MINEFIELD COMPLETE: Final standings and 3/2/1/0 gold rewards are shown.");
+                    SetText(
+                        _statusText,
+                        match.CurrentMinigame == ScheduledMinigameId.Skip
+                            ? "SKIPPED: moving to the next block in the minigame tower."
+                            : MinigameName(match.CurrentMinigame) +
+                              " COMPLETE: final standings and 3/2/1/0 gold rewards are shown.");
+                    break;
+                case BoardFlowState.MatchComplete:
+                    SetText(
+                        _statusText,
+                        "MATCH COMPLETE: all 15 turns have finished.");
                     break;
             }
         }
 
         private void RefreshMinefieldPanelContent(NetworkMatchState match)
         {
+            if (_observedMinigameRevealRevision !=
+                match.MinigameRevealRevision)
+            {
+                _observedMinigameRevealRevision =
+                    match.MinigameRevealRevision;
+                _minigameRevealObservedAt = Time.unscaledTime;
+            }
+
+            var revealPending =
+                match.FlowState == BoardFlowState.MinigameIntroReady &&
+                Time.unscaledTime - _minigameRevealObservedAt <
+                MinigameScheduleTowerView.RevealDelaySeconds;
             var readyCount = CountReadyPlayers(match);
+            var selected = match.CurrentMinigame;
+            var isMinefield = selected == ScheduledMinigameId.Minefield;
+            var isWrongWay = selected == ScheduledMinigameId.WrongWay;
+            var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
-                               _minefieldRuleImage.sprite != null;
-            SetText(_minigameReadyTitle, "MINEFIELD / TOP-DOWN");
+                               _minefieldRuleImage.sprite != null &&
+                               isMinefield;
+            SetText(
+                _minigameReadyTitle,
+                revealPending
+                    ? "???"
+                    : isWrongWay
+                    ? "WRONG WAY / STAIR RACE"
+                    : isSkip
+                        ? "NO MINIGAME / SKIP"
+                        : "MINEFIELD / TOP-DOWN");
             SetText(
                 _minigameReadyNote,
-                (hasRuleImage ? string.Empty : "RULE IMAGE PLACEHOLDER\n") +
-                "Stop and RMB to scan. First mine cripples; second eliminates. " +
-                "Reach the finish before the crusher.\n" +
-                "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4");
-            SetText(_minigameReadyStatus, "READY " + readyCount + " / 4");
+                revealPending
+                    ? "Opening the top block in the minigame tower..."
+                    : isWrongWay
+                    ? "Press the shown WASD direction to climb. A wrong key knocks " +
+                      "you down for 0.5 seconds. First to step 50 ends the round. " +
+                      "Two rounds, 60 seconds each.\nALL 4 PLAYERS READY  -  READY " +
+                      readyCount + " / 4"
+                    : isSkip
+                        ? "This queue slot has no available minigame. " +
+                          "The next turn starts automatically."
+                        : (hasRuleImage ? string.Empty : "RULE IMAGE PLACEHOLDER\n") +
+                          "Stop and RMB to scan. First mine cripples; second eliminates. " +
+                          "Reach the finish before the crusher.\n" +
+                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4");
+            SetText(
+                _minigameReadyStatus,
+                revealPending
+                    ? "REVEALING..."
+                    : isSkip
+                        ? "AUTO SKIP"
+                        : "READY " + readyCount + " / 4");
 
             var localReady = _localAvatar != null &&
                              MinefieldRules.IsValidPlayerSlot(_localAvatar.AssignedSlot) &&
@@ -934,18 +1037,37 @@ namespace MazeParty.Multiplayer
                     match.FlowState == BoardFlowState.MinigameIntroReady &&
                     !match.IsGlobalSimulationPaused &&
                     _localAvatar != null &&
+                    !isSkip &&
+                    !revealPending &&
                     !localReady;
             }
-            SetText(_readyButtonLabel, "READY");
+            SetText(
+                _readyButtonLabel,
+                revealPending
+                    ? "WAIT..."
+                    : isSkip
+                        ? "SKIPPING..."
+                        : "READY");
 
-            SetText(_minefieldResultTitle, "MINEFIELD RESULTS");
-            var resultSummary = BuildMinefieldResultSummary(
-                NetworkMinefieldState.Instance);
+            SetText(
+                _minefieldResultTitle,
+                isWrongWay
+                    ? "WRONG WAY RESULTS"
+                    : isSkip
+                        ? "TURN SKIPPED"
+                        : "MINEFIELD RESULTS");
+            var resultSummary = isWrongWay
+                ? BuildWrongWayResultSummary(NetworkWrongWayState.Instance)
+                : isSkip
+                    ? "No minigame was scheduled for this turn."
+                    : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
             if (_minefieldResultSummary != null)
             {
                 SetText(
                     _minefieldResultNote,
-                    "Final placement awards 3 / 2 / 1 / 0 gold.");
+                    isSkip
+                        ? "No rewards are awarded for an empty queue slot."
+                        : "Final placement awards 3 / 2 / 1 / 0 gold.");
                 SetText(_minefieldResultSummary, resultSummary);
             }
             else
@@ -959,12 +1081,16 @@ namespace MazeParty.Multiplayer
                 _minefieldRuleImage.color = hasRuleImage
                     ? Color.white
                     : new Color(0.055f, 0.09f, 0.14f, 1f);
+                _minefieldRuleImage.gameObject.SetActive(isMinefield);
             }
+            SetText(
+                _minigameRulePlaceholder,
+                isWrongWay ? "W  A  S  D\n50 STEPS" : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
                     ? _minigameRulePlaceholder.gameObject
                     : null,
-                !hasRuleImage);
+                !isSkip && !hasRuleImage);
         }
 
         private static int CountReadyPlayers(NetworkMatchState match)
@@ -1026,6 +1152,55 @@ namespace MazeParty.Multiplayer
             return builder.ToString();
         }
 
+        private static string BuildWrongWayResultSummary(
+            NetworkWrongWayState wrongWay)
+        {
+            if (wrongWay == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1; rank <= WrongWayRules.PlayerCount; rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0; slot < WrongWayRules.PlayerCount; slot++)
+                {
+                    if (wrongWay.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar =
+                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(wrongWay.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(WrongWayRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
         private static string MinefieldPhaseLabel(
             NetworkMinefieldState minefield)
         {
@@ -1072,6 +1247,56 @@ namespace MazeParty.Multiplayer
                     return "All three rounds complete. Final points determine rank and gold.";
                 default:
                     return "Preparing Minefield...";
+            }
+        }
+
+        private static string WrongWayPhaseLabel(
+            NetworkWrongWayState wrongWay)
+        {
+            if (wrongWay == null)
+            {
+                return "WRONG WAY";
+            }
+
+            var round = Mathf.Clamp(
+                wrongWay.RoundNumber,
+                1,
+                WrongWayRules.RoundCount);
+            switch (wrongWay.Phase)
+            {
+                case NetworkWrongWayPhase.Countdown:
+                    return "WRONG WAY  ROUND " + round + " / 2  -  COUNTDOWN";
+                case NetworkWrongWayPhase.Running:
+                    return "WRONG WAY  ROUND " + round + " / 2  -  CLIMB";
+                case NetworkWrongWayPhase.RoundResult:
+                    return "WRONG WAY  ROUND " + round + " / 2  -  RESULT";
+                case NetworkWrongWayPhase.Complete:
+                    return "WRONG WAY COMPLETE";
+                default:
+                    return "WRONG WAY";
+            }
+        }
+
+        private static string WrongWayStatus(
+            NetworkWrongWayState wrongWay)
+        {
+            if (wrongWay == null)
+            {
+                return "Synchronizing the WrongWay race...";
+            }
+
+            switch (wrongWay.Phase)
+            {
+                case NetworkWrongWayPhase.Countdown:
+                    return "Get ready. Every player receives the same direction sequence.";
+                case NetworkWrongWayPhase.Running:
+                    return "Press the shown WASD direction. Wrong input locks you for 0.5 seconds.";
+                case NetworkWrongWayPhase.RoundResult:
+                    return "Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.";
+                case NetworkWrongWayPhase.Complete:
+                    return "Both rounds complete. Final points determine rank and gold.";
+                default:
+                    return "Preparing WrongWay...";
             }
         }
 
@@ -1152,12 +1377,31 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.AscendingResolve: return "RESOLVING / ASCENDING";
                 case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
                 case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
-                case BoardFlowState.MinigameIntroReady: return "MINEFIELD READY";
-                case BoardFlowState.MinigameLoading: return "LOADING MINEFIELD";
-                case BoardFlowState.MinigamePlaying: return "MINEFIELD";
-                case BoardFlowState.SkippedResult: return "MINEFIELD RESULTS";
+                case BoardFlowState.MinigameIntroReady: return "MINIGAME READY";
+                case BoardFlowState.MinigameLoading: return "LOADING MINIGAME";
+                case BoardFlowState.MinigamePlaying: return "MINIGAME";
+                case BoardFlowState.SkippedResult: return "MINIGAME RESULTS";
+                case BoardFlowState.MatchComplete: return "MATCH COMPLETE";
                 default: return state.ToString().ToUpperInvariant();
             }
+        }
+
+        private static string MinigameName(ScheduledMinigameId minigame)
+        {
+            switch (minigame)
+            {
+                case ScheduledMinigameId.Minefield: return "MINEFIELD";
+                case ScheduledMinigameId.WrongWay: return "WRONG WAY";
+                default: return "SKIP";
+            }
+        }
+
+        private bool IsMinigameRevealPending(NetworkMatchState match)
+        {
+            return match != null &&
+                   match.FlowState == BoardFlowState.MinigameIntroReady &&
+                   Time.unscaledTime - _minigameRevealObservedAt <
+                   MinigameScheduleTowerView.RevealDelaySeconds;
         }
 
         private static string ChoiceLabel(NetworkPlayerAvatar avatar)

@@ -74,9 +74,10 @@ namespace MazeParty.EditorTools
             EditorGUILayout.Space(8f);
             EditorGUILayout.LabelField(
                 "Controls",
-                "WASD move · stop + RMB sonar · R restart · N next seed · Esc stop");
+                GetControlsLabel(
+                    descriptors[_selectedIndex].Id));
             EditorGUILayout.HelpBox(
-                "This harness validates local controls, hazards, presentation, " +
+                "This harness validates local controls, penalties, presentation, " +
                 "round timing, and deterministic layouts. NGO RPC and server " +
                 "authority still require the multiplayer test flow.",
                 MessageType.None);
@@ -118,6 +119,21 @@ namespace MazeParty.EditorTools
             EditorPrefs.SetBool(RandomSeedKey, _randomSeed);
         }
 
+        private static string GetControlsLabel(
+            MinigameSoloTestId id)
+        {
+            switch (id)
+            {
+                case MinigameSoloTestId.WrongWay:
+                    return "WASD match prompt · R restart · " +
+                           "N next seed · Esc stop";
+                case MinigameSoloTestId.Minefield:
+                default:
+                    return "WASD move · stop + RMB sonar · " +
+                           "R restart · N next seed · Esc stop";
+            }
+        }
+
         internal static void RepaintOpenWindows()
         {
             var windows =
@@ -134,6 +150,8 @@ namespace MazeParty.EditorTools
     {
         private const string QuickPlayMenuPath =
             "MazeParty/Developer/Play Minefield Solo";
+        private const string QuickPlayWrongWayMenuPath =
+            "MazeParty/Developer/Play WrongWay Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -182,6 +200,20 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlayMenuPath, true)]
         private static bool ValidateQuickPlayMinefield()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayWrongWayMenuPath, false, 2101)]
+        private static void QuickPlayWrongWay()
+        {
+            Start(
+                MinigameSoloTestId.WrongWay,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayWrongWayMenuPath, true)]
+        private static bool ValidateQuickPlayWrongWay()
         {
             return CanStart;
         }
@@ -336,6 +368,22 @@ namespace MazeParty.EditorTools
                             SessionState.GetInt(TestSeedKey, 12345));
                         break;
                     }
+                    case MinigameSoloTestId.WrongWay:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                WrongWaySoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the WrongWay solo harness.");
+                        }
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
                     default:
                         throw new ArgumentOutOfRangeException(nameof(id));
                 }
@@ -389,11 +437,30 @@ namespace MazeParty.EditorTools
             RepaintWindows();
         }
 
-        private static MinefieldSoloTestController FindRuntimeHarness()
+        private static Component FindRuntimeHarness()
+        {
+            var minefield =
+                FindRuntimeHarnessOfType<
+                    MinefieldSoloTestController>();
+            return minefield != null
+                ? (Component)minefield
+                : FindRuntimeHarnessOfType<
+                    WrongWaySoloTestController>();
+        }
+
+        private static void DestroyRuntimeHarnesses()
+        {
+            DestroyRuntimeHarnessesOfType<
+                MinefieldSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                WrongWaySoloTestController>();
+        }
+
+        private static T FindRuntimeHarnessOfType<T>()
+            where T : Component
         {
             var controllers =
-                Resources.FindObjectsOfTypeAll<
-                    MinefieldSoloTestController>();
+                Resources.FindObjectsOfTypeAll<T>();
             for (var index = 0; index < controllers.Length; index++)
             {
                 var controller = controllers[index];
@@ -407,11 +474,11 @@ namespace MazeParty.EditorTools
             return null;
         }
 
-        private static void DestroyRuntimeHarnesses()
+        private static void DestroyRuntimeHarnessesOfType<T>()
+            where T : Component
         {
             var controllers =
-                Resources.FindObjectsOfTypeAll<
-                    MinefieldSoloTestController>();
+                Resources.FindObjectsOfTypeAll<T>();
             for (var index = 0; index < controllers.Length; index++)
             {
                 var controller = controllers[index];
@@ -421,7 +488,8 @@ namespace MazeParty.EditorTools
                     continue;
                 }
 
-                UnityEngine.Object.DestroyImmediate(controller.gameObject);
+                UnityEngine.Object.DestroyImmediate(
+                    controller.gameObject);
             }
         }
 

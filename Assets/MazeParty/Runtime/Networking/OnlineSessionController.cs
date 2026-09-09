@@ -450,10 +450,18 @@ namespace MazeParty.Multiplayer
         private async Task LeaveSessionAsync()
         {
             ClearPlayingReconnectTicket();
+            var abandonHostSchedule =
+                _sessions != null &&
+                _sessions.IsInSession &&
+                _sessions.Current.IsHost;
             _explicitLeaveQueued = true;
             try
             {
                 await _sessions.LeaveAsync();
+                if (abandonHostSchedule)
+                {
+                    new HostMinigameScheduleSession().CompleteActive();
+                }
             }
             finally
             {
@@ -969,6 +977,13 @@ namespace MazeParty.Multiplayer
 
         private void UnloadBoardLocally()
         {
+            var wrongWay = SceneManager.GetSceneByName(
+                MultiplayerConstants.WrongWayScene);
+            if (wrongWay.IsValid() && wrongWay.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(wrongWay);
+            }
+
             var minefield = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
             if (minefield.IsValid() && minefield.isLoaded)
             {

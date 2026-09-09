@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay.Minigames;
 
 namespace MazeParty.Gameplay
 {
@@ -13,7 +14,8 @@ namespace MazeParty.Gameplay
         MinigameIntroReady,
         SkippedResult,
         MinigameLoading,
-        MinigamePlaying
+        MinigamePlaying,
+        MatchComplete
     }
 
     public enum BoardActionEndReason
@@ -56,6 +58,8 @@ namespace MazeParty.Gameplay
         public const double AscendingResolveDurationSeconds = 5d;
         public const double LandingEffectResolveDurationSeconds = 4d;
         public const double SkippedResultDurationSeconds = 3d;
+        public const int DefaultTotalTurns =
+            MinigameScheduleRules.DefaultTurnCount;
 
         private const int AllPlayersMask = (1 << RequiredPlayerCount) - 1;
         private const int TransitionSafetyLimit = 12;
@@ -65,9 +69,15 @@ namespace MazeParty.Gameplay
         private double _totalPausedDuration;
         private double _pauseStartedAt;
 
-        public BoardFlowStateMachine(GameplayPhaseClock actionClock = null)
+        public BoardFlowStateMachine(
+            GameplayPhaseClock actionClock = null,
+            int totalTurns = DefaultTotalTurns)
         {
+            if (totalTurns < 1)
+                throw new ArgumentOutOfRangeException(nameof(totalTurns));
+
             ActionClock = actionClock ?? new GameplayPhaseClock();
+            TotalTurns = totalTurns;
         }
 
         public event Action<BoardFlowTransition> Transitioned;
@@ -76,6 +86,7 @@ namespace MazeParty.Gameplay
         public BoardFlowState State { get; private set; } = BoardFlowState.TurnOverview;
         public BoardActionEndReason LastActionEndReason { get; private set; }
         public int CurrentTurn { get; private set; }
+        public int TotalTurns { get; }
         public bool IsStarted { get; private set; }
         public bool IsPaused { get; private set; }
         public double StateStartedAt => _stateStartedAt;
@@ -202,6 +213,7 @@ namespace MazeParty.Gameplay
                     case BoardFlowState.MinigameLoading:
                     case BoardFlowState.MinigamePlaying:
                     case BoardFlowState.CombatResolve:
+                    case BoardFlowState.MatchComplete:
                         break;
                     default:
                         throw new InvalidOperationException("Unsupported board flow state.");
@@ -421,12 +433,19 @@ namespace MazeParty.Gameplay
 
         private void BeginNextTurn(double occurredAt)
         {
+            if (CurrentTurn >= TotalTurns)
+            {
+                _arrivedPlayerMask = 0;
+                LastActionEndReason = BoardActionEndReason.None;
+                TransitionTo(BoardFlowState.MatchComplete, occurredAt);
+                return;
+            }
+
             CurrentTurn++;
             _arrivedPlayerMask = 0;
             LastActionEndReason = BoardActionEndReason.None;
             TransitionTo(BoardFlowState.TurnOverview, occurredAt);
 
-            // TODO(BOARD-FLOW): enforce the 15-turn match ending rule here.
             // TODO(BOARD-FLOW): settle rewards/currency before starting the next turn.
         }
 

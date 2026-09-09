@@ -23,6 +23,7 @@ namespace MazeParty.Editor
         private const string BootstrapPath = ScenesFolder + "/OnlineBootstrap.unity";
         private const string BoardPath = ScenesFolder + "/Board.unity";
         private const string MinefieldPath = ScenesFolder + "/Minefield.unity";
+        private const string WrongWayPath = ScenesFolder + "/WrongWay.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
         private const string LobbyFloorMaterialPath =
             Root + "/Board/Materials/RoomNormalA.mat";
@@ -45,6 +46,7 @@ namespace MazeParty.Editor
             BoardFlowProjectSetup.BuildBoardSceneBase();
             BoardFlowProjectSetup.BuildLocalTestbedFromBoard();
             MinefieldProjectSetup.BuildMinefieldAssets();
+            WrongWayProjectSetup.BuildWrongWayAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -723,7 +725,8 @@ namespace MazeParty.Editor
             {
                 new EditorBuildSettingsScene(BootstrapPath, true),
                 new EditorBuildSettingsScene(BoardPath, true),
-                new EditorBuildSettingsScene(MinefieldPath, true)
+                new EditorBuildSettingsScene(MinefieldPath, true),
+                new EditorBuildSettingsScene(WrongWayPath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";

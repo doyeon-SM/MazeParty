@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
@@ -318,9 +319,13 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
-            var handlingMinefield = SubmitLocalMinefieldMovement();
+            var handlingMinigame = SubmitLocalWrongWayDirection();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalMinefieldMovement();
+            }
             HandleLocalActionButtons();
-            if (!handlingMinefield)
+            if (!handlingMinigame)
             {
                 SubmitLocalMovement();
             }
@@ -1447,6 +1452,11 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (match != null && match.IsWrongWayPlaying)
+            {
+                return;
+            }
+
             if (match != null && match.IsMinefieldPlaying)
             {
                 var minefield = NetworkMinefieldState.Instance;
@@ -1671,6 +1681,48 @@ namespace MazeParty.Multiplayer
                 _lastSentMinefieldInput = input;
                 _nextMinefieldInputRefresh = Time.unscaledTime + 0.1f;
                 SubmitMinefieldInputRpc(input);
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalWrongWayDirection()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsWrongWayPlaying)
+            {
+                return false;
+            }
+
+            var state = NetworkWrongWayState.Instance;
+            var keyboard = Keyboard.current;
+            if (state == null || keyboard == null ||
+                !state.CanAcceptInputForSlot(AssignedSlot))
+            {
+                return true;
+            }
+
+            WrongWayDirection? direction = null;
+            if (keyboard.wKey.wasPressedThisFrame)
+            {
+                direction = WrongWayDirection.Up;
+            }
+            else if (keyboard.sKey.wasPressedThisFrame)
+            {
+                direction = WrongWayDirection.Down;
+            }
+            else if (keyboard.aKey.wasPressedThisFrame)
+            {
+                direction = WrongWayDirection.Left;
+            }
+            else if (keyboard.dKey.wasPressedThisFrame)
+            {
+                direction = WrongWayDirection.Right;
+            }
+
+            if (direction.HasValue)
+            {
+                SubmitWrongWayDirectionRpc((byte)direction.Value);
             }
 
             return true;
@@ -2457,6 +2509,22 @@ namespace MazeParty.Multiplayer
                     this,
                     Vector2.ClampMagnitude(currentInput, 1f));
             }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitWrongWayDirectionRpc(
+            byte direction,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                direction > (byte)WrongWayDirection.Right)
+            {
+                return;
+            }
+
+            NetworkWrongWayState.Instance?.TrySubmitDirectionOnServer(
+                this,
+                (WrongWayDirection)direction);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using MazeParty.Dev.MinigameSoloTest;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.WrongWay;
 using MazeParty.Multiplayer;
 using NUnit.Framework;
 using UnityEditor;
@@ -131,5 +132,106 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(session.ClearedRoundCount, Is.Zero);
             Assert.That(session.WasRoundCleared(1), Is.False);
         }
+
+        [Test]
+        public void WrongWaySessionKeepsPromptWhileFallenAndAcceptsAfterLock()
+        {
+            var session = new WrongWaySoloSession();
+            session.Begin(2468);
+            session.Tick((float)WrongWayRules.CountdownSeconds);
+
+            var prompt = session.CurrentPrompt.Value;
+            var incorrect = prompt == WrongWayDirection.Up
+                ? WrongWayDirection.Down
+                : WrongWayDirection.Up;
+
+            Assert.That(
+                session.TrySubmitDirection(
+                    incorrect,
+                    out var wrong),
+                Is.True);
+            Assert.That(
+                wrong.Status,
+                Is.EqualTo(WrongWayInputStatus.Incorrect));
+            Assert.That(session.CompletedSteps, Is.Zero);
+            Assert.That(session.CurrentPrompt, Is.EqualTo(prompt));
+            Assert.That(session.IsInputLocked, Is.True);
+            Assert.That(
+                session.InputLockSecondsRemaining,
+                Is.EqualTo(0.5f).Within(0.001f));
+
+            session.Tick(0.49f);
+            session.TrySubmitDirection(prompt, out var ignored);
+            Assert.That(
+                ignored.Status,
+                Is.EqualTo(WrongWayInputStatus.IgnoredWhileLocked));
+            Assert.That(session.CompletedSteps, Is.Zero);
+
+            session.Tick(0.02f);
+            session.TrySubmitDirection(prompt, out var accepted);
+            Assert.That(
+                accepted.Status,
+                Is.EqualTo(WrongWayInputStatus.Correct));
+            Assert.That(session.CompletedSteps, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void WrongWaySessionCompletesTwoFiftyStepRoundsLocally()
+        {
+            var session = new WrongWaySoloSession();
+            session.Begin(97531);
+
+            for (var roundNumber = 1;
+                 roundNumber <= WrongWayRules.RoundCount;
+                 roundNumber++)
+            {
+                Assert.That(
+                    session.RoundNumber,
+                    Is.EqualTo(roundNumber));
+                session.Tick(
+                    (float)WrongWayRules.CountdownSeconds);
+                Assert.That(
+                    session.Phase,
+                    Is.EqualTo(WrongWaySoloPhase.Running));
+
+                for (var step = 0;
+                     step < WrongWayRules.StepCount;
+                     step++)
+                {
+                    Assert.That(
+                        session.TrySubmitDirection(
+                            session.CurrentPrompt.Value,
+                            out _),
+                        Is.True);
+                }
+
+                Assert.That(
+                    session.Phase,
+                    Is.EqualTo(WrongWaySoloPhase.RoundResult));
+                var standing = session
+                    .GetRoundResult(roundNumber)
+                    .GetStandingForSlot(
+                        WrongWaySoloSession.LocalPlayerSlot);
+                Assert.That(
+                    standing.CompletedSteps,
+                    Is.EqualTo(WrongWayRules.StepCount));
+                Assert.That(standing.Rank, Is.EqualTo(1));
+
+                session.Tick(
+                    WrongWaySoloSession.RoundResultSeconds);
+            }
+
+            Assert.That(
+                session.Phase,
+                Is.EqualTo(WrongWaySoloPhase.Complete));
+            Assert.That(session.Leaderboard, Has.Count.EqualTo(4));
+            Assert.That(
+                session.Leaderboard[0].PlayerSlot,
+                Is.EqualTo(WrongWaySoloSession.LocalPlayerSlot));
+            Assert.That(
+                session.Leaderboard[0].TotalCompletedSteps,
+                Is.EqualTo(WrongWayRules.StepCount * 2));
+        }
+
     }
 }

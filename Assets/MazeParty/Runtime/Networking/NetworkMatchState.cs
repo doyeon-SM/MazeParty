@@ -1,7 +1,9 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -20,6 +22,7 @@ namespace MazeParty.Multiplayer
         public const double ReconnectGraceSeconds = 60d;
         public const double KeyShopRevealSeconds = 5d;
         public const double AllPlayersArrivalGraceSeconds = 3d;
+        public const double SkipRevealSeconds = 2d;
         private const int AllPlayersMask = (1 << MultiplayerConstants.MaxPlayers) - 1;
 
         private readonly NetworkVariable<bool> _gameplayEnabled = new NetworkVariable<bool>();
@@ -78,6 +81,14 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedCombatRemaining =
             new NetworkVariable<double>();
+        private readonly NetworkVariable<byte> _currentMinigame =
+            new NetworkVariable<byte>((byte)ScheduledMinigameId.Skip);
+        private readonly NetworkVariable<int> _remainingMinigameSlots =
+            new NetworkVariable<int>(MinigameScheduleRules.DefaultTurnCount);
+        private readonly NetworkVariable<int> _minigameRevealRevision =
+            new NetworkVariable<int>();
+        private readonly NetworkVariable<ulong> _currentMinigameSeed =
+            new NetworkVariable<ulong>();
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
@@ -106,7 +117,12 @@ namespace MazeParty.Multiplayer
         private int[] _combatOverallRanks = new int[MultiplayerConstants.MaxPlayers];
         private int _fightsResolvedThisTurn;
         private int _settledMinigameTurn = -1;
-        private bool _minefieldNetworkLoadCompleted;
+        private bool _selectedMinigameNetworkLoadCompleted;
+        private double _scheduledSkipAt;
+        private bool _scheduledSkipPaused;
+        private double _pausedScheduledSkipRemaining;
+        private HostMinigameSchedule _minigameSchedule;
+        private HostMinigameScheduleSession _minigameScheduleSession;
         private readonly NetworkPlayerAvatar[] _avatarLookupCache =
             new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
         private float _nextAvatarLookupRefresh;
@@ -117,6 +133,11 @@ namespace MazeParty.Multiplayer
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
         public int StateRevision => _stateRevision.Value;
+        public ScheduledMinigameId CurrentMinigame =>
+            (ScheduledMinigameId)_currentMinigame.Value;
+        public int RemainingMinigameSlots => _remainingMinigameSlots.Value;
+        public int MinigameRevealRevision => _minigameRevealRevision.Value;
+        public ulong CurrentMinigameSeed => _currentMinigameSeed.Value;
         public bool IsReconnectPaused => _reconnectPaused.Value;
         public bool IsKeyShopRevealActive => _keyShopRevealActive.Value;
         public bool IsGlobalSimulationPaused => IsReconnectPaused || IsKeyShopRevealActive;
@@ -151,11 +172,20 @@ namespace MazeParty.Multiplayer
             GameplayEnabled && FlowState == BoardFlowState.CombatResolve;
         public bool IsMinefieldPhase =>
             GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.Minefield &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
              FlowState == BoardFlowState.SkippedResult);
         public bool IsMinefieldPlaying =>
-            GameplayEnabled && FlowState == BoardFlowState.MinigamePlaying;
+            IsMinefieldPhase && FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsWrongWayPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.WrongWay &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsWrongWayPlaying =>
+            IsWrongWayPhase && FlowState == BoardFlowState.MinigamePlaying;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
@@ -289,7 +319,17 @@ namespace MazeParty.Multiplayer
             EnsureFlowModel();
             _flow.Tick(now);
             AdvanceArrivalGraceOnServer(now);
-            TryStartLoadedMinefieldOnServer(now);
+            if (_flow.State == BoardFlowState.MinigameIntroReady &&
+                CurrentMinigame == ScheduledMinigameId.Skip &&
+                _scheduledSkipAt > 0d &&
+                now >= _scheduledSkipAt)
+            {
+                _scheduledSkipAt = 0d;
+                _scheduledSkipPaused = false;
+                _pausedScheduledSkipRemaining = 0d;
+                _flow.TrySkipMinigame(now);
+            }
+            TryStartLoadedMinigameOnServer(now);
             AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
             ResolveExpiredPersonalChoicesOnServer(now);
@@ -304,6 +344,10 @@ namespace MazeParty.Multiplayer
             }
 
             EnsureFlowModel();
+            if (!TryInitializeMinigameScheduleOnServer())
+            {
+                return;
+            }
             EnsureKeyShopRuntime();
             _keyShopRuntime.ResetToInactive();
             _keyShopAppearanceEndsAt = 0d;
@@ -326,6 +370,12 @@ namespace MazeParty.Multiplayer
             _arrivalGraceEndsAt.Value = 0d;
             _pausedArrivalGraceRemaining.Value = 0d;
             _readyMask.Value = 0;
+            _remainingMinigameSlots.Value = _minigameSchedule.TurnCount;
+            _currentMinigame.Value = (byte)ScheduledMinigameId.Skip;
+            _currentMinigameSeed.Value = 0UL;
+            _scheduledSkipAt = 0d;
+            _scheduledSkipPaused = false;
+            _pausedScheduledSkipRemaining = 0d;
             _snapshotRestoredMask.Value = AllPlayersMask;
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
             ResetArrivalTimes();
@@ -594,7 +644,9 @@ namespace MazeParty.Multiplayer
 
         public bool TrySetMinigameReadyOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!CanProcessAvatarRequest(avatar) || FlowState != BoardFlowState.MinigameIntroReady)
+            if (!CanProcessAvatarRequest(avatar) ||
+                FlowState != BoardFlowState.MinigameIntroReady ||
+                CurrentMinigame == ScheduledMinigameId.Skip)
             {
                 return false;
             }
@@ -614,6 +666,7 @@ namespace MazeParty.Multiplayer
             if (!IsServer || leaderboard == null ||
                 leaderboard.Count != MultiplayerConstants.MaxPlayers ||
                 FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.Minefield ||
                 _settledMinigameTurn == Turn)
             {
                 return false;
@@ -678,6 +731,74 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        public bool TryCompleteWrongWayOnServer(
+            IReadOnlyList<WrongWayLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.WrongWay ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!WrongWayRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    WrongWayRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
         public void PauseForReconnectOnServer(ulong disconnectedClientId)
         {
             if (!IsServer || !_gameplayEnabled.Value)
@@ -704,7 +825,17 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             var now = ServerNow;
+            if (_flow.State == BoardFlowState.MinigameIntroReady &&
+                CurrentMinigame == ScheduledMinigameId.Skip &&
+                _scheduledSkipAt > 0d)
+            {
+                _scheduledSkipPaused = true;
+                _pausedScheduledSkipRemaining =
+                    Math.Max(0d, _scheduledSkipAt - now);
+                _scheduledSkipAt = 0d;
+            }
             NetworkMinefieldState.Instance?.PauseOnServer(now);
+            NetworkWrongWayState.Instance?.PauseOnServer(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
@@ -848,6 +979,8 @@ namespace MazeParty.Multiplayer
             {
                 case BoardFlowState.TurnOverview:
                     NetworkMinefieldState.Instance?.EndMatchOnServer();
+                    NetworkWrongWayState.Instance?.EndMatchOnServer();
+                    _selectedMinigameNetworkLoadCompleted = false;
                     ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
@@ -883,16 +1016,27 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLandingEffectsOnServer();
                     _readyMask.Value = 0;
+                    RevealScheduledMinigameOnServer(transition.Turn);
                     break;
                 case BoardFlowState.MinigameLoading:
                     StopAllAvatarInputOnServer();
-                    RequestMinefieldLoadOnServer();
+                    RequestSelectedMinigameLoadOnServer();
                     break;
                 case BoardFlowState.MinigamePlaying:
                     StopAllAvatarInputOnServer();
                     break;
                 case BoardFlowState.SkippedResult:
                     StopAllAvatarInputOnServer();
+                    break;
+                case BoardFlowState.MatchComplete:
+                    NetworkMinefieldState.Instance?.EndMatchOnServer();
+                    NetworkWrongWayState.Instance?.EndMatchOnServer();
+                    StopAllAvatarInputOnServer();
+                    _remainingMinigameSlots.Value = 0;
+                    _scheduledSkipAt = 0d;
+                    _scheduledSkipPaused = false;
+                    _pausedScheduledSkipRemaining = 0d;
+                    _minigameScheduleSession?.CompleteActive();
                     break;
             }
 
@@ -941,34 +1085,49 @@ namespace MazeParty.Multiplayer
                 }
                 _pausedArrivalGraceRemaining.Value = 0d;
             }
+            if (_scheduledSkipPaused)
+            {
+                _scheduledSkipAt =
+                    now + Math.Max(0d, _pausedScheduledSkipRemaining);
+                _scheduledSkipPaused = false;
+                _pausedScheduledSkipRemaining = 0d;
+            }
             NetworkMinefieldState.Instance?.ResumeOnServer(now);
+            NetworkWrongWayState.Instance?.ResumeOnServer(now);
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
-            TryStartLoadedMinefieldOnServer(now);
+            TryStartLoadedMinigameOnServer(now);
         }
 
-        private void RequestMinefieldLoadOnServer()
+        private void RequestSelectedMinigameLoadOnServer()
         {
             if (!IsServer || NetworkManager == null || NetworkManager.SceneManager == null)
             {
                 return;
             }
 
-            var scene = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
-            if (scene.IsValid() && scene.isLoaded)
+            var sceneName = GetSelectedMinigameSceneName();
+            if (string.IsNullOrEmpty(sceneName))
             {
-                _minefieldNetworkLoadCompleted = true;
                 return;
             }
 
-            _minefieldNetworkLoadCompleted = false;
+            var scene = SceneManager.GetSceneByName(sceneName);
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                _selectedMinigameNetworkLoadCompleted = true;
+                return;
+            }
+
+            _selectedMinigameNetworkLoadCompleted = false;
             var status = NetworkManager.SceneManager.LoadScene(
-                MultiplayerConstants.MinefieldScene,
+                sceneName,
                 LoadSceneMode.Additive);
             if (status != SceneEventProgressStatus.Started)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    "Could not synchronize the Minefield minigame scene: " + status);
+                    "Could not synchronize the " + CurrentMinigame +
+                    " minigame scene: " + status);
             }
         }
 
@@ -978,17 +1137,22 @@ namespace MazeParty.Multiplayer
             List<ulong> clientsCompleted,
             List<ulong> clientsTimedOut)
         {
-            if (!IsServer || sceneName != MultiplayerConstants.MinefieldScene)
+            var selectedSceneName = GetSelectedMinigameSceneName();
+            if (!IsServer ||
+                string.IsNullOrEmpty(selectedSceneName) ||
+                sceneName != selectedSceneName)
             {
                 return;
             }
 
-            var scene = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
-            _minefieldNetworkLoadCompleted = scene.IsValid() && scene.isLoaded;
-            if (!_minefieldNetworkLoadCompleted)
+            var scene = SceneManager.GetSceneByName(selectedSceneName);
+            _selectedMinigameNetworkLoadCompleted =
+                scene.IsValid() && scene.isLoaded;
+            if (!_selectedMinigameNetworkLoadCompleted)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    "Minefield scene synchronization completed without a loaded scene.");
+                    CurrentMinigame +
+                    " scene synchronization completed without a loaded scene.");
                 return;
             }
 
@@ -999,29 +1163,116 @@ namespace MazeParty.Multiplayer
                 clientsTimedOut.Count > 0)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    "Minefield scene synchronization timed out for a player.");
+                    CurrentMinigame +
+                    " scene synchronization timed out for a player.");
             }
         }
 
-        private void TryStartLoadedMinefieldOnServer(double now)
+        private void TryStartLoadedMinigameOnServer(double now)
         {
             if (!IsServer || _flow == null || _flow.State != BoardFlowState.MinigameLoading ||
-                _flow.IsPaused || _reconnectPaused.Value || !_minefieldNetworkLoadCompleted ||
+                _flow.IsPaused || _reconnectPaused.Value ||
+                !_selectedMinigameNetworkLoadCompleted ||
                 !HasFourBoardReadyPlayers())
             {
                 return;
             }
 
-            var minefield = NetworkMinefieldState.Instance;
-            if (minefield == null || !minefield.IsSpawned)
+            var minefield = CurrentMinigame == ScheduledMinigameId.Minefield
+                ? NetworkMinefieldState.Instance
+                : null;
+            var wrongWay = CurrentMinigame == ScheduledMinigameId.WrongWay
+                ? NetworkWrongWayState.Instance
+                : null;
+            if ((minefield == null || !minefield.IsSpawned) &&
+                (wrongWay == null || !wrongWay.IsSpawned))
             {
                 return;
             }
 
             if (_flow.TryBeginMinigame(now))
             {
-                minefield.BeginMatchOnServer();
+                if (minefield != null)
+                {
+                    minefield.BeginMatchOnServer();
+                }
+                else
+                {
+                    wrongWay.BeginMatchOnServer(_currentMinigameSeed.Value);
+                }
             }
+        }
+
+        private bool TryInitializeMinigameScheduleOnServer()
+        {
+            try
+            {
+                _minigameScheduleSession ??=
+                    new HostMinigameScheduleSession();
+                _minigameSchedule =
+                    _minigameScheduleSession.LoadOrCreateActive(
+                        MinigameScheduleRules.DefaultTurnCount);
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    "The persisted minigame schedule could not be restored.");
+                return false;
+            }
+        }
+
+        private void RevealScheduledMinigameOnServer(int turn)
+        {
+            if (_minigameSchedule == null &&
+                !TryInitializeMinigameScheduleOnServer())
+            {
+                return;
+            }
+
+            var selected =
+                _minigameSchedule.GetMinigameForTurn(turn);
+            _currentMinigame.Value = (byte)selected;
+            _remainingMinigameSlots.Value =
+                Math.Max(0, _minigameSchedule.TurnCount - turn + 1);
+            _currentMinigameSeed.Value = DeriveMinigameSeed(
+                _minigameSchedule.Seed,
+                turn);
+            _selectedMinigameNetworkLoadCompleted = false;
+            _scheduledSkipPaused = false;
+            _pausedScheduledSkipRemaining = 0d;
+            _scheduledSkipAt =
+                selected == ScheduledMinigameId.Skip
+                    ? ServerNow + SkipRevealSeconds
+                    : 0d;
+            _minigameRevealRevision.Value++;
+        }
+
+        private string GetSelectedMinigameSceneName()
+        {
+            switch (CurrentMinigame)
+            {
+                case ScheduledMinigameId.Minefield:
+                    return MultiplayerConstants.MinefieldScene;
+                case ScheduledMinigameId.WrongWay:
+                    return MultiplayerConstants.WrongWayScene;
+                default:
+                    return string.Empty;
+            }
+        }
+
+        private static ulong DeriveMinigameSeed(int scheduleSeed, int turn)
+        {
+            var seed = unchecked(
+                ((ulong)(uint)scheduleSeed << 32) |
+                (uint)turn);
+            seed ^= 0x9E3779B97F4A7C15UL;
+            seed ^= seed >> 30;
+            seed *= 0xBF58476D1CE4E5B9UL;
+            seed ^= seed >> 27;
+            seed *= 0x94D049BB133111EBUL;
+            return seed ^ (seed >> 31);
         }
 
         private void ResolveExpiredPersonalChoicesOnServer(double now)

@@ -1,0 +1,820 @@
+using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.WrongWay;
+using Unity.Cinemachine;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace MazeParty.Multiplayer
+{
+    /// <summary>
+    /// Client-side presentation for the server-authoritative WrongWay race.
+    /// The network state owns progress and scoring while this component builds
+    /// four visual runners, drives the race camera and renders the local HUD.
+    /// </summary>
+    [DisallowMultipleComponent]
+    public sealed class WrongWayNetworkView : MonoBehaviour
+    {
+        public const float CameraFieldOfView = 52f;
+        public const float StartPlatformDepth = 2.2f;
+        public const float FinishPlatformDepth = 2f;
+        public const float RunnerInterpolationSpeed = 14f;
+
+        private static readonly Color[] FallbackPlayerColors =
+        {
+            new Color(0.18f, 0.62f, 1f),
+            new Color(1f, 0.32f, 0.24f),
+            new Color(0.25f, 0.86f, 0.42f),
+            new Color(0.72f, 0.38f, 1f)
+        };
+
+        [SerializeField] private NetworkWrongWayState state;
+        [SerializeField] private CinemachineCamera raceCamera;
+        [SerializeField] private Transform runnerRoot;
+        [SerializeField] private GameObject arenaPresentation;
+
+        private readonly RunnerView[] _runners =
+            new RunnerView[WrongWayRules.PlayerCount];
+        private readonly Text[] _progressRows =
+            new Text[WrongWayRules.PlayerCount];
+
+        private GameplayCameraDirector _cameraDirector;
+        private Canvas _hudCanvas;
+        private Text _phaseText;
+        private Text _promptText;
+        private Text _instructionText;
+        private int _localSlot = -1;
+        private bool _cameraConfigured;
+        private bool _cameraRegistered;
+        private Vector3 _cameraFocus;
+        private bool _hasCameraFocus;
+
+        public static float CourseLength =>
+            WrongWayRules.StepCount * NetworkWrongWayState.StepDepth;
+
+        public static float CourseHeight =>
+            WrongWayRules.StepCount * NetworkWrongWayState.StepHeight;
+
+        public static float GetLaneX(int playerSlot)
+        {
+            var clampedSlot = Mathf.Clamp(
+                playerSlot,
+                0,
+                WrongWayRules.PlayerCount - 1);
+            return NetworkWrongWayState.ArenaCenterX +
+                   (clampedSlot - (WrongWayRules.PlayerCount - 1) * 0.5f) *
+                   NetworkWrongWayState.LaneSpacing;
+        }
+
+        public static Vector3 GetRunnerWorldPosition(
+            int playerSlot,
+            int completedSteps)
+        {
+            var progress = Mathf.Clamp(
+                completedSteps,
+                0,
+                WrongWayRules.StepCount);
+            if (progress == 0)
+            {
+                return new Vector3(
+                    GetLaneX(playerSlot),
+                    0f,
+                    -StartPlatformDepth * 0.5f);
+            }
+
+            return new Vector3(
+                GetLaneX(playerSlot),
+                progress * NetworkWrongWayState.StepHeight,
+                (progress - 0.5f) * NetworkWrongWayState.StepDepth);
+        }
+
+        public static Vector3 CalculateCameraFocus(int leadingProgress)
+        {
+            var progress = Mathf.Clamp(
+                leadingProgress,
+                0,
+                WrongWayRules.StepCount);
+            var runnerPosition = progress == 0
+                ? new Vector3(
+                    NetworkWrongWayState.ArenaCenterX,
+                    0f,
+                    -StartPlatformDepth * 0.5f)
+                : new Vector3(
+                    NetworkWrongWayState.ArenaCenterX,
+                    progress * NetworkWrongWayState.StepHeight,
+                    (progress - 0.5f) * NetworkWrongWayState.StepDepth);
+
+            return runnerPosition + new Vector3(0f, 1.35f, 1.6f);
+        }
+
+        public static Vector3 CalculateCameraPosition(Vector3 focus)
+        {
+            return focus + new Vector3(0f, 8.5f, -12.5f);
+        }
+
+        public static Quaternion CalculateCameraRotation(Vector3 focus)
+        {
+            var direction = focus - CalculateCameraPosition(focus);
+            return Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
+
+        private void Awake()
+        {
+            ResolveSceneReferences();
+            ConfigureCamera();
+            EnsurePresentation();
+            SetWorldPresentationActive(false);
+        }
+
+        private void OnEnable()
+        {
+            ResolveSceneReferences();
+        }
+
+        private void OnDisable()
+        {
+            SetWorldPresentationActive(false);
+            UnregisterCamera();
+        }
+
+        private void Update()
+        {
+            if (state == null)
+            {
+                state = GetComponent<NetworkWrongWayState>();
+            }
+
+            EnsurePresentation();
+
+            var match = NetworkMatchState.Instance;
+            var selected = match != null && match.IsWrongWayPhase;
+            UpdateCameraRegistration(selected);
+
+            var shouldShowWorld = selected &&
+                                  state != null &&
+                                  state.IsSpawned &&
+                                  state.Phase != NetworkWrongWayPhase.Inactive;
+            var shouldShowHud = shouldShowWorld &&
+                                match.IsWrongWayPlaying;
+
+            if (_hudCanvas != null &&
+                _hudCanvas.gameObject.activeSelf != shouldShowHud)
+            {
+                _hudCanvas.gameObject.SetActive(shouldShowHud);
+            }
+
+            if (!shouldShowWorld)
+            {
+                SetWorldPresentationActive(false);
+                return;
+            }
+
+            SetWorldPresentationActive(true);
+            ResolveLocalSlot(match);
+            RefreshRunners(match);
+            RefreshRaceCamera();
+            RefreshHud(match);
+        }
+
+        private void ResolveSceneReferences()
+        {
+            if (state == null)
+            {
+                state = GetComponent<NetworkWrongWayState>();
+            }
+            if (raceCamera == null)
+            {
+                raceCamera = GetComponentInChildren<CinemachineCamera>(true);
+            }
+            if (arenaPresentation == null)
+            {
+                var arena = FindDescendant(transform, "Arena Presentation");
+                arenaPresentation = arena != null ? arena.gameObject : null;
+            }
+            if (runnerRoot == null)
+            {
+                runnerRoot = EnsureChild(transform, "Runtime Runners");
+            }
+        }
+
+        private void EnsurePresentation()
+        {
+            ResolveSceneReferences();
+            for (var slot = 0; slot < _runners.Length; slot++)
+            {
+                if (_runners[slot] == null)
+                {
+                    _runners[slot] = CreateRunner(slot);
+                }
+            }
+
+            if (_hudCanvas == null)
+            {
+                CreateHud();
+            }
+        }
+
+        private RunnerView CreateRunner(int slot)
+        {
+            var runnerObject = new GameObject(
+                "WrongWay Runner " + (slot + 1));
+            runnerObject.transform.SetParent(runnerRoot, false);
+            runnerObject.transform.position =
+                GetRunnerWorldPosition(slot, 0);
+            runnerObject.transform.rotation = Quaternion.identity;
+
+            var visual = runnerObject.AddComponent<PlayerAvatarVisual>();
+            visual.EnsureBuilt();
+            visual.SetBodyColor(FallbackPlayerColors[slot]);
+            visual.SetDisplayName("Player " + (slot + 1));
+            visual.SetOwnerFirstPerson(false);
+
+            var colliders = runnerObject.GetComponentsInChildren<Collider>(true);
+            for (var index = 0; index < colliders.Length; index++)
+            {
+                colliders[index].enabled = false;
+            }
+
+            return new RunnerView(runnerObject.transform, visual);
+        }
+
+        private void ResolveLocalSlot(NetworkMatchState match)
+        {
+            var resolved = -1;
+            for (var slot = 0; slot < _runners.Length; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar != null && avatar.IsOwner)
+                {
+                    resolved = slot;
+                    break;
+                }
+            }
+
+            if (resolved == _localSlot)
+            {
+                return;
+            }
+
+            _localSlot = resolved;
+            for (var slot = 0; slot < _runners.Length; slot++)
+            {
+                _runners[slot]?.Visual.SetTopViewHighlight(
+                    slot == _localSlot);
+            }
+        }
+
+        private void RefreshRunners(NetworkMatchState match)
+        {
+            for (var slot = 0; slot < _runners.Length; slot++)
+            {
+                var runner = _runners[slot];
+                if (runner == null)
+                {
+                    continue;
+                }
+
+                var progress = state.GetProgress(slot);
+                var target = GetRunnerWorldPosition(slot, progress);
+                if (!runner.HasPosition ||
+                    progress < runner.LastProgress ||
+                    Vector3.SqrMagnitude(runner.Root.position - target) > 36f ||
+                    state.Phase == NetworkWrongWayPhase.Countdown)
+                {
+                    runner.Root.position = target;
+                    runner.HasPosition = true;
+                }
+                else
+                {
+                    runner.Root.position = Vector3.Lerp(
+                        runner.Root.position,
+                        target,
+                        1f - Mathf.Exp(
+                            -RunnerInterpolationSpeed *
+                            Time.unscaledDeltaTime));
+                }
+
+                runner.Root.rotation = Quaternion.identity;
+                runner.LastProgress = progress;
+                runner.Visual.SetEliminated(state.IsRecovering(slot));
+
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar != null)
+                {
+                    var appearance = avatar.Appearance;
+                    runner.Visual.SetBodyColor(appearance.BodyColor);
+                    runner.Visual.ApplyAppearance(
+                        appearance.EyeId,
+                        appearance.MouthId,
+                        appearance.HatId);
+                    runner.Visual.SetDisplayName(avatar.DisplayName);
+                }
+                else
+                {
+                    runner.Visual.SetBodyColor(FallbackPlayerColors[slot]);
+                    runner.Visual.SetDisplayName("Player " + (slot + 1));
+                }
+            }
+        }
+
+        private void ConfigureCamera()
+        {
+            if (raceCamera == null)
+            {
+                return;
+            }
+
+            var lens = raceCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = CameraFieldOfView;
+            lens.NearClipPlane = 0.1f;
+            lens.FarClipPlane = 150f;
+            raceCamera.Lens = lens;
+
+            var focus = CalculateCameraFocus(0);
+            raceCamera.ForceCameraPosition(
+                CalculateCameraPosition(focus),
+                CalculateCameraRotation(focus));
+            raceCamera.Priority = 0;
+            _cameraConfigured = true;
+        }
+
+        private void UpdateCameraRegistration(bool selected)
+        {
+            if (_cameraDirector == null)
+            {
+                _cameraDirector =
+                    FindAnyObjectByType<GameplayCameraDirector>();
+            }
+
+            if (selected)
+            {
+                if (!_cameraConfigured)
+                {
+                    ConfigureCamera();
+                }
+
+                if (!_cameraRegistered &&
+                    _cameraDirector != null &&
+                    raceCamera != null)
+                {
+                    _cameraDirector.SetMinigameCamera(raceCamera);
+                    _cameraRegistered = true;
+                }
+            }
+            else
+            {
+                UnregisterCamera();
+            }
+        }
+
+        private void UnregisterCamera()
+        {
+            if (_cameraRegistered &&
+                _cameraDirector != null &&
+                raceCamera != null)
+            {
+                _cameraDirector.ClearMinigameCamera(raceCamera);
+            }
+
+            if (raceCamera != null)
+            {
+                raceCamera.Priority = 0;
+            }
+            _cameraRegistered = false;
+        }
+
+        private void RefreshRaceCamera()
+        {
+            if (raceCamera == null)
+            {
+                return;
+            }
+
+            var leadingProgress = 0;
+            for (var slot = 0; slot < WrongWayRules.PlayerCount; slot++)
+            {
+                leadingProgress = Mathf.Max(
+                    leadingProgress,
+                    state.GetProgress(slot));
+            }
+
+            var targetFocus = CalculateCameraFocus(leadingProgress);
+            if (!_hasCameraFocus ||
+                Vector3.SqrMagnitude(_cameraFocus - targetFocus) > 100f ||
+                state.Phase == NetworkWrongWayPhase.Countdown)
+            {
+                _cameraFocus = targetFocus;
+                _hasCameraFocus = true;
+            }
+            else
+            {
+                _cameraFocus = Vector3.Lerp(
+                    _cameraFocus,
+                    targetFocus,
+                    1f - Mathf.Exp(
+                        -5f * Time.unscaledDeltaTime));
+            }
+
+            raceCamera.ForceCameraPosition(
+                CalculateCameraPosition(_cameraFocus),
+                CalculateCameraRotation(_cameraFocus));
+        }
+
+        private void CreateHud()
+        {
+            var canvasObject = new GameObject("WrongWay HUD");
+            canvasObject.transform.SetParent(transform, false);
+            _hudCanvas = canvasObject.AddComponent<Canvas>();
+            _hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            _hudCanvas.sortingOrder = 45;
+
+            var scaler = canvasObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode =
+                CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var panel = new GameObject(
+                "WrongWay HUD Panel",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            panel.transform.SetParent(canvasObject.transform, false);
+            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 1f);
+            panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -22f);
+            panelRect.sizeDelta = new Vector2(1120f, 330f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color =
+                new Color(0.025f, 0.035f, 0.07f, 0.88f);
+            panelImage.raycastTarget = false;
+
+            _phaseText = CreateText(
+                "Phase",
+                panel.transform,
+                new Vector2(0f, -16f),
+                new Vector2(1060f, 44f),
+                30,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+            _instructionText = CreateText(
+                "Instruction",
+                panel.transform,
+                new Vector2(0f, -58f),
+                new Vector2(1060f, 34f),
+                19,
+                TextAnchor.MiddleCenter,
+                FontStyle.Normal);
+            _instructionText.text =
+                "W A S D  ·  Match the shown direction and climb 50 steps";
+
+            _promptText = CreateText(
+                "Local Prompt",
+                panel.transform,
+                new Vector2(0f, -115f),
+                new Vector2(1060f, 78f),
+                50,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+
+            for (var slot = 0; slot < _progressRows.Length; slot++)
+            {
+                _progressRows[slot] = CreateText(
+                    "Player " + (slot + 1) + " Progress",
+                    panel.transform,
+                    new Vector2(0f, -194f - slot * 29f),
+                    new Vector2(1000f, 28f),
+                    19,
+                    TextAnchor.MiddleLeft,
+                    FontStyle.Bold);
+                _progressRows[slot].color =
+                    FallbackPlayerColors[slot];
+            }
+        }
+
+        private void RefreshHud(NetworkMatchState match)
+        {
+            if (_phaseText == null ||
+                _promptText == null ||
+                _instructionText == null)
+            {
+                return;
+            }
+
+            _phaseText.text = BuildPhaseLabel();
+            _promptText.text = BuildLocalPrompt();
+
+            for (var slot = 0; slot < _progressRows.Length; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                var displayName = avatar != null &&
+                                  !string.IsNullOrWhiteSpace(
+                                      avatar.DisplayName)
+                    ? avatar.DisplayName
+                    : "Player " + (slot + 1);
+                var rank = ResolveDisplayedRank(slot);
+                var prefix = slot == _localSlot ? ">  " : "   ";
+                _progressRows[slot].text =
+                    prefix +
+                    ToOrdinal(rank) +
+                    "   " +
+                    displayName +
+                    "   STEP " +
+                    state.GetProgress(slot) +
+                    " / " +
+                    WrongWayRules.StepCount +
+                    "   SCORE " +
+                    state.GetScore(slot);
+
+                _progressRows[slot].color = avatar != null
+                    ? avatar.Appearance.BodyColor
+                    : FallbackPlayerColors[slot];
+            }
+        }
+
+        private string BuildPhaseLabel()
+        {
+            var round = Mathf.Clamp(
+                state.RoundNumber,
+                1,
+                WrongWayRules.RoundCount);
+            var pauseSuffix = state.IsPaused ? "  ·  PAUSED" : string.Empty;
+
+            switch (state.Phase)
+            {
+                case NetworkWrongWayPhase.Countdown:
+                    return "WRONG WAY  ·  ROUND " +
+                           round +
+                           " / " +
+                           WrongWayRules.RoundCount +
+                           "  ·  START IN " +
+                           Mathf.CeilToInt((float)state.Remaining) +
+                           pauseSuffix;
+                case NetworkWrongWayPhase.Running:
+                    return "WRONG WAY  ·  ROUND " +
+                           round +
+                           " / " +
+                           WrongWayRules.RoundCount +
+                           "  ·  " +
+                           state.Remaining.ToString("0.0") +
+                           "s" +
+                           pauseSuffix;
+                case NetworkWrongWayPhase.RoundResult:
+                    return "ROUND " +
+                           round +
+                           " RESULTS  ·  " +
+                           state.Remaining.ToString("0.0") +
+                           "s" +
+                           pauseSuffix;
+                case NetworkWrongWayPhase.Complete:
+                    return "WRONG WAY  ·  FINAL RESULTS";
+                default:
+                    return "WRONG WAY";
+            }
+        }
+
+        private string BuildLocalPrompt()
+        {
+            if (_localSlot < 0 ||
+                _localSlot >= WrongWayRules.PlayerCount)
+            {
+                return "WAITING FOR LOCAL PLAYER";
+            }
+
+            if (state.IsPaused)
+            {
+                return "PAUSED";
+            }
+
+            switch (state.Phase)
+            {
+                case NetworkWrongWayPhase.Countdown:
+                    return Mathf.Max(
+                        1,
+                        Mathf.CeilToInt((float)state.Remaining)).ToString();
+                case NetworkWrongWayPhase.Running:
+                    if (state.IsRecovering(_localSlot))
+                    {
+                        return "WRONG!  GET UP...";
+                    }
+
+                    if (state.GetProgress(_localSlot) >=
+                        WrongWayRules.StepCount)
+                    {
+                        return "FINISH!";
+                    }
+
+                    return DirectionLabel(
+                        state.GetCurrentDirection(_localSlot));
+                case NetworkWrongWayPhase.RoundResult:
+                    return "ROUND " +
+                           ToOrdinal(state.GetRoundRank(_localSlot)) +
+                           "  ·  +" +
+                           state.GetRoundPoints(_localSlot) +
+                           " POINTS";
+                case NetworkWrongWayPhase.Complete:
+                    return "FINAL " +
+                           ToOrdinal(state.GetFinalRank(_localSlot));
+                default:
+                    return "GET READY";
+            }
+        }
+
+        private int ResolveDisplayedRank(int slot)
+        {
+            var finalRank = state.GetFinalRank(slot);
+            if (finalRank > 0)
+            {
+                return finalRank;
+            }
+
+            var roundRank = state.GetRoundRank(slot);
+            if (state.Phase == NetworkWrongWayPhase.RoundResult &&
+                roundRank > 0)
+            {
+                return roundRank;
+            }
+
+            var progress = state.GetProgress(slot);
+            var rank = 1;
+            for (var other = 0;
+                 other < WrongWayRules.PlayerCount;
+                 other++)
+            {
+                if (other == slot)
+                {
+                    continue;
+                }
+
+                var otherProgress = state.GetProgress(other);
+                if (otherProgress > progress ||
+                    (otherProgress == progress && other < slot))
+                {
+                    rank++;
+                }
+            }
+
+            return rank;
+        }
+
+private void SetWorldPresentationActive(bool active)
+        {
+            if (arenaPresentation != null &&
+                arenaPresentation.activeSelf != active)
+            {
+                arenaPresentation.SetActive(active);
+            }
+
+            if (runnerRoot != null &&
+                runnerRoot.gameObject.activeSelf != active)
+            {
+                runnerRoot.gameObject.SetActive(active);
+            }
+
+            if (!active)
+            {
+                if (_hudCanvas != null &&
+                    _hudCanvas.gameObject.activeSelf)
+                {
+                    _hudCanvas.gameObject.SetActive(false);
+                }
+
+                _hasCameraFocus = false;
+                for (var slot = 0; slot < _runners.Length; slot++)
+                {
+                    _runners[slot]?.Visual.SetEliminated(false);
+                }
+            }
+        }
+
+        private static string DirectionLabel(WrongWayDirection direction)
+        {
+            switch (direction)
+            {
+                case WrongWayDirection.Up:
+                    return "W    ↑";
+                case WrongWayDirection.Down:
+                    return "S    ↓";
+                case WrongWayDirection.Left:
+                    return "A    ←";
+                case WrongWayDirection.Right:
+                    return "D    →";
+                default:
+                    return "?";
+            }
+        }
+
+        private static string ToOrdinal(int rank)
+        {
+            switch (rank)
+            {
+                case 1:
+                    return "1ST";
+                case 2:
+                    return "2ND";
+                case 3:
+                    return "3RD";
+                case 4:
+                    return "4TH";
+                default:
+                    return "--";
+            }
+        }
+
+        private static Text CreateText(
+            string name,
+            Transform parent,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            int fontSize,
+            TextAnchor alignment,
+            FontStyle style)
+        {
+            var textObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text));
+            textObject.transform.SetParent(parent, false);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+
+            var text = textObject.GetComponent<Text>();
+            text.font =
+                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = fontSize;
+            text.fontStyle = style;
+            text.color = new Color(0.94f, 0.97f, 1f);
+            text.alignment = alignment;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private static Transform EnsureChild(
+            Transform parent,
+            string childName)
+        {
+            var existing = parent.Find(childName);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var child = new GameObject(childName).transform;
+            child.SetParent(parent, false);
+            return child;
+        }
+
+        private static Transform FindDescendant(
+            Transform root,
+            string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+            if (root.name == childName)
+            {
+                return root;
+            }
+
+            for (var index = 0; index < root.childCount; index++)
+            {
+                var found = FindDescendant(
+                    root.GetChild(index),
+                    childName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private sealed class RunnerView
+        {
+            public RunnerView(
+                Transform root,
+                PlayerAvatarVisual visual)
+            {
+                Root = root;
+                Visual = visual;
+                LastProgress = -1;
+            }
+
+            public Transform Root { get; }
+            public PlayerAvatarVisual Visual { get; }
+            public bool HasPosition { get; set; }
+            public int LastProgress { get; set; }
+        }
+    }
+}

@@ -64,7 +64,6 @@ namespace MazeParty.Multiplayer
         private void OnEnable()
         {
             ResolveSceneReferences();
-            RegisterCamera();
         }
 
         private void OnDisable()
@@ -94,11 +93,20 @@ namespace MazeParty.Multiplayer
                 state = GetComponent<NetworkMinefieldState>();
             }
 
-            RegisterCamera();
             EnsurePresentation();
 
             var match = NetworkMatchState.Instance;
+            var selected = match != null && match.IsMinefieldPhase;
+            if (selected)
+            {
+                RegisterCamera();
+            }
+            else if (_cameraDirector != null && topDownCamera != null)
+            {
+                _cameraDirector.ClearMinigameCamera(topDownCamera);
+            }
             var shouldShowWorld = state != null && state.IsSpawned && match != null &&
+                                  selected &&
                                   (match.FlowState == BoardFlowState.MinigamePlaying ||
                                    match.FlowState == BoardFlowState.SkippedResult);
             var shouldShowHud = shouldShowWorld &&
