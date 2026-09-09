@@ -25,6 +25,7 @@ namespace MazeParty.Gameplay
         [SerializeField] private BoardTopology topology;
         [SerializeField, Min(0.02f)] private float wallThickness = 0.16f;
         [SerializeField, Min(0.25f)] private float wallHeight = 2.5f;
+        [SerializeField] private Material wallMaterial;
         [SerializeField] private Color passableColor = new Color(0.04f, 0.32f, 1f, 0.72f);
         [SerializeField] private Color blockedColor = new Color(0.005f, 0.008f, 0.012f, 1f);
 
@@ -42,6 +43,20 @@ namespace MazeParty.Gameplay
         public BoardTile CurrentTile => _currentTile;
         public BoardBoundaryWallLayout CurrentLayout => _currentLayout;
         public bool PresentationVisible => _presentationVisible;
+        public Material WallMaterial => wallMaterial;
+
+        public void ConfigureVisualMaterial(Material material)
+        {
+            wallMaterial = material;
+            for (var index = 0; index < _walls.Length; index++)
+            {
+                var wall = _walls[index];
+                if (wall != null && wall.Renderer != null && wallMaterial != null)
+                {
+                    wall.Renderer.sharedMaterial = wallMaterial;
+                }
+            }
+        }
 
         public void Configure(
             int slot,
@@ -177,6 +192,12 @@ namespace MazeParty.Gameplay
             if (_wallRoot != null)
                 return;
 
+            if (wallMaterial == null)
+            {
+                wallMaterial = Resources.Load<Material>(
+                    "MazeParty/Materials/LobbySurface");
+            }
+
             _wallRoot = new GameObject(GetRootName())
             {
                 hideFlags = HideFlags.DontSave
@@ -198,6 +219,13 @@ namespace MazeParty.Gameplay
                 var wallCollider = wall.GetComponent<BoxCollider>();
                 wallCollider.isTrigger = false;
                 var wallRenderer = wall.GetComponent<MeshRenderer>();
+                if (wallMaterial != null)
+                {
+                    // A serialized URP material keeps the shader in standalone
+                    // builds. Runtime primitive defaults can be stripped and render
+                    // magenta even though their property block contains a color.
+                    wallRenderer.sharedMaterial = wallMaterial;
+                }
                 wallRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 wallRenderer.receiveShadows = false;
                 _walls[i] = new WallRuntime(wall, wallCollider, wallRenderer);
@@ -217,9 +245,18 @@ namespace MazeParty.Gameplay
             for (var i = 0; i < _walls.Length; i++)
             {
                 var side = (BoardBoundarySide)i;
+                var wall = _walls[i];
+                var hasConnectedPath = layout.HasExit(side);
+                wall.GameObject.SetActive(hasConnectedPath);
+                if (!hasConnectedPath)
+                {
+                    wall.Collider.enabled = false;
+                    wall.Renderer.enabled = false;
+                    continue;
+                }
+
                 var localNormal = GetLocalNormal(side);
                 var worldNormal = tile.transform.TransformDirection(localNormal).normalized;
-                var wall = _walls[i];
                 var thickness = Mathf.Max(0.02f, wallThickness);
                 var height = Mathf.Max(0.25f, wallHeight);
 

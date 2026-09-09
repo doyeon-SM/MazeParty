@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.Minefield;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MazeParty.Multiplayer
 {
@@ -97,6 +99,11 @@ namespace MazeParty.Multiplayer
             new double[MultiplayerConstants.MaxPlayers];
         private int[] _combatOverallRanks = new int[MultiplayerConstants.MaxPlayers];
         private int _fightsResolvedThisTurn;
+        private int _settledMinigameTurn = -1;
+        private bool _minefieldNetworkLoadCompleted;
+        private readonly NetworkPlayerAvatar[] _avatarLookupCache =
+            new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+        private float _nextAvatarLookupRefresh;
 
         public static NetworkMatchState Instance { get; private set; }
 
@@ -129,6 +136,13 @@ namespace MazeParty.Multiplayer
         public int CombatQueueCount => _combatQueueCount.Value;
         public bool IsCombatPhase =>
             GameplayEnabled && FlowState == BoardFlowState.CombatResolve;
+        public bool IsMinefieldPhase =>
+            GameplayEnabled &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsMinefieldPlaying =>
+            GameplayEnabled && FlowState == BoardFlowState.MinigamePlaying;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
@@ -170,11 +184,22 @@ namespace MazeParty.Multiplayer
                 EnsureKeyShopRuntime();
                 ResolveWorldDiceCoordinator();
                 RefreshPresentMask();
+                if (NetworkManager != null && NetworkManager.SceneManager != null)
+                {
+                    NetworkManager.SceneManager.OnLoadEventCompleted +=
+                        OnNetworkLoadEventCompleted;
+                }
             }
         }
 
         public override void OnNetworkDespawn()
         {
+            if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
+            {
+                NetworkManager.SceneManager.OnLoadEventCompleted -=
+                    OnNetworkLoadEventCompleted;
+            }
+
             if (_flow != null)
             {
                 _flow.Transitioned -= OnFlowTransitioned;
@@ -191,6 +216,12 @@ namespace MazeParty.Multiplayer
             {
                 Instance = null;
             }
+
+            Array.Clear(
+                _avatarLookupCache,
+                0,
+                _avatarLookupCache.Length);
+            _nextAvatarLookupRefresh = 0f;
         }
 
         private void Update()
@@ -244,6 +275,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             _flow.Tick(now);
+            TryStartLoadedMinefieldOnServer(now);
             AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
             ResolveExpiredPersonalChoicesOnServer(now);
@@ -537,8 +569,77 @@ namespace MazeParty.Multiplayer
             _readyMask.Value = (byte)(_readyMask.Value | (1 << avatar.AssignedSlot));
             if ((_readyMask.Value & AllPlayersMask) == AllPlayersMask)
             {
-                // Development-only seam: no minigame reward mutation is performed.
-                _flow.TrySkipMinigame(ServerNow);
+                _flow.TryBeginMinigameLoading(ServerNow);
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteMinefieldOnServer(
+            IReadOnlyList<MinefieldLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!MinefieldRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 || entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 || (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask || seenRanks != AllPlayersMask)
+            {
+                return false;
+            }
+
+            if (!_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+
+                // Until a separate economy table is authored, the final placement
+                // uses the same transparent 3/2/1/0 schedule as each round.
+                avatar.ApplyGoldDeltaOnServer(MinefieldRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
             }
 
             return true;
@@ -570,6 +671,7 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             var now = ServerNow;
+            NetworkMinefieldState.Instance?.PauseOnServer(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
@@ -656,6 +758,7 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshPresentMask();
+            NetworkMinefieldState.Instance?.RestoreAvatarForReconnectOnServer(avatar);
             if (_reconnectPaused.Value && HasFourBoardReadyPlayers())
             {
                 ResumeAfterReconnectOnServer(ServerNow);
@@ -706,6 +809,7 @@ namespace MazeParty.Multiplayer
             switch (transition.Current)
             {
                 case BoardFlowState.TurnOverview:
+                    NetworkMinefieldState.Instance?.EndMatchOnServer();
                     ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
                     _arrivedMask.Value = 0;
@@ -734,6 +838,16 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLandingEffectsOnServer();
                     _readyMask.Value = 0;
+                    break;
+                case BoardFlowState.MinigameLoading:
+                    StopAllAvatarInputOnServer();
+                    RequestMinefieldLoadOnServer();
+                    break;
+                case BoardFlowState.MinigamePlaying:
+                    StopAllAvatarInputOnServer();
+                    break;
+                case BoardFlowState.SkippedResult:
+                    StopAllAvatarInputOnServer();
                     break;
             }
 
@@ -775,8 +889,87 @@ namespace MazeParty.Multiplayer
                 _flow.Resume(now);
                 ResumeCombatAndPersonalProtectionOnServer(now);
             }
+            NetworkMinefieldState.Instance?.ResumeOnServer(now);
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
+            TryStartLoadedMinefieldOnServer(now);
+        }
+
+        private void RequestMinefieldLoadOnServer()
+        {
+            if (!IsServer || NetworkManager == null || NetworkManager.SceneManager == null)
+            {
+                return;
+            }
+
+            var scene = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                _minefieldNetworkLoadCompleted = true;
+                return;
+            }
+
+            _minefieldNetworkLoadCompleted = false;
+            var status = NetworkManager.SceneManager.LoadScene(
+                MultiplayerConstants.MinefieldScene,
+                LoadSceneMode.Additive);
+            if (status != SceneEventProgressStatus.Started)
+            {
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    "Could not synchronize the Minefield minigame scene: " + status);
+            }
+        }
+
+        private void OnNetworkLoadEventCompleted(
+            string sceneName,
+            LoadSceneMode _,
+            List<ulong> clientsCompleted,
+            List<ulong> clientsTimedOut)
+        {
+            if (!IsServer || sceneName != MultiplayerConstants.MinefieldScene)
+            {
+                return;
+            }
+
+            var scene = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
+            _minefieldNetworkLoadCompleted = scene.IsValid() && scene.isLoaded;
+            if (!_minefieldNetworkLoadCompleted)
+            {
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    "Minefield scene synchronization completed without a loaded scene.");
+                return;
+            }
+
+            // A disconnected client may appear in clientsTimedOut while the global
+            // reconnect pause is active. The replacement client is synchronized to
+            // every server-loaded scene before its Board-ready handshake completes.
+            if (!_reconnectPaused.Value && clientsTimedOut != null &&
+                clientsTimedOut.Count > 0)
+            {
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    "Minefield scene synchronization timed out for a player.");
+            }
+        }
+
+        private void TryStartLoadedMinefieldOnServer(double now)
+        {
+            if (!IsServer || _flow == null || _flow.State != BoardFlowState.MinigameLoading ||
+                _flow.IsPaused || _reconnectPaused.Value || !_minefieldNetworkLoadCompleted ||
+                !HasFourBoardReadyPlayers())
+            {
+                return;
+            }
+
+            var minefield = NetworkMinefieldState.Instance;
+            if (minefield == null || !minefield.IsSpawned)
+            {
+                return;
+            }
+
+            if (_flow.TryBeginMinigame(now))
+            {
+                minefield.BeginMatchOnServer();
+            }
         }
 
         private void ResolveExpiredPersonalChoicesOnServer(double now)
@@ -885,20 +1078,41 @@ namespace MazeParty.Multiplayer
                 return null;
             }
 
+            var cached = _avatarLookupCache[slot];
+            if (cached != null && cached.IsSpawned && cached.AssignedSlot == slot)
+            {
+                return cached;
+            }
+
+            if (Time.unscaledTime < _nextAvatarLookupRefresh)
+            {
+                return null;
+            }
+
+            _nextAvatarLookupRefresh = Time.unscaledTime + 0.1f;
+            Array.Clear(
+                _avatarLookupCache,
+                0,
+                _avatarLookupCache.Length);
+
             // Client-side ConnectedClientsIds is not a complete remote-avatar
-            // registry. Search spawned scene avatars so every client can render
-            // all four public stat panels.
+            // registry. Refresh every slot in one scene search, then reuse the
+            // references for Minefield and the public Board stat panels.
             var avatars = FindObjectsByType<NetworkPlayerAvatar>();
             for (var i = 0; i < avatars.Length; i++)
             {
                 var avatar = avatars[i];
-                if (avatar != null && avatar.IsSpawned && avatar.AssignedSlot == slot)
+                if (avatar == null || !avatar.IsSpawned ||
+                    avatar.AssignedSlot < 0 ||
+                    avatar.AssignedSlot >= _avatarLookupCache.Length)
                 {
-                    return avatar;
+                    continue;
                 }
+
+                _avatarLookupCache[avatar.AssignedSlot] = avatar;
             }
 
-            return null;
+            return _avatarLookupCache[slot];
         }
 
         public bool TryGetBoardLandingEffect(

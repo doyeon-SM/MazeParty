@@ -69,6 +69,7 @@ namespace MazeParty.Gameplay
             var renderer = body.GetComponent<Renderer>();
             if (renderer != null)
             {
+                WorldTextOcclusion.ApplyBuildSafeSurface(renderer);
                 var properties = new MaterialPropertyBlock();
                 var color = shopIndex == 0
                     ? new Color(0.58f, 0.2f, 0.86f, 1f)
@@ -89,6 +90,7 @@ namespace MazeParty.Gameplay
             label.fontSize = 48;
             label.characterSize = 0.09f;
             label.color = Color.white;
+            WorldTextOcclusion.Apply(label);
 
             _markers[shopIndex] = root;
             _labels[shopIndex] = label;

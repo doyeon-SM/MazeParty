@@ -99,6 +99,7 @@ namespace MazeParty.Multiplayer
             _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
             _localProfile = PlayerProfilePreferences.Load();
             var displayName = _localProfile.DisplayName;
+            LobbyArena.EnsureRuntimeCreated(lobbyCamera);
             if (lobbyView == null)
             {
                 lobbyView = FindAnyObjectByType<OnlineLobbyView>();
@@ -225,13 +226,27 @@ namespace MazeParty.Multiplayer
 
         private void OnAppearanceChanged(PlayerAppearanceState appearance)
         {
-            SaveLocalProfile(_localProfile.DisplayName, appearance.Sanitized());
             var playerObject = _networkManager != null &&
                                _networkManager.SpawnManager != null
                 ? _networkManager.SpawnManager.GetLocalPlayerObject()
                 : null;
-            playerObject?.GetComponent<NetworkPlayerAvatar>()?
-                .RequestLocalAppearance(_localProfile.Appearance);
+            var avatar = playerObject != null
+                ? playerObject.GetComponent<NetworkPlayerAvatar>()
+                : null;
+            if (avatar != null)
+            {
+                avatar.RequestLocalAppearance(appearance);
+            }
+            else
+            {
+                AcceptAuthoritativeAppearance(appearance);
+            }
+        }
+
+        public void AcceptAuthoritativeAppearance(PlayerAppearanceState appearance)
+        {
+            SaveLocalProfile(_localProfile.DisplayName, appearance.Sanitized());
+            lobbyView?.SetAppearance(_localProfile.Appearance);
         }
 
         private void SaveLocalProfile(string displayName, PlayerAppearanceState appearance)
@@ -941,6 +956,12 @@ namespace MazeParty.Multiplayer
 
         private void UnloadBoardLocally()
         {
+            var minefield = SceneManager.GetSceneByName(MultiplayerConstants.MinefieldScene);
+            if (minefield.IsValid() && minefield.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(minefield);
+            }
+
             var board = SceneManager.GetSceneByName(MultiplayerConstants.BoardScene);
             if (board.IsValid() && board.isLoaded)
             {

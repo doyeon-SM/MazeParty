@@ -11,7 +11,9 @@ namespace MazeParty.Gameplay
         CombatResolve,
         LandingEffectResolve,
         MinigameIntroReady,
-        SkippedResult
+        SkippedResult,
+        MinigameLoading,
+        MinigamePlaying
     }
 
     public enum BoardActionEndReason
@@ -197,6 +199,8 @@ namespace MazeParty.Gameplay
                         break;
                     }
                     case BoardFlowState.MinigameIntroReady:
+                    case BoardFlowState.MinigameLoading:
+                    case BoardFlowState.MinigamePlaying:
                     case BoardFlowState.CombatResolve:
                         break;
                     default:
@@ -247,6 +251,49 @@ namespace MazeParty.Gameplay
             TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
             return true;
         }
+
+        public bool TryBeginMinigameLoading(double synchronizedNow)
+        {
+            ValidateTimestamp(synchronizedNow);
+            if (!IsStarted || IsPaused)
+                return false;
+
+            Tick(synchronizedNow);
+            if (State != BoardFlowState.MinigameIntroReady)
+                return false;
+
+            TransitionTo(BoardFlowState.MinigameLoading, ToFlowTime(synchronizedNow));
+            return true;
+        }
+
+        public bool TryBeginMinigame(double synchronizedNow)
+        {
+            ValidateTimestamp(synchronizedNow);
+            if (!IsStarted || IsPaused)
+                return false;
+
+            Tick(synchronizedNow);
+            if (State != BoardFlowState.MinigameLoading)
+                return false;
+
+            TransitionTo(BoardFlowState.MinigamePlaying, ToFlowTime(synchronizedNow));
+            return true;
+        }
+
+        public bool TryCompleteMinigame(double synchronizedNow)
+        {
+            ValidateTimestamp(synchronizedNow);
+            if (!IsStarted || IsPaused)
+                return false;
+
+            Tick(synchronizedNow);
+            if (State != BoardFlowState.MinigamePlaying)
+                return false;
+
+            TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
+            return true;
+        }
+
 
         public bool TryCompleteCombat(double synchronizedNow)
         {

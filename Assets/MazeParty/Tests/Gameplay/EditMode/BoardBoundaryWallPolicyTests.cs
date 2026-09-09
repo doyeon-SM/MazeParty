@@ -88,13 +88,37 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(eastCollider.enabled, Is.False);
             Assert.That(ReadWallColor(eastBefore).b, Is.GreaterThan(ReadWallColor(eastBefore).r));
             Assert.That(walls.TryGetWall(BoardBoundarySide.North, out var northWall, out var northCollider), Is.True);
-            Assert.That(northCollider.enabled, Is.True);
-            Assert.That(ReadWallColor(northWall).maxColorComponent, Is.LessThan(0.02f));
+            Assert.That(northWall.activeSelf, Is.False);
+            Assert.That(northCollider.enabled, Is.False);
 
             walls.Refresh(source, 0);
             Assert.That(walls.TryGetWall(BoardBoundarySide.East, out var eastAfter, out eastCollider), Is.True);
             Assert.That(eastAfter, Is.SameAs(eastBefore));
             Assert.That(eastCollider.enabled, Is.True);
+        }
+
+        [Test]
+        public void Refresh_DisablesVeilsWhereTheTileHasNoConnectedPath()
+        {
+            var source = CreateTile("Source", Vector2Int.zero, Vector3.zero);
+            var destination = CreateTile(
+                "Destination",
+                Vector2Int.right,
+                Vector3.right * BoardTile.RoomSize);
+            var gate = CreateGate(source, destination);
+            var topology = CreateTopology(source, destination, gate);
+            var controller = CreateController("P1");
+            var walls = controller.gameObject.AddComponent<PlayerBoardBoundaryWalls>();
+            walls.Configure(0, controller, topology);
+
+            walls.Refresh(source, 0);
+
+            Assert.That(walls.TryGetWall(BoardBoundarySide.East, out var east, out var eastCollider), Is.True);
+            Assert.That(east.activeSelf, Is.True);
+            Assert.That(eastCollider.enabled, Is.True);
+            Assert.That(walls.TryGetWall(BoardBoundarySide.North, out var north, out var northCollider), Is.True);
+            Assert.That(north.activeSelf, Is.False);
+            Assert.That(northCollider.enabled, Is.False);
         }
 
         [Test]
@@ -141,7 +165,12 @@ namespace MazeParty.Gameplay.Tests
         public void PresentationVisibility_PersistsAcrossRefreshAndHideWithoutChangingCollision()
         {
             var tile = CreateTile("Tile", Vector2Int.zero, Vector3.zero);
-            var topology = CreateTopology(tile);
+            var destination = CreateTile(
+                "North",
+                Vector2Int.up,
+                Vector3.forward * BoardTile.RoomSize);
+            var gate = CreateGate(tile, destination);
+            var topology = CreateTopology(tile, destination, gate);
             var controller = CreateController("P1");
             var walls = controller.gameObject.AddComponent<PlayerBoardBoundaryWalls>();
             walls.Configure(0, controller, topology);
