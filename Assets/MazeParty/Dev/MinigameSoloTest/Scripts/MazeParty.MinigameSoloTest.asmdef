@@ -1,0 +1,14 @@
+{
+  "name": "MazeParty.MinigameSoloTest",
+  "rootNamespace": "MazeParty.Dev.MinigameSoloTest",
+  "references": [
+    "MazeParty.Gameplay",
+    "MazeParty.Multiplayer",
+    "Unity.InputSystem",
+    "Unity.Netcode.Runtime"
+  ],
+  "defineConstraints": [
+    "UNITY_EDITOR"
+  ],
+  "autoReferenced": true
+}

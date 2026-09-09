@@ -4,6 +4,7 @@
   "references": [
     "MazeParty.Multiplayer",
     "MazeParty.Gameplay",
+    "MazeParty.MinigameSoloTest",
     "Unity.Netcode.Runtime",
     "Unity.Networking.Transport",
     "UnityEngine.UI",
