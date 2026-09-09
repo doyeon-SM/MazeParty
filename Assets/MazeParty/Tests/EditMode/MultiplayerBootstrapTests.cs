@@ -78,6 +78,30 @@ namespace MazeParty.Multiplayer.Tests
         private const string BootstrapScene = "Assets/MazeParty/Scenes/OnlineBootstrap.unity";
         private const string BoardScene = "Assets/MazeParty/Scenes/Board.unity";
         private const string PlayerPrefab = "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
+        private const string D12Model =
+            "Assets/MazeParty/Art/Dice/D12/Models/Dice_d12.fbx";
+        private const string D12VisualPrefab =
+            "Assets/MazeParty/Art/Dice/D12/Prefabs/D12WorldDieVisual.prefab";
+        private const string D12Albedo =
+            "Assets/MazeParty/Art/Dice/D12/Textures/D12_White_Albedo.png";
+
+        // Source albedo atlas values, indexed top-to-bottom and left-to-right.
+        // The test derives each number's face normal independently from mesh UVs so
+        // a matching mistake in the scene-generation constants cannot self-validate.
+        private static readonly int[,] D12AtlasValuesByTopRow =
+        {
+            { 7, 1, 10, 5 },
+            { 9, 11, 4, 8 },
+            { 3, 6, 2, 12 }
+        };
+
+        private static readonly Color[] D12PlayerColors =
+        {
+            new Color(0.95f, 0.25f, 0.25f),
+            new Color(0.25f, 0.55f, 1f),
+            new Color(0.25f, 0.85f, 0.4f),
+            new Color(1f, 0.75f, 0.2f)
+        };
 
         [Test]
         public void OnlineScenes_AreFirstEnabledBuildScenes()
@@ -213,6 +237,265 @@ namespace MazeParty.Multiplayer.Tests
             {
                 UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
             }
+        }
+
+        [Test]
+        public void BoardScene_EachWorldDieHasCompleteD12MarkerSet()
+        {
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                BoardScene,
+                UnityEditor.SceneManagement.OpenSceneMode.Additive);
+
+            try
+            {
+                var expectedValues = Enumerable.Range(
+                        WorldDieAuthorityModel.MinimumFace,
+                        WorldDieAuthorityModel.MaximumFace -
+                        WorldDieAuthorityModel.MinimumFace + 1)
+                    .ToArray();
+                var dice = scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<NetworkWorldDie>(true))
+                    .ToArray();
+
+                Assert.That(
+                    dice,
+                    Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+                foreach (var die in dice)
+                {
+                    var markers = die.GetComponentsInChildren<
+                            WorldDieFaceMarker>(true)
+                        .OrderBy(marker => marker.Value)
+                        .ToArray();
+
+                    Assert.That(
+                        markers,
+                        Has.Length.EqualTo(expectedValues.Length),
+                        die.name);
+                    Assert.That(
+                        markers.Select(marker => marker.Value),
+                        Is.EqualTo(expectedValues),
+                        die.name);
+                }
+            }
+            finally
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.CloseScene(
+                    scene,
+                    true);
+            }
+        }
+
+        [Test]
+        public void BoardScene_WorldDiceUseTrackedD12MeshAndExactNumberedFaces()
+        {
+            var importedModel = AssetDatabase.LoadAssetAtPath<GameObject>(D12Model);
+            var visualPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(D12VisualPrefab);
+
+            Assert.That(importedModel, Is.Not.Null);
+            Assert.That(visualPrefab, Is.Not.Null);
+            var mesh = importedModel.GetComponentInChildren<MeshFilter>(true).sharedMesh;
+            Assert.That(mesh, Is.Not.Null);
+            Assert.That(mesh.triangles.Length / 3, Is.EqualTo(36));
+            Assert.That(
+                mesh.normals
+                    .Select(normal => new Vector3(
+                        Mathf.Round(normal.x * 100000f) / 100000f,
+                        Mathf.Round(normal.y * 100000f) / 100000f,
+                        Mathf.Round(normal.z * 100000f) / 100000f))
+                    .Distinct()
+                    .Count(),
+                Is.EqualTo(12));
+
+            var faceNormalsByValue = DeriveD12FaceNormalsFromUvAtlas(mesh);
+            Assert.That(faceNormalsByValue.Keys.OrderBy(value => value),
+                Is.EqualTo(Enumerable.Range(1, 12)));
+
+            for (var value = 1; value <= 12; value++)
+            {
+                var expected = faceNormalsByValue[value].normalized;
+                var opposite = faceNormalsByValue[13 - value].normalized;
+                Assert.That(
+                    (expected + opposite).sqrMagnitude,
+                    Is.LessThan(0.000001f),
+                    "Opposite numbered D12 faces must sum to 13.");
+            }
+
+            var prefabFilter = visualPrefab.GetComponent<MeshFilter>();
+            var prefabCollider = visualPrefab.GetComponent<MeshCollider>();
+            var prefabRenderer = visualPrefab.GetComponent<MeshRenderer>();
+            Assert.That(prefabFilter, Is.Not.Null);
+            Assert.That(prefabFilter.sharedMesh, Is.SameAs(mesh));
+            Assert.That(prefabCollider, Is.Not.Null);
+            Assert.That(prefabCollider.convex, Is.True);
+            Assert.That(prefabCollider.sharedMesh, Is.SameAs(mesh));
+            Assert.That(prefabRenderer, Is.Not.Null);
+            Assert.That(
+                prefabRenderer.sharedMaterial.shader.name,
+                Is.EqualTo("Universal Render Pipeline/Lit"));
+            Assert.That(
+                AssetDatabase.GetAssetPath(
+                    prefabRenderer.sharedMaterial.GetTexture("_BaseMap")),
+                Is.EqualTo(D12Albedo));
+
+            var scene = UnityEditor.SceneManagement.EditorSceneManager.OpenScene(
+                BoardScene,
+                UnityEditor.SceneManagement.OpenSceneMode.Additive);
+            try
+            {
+                var dice = scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<NetworkWorldDie>(true))
+                    .ToArray();
+                Assert.That(dice, Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+
+                foreach (var die in dice)
+                {
+                    Assert.That(
+                        die.GetComponent<MeshFilter>().sharedMesh,
+                        Is.SameAs(mesh));
+                    var sceneRenderer = die.GetComponent<MeshRenderer>();
+                    Assert.That(sceneRenderer, Is.Not.Null);
+                    Assert.That(
+                        sceneRenderer.sharedMaterial.name,
+                        Is.EqualTo("D12Player" + (die.ConfiguredSlot + 1)));
+                    Assert.That(
+                        Vector4.Distance(
+                            sceneRenderer.sharedMaterial.GetColor("_BaseColor"),
+                            D12PlayerColors[die.ConfiguredSlot]),
+                        Is.LessThan(0.0001f),
+                        "The serialized scene must retain each player's D12 tint.");
+                    Assert.That(
+                        AssetDatabase.GetAssetPath(
+                            sceneRenderer.sharedMaterial.GetTexture("_BaseMap")),
+                        Is.EqualTo(D12Albedo));
+                    var markers = die.GetComponentsInChildren<WorldDieFaceMarker>(true);
+                    Assert.That(markers, Has.Length.EqualTo(12));
+                    Assert.That(
+                        markers.Select(marker => marker.Value).OrderBy(value => value),
+                        Is.EqualTo(Enumerable.Range(1, 12)));
+
+                    for (var value = 1; value <= 12; value++)
+                    {
+                        var marker = markers.Single(candidate => candidate.Value == value);
+                        Assert.That(
+                            Vector3.Dot(
+                                marker.LocalNormal,
+                                faceNormalsByValue[value].normalized),
+                            Is.GreaterThan(0.99999f),
+                            "Scene marker " + value +
+                            " must match its texture-numbered mesh face.");
+                        Assert.That(
+                            marker.GetComponentInChildren<TextMesh>(true),
+                            Is.Null,
+                            "The texture supplies face numbers; marker text would overlap it.");
+                    }
+                }
+            }
+            finally
+            {
+                UnityEditor.SceneManagement.EditorSceneManager.CloseScene(scene, true);
+            }
+        }
+
+        private static Dictionary<int, Vector3> DeriveD12FaceNormalsFromUvAtlas(
+            Mesh mesh)
+        {
+            const float centroidClusterEpsilon = 0.001f;
+            var normals = mesh.normals;
+            var uvs = mesh.uv;
+            Assert.That(uvs, Has.Length.EqualTo(normals.Length));
+
+            var faceGroups = Enumerable.Range(0, normals.Length)
+                .GroupBy(index => new Vector3(
+                    Mathf.Round(normals[index].x * 100000f) / 100000f,
+                    Mathf.Round(normals[index].y * 100000f) / 100000f,
+                    Mathf.Round(normals[index].z * 100000f) / 100000f));
+            var faceCentroids = new List<KeyValuePair<Vector3, Vector2>>();
+            foreach (var faceGroup in faceGroups)
+            {
+                var vertexIndices = faceGroup.ToArray();
+                Assert.That(vertexIndices, Has.Length.EqualTo(5));
+                var uvCentroid = vertexIndices
+                    .Select(index => uvs[index])
+                    .Aggregate(Vector2.zero, (sum, uv) => sum + uv) /
+                    vertexIndices.Length;
+                faceCentroids.Add(new KeyValuePair<Vector3, Vector2>(
+                    faceGroup.Key.normalized,
+                    uvCentroid));
+            }
+
+            Assert.That(faceCentroids, Has.Count.EqualTo(12));
+            var atlasColumns = ClusterD12AtlasCoordinates(
+                    faceCentroids.Select(face => face.Value.x),
+                    centroidClusterEpsilon)
+                .OrderBy(coordinate => coordinate)
+                .ToArray();
+            var atlasRowsFromTop = ClusterD12AtlasCoordinates(
+                    faceCentroids.Select(face => face.Value.y),
+                    centroidClusterEpsilon)
+                .OrderByDescending(coordinate => coordinate)
+                .ToArray();
+            Assert.That(atlasColumns, Has.Length.EqualTo(4));
+            Assert.That(atlasRowsFromTop, Has.Length.EqualTo(3));
+
+            var result = new Dictionary<int, Vector3>();
+            foreach (var face in faceCentroids)
+            {
+                var atlasColumn = FindNearestD12AtlasCoordinate(
+                    atlasColumns,
+                    face.Value.x);
+                var atlasRowFromTop = FindNearestD12AtlasCoordinate(
+                    atlasRowsFromTop,
+                    face.Value.y);
+                var value = D12AtlasValuesByTopRow[atlasRowFromTop, atlasColumn];
+                Assert.That(result.ContainsKey(value), Is.False,
+                    "Each numbered atlas cell must belong to exactly one mesh face.");
+                result.Add(value, face.Key);
+            }
+
+            return result;
+        }
+
+        private static IEnumerable<float> ClusterD12AtlasCoordinates(
+            IEnumerable<float> coordinates,
+            float epsilon)
+        {
+            var clusters = new List<List<float>>();
+            foreach (var coordinate in coordinates.OrderBy(value => value))
+            {
+                var cluster = clusters.LastOrDefault();
+                if (cluster == null ||
+                    Mathf.Abs(coordinate - cluster.Average()) > epsilon)
+                {
+                    cluster = new List<float>();
+                    clusters.Add(cluster);
+                }
+
+                cluster.Add(coordinate);
+            }
+
+            return clusters.Select(cluster => cluster.Average());
+        }
+
+        private static int FindNearestD12AtlasCoordinate(
+            IReadOnlyList<float> coordinates,
+            float value)
+        {
+            var nearestIndex = 0;
+            var nearestDistance = float.PositiveInfinity;
+            for (var index = 0; index < coordinates.Count; index++)
+            {
+                var distance = Mathf.Abs(coordinates[index] - value);
+                if (distance < nearestDistance)
+                {
+                    nearestDistance = distance;
+                    nearestIndex = index;
+                }
+            }
+
+            return nearestIndex;
         }
 
 

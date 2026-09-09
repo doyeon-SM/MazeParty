@@ -7,6 +7,13 @@ using UnityEngine;
 
 namespace MazeParty.Multiplayer
 {
+    public enum WorldDieRollPresentationPhase : byte
+    {
+        None,
+        Tumbling,
+        Landing
+    }
+
     [Serializable]
     public struct WorldDieReconnectSnapshot
     {
@@ -19,6 +26,14 @@ namespace MazeParty.Multiplayer
         public bool IsNudging;
         public float NudgeRemainingSeconds;
         public float ResultVisibleRemainingSeconds;
+        public WorldDieRollPresentationPhase RollPresentationPhase;
+        public int TargetFace;
+        public float PhysicalTumbleRemainingSeconds;
+        public float LandingRemainingSeconds;
+        public Vector3 LandingStartPosition;
+        public Quaternion LandingStartRotation;
+        public Vector3 LandingTargetPosition;
+        public Quaternion LandingTargetRotation;
     }
 
     /// <summary>
@@ -34,6 +49,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(Collider))]
     public sealed class NetworkWorldDie : NetworkBehaviour
     {
+        private const float LandingClearance = 0.01f;
+
         private static readonly HashSet<NetworkWorldDie> ActiveServerDice =
             new HashSet<NetworkWorldDie>();
 
@@ -59,15 +76,7 @@ namespace MazeParty.Multiplayer
         [SerializeField, Min(0f)] private float nudgeSettleHoldSeconds = 0.15f;
         [SerializeField, Min(0.1f)] private float maximumNudgeSeconds = 1.5f;
 
-        [Header("Settlement")]
-        [SerializeField, Min(0.001f)] private float linearSettleThreshold = 0.08f;
-        [SerializeField, Min(0.001f)] private float angularSettleThreshold = 0.12f;
-        [SerializeField, Min(0f)] private float settleHoldSeconds = 0.65f;
-        [SerializeField, Min(0.5f)] private float maximumRollSeconds = 6f;
-
         [Header("Presentation")]
-        [SerializeField, Min(0f)] private float resultVisibleSeconds =
-            WorldDieResultPresentationPolicy.DefaultVisibleSeconds;
         [SerializeField] private Renderer[] dieRenderers = Array.Empty<Renderer>();
         [SerializeField] private WorldDieFaceMarker[] faceMarkers =
             Array.Empty<WorldDieFaceMarker>();
@@ -97,8 +106,10 @@ namespace MazeParty.Multiplayer
                 NetworkVariableWritePermission.Server);
 
         private readonly WorldDieAuthorityModel _authority = new WorldDieAuthorityModel();
-        private readonly List<Vector3> _localFaceNormals = new List<Vector3>(10);
-        private readonly List<int> _faceValues = new List<int>(10);
+        private readonly List<Vector3> _localFaceNormals =
+            new List<Vector3>(WorldDieAuthorityModel.MaximumFace);
+        private readonly List<int> _faceValues =
+            new List<int>(WorldDieAuthorityModel.MaximumFace);
 
         private Rigidbody _body;
         private Collider _dieCollider;
@@ -115,7 +126,16 @@ namespace MazeParty.Multiplayer
         private double _nextNudgeAllowedAt;
         private double _resultHideDeadline = -1d;
         private double _localPauseStartedAt = -1d;
+        private WorldDieRollPresentationPhase _rollPresentationPhase;
+        private int _targetFace;
+        private double _physicalTumbleStartedAt = -1d;
+        private double _landingStartedAt = -1d;
+        private Vector3 _landingStartPosition;
+        private Quaternion _landingStartRotation = Quaternion.identity;
+        private Vector3 _landingTargetPosition;
+        private Quaternion _landingTargetRotation = Quaternion.identity;
 
+        public event Action<NetworkWorldDie> RollStartedOnServer;
         public event Action<NetworkWorldDie, int> SettledOnServer;
 
         public int ConfiguredSlot => configuredSlot;
@@ -188,15 +208,16 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            var now = ServerNow;
             var match = NetworkMatchState.Instance;
-            if (match != null && match.IsReconnectPaused != _authority.IsPaused)
+            if (match != null && match.IsGlobalSimulationPaused != _authority.IsPaused)
             {
-                SetSimulationPausedOnServer(match.IsReconnectPaused, ServerNow);
+                SetSimulationPausedOnServer(match.IsGlobalSimulationPaused, now);
             }
 
-            if (ServerNow >= _nextCollisionIsolationRefresh)
+            if (now >= _nextCollisionIsolationRefresh)
             {
-                _nextCollisionIsolationRefresh = ServerNow + 0.5d;
+                _nextCollisionIsolationRefresh = now + 0.5d;
                 RefreshCollisionIsolationOnServer();
             }
 
@@ -210,7 +231,7 @@ namespace MazeParty.Multiplayer
                 if (WorldDieResultPresentationPolicy.ShouldHide(
                         _authority.Phase,
                         _authority.IsPaused,
-                        ServerNow,
+                        now,
                         _resultHideDeadline))
                 {
                     HideOnServer();
@@ -222,7 +243,7 @@ namespace MazeParty.Multiplayer
             {
                 if (_nudgeInProgress)
                 {
-                    UpdateNudgeMotionOnServer(ServerNow);
+                    UpdateNudgeMotionOnServer(now);
                 }
                 return;
             }
@@ -232,25 +253,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            ConstrainToAssignedTileOnServer();
-            var decision = _authority.ObserveMotion(
-                ServerNow,
-                _body.linearVelocity.magnitude,
-                _body.angularVelocity.magnitude,
-                linearSettleThreshold,
-                angularSettleThreshold,
-                settleHoldSeconds,
-                maximumRollSeconds);
-            if (decision == WorldDieMotionDecision.ForceSettle)
-            {
-                _body.linearVelocity = Vector3.zero;
-                _body.angularVelocity = Vector3.zero;
-            }
-
-            if (decision != WorldDieMotionDecision.None)
-            {
-                SettleOnServer();
-            }
+            UpdateRollPresentationOnServer(now);
         }
 
         private void LateUpdate()
@@ -339,15 +342,14 @@ namespace MazeParty.Multiplayer
                 UnityEngine.Random.Range(0f, 360f),
                 UnityEngine.Random.Range(0f, 360f));
 
-            _body.linearVelocity = Vector3.zero;
-            _body.angularVelocity = Vector3.zero;
-            _body.isKinematic = true;
+            FreezeBody();
             _body.detectCollisions = true;
             _nudgeInProgress = false;
             _nudgeDeadline = -1d;
             _nudgeBelowThresholdSince = -1d;
             _resultHideDeadline = -1d;
             _localPauseStartedAt = -1d;
+            ResetRollPresentationState();
             TeleportOnServer(targetPosition, targetRotation);
             SyncAuthorityToNetwork();
             RefreshCollisionIsolationOnServer();
@@ -371,9 +373,8 @@ namespace MazeParty.Multiplayer
             _nudgeBelowThresholdSince = -1d;
             _resultHideDeadline = -1d;
             _localPauseStartedAt = -1d;
-            _body.linearVelocity = Vector3.zero;
-            _body.angularVelocity = Vector3.zero;
-            _body.isKinematic = true;
+            ResetRollPresentationState();
+            FreezeBody();
             _body.detectCollisions = false;
             SyncAuthorityToNetwork();
         }
@@ -459,14 +460,23 @@ namespace MazeParty.Multiplayer
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
                 match.IsReconnectPaused,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
-            if (!_authority.TryBeginRoll(context, ServerNow, out rejectReason))
+            var now = ServerNow;
+            if (!_authority.TryBeginRoll(context, now, out rejectReason))
             {
                 return false;
             }
 
+            _targetFace = UnityEngine.Random.Range(
+                WorldDieAuthorityModel.MinimumFace,
+                WorldDieAuthorityModel.MaximumFace + 1);
+            _rollPresentationPhase = WorldDieRollPresentationPhase.Tumbling;
+            _physicalTumbleStartedAt = now;
+            _landingStartedAt = -1d;
+            _resultHideDeadline = -1d;
             _publicFace.Value = 0;
             _phase.Value = (byte)WorldDiePhase.Rolling;
             _simulationPaused.Value = false;
+            RollStartedOnServer?.Invoke(this);
             _body.isKinematic = false;
             _body.detectCollisions = true;
             _body.WakeUp();
@@ -618,7 +628,9 @@ namespace MazeParty.Multiplayer
 
             if (paused)
             {
-                if (_authority.Phase == WorldDiePhase.Rolling || _nudgeInProgress)
+                if ((_authority.Phase == WorldDiePhase.Rolling &&
+                     _rollPresentationPhase == WorldDieRollPresentationPhase.Tumbling) ||
+                    _nudgeInProgress)
                 {
                     _pausedLinearVelocity = _body.linearVelocity;
                     _pausedAngularVelocity = _body.angularVelocity;
@@ -626,36 +638,53 @@ namespace MazeParty.Multiplayer
 
                 _localPauseStartedAt = now;
                 _authority.SetPaused(true, now);
-                _body.linearVelocity = Vector3.zero;
-                _body.angularVelocity = Vector3.zero;
-                _body.isKinematic = true;
+                FreezeBody();
             }
             else
             {
                 if (_localPauseStartedAt >= 0d)
                 {
                     var pausedSeconds = Math.Max(0d, now - _localPauseStartedAt);
-                    if (_nudgeDeadline >= 0d)
-                    {
-                        _nudgeDeadline += pausedSeconds;
-                    }
-                    if (_resultHideDeadline >= 0d)
-                    {
-                        _resultHideDeadline += pausedSeconds;
-                    }
+                    _nudgeDeadline =
+                        WorldDieRollPresentationPolicy.ShiftTimestampForPause(
+                            _nudgeDeadline,
+                            pausedSeconds);
+                    _nudgeBelowThresholdSince =
+                        WorldDieRollPresentationPolicy.ShiftTimestampForPause(
+                            _nudgeBelowThresholdSince,
+                            pausedSeconds);
+                    _resultHideDeadline =
+                        WorldDieRollPresentationPolicy.ShiftTimestampForPause(
+                            _resultHideDeadline,
+                            pausedSeconds);
+                    _physicalTumbleStartedAt =
+                        WorldDieRollPresentationPolicy.ShiftTimestampForPause(
+                            _physicalTumbleStartedAt,
+                            pausedSeconds);
+                    _landingStartedAt =
+                        WorldDieRollPresentationPolicy.ShiftTimestampForPause(
+                            _landingStartedAt,
+                            pausedSeconds);
                 }
 
                 _localPauseStartedAt = -1d;
-                var resumeDynamic = _authority.Phase == WorldDiePhase.Rolling ||
+                var resumeDynamic =
+                                    (_authority.Phase == WorldDiePhase.Rolling &&
+                                     _rollPresentationPhase ==
+                                     WorldDieRollPresentationPhase.Tumbling) ||
                                     (_authority.Phase == WorldDiePhase.Ready &&
                                      _nudgeInProgress);
                 _authority.SetPaused(false, now);
-                _body.isKinematic = !resumeDynamic;
                 if (resumeDynamic)
                 {
+                    _body.isKinematic = false;
                     _body.linearVelocity = _pausedLinearVelocity;
                     _body.angularVelocity = _pausedAngularVelocity;
                     _body.WakeUp();
+                }
+                else
+                {
+                    FreezeBody();
                 }
 
                 _pausedLinearVelocity = Vector3.zero;
@@ -696,7 +725,31 @@ namespace MazeParty.Multiplayer
                     _authority.Phase == WorldDiePhase.Settled &&
                     _resultHideDeadline >= 0d
                         ? Mathf.Max(0f, (float)(_resultHideDeadline - timerNow))
-                        : 0f
+                        : 0f,
+                RollPresentationPhase = _rollPresentationPhase,
+                TargetFace = _targetFace,
+                PhysicalTumbleRemainingSeconds =
+                    _rollPresentationPhase == WorldDieRollPresentationPhase.Tumbling &&
+                    _physicalTumbleStartedAt >= 0d
+                        ? Mathf.Max(
+                            0f,
+                            (float)(_physicalTumbleStartedAt +
+                                    WorldDieRollPresentationPolicy
+                                        .PhysicalTumbleSeconds - timerNow))
+                        : 0f,
+                LandingRemainingSeconds =
+                    _rollPresentationPhase == WorldDieRollPresentationPhase.Landing &&
+                    _landingStartedAt >= 0d
+                        ? Mathf.Max(
+                            0f,
+                            (float)(_landingStartedAt +
+                                    WorldDieRollPresentationPolicy.LandingSeconds -
+                                    timerNow))
+                        : 0f,
+                LandingStartPosition = _landingStartPosition,
+                LandingStartRotation = _landingStartRotation,
+                LandingTargetPosition = _landingTargetPosition,
+                LandingTargetRotation = _landingTargetRotation
             };
         }
 
@@ -704,12 +757,14 @@ namespace MazeParty.Multiplayer
             WorldDieReconnectSnapshot snapshot,
             BoardTile tile)
         {
+            var now = ServerNow;
             if (!IsServer || !snapshot.IsValid ||
                 !snapshot.Authority.IsValid ||
+                !IsRollPresentationSnapshotValid(snapshot) ||
                 (snapshot.Authority.Phase != WorldDiePhase.Hidden &&
                  (tile == null ||
                   tile.Coordinate != snapshot.Authority.TileCoordinate)) ||
-                !_authority.Restore(snapshot.Authority, ServerNow))
+                !_authority.Restore(snapshot.Authority, now))
             {
                 return false;
             }
@@ -727,23 +782,26 @@ namespace MazeParty.Multiplayer
             }
 
             configuredSlot = snapshot.Authority.Slot;
+            RestoreRollPresentationState(snapshot, now);
             _pausedLinearVelocity = snapshot.LinearVelocity;
             _pausedAngularVelocity = snapshot.AngularVelocity;
             _nudgeInProgress = snapshot.IsNudging &&
                                snapshot.Authority.Phase == WorldDiePhase.Ready &&
                                snapshot.NudgeRemainingSeconds > 0f;
             _nudgeDeadline = _nudgeInProgress
-                ? ServerNow + snapshot.NudgeRemainingSeconds
+                ? now + snapshot.NudgeRemainingSeconds
                 : -1d;
             _nudgeBelowThresholdSince = -1d;
             _resultHideDeadline = snapshot.Authority.Phase == WorldDiePhase.Settled
-                ? ServerNow + Mathf.Max(0f, snapshot.ResultVisibleRemainingSeconds)
+                ? now + Mathf.Max(0f, snapshot.ResultVisibleRemainingSeconds)
                 : -1d;
-            _localPauseStartedAt = snapshot.Authority.IsPaused ? ServerNow : -1d;
+            _localPauseStartedAt = snapshot.Authority.IsPaused ? now : -1d;
             TeleportOnServer(snapshot.Position, snapshot.Rotation);
             _body.detectCollisions = snapshot.Authority.Phase != WorldDiePhase.Hidden;
             var resumeDynamic =
-                                (snapshot.Authority.Phase == WorldDiePhase.Rolling ||
+                                ((snapshot.Authority.Phase == WorldDiePhase.Rolling &&
+                                  _rollPresentationPhase ==
+                                  WorldDieRollPresentationPhase.Tumbling) ||
                                  _nudgeInProgress) &&
                                 !snapshot.Authority.IsPaused;
             if (resumeDynamic)
@@ -754,50 +812,338 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                if (!_body.isKinematic)
-                {
-                    _body.linearVelocity = Vector3.zero;
-                    _body.angularVelocity = Vector3.zero;
-                }
-
-                _body.isKinematic = true;
+                FreezeBody();
             }
             SyncAuthorityToNetwork();
             RefreshCollisionIsolationOnServer();
             return true;
         }
 
-        private void SettleOnServer()
+        private static bool IsRollPresentationSnapshotValid(
+            WorldDieReconnectSnapshot snapshot)
         {
-            var face = WorldDieFaceResolver.ResolveHighestFace(
-                _body.rotation,
-                _localFaceNormals,
-                _faceValues);
-            if (face == 0)
+            if (snapshot.Authority.Phase != WorldDiePhase.Rolling)
+            {
+                return snapshot.RollPresentationPhase ==
+                           WorldDieRollPresentationPhase.None &&
+                       snapshot.TargetFace == 0;
+            }
+
+            if (snapshot.TargetFace < WorldDieAuthorityModel.MinimumFace ||
+                snapshot.TargetFace > WorldDieAuthorityModel.MaximumFace)
+            {
+                return false;
+            }
+
+            switch (snapshot.RollPresentationPhase)
+            {
+                case WorldDieRollPresentationPhase.Tumbling:
+                    return float.IsFinite(snapshot.PhysicalTumbleRemainingSeconds) &&
+                           snapshot.PhysicalTumbleRemainingSeconds >= 0f &&
+                           snapshot.PhysicalTumbleRemainingSeconds <=
+                           (float)WorldDieRollPresentationPolicy
+                               .PhysicalTumbleSeconds + 0.001f;
+
+                case WorldDieRollPresentationPhase.Landing:
+                    return float.IsFinite(snapshot.LandingRemainingSeconds) &&
+                           snapshot.LandingRemainingSeconds >= 0f &&
+                           snapshot.LandingRemainingSeconds <=
+                           (float)WorldDieRollPresentationPolicy.LandingSeconds +
+                           0.001f &&
+                           IsFinite(snapshot.LandingStartPosition) &&
+                           IsFinite(snapshot.LandingTargetPosition) &&
+                           IsFinite(snapshot.LandingStartRotation) &&
+                           IsFinite(snapshot.LandingTargetRotation);
+
+                default:
+                    return false;
+            }
+        }
+
+        private void RestoreRollPresentationState(
+            WorldDieReconnectSnapshot snapshot,
+            double now)
+        {
+            ResetRollPresentationState();
+            if (snapshot.Authority.Phase != WorldDiePhase.Rolling)
+            {
+                return;
+            }
+
+            _targetFace = snapshot.TargetFace;
+            _rollPresentationPhase = snapshot.RollPresentationPhase;
+            if (_rollPresentationPhase == WorldDieRollPresentationPhase.Tumbling)
+            {
+                var remaining = Mathf.Clamp(
+                    snapshot.PhysicalTumbleRemainingSeconds,
+                    0f,
+                    (float)WorldDieRollPresentationPolicy.PhysicalTumbleSeconds);
+                _physicalTumbleStartedAt =
+                    now -
+                    (WorldDieRollPresentationPolicy.PhysicalTumbleSeconds -
+                     remaining);
+                return;
+            }
+
+            var landingRemaining = Mathf.Clamp(
+                snapshot.LandingRemainingSeconds,
+                0f,
+                (float)WorldDieRollPresentationPolicy.LandingSeconds);
+            _landingStartedAt =
+                now -
+                (WorldDieRollPresentationPolicy.LandingSeconds -
+                 landingRemaining);
+            _landingStartPosition = snapshot.LandingStartPosition;
+            _landingStartRotation = NormalizeQuaternion(snapshot.LandingStartRotation);
+            _landingTargetPosition = snapshot.LandingTargetPosition;
+            _landingTargetRotation = NormalizeQuaternion(snapshot.LandingTargetRotation);
+        }
+
+        private void UpdateRollPresentationOnServer(double now)
+        {
+            switch (_rollPresentationPhase)
+            {
+                case WorldDieRollPresentationPhase.Tumbling:
+                    ConstrainToAssignedTileOnServer();
+                    if (_physicalTumbleStartedAt < 0d)
+                    {
+                        _physicalTumbleStartedAt = now;
+                    }
+
+                    if (WorldDieRollPresentationPolicy.ShouldBeginLanding(
+                            now - _physicalTumbleStartedAt))
+                    {
+                        BeginLandingCorrectionOnServer(now);
+                        if (_rollPresentationPhase ==
+                            WorldDieRollPresentationPhase.Landing)
+                        {
+                            UpdateLandingCorrectionOnServer(now);
+                        }
+                    }
+                    break;
+
+                case WorldDieRollPresentationPhase.Landing:
+                    UpdateLandingCorrectionOnServer(now);
+                    break;
+
+                default:
+                    Debug.LogError(
+                        "A rolling world die is missing its server presentation state.",
+                        this);
+                    HideOnServer();
+                    break;
+            }
+        }
+
+        private void BeginLandingCorrectionOnServer(double now)
+        {
+            if (!TryGetFaceLandingGeometry(
+                    _targetFace,
+                    out var targetLocalNormal,
+                    out var faceCenterDistance))
             {
                 Debug.LogError(
-                    "World die could not resolve a face. Verify its ten face markers.",
+                    "World die cannot animate its preselected face. Verify all face markers.",
                     this);
-                _body.linearVelocity = Vector3.zero;
-                _body.angularVelocity = Vector3.zero;
-                _body.isKinematic = true;
+                HideOnServer();
                 return;
             }
 
+            ConstrainToAssignedTileOnServer();
+            FreezeBody();
+            _pausedLinearVelocity = Vector3.zero;
+            _pausedAngularVelocity = Vector3.zero;
+
+            _landingStartPosition = _body.position;
+            _landingStartRotation = _body.rotation;
+            _landingTargetRotation =
+                WorldDieRollPresentationPolicy.ResolveLandingRotation(
+                    _landingStartRotation,
+                    targetLocalNormal,
+                    _tileFrame.Up);
+            _landingTargetRotation = NormalizeQuaternion(_landingTargetRotation);
+            _landingTargetPosition = ResolveLandingPosition(
+                _landingStartPosition,
+                faceCenterDistance);
+            var landingStartsAt = _physicalTumbleStartedAt >= 0d
+                ? _physicalTumbleStartedAt +
+                  WorldDieRollPresentationPolicy.PhysicalTumbleSeconds
+                : now;
+            _rollPresentationPhase = WorldDieRollPresentationPhase.Landing;
+            _physicalTumbleStartedAt = -1d;
+            _landingStartedAt = landingStartsAt;
+        }
+
+        private void UpdateLandingCorrectionOnServer(double now)
+        {
+            if (_landingStartedAt < 0d)
+            {
+                _landingStartedAt = now;
+            }
+
+            var rollElapsed =
+                WorldDieRollPresentationPolicy.PhysicalTumbleSeconds +
+                Math.Max(0d, now - _landingStartedAt);
+            var progress =
+                WorldDieRollPresentationPolicy.GetLandingProgress(rollElapsed);
+            var eased = progress * progress * (3f - 2f * progress);
+            var position = Vector3.LerpUnclamped(
+                _landingStartPosition,
+                _landingTargetPosition,
+                eased);
+            var rotation = Quaternion.SlerpUnclamped(
+                _landingStartRotation,
+                _landingTargetRotation,
+                eased);
+            _body.MovePosition(position);
+            _body.MoveRotation(rotation);
+
+            if (WorldDieRollPresentationPolicy.ShouldCommitResult(rollElapsed))
+            {
+                CompleteLandingOnServer(now);
+            }
+        }
+
+        private void CompleteLandingOnServer(double now)
+        {
+            var face = _targetFace;
+            TeleportOnServer(_landingTargetPosition, _landingTargetRotation);
             if (!_authority.MarkSettled(face))
             {
+                Debug.LogError("World die landing completed from an invalid phase.", this);
+                HideOnServer();
                 return;
             }
 
-            _body.linearVelocity = Vector3.zero;
-            _body.angularVelocity = Vector3.zero;
-            _body.isKinematic = true;
+            FreezeBody();
             _nudgeInProgress = false;
             _nudgeDeadline = -1d;
             _nudgeBelowThresholdSince = -1d;
-            _resultHideDeadline = ServerNow + resultVisibleSeconds;
+            _resultHideDeadline =
+                now + WorldDieResultPresentationPolicy.DefaultVisibleSeconds;
+            ResetRollPresentationState();
             SyncAuthorityToNetwork();
             SettledOnServer?.Invoke(this, face);
+        }
+
+        private Vector3 ResolveLandingPosition(
+            Vector3 currentPosition,
+            float faceCenterDistance)
+        {
+            if (!_hasTileFrame)
+            {
+                return currentPosition;
+            }
+
+            var tileSurfaceHeight = Mathf.Max(
+                0f,
+                spawnHeight - faceCenterDistance - LandingClearance);
+            var tileCollider = _assignedTile != null
+                ? _assignedTile.GetComponent<Collider>()
+                : null;
+            if (tileCollider != null && tileCollider.enabled)
+            {
+                var probeDistance =
+                    tileCollider.bounds.extents.magnitude + BoardTile.RoomSize;
+                var surfacePoint = tileCollider.ClosestPoint(
+                    _tileFrame.Center + _tileFrame.Up * probeDistance);
+                tileSurfaceHeight = Vector3.Dot(
+                    surfacePoint - _tileFrame.Center,
+                    _tileFrame.Up);
+            }
+
+            var targetCenterHeight =
+                WorldDieRollPresentationPolicy.GetLandingCenterHeight(
+                    tileSurfaceHeight,
+                    faceCenterDistance,
+                    LandingClearance);
+            var vertical = Vector3.Dot(
+                currentPosition - _tileFrame.Center,
+                _tileFrame.Up);
+            var desiredPosition = currentPosition +
+                                  _tileFrame.Up *
+                                  (targetCenterHeight - vertical);
+            var bounds = _dieCollider.bounds;
+            var targetRightExtent =
+                WorldDieRollPresentationPolicy.GetTargetRotationProjectedExtent(
+                    bounds,
+                    _landingStartPosition,
+                    _landingStartRotation,
+                    _landingTargetRotation,
+                    _tileFrame.Right);
+            var targetForwardExtent =
+                WorldDieRollPresentationPolicy.GetTargetRotationProjectedExtent(
+                    bounds,
+                    _landingStartPosition,
+                    _landingStartRotation,
+                    _landingTargetRotation,
+                    _tileFrame.Forward);
+            _tileFrame.Constrain(
+                desiredPosition,
+                Vector3.zero,
+                targetRightExtent,
+                targetForwardExtent,
+                0f,
+                out var constrained,
+                out _);
+            return constrained;
+        }
+
+        private bool TryGetFaceLandingGeometry(
+            int face,
+            out Vector3 localNormal,
+            out float faceCenterDistance)
+        {
+            CacheFaceMarkers();
+            for (var i = 0; i < faceMarkers.Length; i++)
+            {
+                var marker = faceMarkers[i];
+                if (marker == null || marker.Value != face ||
+                    marker.LocalNormal.sqrMagnitude <= 0.000001f)
+                {
+                    continue;
+                }
+
+                localNormal = marker.LocalNormal.normalized;
+                faceCenterDistance = Vector3.Distance(
+                    transform.position,
+                    marker.transform.position);
+                return faceCenterDistance > 0.0001f;
+            }
+
+            localNormal = default;
+            faceCenterDistance = 0f;
+            return false;
+        }
+
+        private void ResetRollPresentationState()
+        {
+            _rollPresentationPhase = WorldDieRollPresentationPhase.None;
+            _targetFace = 0;
+            _physicalTumbleStartedAt = -1d;
+            _landingStartedAt = -1d;
+            _landingStartPosition = default;
+            _landingStartRotation = Quaternion.identity;
+            _landingTargetPosition = default;
+            _landingTargetRotation = Quaternion.identity;
+        }
+
+        private static Quaternion NormalizeQuaternion(Quaternion value)
+        {
+            var magnitude = Mathf.Sqrt(
+                value.x * value.x + value.y * value.y +
+                value.z * value.z + value.w * value.w);
+            if (magnitude <= 0.000001f)
+            {
+                return Quaternion.identity;
+            }
+
+            var inverse = 1f / magnitude;
+            return new Quaternion(
+                value.x * inverse,
+                value.y * inverse,
+                value.z * inverse,
+                value.w * inverse);
         }
 
         private void UpdateNudgeMotionOnServer(double now)
@@ -828,12 +1174,21 @@ namespace MazeParty.Multiplayer
 
         private void StopNudgeOnServer()
         {
-            _body.linearVelocity = Vector3.zero;
-            _body.angularVelocity = Vector3.zero;
-            _body.isKinematic = true;
+            FreezeBody();
             _nudgeInProgress = false;
             _nudgeDeadline = -1d;
             _nudgeBelowThresholdSince = -1d;
+        }
+
+        private void FreezeBody()
+        {
+            if (!_body.isKinematic)
+            {
+                _body.linearVelocity = Vector3.zero;
+                _body.angularVelocity = Vector3.zero;
+            }
+
+            _body.isKinematic = true;
         }
 
         private void ConstrainToAssignedTileOnServer()
@@ -875,7 +1230,7 @@ namespace MazeParty.Multiplayer
             }
 
             Debug.LogError(
-                "NetworkWorldDie requires exactly one outward-facing marker for each value 1-10.",
+                "NetworkWorldDie requires exactly one outward-facing marker for each supported face value.",
                 this);
             return false;
 
@@ -1114,6 +1469,16 @@ namespace MazeParty.Multiplayer
             return float.IsFinite(value.x) &&
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z);
+        }
+
+        private static bool IsFinite(Quaternion value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z) &&
+                   float.IsFinite(value.w) &&
+                   value.x * value.x + value.y * value.y +
+                   value.z * value.z + value.w * value.w > 0.000001f;
         }
     }
 }

@@ -86,6 +86,49 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void ApprovedRoll_DefersTimeoutAndStartsFullAscendingAfterSettlement()
+        {
+            var flow = StartInAction();
+
+            flow.Tick(186d, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+            Assert.That(flow.GetActionRemaining(186d), Is.Zero);
+            Assert.That(flow.LastActionEndReason, Is.EqualTo(BoardActionEndReason.None));
+
+            flow.Tick(186.999d, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+
+            flow.Tick(187d, false);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(187d));
+            Assert.That(flow.GetStateRemaining(187d), Is.EqualTo(5d));
+            Assert.That(
+                flow.LastActionEndReason,
+                Is.EqualTo(BoardActionEndReason.TimeExpired));
+        }
+
+        [Test]
+        public void ReconnectPause_PreservesDeferredExpiredAction()
+        {
+            var flow = StartInAction();
+
+            Assert.That(flow.Pause(186.5d, true), Is.True);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+            Assert.That(flow.GetActionRemaining(300d), Is.Zero);
+
+            Assert.That(flow.Resume(300d), Is.True);
+            flow.Tick(300.4d, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+
+            flow.Tick(300.5d, false);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
+            Assert.That(flow.GetStateRemaining(300.5d), Is.EqualTo(5d));
+            Assert.That(
+                flow.LastActionEndReason,
+                Is.EqualTo(BoardActionEndReason.TimeExpired));
+        }
+
+        [Test]
         public void AscendingAndLandingEffectsThenDevelopmentSkip_ShowsResultBeforeNextTurn()
         {
             var flow = StartInAction();

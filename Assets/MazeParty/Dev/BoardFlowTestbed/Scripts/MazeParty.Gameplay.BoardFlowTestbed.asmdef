@@ -3,6 +3,7 @@
   "rootNamespace": "MazeParty.Gameplay.BoardFlowTestbed",
   "references": [
     "MazeParty.Gameplay",
+    "MazeParty.Multiplayer",
     "Unity.InputSystem",
     "UnityEngine.UI"
   ],

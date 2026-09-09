@@ -3,6 +3,7 @@
   "rootNamespace": "MazeParty.Gameplay.Testbed",
   "references": [
     "MazeParty.Gameplay",
+    "MazeParty.Multiplayer",
     "Unity.InputSystem",
     "Unity.Cinemachine",
     "UnityEngine.UI"

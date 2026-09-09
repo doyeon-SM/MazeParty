@@ -4,7 +4,7 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Place one marker per physical face, with local up pointing away from the die
-    /// center. Supports the board's 1-10 roll without hard-coding a six-sided cube.
+    /// center. Supports the board's shared D12 range without assuming a cube.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class WorldDieFaceMarker : MonoBehaviour

@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
+using MazeParty.Multiplayer;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -14,13 +16,22 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
     /// </summary>
     public sealed class BoardFlowLocalSimulator : MonoBehaviour
     {
+        private const string DefaultWorldDieVisualPrefabPath =
+            "Assets/MazeParty/Art/Dice/D12/Prefabs/D12WorldDieVisual.prefab";
+        private const float WorldDieRollHorizontalImpulse = 4.5f;
+        private const float WorldDieRollUpwardImpulse = 4f;
+        private const float WorldDieRollTorqueImpulse = 7f;
+        private const float WorldDieLandingClearance = 0.01f;
+        private static readonly Color LocalWorldDieTint =
+            new Color(0.95f, 0.25f, 0.25f);
+
         [SerializeField] private CharacterController player;
         [SerializeField] private Transform eyePivot;
         [SerializeField] private BoardTopology topology;
         [SerializeField] private GameplayCameraDirector cameraDirector;
+        [SerializeField] private GameObject worldDieVisualPrefab;
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
-        [SerializeField, Min(0f)] private float worldDieResultVisibleSeconds = 2f;
         [SerializeField, Min(0.05f)] private float worldDieNudgeHorizontalImpulse = 1.35f;
         [SerializeField, Min(0f)] private float worldDieNudgeUpwardImpulse = 0.25f;
         [SerializeField, Min(0f)] private float worldDieNudgeTorqueImpulse = 0.9f;
@@ -117,12 +128,25 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private GameObject _worldDie;
         private Collider _worldDieCollider;
         private Rigidbody _worldDieBody;
+        private WorldDieFaceMarker[] _worldDieFaceMarkers =
+            Array.Empty<WorldDieFaceMarker>();
         private TextMesh _worldDieResult;
         private BoardTile _worldDieTile;
+        private WorldDieRollPresentationPhase _worldDieRollPresentationPhase;
+        private int _pendingWorldDieFace;
+        private double _worldDieRollStartedAt = -1d;
+        private Vector3 _worldDieLandingStartPosition;
+        private Quaternion _worldDieLandingStartRotation = Quaternion.identity;
+        private Vector3 _worldDieLandingTargetPosition;
+        private Quaternion _worldDieLandingTargetRotation = Quaternion.identity;
         private bool _worldDieNudgeInProgress;
         private double _worldDieNudgeDeadline = -1d;
         private double _worldDieNudgeBelowThresholdSince = -1d;
         private double _worldDieHideDeadline = -1d;
+        private bool _worldDiePhysicsSuspended;
+        private bool _worldDieWasKinematicBeforeSuspension = true;
+        private Vector3 _worldDieSuspendedLinearVelocity;
+        private Vector3 _worldDieSuspendedAngularVelocity;
         private BoardLandingEffectLayout _boardEffectLayout;
         private int _nextLandingEffectSlot;
         private bool _stageTwoPlayerFightAtFinish;
@@ -149,12 +173,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             CharacterController localPlayer,
             Transform localEye,
             BoardTopology boardTopology,
-            GameplayCameraDirector director)
+            GameplayCameraDirector director,
+            GameObject dieVisualPrefab = null)
         {
             player = localPlayer;
             eyePivot = localEye;
             topology = boardTopology;
             cameraDirector = director;
+            worldDieVisualPrefab = dieVisualPrefab;
         }
 
         private void Awake()
@@ -271,6 +297,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void Update()
         {
+            var worldDieTimersWereSuspended =
+                _paused || _keyShopRevealActive;
+            var unscaledDeltaTime = Time.unscaledDeltaTime;
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
             _flow.Tick(_simulationNow);
             RefreshLocalCrouch();
@@ -288,6 +317,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
             HandleEditorPointerToggle();
             HandleInput();
+            PreserveLocalWorldDieTimersDuringPause(
+                worldDieTimersWereSuspended,
+                unscaledDeltaTime);
+            SetLocalWorldDiePhysicsSuspended(
+                _paused || _keyShopRevealActive);
+            UpdateLocalWorldDieRollPresentation();
             UpdateLocalWorldDieLifetime();
             UpdateWorldDieResultBillboard();
             RefreshUi();
@@ -557,35 +592,20 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                         return;
                     }
                 }
-                else if (mouse.rightButton.wasPressedThisFrame && _roll <= 0 &&
-                         TryGetAimedLocalWorldDie(out _))
+                else if (mouse.rightButton.wasPressedThisFrame &&
+                         _roll <= 0 &&
+                         _worldDieRollPresentationPhase ==
+                         WorldDieRollPresentationPhase.None &&
+                         TryGetAimedLocalWorldDie(out var rollRay))
                 {
-                    _roll = UnityEngine.Random.Range(1, 11);
-                    _remainingMoves = _roll;
-                    _actionStates[0] = PlayerBoardActionState.Moving;
-                    _avatarVisual?.TriggerPunch();
-                    StopLocalWorldDieNudge();
-                    if (_worldDie != null)
-                    {
-                        _worldDie.transform.rotation = UnityEngine.Random.rotation;
-                    }
-                    if (_worldDieResult != null)
-                    {
-                        _worldDieResult.text = _roll.ToString();
-                    }
-                    _worldDieHideDeadline = Time.unscaledTimeAsDouble +
-                                            worldDieResultVisibleSeconds;
-                    if (_traversal.IsInitialized)
-                    {
-                        _traversal.ResetMoves(_roll);
-                    }
-                    RefreshBoundaryWalls();
-                    SetStatus("Rolled " + _roll + ". Blue walls are passable; black walls physically block entry.");
+                    BeginLocalWorldDieRoll(rollRay);
                 }
                 var repeatPrimary = ShouldRepeatLocalPrimaryAction(
                     mouse,
                     PlayerUnarmedRules.PunchCooldownSeconds);
                 if (repeatPrimary &&
+                    _worldDieRollPresentationPhase ==
+                    WorldDieRollPresentationPhase.None &&
                     TryGetAimedLocalWorldDie(out var dieRay))
                 {
                     if (_roll <= 0)
@@ -851,26 +871,41 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 return;
             }
 
-            _worldDie = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            if (!TryCreateLocalWorldDieFromVisualPrefab(out var sourceError))
+            {
+                Debug.LogError(
+                    "BoardFlow testbed could not instantiate its D12 visual prefab: " +
+                    sourceError +
+                    " Falling back to a red sphere with logical D12 markers.",
+                    this);
+                CreateFallbackLocalWorldDie();
+            }
+
             _worldDie.name = "Local World Die (Editor)";
-            _worldDie.transform.localScale = Vector3.one * 0.8f;
-            _worldDieCollider = _worldDie.GetComponent<Collider>();
             _worldDieBody = _worldDie.AddComponent<Rigidbody>();
             _worldDieBody.interpolation = RigidbodyInterpolation.Interpolate;
             _worldDieBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             _worldDieBody.isKinematic = true;
             _worldDieBody.detectCollisions = false;
-            var renderer = _worldDie.GetComponent<Renderer>();
-            if (renderer != null)
+            var renderers = _worldDie.GetComponentsInChildren<Renderer>(true);
+            for (var rendererIndex = 0;
+                 rendererIndex < renderers.Length;
+                 rendererIndex++)
             {
                 var properties = new MaterialPropertyBlock();
-                properties.SetColor("_BaseColor", new Color(0.95f, 0.25f, 0.25f));
-                properties.SetColor("_Color", new Color(0.95f, 0.25f, 0.25f));
-                renderer.SetPropertyBlock(properties);
+                properties.SetColor("_BaseColor", LocalWorldDieTint);
+                properties.SetColor("_Color", LocalWorldDieTint);
+                renderers[rendererIndex].SetPropertyBlock(properties);
             }
 
             var labelObject = new GameObject("Public World Result");
             labelObject.transform.SetParent(_worldDie.transform, false);
+            var visualScale = Mathf.Abs(_worldDie.transform.localScale.x);
+            if (visualScale > 0.0001f)
+            {
+                labelObject.transform.localScale =
+                    Vector3.one / visualScale;
+            }
             _worldDieResult = labelObject.AddComponent<TextMesh>();
             _worldDieResult.anchor = TextAnchor.MiddleCenter;
             _worldDieResult.alignment = TextAlignment.Center;
@@ -878,6 +913,174 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _worldDieResult.characterSize = 0.045f;
             _worldDieResult.color = Color.white;
             HideLocalWorldDie();
+        }
+
+        private bool TryCreateLocalWorldDieFromVisualPrefab(
+            out string error)
+        {
+            var visualPrefab = worldDieVisualPrefab != null
+                ? worldDieVisualPrefab
+                : AssetDatabase.LoadAssetAtPath<GameObject>(
+                    DefaultWorldDieVisualPrefabPath);
+            if (visualPrefab == null)
+            {
+                error =
+                    "assign worldDieVisualPrefab or restore " +
+                    DefaultWorldDieVisualPrefabPath + ".";
+                return false;
+            }
+
+            var sourceFilter = visualPrefab.GetComponent<MeshFilter>();
+            var sourceRenderer = visualPrefab.GetComponent<MeshRenderer>();
+            var sourceCollider = visualPrefab.GetComponent<MeshCollider>();
+            var prefabMarkers =
+                visualPrefab.GetComponentsInChildren<WorldDieFaceMarker>(true);
+            if (sourceFilter == null || sourceFilter.sharedMesh == null)
+            {
+                error = "the visual prefab has no root MeshFilter/sharedMesh.";
+                return false;
+            }
+            if (sourceRenderer == null ||
+                sourceRenderer.sharedMaterial == null)
+            {
+                error =
+                    "the visual prefab has no root MeshRenderer/sharedMaterial.";
+                return false;
+            }
+            if (sourceCollider == null ||
+                sourceCollider.sharedMesh == null ||
+                !sourceCollider.convex)
+            {
+                error =
+                    "the visual prefab requires a convex root MeshCollider.";
+                return false;
+            }
+            if (prefabMarkers.Length > 0 &&
+                !HasCompleteD12MarkerSet(prefabMarkers))
+            {
+                error =
+                    "the visual prefab has an incomplete D12 marker set.";
+                return false;
+            }
+
+            _worldDie = Instantiate(visualPrefab);
+            _worldDieCollider =
+                _worldDie.GetComponent<MeshCollider>();
+            _worldDieFaceMarkers =
+                _worldDie.GetComponentsInChildren<WorldDieFaceMarker>(true);
+            if (_worldDieFaceMarkers.Length == 0)
+            {
+                _worldDieFaceMarkers =
+                    CreateLocalD12FaceMarkers(
+                        _worldDie.transform);
+            }
+            Array.Sort(
+                _worldDieFaceMarkers,
+                (left, right) => left.Value.CompareTo(right.Value));
+
+            error = string.Empty;
+            return true;
+        }
+
+        private static WorldDieFaceMarker[] CreateLocalD12FaceMarkers(
+            Transform parent)
+        {
+            var markers =
+                new WorldDieFaceMarker[
+                    WorldDieAuthorityModel.MaximumFace];
+            for (var faceIndex = 0;
+                 faceIndex < markers.Length;
+                 faceIndex++)
+            {
+                var faceValue = faceIndex + 1;
+                if (!WorldDieD12Layout.TryGetLocalNormal(
+                        faceValue,
+                        out var normal) ||
+                    !WorldDieD12Layout.TryGetLocalMarkerPosition(
+                        faceValue,
+                        out var markerPosition))
+                {
+                    continue;
+                }
+                var markerObject =
+                    new GameObject("Face " + faceValue);
+                markerObject.transform.SetParent(parent, false);
+                markerObject.transform.localPosition =
+                    markerPosition;
+                markerObject.transform.localRotation =
+                    Quaternion.FromToRotation(Vector3.up, normal);
+                var marker =
+                    markerObject.AddComponent<WorldDieFaceMarker>();
+                marker.Configure(faceValue);
+                markers[faceIndex] = marker;
+            }
+
+            return markers;
+        }
+
+        private void CreateFallbackLocalWorldDie()
+        {
+            _worldDie =
+                GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            _worldDie.transform.localScale = Vector3.one * 0.8f;
+            _worldDieCollider = _worldDie.GetComponent<Collider>();
+            _worldDieFaceMarkers =
+                new WorldDieFaceMarker[
+                    WorldDieAuthorityModel.MaximumFace];
+            for (var faceIndex = 0;
+                 faceIndex < _worldDieFaceMarkers.Length;
+                 faceIndex++)
+            {
+                var faceValue = faceIndex + 1;
+                WorldDieD12Layout.TryGetLocalNormal(
+                    faceValue,
+                    out var normal);
+                var markerObject =
+                    new GameObject("Fallback Face " + faceValue);
+                markerObject.transform.SetParent(
+                    _worldDie.transform,
+                    false);
+                markerObject.transform.localPosition =
+                    normal * 0.5f;
+                markerObject.transform.localRotation =
+                    Quaternion.FromToRotation(Vector3.up, normal);
+                var marker =
+                    markerObject.AddComponent<WorldDieFaceMarker>();
+                marker.Configure(faceValue);
+                _worldDieFaceMarkers[faceIndex] = marker;
+            }
+        }
+
+        private static bool HasCompleteD12MarkerSet(
+            WorldDieFaceMarker[] markers)
+        {
+            if (markers == null ||
+                markers.Length !=
+                WorldDieAuthorityModel.MaximumFace)
+            {
+                return false;
+            }
+
+            var seen =
+                new bool[
+                    WorldDieAuthorityModel.MaximumFace + 1];
+            for (var index = 0; index < markers.Length; index++)
+            {
+                var marker = markers[index];
+                if (marker == null ||
+                    marker.Value <
+                    WorldDieAuthorityModel.MinimumFace ||
+                    marker.Value >
+                    WorldDieAuthorityModel.MaximumFace ||
+                    seen[marker.Value])
+                {
+                    return false;
+                }
+
+                seen[marker.Value] = true;
+            }
+
+            return true;
         }
 
         private void PrepareLocalWorldDie()
@@ -898,6 +1101,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             target = ClampPointInsideTile(target, _worldDieTile, 0.65f);
             target.y = _worldDieTile.WorldCenter.y + 0.75f;
             StopLocalWorldDieNudge();
+            ResetLocalWorldDieRollPresentation();
             _worldDie.transform.SetPositionAndRotation(target, UnityEngine.Random.rotation);
             _worldDieResult.text = "?";
             _worldDie.SetActive(true);
@@ -910,6 +1114,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _worldDieTile = null;
             StopLocalWorldDieNudge();
+            ResetLocalWorldDieRollPresentation();
+            ClearLocalWorldDiePhysicsSuspension();
             _worldDieHideDeadline = -1d;
             if (_worldDie != null)
             {
@@ -962,6 +1168,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             if (_worldDie == null || _worldDieTile == null ||
                 _worldDieBody == null || _worldDieCollider == null ||
+                _worldDieRollPresentationPhase !=
+                WorldDieRollPresentationPhase.None ||
                 !_worldDieCollider.Raycast(ray, out var hit, 5.5f))
             {
                 return;
@@ -991,9 +1199,423 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
+        private bool BeginLocalWorldDieRoll(Ray ray)
+        {
+            if (_worldDie == null ||
+                !_worldDie.activeSelf ||
+                _worldDieTile == null ||
+                _worldDieBody == null ||
+                _worldDieCollider == null ||
+                _roll > 0 ||
+                _worldDieRollPresentationPhase !=
+                WorldDieRollPresentationPhase.None)
+            {
+                return false;
+            }
+
+            StopLocalWorldDieNudge();
+            ResetLocalWorldDieRollPresentation();
+            _pendingWorldDieFace = UnityEngine.Random.Range(
+                WorldDieAuthorityModel.MinimumFace,
+                WorldDieAuthorityModel.MaximumFace + 1);
+            _worldDieRollPresentationPhase =
+                WorldDieRollPresentationPhase.Tumbling;
+            _worldDieRollStartedAt =
+                Time.unscaledTimeAsDouble;
+            _worldDieHideDeadline = -1d;
+            if (_worldDieResult != null)
+            {
+                _worldDieResult.text = "?";
+            }
+
+            _worldDieBody.isKinematic = false;
+            _worldDieBody.detectCollisions = true;
+            _worldDieBody.WakeUp();
+            var up = _worldDieTile.transform.up.normalized;
+            var horizontalDirection =
+                Vector3.ProjectOnPlane(ray.direction, up);
+            if (horizontalDirection.sqrMagnitude <= 0.000001f)
+            {
+                horizontalDirection =
+                    _worldDieTile.transform.forward;
+            }
+
+            horizontalDirection.Normalize();
+            var impulse =
+                horizontalDirection *
+                WorldDieRollHorizontalImpulse +
+                up * WorldDieRollUpwardImpulse;
+            var forcePoint = _worldDieBody.worldCenterOfMass;
+            if (_worldDieCollider.Raycast(
+                    ray,
+                    out var hit,
+                    5.5f))
+            {
+                forcePoint = hit.point;
+            }
+
+            _worldDieBody.AddForceAtPosition(
+                impulse,
+                forcePoint,
+                ForceMode.Impulse);
+            _worldDieBody.AddTorque(
+                UnityEngine.Random.onUnitSphere *
+                WorldDieRollTorqueImpulse,
+                ForceMode.Impulse);
+            _avatarVisual?.TriggerPunch();
+            SetStatus(
+                "Rolling the local D12. Movement commits after its one-second landing.");
+            return true;
+        }
+
+        private void UpdateLocalWorldDieRollPresentation()
+        {
+            if (_worldDieRollPresentationPhase ==
+                    WorldDieRollPresentationPhase.None ||
+                _worldDie == null ||
+                !_worldDie.activeSelf ||
+                _worldDieBody == null ||
+                _worldDieTile == null ||
+                _paused ||
+                _keyShopRevealActive)
+            {
+                return;
+            }
+
+            var now = Time.unscaledTimeAsDouble;
+            var elapsed = Math.Max(
+                0d,
+                now - _worldDieRollStartedAt);
+            if (_worldDieRollPresentationPhase ==
+                    WorldDieRollPresentationPhase.Tumbling &&
+                WorldDieRollPresentationPolicy
+                    .ShouldBeginLanding(elapsed))
+            {
+                BeginLocalWorldDieLanding();
+            }
+
+            if (_worldDieRollPresentationPhase !=
+                WorldDieRollPresentationPhase.Landing)
+            {
+                return;
+            }
+
+            var progress =
+                WorldDieRollPresentationPolicy
+                    .GetLandingProgress(elapsed);
+            var eased =
+                progress * progress * (3f - 2f * progress);
+            _worldDieBody.MovePosition(
+                Vector3.LerpUnclamped(
+                    _worldDieLandingStartPosition,
+                    _worldDieLandingTargetPosition,
+                    eased));
+            _worldDieBody.MoveRotation(
+                Quaternion.SlerpUnclamped(
+                    _worldDieLandingStartRotation,
+                    _worldDieLandingTargetRotation,
+                    eased));
+
+            if (WorldDieRollPresentationPolicy
+                .ShouldCommitResult(elapsed))
+            {
+                CompleteLocalWorldDieLanding(now);
+            }
+        }
+
+        private void BeginLocalWorldDieLanding()
+        {
+            if (!TryGetLocalWorldDieFaceGeometry(
+                    _pendingWorldDieFace,
+                    out var targetLocalNormal,
+                    out var faceSupportDistance))
+            {
+                Debug.LogError(
+                    "Local D12 cannot land on its preselected face. " +
+                    "Verify the local D12 marker set contains values 1-12.",
+                    this);
+                StopLocalWorldDieNudge();
+                ResetLocalWorldDieRollPresentation();
+                return;
+            }
+
+            var currentPosition = _worldDieBody.position;
+            var currentRotation = _worldDieBody.rotation;
+            _worldDieBody.linearVelocity = Vector3.zero;
+            _worldDieBody.angularVelocity = Vector3.zero;
+            _worldDieBody.isKinematic = true;
+
+            _worldDieLandingStartPosition =
+                currentPosition;
+            _worldDieLandingStartRotation =
+                currentRotation;
+            _worldDieLandingTargetPosition =
+                ClampPointInsideTile(
+                    currentPosition,
+                    _worldDieTile,
+                    0.65f);
+            var tileUp =
+                _worldDieTile.transform.up.normalized;
+            var tileSurfacePoint =
+                ResolveLocalWorldDieTileSurfacePoint(
+                    _worldDieLandingTargetPosition,
+                    tileUp);
+            var currentCenterHeight = Vector3.Dot(
+                _worldDieLandingTargetPosition,
+                tileUp);
+            var targetCenterHeight =
+                WorldDieRollPresentationPolicy
+                    .GetLandingCenterHeight(
+                        Vector3.Dot(tileSurfacePoint, tileUp),
+                        faceSupportDistance,
+                        WorldDieLandingClearance);
+            _worldDieLandingTargetPosition +=
+                tileUp *
+                (targetCenterHeight - currentCenterHeight);
+            _worldDieLandingTargetRotation =
+                WorldDieRollPresentationPolicy
+                    .ResolveLandingRotation(
+                        currentRotation,
+                        targetLocalNormal,
+                        tileUp);
+            _worldDieRollPresentationPhase =
+                WorldDieRollPresentationPhase.Landing;
+        }
+
+        private void CompleteLocalWorldDieLanding(double now)
+        {
+            var settledFace = _pendingWorldDieFace;
+            _worldDieBody.position =
+                _worldDieLandingTargetPosition;
+            _worldDieBody.rotation =
+                _worldDieLandingTargetRotation;
+            if (!_worldDieBody.isKinematic)
+            {
+                _worldDieBody.linearVelocity = Vector3.zero;
+                _worldDieBody.angularVelocity = Vector3.zero;
+                _worldDieBody.isKinematic = true;
+            }
+
+            ResetLocalWorldDieRollPresentation();
+            _roll = settledFace;
+            _remainingMoves = settledFace;
+            _actionStates[0] =
+                PlayerBoardActionState.Moving;
+            if (_worldDieResult != null)
+            {
+                _worldDieResult.text =
+                    settledFace.ToString();
+            }
+
+            _worldDieHideDeadline =
+                now +
+                WorldDieResultPresentationPolicy
+                    .DefaultVisibleSeconds;
+            if (_traversal.IsInitialized)
+            {
+                _traversal.ResetMoves(settledFace);
+            }
+
+            RefreshBoundaryWalls();
+            SetStatus(
+                "Rolled " + settledFace +
+                ". Blue walls are passable; black walls physically block entry.");
+        }
+
+        private bool TryGetLocalWorldDieFaceGeometry(
+            int face,
+            out Vector3 localNormal,
+            out float supportDistance)
+        {
+            for (var index = 0;
+                 index < _worldDieFaceMarkers.Length;
+                 index++)
+            {
+                var marker = _worldDieFaceMarkers[index];
+                if (marker == null ||
+                    marker.Value != face ||
+                    marker.LocalNormal.sqrMagnitude <=
+                    0.000001f)
+                {
+                    continue;
+                }
+
+                localNormal =
+                    marker.LocalNormal.normalized;
+                var worldOffset =
+                    marker.transform.position -
+                    _worldDie.transform.position;
+                supportDistance = Mathf.Abs(
+                    Vector3.Dot(
+                        worldOffset,
+                        marker.transform.up.normalized));
+                if (supportDistance <= 0.0001f)
+                {
+                    supportDistance = worldOffset.magnitude;
+                }
+
+                if (supportDistance <= 0.0001f)
+                {
+                    localNormal = default;
+                    supportDistance = 0f;
+                    return false;
+                }
+
+                return true;
+            }
+
+            localNormal = default;
+            supportDistance = 0f;
+            return false;
+        }
+
+        private Vector3 ResolveLocalWorldDieTileSurfacePoint(
+            Vector3 horizontalPosition,
+            Vector3 tileUp)
+        {
+            var tileCollider =
+                _worldDieTile != null
+                    ? _worldDieTile.GetComponent<Collider>()
+                    : null;
+            if (tileCollider == null || !tileCollider.enabled)
+            {
+                Debug.LogError(
+                    "Local D12 landing requires an enabled collider on its board tile.",
+                    this);
+                return _worldDieTile != null
+                    ? _worldDieTile.WorldCenter
+                    : horizontalPosition;
+            }
+
+            var probe =
+                horizontalPosition +
+                tileUp * BoardTile.RoomSize;
+            return tileCollider.ClosestPoint(probe);
+        }
+
+        private void PreserveLocalWorldDieTimersDuringPause(
+            bool timersWereSuspended,
+            double pausedDeltaSeconds)
+        {
+            if (!timersWereSuspended || pausedDeltaSeconds <= 0d)
+            {
+                return;
+            }
+
+            _worldDieRollStartedAt =
+                WorldDieRollPresentationPolicy
+                    .ShiftTimestampForPause(
+                        _worldDieRollStartedAt,
+                        pausedDeltaSeconds);
+            _worldDieHideDeadline =
+                WorldDieRollPresentationPolicy
+                    .ShiftTimestampForPause(
+                        _worldDieHideDeadline,
+                        pausedDeltaSeconds);
+            _worldDieNudgeDeadline =
+                WorldDieRollPresentationPolicy
+                    .ShiftTimestampForPause(
+                        _worldDieNudgeDeadline,
+                        pausedDeltaSeconds);
+            _worldDieNudgeBelowThresholdSince =
+                WorldDieRollPresentationPolicy
+                    .ShiftTimestampForPause(
+                        _worldDieNudgeBelowThresholdSince,
+                        pausedDeltaSeconds);
+        }
+
+        private void SetLocalWorldDiePhysicsSuspended(bool suspended)
+        {
+            if (_worldDiePhysicsSuspended == suspended)
+            {
+                return;
+            }
+
+            _worldDiePhysicsSuspended = suspended;
+            if (_worldDieBody == null)
+            {
+                return;
+            }
+
+            if (suspended)
+            {
+                _worldDieWasKinematicBeforeSuspension =
+                    _worldDieBody.isKinematic;
+                _worldDieSuspendedLinearVelocity =
+                    _worldDieBody.linearVelocity;
+                _worldDieSuspendedAngularVelocity =
+                    _worldDieBody.angularVelocity;
+                if (!_worldDieBody.isKinematic)
+                {
+                    _worldDieBody.isKinematic = true;
+                }
+
+                return;
+            }
+
+            var shouldRestoreDynamicBody =
+                !_worldDieWasKinematicBeforeSuspension &&
+                _worldDie != null &&
+                _worldDie.activeSelf &&
+                (_worldDieNudgeInProgress ||
+                 _worldDieRollPresentationPhase ==
+                 WorldDieRollPresentationPhase.Tumbling);
+            if (shouldRestoreDynamicBody)
+            {
+                _worldDieBody.isKinematic = false;
+                _worldDieBody.linearVelocity =
+                    _worldDieSuspendedLinearVelocity;
+                _worldDieBody.angularVelocity =
+                    _worldDieSuspendedAngularVelocity;
+                _worldDieBody.WakeUp();
+            }
+
+            _worldDieWasKinematicBeforeSuspension = true;
+            _worldDieSuspendedLinearVelocity = Vector3.zero;
+            _worldDieSuspendedAngularVelocity = Vector3.zero;
+        }
+
+        private void ClearLocalWorldDiePhysicsSuspension()
+        {
+            _worldDiePhysicsSuspended = false;
+            _worldDieWasKinematicBeforeSuspension = true;
+            _worldDieSuspendedLinearVelocity = Vector3.zero;
+            _worldDieSuspendedAngularVelocity = Vector3.zero;
+        }
+
+        private void ResetLocalWorldDieRollPresentation()
+        {
+            if (_worldDieBody != null &&
+                _worldDieRollPresentationPhase !=
+                WorldDieRollPresentationPhase.None)
+            {
+                if (!_worldDieBody.isKinematic)
+                {
+                    _worldDieBody.linearVelocity =
+                        Vector3.zero;
+                    _worldDieBody.angularVelocity =
+                        Vector3.zero;
+                    _worldDieBody.isKinematic = true;
+                }
+            }
+
+            _worldDieRollPresentationPhase =
+                WorldDieRollPresentationPhase.None;
+            _pendingWorldDieFace = 0;
+            _worldDieRollStartedAt = -1d;
+            _worldDieLandingStartPosition = default;
+            _worldDieLandingStartRotation =
+                Quaternion.identity;
+            _worldDieLandingTargetPosition = default;
+            _worldDieLandingTargetRotation =
+                Quaternion.identity;
+        }
+
         private void UpdateLocalWorldDieLifetime()
         {
             if (_worldDie != null && _worldDie.activeSelf && _roll > 0 &&
+                _worldDieRollPresentationPhase ==
+                WorldDieRollPresentationPhase.None &&
                 _worldDieHideDeadline >= 0d &&
                 Time.unscaledTimeAsDouble >= _worldDieHideDeadline)
             {
@@ -1001,9 +1623,52 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
+        private bool IsLocalWorldDieResultPublic(double now)
+        {
+            return _roll > 0 &&
+                   _worldDie != null &&
+                   _worldDie.activeSelf &&
+                   _worldDieRollPresentationPhase ==
+                   WorldDieRollPresentationPhase.None &&
+                   _worldDieHideDeadline >= 0d &&
+                   now < _worldDieHideDeadline;
+        }
+
+        private string ResolveLocalWorldDieHudLabel()
+        {
+            if (_flow.State == BoardFlowState.CombatResolve)
+            {
+                return IsLocalCombatAlive(0)
+                    ? "LMB  PUNCH"
+                    : "FIGHT  SPECTATING";
+            }
+
+            if (_worldDieRollPresentationPhase !=
+                WorldDieRollPresentationPhase.None)
+            {
+                return "DICE  ROLLING...";
+            }
+
+            if (_roll > 0)
+            {
+                return IsLocalWorldDieResultPublic(
+                    Time.unscaledTimeAsDouble)
+                    ? "DICE  " + _roll
+                    : "DICE  ROLL COMPLETE";
+            }
+
+            return _flow.ActionClock.IsChoicePending
+                ? "DICE  CHOOSE ITEM FIRST"
+                : "AIM AT WORLD DIE / RMB ROLL";
+        }
+
         private void UpdateLocalWorldDiePhysics()
         {
-            if (!_worldDieNudgeInProgress || _worldDieBody == null ||
+            var isPhysicalTumble =
+                _worldDieRollPresentationPhase ==
+                WorldDieRollPresentationPhase.Tumbling;
+            if ((!_worldDieNudgeInProgress && !isPhysicalTumble) ||
+                _worldDieBody == null ||
                 _worldDieTile == null || !_worldDie.activeSelf)
             {
                 return;
@@ -1020,6 +1685,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 var up = _worldDieTile.transform.up.normalized;
                 _worldDieBody.linearVelocity =
                     Vector3.Project(_worldDieBody.linearVelocity, up);
+            }
+
+            if (isPhysicalTumble)
+            {
+                return;
             }
 
             var belowThreshold =
@@ -2235,15 +2905,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     _personalProtectionEndsAtFlowTime -
                     _flow.ToFlowTime(_simulationNow)));
             SetText(_shieldText, shield > 0d ? "SHIELD  " + shield.ToString("0.0") + "s" : "SHIELD  OFF");
-            SetText(_diceText, _flow.State == BoardFlowState.CombatResolve
-                ? IsLocalCombatAlive(0) ? "LMB  PUNCH" : "FIGHT  SPECTATING"
-                : _roll > 0
-                ? "DICE  " + _roll
-                : _flow.ActionClock.IsChoicePending
-                    ? "DICE  CHOOSE ITEM FIRST"
-                    : "AIM AT WORLD DIE / RMB ROLL");
+            SetText(_diceText, ResolveLocalWorldDieHudLabel());
             var movementLabel = _flow.State == BoardFlowState.CombatResolve
                 ? IsLocalCombatAlive(0) ? "WASD  MOVE" : "INPUT  LOCKED"
+                : _worldDieRollPresentationPhase !=
+                  WorldDieRollPresentationPhase.None
+                    ? "MOVES  LOCKED / DIE ROLLING"
                 : _roll > 0 && _remainingMoves == 0
                 ? "MOVES  0 / FREE IN ROOM"
                 : "MOVES  " + _remainingMoves;

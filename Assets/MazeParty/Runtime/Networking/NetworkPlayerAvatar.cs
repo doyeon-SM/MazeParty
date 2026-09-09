@@ -159,9 +159,65 @@ namespace MazeParty.Multiplayer
         private bool _boundaryWallsActive;
         private Vector3 _combatKnockbackVelocity;
         private readonly Collider[] _standingClearanceHits = new Collider[16];
+        private NetworkWorldDie _cachedLocalWorldDie;
+        private int _cachedLocalWorldDieSlot = -1;
+        private float _nextLocalWorldDieResolveAt;
 
         public int AssignedSlot => _slot.Value;
-        public int LocalVisibleRoll => IsOwner ? _privateRoll.Value : 0;
+        public int LocalVisibleRoll
+        {
+            get
+            {
+                if (!IsOwner)
+                {
+                    return 0;
+                }
+
+                var slot = _slot.Value;
+                var die = ResolveLocalWorldDie(slot);
+                var match = NetworkMatchState.Instance;
+                return WorldDieHudPresentationPolicy.ResolveVisibleRoll(
+                    true,
+                    _privateRoll.Value,
+                    slot,
+                    die != null && die.IsSpawned,
+                    die != null ? die.AssignedSlot : -1,
+                    die != null ? die.Phase : WorldDiePhase.Hidden,
+                    die != null ? die.PublicFace : 0,
+                    match != null &&
+                    match.FlowState != BoardFlowState.Action);
+            }
+        }
+        public WorldDiePhase LocalWorldDiePhase
+        {
+            get
+            {
+                if (!IsOwner)
+                {
+                    return WorldDiePhase.Hidden;
+                }
+
+                var die = ResolveLocalWorldDie(_slot.Value);
+                return die != null && die.IsSpawned
+                    ? die.Phase
+                    : WorldDiePhase.Hidden;
+            }
+        }
+        public int LocalWorldDiePublicFace
+        {
+            get
+            {
+                if (!IsOwner)
+                {
+                    return 0;
+                }
+
+                var die = ResolveLocalWorldDie(_slot.Value);
+                return die != null && die.IsSpawned
+                    ? die.PublicFace
+                    : 0;
+            }
+        }
         public int LocalRemainingMoves => IsOwner ? _remainingMoves.Value : 0;
         public int LocalSelectedItemSlot => IsOwner ? _selectedItemSlot.Value : -1;
         public byte LocalOccupiedItemMask => IsOwner ? _occupiedItemMask.Value : (byte)0;
@@ -285,6 +341,7 @@ namespace MazeParty.Multiplayer
             _appearance.OnValueChanged -= OnAppearanceChanged;
             _displayName.OnValueChanged -= OnDisplayNameChanged;
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            ClearLocalWorldDieCache();
             _traversal.Dispose();
         }
 
@@ -1025,7 +1082,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var safeRoll = Mathf.Clamp(roll, 0, 10);
+            var safeRoll = Mathf.Clamp(
+                roll,
+                0,
+                WorldDieAuthorityModel.MaximumFace);
             _privateRoll.Value = safeRoll;
             _remainingMoves.Value = safeRoll;
             _actionState.Value = safeRoll > 0
@@ -1157,7 +1217,10 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _privateRoll.Value = Mathf.Clamp(snapshot.Roll, 0, 10);
+            _privateRoll.Value = Mathf.Clamp(
+                snapshot.Roll,
+                0,
+                WorldDieAuthorityModel.MaximumFace);
             _remainingMoves.Value = Mathf.Max(0, snapshot.RemainingMoves);
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
@@ -2115,6 +2178,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSlotChanged(int _, int current)
         {
+            ClearLocalWorldDieCache();
             ApplySlotVisual(current);
             if (IsServer && _boardReady.Value)
             {
@@ -2261,6 +2325,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSceneLoaded(Scene scene, LoadSceneMode _)
         {
+            ClearLocalWorldDieCache();
             if (scene.name != MultiplayerConstants.BoardScene)
             {
                 return;
@@ -2279,6 +2344,69 @@ namespace MazeParty.Multiplayer
             {
                 InitializeBoardStateOnServer();
             }
+        }
+
+        private NetworkWorldDie ResolveLocalWorldDie(int slot)
+        {
+            if (slot < 0)
+            {
+                ClearLocalWorldDieCache();
+                return null;
+            }
+
+            if (_cachedLocalWorldDie != null &&
+                _cachedLocalWorldDieSlot == slot &&
+                _cachedLocalWorldDie.IsSpawned &&
+                _cachedLocalWorldDie.AssignedSlot == slot)
+            {
+                return _cachedLocalWorldDie;
+            }
+
+            _cachedLocalWorldDie = null;
+            _cachedLocalWorldDieSlot = -1;
+            if (Time.unscaledTime < _nextLocalWorldDieResolveAt)
+            {
+                return null;
+            }
+
+            _nextLocalWorldDieResolveAt = Time.unscaledTime + 0.25f;
+            var coordinator = NetworkWorldDiceCoordinator.Instance;
+            if (coordinator != null && coordinator.TryGetDie(slot, out var coordinatedDie))
+            {
+                CacheLocalWorldDie(coordinatedDie, slot);
+                return coordinatedDie;
+            }
+
+            var dice = FindObjectsByType<NetworkWorldDie>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var index = 0; index < dice.Length; index++)
+            {
+                var candidate = dice[index];
+                if (candidate == null || !candidate.IsSpawned ||
+                    candidate.AssignedSlot != slot)
+                {
+                    continue;
+                }
+
+                CacheLocalWorldDie(candidate, slot);
+                return candidate;
+            }
+
+            return null;
+        }
+
+        private void CacheLocalWorldDie(NetworkWorldDie die, int slot)
+        {
+            _cachedLocalWorldDie = die;
+            _cachedLocalWorldDieSlot = slot;
+        }
+
+        private void ClearLocalWorldDieCache()
+        {
+            _cachedLocalWorldDie = null;
+            _cachedLocalWorldDieSlot = -1;
+            _nextLocalWorldDieResolveAt = 0f;
         }
 
         private void EnsureEyePivot()

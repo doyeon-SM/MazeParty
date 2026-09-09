@@ -317,8 +317,22 @@ namespace MazeParty.Multiplayer
             }
 
             EnsureFlowModel();
-            _flow.Tick(now);
-            AdvanceArrivalGraceOnServer(now);
+            var deferActionTimeout =
+                ShouldDeferActionTimeoutForWorldDie();
+            _flow.Tick(now, deferActionTimeout);
+            if (deferActionTimeout &&
+                _flow.State == BoardFlowState.Action &&
+                _flow.GetActionRemaining(now) <= 0d)
+            {
+                StopAllAvatarInputOnServer();
+                ResolveExpiredPersonalChoicesOnServer(now);
+                return;
+            }
+
+            if (_flow.State == BoardFlowState.Action)
+            {
+                AdvanceArrivalGraceOnServer(now);
+            }
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
                 CurrentMinigame == ScheduledMinigameId.Skip &&
                 _scheduledSkipAt > 0d &&
@@ -414,6 +428,17 @@ namespace MazeParty.Multiplayer
 
         public bool ApplyWorldDieResultOnServer(int slot, int face)
         {
+            return ApplyWorldDieResultOnServer(
+                slot,
+                face,
+                false);
+        }
+
+        private bool ApplyWorldDieResultOnServer(
+            int slot,
+            int face,
+            bool approvedBeforeActionTimeout)
+        {
             if (!IsServer || slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
                 face < WorldDieAuthorityModel.MinimumFace ||
                 face > WorldDieAuthorityModel.MaximumFace || HasRolled(slot) || HasArrived(slot))
@@ -422,7 +447,11 @@ namespace MazeParty.Multiplayer
             }
 
             var avatar = GetAvatarForSlot(slot);
-            if (!CanProcessActionRequest(avatar) || !avatar.HasResolvedItemChoice || avatar.HasRolled)
+            var canCommitResult = approvedBeforeActionTimeout
+                ? CanProcessAvatarRequest(avatar) &&
+                  FlowState == BoardFlowState.Action
+                : CanProcessActionRequest(avatar);
+            if (!canCommitResult || !avatar.HasResolvedItemChoice || avatar.HasRolled)
             {
                 return false;
             }
@@ -848,7 +877,10 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                _flow.Pause(now);
+                ResolveWorldDiceCoordinator();
+                _flow.Pause(
+                    now,
+                    ShouldDeferActionTimeoutForWorldDie());
                 _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
                 _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
                 _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
@@ -1390,6 +1422,14 @@ namespace MazeParty.Multiplayer
             return CanProcessAvatarRequest(avatar) &&
                    FlowState == BoardFlowState.Action &&
                    ActionRemaining > 0d;
+        }
+
+        private bool ShouldDeferActionTimeoutForWorldDie()
+        {
+            return _flow != null &&
+                   _flow.State == BoardFlowState.Action &&
+                   _diceCoordinator != null &&
+                   _diceCoordinator.HasInFlightRollOnServer();
         }
 
         private void ForEachAvatar(Action<NetworkPlayerAvatar> action)
@@ -2106,7 +2146,11 @@ namespace MazeParty.Multiplayer
 
         private void OnWorldDieSettledOnServer(int slot, int face)
         {
-            ApplyWorldDieResultOnServer(slot, face);
+            if (_diceCoordinator != null &&
+                _diceCoordinator.IsRollInFlightOnServer(slot))
+            {
+                ApplyWorldDieResultOnServer(slot, face, true);
+            }
         }
 
         private void EnsureKeyShopRuntime()
@@ -2321,7 +2365,11 @@ namespace MazeParty.Multiplayer
         private void BeginKeyShopRevealOnServer(double now)
         {
             EnsureFlowModel();
-            if (_keyShopRevealActive.Value || !_flow.Pause(now))
+            ResolveWorldDiceCoordinator();
+            if (_keyShopRevealActive.Value ||
+                !_flow.Pause(
+                    now,
+                    ShouldDeferActionTimeoutForWorldDie()))
             {
                 return;
             }

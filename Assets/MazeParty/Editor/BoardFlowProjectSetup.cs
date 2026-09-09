@@ -21,6 +21,32 @@ namespace MazeParty.Editor
         private const string MaterialFolder = BoardFolder + "/Materials";
         private const string BoardPath = Root + "/Scenes/Board.unity";
 
+        private const string DiceArtFolder = Root + "/Art/Dice";
+        private const string D12ArtFolder = DiceArtFolder + "/D12";
+        private const string D12ModelFolder = D12ArtFolder + "/Models";
+        private const string D12TextureFolder = D12ArtFolder + "/Textures";
+        private const string D12MaterialFolder = D12ArtFolder + "/Materials";
+        private const string D12PrefabFolder = D12ArtFolder + "/Prefabs";
+        private const string D12ModelPath = D12ModelFolder + "/Dice_d12.fbx";
+        private const string D12AlbedoPath =
+            D12TextureFolder + "/D12_White_Albedo.png";
+        private const string D12NormalPath =
+            D12TextureFolder + "/D12_White_Normal.png";
+        private const string D12OcclusionPath = D12TextureFolder + "/D12_AO.png";
+        private const string D12MaterialPath =
+            D12MaterialFolder + "/D12Tintable.mat";
+        private const string D12VisualPrefabPath =
+            D12PrefabFolder + "/D12WorldDieVisual.prefab";
+        private const float D12VisualScale = 0.3f;
+
+        private static readonly Color[] D12PlayerColors =
+        {
+            new Color(0.95f, 0.25f, 0.25f),
+            new Color(0.25f, 0.55f, 1f),
+            new Color(0.25f, 0.85f, 0.4f),
+            new Color(1f, 0.75f, 0.2f)
+        };
+
         private const string UiFolder = Root + "/UI";
         private const string UiPrefabFolder = UiFolder + "/Prefabs";
         internal const string BoardCanvasPrefabPath =
@@ -98,6 +124,24 @@ namespace MazeParty.Editor
             Selection.activeObject = prefab;
             EditorGUIUtility.PingObject(prefab);
             AssetDatabase.OpenAsset(prefab);
+        }
+
+        [MenuItem("MazeParty/Gameplay/Rebuild D12 Dice Assets")]
+        public static void RebuildD12DiceAssets()
+        {
+            EnsureFolders();
+            EnsureD12RuntimeAssets();
+            CreateOrUpdateD12PlayerMaterials(D12PlayerColors);
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "D12 dice assets rebuilt with the tracked 512px texture set, " +
+                "URP tint material, convex collider and numbered face mapping.");
+        }
+
+        [MenuItem("MazeParty/Gameplay/Rebuild D12 Dice Assets", true)]
+        private static bool CanRebuildD12DiceAssets()
+        {
+            return !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 
         internal static void BuildBoardSceneBase()
@@ -275,7 +319,13 @@ namespace MazeParty.Editor
             CreateEditorTools(canvas.transform,
                 Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
             var simulator = rig.AddComponent<BoardFlowLocalSimulator>();
-            simulator.Configure(controller, eye, topology, director);
+            var d12VisualPrefab = EnsureD12RuntimeAssets();
+            simulator.Configure(
+                controller,
+                eye,
+                topology,
+                director,
+                d12VisualPrefab);
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -394,27 +444,34 @@ namespace MazeParty.Editor
                 }
             }
 
+            var d12VisualPrefab = EnsureD12RuntimeAssets();
             var dice = new NetworkWorldDie[MultiplayerConstants.MaxPlayers];
-            var colors = new[]
-            {
-                new Color(0.95f, 0.25f, 0.25f),
-                new Color(0.25f, 0.55f, 1f),
-                new Color(0.25f, 0.85f, 0.4f),
-                new Color(1f, 0.75f, 0.2f)
-            };
+            var playerMaterials =
+                CreateOrUpdateD12PlayerMaterials(D12PlayerColors);
 
             for (var slot = 0; slot < dice.Length; slot++)
             {
-                var dieObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                var dieObject = PrefabUtility.InstantiatePrefab(d12VisualPrefab) as GameObject;
+                if (dieObject == null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to instantiate the generated D12 visual prefab.");
+                }
+
                 dieObject.name = "World Die P" + (slot + 1);
                 dieObject.transform.position = new Vector3(slot * 1.5f, -20f, 0f);
-                dieObject.transform.localScale = Vector3.one * 0.8f;
 
                 var dieRenderer = dieObject.GetComponent<MeshRenderer>();
-                var colorProperties = new MaterialPropertyBlock();
-                colorProperties.SetColor("_BaseColor", colors[slot]);
-                colorProperties.SetColor("_Color", colors[slot]);
-                dieRenderer.SetPropertyBlock(colorProperties);
+                if (dieRenderer == null)
+                {
+                    throw new InvalidOperationException(
+                        "The generated D12 visual prefab has no MeshRenderer.");
+                }
+
+                // Renderer property blocks are not serialized into the generated
+                // scene reliably. A tiny per-slot material asset preserves the tint
+                // after closing/reopening Board while sharing the same 512px maps.
+                dieRenderer.sharedMaterial = playerMaterials[slot];
 
                 dieObject.AddComponent<NetworkObject>();
                 var networkTransform = dieObject.AddComponent<NetworkTransform>();
@@ -426,41 +483,46 @@ namespace MazeParty.Editor
                 body.maxAngularVelocity = 24f;
                 dieObject.AddComponent<NetworkRigidbody>();
 
-                var markers = new WorldDieFaceMarker[WorldDieAuthorityModel.MaximumFace];
-                const float goldenAngle = 2.39996323f;
+                if (WorldDieD12Layout.FaceCount !=
+                    WorldDieAuthorityModel.MaximumFace)
+                {
+                    throw new InvalidOperationException(
+                        "The D12 face mapping must contain exactly one normal per roll value.");
+                }
+
+                var markers =
+                    new WorldDieFaceMarker[WorldDieD12Layout.FaceCount];
                 for (var faceIndex = 0; faceIndex < markers.Length; faceIndex++)
                 {
-                    var y = 1f - 2f * ((faceIndex + 0.5f) / markers.Length);
-                    var ringRadius = Mathf.Sqrt(Mathf.Max(0f, 1f - y * y));
-                    var angle = faceIndex * goldenAngle;
-                    var normal = new Vector3(
-                        Mathf.Cos(angle) * ringRadius,
-                        y,
-                        Mathf.Sin(angle) * ringRadius).normalized;
-                    var markerObject = new GameObject("Face " + (faceIndex + 1));
+                    var faceValue =
+                        faceIndex + WorldDieAuthorityModel.MinimumFace;
+                    if (!WorldDieD12Layout.TryGetLocalNormal(
+                            faceValue,
+                            out var normal) ||
+                        !WorldDieD12Layout.TryGetLocalMarkerPosition(
+                            faceValue,
+                            out var markerPosition))
+                    {
+                        throw new InvalidOperationException(
+                            "The shared D12 layout is missing face " +
+                            faceValue + ".");
+                    }
+
+                    var markerObject = new GameObject("Face " + faceValue);
                     markerObject.transform.SetParent(dieObject.transform, false);
-                    markerObject.transform.localPosition = normal * 0.49f;
+                    markerObject.transform.localPosition =
+                        markerPosition;
                     markerObject.transform.localRotation =
                         Quaternion.FromToRotation(Vector3.up, normal);
                     var marker = markerObject.AddComponent<WorldDieFaceMarker>();
-                    marker.Configure(faceIndex + 1);
+                    marker.Configure(faceValue);
                     markers[faceIndex] = marker;
-
-                    var faceTextObject = new GameObject("Value");
-                    faceTextObject.transform.SetParent(markerObject.transform, false);
-                    faceTextObject.transform.localRotation =
-                        Quaternion.FromToRotation(Vector3.forward, Vector3.up);
-                    var faceText = faceTextObject.AddComponent<TextMesh>();
-                    faceText.text = (faceIndex + 1).ToString();
-                    faceText.anchor = TextAnchor.MiddleCenter;
-                    faceText.alignment = TextAlignment.Center;
-                    faceText.fontSize = 42;
-                    faceText.characterSize = 0.035f;
-                    faceText.color = Color.white;
                 }
 
                 var resultObject = new GameObject("Public World Result");
                 resultObject.transform.SetParent(dieObject.transform, false);
+                resultObject.transform.localScale =
+                    Vector3.one / D12VisualScale;
                 var resultText = resultObject.AddComponent<TextMesh>();
                 resultText.text = "?";
                 resultText.anchor = TextAnchor.MiddleCenter;
@@ -480,6 +542,262 @@ namespace MazeParty.Editor
             }
 
             return dice;
+        }
+
+        private static GameObject EnsureD12RuntimeAssets()
+        {
+            ConfigureD12ImportSettings();
+            var material = CreateOrUpdateD12Material();
+            var model = AssetDatabase.LoadAssetAtPath<GameObject>(D12ModelPath);
+            if (model == null)
+            {
+                throw new InvalidOperationException(
+                    "Tracked D12 model is missing at " + D12ModelPath + ".");
+            }
+
+            var sourceFilter = model.GetComponentInChildren<MeshFilter>(true);
+            if (sourceFilter == null || sourceFilter.sharedMesh == null)
+            {
+                throw new InvalidOperationException(
+                    "Tracked D12 model does not contain an imported mesh.");
+            }
+
+            var temporary = new GameObject("D12 World Die Visual");
+            try
+            {
+                temporary.transform.localScale = Vector3.one * D12VisualScale;
+                var filter = temporary.AddComponent<MeshFilter>();
+                filter.sharedMesh = sourceFilter.sharedMesh;
+                var renderer = temporary.AddComponent<MeshRenderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.On;
+                renderer.receiveShadows = true;
+                var collider = temporary.AddComponent<MeshCollider>();
+                collider.sharedMesh = sourceFilter.sharedMesh;
+                collider.convex = true;
+
+                var prefab = PrefabUtility.SaveAsPrefabAsset(
+                    temporary,
+                    D12VisualPrefabPath);
+                if (prefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to save the generated D12 visual prefab.");
+                }
+
+                return prefab;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(temporary);
+            }
+        }
+
+        private static void ConfigureD12ImportSettings()
+        {
+            var modelImporter = AssetImporter.GetAtPath(D12ModelPath) as ModelImporter;
+            if (modelImporter == null)
+            {
+                throw new InvalidOperationException(
+                    "D12 model importer is unavailable at " + D12ModelPath + ".");
+            }
+
+            var modelChanged = false;
+            if (modelImporter.importAnimation)
+            {
+                modelImporter.importAnimation = false;
+                modelChanged = true;
+            }
+            if (modelImporter.isReadable)
+            {
+                modelImporter.isReadable = false;
+                modelChanged = true;
+            }
+            if (modelImporter.addCollider)
+            {
+                modelImporter.addCollider = false;
+                modelChanged = true;
+            }
+            if (modelImporter.materialImportMode != ModelImporterMaterialImportMode.None)
+            {
+                modelImporter.materialImportMode = ModelImporterMaterialImportMode.None;
+                modelChanged = true;
+            }
+            if (modelChanged)
+            {
+                modelImporter.SaveAndReimport();
+            }
+
+            ConfigureD12Texture(
+                D12AlbedoPath,
+                TextureImporterType.Default,
+                true);
+            ConfigureD12Texture(
+                D12NormalPath,
+                TextureImporterType.NormalMap,
+                false);
+            ConfigureD12Texture(
+                D12OcclusionPath,
+                TextureImporterType.Default,
+                false);
+        }
+
+        private static void ConfigureD12Texture(
+            string path,
+            TextureImporterType textureType,
+            bool sRgb)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException(
+                    "D12 texture importer is unavailable at " + path + ".");
+            }
+
+            var changed = false;
+            if (importer.textureType != textureType)
+            {
+                importer.textureType = textureType;
+                changed = true;
+            }
+            if (importer.sRGBTexture != sRgb)
+            {
+                importer.sRGBTexture = sRgb;
+                changed = true;
+            }
+            if (!importer.mipmapEnabled)
+            {
+                importer.mipmapEnabled = true;
+                changed = true;
+            }
+            if (importer.maxTextureSize != 512)
+            {
+                importer.maxTextureSize = 512;
+                changed = true;
+            }
+            if (importer.textureCompression != TextureImporterCompression.Compressed)
+            {
+                importer.textureCompression = TextureImporterCompression.Compressed;
+                changed = true;
+            }
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
+        }
+
+        private static Material CreateOrUpdateD12Material()
+        {
+            var shader = Shader.Find("Universal Render Pipeline/Lit") ??
+                         Shader.Find("Standard");
+            if (shader == null)
+            {
+                throw new InvalidOperationException(
+                    "No supported Lit shader is available for the D12 die.");
+            }
+
+            var material = AssetDatabase.LoadAssetAtPath<Material>(D12MaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader) { name = "D12Tintable" };
+                AssetDatabase.CreateAsset(material, D12MaterialPath);
+            }
+            else if (material.shader != shader)
+            {
+                material.shader = shader;
+            }
+
+            var albedo = AssetDatabase.LoadAssetAtPath<Texture2D>(D12AlbedoPath);
+            var normal = AssetDatabase.LoadAssetAtPath<Texture2D>(D12NormalPath);
+            var occlusion = AssetDatabase.LoadAssetAtPath<Texture2D>(D12OcclusionPath);
+            if (albedo == null || normal == null || occlusion == null)
+            {
+                throw new InvalidOperationException(
+                    "One or more tracked D12 textures could not be loaded.");
+            }
+
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", albedo);
+            }
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", albedo);
+            }
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", Color.white);
+            }
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", Color.white);
+            }
+            if (material.HasProperty("_BumpMap"))
+            {
+                material.SetTexture("_BumpMap", normal);
+                material.SetFloat("_BumpScale", 1f);
+                material.EnableKeyword("_NORMALMAP");
+            }
+            if (material.HasProperty("_OcclusionMap"))
+            {
+                material.SetTexture("_OcclusionMap", occlusion);
+                material.SetFloat("_OcclusionStrength", 1f);
+            }
+            if (material.HasProperty("_Metallic"))
+            {
+                material.SetFloat("_Metallic", 0f);
+            }
+            if (material.HasProperty("_Smoothness"))
+            {
+                material.SetFloat("_Smoothness", 0.48f);
+            }
+
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material[] CreateOrUpdateD12PlayerMaterials(Color[] colors)
+        {
+            var baseMaterial =
+                AssetDatabase.LoadAssetAtPath<Material>(D12MaterialPath);
+            if (baseMaterial == null)
+            {
+                throw new InvalidOperationException(
+                    "The generated D12 base material is unavailable.");
+            }
+
+            var materials = new Material[colors.Length];
+            for (var slot = 0; slot < colors.Length; slot++)
+            {
+                var name = "D12Player" + (slot + 1);
+                var path = D12MaterialFolder + "/" + name + ".mat";
+                var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+                if (material == null)
+                {
+                    material = new Material(baseMaterial) { name = name };
+                    AssetDatabase.CreateAsset(material, path);
+                }
+                else
+                {
+                    material.CopyPropertiesFromMaterial(baseMaterial);
+                    material.shader = baseMaterial.shader;
+                    material.name = name;
+                }
+
+                if (material.HasProperty("_BaseColor"))
+                {
+                    material.SetColor("_BaseColor", colors[slot]);
+                }
+                if (material.HasProperty("_Color"))
+                {
+                    material.SetColor("_Color", colors[slot]);
+                }
+                EditorUtility.SetDirty(material);
+                materials[slot] = material;
+            }
+
+            return materials;
         }
 
         private static BoardTile CreateTile(
@@ -1240,6 +1558,12 @@ namespace MazeParty.Editor
             EnsureFolder(UiFolder);
             EnsureFolder(UiPrefabFolder);
             EnsureFolder(MaterialFolder);
+            EnsureFolder(DiceArtFolder);
+            EnsureFolder(D12ArtFolder);
+            EnsureFolder(D12ModelFolder);
+            EnsureFolder(D12TextureFolder);
+            EnsureFolder(D12MaterialFolder);
+            EnsureFolder(D12PrefabFolder);
         }
 
         private static void EnsureFolder(string path)

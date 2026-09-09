@@ -35,7 +35,12 @@ namespace MazeParty.Multiplayer
 
     public static class WorldDieResultPresentationPolicy
     {
-        public const float DefaultVisibleSeconds = 2f;
+        public const float DefaultVisibleSeconds = 1f;
+
+        public static bool ShouldPreserveAcrossActionExit(WorldDiePhase phase)
+        {
+            return phase == WorldDiePhase.Settled;
+        }
 
         public static bool ShouldHide(
             WorldDiePhase phase,
@@ -47,6 +52,233 @@ namespace MazeParty.Multiplayer
                    !isPaused &&
                    hideDeadline >= 0d &&
                    now >= hideDeadline;
+        }
+    }
+
+    public static class WorldDieRollPresentationPolicy
+    {
+        public const double TotalSeconds = 1d;
+        public const double LandingSeconds = 0.35d;
+        public const double PhysicalTumbleSeconds = TotalSeconds - LandingSeconds;
+
+        public static bool ShouldBeginLanding(double elapsedSeconds)
+        {
+            return elapsedSeconds >= PhysicalTumbleSeconds;
+        }
+
+        public static bool ShouldCommitResult(double elapsedSeconds)
+        {
+            return elapsedSeconds >= TotalSeconds;
+        }
+
+        public static float GetLandingProgress(double elapsedSeconds)
+        {
+            var normalized =
+                (elapsedSeconds - PhysicalTumbleSeconds) / LandingSeconds;
+            return (float)Math.Max(0d, Math.Min(1d, normalized));
+        }
+
+        public static double ShiftTimestampForPause(
+            double timestamp,
+            double pausedSeconds)
+        {
+            return timestamp >= 0d
+                ? timestamp + Math.Max(0d, pausedSeconds)
+                : timestamp;
+        }
+
+        public static float GetLandingCenterHeight(
+            float tileSurfaceHeight,
+            float faceCenterDistance,
+            float clearance)
+        {
+            return tileSurfaceHeight +
+                   Mathf.Max(0f, faceCenterDistance) +
+                   Mathf.Max(0f, clearance);
+        }
+
+        public static Quaternion ResolveLandingRotation(
+            Quaternion startRotation,
+            Vector3 targetLocalNormal,
+            Vector3 worldUp)
+        {
+            if (targetLocalNormal.sqrMagnitude <= 0.000001f ||
+                worldUp.sqrMagnitude <= 0.000001f)
+            {
+                return startRotation;
+            }
+
+            var targetWorldNormal =
+                startRotation * targetLocalNormal.normalized;
+            return Quaternion.FromToRotation(
+                       targetWorldNormal,
+                       worldUp.normalized) *
+                   startRotation;
+        }
+
+        public static float GetTargetRotationProjectedExtent(
+            Bounds sourceWorldBounds,
+            Vector3 dieCenter,
+            Quaternion sourceRotation,
+            Quaternion targetRotation,
+            Vector3 worldAxis)
+        {
+            if (worldAxis.sqrMagnitude <= 0.000001f)
+            {
+                return 0f;
+            }
+
+            var axis = worldAxis.normalized;
+            var rotationDelta = targetRotation * Quaternion.Inverse(sourceRotation);
+            var rotatedCenterOffset =
+                rotationDelta * (sourceWorldBounds.center - dieCenter);
+            var extents = sourceWorldBounds.extents;
+            return Mathf.Abs(Vector3.Dot(rotatedCenterOffset, axis)) +
+                   extents.x * Mathf.Abs(Vector3.Dot(
+                       rotationDelta * Vector3.right,
+                       axis)) +
+                   extents.y * Mathf.Abs(Vector3.Dot(
+                       rotationDelta * Vector3.up,
+                       axis)) +
+                   extents.z * Mathf.Abs(Vector3.Dot(
+                       rotationDelta * Vector3.forward,
+                       axis));
+        }
+    }
+
+    public static class WorldDieHudPresentationPolicy
+    {
+        public const string RollCompleteLabel = "DICE  ROLL COMPLETE";
+
+        public static int ResolveVisibleRoll(
+            bool isOwner,
+            int privateRoll,
+            int avatarSlot,
+            bool dieIsSpawned,
+            int dieSlot,
+            WorldDiePhase diePhase,
+            int publicFace,
+            bool allowPrivateRollReset = false)
+        {
+            if (!isOwner ||
+                avatarSlot < 0 ||
+                !dieIsSpawned ||
+                dieSlot != avatarSlot ||
+                diePhase != WorldDiePhase.Settled ||
+                publicFace < WorldDieAuthorityModel.MinimumFace ||
+                publicFace > WorldDieAuthorityModel.MaximumFace)
+            {
+                return 0;
+            }
+
+            if (privateRoll == 0 && allowPrivateRollReset)
+            {
+                return publicFace;
+            }
+
+            return privateRoll >= WorldDieAuthorityModel.MinimumFace &&
+                   privateRoll <= WorldDieAuthorityModel.MaximumFace &&
+                   publicFace == privateRoll
+                ? privateRoll
+                : 0;
+        }
+
+        public static string ResolveDiceStatusLabel(
+            int visibleRoll,
+            bool hasRolled,
+            bool hasResolvedItemChoice,
+            bool isActionPhase,
+            bool actionWindowOpen,
+            WorldDiePhase diePhase,
+            int publicFace)
+        {
+            var hasSettledPublicFace =
+                diePhase == WorldDiePhase.Settled &&
+                publicFace >= WorldDieAuthorityModel.MinimumFace &&
+                publicFace <= WorldDieAuthorityModel.MaximumFace;
+            if (visibleRoll > 0 &&
+                hasSettledPublicFace &&
+                publicFace == visibleRoll)
+            {
+                return "DICE  " + visibleRoll;
+            }
+
+            if (!isActionPhase)
+            {
+                return "DICE  --";
+            }
+
+            if (diePhase == WorldDiePhase.Rolling)
+            {
+                return "DICE  ROLLING...";
+            }
+
+            if (hasRolled || hasSettledPublicFace)
+            {
+                return RollCompleteLabel;
+            }
+
+            if (!actionWindowOpen)
+            {
+                return "DICE  TIME EXPIRED";
+            }
+
+            return hasResolvedItemChoice
+                ? "RMB  AIM AT YOUR DIE TO ROLL"
+                : "DICE  CHOOSE ITEM FIRST";
+        }
+    }
+
+    /// <summary>
+    /// Runtime-safe numbered-face layout for the tracked Dice_d12 mesh. The values
+    /// were derived from the imported mesh UV centroids and its 4x3 numbered atlas.
+    /// </summary>
+    public static class WorldDieD12Layout
+    {
+        public const int FaceCount = 12;
+        public const float FaceMarkerRadius = 1.12f;
+
+        private static readonly Vector3[] FaceNormalsByValue =
+        {
+            new Vector3(-0.276393f, 0.447213f, 0.850651f),
+            new Vector3(0.894427f, -0.447213f, 0f),
+            new Vector3(0f, 1f, 0f),
+            new Vector3(-0.723607f, -0.447213f, -0.525731f),
+            new Vector3(0.276393f, -0.447214f, 0.850651f),
+            new Vector3(0.723607f, 0.447213f, -0.525731f),
+            new Vector3(-0.723607f, -0.447213f, 0.525731f),
+            new Vector3(-0.276393f, 0.447214f, -0.850651f),
+            new Vector3(0.723607f, 0.447213f, 0.525731f),
+            new Vector3(0f, -1f, 0f),
+            new Vector3(-0.894427f, 0.447213f, 0f),
+            new Vector3(0.276393f, -0.447213f, -0.850651f)
+        };
+
+        public static bool TryGetLocalNormal(int faceValue, out Vector3 normal)
+        {
+            var index = faceValue - WorldDieAuthorityModel.MinimumFace;
+            if (index < 0 || index >= FaceNormalsByValue.Length)
+            {
+                normal = default;
+                return false;
+            }
+
+            normal = FaceNormalsByValue[index].normalized;
+            return true;
+        }
+
+        public static bool TryGetLocalMarkerPosition(
+            int faceValue,
+            out Vector3 position)
+        {
+            if (!TryGetLocalNormal(faceValue, out var normal))
+            {
+                position = default;
+                return false;
+            }
+
+            position = normal * FaceMarkerRadius;
+            return true;
         }
     }
 
@@ -97,7 +329,7 @@ namespace MazeParty.Multiplayer
     public sealed class WorldDieAuthorityModel
     {
         public const int MinimumFace = 1;
-        public const int MaximumFace = 10;
+        public const int MaximumFace = WorldDieD12Layout.FaceCount;
 
         private double _rollStartedAt = -1d;
         private double _stableSince = -1d;

@@ -27,6 +27,7 @@ namespace MazeParty.Multiplayer
 
         private int _observedTurn = -1;
         private BoardFlowState _observedFlowState = (BoardFlowState)(-1);
+        private byte _inFlightRollMask;
 
         public static NetworkWorldDiceCoordinator Instance { get; private set; }
 
@@ -67,12 +68,14 @@ namespace MazeParty.Multiplayer
             {
                 if (die != null)
                 {
+                    die.RollStartedOnServer -= OnDieRollStartedOnServer;
                     die.SettledOnServer -= OnDieSettledOnServer;
                 }
             }
 
             _subscribedDice.Clear();
             Array.Clear(_diceBySlot, 0, _diceBySlot.Length);
+            _inFlightRollMask = 0;
             if (Instance == this)
             {
                 Instance = null;
@@ -98,9 +101,13 @@ namespace MazeParty.Multiplayer
                 var enteringAction = match.FlowState == BoardFlowState.Action &&
                                      (_observedFlowState != BoardFlowState.Action ||
                                       _observedTurn != match.Turn);
-                if (enteringAction || match.FlowState != BoardFlowState.Action)
+                if (enteringAction)
                 {
                     HideAllDiceOnServer();
+                }
+                else if (match.FlowState != BoardFlowState.Action)
+                {
+                    HideUnsettledDiceOnServer();
                 }
 
                 _observedTurn = match.Turn;
@@ -108,9 +115,7 @@ namespace MazeParty.Multiplayer
             }
 
             SetAllPausedOnServer(match.IsGlobalSimulationPaused);
-            if (autoPrepareAfterItemChoice &&
-                match.FlowState == BoardFlowState.Action &&
-                !match.IsGlobalSimulationPaused)
+            if (autoPrepareAfterItemChoice && match.CanAcceptActionInput)
             {
                 PrepareResolvedChoicesOnServer(match);
             }
@@ -135,6 +140,25 @@ namespace MazeParty.Multiplayer
                    die.PrepareOnServer(currentTile);
         }
 
+        public bool HasInFlightRollOnServer()
+        {
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            ResolveDice();
+            return _inFlightRollMask != 0;
+        }
+
+        public bool IsRollInFlightOnServer(int slot)
+        {
+            return IsServer &&
+                   slot >= 0 &&
+                   slot < MultiplayerConstants.MaxPlayers &&
+                   (_inFlightRollMask & (1 << slot)) != 0;
+        }
+
         public void HideAllDiceOnServer()
         {
             if (!IsServer)
@@ -148,6 +172,26 @@ namespace MazeParty.Multiplayer
                 {
                     _diceBySlot[slot].HideOnServer();
                 }
+            }
+
+            _inFlightRollMask = 0;
+        }
+
+        private void HideUnsettledDiceOnServer()
+        {
+            for (var slot = 0; slot < _diceBySlot.Length; slot++)
+            {
+                var die = _diceBySlot[slot];
+                if (die == null ||
+                    WorldDieResultPresentationPolicy
+                        .ShouldPreserveAcrossActionExit(die.Phase))
+                {
+                    continue;
+                }
+
+                die.HideOnServer();
+                _inFlightRollMask =
+                    (byte)(_inFlightRollMask & ~(1 << slot));
             }
         }
 
@@ -291,6 +335,7 @@ namespace MazeParty.Multiplayer
             }
 
             Array.Clear(_diceBySlot, 0, _diceBySlot.Length);
+            byte resolvedSlotMask = 0;
             for (var i = 0; i < sceneDice.Length; i++)
             {
                 var die = sceneDice[i];
@@ -314,11 +359,26 @@ namespace MazeParty.Multiplayer
                 }
 
                 _diceBySlot[slot] = die;
+                resolvedSlotMask = (byte)(resolvedSlotMask | (1 << slot));
+                if (die.Phase == WorldDiePhase.Rolling)
+                {
+                    _inFlightRollMask =
+                        (byte)(_inFlightRollMask | (1 << slot));
+                }
+                else if (die.Phase != WorldDiePhase.Settled)
+                {
+                    _inFlightRollMask =
+                        (byte)(_inFlightRollMask & ~(1 << slot));
+                }
                 if (_subscribedDice.Add(die))
                 {
+                    die.RollStartedOnServer += OnDieRollStartedOnServer;
                     die.SettledOnServer += OnDieSettledOnServer;
                 }
             }
+
+            _inFlightRollMask =
+                (byte)(_inFlightRollMask & resolvedSlotMask);
         }
 
         private void ResolveTopology()
@@ -331,15 +391,42 @@ namespace MazeParty.Multiplayer
 
         private void OnDieSettledOnServer(NetworkWorldDie die, int face)
         {
+            var slot = die != null ? die.AssignedSlot : -1;
             if (!IsServer ||
                 die == null ||
                 face < WorldDieAuthorityModel.MinimumFace ||
-                face > WorldDieAuthorityModel.MaximumFace)
+                face > WorldDieAuthorityModel.MaximumFace ||
+                !IsRollInFlightOnServer(slot) ||
+                !TryGetDie(slot, out var currentDie) ||
+                !ReferenceEquals(currentDie, die) ||
+                die.Phase != WorldDiePhase.Settled ||
+                die.PublicFace != face)
             {
                 return;
             }
 
-            DieSettledOnServer?.Invoke(die.AssignedSlot, face);
+            try
+            {
+                DieSettledOnServer?.Invoke(slot, face);
+            }
+            finally
+            {
+                _inFlightRollMask =
+                    (byte)(_inFlightRollMask & ~(1 << slot));
+            }
+        }
+
+        private void OnDieRollStartedOnServer(NetworkWorldDie die)
+        {
+            if (!IsServer || die == null ||
+                die.AssignedSlot < 0 ||
+                die.AssignedSlot >= MultiplayerConstants.MaxPlayers)
+            {
+                return;
+            }
+
+            _inFlightRollMask =
+                (byte)(_inFlightRollMask | (1 << die.AssignedSlot));
         }
 
         private double ServerNow =>

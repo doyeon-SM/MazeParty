@@ -1,4 +1,5 @@
 using MazeParty.Gameplay;
+using MazeParty.Multiplayer;
 using UnityEngine;
 
 namespace MazeParty.Gameplay.Testbed
@@ -62,7 +63,9 @@ namespace MazeParty.Gameplay.Testbed
         {
             if (rollDieOnInteract)
             {
-                var result = Random.Range(1, 11);
+                var result = Random.Range(
+                    WorldDieAuthorityModel.MinimumFace,
+                    WorldDieAuthorityModel.MaximumFace + 1);
                 transform.rotation = Random.rotation;
                 LastInteractionMessage = "Board die result: " + result;
                 return;

@@ -570,18 +570,26 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (match.FlowState != BoardFlowState.Action)
+            var visibleRoll = _localAvatar.LocalVisibleRoll;
+            var diePhase = _localAvatar.LocalWorldDiePhase;
+            var publicFace = _localAvatar.LocalWorldDiePublicFace;
+            var isActionPhase = match.FlowState == BoardFlowState.Action;
+            SetText(
+                _diceText,
+                WorldDieHudPresentationPolicy.ResolveDiceStatusLabel(
+                    visibleRoll,
+                    _localAvatar.HasRolled,
+                    _localAvatar.HasResolvedItemChoice,
+                    isActionPhase,
+                    match.ActionRemaining > 0d,
+                    diePhase,
+                    publicFace));
+            if (!isActionPhase)
             {
-                SetText(_diceText, "DICE  --");
                 SetText(_movesText, "MOVES  --");
                 return;
             }
 
-            SetText(_diceText, _localAvatar.LocalVisibleRoll > 0
-                ? "DICE  " + _localAvatar.LocalVisibleRoll
-                : _localAvatar.HasResolvedItemChoice
-                        ? "RMB  AIM AT YOUR DIE TO ROLL"
-                    : "DICE  CHOOSE ITEM FIRST");
             var movementLabel = _localAvatar.HasRolled &&
                                 _localAvatar.LocalRemainingMoves == 0
                 ? "MOVES  0 / FREE IN ROOM"

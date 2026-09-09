@@ -68,6 +68,7 @@ namespace MazeParty.Gameplay
         private double _stateStartedAt;
         private double _totalPausedDuration;
         private double _pauseStartedAt;
+        private bool _actionTimeoutDeferred;
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
@@ -123,9 +124,12 @@ namespace MazeParty.Gameplay
             _stateStartedAt = synchronizedNow;
             _totalPausedDuration = 0d;
             _pauseStartedAt = 0d;
+            _actionTimeoutDeferred = false;
         }
 
-        public void Tick(double synchronizedNow)
+        public void Tick(
+            double synchronizedNow,
+            bool deferExpiredAction = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
@@ -168,10 +172,21 @@ namespace MazeParty.Gameplay
                         ActionClock.Tick(logicalNow);
                         if (ActionClock.IsActionExpired(logicalNow))
                         {
-                            var boundary =
-                                ActionClock.StartedAt + GameplayPhaseClock.DefaultActionDurationSeconds;
-                            EndAction(BoardActionEndReason.TimeExpired, boundary);
-                            keepAdvancing = true;
+                            if (deferExpiredAction)
+                            {
+                                _actionTimeoutDeferred = true;
+                            }
+                            else
+                            {
+                                var boundary = _actionTimeoutDeferred
+                                    ? logicalNow
+                                    : ActionClock.StartedAt +
+                                      GameplayPhaseClock.DefaultActionDurationSeconds;
+                                EndAction(
+                                    BoardActionEndReason.TimeExpired,
+                                    boundary);
+                                keepAdvancing = true;
+                            }
                         }
 
                         break;
@@ -325,13 +340,15 @@ namespace MazeParty.Gameplay
             return true;
         }
 
-        public bool Pause(double synchronizedNow)
+        public bool Pause(
+            double synchronizedNow,
+            bool deferExpiredAction = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
                 return false;
 
-            Tick(synchronizedNow);
+            Tick(synchronizedNow, deferExpiredAction);
             IsPaused = true;
             _pauseStartedAt = synchronizedNow;
             return true;
@@ -411,6 +428,7 @@ namespace MazeParty.Gameplay
         {
             _arrivedPlayerMask = 0;
             LastActionEndReason = BoardActionEndReason.None;
+            _actionTimeoutDeferred = false;
 
             // Descending completion is the single shared start timestamp for the
             // existing 180-second action, 30-second choice, and five-second shield.
@@ -424,6 +442,7 @@ namespace MazeParty.Gameplay
                 ActionClock.TryChooseNoItem(occurredAt);
 
             ActionClock.Stop();
+            _actionTimeoutDeferred = false;
             LastActionEndReason = reason;
             TransitionTo(BoardFlowState.AscendingResolve, occurredAt);
 
