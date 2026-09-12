@@ -20,11 +20,19 @@ namespace MazeParty.Editor
         private const string Root = "Assets/MazeParty";
         private const string ScenesFolder = Root + "/Scenes";
         private const string PrefabsFolder = Root + "/Prefabs";
+        private const string UiFolder = Root + "/UI";
+        private const string UiPrefabsFolder = UiFolder + "/Prefabs";
         private const string BootstrapPath = ScenesFolder + "/OnlineBootstrap.unity";
         private const string BoardPath = ScenesFolder + "/Board.unity";
         private const string MinefieldPath = ScenesFolder + "/Minefield.unity";
         private const string WrongWayPath = ScenesFolder + "/WrongWay.unity";
+        private const string RedLightGreenLightPath =
+            ScenesFolder + "/RedLightGreenLight.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
+        private const string LobbyCanvasPrefabPath =
+            UiPrefabsFolder + "/LobbyCanvas.prefab";
+        private const string MinigameScheduleTowerPrefabPath =
+            UiPrefabsFolder + "/MinigameScheduleTower.prefab";
         private const string LobbyFloorMaterialPath =
             Root + "/Board/Materials/RoomNormalA.mat";
         private const string LobbyWallMaterialPath =
@@ -47,6 +55,7 @@ namespace MazeParty.Editor
             BoardFlowProjectSetup.BuildLocalTestbedFromBoard();
             MinefieldProjectSetup.BuildMinefieldAssets();
             WrongWayProjectSetup.BuildWrongWayAssets();
+            RedLightGreenLightProjectSetup.BuildRedLightGreenLightAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -66,6 +75,8 @@ namespace MazeParty.Editor
             EnsureFolder(Root);
             EnsureFolder(ScenesFolder);
             EnsureFolder(PrefabsFolder);
+            EnsureFolder(UiFolder);
+            EnsureFolder(UiPrefabsFolder);
         }
 
         private static void EnsureFolder(string path)
@@ -119,6 +130,8 @@ namespace MazeParty.Editor
 
         private static void CreateBootstrapScene(GameObject playerPrefab)
         {
+            var lobbyCanvasPrefab = LoadOrCreateLobbyCanvasPrefab();
+            var scheduleTowerPrefab = LoadOrCreateScheduleTowerPrefab();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
 
             var cameraObject = new GameObject("Lobby Camera");
@@ -139,7 +152,18 @@ namespace MazeParty.Editor
 
             CreateLobbyArena();
 
-            var lobbyView = CreateLobbyCanvas();
+            var lobbyCanvas = (GameObject)PrefabUtility.InstantiatePrefab(
+                lobbyCanvasPrefab,
+                scene);
+            lobbyCanvas.transform.localScale =
+                lobbyCanvasPrefab.transform.localScale;
+            var lobbyView = lobbyCanvas.GetComponent<OnlineLobbyView>();
+
+            var scheduleTower = (GameObject)PrefabUtility.InstantiatePrefab(
+                scheduleTowerPrefab,
+                scene);
+            scheduleTower.transform.localScale =
+                scheduleTowerPrefab.transform.localScale;
             CreateEventSystem();
 
             var runtime = new GameObject("Online Network Runtime");
@@ -246,9 +270,53 @@ namespace MazeParty.Editor
             return material;
         }
 
-        private static OnlineLobbyView CreateLobbyCanvas()
+        private static GameObject LoadOrCreateLobbyCanvasPrefab()
         {
-            var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LobbyCanvasPrefabPath);
+            if (prefab == null)
+            {
+                if (AssetDatabase.LoadMainAssetAtPath(LobbyCanvasPrefabPath) != null)
+                {
+                    throw new System.InvalidOperationException(
+                        "An incompatible asset already exists at " +
+                        LobbyCanvasPrefabPath + ".");
+                }
+
+                var template = CreateLobbyCanvasTemplate();
+                try
+                {
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        template.gameObject,
+                        LobbyCanvasPrefabPath);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(template.gameObject);
+                }
+            }
+
+            var view = prefab != null
+                ? prefab.GetComponent<OnlineLobbyView>()
+                : null;
+            if (view == null || !view.HasRequiredReferences)
+            {
+                throw new System.InvalidOperationException(
+                    "LobbyCanvas.prefab is missing required OnlineLobbyView bindings. " +
+                    "Repair the prefab without recreating it so designer changes are preserved.");
+            }
+
+            return prefab;
+        }
+
+        private static OnlineLobbyView CreateLobbyCanvasTemplate()
+        {
+            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
+            if (font == null)
+            {
+                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            }
+
             if (font == null)
             {
                 throw new System.InvalidOperationException(
@@ -263,6 +331,7 @@ namespace MazeParty.Editor
                 typeof(GraphicRaycaster),
                 typeof(CanvasGroup),
                 typeof(OnlineLobbyView));
+            canvasObject.transform.localScale = Vector3.one;
             canvasObject.layer = LayerMask.NameToLayer("UI");
 
             var canvas = canvasObject.GetComponent<Canvas>();
@@ -373,7 +442,7 @@ namespace MazeParty.Editor
             var sessionPanel = CreateVerticalContainer(
                 "Session Panel",
                 window.transform,
-                500f);
+                700f);
             var inviteCodeText = CreateText(
                 "Invite Code",
                 sessionPanel.transform,
@@ -445,6 +514,13 @@ namespace MazeParty.Editor
                 font,
                 out _);
 
+            var customizationPanel = CreateLobbyCustomization(
+                sessionPanel.transform,
+                font,
+                out var paletteButtons,
+                out var paletteOutlines,
+                out var testHatToggle);
+
             var statusText = CreateText(
                 "Status",
                 window.transform,
@@ -486,8 +562,327 @@ namespace MazeParty.Editor
                 playerRows,
                 startHintText.gameObject,
                 runningText.gameObject,
-                statusText);
+                statusText,
+                customizationPanel,
+                paletteButtons,
+                paletteOutlines,
+                testHatToggle);
             return lobbyView;
+        }
+
+        private static GameObject CreateLobbyCustomization(
+            Transform parent,
+            Font font,
+            out Button[] paletteButtons,
+            out Outline[] paletteOutlines,
+            out Toggle testHatToggle)
+        {
+            var customizationPanel = CreateUiObject(
+                "Player Customization",
+                parent);
+            var layout = customizationPanel.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = 6f;
+            layout.childControlWidth = true;
+            layout.childControlHeight = true;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+            var panelSize = customizationPanel.AddComponent<LayoutElement>();
+            panelSize.preferredHeight = 164f;
+
+            CreateText(
+                "Customization Label",
+                customizationPanel.transform,
+                "Character - Unique Body Color / Test Hat",
+                font,
+                17,
+                TextAnchor.MiddleLeft,
+                26f);
+
+            var paletteGrid = CreateUiObject(
+                "Body Color Palette",
+                customizationPanel.transform);
+            var grid = paletteGrid.AddComponent<GridLayoutGroup>();
+            grid.cellSize = new Vector2(102f, 36f);
+            grid.spacing = new Vector2(8f, 8f);
+            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = 4;
+            grid.childAlignment = TextAnchor.MiddleLeft;
+            var gridSize = paletteGrid.AddComponent<LayoutElement>();
+            gridSize.preferredHeight = 80f;
+
+            paletteButtons = new Button[LobbyColorPalette.Count];
+            paletteOutlines = new Outline[LobbyColorPalette.Count];
+            for (var index = 0; index < LobbyColorPalette.Count; index++)
+            {
+                var buttonObject = CreateUiObject(
+                    LobbyColorPalette.GetDisplayName(index) + " Color Button",
+                    paletteGrid.transform);
+                var image = buttonObject.AddComponent<Image>();
+                image.color = LobbyColorPalette.GetColor(index);
+                var outline = buttonObject.AddComponent<Outline>();
+                outline.effectColor = Color.white;
+                outline.effectDistance = new Vector2(3f, -3f);
+                var button = buttonObject.AddComponent<Button>();
+                button.targetGraphic = image;
+                var colors = button.colors;
+                colors.normalColor = Color.white;
+                colors.highlightedColor = new Color(1f, 1f, 1f, 0.82f);
+                colors.pressedColor = new Color(0.72f, 0.72f, 0.72f, 1f);
+                colors.selectedColor = colors.highlightedColor;
+                colors.disabledColor = new Color(0.2f, 0.2f, 0.2f, 0.32f);
+                button.colors = colors;
+
+                var label = CreateText(
+                    "Label",
+                    buttonObject.transform,
+                    LobbyColorPalette.GetDisplayName(index),
+                    font,
+                    14,
+                    TextAnchor.MiddleCenter,
+                    36f);
+                Object.DestroyImmediate(label.GetComponent<LayoutElement>());
+                SetStretch(label.rectTransform, 4f, 4f, 2f, 2f);
+                label.color = index == 2 ? Color.black : Color.white;
+
+                paletteButtons[index] = button;
+                paletteOutlines[index] = outline;
+            }
+
+            var footer = CreateUiObject(
+                "Customization Footer",
+                customizationPanel.transform);
+            var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
+            footerLayout.spacing = 10f;
+            footerLayout.childAlignment = TextAnchor.MiddleLeft;
+            footerLayout.childControlWidth = false;
+            footerLayout.childControlHeight = true;
+            var footerSize = footer.AddComponent<LayoutElement>();
+            footerSize.preferredHeight = 32f;
+
+            testHatToggle = CreateToggle("Test Hat", footer.transform, font);
+            return customizationPanel;
+        }
+
+        private static Toggle CreateToggle(
+            string label,
+            Transform parent,
+            Font font)
+        {
+            var root = CreateUiObject(label + " Toggle", parent);
+            var size = root.AddComponent<LayoutElement>();
+            size.preferredWidth = 180f;
+            size.preferredHeight = 28f;
+
+            var background = CreateUiObject("Background", root.transform);
+            var backgroundRect = background.GetComponent<RectTransform>();
+            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
+            backgroundRect.anchorMax = new Vector2(0f, 0.5f);
+            backgroundRect.sizeDelta = new Vector2(24f, 24f);
+            backgroundRect.anchoredPosition = new Vector2(12f, 0f);
+            var backgroundImage = background.AddComponent<Image>();
+            backgroundImage.color = new Color(0.12f, 0.15f, 0.2f, 1f);
+
+            var checkmark = CreateUiObject("Checkmark", background.transform);
+            SetStretch(
+                checkmark.GetComponent<RectTransform>(),
+                4f,
+                4f,
+                4f,
+                4f);
+            var checkmarkImage = checkmark.AddComponent<Image>();
+            checkmarkImage.color = new Color(0.3f, 0.75f, 1f, 1f);
+
+            var labelText = CreateText(
+                "Label",
+                root.transform,
+                label,
+                font,
+                15,
+                TextAnchor.MiddleLeft,
+                28f);
+            Object.DestroyImmediate(labelText.GetComponent<LayoutElement>());
+            var labelRect = labelText.rectTransform;
+            labelRect.anchorMin = Vector2.zero;
+            labelRect.anchorMax = Vector2.one;
+            labelRect.offsetMin = new Vector2(34f, 0f);
+            labelRect.offsetMax = Vector2.zero;
+
+            var toggle = root.AddComponent<Toggle>();
+            toggle.targetGraphic = backgroundImage;
+            toggle.graphic = checkmarkImage;
+            return toggle;
+        }
+
+        private static GameObject LoadOrCreateScheduleTowerPrefab()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                MinigameScheduleTowerPrefabPath);
+            if (prefab == null)
+            {
+                if (AssetDatabase.LoadMainAssetAtPath(
+                        MinigameScheduleTowerPrefabPath) != null)
+                {
+                    throw new System.InvalidOperationException(
+                        "An incompatible asset already exists at " +
+                        MinigameScheduleTowerPrefabPath + ".");
+                }
+
+                var template = CreateScheduleTowerTemplate();
+                try
+                {
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        template,
+                        MinigameScheduleTowerPrefabPath);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(template);
+                }
+            }
+
+            var view = prefab != null
+                ? prefab.GetComponent<MinigameScheduleTowerView>()
+                : null;
+            if (view == null || !view.HasRequiredReferences)
+            {
+                throw new System.InvalidOperationException(
+                    "MinigameScheduleTower.prefab is missing required UI bindings. " +
+                    "Repair the prefab without recreating it so designer changes are preserved.");
+            }
+
+            return prefab;
+        }
+
+        private static GameObject CreateScheduleTowerTemplate()
+        {
+            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
+            if (font == null)
+            {
+                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            }
+
+            if (font == null)
+            {
+                throw new System.InvalidOperationException(
+                    "A font is required to build MinigameScheduleTower.prefab.");
+            }
+
+            var root = new GameObject(
+                "Minigame Schedule Tower",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler),
+                typeof(GraphicRaycaster),
+                typeof(MinigameScheduleTowerView));
+            root.transform.localScale = Vector3.one;
+            root.layer = LayerMask.NameToLayer("UI");
+
+            var canvas = root.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 55;
+            var scaler = root.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var panelObject = CreateUiObject("Tower Panel", root.transform);
+            var panel = panelObject.GetComponent<RectTransform>();
+            panel.anchorMin = new Vector2(1f, 0.5f);
+            panel.anchorMax = new Vector2(1f, 0.5f);
+            panel.pivot = new Vector2(1f, 0.5f);
+            panel.anchoredPosition = new Vector2(-30f, 0f);
+            panel.sizeDelta = new Vector2(310f, 860f);
+            var panelImage = panelObject.AddComponent<Image>();
+            panelImage.color = new Color(0.02f, 0.03f, 0.055f, 0.93f);
+            panelImage.raycastTarget = false;
+
+            var title = CreateTowerText(
+                "Title",
+                panel,
+                "MINIGAME TOWER",
+                font,
+                new Vector2(0f, -24f),
+                new Vector2(280f, 42f),
+                25,
+                FontStyle.Bold);
+            var subtitle = CreateTowerText(
+                "Subtitle",
+                panel,
+                "TURN 1  ·  15 BLOCKS LEFT",
+                font,
+                new Vector2(0f, -66f),
+                new Vector2(280f, 32f),
+                17,
+                FontStyle.Normal);
+
+            var blocks = new Image[MinigameScheduleTowerView.MaximumVisibleBlocks];
+            var blockLabels = new Text[blocks.Length];
+            for (var index = 0; index < blocks.Length; index++)
+            {
+                var blockObject = CreateUiObject(
+                    "Block " + (index + 1),
+                    panel);
+                var blockRect = blockObject.GetComponent<RectTransform>();
+                blockRect.anchorMin = new Vector2(0.5f, 1f);
+                blockRect.anchorMax = new Vector2(0.5f, 1f);
+                blockRect.pivot = new Vector2(0.5f, 1f);
+                blockRect.anchoredPosition =
+                    new Vector2(0f, -108f - index * 48f);
+                blockRect.sizeDelta = new Vector2(
+                    264f - Mathf.Min(index, 8) * 4f,
+                    40f);
+                blocks[index] = blockObject.AddComponent<Image>();
+                blocks[index].color = new Color(0.12f, 0.16f, 0.23f, 0.98f);
+                blocks[index].raycastTarget = false;
+                blockLabels[index] = CreateTowerText(
+                    "Label",
+                    blockRect,
+                    "???",
+                    font,
+                    Vector2.zero,
+                    blockRect.sizeDelta,
+                    18,
+                    index == 0 ? FontStyle.Bold : FontStyle.Normal);
+            }
+
+            root.GetComponent<MinigameScheduleTowerView>().Configure(
+                canvas,
+                panel,
+                title,
+                subtitle,
+                blocks,
+                blockLabels);
+            return root;
+        }
+
+        private static Text CreateTowerText(
+            string name,
+            Transform parent,
+            string value,
+            Font font,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            int fontSize,
+            FontStyle style)
+        {
+            var textObject = CreateUiObject(name, parent);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+
+            var text = textObject.AddComponent<Text>();
+            text.text = value;
+            text.font = font;
+            text.fontSize = fontSize;
+            text.fontStyle = style;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            return text;
         }
 
         private static void CreateEventSystem()
@@ -726,7 +1121,8 @@ namespace MazeParty.Editor
                 new EditorBuildSettingsScene(BootstrapPath, true),
                 new EditorBuildSettingsScene(BoardPath, true),
                 new EditorBuildSettingsScene(MinefieldPath, true),
-                new EditorBuildSettingsScene(WrongWayPath, true)
+                new EditorBuildSettingsScene(WrongWayPath, true),
+                new EditorBuildSettingsScene(RedLightGreenLightPath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";

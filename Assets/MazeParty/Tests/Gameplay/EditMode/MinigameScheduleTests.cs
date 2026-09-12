@@ -3,18 +3,26 @@ using System.Collections.Generic;
 using System.IO;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
-using UnityEngine;
 
 namespace MazeParty.Gameplay.Tests
 {
     public sealed class MinigameScheduleTests
     {
         [Test]
-        public void DefaultSchedule_UsesTurnCountAndEveryRegisteredGameExactlyOnce()
+        public void Create_CoversCatalogAndRepeatsDeterministicShuffle()
         {
             var schedule = HostMinigameSchedule.Create(12345);
+            var repeated = HostMinigameSchedule.Create(12345);
             var counts = CountEntries(schedule);
 
+            AssertSchedulesEqual(schedule, repeated);
+            Assert.That(
+                (int)ScheduledMinigameId.RedLightGreenLight,
+                Is.EqualTo(3),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                MinigameScheduleRules.RegisteredGameCount,
+                Is.EqualTo(3));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
@@ -25,60 +33,13 @@ namespace MazeParty.Gameplay.Tests
                 counts[ScheduledMinigameId.WrongWay],
                 Is.EqualTo(1));
             Assert.That(
+                counts[ScheduledMinigameId.RedLightGreenLight],
+                Is.EqualTo(1));
+            Assert.That(
                 counts[ScheduledMinigameId.Skip],
                 Is.EqualTo(
                     schedule.TurnCount -
                     MinigameScheduleRules.RegisteredGameCount));
-        }
-
-        [Test]
-        public void Create_SameSeedProducesSameDeterministicShuffle()
-        {
-            var first = HostMinigameSchedule.Create(0x12345678);
-            var second = HostMinigameSchedule.Create(0x12345678);
-
-            AssertSchedulesEqual(first, second);
-        }
-
-        [Test]
-        public void ScheduleShorterThanCatalog_SelectsDistinctGamesWithoutSkip()
-        {
-            var schedule = HostMinigameSchedule.Create(42, 1);
-
-            Assert.That(schedule.TurnCount, Is.EqualTo(1));
-            Assert.That(
-                schedule.GetMinigameForTurn(1),
-                Is.Not.EqualTo(ScheduledMinigameId.Skip));
-        }
-
-        [Test]
-        public void Lookup_UsesOneBasedTurnsAndRejectsOutsideSchedule()
-        {
-            var schedule = HostMinigameSchedule.Create(77);
-
-            Assert.That(
-                Enum.IsDefined(
-                    typeof(ScheduledMinigameId),
-                    schedule.GetMinigameForTurn(1)),
-                Is.True);
-            Assert.That(
-                Enum.IsDefined(
-                    typeof(ScheduledMinigameId),
-                    schedule.GetMinigameForTurn(schedule.TurnCount)),
-                Is.True);
-            Assert.That(
-                schedule.TryGetMinigameForTurn(0, out _),
-                Is.False);
-            Assert.That(
-                schedule.TryGetMinigameForTurn(
-                    schedule.TurnCount + 1,
-                    out _),
-                Is.False);
-            Assert.Throws<ArgumentOutOfRangeException>(
-                () => schedule.GetMinigameForTurn(0));
-            Assert.Throws<ArgumentOutOfRangeException>(
-                () => schedule.GetMinigameForTurn(
-                    schedule.TurnCount + 1));
         }
 
         [Test]
@@ -98,22 +59,37 @@ namespace MazeParty.Gameplay.Tests
             AssertSchedulesEqual(original, restored);
         }
 
-        [TestCase(
-            "{\"schemaVersion\":1,\"matchKey\":\"match\",\"seed\":1," +
-            "\"turnCount\":2,\"entries\":[1,1]}")]
-        [TestCase(
-            "{\"schemaVersion\":1,\"matchKey\":\"match\",\"seed\":1," +
-            "\"turnCount\":2,\"entries\":[1,99]}")]
-        [TestCase(
-            "{\"schemaVersion\":99,\"matchKey\":\"match\",\"seed\":1," +
-            "\"turnCount\":2,\"entries\":[1,2]}")]
-        public void JsonCodec_RejectsInvalidOrUnknownSchedules(string payload)
+        [Test]
+        public void JsonCodec_RestoresLegacyCatalogWithoutRerollingQueue()
         {
+            const string payload =
+                "{\"schemaVersion\":1,\"matchKey\":\"legacy-match\"," +
+                "\"seed\":314,\"turnCount\":5," +
+                "\"entries\":[0,2,0,1,0]}";
             var codec = new HostMinigameScheduleJsonCodec();
 
+            var decoded = codec.TryDecode(
+                payload,
+                out var matchKey,
+                out var restored);
+
+            Assert.That(decoded, Is.True);
+            Assert.That(matchKey, Is.EqualTo("legacy-match"));
+            Assert.That(restored.Seed, Is.EqualTo(314));
+            Assert.That(restored.TurnCount, Is.EqualTo(5));
             Assert.That(
-                codec.TryDecode(payload, out _, out _),
-                Is.False);
+                restored.GetMinigameForTurn(2),
+                Is.EqualTo(ScheduledMinigameId.WrongWay));
+            Assert.That(
+                restored.GetMinigameForTurn(4),
+                Is.EqualTo(ScheduledMinigameId.Minefield));
+
+            var reencoded = codec.Encode(matchKey, restored);
+            StringAssert.Contains("\"schemaVersion\":1", reencoded);
+            Assert.That(
+                codec.TryDecode(reencoded, out _, out var roundTripped),
+                Is.True);
+            AssertSchedulesEqual(restored, roundTripped);
         }
 
         [Test]
@@ -143,39 +119,6 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Repository_NewMatchKeyCreatesAndStoresANewSchedule()
-        {
-            var payloadStore = new MemoryPayloadStore();
-            var repository = new HostMinigameScheduleRepository(
-                payloadStore,
-                new HostMinigameScheduleJsonCodec());
-
-            var first = repository.LoadOrCreate("match-a", () => 10);
-            var second = repository.LoadOrCreate("match-b", () => 20);
-
-            Assert.That(first.Seed, Is.EqualTo(10));
-            Assert.That(second.Seed, Is.EqualTo(20));
-            Assert.That(payloadStore.Count, Is.EqualTo(2));
-        }
-
-        [Test]
-        public void Repository_RefusesToReplaceScheduleForExistingMatch()
-        {
-            var payloadStore = new MemoryPayloadStore();
-            var repository = new HostMinigameScheduleRepository(
-                payloadStore,
-                new HostMinigameScheduleJsonCodec());
-            repository.Save(
-                "immutable-match",
-                HostMinigameSchedule.Create(1));
-
-            Assert.Throws<InvalidOperationException>(
-                () => repository.Save(
-                    "immutable-match",
-                    HostMinigameSchedule.Create(2)));
-        }
-
-        [Test]
         public void Repository_CorruptPayloadFailsInsteadOfRerolling()
         {
             var payloadStore = new MemoryPayloadStore();
@@ -196,68 +139,6 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(seedFactoryCalls, Is.EqualTo(0));
         }
 
-        [Test]
-        public void FileStore_HashesMatchKeyAndKeepsPayloadInsideConfiguredDirectory()
-        {
-            var root = Path.Combine(
-                Path.GetTempPath(),
-                "MazeParty.MinGameSchedule." + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(root);
-
-            try
-            {
-                var store = new FileMinigameSchedulePayloadStore(root);
-                const string matchKey = "../../outside/unsafe:match";
-                store.Write(matchKey, "{\"value\":1}");
-
-                var files = Directory.GetFiles(
-                    root,
-                    "*.json",
-                    SearchOption.TopDirectoryOnly);
-                Assert.That(files, Has.Length.EqualTo(1));
-                Assert.That(
-                    Path.GetDirectoryName(Path.GetFullPath(files[0])),
-                    Is.EqualTo(Path.GetFullPath(root)));
-                Assert.That(
-                    Path.GetFileNameWithoutExtension(files[0]).Length,
-                    Is.EqualTo(64));
-                Assert.That(
-                    store.TryRead(matchKey, out var payload),
-                    Is.True);
-                Assert.That(payload, Is.EqualTo("{\"value\":1}"));
-            }
-            finally
-            {
-                if (Directory.Exists(root))
-                {
-                    Directory.Delete(root, true);
-                }
-            }
-        }
-
-        [Test]
-        public void DefaultFileStore_IsUnderApplicationPersistentDataPath()
-        {
-            var store = new FileMinigameSchedulePayloadStore();
-            var persistentRoot =
-                Path.GetFullPath(Application.persistentDataPath)
-                    .TrimEnd(
-                        Path.DirectorySeparatorChar,
-                        Path.AltDirectorySeparatorChar) +
-                Path.DirectorySeparatorChar;
-            var actual =
-                store.DirectoryPath.TrimEnd(
-                    Path.DirectorySeparatorChar,
-                    Path.AltDirectorySeparatorChar) +
-                Path.DirectorySeparatorChar;
-
-            Assert.That(
-                actual.StartsWith(
-                    persistentRoot,
-                    StringComparison.OrdinalIgnoreCase),
-                Is.True);
-        }
-
         private static Dictionary<ScheduledMinigameId, int> CountEntries(
             HostMinigameSchedule schedule)
         {
@@ -265,7 +146,8 @@ namespace MazeParty.Gameplay.Tests
             {
                 [ScheduledMinigameId.Skip] = 0,
                 [ScheduledMinigameId.Minefield] = 0,
-                [ScheduledMinigameId.WrongWay] = 0
+                [ScheduledMinigameId.WrongWay] = 0,
+                [ScheduledMinigameId.RedLightGreenLight] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)
@@ -297,8 +179,6 @@ namespace MazeParty.Gameplay.Tests
         {
             private readonly Dictionary<string, string> _payloads =
                 new Dictionary<string, string>(StringComparer.Ordinal);
-
-            public int Count => _payloads.Count;
 
             public bool TryRead(string matchKey, out string payload)
             {

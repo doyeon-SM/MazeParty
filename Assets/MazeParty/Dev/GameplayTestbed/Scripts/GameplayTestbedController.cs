@@ -36,6 +36,7 @@ namespace MazeParty.Gameplay.Testbed
         [SerializeField] private Transform firstPersonSpawn;
         [SerializeField] private Transform boardSpawn;
         [SerializeField] private Transform minigameSpawn;
+        [SerializeField] private GameplayTestbedUiBindings uiBindings;
 
         private readonly GameplayPhaseClock _phaseClock = new GameplayPhaseClock();
         private readonly GameplayInventory _inventory = new GameplayInventory();
@@ -48,9 +49,11 @@ namespace MazeParty.Gameplay.Testbed
         private Text _ammoText;
         private Text _statusText;
         private Text _tooltipText;
-        private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
-        private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
-        private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
+        private Image[] _slotBackgrounds;
+        private Text[] _slotLabels;
+        private Button[] _choiceButtons;
+        private Text[] _choiceButtonLabels;
+        private TestbedItemChoiceButton[] _choicePresenters;
 
         private ItemChoiceResolution _lastChoiceResolution;
         private bool _manualPointerRelease;
@@ -67,7 +70,8 @@ namespace MazeParty.Gameplay.Testbed
             GameplayCameraDirector cameras,
             Transform firstPerson,
             Transform board,
-            Transform minigame)
+            Transform minigame,
+            GameplayTestbedUiBindings bindings)
         {
             inputSource = input;
             playerMotor = motor;
@@ -76,11 +80,23 @@ namespace MazeParty.Gameplay.Testbed
             firstPersonSpawn = firstPerson;
             boardSpawn = board;
             minigameSpawn = minigame;
+            uiBindings = bindings;
         }
 
         private void Awake()
         {
-            FindUi();
+            if (uiBindings == null || !uiBindings.HasRequiredReferences)
+            {
+                Debug.LogError(
+                    "GameplayTestbedController requires a complete " +
+                    "GameplayTestbedUiBindings component from " +
+                    "GameplayTestbedCanvas.prefab.",
+                    this);
+                enabled = false;
+                return;
+            }
+
+            ApplyUiBindings();
             WireButtons();
             _inventory.Changed += RefreshInventoryUi;
         }
@@ -102,6 +118,14 @@ namespace MazeParty.Gameplay.Testbed
         private void OnDestroy()
         {
             _inventory.Changed -= RefreshInventoryUi;
+            UnwireButtons();
+            if (_choicePresenters != null)
+            {
+                for (var index = 0; index < _choicePresenters.Length; index++)
+                {
+                    _choicePresenters[index]?.Unbind(this);
+                }
+            }
             if (playerHealth != null)
             {
                 playerHealth.HealthChanged -= OnHealthChanged;
@@ -546,8 +570,8 @@ namespace MazeParty.Gameplay.Testbed
                     ? "HP SHIELD  " + remaining.ToString("0.0") + "s"
                     : _phaseClock.IsRunning ? "HP SHIELD  OFF" : "HP SHIELD  --";
                 _shieldTimerText.color = remaining > 0d
-                    ? new Color(0.25f, 1f, 0.75f)
-                    : new Color(1f, 0.45f, 0.45f);
+                    ? uiBindings.ShieldActiveColor
+                    : uiBindings.ShieldInactiveColor;
             }
 
             if (_choiceTimerText != null)
@@ -579,21 +603,19 @@ namespace MazeParty.Gameplay.Testbed
                 if (_slotBackgrounds[i] != null)
                 {
                     _slotBackgrounds[i].color = i == _inventory.SelectedSlotIndex
-                        ? new Color(1f, 0.72f, 0.15f, 0.96f)
+                        ? uiBindings.InventorySelectedColor
                         : slot == null
-                            ? new Color(0.12f, 0.14f, 0.18f, 0.9f)
-                            : new Color(0.18f, 0.32f, 0.5f, 0.94f);
+                            ? uiBindings.InventoryEmptyColor
+                            : uiBindings.InventoryOccupiedColor;
                 }
 
                 if (_choiceButtons[i] != null)
                 {
                     _choiceButtons[i].interactable = slot != null;
-                    var label = _choiceButtons[i].GetComponentInChildren<Text>();
-                    if (label != null)
-                        label.text = slot == null
-                            ? "EMPTY"
-                            : slot.Definition.DisplayName
-                                + (slot.Definition.InitialCharges > 1 ? "  x" + slot.Charges : string.Empty);
+                    _choiceButtonLabels[i].text = slot == null
+                        ? "EMPTY"
+                        : slot.Definition.DisplayName
+                            + (slot.Definition.InitialCharges > 1 ? "  x" + slot.Charges : string.Empty);
                 }
             }
 
@@ -604,45 +626,58 @@ namespace MazeParty.Gameplay.Testbed
                     : "AMMO  --";
         }
 
-        private void FindUi()
+        private void ApplyUiBindings()
         {
-            _selectionPanel = FindObject("ItemSelectionPanel");
-            _actionTimerText = FindText("ActionTimerText");
-            _shieldTimerText = FindText("ShieldTimerText");
-            _choiceTimerText = FindText("ChoiceTimerText");
-            _healthText = FindText("HealthText");
-            _ammoText = FindText("AmmoText");
-            _statusText = FindText("StatusText");
-            _tooltipText = FindText("TooltipText");
-
-            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            _selectionPanel = uiBindings.SelectionPanel;
+            _actionTimerText = uiBindings.ActionTimerText;
+            _shieldTimerText = uiBindings.ShieldTimerText;
+            _choiceTimerText = uiBindings.ChoiceTimerText;
+            _healthText = uiBindings.HealthText;
+            _ammoText = uiBindings.AmmoText;
+            _statusText = uiBindings.StatusText;
+            _tooltipText = uiBindings.TooltipText;
+            _slotBackgrounds = uiBindings.SlotBackgrounds;
+            _slotLabels = uiBindings.SlotLabels;
+            _choiceButtons = uiBindings.ChoiceButtons;
+            _choiceButtonLabels = uiBindings.ChoiceButtonLabels;
+            _choicePresenters = uiBindings.ChoicePresenters;
+            for (var index = 0; index < _choicePresenters.Length; index++)
             {
-                var slotObject = FindObject("InventorySlot" + i);
-                _slotBackgrounds[i] = slotObject != null ? slotObject.GetComponent<Image>() : null;
-                _slotLabels[i] = slotObject != null ? slotObject.GetComponentInChildren<Text>() : null;
-                _choiceButtons[i] = FindButton("ChoiceButton" + i);
+                _choicePresenters[index].Bind(this);
             }
         }
 
         private void WireButtons()
         {
-            AddButtonListener("StartActionButton", StartActionPhase);
-            AddButtonListener("NoItemButton", ChooseNoItem);
-            AddButtonListener("IncomingHitButton", SimulateIncomingItemHit);
-            AddButtonListener("IncomingPushButton", SimulateIncomingPush);
-            AddButtonListener("AddRewardButton", TryAddReward);
-            AddButtonListener("EndActionButton", EndActionPhase);
-            AddButtonListener("ResetButton", ResetTestbed);
-            AddButtonListener("FirstPersonButton", SwitchToFirstPerson);
-            AddButtonListener("BoardButton", SwitchToBoard);
-            AddButtonListener("MinigameButton", SwitchToMinigame);
+            uiBindings.StartActionButton.onClick.AddListener(StartActionPhase);
+            uiBindings.NoItemButton.onClick.AddListener(ChooseNoItem);
+            uiBindings.IncomingHitButton.onClick.AddListener(SimulateIncomingItemHit);
+            uiBindings.IncomingPushButton.onClick.AddListener(SimulateIncomingPush);
+            uiBindings.AddRewardButton.onClick.AddListener(TryAddReward);
+            uiBindings.EndActionButton.onClick.AddListener(EndActionPhase);
+            uiBindings.ResetButton.onClick.AddListener(ResetTestbed);
+            uiBindings.FirstPersonButton.onClick.AddListener(SwitchToFirstPerson);
+            uiBindings.BoardButton.onClick.AddListener(SwitchToBoard);
+            uiBindings.MinigameButton.onClick.AddListener(SwitchToMinigame);
         }
 
-        private void AddButtonListener(string objectName, UnityEngine.Events.UnityAction action)
+        private void UnwireButtons()
         {
-            var button = FindButton(objectName);
-            if (button != null)
-                button.onClick.AddListener(action);
+            if (uiBindings == null)
+            {
+                return;
+            }
+
+            uiBindings.StartActionButton?.onClick.RemoveListener(StartActionPhase);
+            uiBindings.NoItemButton?.onClick.RemoveListener(ChooseNoItem);
+            uiBindings.IncomingHitButton?.onClick.RemoveListener(SimulateIncomingItemHit);
+            uiBindings.IncomingPushButton?.onClick.RemoveListener(SimulateIncomingPush);
+            uiBindings.AddRewardButton?.onClick.RemoveListener(TryAddReward);
+            uiBindings.EndActionButton?.onClick.RemoveListener(EndActionPhase);
+            uiBindings.ResetButton?.onClick.RemoveListener(ResetTestbed);
+            uiBindings.FirstPersonButton?.onClick.RemoveListener(SwitchToFirstPerson);
+            uiBindings.BoardButton?.onClick.RemoveListener(SwitchToBoard);
+            uiBindings.MinigameButton?.onClick.RemoveListener(SwitchToMinigame);
         }
 
         private void OnHealthChanged(int current, int maximum)
@@ -682,23 +717,6 @@ namespace MazeParty.Gameplay.Testbed
                 current = current.parent;
             }
             return null;
-        }
-
-        private static GameObject FindObject(string objectName)
-        {
-            return GameObject.Find(objectName);
-        }
-
-        private static Text FindText(string objectName)
-        {
-            var target = FindObject(objectName);
-            return target != null ? target.GetComponent<Text>() : null;
-        }
-
-        private static Button FindButton(string objectName)
-        {
-            var target = FindObject(objectName);
-            return target != null ? target.GetComponent<Button>() : null;
         }
 
         private static string FormatClock(double seconds)

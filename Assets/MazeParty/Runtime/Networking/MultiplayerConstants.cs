@@ -10,6 +10,7 @@ namespace MazeParty.Multiplayer
         public const string BoardScene = "Board";
         public const string MinefieldScene = "Minefield";
         public const string WrongWayScene = "WrongWay";
+        public const string RedLightGreenLightScene = "RedLightGreenLight";
 
         public const string DisplayNameProperty = "displayName";
         public const string NetworkClientIdProperty = "ngoClientId";

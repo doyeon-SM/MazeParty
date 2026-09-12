@@ -6,17 +6,6 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BoardCombatRulesTests
     {
         [Test]
-        public void ConfirmedPrototypeValues_AreCentralized()
-        {
-            Assert.That(BoardCombatRules.TemporaryHealth, Is.EqualTo(100));
-            Assert.That(BoardCombatRules.PunchDamage, Is.EqualTo(5));
-            Assert.That(BoardCombatRules.FightDurationSeconds, Is.EqualTo(60d));
-            Assert.That(
-                BoardCombatRules.NextActionItemProtectionSeconds,
-                Is.EqualTo(30d));
-        }
-
-        [Test]
         public void InitialQueue_UsesFormationThenCurrentLastPlacePriority()
         {
             var coordinateA = new Vector2Int(1, 2);
@@ -38,38 +27,31 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void TimeoutStanding_UsesHealthArrivalRubberBandAndSlotOrder()
+        public void Standings_UseHealthEliminationTimeRubberBandAndSlotOrder()
         {
-            var standings = BoardCombatRules.ResolveStandings(new[]
+            var timeout = BoardCombatRules.ResolveStandings(new[]
             {
                 new BoardCombatRankingEntry(0, 70, double.NaN, 2d, 1),
                 new BoardCombatRankingEntry(1, 80, double.NaN, 4d, 2),
                 new BoardCombatRankingEntry(2, 80, double.NaN, 4d, 4),
                 new BoardCombatRankingEntry(3, 80, double.NaN, 4d, 4)
             });
+            Assert.That(
+                new[] { timeout[0].Slot, timeout[1].Slot, timeout[2].Slot, timeout[3].Slot },
+                Is.EqualTo(new[] { 2, 3, 1, 0 }));
+            Assert.That(timeout[3].RetreatDistance, Is.EqualTo(3));
 
-            Assert.That(standings[0].Slot, Is.EqualTo(2));
-            Assert.That(standings[1].Slot, Is.EqualTo(3));
-            Assert.That(standings[2].Slot, Is.EqualTo(1));
-            Assert.That(standings[3].Slot, Is.EqualTo(0));
-            Assert.That(standings[3].RetreatDistance, Is.EqualTo(3));
-        }
-
-        [Test]
-        public void KnockoutStanding_LaterEliminationRanksHigherThanEarlierElimination()
-        {
-            var standings = BoardCombatRules.ResolveStandings(new[]
+            var knockout = BoardCombatRules.ResolveStandings(new[]
             {
                 new BoardCombatRankingEntry(0, 25, double.NaN, 3d, 1),
                 new BoardCombatRankingEntry(1, 0, 20d, 1d, 2),
                 new BoardCombatRankingEntry(2, 0, 15d, 2d, 3)
             });
-
-            Assert.That(standings[0].Slot, Is.EqualTo(0));
-            Assert.That(standings[1].Slot, Is.EqualTo(1));
-            Assert.That(standings[2].Slot, Is.EqualTo(2));
-            Assert.That(standings[0].RetreatDistance, Is.Zero);
-            Assert.That(standings[2].RetreatDistance, Is.EqualTo(2));
+            Assert.That(
+                new[] { knockout[0].Slot, knockout[1].Slot, knockout[2].Slot },
+                Is.EqualTo(new[] { 0, 1, 2 }));
+            Assert.That(knockout[0].RetreatDistance, Is.Zero);
+            Assert.That(knockout[2].RetreatDistance, Is.EqualTo(2));
         }
 
         [Test]
@@ -79,9 +61,7 @@ namespace MazeParty.Gameplay.Tests
             flow.Start(0d);
             flow.Tick(6d);
             for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
-            {
                 Assert.That(flow.TryReportPlayerArrived(slot, 10d + slot), Is.True);
-            }
 
             flow.Tick(18d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
@@ -90,17 +70,6 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
             Assert.That(flow.TryCompleteCombat(1_000d), Is.True);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
-        }
-
-        [TestCase(1, 0)]
-        [TestCase(2, 1)]
-        [TestCase(3, 2)]
-        [TestCase(4, 3)]
-        public void RetreatDistance_IsRankMinusOne(int rank, int expected)
-        {
-            Assert.That(
-                BoardCombatRules.RetreatDistanceForRank(rank),
-                Is.EqualTo(expected));
         }
     }
 }

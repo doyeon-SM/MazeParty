@@ -8,6 +8,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
@@ -23,6 +24,12 @@ namespace MazeParty.Editor
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder =
             ProjectRoot + "/Scenes";
+        private const string UiFolder =
+            ProjectRoot + "/UI";
+        private const string UiPrefabFolder =
+            UiFolder + "/Prefabs";
+        private const string WrongWayHudPrefabPath =
+            UiPrefabFolder + "/WrongWayHud.prefab";
         private const string ArtFolder =
             ProjectRoot + "/Art";
         private const string MinigameArtFolder =
@@ -68,7 +75,8 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "WrongWay rebuilt: four 50-step lanes, network state, " +
-                "lead-follow race camera and additive-safe presentation.");
+                "lead-follow race camera, connected HUD prefab and " +
+                "additive-safe presentation.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -80,12 +88,14 @@ namespace MazeParty.Editor
         public static void BuildWrongWayAssets()
         {
             EnsureFolders();
-            BuildWrongWayScene(CreateMaterials());
+            var hudPrefab = LoadOrCreateWrongWayHudPrefab();
+            BuildWrongWayScene(CreateMaterials(), hudPrefab);
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildWrongWayScene(
-            WrongWayMaterials materials)
+            WrongWayMaterials materials,
+            GameObject hudPrefab)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -128,6 +138,9 @@ namespace MazeParty.Editor
             CreateArena(arenaPresentation.transform, materials);
             CreateLighting(arenaPresentation.transform);
             CreateRaceCamera(root.transform);
+            var hud = InstantiateWrongWayHud(
+                hudPrefab,
+                root.transform);
 
             // NGO only assigns a stable in-scene hash after the scene is saved
             // and registered as an enabled build scene.
@@ -138,7 +151,8 @@ namespace MazeParty.Editor
 
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkWrongWayState>();
-            root.AddComponent<WrongWayNetworkView>();
+            var networkView = root.AddComponent<WrongWayNetworkView>();
+            ConfigureNetworkView(networkView, hud);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(
@@ -516,11 +530,252 @@ namespace MazeParty.Editor
             }
         }
 
+        private static GameObject LoadOrCreateWrongWayHudPrefab()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                WrongWayHudPrefabPath);
+            if (existing != null)
+            {
+                ValidateWrongWayHudPrefab(existing);
+                return existing;
+            }
+
+            var template = CreateWrongWayHudTemplate();
+            try
+            {
+                var prefab = PrefabUtility.SaveAsPrefabAsset(
+                    template,
+                    WrongWayHudPrefabPath);
+                if (prefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "WrongWayHud.prefab could not be created.");
+                }
+
+                ValidateWrongWayHudPrefab(prefab);
+                return prefab;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(template);
+            }
+        }
+
+        private static GameObject CreateWrongWayHudTemplate()
+        {
+            var font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            if (font == null)
+            {
+                throw new InvalidOperationException(
+                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
+            }
+
+            var canvasObject = new GameObject(
+                "WrongWay HUD",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler));
+            canvasObject.transform.localScale = Vector3.one;
+            SetUiLayer(canvasObject);
+
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 45;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var panel = new GameObject(
+                "WrongWay HUD Panel",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            SetUiLayer(panel);
+            panel.transform.SetParent(canvasObject.transform, false);
+            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 1f);
+            panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -22f);
+            panelRect.sizeDelta = new Vector2(1120f, 330f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color =
+                new Color(0.025f, 0.035f, 0.07f, 0.88f);
+            panelImage.raycastTarget = false;
+
+            var phaseText = CreateHudText(
+                "Phase",
+                panel.transform,
+                font,
+                new Vector2(0f, -16f),
+                new Vector2(1060f, 44f),
+                30,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+            var instructionText = CreateHudText(
+                "Instruction",
+                panel.transform,
+                font,
+                new Vector2(0f, -58f),
+                new Vector2(1060f, 34f),
+                19,
+                TextAnchor.MiddleCenter,
+                FontStyle.Normal);
+            instructionText.text =
+                "W A S D  ·  Match the shown direction and climb 50 steps";
+            var promptText = CreateHudText(
+                "Local Prompt",
+                panel.transform,
+                font,
+                new Vector2(0f, -115f),
+                new Vector2(1060f, 78f),
+                50,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+
+            var playerColors = new[]
+            {
+                new Color(0.18f, 0.62f, 1f),
+                new Color(1f, 0.32f, 0.24f),
+                new Color(0.25f, 0.86f, 0.42f),
+                new Color(0.72f, 0.38f, 1f)
+            };
+            var progressRows = new Text[WrongWayRules.PlayerCount];
+            for (var slot = 0; slot < progressRows.Length; slot++)
+            {
+                progressRows[slot] = CreateHudText(
+                    "Player " + (slot + 1) + " Progress",
+                    panel.transform,
+                    font,
+                    new Vector2(0f, -194f - slot * 29f),
+                    new Vector2(1000f, 28f),
+                    19,
+                    TextAnchor.MiddleLeft,
+                    FontStyle.Bold);
+                progressRows[slot].color = playerColors[slot];
+            }
+
+            var bindings =
+                canvasObject.AddComponent<WrongWayHudBindings>();
+            bindings.Configure(
+                canvas,
+                phaseText,
+                instructionText,
+                promptText,
+                progressRows);
+            canvasObject.SetActive(false);
+            return canvasObject;
+        }
+
+        private static Text CreateHudText(
+            string name,
+            Transform parent,
+            Font font,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            int fontSize,
+            TextAnchor alignment,
+            FontStyle style)
+        {
+            var textObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text));
+            SetUiLayer(textObject);
+            textObject.transform.SetParent(parent, false);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+
+            var text = textObject.GetComponent<Text>();
+            text.font = font;
+            text.fontSize = fontSize;
+            text.fontStyle = style;
+            text.color = new Color(0.94f, 0.97f, 1f);
+            text.alignment = alignment;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.raycastTarget = false;
+            return text;
+        }
+
+        private static void SetUiLayer(GameObject target)
+        {
+            var uiLayer = LayerMask.NameToLayer("UI");
+            if (uiLayer >= 0)
+            {
+                target.layer = uiLayer;
+            }
+        }
+
+        private static void ValidateWrongWayHudPrefab(GameObject prefab)
+        {
+            var bindings = prefab.GetComponent<WrongWayHudBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "WrongWayHud.prefab is missing its required bindings. " +
+                    "Repair the prefab explicitly instead of rebuilding over " +
+                    "designer-authored UI.");
+            }
+        }
+
+        private static WrongWayHudBindings InstantiateWrongWayHud(
+            GameObject hudPrefab,
+            Transform parent)
+        {
+            var instance = PrefabUtility.InstantiatePrefab(
+                hudPrefab,
+                parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "WrongWayHud.prefab could not be instantiated.");
+            }
+
+            instance.transform.SetLocalPositionAndRotation(
+                Vector3.zero,
+                Quaternion.identity);
+            instance.transform.localScale = hudPrefab.transform.localScale;
+            var bindings = instance.GetComponent<WrongWayHudBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "WrongWay HUD instance has incomplete bindings.");
+            }
+
+            return bindings;
+        }
+
+        private static void ConfigureNetworkView(
+            WrongWayNetworkView view,
+            WrongWayHudBindings hud)
+        {
+            var serializedView = new SerializedObject(view);
+            var hudProperty = serializedView.FindProperty("hud");
+            if (hudProperty == null)
+            {
+                throw new InvalidOperationException(
+                    "WrongWayNetworkView no longer exposes its HUD contract.");
+            }
+
+            hudProperty.objectReferenceValue = hud;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void ValidateSceneContract(GameObject root)
         {
+            var networkView = root.GetComponent<WrongWayNetworkView>();
+            var hud = root.GetComponentInChildren<WrongWayHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkWrongWayState>() == null ||
-                root.GetComponent<WrongWayNetworkView>() == null ||
+                networkView == null ||
                 FindDescendant(
                     root.transform,
                     "Arena Presentation") == null ||
@@ -528,11 +783,23 @@ namespace MazeParty.Editor
                     root.transform,
                     "Stair Arena") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(
-                    true) == null)
+                    true) == null ||
+                hud == null ||
+                !hud.HasRequiredReferences ||
+                PrefabUtility.GetPrefabInstanceStatus(hud.gameObject) !=
+                PrefabInstanceStatus.Connected)
             {
                 throw new InvalidOperationException(
                     "Generated WrongWay scene is missing its network or " +
                     "presentation contract.");
+            }
+
+            var serializedView = new SerializedObject(networkView);
+            if (serializedView.FindProperty("hud")?.objectReferenceValue != hud)
+            {
+                throw new InvalidOperationException(
+                    "WrongWayNetworkView must reference the connected HUD " +
+                    "prefab instance in its scene.");
             }
 
             for (var slot = 0;
@@ -671,6 +938,8 @@ namespace MazeParty.Editor
         {
             EnsureFolder(ProjectRoot);
             EnsureFolder(ScenesFolder);
+            EnsureFolder(UiFolder);
+            EnsureFolder(UiPrefabFolder);
             EnsureFolder(ArtFolder);
             EnsureFolder(MinigameArtFolder);
             EnsureFolder(WrongWayArtFolder);

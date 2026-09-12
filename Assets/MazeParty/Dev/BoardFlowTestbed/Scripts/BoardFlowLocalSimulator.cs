@@ -30,6 +30,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         [SerializeField] private BoardTopology topology;
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private GameObject worldDieVisualPrefab;
+        [SerializeField] private BoardCanvasBindings boardUiBindings;
+        [SerializeField] private BoardFlowTestToolsBindings testToolsBindings;
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
         [SerializeField, Min(0.05f)] private float worldDieNudgeHorizontalImpulse = 1.35f;
@@ -41,6 +43,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly Image[] _slotImages = new Image[GameplayInventory.Capacity];
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
+        private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerCards = new Image[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerHealthFills = new Image[BoardFlowStateMachine.RequiredPlayerCount];
@@ -174,18 +177,26 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             Transform localEye,
             BoardTopology boardTopology,
             GameplayCameraDirector director,
-            GameObject dieVisualPrefab = null)
+            GameObject dieVisualPrefab = null,
+            BoardCanvasBindings boardBindings = null,
+            BoardFlowTestToolsBindings toolBindings = null)
         {
             player = localPlayer;
             eyePivot = localEye;
             topology = boardTopology;
             cameraDirector = director;
             worldDieVisualPrefab = dieVisualPrefab;
+            boardUiBindings = boardBindings;
+            testToolsBindings = toolBindings;
         }
 
         private void Awake()
         {
-            BindUi();
+            if (!BindUi())
+            {
+                enabled = false;
+                return;
+            }
             WireButtons();
             _flow.Transitioned += OnTransitioned;
         }
@@ -2945,13 +2956,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 SetText(_playerRankTexts[playerIndex], "#" + ranks[playerIndex]);
                 if (_playerRows[playerIndex] != null)
                 {
-                    _playerRows[playerIndex].color = PlayerColor(playerIndex);
+                    _playerRows[playerIndex].color =
+                        boardUiBindings.GetPlayerColor(playerIndex);
                 }
                 if (_playerCards[playerIndex] != null)
                 {
                     _playerCards[playerIndex].color = playerIndex == 0
-                        ? new Color(0.16f, 0.3f, 0.5f, 0.98f)
-                        : new Color(0.055f, 0.085f, 0.13f, 0.94f);
+                        ? boardUiBindings.LocalPlayerCardColor
+                        : boardUiBindings.RemotePlayerCardColor;
                 }
 
                 var showCombatHealth = _flow.State == BoardFlowState.CombatResolve &&
@@ -2967,10 +2979,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 {
                     _playerHealthFills[playerIndex].fillAmount = healthRatio;
                     _playerHealthFills[playerIndex].color = healthRatio > 0.5f
-                        ? new Color(0.2f, 0.82f, 0.38f, 1f)
+                        ? boardUiBindings.HealthyHealthColor
                         : healthRatio > 0.25f
-                            ? new Color(1f, 0.7f, 0.16f, 1f)
-                            : new Color(0.95f, 0.2f, 0.2f, 1f);
+                            ? boardUiBindings.WoundedHealthColor
+                            : boardUiBindings.CriticalHealthColor;
                 }
                 SetText(_playerHealthTexts[playerIndex],
                     shownHealth + "/" + maxHealth);
@@ -2986,8 +2998,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_playerActionIcons[playerIndex] != null)
                 {
                     _playerActionIcons[playerIndex].color = combatOut
-                        ? new Color(1f, 0.25f, 0.2f)
-                        : ActionIconColor(actionState);
+                        ? boardUiBindings.CombatOutColor
+                        : boardUiBindings.GetActionIconColor(actionState);
                 }
             }
 
@@ -2999,19 +3011,17 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_slotImages[i] != null)
                 {
                     _slotImages[i].color = i == _selectedSlot
-                        ? new Color(1f, 0.72f, 0.15f, 0.97f)
+                        ? boardUiBindings.InventorySelectedColor
                         : occupied
-                            ? new Color(0.18f, 0.36f, 0.58f, 0.94f)
-                            : new Color(0.1f, 0.12f, 0.16f, 0.88f);
+                            ? boardUiBindings.InventoryOccupiedColor
+                            : boardUiBindings.InventoryEmptyColor;
                 }
                 if (_choiceButtons[i] != null)
                 {
                     _choiceButtons[i].interactable = occupied;
-                    var label = _choiceButtons[i].GetComponentInChildren<Text>();
-                    if (label != null)
-                    {
-                        label.text = occupied ? ItemName(i) : "EMPTY";
-                    }
+                    SetText(
+                        _choiceLabels[i],
+                        occupied ? ItemName(i) : "EMPTY");
                 }
             }
 
@@ -3023,58 +3033,76 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _flow.ActionClock.IsChoicePending);
         }
 
-        private void BindUi()
+        private bool BindUi()
         {
-            _selectionPanel = FindNamed("ItemSelectionPanel");
-            _readyPanel = FindNamed("MinigameReadyPanel");
-            _resultPanel = FindNamed("SkippedResultPanel");
-            _reticle = FindNamed("BoardReticle");
-            _itemShopPanel = FindNamed("ItemShopPanel");
-            _turnText = FindNamedComponent<Text>("TurnText");
-            _phaseText = FindNamedComponent<Text>("PhaseText");
-            _phaseTimerText = FindNamedComponent<Text>("PhaseTimerText");
-            _choiceText = FindNamedComponent<Text>("BoardChoiceTimerText");
-            _shieldText = FindNamedComponent<Text>("BoardShieldText");
-            _diceText = FindNamedComponent<Text>("DiceText");
-            _movesText = FindNamedComponent<Text>("MovesText");
-            _ammoText = FindNamedComponent<Text>("BoardAmmoText");
-            _statusText = FindNamedComponent<Text>("BoardStatusText");
-            _tooltipText = FindNamedComponent<Text>("BoardTooltipText");
-            _itemShopTitle = FindNamedComponent<Text>("ItemShopTitle");
-            _itemShopTooltip = FindNamedComponent<Text>("ItemShopTooltip");
-            _itemShopStatus = FindNamedComponent<Text>("ItemShopStatus");
-            _noItemButton = FindNamedComponent<Button>("NoItemButton");
-            _readyButton = FindNamedComponent<Button>("ReadyButton");
-            _finishActionButton = FindNamedComponent<Button>("EditorFinishActionButton");
-            _stageFightButton = FindNamedComponent<Button>("EditorStageFightButton");
-            _speedButton = FindNamedComponent<Button>("EditorSpeedButton");
-            _pauseButton = FindNamedComponent<Button>("EditorPauseButton");
-            _damagePlayerButton = FindNamedComponent<Button>("EditorDamagePlayerButton");
-            _addGoldButton = FindNamedComponent<Button>("EditorAddGoldButton");
-            _buyKeyButton = FindNamedComponent<Button>("EditorBuyKeyButton");
-            _itemShopCloseButton = FindNamedComponent<Button>("ItemShopCloseButton");
-            _speedButtonLabel = _speedButton != null ? _speedButton.GetComponentInChildren<Text>() : null;
-            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            if (boardUiBindings == null ||
+                !boardUiBindings.HasRequiredReferences ||
+                testToolsBindings == null ||
+                !testToolsBindings.HasRequiredReferences)
             {
-                _slotImages[i] = FindNamedComponent<Image>("BoardInventorySlot" + i);
-                _slotLabels[i] = FindNamedComponent<Text>("BoardInventorySlotLabel" + i);
-                _choiceButtons[i] = FindNamedComponent<Button>("ItemChoiceButton" + i);
+                Debug.LogError(
+                    "BoardFlowLocalSimulator requires serialized BoardCanvas " +
+                    "and BoardFlowTestTools prefab bindings.",
+                    this);
+                return false;
             }
-            for (var i = 0; i < _playerRows.Length; i++)
-            {
-                _playerRows[i] = FindNamedComponent<Text>("PlayerState" + i);
-                _playerCards[i] = FindNamedComponent<Image>("PlayerCard" + i);
-                _playerHealthFills[i] = FindNamedComponent<Image>("PlayerHealthFill" + i);
-                _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
-                _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
-                _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
-                _playerRankTexts[i] = FindNamedComponent<Text>("PlayerRank" + i);
-            }
-            for (var i = 0; i < ItemShopRules.OfferCount; i++)
-            {
-                _shopOfferButtons[i] = FindNamedComponent<Button>("ItemShopOffer" + i);
-                _shopOfferLabels[i] = FindNamedComponent<Text>("ItemShopOfferLabel" + i);
-            }
+
+            _selectionPanel = boardUiBindings.ItemSelectionPanel;
+            _readyPanel = boardUiBindings.MinigameReadyPanel;
+            _resultPanel = boardUiBindings.ResultPanel;
+            _reticle = boardUiBindings.Reticle;
+            _itemShopPanel = boardUiBindings.ItemShopPanel;
+            _turnText = boardUiBindings.TurnText;
+            _phaseText = boardUiBindings.PhaseText;
+            _phaseTimerText = boardUiBindings.PhaseTimerText;
+            _choiceText = boardUiBindings.ChoiceTimerText;
+            _shieldText = boardUiBindings.ShieldText;
+            _diceText = boardUiBindings.DiceText;
+            _movesText = boardUiBindings.MovesText;
+            _ammoText = boardUiBindings.AmmoText;
+            _statusText = boardUiBindings.StatusText;
+            _tooltipText = boardUiBindings.TooltipText;
+            _itemShopTitle = boardUiBindings.ItemShopTitle;
+            _itemShopTooltip = boardUiBindings.ItemShopTooltip;
+            _itemShopStatus = boardUiBindings.ItemShopStatus;
+            _noItemButton = boardUiBindings.NoItemButton;
+            _readyButton = boardUiBindings.ReadyButton;
+            _itemShopCloseButton = boardUiBindings.ItemShopCloseButton;
+            _finishActionButton = testToolsBindings.FinishActionButton;
+            _stageFightButton = testToolsBindings.StageFightButton;
+            _speedButton = testToolsBindings.SpeedButton;
+            _pauseButton = testToolsBindings.PauseButton;
+            _damagePlayerButton = testToolsBindings.DamagePlayerButton;
+            _addGoldButton = testToolsBindings.AddGoldButton;
+            _buyKeyButton = testToolsBindings.BuyKeyButton;
+            _speedButtonLabel = testToolsBindings.SpeedButtonLabel;
+
+            CopyReferences(
+                boardUiBindings.InventorySlotBackgrounds,
+                _slotImages);
+            CopyReferences(boardUiBindings.InventorySlotLabels, _slotLabels);
+            CopyReferences(boardUiBindings.ItemChoiceButtons, _choiceButtons);
+            CopyReferences(boardUiBindings.ItemChoiceLabels, _choiceLabels);
+            CopyReferences(boardUiBindings.PlayerRows, _playerRows);
+            CopyReferences(boardUiBindings.PlayerCards, _playerCards);
+            CopyReferences(
+                boardUiBindings.PlayerHealthFills,
+                _playerHealthFills);
+            CopyReferences(
+                boardUiBindings.PlayerHealthTexts,
+                _playerHealthTexts);
+            CopyReferences(
+                boardUiBindings.PlayerCurrencyTexts,
+                _playerCurrencyTexts);
+            CopyReferences(
+                boardUiBindings.PlayerActionIcons,
+                _playerActionIcons);
+            CopyReferences(boardUiBindings.PlayerRankTexts, _playerRankTexts);
+            CopyReferences(
+                boardUiBindings.ShopOfferButtons,
+                _shopOfferButtons);
+            CopyReferences(boardUiBindings.ShopOfferLabels, _shopOfferLabels);
+            return true;
         }
 
         private void WireButtons()
@@ -3250,30 +3278,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
-        private T FindNamedComponent<T>(string name) where T : Component
+        private static void CopyReferences<T>(T[] source, T[] destination)
         {
-            var components = FindObjectsByType<T>(FindObjectsInactive.Include);
-            for (var i = 0; i < components.Length; i++)
+            for (var index = 0; index < destination.Length; index++)
             {
-                if (components[i].gameObject.name == name)
-                {
-                    return components[i];
-                }
+                destination[index] = source[index];
             }
-            return null;
-        }
-
-        private static GameObject FindNamed(string name)
-        {
-            var transforms = FindObjectsByType<Transform>(FindObjectsInactive.Include);
-            for (var i = 0; i < transforms.Length; i++)
-            {
-                if (transforms[i].gameObject.name == name)
-                {
-                    return transforms[i].gameObject;
-                }
-            }
-            return null;
         }
 
         private void SetStatus(string message)
@@ -3353,27 +3363,5 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
-        private static Color ActionIconColor(PlayerBoardActionState state)
-        {
-            switch (state)
-            {
-                case PlayerBoardActionState.Dice: return new Color(0.4f, 0.75f, 1f);
-                case PlayerBoardActionState.Moving: return new Color(0.35f, 1f, 0.55f);
-                case PlayerBoardActionState.Arrived: return new Color(1f, 0.82f, 0.3f);
-                case PlayerBoardActionState.Fighting: return new Color(1f, 0.3f, 0.25f);
-                default: return Color.clear;
-            }
-        }
-
-        private static Color PlayerColor(int slot)
-        {
-            switch (slot)
-            {
-                case 0: return new Color(1f, 0.42f, 0.42f);
-                case 1: return new Color(0.42f, 0.7f, 1f);
-                case 2: return new Color(0.42f, 1f, 0.58f);
-                default: return new Color(1f, 0.82f, 0.35f);
-            }
-        }
     }
 }

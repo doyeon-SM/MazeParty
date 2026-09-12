@@ -4,7 +4,6 @@ using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.Minefield;
 using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
 {
@@ -26,17 +25,17 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform mineRoot;
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private GameObject crusherPlaceholder;
+        [SerializeField] private MinefieldHudBindings hud;
 
         private readonly RunnerView[] _runners =
             new RunnerView[MinefieldRules.PlayerCount];
         private readonly List<MineView> _mines = new List<MineView>();
         private GameplayCameraDirector _cameraDirector;
-        private Canvas _hudCanvas;
-        private Text _phaseText;
-        private Text _instructionText;
-        private Text[] _scoreRows;
         private int _mineLayoutHash;
         private bool _cameraConfigured;
+        private bool _hudContractErrorLogged;
+        private bool _hudDefaultsCaptured;
+        private string _defaultInstructionText;
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
             90f - PlayerCameraTiltDegrees,
@@ -59,6 +58,7 @@ namespace MazeParty.Multiplayer
             ConfigureCamera();
             EnsurePresentation();
             SetWorldPresentationActive(false);
+            SetHudActive(false);
         }
 
         private void OnEnable()
@@ -69,6 +69,7 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
+            SetHudActive(false);
             if (_cameraDirector != null && topDownCamera != null)
             {
                 _cameraDirector.ClearMinigameCamera(topDownCamera);
@@ -111,10 +112,7 @@ namespace MazeParty.Multiplayer
                                    match.FlowState == BoardFlowState.SkippedResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState == BoardFlowState.MinigamePlaying;
-            if (_hudCanvas != null && _hudCanvas.gameObject.activeSelf != shouldShowHud)
-            {
-                _hudCanvas.gameObject.SetActive(shouldShowHud);
-            }
+            SetHudActive(shouldShowHud);
 
             if (!shouldShowWorld)
             {
@@ -128,6 +126,16 @@ namespace MazeParty.Multiplayer
             RefreshMines();
             RefreshCrusher();
             RefreshHud(match);
+        }
+
+        private void SetHudActive(bool active)
+        {
+            if (hud != null &&
+                hud.Canvas != null &&
+                hud.Canvas.gameObject.activeSelf != active)
+            {
+                hud.Canvas.gameObject.SetActive(active);
+            }
         }
 
         private void ResolveSceneReferences()
@@ -149,6 +157,13 @@ namespace MazeParty.Multiplayer
             {
                 var arena = FindDescendant(transform, "Arena Presentation");
                 arenaPresentation = arena != null ? arena.gameObject : null;
+            }
+            if (!_hudDefaultsCaptured &&
+                hud != null &&
+                hud.InstructionText != null)
+            {
+                _defaultInstructionText = hud.InstructionText.text;
+                _hudDefaultsCaptured = true;
             }
             if (runnerRoot == null)
             {
@@ -242,9 +257,14 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (_hudCanvas == null)
+            if ((hud == null || !hud.HasRequiredReferences) &&
+                !_hudContractErrorLogged)
             {
-                CreateHud();
+                Debug.LogError(
+                    "MinefieldNetworkView requires a connected " +
+                    "MinefieldHud.prefab instance with complete bindings.",
+                    this);
+                _hudContractErrorLogged = true;
             }
         }
 
@@ -479,99 +499,50 @@ namespace MazeParty.Multiplayer
             crusherPlaceholder.transform.position = position;
         }
 
-        private void CreateHud()
-        {
-            var canvasObject = new GameObject("Minefield HUD");
-            canvasObject.transform.SetParent(transform, false);
-            _hudCanvas = canvasObject.AddComponent<Canvas>();
-            _hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _hudCanvas.sortingOrder = 40;
-            var scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var panel = new GameObject("Minefield HUD Panel");
-            panel.transform.SetParent(canvasObject.transform, false);
-            var panelRect = panel.AddComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 1f);
-            panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -24f);
-            panelRect.sizeDelta = new Vector2(950f, 265f);
-            var panelImage = panel.AddComponent<Image>();
-            panelImage.color = new Color(0.025f, 0.035f, 0.055f, 0.88f);
-            panelImage.raycastTarget = false;
-
-            _phaseText = CreateText(
-                "Minefield Phase",
-                panel.transform,
-                new Vector2(0f, -20f),
-                new Vector2(900f, 48f),
-                34,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            _instructionText = CreateText(
-                "Minefield Instructions",
-                panel.transform,
-                new Vector2(0f, -68f),
-                new Vector2(900f, 34f),
-                20,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            _instructionText.text = "WASD MOVE   |   STOP + RMB SONAR   |   FIRST MINE: CRIPPLED   |   SECOND: OUT";
-
-            _scoreRows = new Text[MinefieldRules.PlayerCount];
-            for (var slot = 0; slot < _scoreRows.Length; slot++)
-            {
-                _scoreRows[slot] = CreateText(
-                    "Minefield Score " + slot,
-                    panel.transform,
-                    new Vector2(-330f + slot * 220f, -133f),
-                    new Vector2(205f, 105f),
-                    19,
-                    TextAnchor.UpperCenter,
-                    FontStyle.Bold);
-            }
-        }
-
         private void RefreshHud(NetworkMatchState match)
         {
+            if (hud == null || !hud.HasRequiredReferences)
+            {
+                return;
+            }
+
+            var phaseText = hud.PhaseText;
+            var instructionText = hud.InstructionText;
+            var scoreRows = hud.ScoreRows;
             if (match.IsReconnectPaused)
             {
-                _phaseText.text = "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
-                                  FormatClock(match.ReconnectRemaining);
-                _instructionText.text =
+                phaseText.text = "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
+                                 FormatClock(match.ReconnectRemaining);
+                instructionText.text =
                     "Waiting up to 60 seconds for the player to reconnect.";
             }
             else
             {
-                _instructionText.text =
-                    "WASD MOVE   |   STOP + RMB SONAR   |   FIRST MINE: CRIPPLED   |   SECOND: OUT";
+                instructionText.text = _defaultInstructionText;
                 switch (state.Phase)
                 {
                     case NetworkMinefieldPhase.Countdown:
-                        _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  START IN " +
-                                          Mathf.CeilToInt((float)state.Remaining);
+                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  START IN " +
+                                         Mathf.CeilToInt((float)state.Remaining);
                         break;
                     case NetworkMinefieldPhase.Running:
-                        _phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  " +
-                                          FormatClock(state.Remaining);
+                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  " +
+                                         FormatClock(state.Remaining);
                         break;
                     case NetworkMinefieldPhase.RoundResult:
-                        _phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
-                                          Mathf.CeilToInt((float)state.Remaining);
+                        phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
+                                         Mathf.CeilToInt((float)state.Remaining);
                         break;
                     case NetworkMinefieldPhase.Complete:
-                        _phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
+                        phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
                         break;
                     default:
-                        _phaseText.text = "MINEFIELD";
+                        phaseText.text = "MINEFIELD";
                         break;
                 }
             }
 
-            for (var slot = 0; slot < _scoreRows.Length; slot++)
+            for (var slot = 0; slot < scoreRows.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
                 var displayName = avatar != null ? avatar.DisplayName : "PLAYER " + (slot + 1);
@@ -584,17 +555,17 @@ namespace MazeParty.Multiplayer
                         : playerState == MinefieldPlayerState.Finished
                             ? "FINISHED"
                             : "RUNNING";
-                _scoreRows[slot].text = displayName + "\n" +
-                                        stateLabel + "\n" +
-                                        "+" + state.GetRoundPoints(slot) +
-                                        "  ·  TOTAL " + state.GetScore(slot) +
-                                        (finalRank > 0
-                                            ? "\n#" + finalRank + "  ·  GOLD +" +
-                                              MinefieldRules.GetPointsForRank(finalRank)
-                                            : string.Empty);
+                scoreRows[slot].text = displayName + "\n" +
+                                       stateLabel + "\n" +
+                                       "+" + state.GetRoundPoints(slot) +
+                                       "  ·  TOTAL " + state.GetScore(slot) +
+                                       (finalRank > 0
+                                           ? "\n#" + finalRank + "  ·  GOLD +" +
+                                             MinefieldRules.GetPointsForRank(finalRank)
+                                           : string.Empty);
                 if (avatar != null)
                 {
-                    _scoreRows[slot].color = avatar.Appearance.BodyColor;
+                    scoreRows[slot].color = avatar.Appearance.BodyColor;
                 }
             }
         }
@@ -617,6 +588,13 @@ namespace MazeParty.Multiplayer
             if (crusherPlaceholder != null && crusherPlaceholder.activeSelf != active)
             {
                 crusherPlaceholder.SetActive(active);
+            }
+            if (!active &&
+                hud != null &&
+                hud.Canvas != null &&
+                hud.Canvas.gameObject.activeSelf)
+            {
+                hud.Canvas.gameObject.SetActive(false);
             }
         }
 
@@ -643,35 +621,6 @@ namespace MazeParty.Multiplayer
                 }
                 return hash;
             }
-        }
-
-        private static Text CreateText(
-            string name,
-            Transform parent,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            TextAnchor alignment,
-            FontStyle style)
-        {
-            var textObject = new GameObject(name);
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            var text = textObject.AddComponent<Text>();
-            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.alignment = alignment;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Overflow;
-            return text;
         }
 
         private static Transform EnsureChild(Transform parent, string name)

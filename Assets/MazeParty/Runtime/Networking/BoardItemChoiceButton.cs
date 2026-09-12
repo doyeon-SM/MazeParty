@@ -11,6 +11,16 @@ namespace MazeParty.Multiplayer
         [SerializeField] private int slotIndex;
         [SerializeField] private bool shopOffer;
 
+        public bool IsConfiguredFor(
+            BoardFlowView owner,
+            int slot,
+            bool isShopOffer)
+        {
+            return view == owner &&
+                   slotIndex == slot &&
+                   shopOffer == isShopOffer;
+        }
+
         public void Configure(BoardFlowView owner, int slot)
         {
             view = owner;
@@ -27,25 +37,35 @@ namespace MazeParty.Multiplayer
 
         public void OnPointerEnter(PointerEventData eventData)
         {
+            if (view == null || !view.isActiveAndEnabled)
+            {
+                return;
+            }
+
             if (shopOffer)
             {
-                view?.ShowShopItemTooltip(slotIndex);
+                view.ShowShopItemTooltip(slotIndex);
             }
             else
             {
-                view?.ShowItemTooltip(slotIndex);
+                view.ShowItemTooltip(slotIndex);
             }
         }
 
         public void OnPointerExit(PointerEventData eventData)
         {
+            if (view == null || !view.isActiveAndEnabled)
+            {
+                return;
+            }
+
             if (shopOffer)
             {
-                view?.HideShopItemTooltip();
+                view.HideShopItemTooltip();
             }
             else
             {
-                view?.HideItemTooltip();
+                view.HideItemTooltip();
             }
         }
     }

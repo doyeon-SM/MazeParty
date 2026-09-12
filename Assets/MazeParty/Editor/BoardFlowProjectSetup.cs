@@ -51,6 +51,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = UiFolder + "/Prefabs";
         internal const string BoardCanvasPrefabPath =
             UiPrefabFolder + "/BoardCanvas.prefab";
+        internal const string BoardFlowTestToolsPrefabPath =
+            UiPrefabFolder + "/Dev/BoardFlowTestTools.prefab";
         private const string TestbedPath =
             Root + "/Dev/BoardFlowTestbed/BoardFlowTestbed.unity";
         private const float RoomSize = BoardTile.RoomSize;
@@ -233,10 +235,12 @@ namespace MazeParty.Editor
             }
 
             var networkView = canvas.GetComponent<BoardFlowView>();
-            if (networkView != null)
+            if (networkView == null)
             {
-                UnityEngine.Object.DestroyImmediate(networkView);
+                throw new InvalidOperationException(
+                    "Board Canvas prefab instance is missing BoardFlowView.");
             }
+            networkView.enabled = false;
             var networkPresenter = rig.GetComponent<BoardFlowCameraPresenter>();
             if (networkPresenter != null)
             {
@@ -316,8 +320,13 @@ namespace MazeParty.Editor
                 remoteWalls.SetPresentationVisible(false);
             }
 
-            CreateEditorTools(canvas.transform,
-                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"));
+            var boardBindings = canvas.GetComponent<BoardCanvasBindings>();
+            if (boardBindings == null || !boardBindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas instance is missing its serialized bindings.");
+            }
+            var testToolBindings = InstantiateEditorTools(canvas.transform);
             var simulator = rig.AddComponent<BoardFlowLocalSimulator>();
             var d12VisualPrefab = EnsureD12RuntimeAssets();
             simulator.Configure(
@@ -325,7 +334,9 @@ namespace MazeParty.Editor
                 eye,
                 topology,
                 director,
-                d12VisualPrefab);
+                d12VisualPrefab,
+                boardBindings,
+                testToolBindings);
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -333,12 +344,6 @@ namespace MazeParty.Editor
                 if (choiceButton == null)
                 {
                     continue;
-                }
-
-                var onlineHover = choiceButton.GetComponent<BoardItemChoiceButton>();
-                if (onlineHover != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(onlineHover);
                 }
 
                 var localHover = choiceButton.AddComponent<BoardFlowLocalItemChoiceButton>();
@@ -351,12 +356,6 @@ namespace MazeParty.Editor
                 if (shopButton == null)
                 {
                     continue;
-                }
-
-                var onlineHover = shopButton.GetComponent<BoardItemChoiceButton>();
-                if (onlineHover != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(onlineHover);
                 }
 
                 var localHover = shopButton.AddComponent<BoardFlowLocalItemChoiceButton>();
@@ -930,7 +929,9 @@ namespace MazeParty.Editor
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster),
                 typeof(BoardEventSystemBootstrap),
+                typeof(BoardCanvasBindings),
                 typeof(BoardFlowView));
+            root.transform.localScale = Vector3.one;
             root.layer = LayerMask.NameToLayer("UI");
             var canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -951,6 +952,9 @@ namespace MazeParty.Editor
             CreateResultPanel(root.transform, font);
             CreateReticle(root.transform, font);
             CreateReconnectOverlay(root.transform, font);
+            var bindings = root.GetComponent<BoardCanvasBindings>();
+            ConfigureBoardCanvasBindings(root, bindings);
+            root.GetComponent<BoardFlowView>().ConfigureUiBindings(bindings);
             return root;
         }
 
@@ -964,6 +968,7 @@ namespace MazeParty.Editor
                     "Board Canvas prefab could not be instantiated.");
             }
 
+            root.transform.localScale = prefab.transform.localScale;
             root.name = "Board Canvas";
             var view = root.GetComponent<BoardFlowView>();
             if (view == null)
@@ -1002,9 +1007,74 @@ namespace MazeParty.Editor
 
                 AssetDatabase.SaveAssets();
             }
+            else
+            {
+                prefab = MigrateBoardCanvasBindingsIfMissing(prefab);
+            }
 
+            prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
             ValidateBoardCanvasPrefab(prefab);
             return prefab;
+        }
+
+        private static GameObject MigrateBoardCanvasBindingsIfMissing(
+            GameObject prefab)
+        {
+            if (prefab.GetComponent<BoardCanvasBindings>() != null)
+            {
+                return prefab;
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                BoardCanvasPrefabPath);
+            try
+            {
+                var bindings = contents.AddComponent<BoardCanvasBindings>();
+                ConfigureBoardCanvasBindings(contents, bindings);
+                var view = contents.GetComponent<BoardFlowView>();
+                if (view == null)
+                {
+                    throw new InvalidOperationException(
+                        "BoardCanvas.prefab is missing BoardFlowView.");
+                }
+                view.ConfigureUiBindings(bindings);
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    BoardCanvasPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+        }
+
+        private static GameObject MigrateBoardItemChoiceBindingsIfMissing(
+            GameObject prefab)
+        {
+            if (HasConfiguredBoardItemChoices(prefab))
+            {
+                return prefab;
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                BoardCanvasPrefabPath);
+            try
+            {
+                ConfigureBoardItemChoices(contents);
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    BoardCanvasPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
         }
 
         private static void ValidateBoardCanvasPrefab(GameObject prefab)
@@ -1014,91 +1084,28 @@ namespace MazeParty.Editor
                 prefab.GetComponent<CanvasScaler>() == null ||
                 prefab.GetComponent<GraphicRaycaster>() == null ||
                 prefab.GetComponent<BoardEventSystemBootstrap>() == null ||
-                prefab.GetComponent<BoardFlowView>() == null)
+                prefab.GetComponent<BoardFlowView>() == null ||
+                prefab.GetComponent<BoardCanvasBindings>() == null)
             {
                 throw new InvalidOperationException(
                     "Board Canvas prefab root contract is incomplete. " +
-                    "Keep its Canvas, scaler, raycaster, event bootstrap, and BoardFlowView.");
+                    "Keep its Canvas, scaler, raycaster, event bootstrap, " +
+                    "BoardFlowView, and BoardCanvasBindings.");
             }
 
-            var requiredPanels = new[]
+            var bindings = prefab.GetComponent<BoardCanvasBindings>();
+            var view = prefab.GetComponent<BoardFlowView>();
+            if (!bindings.HasRequiredReferences ||
+                !view.HasRequiredUiReferences ||
+                view.UiBindings != bindings ||
+                !HasConfiguredBoardItemChoices(prefab))
             {
-                "Header Panel",
-                "Player State Panel",
-                "Inventory Panel",
-                "ItemSelectionPanel",
-                "ItemShopPanel",
-                "MinigameReadyPanel",
-                "SkippedResultPanel",
-                "ReconnectOverlay",
-                "BoardReticle"
-            };
-            for (var i = 0; i < requiredPanels.Length; i++)
-            {
-                if (FindDescendant(prefab.transform, requiredPanels[i]) == null)
-                {
-                    throw new InvalidOperationException(
-                        "Board Canvas prefab is missing UI anchor '" +
-                        requiredPanels[i] + "'.");
-                }
+                throw new InvalidOperationException(
+                    "BoardCanvas.prefab has incomplete serialized UI bindings. " +
+                    "Repair BoardCanvasBindings directly; setup will not " +
+                    "overwrite its design or remap an existing contract.");
             }
 
-            var requiredTexts = new[]
-            {
-                "TurnText",
-                "PhaseText",
-                "PhaseTimerText",
-                "BoardChoiceTimerText",
-                "BoardShieldText",
-                "DiceText",
-                "MovesText",
-                "BoardAmmoText",
-                "BoardStatusText",
-                "BoardTooltipText",
-                "ReconnectText",
-                "ItemShopTitle",
-                "ItemShopTooltip",
-                "ItemShopStatus"
-            };
-            for (var i = 0; i < requiredTexts.Length; i++)
-            {
-                RequireBoardUiComponent<Text>(prefab, requiredTexts[i]);
-            }
-
-            RequireBoardUiComponent<Button>(prefab, "NoItemButton");
-            RequireBoardUiComponent<Button>(prefab, "ReadyButton");
-            RequireBoardUiComponent<Button>(prefab, "ItemShopCloseButton");
-
-            for (var i = 0; i < GameplayInventory.Capacity; i++)
-            {
-                RequireBoardUiComponent<Image>(prefab, "BoardInventorySlot" + i);
-                RequireBoardUiComponent<Text>(prefab, "BoardInventorySlotLabel" + i);
-                RequireBoardUiComponent<Button>(prefab, "ItemChoiceButton" + i);
-                RequireBoardUiComponent<Text>(prefab, "ItemChoiceLabel" + i);
-                RequireBoardUiComponent<BoardItemChoiceButton>(
-                    prefab,
-                    "ItemChoiceButton" + i);
-            }
-
-            for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
-            {
-                RequireBoardUiComponent<Image>(prefab, "PlayerCard" + i);
-                RequireBoardUiComponent<Text>(prefab, "PlayerState" + i);
-                RequireBoardUiComponent<Image>(prefab, "PlayerHealthFill" + i);
-                RequireBoardUiComponent<Text>(prefab, "PlayerHealthText" + i);
-                RequireBoardUiComponent<Text>(prefab, "PlayerCurrency" + i);
-                RequireBoardUiComponent<Text>(prefab, "PlayerActionIcon" + i);
-                RequireBoardUiComponent<Text>(prefab, "PlayerRank" + i);
-            }
-
-            for (var i = 0; i < ItemShopRules.OfferCount; i++)
-            {
-                RequireBoardUiComponent<Button>(prefab, "ItemShopOffer" + i);
-                RequireBoardUiComponent<Text>(prefab, "ItemShopOfferLabel" + i);
-                RequireBoardUiComponent<BoardItemChoiceButton>(
-                    prefab,
-                    "ItemShopOffer" + i);
-            }
         }
 
         private static T RequireBoardUiComponent<T>(
@@ -1116,6 +1123,306 @@ namespace MazeParty.Editor
             }
 
             return component;
+        }
+
+        private static GameObject RequireBoardUiObject(
+            GameObject prefab,
+            string objectName)
+        {
+            var target = FindDescendant(prefab.transform, objectName);
+            if (target == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas prefab is missing UI anchor '" +
+                    objectName + "'.");
+            }
+
+            return target;
+        }
+
+        private static void ConfigureBoardCanvasBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            if (bindings == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas requires BoardCanvasBindings on its root.");
+            }
+
+            var slotBackgrounds =
+                new Image[GameplayInventory.Capacity];
+            var slotLabels = new Text[GameplayInventory.Capacity];
+            var choiceButtons = new Button[GameplayInventory.Capacity];
+            var choiceLabels = new Text[GameplayInventory.Capacity];
+            var choiceHovers =
+                new BoardItemChoiceButton[GameplayInventory.Capacity];
+            for (var index = 0;
+                 index < GameplayInventory.Capacity;
+                 index++)
+            {
+                slotBackgrounds[index] = RequireBoardUiComponent<Image>(
+                    root,
+                    "BoardInventorySlot" + index);
+                slotLabels[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardInventorySlotLabel" + index);
+                choiceButtons[index] = RequireBoardUiComponent<Button>(
+                    root,
+                    "ItemChoiceButton" + index);
+                choiceLabels[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "ItemChoiceLabel" + index);
+                choiceHovers[index] =
+                    RequireBoardUiComponent<BoardItemChoiceButton>(
+                        root,
+                        "ItemChoiceButton" + index);
+            }
+
+            var shopButtons = new Button[ItemShopRules.OfferCount];
+            var shopLabels = new Text[ItemShopRules.OfferCount];
+            var shopHovers =
+                new BoardItemChoiceButton[ItemShopRules.OfferCount];
+            for (var index = 0;
+                 index < ItemShopRules.OfferCount;
+                 index++)
+            {
+                shopButtons[index] = RequireBoardUiComponent<Button>(
+                    root,
+                    "ItemShopOffer" + index);
+                shopLabels[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "ItemShopOfferLabel" + index);
+                shopHovers[index] =
+                    RequireBoardUiComponent<BoardItemChoiceButton>(
+                        root,
+                        "ItemShopOffer" + index);
+            }
+
+            var playerRows = new Text[MultiplayerConstants.MaxPlayers];
+            var playerCards = new Image[MultiplayerConstants.MaxPlayers];
+            var playerHealthFills =
+                new Image[MultiplayerConstants.MaxPlayers];
+            var playerHealthTexts =
+                new Text[MultiplayerConstants.MaxPlayers];
+            var playerCurrencyTexts =
+                new Text[MultiplayerConstants.MaxPlayers];
+            var playerActionIcons =
+                new Text[MultiplayerConstants.MaxPlayers];
+            var playerRankTexts =
+                new Text[MultiplayerConstants.MaxPlayers];
+            for (var index = 0;
+                 index < MultiplayerConstants.MaxPlayers;
+                 index++)
+            {
+                playerRows[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerState" + index);
+                playerCards[index] = RequireBoardUiComponent<Image>(
+                    root,
+                    "PlayerCard" + index);
+                playerHealthFills[index] = RequireBoardUiComponent<Image>(
+                    root,
+                    "PlayerHealthFill" + index);
+                playerHealthTexts[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerHealthText" + index);
+                playerCurrencyTexts[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerCurrency" + index);
+                playerActionIcons[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerActionIcon" + index);
+                playerRankTexts[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerRank" + index);
+            }
+
+            var readyButton = RequireBoardUiComponent<Button>(
+                root,
+                "ReadyButton");
+            var readyButtonLabel =
+                readyButton.GetComponentInChildren<Text>(true);
+            if (readyButtonLabel == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas ReadyButton requires its prefab-authored label.");
+            }
+
+            bindings.Configure(new BoardCanvasBindings.References
+            {
+                RootCanvas = root.GetComponent<Canvas>(),
+                RootRaycaster = root.GetComponent<GraphicRaycaster>(),
+                ItemSelectionPanel = RequireBoardUiObject(
+                    root,
+                    "ItemSelectionPanel"),
+                MinigameReadyPanel = RequireBoardUiObject(
+                    root,
+                    "MinigameReadyPanel"),
+                ResultPanel = RequireBoardUiObject(
+                    root,
+                    "SkippedResultPanel"),
+                ReconnectOverlay = RequireBoardUiObject(
+                    root,
+                    "ReconnectOverlay"),
+                Reticle = RequireBoardUiObject(root, "BoardReticle"),
+                ItemShopPanel = RequireBoardUiObject(
+                    root,
+                    "ItemShopPanel"),
+                TurnText = RequireBoardUiComponent<Text>(root, "TurnText"),
+                PhaseText = RequireBoardUiComponent<Text>(root, "PhaseText"),
+                PhaseTimerText = RequireBoardUiComponent<Text>(
+                    root,
+                    "PhaseTimerText"),
+                ChoiceTimerText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardChoiceTimerText"),
+                ShieldText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardShieldText"),
+                DiceText = RequireBoardUiComponent<Text>(root, "DiceText"),
+                MovesText = RequireBoardUiComponent<Text>(root, "MovesText"),
+                AmmoText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardAmmoText"),
+                StatusText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardStatusText"),
+                TooltipText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardTooltipText"),
+                ReconnectText = RequireBoardUiComponent<Text>(
+                    root,
+                    "ReconnectText"),
+                ItemShopTitle = RequireBoardUiComponent<Text>(
+                    root,
+                    "ItemShopTitle"),
+                ItemShopTooltip = RequireBoardUiComponent<Text>(
+                    root,
+                    "ItemShopTooltip"),
+                ItemShopStatus = RequireBoardUiComponent<Text>(
+                    root,
+                    "ItemShopStatus"),
+                MinigameReadyTitle = RequireBoardUiComponent<Text>(
+                    root,
+                    "Ready Title"),
+                MinigameReadyNote = RequireBoardUiComponent<Text>(
+                    root,
+                    "Ready Note"),
+                MinigameReadyStatus = RequireBoardUiComponent<Text>(
+                    root,
+                    "MinigameReadyStatus"),
+                MinigameRulePlaceholder = RequireBoardUiComponent<Text>(
+                    root,
+                    "MinigameRulePlaceholderText"),
+                ResultTitle = RequireBoardUiComponent<Text>(
+                    root,
+                    "Result Title"),
+                ResultNote = RequireBoardUiComponent<Text>(
+                    root,
+                    "Result Note"),
+                ResultSummary = RequireBoardUiComponent<Text>(
+                    root,
+                    "MinefieldResultSummary"),
+                ReadyButtonLabel = readyButtonLabel,
+                MinigameRuleImage = RequireBoardUiComponent<Image>(
+                    root,
+                    "MinigameRuleImage"),
+                NoItemButton = RequireBoardUiComponent<Button>(
+                    root,
+                    "NoItemButton"),
+                ReadyButton = readyButton,
+                ItemShopCloseButton = RequireBoardUiComponent<Button>(
+                    root,
+                    "ItemShopCloseButton"),
+                InventorySlotBackgrounds = slotBackgrounds,
+                InventorySlotLabels = slotLabels,
+                ItemChoiceButtons = choiceButtons,
+                ItemChoiceLabels = choiceLabels,
+                ItemChoiceHovers = choiceHovers,
+                ShopOfferButtons = shopButtons,
+                ShopOfferLabels = shopLabels,
+                ShopOfferHovers = shopHovers,
+                PlayerRows = playerRows,
+                PlayerCards = playerCards,
+                PlayerHealthFills = playerHealthFills,
+                PlayerHealthTexts = playerHealthTexts,
+                PlayerCurrencyTexts = playerCurrencyTexts,
+                PlayerActionIcons = playerActionIcons,
+                PlayerRankTexts = playerRankTexts
+            });
+
+            ConfigureBoardItemChoices(root);
+        }
+
+        private static void ConfigureBoardItemChoices(GameObject root)
+        {
+            var bindings = root.GetComponent<BoardCanvasBindings>();
+            var view = root.GetComponent<BoardFlowView>();
+            if (bindings == null ||
+                view == null ||
+                !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas item choices require complete prefab " +
+                    "bindings and BoardFlowView.");
+            }
+
+            for (var index = 0;
+                 index < bindings.ItemChoiceHovers.Length;
+                 index++)
+            {
+                bindings.ItemChoiceHovers[index].Configure(view, index);
+            }
+            for (var index = 0;
+                 index < bindings.ShopOfferHovers.Length;
+                 index++)
+            {
+                bindings.ShopOfferHovers[index].ConfigureShop(view, index);
+            }
+        }
+
+        private static bool HasConfiguredBoardItemChoices(GameObject root)
+        {
+            var bindings = root != null
+                ? root.GetComponent<BoardCanvasBindings>()
+                : null;
+            var view = root != null
+                ? root.GetComponent<BoardFlowView>()
+                : null;
+            if (bindings == null ||
+                view == null ||
+                !bindings.HasRequiredReferences)
+            {
+                return false;
+            }
+
+            for (var index = 0;
+                 index < bindings.ItemChoiceHovers.Length;
+                 index++)
+            {
+                if (!bindings.ItemChoiceHovers[index].IsConfiguredFor(
+                        view,
+                        index,
+                        false))
+                {
+                    return false;
+                }
+            }
+            for (var index = 0;
+                 index < bindings.ShopOfferHovers.Length;
+                 index++)
+            {
+                if (!bindings.ShopOfferHovers[index].IsConfiguredFor(
+                        view,
+                        index,
+                        true))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static void CreateHeader(Transform canvas, Font font)
@@ -1295,15 +1602,48 @@ namespace MazeParty.Editor
         private static void CreateReadyPanel(Transform canvas, Font font)
         {
             var panel = CreatePanel("MinigameReadyPanel", canvas, new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(610f, 245f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1120f, 760f),
                 new Vector2(0.5f, 0.5f), new Color(0.03f, 0.055f, 0.09f, 0.98f));
             CreateText("Ready Title", panel.transform, "MINIGAME INTRO / READY", font, 28,
-                new Vector2(0f, 73f), new Vector2(540f, 44f), TextAnchor.MiddleCenter);
+                new Vector2(0f, 330f), new Vector2(960f, 44f), TextAnchor.MiddleCenter);
             CreateText("Ready Note", panel.transform,
                 "Minigame selection is TODO. Ready from all four players triggers the development skip.",
-                font, 17, new Vector2(0f, 20f), new Vector2(520f, 62f), TextAnchor.MiddleCenter);
+                font, 17, new Vector2(0f, 282f), new Vector2(960f, 62f), TextAnchor.MiddleCenter);
+
+            var ruleImageObject = CreateUiObject(
+                "MinigameRuleImage",
+                panel.transform);
+            var ruleImageRect = ruleImageObject.GetComponent<RectTransform>();
+            ruleImageRect.anchorMin = new Vector2(0.5f, 0.5f);
+            ruleImageRect.anchorMax = ruleImageRect.anchorMin;
+            ruleImageRect.anchoredPosition = new Vector2(0f, 15f);
+            ruleImageRect.sizeDelta = new Vector2(1040f, 480f);
+            var ruleImage = ruleImageObject.AddComponent<Image>();
+            ruleImage.color = new Color(0.055f, 0.09f, 0.14f, 1f);
+            ruleImage.preserveAspect = true;
+            ruleImage.raycastTarget = false;
+            ruleImageObject.transform.SetAsFirstSibling();
+
+            CreateText(
+                "MinigameRulePlaceholderText",
+                panel.transform,
+                "MINEFIELD RULE IMAGE\nARTWORK PLACEHOLDER",
+                font,
+                26,
+                new Vector2(0f, 15f),
+                new Vector2(900f, 120f),
+                TextAnchor.MiddleCenter);
+            CreateText(
+                "MinigameReadyStatus",
+                panel.transform,
+                "READY 0 / 4",
+                font,
+                22,
+                new Vector2(0f, -270f),
+                new Vector2(900f, 48f),
+                TextAnchor.MiddleCenter);
             CreateButton("ReadyButton", panel.transform, "READY / SKIP", font,
-                new Vector2(0f, -74f), new Vector2(280f, 58f));
+                new Vector2(0f, -330f), new Vector2(280f, 58f));
             panel.SetActive(false);
         }
 
@@ -1351,13 +1691,22 @@ namespace MazeParty.Editor
         private static void CreateResultPanel(Transform canvas, Font font)
         {
             var panel = CreatePanel("SkippedResultPanel", canvas, new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(570f, 170f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 420f),
                 new Vector2(0.5f, 0.5f), new Color(0.08f, 0.045f, 0.1f, 0.98f));
             CreateText("Result Title", panel.transform, "RESULT PLACEHOLDER", font, 30,
-                new Vector2(0f, 42f), new Vector2(500f, 44f), TextAnchor.MiddleCenter);
+                new Vector2(0f, 155f), new Vector2(680f, 44f), TextAnchor.MiddleCenter);
             CreateText("Result Note", panel.transform,
                 "No minigame reward or currency transfer. Next turn begins in 3 seconds.", font, 18,
-                new Vector2(0f, -25f), new Vector2(490f, 60f), TextAnchor.MiddleCenter);
+                new Vector2(0f, 105f), new Vector2(680f, 60f), TextAnchor.MiddleCenter);
+            CreateText(
+                "MinefieldResultSummary",
+                panel.transform,
+                "1ST  --\n2ND  --\n3RD  --\n4TH  --",
+                font,
+                22,
+                new Vector2(0f, -42f),
+                new Vector2(680f, 180f),
+                TextAnchor.MiddleCenter);
             panel.SetActive(false);
         }
 
@@ -1557,6 +1906,7 @@ namespace MazeParty.Editor
 
             EnsureFolder(UiFolder);
             EnsureFolder(UiPrefabFolder);
+            EnsureFolder(UiPrefabFolder + "/Dev");
             EnsureFolder(MaterialFolder);
             EnsureFolder(DiceArtFolder);
             EnsureFolder(D12ArtFolder);
@@ -1612,9 +1962,124 @@ namespace MazeParty.Editor
             }
         }
 
-        private static void CreateEditorTools(Transform canvas, Font font)
+        private static BoardFlowTestToolsBindings InstantiateEditorTools(
+            Transform canvas)
         {
-            var panel = CreatePanel("Editor Flow Tools", canvas, new Vector2(1f, 1f),
+            var prefab = LoadOrCreateEditorToolsPrefab();
+            var instance = PrefabUtility.InstantiatePrefab(
+                prefab,
+                canvas) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardFlowTestTools.prefab could not be instantiated.");
+            }
+
+            var bindings = instance.GetComponent<BoardFlowTestToolsBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "BoardFlowTestTools prefab instance has incomplete " +
+                    "serialized bindings.");
+            }
+            return bindings;
+        }
+
+        private static GameObject LoadOrCreateEditorToolsPrefab()
+        {
+            EnsureFolder(UiPrefabFolder + "/Dev");
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardFlowTestToolsPrefabPath);
+            if (prefab != null)
+            {
+                prefab = MigrateEditorToolsBindingsIfMissing(prefab);
+                ValidateEditorToolsPrefab(prefab);
+                return prefab;
+            }
+
+            var font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            if (font == null)
+            {
+                throw new InvalidOperationException(
+                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
+            }
+
+            var template = CreateEditorToolsTemplate(font);
+            try
+            {
+                prefab = PrefabUtility.SaveAsPrefabAsset(
+                    template,
+                    BoardFlowTestToolsPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(template);
+            }
+            ValidateEditorToolsPrefab(prefab);
+            return prefab;
+        }
+
+        private static GameObject MigrateEditorToolsBindingsIfMissing(
+            GameObject prefab)
+        {
+            if (prefab.GetComponent<BoardFlowTestToolsBindings>() != null)
+            {
+                return prefab;
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                BoardFlowTestToolsPrefabPath);
+            try
+            {
+                var bindings =
+                    contents.AddComponent<BoardFlowTestToolsBindings>();
+                ConfigureEditorToolsBindings(contents, bindings);
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    BoardFlowTestToolsPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardFlowTestToolsPrefabPath);
+        }
+
+        private static void ValidateEditorToolsPrefab(GameObject prefab)
+        {
+            if (prefab == null || prefab.GetComponent<RectTransform>() == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardFlowTestTools.prefab is missing its UI root. " +
+                    "Repair the prefab directly so its design is preserved.");
+            }
+
+            var bindings =
+                prefab.GetComponent<BoardFlowTestToolsBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "BoardFlowTestTools.prefab has incomplete serialized " +
+                    "bindings. Repair the prefab directly so setup preserves " +
+                    "its authored design.");
+            }
+        }
+
+        private static GameObject CreateEditorToolsTemplate(Font font)
+        {
+            var root = new GameObject(
+                "BoardFlowTestTools",
+                typeof(RectTransform));
+            var rootRect = root.GetComponent<RectTransform>();
+            rootRect.anchorMin = Vector2.zero;
+            rootRect.anchorMax = Vector2.one;
+            rootRect.offsetMin = Vector2.zero;
+            rootRect.offsetMax = Vector2.zero;
+
+            var panel = CreatePanel("Editor Flow Tools", root.transform, new Vector2(1f, 1f),
                 new Vector2(1f, 1f), new Vector2(-22f, -22f), new Vector2(310f, 480f),
                 new Vector2(1f, 1f), new Color(0.08f, 0.035f, 0.11f, 0.95f));
             CreateText("Editor Tools Title", panel.transform, "EDITOR LOCAL TOOLS", font, 20,
@@ -1636,6 +2101,53 @@ namespace MazeParty.Editor
                 new Vector2(0f, -350f), new Vector2(270f, 42f));
             CreateButton("EditorBuyKeyButton", panel.transform, "BUY KEY  -20 GOLD", font,
                 new Vector2(0f, -399f), new Vector2(270f, 42f));
+            var bindings = root.AddComponent<BoardFlowTestToolsBindings>();
+            ConfigureEditorToolsBindings(root, bindings);
+            return root;
+        }
+
+        private static void ConfigureEditorToolsBindings(
+            GameObject root,
+            BoardFlowTestToolsBindings bindings)
+        {
+            var stageFight = RequireEditorToolButton(
+                root,
+                "EditorStageFightButton");
+            var finishAction = RequireEditorToolButton(
+                root,
+                "EditorFinishActionButton");
+            var speed = RequireEditorToolButton(root, "EditorSpeedButton");
+            var speedLabel = speed.GetComponentInChildren<Text>(true);
+            if (speedLabel == null)
+            {
+                throw new InvalidOperationException(
+                    "EditorSpeedButton requires its prefab-authored label.");
+            }
+
+            bindings.Configure(
+                stageFight,
+                finishAction,
+                speed,
+                RequireEditorToolButton(root, "EditorPauseButton"),
+                RequireEditorToolButton(root, "EditorDamagePlayerButton"),
+                RequireEditorToolButton(root, "EditorAddGoldButton"),
+                RequireEditorToolButton(root, "EditorBuyKeyButton"),
+                speedLabel);
+        }
+
+        private static Button RequireEditorToolButton(
+            GameObject root,
+            string name)
+        {
+            var target = FindDescendant(root.transform, name);
+            var button = target != null ? target.GetComponent<Button>() : null;
+            if (button == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardFlowTestTools prefab migration could not find '" +
+                    name + "'. Repair the prefab directly.");
+            }
+            return button;
         }
 
         private static GameObject FindDescendant(Transform root, string objectName)

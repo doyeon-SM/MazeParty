@@ -34,7 +34,11 @@ namespace MazeParty.Gameplay.Minigames
     public sealed class HostMinigameScheduleJsonCodec :
         IHostMinigameScheduleCodec
     {
-        private const int CurrentSchemaVersion = 1;
+        private const int LegacySchemaVersion = 1;
+        private const int CurrentSchemaVersion = 2;
+        // Schema 1 predates Red Light / Green Light and therefore validates
+        // against only the first two append-only catalog entries.
+        private const int LegacyRegisteredGameCount = 2;
 
         public string Encode(
             string matchKey,
@@ -55,7 +59,7 @@ namespace MazeParty.Gameplay.Minigames
 
             var document = new ScheduleDocument
             {
-                schemaVersion = CurrentSchemaVersion,
+                schemaVersion = GetSchemaVersion(schedule),
                 matchKey = matchKey,
                 seed = schedule.Seed,
                 turnCount = schedule.TurnCount,
@@ -63,6 +67,24 @@ namespace MazeParty.Gameplay.Minigames
             };
 
             return JsonUtility.ToJson(document);
+        }
+
+        private static int GetSchemaVersion(
+            HostMinigameSchedule schedule)
+        {
+            if (schedule.RegisteredGameCountAtCreation ==
+                LegacyRegisteredGameCount)
+            {
+                return LegacySchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                MinigameScheduleRules.RegisteredGameCount)
+            {
+                return CurrentSchemaVersion;
+            }
+
+            throw new InvalidOperationException(
+                "The schedule uses an unsupported minigame catalog.");
         }
 
         public bool TryDecode(
@@ -81,7 +103,8 @@ namespace MazeParty.Gameplay.Minigames
             {
                 var document = JsonUtility.FromJson<ScheduleDocument>(payload);
                 if (document == null ||
-                    document.schemaVersion != CurrentSchemaVersion ||
+                    (document.schemaVersion != LegacySchemaVersion &&
+                     document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
                     document.turnCount != document.entries.Length)
@@ -103,9 +126,14 @@ namespace MazeParty.Gameplay.Minigames
                     entries[index] = (ScheduledMinigameId)rawEntry;
                 }
 
+                var registeredGameCount =
+                    document.schemaVersion == LegacySchemaVersion
+                        ? LegacyRegisteredGameCount
+                        : MinigameScheduleRules.RegisteredGameCount;
                 var restored = HostMinigameSchedule.Restore(
                     document.seed,
-                    entries);
+                    entries,
+                    registeredGameCount);
                 matchKey = document.matchKey;
                 schedule = restored;
                 return true;

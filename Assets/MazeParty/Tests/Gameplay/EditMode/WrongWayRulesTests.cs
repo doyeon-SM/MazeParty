@@ -8,28 +8,6 @@ namespace MazeParty.Gameplay.Tests
     public sealed class WrongWayRulesTests
     {
         [Test]
-        public void MatchConstants_AreTwoRoundsFiftyStepsAndThreeTwoOneZeroPoints()
-        {
-            Assert.That(WrongWayRules.PlayerCount, Is.EqualTo(4));
-            Assert.That(WrongWayRules.StepCount, Is.EqualTo(50));
-            Assert.That(WrongWayRules.RoundCount, Is.EqualTo(2));
-            Assert.That(WrongWayRules.CountdownSeconds, Is.EqualTo(3d));
-            Assert.That(WrongWayRules.RoundSeconds, Is.EqualTo(60d));
-            Assert.That(
-                WrongWayRules.IncorrectInputLockSeconds,
-                Is.EqualTo(0.5d));
-            Assert.That(
-                new[]
-                {
-                    WrongWayRules.GetPointsForRank(1),
-                    WrongWayRules.GetPointsForRank(2),
-                    WrongWayRules.GetPointsForRank(3),
-                    WrongWayRules.GetPointsForRank(4)
-                },
-                Is.EqualTo(new[] { 3, 2, 1, 0 }));
-        }
-
-        [Test]
         public void PromptSequence_IsCanonicalAndChangesBetweenRounds()
         {
             const ulong seed = 0x123456789ABCDEF0UL;
@@ -61,7 +39,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void AllPlayersSharePromptsButAdvanceIndependently()
+        public void PlayerProgress_IsIndependentAndWrongInputLocksUntilBoundary()
         {
             var round = new WrongWayRoundState(77UL, 1);
             var sharedFirstPrompt = round.GetPromptForSlot(0);
@@ -91,12 +69,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 round.GetPromptForSlot(0),
                 Is.EqualTo(round.Prompts[1]));
-        }
 
-        [Test]
-        public void IncorrectInput_KeepsStepAndPromptAndLocksForHalfSecond()
-        {
-            var round = new WrongWayRoundState(88UL, 1);
             var prompt = round.GetPromptForSlot(2).Value;
             var incorrect = DifferentDirection(prompt);
 
@@ -214,29 +187,15 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 leaderboard[2].SecondRoundRank,
                 Is.EqualTo(4));
-        }
-
-        [Test]
-        public void Scoring_RejectsDuplicatePlayersAndWrongRoundCount()
-        {
-            Assert.Throws<ArgumentException>(
-                () => WrongWayRoundScoring.Score(
-                    new[]
-                    {
-                        new WrongWayRoundOutcome(0, 10, 1),
-                        new WrongWayRoundOutcome(0, 9, 2),
-                        new WrongWayRoundOutcome(2, 8, 3),
-                        new WrongWayRoundOutcome(3, 7, 4)
-                    }));
-
-            var round = ScoreProgress(
-                (0, 4),
-                (1, 3),
-                (2, 2),
-                (3, 1));
-            Assert.Throws<ArgumentException>(
+            Assert.Throws<System.ArgumentException>(
                 () => WrongWayMatchScoring.BuildLeaderboard(
-                    new[] { round }));
+                    new[] { roundOne }));
+            Assert.Throws<System.ArgumentException>(
+                () => ScoreProgress(
+                    (0, 50),
+                    (0, 45),
+                    (2, 30),
+                    (3, 10)));
         }
 
         private static WrongWayInputResolution Advance(

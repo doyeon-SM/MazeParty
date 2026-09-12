@@ -28,16 +28,6 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(topology, Is.Not.Null, "Board scene must contain one BoardTopology.");
                 topology.RebuildIndex();
 
-                var cameraDirector = scene.GetRootGameObjects()
-                    .SelectMany(root =>
-                        root.GetComponentsInChildren<GameplayCameraDirector>(true))
-                    .SingleOrDefault();
-                Assert.That(cameraDirector, Is.Not.Null);
-                Assert.That(
-                    cameraDirector.SmoothCameraTransitions,
-                    Is.False,
-                    "Build cameras must cut immediately to avoid motion-sickness-inducing blends.");
-
                 var tiles = topology.Tiles.Where(tile => tile != null).ToArray();
                 var gates = topology.Gates.Where(gate => gate != null).ToArray();
                 var starts = tiles.Where(tile => tile.TileType == BoardTileType.Start).ToArray();

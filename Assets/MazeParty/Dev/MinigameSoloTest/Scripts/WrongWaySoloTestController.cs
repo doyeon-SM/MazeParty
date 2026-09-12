@@ -1,6 +1,7 @@
 using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.WrongWay;
+using MazeParty.Multiplayer;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -35,20 +36,22 @@ namespace MazeParty.Dev.MinigameSoloTest
         private Camera _runtimeCamera;
         private float _displayedProgress;
         private string _feedbackMessage = string.Empty;
-        private Color _feedbackColor = Color.white;
+        private MinigameSoloFeedbackStyle _feedbackStyle =
+            MinigameSoloFeedbackStyle.Neutral;
         private float _feedbackUntil = float.NegativeInfinity;
+        private MinigameSoloHudView _hud;
         private bool _initialized;
         private bool _snapCamera;
-
-        private GUIStyle _headerStyle;
-        private GUIStyle _promptStyle;
-        private GUIStyle _statusStyle;
-        private GUIStyle _feedbackStyle;
 
         public bool IsInitialized => _initialized;
         public WrongWaySoloSession Session => _session;
         public Camera RuntimeCamera => _runtimeCamera;
         public Transform RunnerRoot => _runnerRoot;
+
+        public void ConfigureHud(MinigameSoloHudView hud)
+        {
+            _hud = hud;
+        }
 
         public void Begin(int seed)
         {
@@ -57,6 +60,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                 throw new InvalidOperationException(
                     "The WrongWay solo harness is already initialized.");
             }
+            if (_hud == null || !_hud.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "The WrongWay solo harness requires a valid " +
+                    "MinigameSoloHud prefab instance.");
+            }
+
+            _hud.BindActions(RestartRound, StartNextSeed, StopSoloTest);
 
             DisableProductionPresentation();
             CreateRuntimeRoot();
@@ -68,6 +79,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             _session.Begin(seed);
             ResetRoundPresentation();
             _initialized = true;
+            UpdateHud();
 
             Debug.Log(
                 "[Minigame Solo Test] WrongWay started with seed " +
@@ -120,6 +132,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _avatarVisual.SetEliminated(
                     _session.IsInputLocked);
             }
+            UpdateHud();
         }
 
         private void LateUpdate()
@@ -160,100 +173,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 blend);
         }
 
-        private void OnGUI()
-        {
-            if (!_initialized || _session == null)
-            {
-                return;
-            }
-
-            EnsureGuiStyles();
-
-            GUILayout.BeginArea(
-                new Rect(18f, 18f, 470f, 350f),
-                GUI.skin.box);
-            GUILayout.Label(
-                "DEVELOPER SOLO TEST  /  WRONGWAY",
-                _headerStyle);
-            GUILayout.Label(
-                "ROUND " + _session.RoundNumber + " / " +
-                WrongWayRules.RoundCount + "  ·  " +
-                GetPhaseLabel() + "  ·  " +
-                FormatClock(_session.RemainingSeconds),
-                _statusStyle);
-            GUILayout.Label(
-                "STAIR " + _session.CompletedSteps + " / " +
-                WrongWayRules.StepCount + "  ·  SEED " +
-                _session.Seed,
-                _statusStyle);
-
-            GUILayout.Space(8f);
-            if (_session.Phase == WrongWaySoloPhase.Running &&
-                _session.CurrentPrompt.HasValue)
-            {
-                GUILayout.Label(
-                    GetPromptLabel(_session.CurrentPrompt.Value),
-                    _promptStyle,
-                    GUILayout.Height(86f));
-            }
-            else
-            {
-                GUILayout.Label(
-                    GetPhaseMessage(),
-                    _promptStyle,
-                    GUILayout.Height(86f));
-            }
-
-            if (_session.IsInputLocked)
-            {
-                var previousColor = GUI.color;
-                GUI.color = new Color(1f, 0.46f, 0.38f, 1f);
-                GUILayout.Label(
-                    "FALLEN · INPUT LOCK " +
-                    _session.InputLockSecondsRemaining.ToString("0.00") +
-                    "s",
-                    _feedbackStyle);
-                GUI.color = previousColor;
-            }
-            else if (Time.unscaledTime < _feedbackUntil)
-            {
-                var previousColor = GUI.color;
-                GUI.color = _feedbackColor;
-                GUILayout.Label(_feedbackMessage, _feedbackStyle);
-                GUI.color = previousColor;
-            }
-            else
-            {
-                GUILayout.Label(
-                    "W / A / S / D  ·  match the shown direction",
-                    _feedbackStyle);
-            }
-
-            GUILayout.FlexibleSpace();
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button(
-                    "Restart Round (R)",
-                    GUILayout.Height(32f)))
-            {
-                RestartRound();
-            }
-            if (GUILayout.Button(
-                    "Next Seed (N)",
-                    GUILayout.Height(32f)))
-            {
-                StartNewSeed(unchecked(_session.Seed + 1));
-            }
-            GUILayout.EndHorizontal();
-
-            if (GUILayout.Button(
-                    "Stop Solo Test (Esc)",
-                    GUILayout.Height(30f)))
-            {
-                StopSoloTest();
-            }
-            GUILayout.EndArea();
-        }
-
         public void RestartRound()
         {
             if (_session == null)
@@ -263,6 +182,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _session.RestartCurrentRound();
             ResetRoundPresentation();
+            UpdateHud();
             Debug.Log(
                 "[Minigame Solo Test] WrongWay round " +
                 _session.RoundNumber + " restarted.");
@@ -277,6 +197,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _session.Begin(seed);
             ResetRoundPresentation();
+            UpdateHud();
             Debug.Log(
                 "[Minigame Solo Test] WrongWay started with seed " +
                 seed + ".");
@@ -512,6 +433,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
 
             _feedbackMessage = string.Empty;
+            _feedbackStyle = MinigameSoloFeedbackStyle.Neutral;
             _feedbackUntil = float.NegativeInfinity;
             _snapCamera = true;
         }
@@ -523,8 +445,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 case WrongWayInputStatus.Incorrect:
                     _feedbackMessage = "WRONG · GET UP!";
-                    _feedbackColor =
-                        new Color(1f, 0.36f, 0.28f, 1f);
+                    _feedbackStyle = MinigameSoloFeedbackStyle.Error;
                     _feedbackUntil = Time.unscaledTime +
                                      (float)WrongWayRules
                                          .IncorrectInputLockSeconds;
@@ -534,8 +455,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     _feedbackMessage = resolution.FinishedRound
                         ? "50 / 50 · FINISH!"
                         : "CORRECT · +1 STEP";
-                    _feedbackColor =
-                        new Color(0.35f, 1f, 0.55f, 1f);
+                    _feedbackStyle = MinigameSoloFeedbackStyle.Success;
                     _feedbackUntil = Time.unscaledTime + 0.28f;
                     break;
             }
@@ -674,36 +594,59 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
         }
 
-        private void EnsureGuiStyles()
+        private void StartNextSeed()
         {
-            if (_headerStyle != null)
+            if (_session != null)
+            {
+                StartNewSeed(unchecked(_session.Seed + 1));
+            }
+        }
+
+        private void UpdateHud()
+        {
+            if (_hud == null || _session == null)
             {
                 return;
             }
 
-            _headerStyle = new GUIStyle(GUI.skin.label)
+            var feature =
+                _session.Phase == WrongWaySoloPhase.Running &&
+                _session.CurrentPrompt.HasValue
+                    ? GetPromptLabel(_session.CurrentPrompt.Value)
+                    : GetPhaseMessage();
+            string feedback;
+            MinigameSoloFeedbackStyle feedbackStyle;
+            if (_session.IsInputLocked)
             {
-                fontStyle = FontStyle.Bold,
-                fontSize = 14
-            };
-            _statusStyle = new GUIStyle(GUI.skin.label)
+                feedback = "FALLEN · INPUT LOCK " +
+                           _session.InputLockSecondsRemaining.ToString("0.00") +
+                           "s";
+                feedbackStyle = MinigameSoloFeedbackStyle.Error;
+            }
+            else if (Time.unscaledTime < _feedbackUntil)
             {
-                fontStyle = FontStyle.Bold,
-                fontSize = 15
-            };
-            _promptStyle = new GUIStyle(GUI.skin.box)
+                feedback = _feedbackMessage;
+                feedbackStyle = _feedbackStyle;
+            }
+            else
             {
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold,
-                fontSize = 34,
-                wordWrap = true
-            };
-            _feedbackStyle = new GUIStyle(GUI.skin.label)
-            {
-                alignment = TextAnchor.MiddleCenter,
-                fontStyle = FontStyle.Bold,
-                fontSize = 15
-            };
+                feedback = string.Empty;
+                feedbackStyle = MinigameSoloFeedbackStyle.Neutral;
+            }
+
+            _hud.SetContent(
+                "DEVELOPER SOLO TEST  /  WRONGWAY",
+                "ROUND " + _session.RoundNumber + " / " +
+                WrongWayRules.RoundCount + "  ·  " +
+                GetPhaseLabel() + "  ·  " +
+                FormatClock(_session.RemainingSeconds),
+                "STAIR " + _session.CompletedSteps + " / " +
+                WrongWayRules.StepCount + "  ·  SEED " +
+                _session.Seed,
+                feature,
+                "W / A / S / D  ·  match the shown direction",
+                feedback,
+                feedbackStyle);
         }
 
         private void CreateBlock(

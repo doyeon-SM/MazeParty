@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
@@ -35,11 +36,14 @@ namespace MazeParty.Multiplayer
         [Header("Feedback")]
         [SerializeField] private Text statusText;
 
+        [Header("Character Customization")]
+        [SerializeField] private GameObject customizationPanel;
+        [SerializeField] private Button[] paletteButtons = Array.Empty<Button>();
+        [SerializeField] private Outline[] paletteOutlines = Array.Empty<Outline>();
+        [SerializeField] private Toggle testHatToggle;
+
         private bool _buttonEventsBound;
-        private GameObject _customizationPanel;
-        private Button[] _paletteButtons = Array.Empty<Button>();
-        private Outline[] _paletteOutlines = Array.Empty<Outline>();
-        private Toggle _testHatToggle;
+        private UnityAction[] _paletteButtonActions = Array.Empty<UnityAction>();
         private int _selectedPaletteIndex;
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
@@ -77,7 +81,15 @@ namespace MazeParty.Multiplayer
             Array.TrueForAll(playerRows, row => row != null) &&
             startHint != null &&
             runningMessage != null &&
-            statusText != null;
+            statusText != null &&
+            customizationPanel != null &&
+            paletteButtons != null &&
+            paletteButtons.Length == LobbyColorPalette.Count &&
+            Array.TrueForAll(paletteButtons, button => button != null) &&
+            paletteOutlines != null &&
+            paletteOutlines.Length == LobbyColorPalette.Count &&
+            Array.TrueForAll(paletteOutlines, outline => outline != null) &&
+            testHatToggle != null;
 
         public int PlayerRowCount => playerRows != null ? playerRows.Length : 0;
         public bool PresentationVisible => _presentationVisible;
@@ -102,7 +114,11 @@ namespace MazeParty.Multiplayer
             Text[] configuredPlayerRows,
             GameObject configuredStartHint,
             GameObject configuredRunningMessage,
-            Text configuredStatusText)
+            Text configuredStatusText,
+            GameObject configuredCustomizationPanel,
+            Button[] configuredPaletteButtons,
+            Outline[] configuredPaletteOutlines,
+            Toggle configuredTestHatToggle)
         {
             canvasGroup = configuredCanvasGroup;
             connectionPanel = configuredConnectionPanel;
@@ -124,6 +140,10 @@ namespace MazeParty.Multiplayer
             startHint = configuredStartHint;
             runningMessage = configuredRunningMessage;
             statusText = configuredStatusText;
+            customizationPanel = configuredCustomizationPanel;
+            paletteButtons = configuredPaletteButtons ?? Array.Empty<Button>();
+            paletteOutlines = configuredPaletteOutlines ?? Array.Empty<Outline>();
+            testHatToggle = configuredTestHatToggle;
         }
 
         public void SetDisplayName(string displayName)
@@ -136,8 +156,7 @@ namespace MazeParty.Multiplayer
 
         public void SetAppearance(PlayerAppearanceState appearance)
         {
-            EnsureCustomizationUi();
-            if (_paletteButtons.Length == 0)
+            if (paletteButtons.Length == 0)
             {
                 return;
             }
@@ -145,7 +164,7 @@ namespace MazeParty.Multiplayer
             _suppressAppearanceEvents = true;
             _selectedPaletteIndex = LobbyColorPalette.FindClosestIndex(
                 (Color32)appearance.BodyColor);
-            _testHatToggle.SetIsOnWithoutNotify(appearance.HatId == 1);
+            testHatToggle.SetIsOnWithoutNotify(appearance.HatId == 1);
             _suppressAppearanceEvents = false;
             RefreshPaletteAvailability();
         }
@@ -210,14 +229,10 @@ namespace MazeParty.Multiplayer
 
             startButton.gameObject.SetActive(isLobby && snapshot.IsHost);
             startButton.interactable = !busy && snapshot.CanStart;
-            startButtonText.text = "Start 4-Player Game";
 
             startHint.SetActive(isLobby && snapshot.IsHost && !snapshot.CanStart);
             runningMessage.SetActive(!isLobby);
-            if (_customizationPanel != null)
-            {
-                _customizationPanel.SetActive(isLobby);
-            }
+            customizationPanel.SetActive(isLobby);
         }
 
         private void Awake()
@@ -231,15 +246,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            EnsureCustomizationUi();
-            ApplyPlayerNameFont();
             BindButtonEvents();
+            RefreshPaletteAvailability();
             ApplyPresentationState();
         }
 
         private void Update()
         {
-            if (_customizationPanel == null || !_customizationPanel.activeInHierarchy ||
+            if (!customizationPanel.activeInHierarchy ||
                 Time.unscaledTime < _nextPaletteAvailabilityRefresh)
             {
                 return;
@@ -280,6 +294,16 @@ namespace MazeParty.Multiplayer
             startButton.onClick.AddListener(OnStartClicked);
             leaveButton.onClick.AddListener(OnLeaveClicked);
             quitButton.onClick.AddListener(OnQuitClicked);
+            _paletteButtonActions = new UnityAction[paletteButtons.Length];
+            for (var index = 0; index < paletteButtons.Length; index++)
+            {
+                var capturedIndex = index;
+                UnityAction action = () => OnPaletteColorClicked(capturedIndex);
+                _paletteButtonActions[index] = action;
+                paletteButtons[index].onClick.AddListener(action);
+            }
+
+            testHatToggle.onValueChanged.AddListener(OnHatControlChanged);
             _buttonEventsBound = true;
         }
 
@@ -297,125 +321,19 @@ namespace MazeParty.Multiplayer
             startButton.onClick.RemoveListener(OnStartClicked);
             leaveButton.onClick.RemoveListener(OnLeaveClicked);
             quitButton.onClick.RemoveListener(OnQuitClicked);
+            for (var index = 0; index < paletteButtons.Length; index++)
+            {
+                if (index < _paletteButtonActions.Length &&
+                    _paletteButtonActions[index] != null)
+                {
+                    paletteButtons[index].onClick.RemoveListener(
+                        _paletteButtonActions[index]);
+                }
+            }
+
+            testHatToggle.onValueChanged.RemoveListener(OnHatControlChanged);
+            _paletteButtonActions = Array.Empty<UnityAction>();
             _buttonEventsBound = false;
-        }
-
-        private void EnsureCustomizationUi()
-        {
-            if (_customizationPanel != null || sessionPanel == null)
-            {
-                return;
-            }
-
-            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
-            if (font == null)
-            {
-                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            }
-
-            var sessionSize = sessionPanel.GetComponent<LayoutElement>();
-            if (sessionSize != null)
-            {
-                sessionSize.preferredHeight = Mathf.Max(sessionSize.preferredHeight, 700f);
-            }
-
-            _customizationPanel = CreateUiObject("Player Customization", sessionPanel.transform);
-            var layout = _customizationPanel.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 6f;
-            layout.childControlWidth = true;
-            layout.childControlHeight = true;
-            layout.childForceExpandWidth = true;
-            layout.childForceExpandHeight = false;
-            var panelSize = _customizationPanel.AddComponent<LayoutElement>();
-            panelSize.preferredHeight = 164f;
-
-            CreateRuntimeText(
-                "Customization Label",
-                _customizationPanel.transform,
-                "Character - Unique Body Color / Test Hat",
-                font,
-                17,
-                26f);
-
-            var paletteGrid = CreateUiObject("Body Color Palette", _customizationPanel.transform);
-            var grid = paletteGrid.AddComponent<GridLayoutGroup>();
-            grid.cellSize = new Vector2(102f, 36f);
-            grid.spacing = new Vector2(8f, 8f);
-            grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-            grid.constraintCount = 4;
-            grid.childAlignment = TextAnchor.MiddleLeft;
-            var gridSize = paletteGrid.AddComponent<LayoutElement>();
-            gridSize.preferredHeight = 80f;
-
-            _paletteButtons = new Button[LobbyColorPalette.Count];
-            _paletteOutlines = new Outline[LobbyColorPalette.Count];
-            for (var index = 0; index < LobbyColorPalette.Count; index++)
-            {
-                var capturedIndex = index;
-                var buttonObject = CreateUiObject(
-                    LobbyColorPalette.GetDisplayName(index) + " Color Button",
-                    paletteGrid.transform);
-                var image = buttonObject.AddComponent<Image>();
-                image.color = LobbyColorPalette.GetColor(index);
-                var outline = buttonObject.AddComponent<Outline>();
-                outline.effectColor = Color.white;
-                outline.effectDistance = new Vector2(3f, -3f);
-                var button = buttonObject.AddComponent<Button>();
-                button.targetGraphic = image;
-                var colors = button.colors;
-                colors.normalColor = Color.white;
-                colors.highlightedColor = new Color(1f, 1f, 1f, 0.82f);
-                colors.pressedColor = new Color(0.72f, 0.72f, 0.72f, 1f);
-                colors.selectedColor = colors.highlightedColor;
-                colors.disabledColor = new Color(0.2f, 0.2f, 0.2f, 0.32f);
-                button.colors = colors;
-
-                var label = CreateRuntimeText(
-                    "Label",
-                    buttonObject.transform,
-                    LobbyColorPalette.GetDisplayName(index),
-                    font,
-                    14,
-                    36f);
-                Destroy(label.GetComponent<LayoutElement>());
-                Stretch(label.rectTransform, 0f, 0f, 1f, 1f, 4f, 2f, -4f, -2f);
-                label.alignment = TextAnchor.MiddleCenter;
-                label.raycastTarget = false;
-                label.color = index == 2 ? Color.black : Color.white;
-
-                button.onClick.AddListener(() => OnPaletteColorClicked(capturedIndex));
-                _paletteButtons[index] = button;
-                _paletteOutlines[index] = outline;
-            }
-
-            var footer = CreateUiObject("Customization Footer", _customizationPanel.transform);
-            var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
-            footerLayout.spacing = 10f;
-            footerLayout.childAlignment = TextAnchor.MiddleLeft;
-            footerLayout.childControlWidth = false;
-            footerLayout.childControlHeight = true;
-            var footerSize = footer.AddComponent<LayoutElement>();
-            footerSize.preferredHeight = 32f;
-
-            _testHatToggle = CreateToggle("Test Hat", footer.transform, font);
-
-            _testHatToggle.onValueChanged.AddListener(OnHatControlChanged);
-            RefreshPaletteAvailability();
-        }
-
-        private void ApplyPlayerNameFont()
-        {
-            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
-            if (font == null)
-            {
-                return;
-            }
-
-            var texts = GetComponentsInChildren<Text>(true);
-            for (var index = 0; index < texts.Length; index++)
-            {
-                texts[index].font = font;
-            }
         }
 
         private void OnPaletteColorClicked(int paletteIndex)
@@ -430,7 +348,7 @@ namespace MazeParty.Multiplayer
 
         private void PublishAppearance(int paletteIndex)
         {
-            if (_suppressAppearanceEvents || _paletteButtons.Length == 0 ||
+            if (_suppressAppearanceEvents || paletteButtons.Length == 0 ||
                 paletteIndex < 0 || paletteIndex >= LobbyColorPalette.Count)
             {
                 return;
@@ -440,13 +358,13 @@ namespace MazeParty.Multiplayer
                 LobbyColorPalette.GetColor(paletteIndex),
                 0,
                 0,
-                (byte)(_testHatToggle.isOn ? 1 : 0),
+                (byte)(testHatToggle.isOn ? 1 : 0),
                 0));
         }
 
         private void RefreshPaletteAvailability()
         {
-            if (_paletteButtons.Length == 0)
+            if (paletteButtons.Length == 0)
             {
                 return;
             }
@@ -479,90 +397,13 @@ namespace MazeParty.Multiplayer
                 localIndex,
                 0,
                 LobbyColorPalette.Count - 1);
-            for (var index = 0; index < _paletteButtons.Length; index++)
+            for (var index = 0; index < paletteButtons.Length; index++)
             {
                 var selected = index == _selectedPaletteIndex;
-                _paletteButtons[index].interactable =
+                paletteButtons[index].interactable =
                     selected || (occupiedMask & (1 << index)) == 0;
-                if (_paletteOutlines[index] != null)
-                {
-                    _paletteOutlines[index].enabled = selected;
-                }
+                paletteOutlines[index].enabled = selected;
             }
-        }
-
-        private static Toggle CreateToggle(string label, Transform parent, Font font)
-        {
-            var root = CreateUiObject(label + " Toggle", parent);
-            var size = root.AddComponent<LayoutElement>();
-            size.preferredWidth = 180f;
-            size.preferredHeight = 28f;
-            var background = CreateUiObject("Background", root.transform);
-            var backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
-            backgroundRect.anchorMax = new Vector2(0f, 0.5f);
-            backgroundRect.sizeDelta = new Vector2(24f, 24f);
-            backgroundRect.anchoredPosition = new Vector2(12f, 0f);
-            var backgroundImage = background.AddComponent<Image>();
-            backgroundImage.color = new Color(0.12f, 0.15f, 0.2f, 1f);
-            var checkmark = CreateUiObject("Checkmark", background.transform);
-            Stretch(checkmark.GetComponent<RectTransform>(), 0f, 0f, 1f, 1f, 4f, 4f, -4f, -4f);
-            var checkmarkImage = checkmark.AddComponent<Image>();
-            checkmarkImage.color = new Color(0.3f, 0.75f, 1f, 1f);
-            var text = CreateRuntimeText("Label", root.transform, label, font, 15, 28f);
-            var textRect = text.rectTransform;
-            textRect.anchorMin = Vector2.zero;
-            textRect.anchorMax = Vector2.one;
-            textRect.offsetMin = new Vector2(34f, 0f);
-            textRect.offsetMax = Vector2.zero;
-            var toggle = root.AddComponent<Toggle>();
-            toggle.targetGraphic = backgroundImage;
-            toggle.graphic = checkmarkImage;
-            return toggle;
-        }
-
-        private static GameObject CreateUiObject(string name, Transform parent)
-        {
-            var value = new GameObject(name, typeof(RectTransform));
-            value.layer = parent.gameObject.layer;
-            value.transform.SetParent(parent, false);
-            return value;
-        }
-
-        private static Text CreateRuntimeText(
-            string name,
-            Transform parent,
-            string value,
-            Font font,
-            int size,
-            float height)
-        {
-            var text = CreateUiObject(name, parent).AddComponent<Text>();
-            text.text = value;
-            text.font = font;
-            text.fontSize = size;
-            text.color = Color.white;
-            text.alignment = TextAnchor.MiddleLeft;
-            var layout = text.gameObject.AddComponent<LayoutElement>();
-            layout.preferredHeight = height;
-            return text;
-        }
-
-        private static void Stretch(
-            RectTransform rect,
-            float minX,
-            float minY,
-            float maxX,
-            float maxY,
-            float left,
-            float bottom,
-            float right,
-            float top)
-        {
-            rect.anchorMin = new Vector2(minX, minY);
-            rect.anchorMax = new Vector2(maxX, maxY);
-            rect.offsetMin = new Vector2(left, bottom);
-            rect.offsetMax = new Vector2(right, top);
         }
 
         private void OnCreateClicked()

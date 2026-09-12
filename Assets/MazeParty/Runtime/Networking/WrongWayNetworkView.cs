@@ -2,7 +2,6 @@ using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Cinemachine;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
 {
@@ -31,22 +30,18 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera raceCamera;
         [SerializeField] private Transform runnerRoot;
         [SerializeField] private GameObject arenaPresentation;
+        [SerializeField] private WrongWayHudBindings hud;
 
         private readonly RunnerView[] _runners =
             new RunnerView[WrongWayRules.PlayerCount];
-        private readonly Text[] _progressRows =
-            new Text[WrongWayRules.PlayerCount];
 
         private GameplayCameraDirector _cameraDirector;
-        private Canvas _hudCanvas;
-        private Text _phaseText;
-        private Text _promptText;
-        private Text _instructionText;
         private int _localSlot = -1;
         private bool _cameraConfigured;
         private bool _cameraRegistered;
         private Vector3 _cameraFocus;
         private bool _hasCameraFocus;
+        private bool _hudContractErrorLogged;
 
         public static float CourseLength =>
             WrongWayRules.StepCount * NetworkWrongWayState.StepDepth;
@@ -123,6 +118,7 @@ namespace MazeParty.Multiplayer
             ConfigureCamera();
             EnsurePresentation();
             SetWorldPresentationActive(false);
+            SetHudActive(false);
         }
 
         private void OnEnable()
@@ -133,6 +129,7 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
+            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -156,11 +153,7 @@ namespace MazeParty.Multiplayer
             var shouldShowHud = shouldShowWorld &&
                                 match.IsWrongWayPlaying;
 
-            if (_hudCanvas != null &&
-                _hudCanvas.gameObject.activeSelf != shouldShowHud)
-            {
-                _hudCanvas.gameObject.SetActive(shouldShowHud);
-            }
+            SetHudActive(shouldShowHud);
 
             if (!shouldShowWorld)
             {
@@ -173,6 +166,16 @@ namespace MazeParty.Multiplayer
             RefreshRunners(match);
             RefreshRaceCamera();
             RefreshHud(match);
+        }
+
+        private void SetHudActive(bool active)
+        {
+            if (hud != null &&
+                hud.Canvas != null &&
+                hud.Canvas.gameObject.activeSelf != active)
+            {
+                hud.Canvas.gameObject.SetActive(active);
+            }
         }
 
         private void ResolveSceneReferences()
@@ -207,9 +210,14 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (_hudCanvas == null)
+            if ((hud == null || !hud.HasRequiredReferences) &&
+                !_hudContractErrorLogged)
             {
-                CreateHud();
+                Debug.LogError(
+                    "WrongWayNetworkView requires a connected " +
+                    "WrongWayHud.prefab instance with complete bindings.",
+                    this);
+                _hudContractErrorLogged = true;
             }
         }
 
@@ -420,93 +428,18 @@ namespace MazeParty.Multiplayer
                 CalculateCameraRotation(_cameraFocus));
         }
 
-        private void CreateHud()
-        {
-            var canvasObject = new GameObject("WrongWay HUD");
-            canvasObject.transform.SetParent(transform, false);
-            _hudCanvas = canvasObject.AddComponent<Canvas>();
-            _hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _hudCanvas.sortingOrder = 45;
-
-            var scaler = canvasObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var panel = new GameObject(
-                "WrongWay HUD Panel",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(canvasObject.transform, false);
-            var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 1f);
-            panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -22f);
-            panelRect.sizeDelta = new Vector2(1120f, 330f);
-            var panelImage = panel.GetComponent<Image>();
-            panelImage.color =
-                new Color(0.025f, 0.035f, 0.07f, 0.88f);
-            panelImage.raycastTarget = false;
-
-            _phaseText = CreateText(
-                "Phase",
-                panel.transform,
-                new Vector2(0f, -16f),
-                new Vector2(1060f, 44f),
-                30,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            _instructionText = CreateText(
-                "Instruction",
-                panel.transform,
-                new Vector2(0f, -58f),
-                new Vector2(1060f, 34f),
-                19,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            _instructionText.text =
-                "W A S D  ·  Match the shown direction and climb 50 steps";
-
-            _promptText = CreateText(
-                "Local Prompt",
-                panel.transform,
-                new Vector2(0f, -115f),
-                new Vector2(1060f, 78f),
-                50,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-
-            for (var slot = 0; slot < _progressRows.Length; slot++)
-            {
-                _progressRows[slot] = CreateText(
-                    "Player " + (slot + 1) + " Progress",
-                    panel.transform,
-                    new Vector2(0f, -194f - slot * 29f),
-                    new Vector2(1000f, 28f),
-                    19,
-                    TextAnchor.MiddleLeft,
-                    FontStyle.Bold);
-                _progressRows[slot].color =
-                    FallbackPlayerColors[slot];
-            }
-        }
-
         private void RefreshHud(NetworkMatchState match)
         {
-            if (_phaseText == null ||
-                _promptText == null ||
-                _instructionText == null)
+            if (hud == null || !hud.HasRequiredReferences)
             {
                 return;
             }
 
-            _phaseText.text = BuildPhaseLabel();
-            _promptText.text = BuildLocalPrompt();
+            hud.PhaseText.text = BuildPhaseLabel();
+            hud.PromptText.text = BuildLocalPrompt();
+            var progressRows = hud.ProgressRows;
 
-            for (var slot = 0; slot < _progressRows.Length; slot++)
+            for (var slot = 0; slot < progressRows.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
                 var displayName = avatar != null &&
@@ -516,7 +449,7 @@ namespace MazeParty.Multiplayer
                     : "Player " + (slot + 1);
                 var rank = ResolveDisplayedRank(slot);
                 var prefix = slot == _localSlot ? ">  " : "   ";
-                _progressRows[slot].text =
+                progressRows[slot].text =
                     prefix +
                     ToOrdinal(rank) +
                     "   " +
@@ -528,9 +461,9 @@ namespace MazeParty.Multiplayer
                     "   SCORE " +
                     state.GetScore(slot);
 
-                _progressRows[slot].color = avatar != null
+                progressRows[slot].color = avatar != null
                     ? avatar.Appearance.BodyColor
-                    : FallbackPlayerColors[slot];
+                    : hud.GetDefaultProgressRowColor(slot);
             }
         }
 
@@ -675,10 +608,11 @@ private void SetWorldPresentationActive(bool active)
 
             if (!active)
             {
-                if (_hudCanvas != null &&
-                    _hudCanvas.gameObject.activeSelf)
+                if (hud != null &&
+                    hud.Canvas != null &&
+                    hud.Canvas.gameObject.activeSelf)
                 {
-                    _hudCanvas.gameObject.SetActive(false);
+                    hud.Canvas.gameObject.SetActive(false);
                 }
 
                 _hasCameraFocus = false;
@@ -721,41 +655,6 @@ private void SetWorldPresentationActive(bool active)
                 default:
                     return "--";
             }
-        }
-
-        private static Text CreateText(
-            string name,
-            Transform parent,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            TextAnchor alignment,
-            FontStyle style)
-        {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-
-            var text = textObject.GetComponent<Text>();
-            text.font =
-                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = new Color(0.94f, 0.97f, 1f);
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            return text;
         }
 
         private static Transform EnsureChild(

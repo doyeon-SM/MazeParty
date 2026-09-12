@@ -26,6 +26,8 @@ namespace MazeParty.Editor
         private const string BoardScenePath = ScenesFolder + "/Board.unity";
         private const string BoardCanvasPrefabPath =
             UiPrefabFolder + "/BoardCanvas.prefab";
+        private const string MinefieldHudPrefabPath =
+            UiPrefabFolder + "/MinefieldHud.prefab";
         private const float CrusherStartOffset = 2.5f;
 
         internal const string MinefieldScenePath =
@@ -55,7 +57,7 @@ namespace MazeParty.Editor
             }
             Debug.Log(
                 "Minefield rebuilt: additive-safe top-view arena, network state, " +
-                "and image-centered board minigame UI.");
+                "connected HUD prefab, and image-centered board minigame UI.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -68,11 +70,14 @@ namespace MazeParty.Editor
         {
             EnsureFolders();
             UpdateBoardCanvasPrefab();
-            BuildMinefieldScene(CreateMaterials());
+            var hudPrefab = LoadOrCreateMinefieldHudPrefab();
+            BuildMinefieldScene(CreateMaterials(), hudPrefab);
             AssetDatabase.SaveAssets();
         }
 
-        private static void BuildMinefieldScene(MinefieldMaterials materials)
+        private static void BuildMinefieldScene(
+            MinefieldMaterials materials,
+            GameObject hudPrefab)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -109,6 +114,9 @@ namespace MazeParty.Editor
             CreateArena(arenaPresentation.transform, materials);
             CreateLighting(arenaPresentation.transform);
             CreateTopDownCamera(root.transform);
+            var hud = InstantiateMinefieldHud(
+                hudPrefab,
+                root.transform);
 
             // Save and enable the scene before adding its NetworkObject so NGO can
             // assign a stable in-scene GlobalObjectIdHash.
@@ -117,7 +125,8 @@ namespace MazeParty.Editor
 
             root.AddComponent<NetworkObject>();
             root.AddComponent<NetworkMinefieldState>();
-            root.AddComponent<MinefieldNetworkView>();
+            var networkView = root.AddComponent<MinefieldNetworkView>();
+            ConfigureNetworkView(networkView, hud);
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, MinefieldScenePath);
 
@@ -372,17 +381,252 @@ namespace MazeParty.Editor
             camera.Lens = lens;
         }
 
+        private static GameObject LoadOrCreateMinefieldHudPrefab()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                MinefieldHudPrefabPath);
+            if (existing != null)
+            {
+                ValidateMinefieldHudPrefab(existing);
+                return existing;
+            }
+
+            var template = CreateMinefieldHudTemplate();
+            try
+            {
+                var prefab = PrefabUtility.SaveAsPrefabAsset(
+                    template,
+                    MinefieldHudPrefabPath);
+                if (prefab == null)
+                {
+                    throw new InvalidOperationException(
+                        "MinefieldHud.prefab could not be created.");
+                }
+
+                ValidateMinefieldHudPrefab(prefab);
+                return prefab;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(template);
+            }
+        }
+
+        private static GameObject CreateMinefieldHudTemplate()
+        {
+            var font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            if (font == null)
+            {
+                throw new InvalidOperationException(
+                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
+            }
+
+            var canvasObject = new GameObject(
+                "Minefield HUD",
+                typeof(RectTransform),
+                typeof(Canvas),
+                typeof(CanvasScaler));
+            canvasObject.transform.localScale = Vector3.one;
+            SetUiLayer(canvasObject);
+
+            var canvas = canvasObject.GetComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 40;
+            var scaler = canvasObject.GetComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            var panel = new GameObject(
+                "Minefield HUD Panel",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            SetUiLayer(panel);
+            panel.transform.SetParent(canvasObject.transform, false);
+            var panelRect = panel.GetComponent<RectTransform>();
+            panelRect.anchorMin = new Vector2(0.5f, 1f);
+            panelRect.anchorMax = new Vector2(0.5f, 1f);
+            panelRect.pivot = new Vector2(0.5f, 1f);
+            panelRect.anchoredPosition = new Vector2(0f, -24f);
+            panelRect.sizeDelta = new Vector2(950f, 265f);
+            var panelImage = panel.GetComponent<Image>();
+            panelImage.color = new Color(0.025f, 0.035f, 0.055f, 0.88f);
+            panelImage.raycastTarget = false;
+
+            var phaseText = CreateHudText(
+                "Minefield Phase",
+                panel.transform,
+                font,
+                new Vector2(0f, -20f),
+                new Vector2(900f, 48f),
+                34,
+                TextAnchor.MiddleCenter,
+                FontStyle.Bold);
+            var instructionText = CreateHudText(
+                "Minefield Instructions",
+                panel.transform,
+                font,
+                new Vector2(0f, -68f),
+                new Vector2(900f, 34f),
+                20,
+                TextAnchor.MiddleCenter,
+                FontStyle.Normal);
+            instructionText.text =
+                "WASD MOVE   |   STOP + RMB SONAR   |   " +
+                "FIRST MINE: CRIPPLED   |   SECOND: OUT";
+
+            var scoreRows = new Text[MinefieldRules.PlayerCount];
+            for (var slot = 0; slot < scoreRows.Length; slot++)
+            {
+                scoreRows[slot] = CreateHudText(
+                    "Minefield Score " + slot,
+                    panel.transform,
+                    font,
+                    new Vector2(-330f + slot * 220f, -133f),
+                    new Vector2(205f, 105f),
+                    19,
+                    TextAnchor.UpperCenter,
+                    FontStyle.Bold);
+            }
+
+            var bindings =
+                canvasObject.AddComponent<MinefieldHudBindings>();
+            bindings.Configure(
+                canvas,
+                phaseText,
+                instructionText,
+                scoreRows);
+            canvasObject.SetActive(false);
+            return canvasObject;
+        }
+
+        private static Text CreateHudText(
+            string name,
+            Transform parent,
+            Font font,
+            Vector2 anchoredPosition,
+            Vector2 size,
+            int fontSize,
+            TextAnchor alignment,
+            FontStyle style)
+        {
+            var textObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text));
+            SetUiLayer(textObject);
+            textObject.transform.SetParent(parent, false);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = new Vector2(0.5f, 1f);
+            rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = anchoredPosition;
+            rect.sizeDelta = size;
+
+            var text = textObject.GetComponent<Text>();
+            text.font = font;
+            text.fontSize = fontSize;
+            text.fontStyle = style;
+            text.alignment = alignment;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            text.horizontalOverflow = HorizontalWrapMode.Wrap;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
+        }
+
+        private static void SetUiLayer(GameObject target)
+        {
+            var uiLayer = LayerMask.NameToLayer("UI");
+            if (uiLayer >= 0)
+            {
+                target.layer = uiLayer;
+            }
+        }
+
+        private static void ValidateMinefieldHudPrefab(GameObject prefab)
+        {
+            var bindings = prefab.GetComponent<MinefieldHudBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "MinefieldHud.prefab is missing its required bindings. " +
+                    "Repair the prefab explicitly instead of rebuilding over " +
+                    "designer-authored UI.");
+            }
+        }
+
+        private static MinefieldHudBindings InstantiateMinefieldHud(
+            GameObject hudPrefab,
+            Transform parent)
+        {
+            var instance = PrefabUtility.InstantiatePrefab(
+                hudPrefab,
+                parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "MinefieldHud.prefab could not be instantiated.");
+            }
+
+            instance.transform.SetLocalPositionAndRotation(
+                Vector3.zero,
+                Quaternion.identity);
+            instance.transform.localScale = hudPrefab.transform.localScale;
+            var bindings = instance.GetComponent<MinefieldHudBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "Minefield HUD instance has incomplete bindings.");
+            }
+
+            return bindings;
+        }
+
+        private static void ConfigureNetworkView(
+            MinefieldNetworkView view,
+            MinefieldHudBindings hud)
+        {
+            var serializedView = new SerializedObject(view);
+            var hudProperty = serializedView.FindProperty("hud");
+            if (hudProperty == null)
+            {
+                throw new InvalidOperationException(
+                    "MinefieldNetworkView no longer exposes its HUD contract.");
+            }
+
+            hudProperty.objectReferenceValue = hud;
+            serializedView.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void ValidateSceneContract(GameObject root)
         {
+            var networkView = root.GetComponent<MinefieldNetworkView>();
+            var hud = root.GetComponentInChildren<MinefieldHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkMinefieldState>() == null ||
-                root.GetComponent<MinefieldNetworkView>() == null ||
+                networkView == null ||
                 FindDescendant(root.transform, "Arena Presentation") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
-                FindDescendant(root.transform, "Crusher Placeholder") == null)
+                FindDescendant(root.transform, "Crusher Placeholder") == null ||
+                hud == null ||
+                !hud.HasRequiredReferences ||
+                PrefabUtility.GetPrefabInstanceStatus(hud.gameObject) !=
+                PrefabInstanceStatus.Connected)
             {
                 throw new InvalidOperationException(
                     "Generated Minefield scene is missing its network or presentation contract.");
+            }
+
+            var serializedView = new SerializedObject(networkView);
+            if (serializedView.FindProperty("hud")?.objectReferenceValue != hud)
+            {
+                throw new InvalidOperationException(
+                    "MinefieldNetworkView must reference the connected HUD " +
+                    "prefab instance in its scene.");
             }
 
             if (root.GetComponentInChildren<Camera>(true) != null ||
@@ -405,6 +649,14 @@ namespace MazeParty.Editor
                     "prototype before rebuilding Minefield.");
             }
 
+            if (HasCompleteBoardCanvasContract(prefab))
+            {
+                ValidateBoardCanvasContract(prefab);
+                return;
+            }
+
+            ValidateExistingBoardCanvasAnchors(prefab);
+
             var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             if (font == null)
             {
@@ -424,147 +676,212 @@ namespace MazeParty.Editor
                         "BoardCanvas.prefab is missing MinigameReadyPanel.");
                 }
 
-                ConfigureCenteredRect(
-                    RequireRect(readyPanel),
-                    Vector2.zero,
-                    new Vector2(1180f, 840f));
-
-                UpdateExistingText(
-                    readyPanel.transform,
-                    "Ready Title",
-                    "MINEFIELD / READY",
-                    new Vector2(0f, 365f),
-                    new Vector2(1040f, 50f),
-                    32);
-                UpdateExistingText(
-                    readyPanel.transform,
-                    "Ready Note",
-                    "Study the top-view field, then ready up with all four players.",
-                    new Vector2(0f, 315f),
-                    new Vector2(1040f, 36f),
-                    18);
-
-                var ruleImageObject = EnsureDirectUiChild(
-                    readyPanel.transform,
-                    "MinigameRuleImage");
-                var ruleImage = GetOrAdd<Image>(ruleImageObject);
-                ruleImage.type = Image.Type.Simple;
-                ruleImage.preserveAspect = true;
-                ruleImage.color = ruleImage.sprite != null
-                    ? Color.white
-                    : new Color(0.055f, 0.09f, 0.14f, 1f);
-                ruleImage.raycastTarget = false;
-                ConfigureCenteredRect(
-                    RequireRect(ruleImageObject),
-                    new Vector2(0f, 25f),
-                    new Vector2(1040f, 520f));
-                ruleImageObject.transform.SetAsFirstSibling();
-
-                EnsureText(
-                    readyPanel.transform,
-                    "MinigameRulePlaceholderText",
-                    "MINEFIELD RULE IMAGE\nARTWORK PLACEHOLDER",
-                    font,
-                    26,
-                    new Vector2(0f, 25f),
-                    new Vector2(900f, 120f));
-                EnsureText(
-                    readyPanel.transform,
-                    "MinigameReadyStatus",
-                    "READY 0 / 4",
-                    font,
-                    22,
-                    new Vector2(0f, -270f),
-                    new Vector2(900f, 48f));
-
-                var readyButton = FindDescendant(
-                    readyPanel.transform,
-                    "ReadyButton");
-                if (readyButton != null)
+                if (FindDescendant(
+                        readyPanel.transform,
+                        "MinigameRuleImage") == null)
                 {
-                    ConfigureCenteredRect(
-                        RequireRect(readyButton),
-                        new Vector2(0f, -350f),
-                        new Vector2(320f, 64f));
-                    var label = readyButton.GetComponentInChildren<Text>(true);
-                    if (label != null)
-                    {
-                        label.text = "READY";
-                    }
+                    CreateBoardImageAnchor(
+                        readyPanel.transform,
+                        "MinigameRuleImage",
+                        new Vector2(0f, 25f),
+                        new Vector2(1040f, 520f));
+                }
+                if (FindDescendant(
+                        readyPanel.transform,
+                        "MinigameRulePlaceholderText") == null)
+                {
+                    CreateBoardTextAnchor(
+                        readyPanel.transform,
+                        "MinigameRulePlaceholderText",
+                        "MINEFIELD RULE IMAGE\nARTWORK PLACEHOLDER",
+                        font,
+                        26,
+                        new Vector2(0f, 25f),
+                        new Vector2(900f, 120f));
+                }
+                if (FindDescendant(
+                        readyPanel.transform,
+                        "MinigameReadyStatus") == null)
+                {
+                    CreateBoardTextAnchor(
+                        readyPanel.transform,
+                        "MinigameReadyStatus",
+                        "READY 0 / 4",
+                        font,
+                        22,
+                        new Vector2(0f, -270f),
+                        new Vector2(900f, 48f));
                 }
 
-                UpdateResultPanel(contents.transform, font);
+                var resultPanel = FindDescendant(
+                    contents.transform,
+                    "SkippedResultPanel");
+                if (resultPanel == null)
+                {
+                    throw new InvalidOperationException(
+                        "BoardCanvas.prefab is missing SkippedResultPanel.");
+                }
+                if (FindDescendant(
+                        resultPanel.transform,
+                        "MinefieldResultSummary") == null)
+                {
+                    CreateBoardTextAnchor(
+                        resultPanel.transform,
+                        "MinefieldResultSummary",
+                        "1ST  --\n2ND  --\n3RD  --\n4TH  --",
+                        font,
+                        22,
+                        new Vector2(0f, -42f),
+                        new Vector2(680f, 180f));
+                }
+
                 PrefabUtility.SaveAsPrefabAsset(contents, BoardCanvasPrefabPath);
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(contents);
             }
+
+            var migrated = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+            ValidateBoardCanvasContract(migrated);
         }
 
-        private static void UpdateResultPanel(Transform canvas, Font font)
+        private static bool HasCompleteBoardCanvasContract(GameObject prefab)
         {
-            var resultPanel = FindDescendant(canvas, "SkippedResultPanel");
-            if (resultPanel == null)
+            return prefab != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "MinigameReadyPanel") != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "SkippedResultPanel") != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "MinigameRuleImage") != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "MinigameRulePlaceholderText") != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "MinigameReadyStatus") != null &&
+                   FindDescendant(
+                       prefab.transform,
+                       "MinefieldResultSummary") != null;
+        }
+
+        private static void ValidateBoardCanvasContract(GameObject prefab)
+        {
+            if (!HasCompleteBoardCanvasContract(prefab))
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab is missing SkippedResultPanel.");
+                    "BoardCanvas.prefab is missing its Minefield UI anchors.");
             }
 
-            ConfigureCenteredRect(
-                RequireRect(resultPanel),
-                Vector2.zero,
-                new Vector2(760f, 320f));
-            UpdateExistingText(
-                resultPanel.transform,
-                "Result Title",
-                "MINEFIELD RESULTS",
-                new Vector2(0f, 115f),
-                new Vector2(680f, 48f),
-                30);
-            UpdateExistingText(
-                resultPanel.transform,
-                "Result Note",
-                "Final rank settles after all three rounds.",
-                new Vector2(0f, 72f),
-                new Vector2(680f, 32f),
-                18);
-            EnsureText(
-                resultPanel.transform,
-                "MinefieldResultSummary",
-                "1ST  --\n2ND  --\n3RD  --\n4TH  --",
-                font,
-                22,
-                new Vector2(0f, -42f),
-                new Vector2(680f, 180f));
+            var ruleImage = FindDescendant(
+                    prefab.transform,
+                    "MinigameRuleImage")
+                .GetComponent<Image>();
+            if (ruleImage == null || !ruleImage.preserveAspect)
+            {
+                throw new InvalidOperationException(
+                    "BoardCanvas MinigameRuleImage must be an aspect-preserving Image. " +
+                    "Repair the prefab explicitly; setup will not overwrite its design.");
+            }
+
+            ValidateTextAnchor(prefab.transform, "MinigameRulePlaceholderText");
+            ValidateTextAnchor(prefab.transform, "MinigameReadyStatus");
+            ValidateTextAnchor(prefab.transform, "MinefieldResultSummary");
         }
 
-        private static void UpdateExistingText(
+        private static void ValidateExistingBoardCanvasAnchors(GameObject prefab)
+        {
+            if (FindDescendant(prefab.transform, "MinigameReadyPanel") == null ||
+                FindDescendant(prefab.transform, "SkippedResultPanel") == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardCanvas.prefab is missing its base minigame panels.");
+            }
+
+            var ruleImageObject = FindDescendant(
+                prefab.transform,
+                "MinigameRuleImage");
+            if (ruleImageObject != null)
+            {
+                var ruleImage = ruleImageObject.GetComponent<Image>();
+                if (ruleImage == null || !ruleImage.preserveAspect)
+                {
+                    throw new InvalidOperationException(
+                        "Existing BoardCanvas MinigameRuleImage is invalid. " +
+                        "Repair the prefab explicitly; setup will not overwrite it.");
+                }
+            }
+
+            ValidateExistingTextAnchor(
+                prefab.transform,
+                "MinigameRulePlaceholderText");
+            ValidateExistingTextAnchor(
+                prefab.transform,
+                "MinigameReadyStatus");
+            ValidateExistingTextAnchor(
+                prefab.transform,
+                "MinefieldResultSummary");
+        }
+
+        private static void ValidateExistingTextAnchor(
+            Transform parent,
+            string name)
+        {
+            var target = FindDescendant(parent, name);
+            if (target != null && target.GetComponent<Text>() == null)
+            {
+                throw new InvalidOperationException(
+                    "Existing BoardCanvas UI anchor '" + name +
+                    "' is invalid. Repair the prefab explicitly; setup will " +
+                    "not overwrite it.");
+            }
+        }
+
+        private static void ValidateTextAnchor(
+            Transform parent,
+            string name)
+        {
+            var target = FindDescendant(parent, name);
+            if (target == null || target.GetComponent<Text>() == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardCanvas UI anchor '" + name +
+                    "' must contain a Text component. Repair the prefab " +
+                    "explicitly; setup will not overwrite its design.");
+            }
+        }
+
+        private static void CreateBoardImageAnchor(
             Transform parent,
             string name,
-            string value,
             Vector2 position,
-            Vector2 size,
-            int fontSize)
+            Vector2 size)
         {
-            var child = FindDescendant(parent, name);
-            if (child == null)
-            {
-                return;
-            }
-
-            var text = child.GetComponent<Text>();
-            if (text != null)
-            {
-                text.text = value;
-                text.fontSize = fontSize;
-                text.alignment = TextAnchor.MiddleCenter;
-            }
-
-            ConfigureCenteredRect(RequireRect(child), position, size);
+            var imageObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            imageObject.layer = parent.gameObject.layer;
+            imageObject.transform.SetParent(parent, false);
+            ConfigureBoardAnchor(
+                imageObject.GetComponent<RectTransform>(),
+                position,
+                size);
+            var image = imageObject.GetComponent<Image>();
+            image.type = Image.Type.Simple;
+            image.preserveAspect = true;
+            image.color = new Color(0.055f, 0.09f, 0.14f, 1f);
+            image.raycastTarget = false;
+            imageObject.transform.SetAsFirstSibling();
         }
 
-        private static Text EnsureText(
+        private static void CreateBoardTextAnchor(
             Transform parent,
             string name,
             string value,
@@ -573,8 +890,18 @@ namespace MazeParty.Editor
             Vector2 position,
             Vector2 size)
         {
-            var textObject = EnsureDirectUiChild(parent, name);
-            var text = GetOrAdd<Text>(textObject);
+            var textObject = new GameObject(
+                name,
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text));
+            textObject.layer = parent.gameObject.layer;
+            textObject.transform.SetParent(parent, false);
+            ConfigureBoardAnchor(
+                textObject.GetComponent<RectTransform>(),
+                position,
+                size);
+            var text = textObject.GetComponent<Text>();
             text.font = font;
             text.text = value;
             text.fontSize = fontSize;
@@ -583,52 +910,10 @@ namespace MazeParty.Editor
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
             text.raycastTarget = false;
-            ConfigureCenteredRect(RequireRect(textObject), position, size);
             textObject.transform.SetAsLastSibling();
-            return text;
         }
 
-        private static GameObject EnsureDirectUiChild(
-            Transform parent,
-            string name)
-        {
-            var existing = parent.Find(name);
-            if (existing != null)
-            {
-                existing.gameObject.layer = parent.gameObject.layer;
-                existing.gameObject.SetActive(true);
-                return existing.gameObject;
-            }
-
-            var child = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer));
-            child.layer = parent.gameObject.layer;
-            child.transform.SetParent(parent, false);
-            return child;
-        }
-
-        private static T GetOrAdd<T>(GameObject gameObject)
-            where T : Component
-        {
-            var component = gameObject.GetComponent<T>();
-            return component != null ? component : gameObject.AddComponent<T>();
-        }
-
-        private static RectTransform RequireRect(GameObject gameObject)
-        {
-            var rect = gameObject.GetComponent<RectTransform>();
-            if (rect == null)
-            {
-                throw new InvalidOperationException(
-                    "UI anchor '" + gameObject.name + "' must use RectTransform.");
-            }
-
-            return rect;
-        }
-
-        private static void ConfigureCenteredRect(
+        private static void ConfigureBoardAnchor(
             RectTransform rect,
             Vector2 anchoredPosition,
             Vector2 size)

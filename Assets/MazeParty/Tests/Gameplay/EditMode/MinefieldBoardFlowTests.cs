@@ -5,88 +5,82 @@ namespace MazeParty.Gameplay.Tests
     public sealed class MinefieldBoardFlowTests
     {
         [Test]
-        public void MinigameLifecycle_CompletesAndBeginsNextTurn()
+        public void MinigameLifecycle_TransitionsAtTheExactResultBoundary()
         {
-            var flow = AdvanceNormallyToMinigameIntro();
+            var cases = new[]
+            {
+                (
+                    TotalTurns: BoardFlowStateMachine.DefaultTotalTurns,
+                    ExpectedState: BoardFlowState.TurnOverview,
+                    ExpectedTurn: 2),
+                (
+                    TotalTurns: 1,
+                    ExpectedState: BoardFlowState.MatchComplete,
+                    ExpectedTurn: 1)
+            };
 
-            Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameLoading));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
+            foreach (var testCase in cases)
+            {
+                var flow = AdvanceNormallyToMinigameIntro(testCase.TotalTurns);
 
-            Assert.That(flow.TryBeginMinigame(21d), Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
+                Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameLoading));
+                Assert.That(flow.TryBeginMinigame(21d), Is.True);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
+                Assert.That(flow.TryCompleteMinigame(22d), Is.True);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
+                Assert.That(flow.GetStateRemaining(22d), Is.EqualTo(3d));
 
-            Assert.That(flow.TryCompleteMinigame(22d), Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
-            Assert.That(flow.GetStateRemaining(22d), Is.EqualTo(3d));
+                flow.Tick(24.999d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
 
-            flow.Tick(24.999d);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
-
-            flow.Tick(25d);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(2));
-            Assert.That(flow.GetStateRemaining(25d), Is.EqualTo(5d));
+                flow.Tick(25d);
+                Assert.That(flow.State, Is.EqualTo(testCase.ExpectedState));
+                Assert.That(flow.CurrentTurn, Is.EqualTo(testCase.ExpectedTurn));
+            }
         }
 
         [Test]
-        public void LoadingPause_BlocksPlayingTransitionUntilResume()
+        public void Pause_BlocksLoadingAndPlayingTransitionsUntilResume()
         {
-            var flow = AdvanceNormallyToMinigameIntro();
-            Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
+            var loadingFlow = AdvanceNormallyToMinigameIntro();
+            Assert.That(loadingFlow.TryBeginMinigameLoading(20d), Is.True);
 
-            Assert.That(flow.Pause(21d), Is.True);
-            Assert.That(flow.TryBeginMinigame(100d), Is.False);
-            flow.Tick(100d);
+            Assert.That(loadingFlow.Pause(21d), Is.True);
+            Assert.That(loadingFlow.TryBeginMinigame(100d), Is.False);
+            loadingFlow.Tick(100d);
 
-            Assert.That(flow.IsPaused, Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameLoading));
+            Assert.That(loadingFlow.IsPaused, Is.True);
+            Assert.That(
+                loadingFlow.State,
+                Is.EqualTo(BoardFlowState.MinigameLoading));
 
-            Assert.That(flow.Resume(100d), Is.True);
-            Assert.That(flow.TryBeginMinigame(100d), Is.True);
-            Assert.That(flow.IsPaused, Is.False);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
-        }
+            Assert.That(loadingFlow.Resume(100d), Is.True);
+            Assert.That(loadingFlow.TryBeginMinigame(100d), Is.True);
+            Assert.That(loadingFlow.IsPaused, Is.False);
+            Assert.That(
+                loadingFlow.State,
+                Is.EqualTo(BoardFlowState.MinigamePlaying));
 
-        [Test]
-        public void PlayingPause_BlocksCompletionUntilResume()
-        {
-            var flow = AdvanceNormallyToMinigameIntro();
-            Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
-            Assert.That(flow.TryBeginMinigame(21d), Is.True);
+            var playingFlow = AdvanceNormallyToMinigameIntro();
+            Assert.That(playingFlow.TryBeginMinigameLoading(20d), Is.True);
+            Assert.That(playingFlow.TryBeginMinigame(21d), Is.True);
 
-            Assert.That(flow.Pause(22d), Is.True);
-            Assert.That(flow.TryCompleteMinigame(200d), Is.False);
-            flow.Tick(200d);
+            Assert.That(playingFlow.Pause(22d), Is.True);
+            Assert.That(playingFlow.TryCompleteMinigame(200d), Is.False);
+            playingFlow.Tick(200d);
 
-            Assert.That(flow.IsPaused, Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
+            Assert.That(playingFlow.IsPaused, Is.True);
+            Assert.That(
+                playingFlow.State,
+                Is.EqualTo(BoardFlowState.MinigamePlaying));
 
-            Assert.That(flow.Resume(200d), Is.True);
-            Assert.That(flow.TryCompleteMinigame(200d), Is.True);
-            Assert.That(flow.IsPaused, Is.False);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
-        }
-
-        [Test]
-        public void FinalTurn_ResultTransitionsToMatchCompleteWithoutTurnSixteen()
-        {
-            var flow = AdvanceNormallyToMinigameIntro(totalTurns: 1);
-
-            Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
-            Assert.That(flow.TryBeginMinigame(21d), Is.True);
-            Assert.That(flow.TryCompleteMinigame(22d), Is.True);
-
-            flow.Tick(25d);
-
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MatchComplete));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
-            Assert.That(flow.TotalTurns, Is.EqualTo(1));
-
-            flow.Tick(1000d);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MatchComplete));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(1));
+            Assert.That(playingFlow.Resume(200d), Is.True);
+            Assert.That(playingFlow.TryCompleteMinigame(200d), Is.True);
+            Assert.That(playingFlow.IsPaused, Is.False);
+            Assert.That(
+                playingFlow.State,
+                Is.EqualTo(BoardFlowState.SkippedResult));
         }
 
         private static BoardFlowStateMachine AdvanceNormallyToMinigameIntro(

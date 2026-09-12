@@ -16,6 +16,8 @@ namespace MazeParty.Editor
     {
         public const string ScenePath = "Assets/MazeParty/Dev/GameplayTestbed/GameplayTestbed.unity";
         private const string MaterialFolder = "Assets/MazeParty/Dev/GameplayTestbed/Materials";
+        public const string CanvasPrefabPath =
+            "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab";
 
         private static Font _font;
         private static Sprite _uiSprite;
@@ -106,7 +108,7 @@ namespace MazeParty.Editor
             var cameraDirector = systemsRoot.AddComponent<GameplayCameraDirector>();
             cameraDirector.Configure(mainCamera, firstPersonCamera, boardCamera, minigameCamera);
 
-            CreateCanvas();
+            var uiBindings = CreateCanvas();
             var controller = systemsRoot.AddComponent<GameplayTestbedController>();
             controller.Configure(
                 inputSource,
@@ -115,7 +117,8 @@ namespace MazeParty.Editor
                 cameraDirector,
                 firstPersonSpawn,
                 boardSpawn,
-                minigameSpawn);
+                minigameSpawn,
+                uiBindings);
 
             EditorUtility.SetDirty(characterController);
             EditorUtility.SetDirty(playerMotor);
@@ -327,10 +330,76 @@ namespace MazeParty.Editor
             CreateWorldLabel(root, "MINIGAME / PRIMARY + SECONDARY", new Vector3(-30f, 3f, 9.2f), new Color(1f, 0.4f, 0.65f));
         }
 
-        private static void CreateCanvas()
+        private static GameplayTestbedUiBindings CreateCanvas()
+        {
+            var prefab = LoadOrCreateCanvasPrefab();
+            ValidateCanvasPrefab(prefab);
+            var canvasObject =
+                PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+            if (canvasObject == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Could not instantiate " + CanvasPrefabPath + ".");
+            }
+            canvasObject.transform.localScale = prefab.transform.localScale;
+            canvasObject.name = "GameplayTestbedCanvas";
+            var bindings =
+                canvasObject.GetComponent<GameplayTestbedUiBindings>();
+            if (bindings == null || !bindings.HasRequiredReferences)
+            {
+                throw new System.InvalidOperationException(
+                    CanvasPrefabPath + " has incomplete serialized UI " +
+                    "bindings.");
+            }
+
+            var eventSystemObject = new GameObject("EventSystem");
+            eventSystemObject.AddComponent<EventSystem>();
+            var inputModule = eventSystemObject.AddComponent<InputSystemUIInputModule>();
+            inputModule.AssignDefaultActions();
+            return bindings;
+        }
+
+        private static GameObject LoadOrCreateCanvasPrefab()
+        {
+            var existing =
+                AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPrefabPath);
+            if (existing != null)
+            {
+                if (existing.GetComponent<GameplayTestbedUiBindings>() == null)
+                    existing = MigrateLegacyCanvasBindings();
+                ValidateCanvasPrefab(existing);
+                return existing;
+            }
+
+            EnsureFolder("Assets/MazeParty/UI");
+            EnsureFolder("Assets/MazeParty/UI/Prefabs");
+            EnsureFolder("Assets/MazeParty/UI/Prefabs/Dev");
+
+            var canvasObject = CreateCanvasTemplate();
+            try
+            {
+                var created = PrefabUtility.SaveAsPrefabAsset(
+                    canvasObject,
+                    CanvasPrefabPath);
+                if (created == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Could not create " + CanvasPrefabPath + ".");
+                }
+                ValidateCanvasPrefab(created);
+                return created;
+            }
+            finally
+            {
+                Object.DestroyImmediate(canvasObject);
+            }
+        }
+
+        private static GameObject CreateCanvasTemplate()
         {
             var canvasObject = new GameObject("GameplayTestbedCanvas");
             var canvas = canvasObject.AddComponent<Canvas>();
+            canvasObject.transform.localScale = Vector3.one;
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 100;
             var scaler = canvasObject.AddComponent<CanvasScaler>();
@@ -339,17 +408,158 @@ namespace MazeParty.Editor
             scaler.matchWidthOrHeight = 0.5f;
             canvasObject.AddComponent<GraphicRaycaster>();
 
-            var eventSystemObject = new GameObject("EventSystem");
-            eventSystemObject.AddComponent<EventSystem>();
-            var inputModule = eventSystemObject.AddComponent<InputSystemUIInputModule>();
-            inputModule.AssignDefaultActions();
-
             CreateTopHud(canvasObject.transform);
             CreateDebugPanel(canvasObject.transform);
             CreateInventoryHud(canvasObject.transform);
             CreateSelectionPanel(canvasObject.transform);
             CreateStatusHud(canvasObject.transform);
             CreateReticle(canvasObject.transform);
+            var bindings =
+                canvasObject.AddComponent<GameplayTestbedUiBindings>();
+            ConfigureCanvasBindings(canvasObject, bindings);
+            return canvasObject;
+        }
+
+        private static GameObject MigrateLegacyCanvasBindings()
+        {
+            var contents = PrefabUtility.LoadPrefabContents(CanvasPrefabPath);
+            try
+            {
+                var bindings =
+                    contents.GetComponent<GameplayTestbedUiBindings>() ??
+                    contents.AddComponent<GameplayTestbedUiBindings>();
+                ConfigureCanvasBindings(contents, bindings);
+                EditorUtility.SetDirty(bindings);
+                var saved = PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    CanvasPrefabPath);
+                if (saved == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Could not migrate serialized bindings onto " +
+                        CanvasPrefabPath + ".");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPrefabPath);
+        }
+
+        private static void ConfigureCanvasBindings(
+            GameObject canvasObject,
+            GameplayTestbedUiBindings bindings)
+        {
+            var root = canvasObject.transform;
+            var slotBackgrounds = new Image[GameplayInventory.Capacity];
+            var slotLabels = new Text[GameplayInventory.Capacity];
+            var choiceButtons = new Button[GameplayInventory.Capacity];
+            var choiceButtonLabels = new Text[GameplayInventory.Capacity];
+            var choicePresenters =
+                new TestbedItemChoiceButton[GameplayInventory.Capacity];
+
+            for (var index = 0; index < GameplayInventory.Capacity; index++)
+            {
+                var slot = RequiredTransform(
+                    root,
+                    "InventorySlot" + index);
+                slotBackgrounds[index] = RequiredComponent<Image>(slot);
+                slotLabels[index] = RequiredComponent<Text>(
+                    RequiredTransform(slot, "SlotLabel"));
+
+                var choice = RequiredTransform(root, "ChoiceButton" + index);
+                choiceButtons[index] = RequiredComponent<Button>(choice);
+                choiceButtonLabels[index] = RequiredComponent<Text>(
+                    RequiredTransform(choice, "Label"));
+                choicePresenters[index] =
+                    RequiredComponent<TestbedItemChoiceButton>(choice);
+            }
+
+            bindings.Configure(
+                RequiredTransform(root, "ItemSelectionPanel").gameObject,
+                RequiredNamedComponent<Text>(root, "ActionTimerText"),
+                RequiredNamedComponent<Text>(root, "ShieldTimerText"),
+                RequiredNamedComponent<Text>(root, "ChoiceTimerText"),
+                RequiredNamedComponent<Text>(root, "HealthText"),
+                RequiredNamedComponent<Text>(root, "AmmoText"),
+                RequiredNamedComponent<Text>(root, "StatusText"),
+                RequiredNamedComponent<Text>(root, "TooltipText"),
+                slotBackgrounds,
+                slotLabels,
+                choiceButtons,
+                choiceButtonLabels,
+                choicePresenters,
+                RequiredNamedComponent<Button>(root, "StartActionButton"),
+                RequiredNamedComponent<Button>(root, "NoItemButton"),
+                RequiredNamedComponent<Button>(root, "IncomingHitButton"),
+                RequiredNamedComponent<Button>(root, "IncomingPushButton"),
+                RequiredNamedComponent<Button>(root, "AddRewardButton"),
+                RequiredNamedComponent<Button>(root, "EndActionButton"),
+                RequiredNamedComponent<Button>(root, "ResetButton"),
+                RequiredNamedComponent<Button>(root, "FirstPersonButton"),
+                RequiredNamedComponent<Button>(root, "BoardButton"),
+                RequiredNamedComponent<Button>(root, "MinigameButton"));
+        }
+
+        private static void ValidateCanvasPrefab(GameObject prefab)
+        {
+            if (prefab == null ||
+                prefab.GetComponent<Canvas>() == null ||
+                prefab.GetComponent<CanvasScaler>() == null ||
+                prefab.GetComponent<GraphicRaycaster>() == null ||
+                prefab.GetComponent<GameplayTestbedUiBindings>() == null ||
+                !prefab.GetComponent<GameplayTestbedUiBindings>()
+                    .HasRequiredReferences)
+            {
+                throw new System.InvalidOperationException(
+                    CanvasPrefabPath + " is missing its Canvas or serialized " +
+                    "binding contract. " +
+                    "Repair the prefab directly so custom design changes are " +
+                    "preserved.");
+            }
+        }
+
+        private static T RequiredNamedComponent<T>(
+            Transform root,
+            string objectName)
+            where T : Component
+        {
+            return RequiredComponent<T>(RequiredTransform(root, objectName));
+        }
+
+        private static T RequiredComponent<T>(Transform target)
+            where T : Component
+        {
+            var component = target.GetComponent<T>();
+            if (component == null)
+            {
+                throw new System.InvalidOperationException(
+                    CanvasPrefabPath + " object '" + target.name +
+                    "' requires component " + typeof(T).Name +
+                    " for the one-time binding migration.");
+            }
+
+            return component;
+        }
+
+        private static Transform RequiredTransform(
+            Transform root,
+            string objectName)
+        {
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var index = 0; index < transforms.Length; index++)
+            {
+                if (transforms[index].name == objectName)
+                {
+                    return transforms[index];
+                }
+            }
+
+            throw new System.InvalidOperationException(
+                CanvasPrefabPath + " is missing required legacy UI object '" +
+                objectName + "'. Repair the prefab before migrating bindings.");
         }
 
         private static void CreateTopHud(Transform canvas)

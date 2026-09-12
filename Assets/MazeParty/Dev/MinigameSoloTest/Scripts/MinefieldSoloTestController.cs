@@ -42,12 +42,18 @@ namespace MazeParty.Dev.MinigameSoloTest
         private LineRenderer _sonarPulse;
         private Material _sonarPulseMaterial;
         private float _sonarPulseUntil = float.NegativeInfinity;
+        private MinigameSoloHudView _hud;
         private bool _initialized;
 
         public bool IsInitialized => _initialized;
         public MinefieldSoloSession Session => _session;
         public MinefieldPlayerActor PlayerActor => _playerActor;
         public Camera RuntimeCamera => _runtimeCamera;
+
+        public void ConfigureHud(MinigameSoloHudView hud)
+        {
+            _hud = hud;
+        }
 
         public int ActiveMineCount
         {
@@ -79,6 +85,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                 throw new InvalidOperationException(
                     "The Minefield solo harness is already initialized.");
             }
+            if (_hud == null || !_hud.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "The Minefield solo harness requires a valid " +
+                    "MinigameSoloHud prefab instance.");
+            }
+
+            _hud.BindActions(RestartRound, StartNextSeed, StopSoloTest);
 
             _networkState = FindAnyObjectByType<NetworkMinefieldState>();
             if (_networkState == null)
@@ -100,6 +114,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             _session.Begin(seed);
             BuildCurrentRound();
             _initialized = true;
+            UpdateHud();
 
             Debug.Log(
                 "[Minigame Solo Test] Minefield started with seed " +
@@ -146,6 +161,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     Time.unscaledTime < _sonarPulseUntil &&
                     _session.Phase == MinefieldSoloPhase.Running;
             }
+            UpdateHud();
         }
 
         private void LateUpdate()
@@ -159,52 +175,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 MinefieldNetworkView.CalculatePlayerCameraPosition(
                     _playerRoot.position),
                 MinefieldNetworkView.PlayerCameraRotation);
-        }
-
-        private void OnGUI()
-        {
-            if (!_initialized || _session == null)
-            {
-                return;
-            }
-
-            GUILayout.BeginArea(
-                new Rect(18f, 18f, 455f, 260f),
-                GUI.skin.box);
-            GUILayout.Label("DEVELOPER SOLO TEST  /  MINEFIELD");
-            GUILayout.Label(
-                "ROUND " + _session.RoundNumber + " / " +
-                MinefieldRules.RoundCount + "  ·  " +
-                GetPhaseLabel() + "  ·  " +
-                FormatClock(_session.RemainingSeconds));
-            GUILayout.Label(
-                "STATE " + GetPlayerStateLabel() +
-                "  ·  MINES " + ActiveMineCount + " / " +
-                NetworkMinefieldState.MineCount +
-                "  ·  CLEARS " + _session.ClearedRoundCount);
-            GUILayout.Label("SEED " + _session.Seed);
-            GUILayout.Space(4f);
-            GUILayout.Label(
-                "WASD move  |  stop + RMB sonar  |  " +
-                "first mine slows, second mine eliminates");
-
-            GUILayout.FlexibleSpace();
-            GUILayout.BeginHorizontal();
-            if (GUILayout.Button("Restart Round (R)", GUILayout.Height(32f)))
-            {
-                RestartRound();
-            }
-            if (GUILayout.Button("Next Seed (N)", GUILayout.Height(32f)))
-            {
-                StartNewSeed(unchecked(_session.Seed + 1));
-            }
-            GUILayout.EndHorizontal();
-
-            if (GUILayout.Button("Stop Solo Test (Esc)", GUILayout.Height(30f)))
-            {
-                StopSoloTest();
-            }
-            GUILayout.EndArea();
         }
 
         private void OnDestroy()
@@ -228,6 +198,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _session.RestartCurrentRound();
             BuildCurrentRound();
+            UpdateHud();
         }
 
         public void StartNewSeed(int seed)
@@ -239,6 +210,39 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _session.Begin(seed);
             BuildCurrentRound();
+            UpdateHud();
+        }
+
+        private void StartNextSeed()
+        {
+            if (_session != null)
+            {
+                StartNewSeed(unchecked(_session.Seed + 1));
+            }
+        }
+
+        private void UpdateHud()
+        {
+            if (_hud == null || _session == null)
+            {
+                return;
+            }
+
+            _hud.SetContent(
+                "DEVELOPER SOLO TEST  /  MINEFIELD",
+                "ROUND " + _session.RoundNumber + " / " +
+                MinefieldRules.RoundCount + "  ·  " +
+                GetPhaseLabel() + "  ·  " +
+                FormatClock(_session.RemainingSeconds),
+                "STATE " + GetPlayerStateLabel() +
+                "  ·  MINES " + ActiveMineCount + " / " +
+                NetworkMinefieldState.MineCount +
+                "  ·  CLEARS " + _session.ClearedRoundCount,
+                "SEED " + _session.Seed,
+                "WASD move  |  stop + RMB sonar  |  " +
+                "first mine slows, second mine eliminates",
+                string.Empty,
+                MinigameSoloFeedbackStyle.Neutral);
         }
 
         private void DisableNetworkPresentation()

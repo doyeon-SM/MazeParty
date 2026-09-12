@@ -1,3 +1,4 @@
+using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
@@ -13,40 +14,86 @@ namespace MazeParty.Multiplayer
     public sealed class MinigameScheduleTowerView : MonoBehaviour
     {
         public const float RevealDelaySeconds = 0.7f;
-        private const int MaximumVisibleBlocks =
+        public const int MaximumVisibleBlocks =
             MinigameScheduleRules.DefaultTurnCount;
 
-        private Canvas _canvas;
-        private RectTransform _panel;
-        private Text _title;
-        private Text _subtitle;
-        private readonly Image[] _blocks = new Image[MaximumVisibleBlocks];
-        private readonly Text[] _blockLabels = new Text[MaximumVisibleBlocks];
+        [Header("Prefab UI Bindings")]
+        [SerializeField] private Canvas canvas;
+        [SerializeField] private RectTransform panel;
+        [SerializeField] private Text title;
+        [SerializeField] private Text subtitle;
+        [SerializeField] private Image[] blocks = Array.Empty<Image>();
+        [SerializeField] private Text[] blockLabels = Array.Empty<Text>();
+
+        [Header("State Colors")]
+        [SerializeField] private Color futureBlockColor =
+            new Color(0.12f, 0.16f, 0.23f, 0.98f);
+        [SerializeField] private Color hiddenCurrentColor =
+            new Color(0.28f, 0.32f, 0.43f, 1f);
+        [SerializeField] private Color minefieldColor =
+            new Color(0.12f, 0.58f, 0.42f, 1f);
+        [SerializeField] private Color wrongWayColor =
+            new Color(0.95f, 0.42f, 0.12f, 1f);
+        [SerializeField] private Color redLightGreenLightColor =
+            new Color(0.84f, 0.16f, 0.2f, 1f);
+        [SerializeField] private Color skipColor =
+            new Color(0.44f, 0.46f, 0.52f, 1f);
+        private Vector3[] _blockBaseScales = Array.Empty<Vector3>();
         private int _observedRevision = -1;
         private float _revisionObservedAt;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void Install()
-        {
-            if (FindAnyObjectByType<MinigameScheduleTowerView>() != null)
-            {
-                return;
-            }
+        public bool HasRequiredReferences =>
+            canvas != null &&
+            panel != null &&
+            title != null &&
+            subtitle != null &&
+            blocks != null &&
+            blocks.Length == MaximumVisibleBlocks &&
+            Array.TrueForAll(blocks, block => block != null) &&
+            blockLabels != null &&
+            blockLabels.Length == MaximumVisibleBlocks &&
+            Array.TrueForAll(blockLabels, label => label != null);
 
-            var root = new GameObject("[UI] Minigame Schedule Tower");
-            DontDestroyOnLoad(root);
-            root.AddComponent<MinigameScheduleTowerView>();
+        public int BlockCount => blocks != null ? blocks.Length : 0;
+
+        public void Configure(
+            Canvas configuredCanvas,
+            RectTransform configuredPanel,
+            Text configuredTitle,
+            Text configuredSubtitle,
+            Image[] configuredBlocks,
+            Text[] configuredBlockLabels)
+        {
+            canvas = configuredCanvas;
+            panel = configuredPanel;
+            title = configuredTitle;
+            subtitle = configuredSubtitle;
+            blocks = configuredBlocks ?? Array.Empty<Image>();
+            blockLabels = configuredBlockLabels ?? Array.Empty<Text>();
         }
 
         private void Awake()
         {
-            EnsureUi();
-            _canvas.enabled = false;
+            if (!HasRequiredReferences)
+            {
+                Debug.LogError(
+                    "MinigameScheduleTowerView is missing one or more prefab UI bindings.",
+                    this);
+                enabled = false;
+                return;
+            }
+
+            CacheBlockBaseScales();
+            canvas.enabled = false;
+        }
+
+        private void OnDisable()
+        {
+            ResetBlockScales();
         }
 
         private void Update()
         {
-            EnsureUi();
             var match = NetworkMatchState.Instance;
             var visible =
                 match != null &&
@@ -54,9 +101,13 @@ namespace MazeParty.Multiplayer
                 match.GameplayEnabled &&
                 match.FlowState == BoardFlowState.MinigameIntroReady &&
                 !match.IsGlobalSimulationPaused;
-            if (_canvas.enabled != visible)
+            if (canvas.enabled != visible)
             {
-                _canvas.enabled = visible;
+                canvas.enabled = visible;
+                if (!visible)
+                {
+                    ResetBlockScales();
+                }
             }
 
             if (!visible)
@@ -75,78 +126,9 @@ namespace MazeParty.Multiplayer
             Refresh(match, revealed);
         }
 
-        private void EnsureUi()
-        {
-            if (_canvas != null)
-            {
-                return;
-            }
-
-            _canvas = gameObject.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            _canvas.sortingOrder = 55;
-            var scaler = gameObject.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-            gameObject.AddComponent<GraphicRaycaster>();
-
-            var panelObject = new GameObject("Tower Panel");
-            panelObject.transform.SetParent(transform, false);
-            _panel = panelObject.AddComponent<RectTransform>();
-            _panel.anchorMin = new Vector2(1f, 0.5f);
-            _panel.anchorMax = new Vector2(1f, 0.5f);
-            _panel.pivot = new Vector2(1f, 0.5f);
-            _panel.anchoredPosition = new Vector2(-30f, 0f);
-            _panel.sizeDelta = new Vector2(310f, 860f);
-            var panelImage = panelObject.AddComponent<Image>();
-            panelImage.color = new Color(0.02f, 0.03f, 0.055f, 0.93f);
-            panelImage.raycastTarget = false;
-
-            _title = CreateText(
-                "Title",
-                _panel,
-                new Vector2(0f, -24f),
-                new Vector2(280f, 42f),
-                25,
-                FontStyle.Bold);
-            _subtitle = CreateText(
-                "Subtitle",
-                _panel,
-                new Vector2(0f, -66f),
-                new Vector2(280f, 32f),
-                17,
-                FontStyle.Normal);
-
-            for (var index = 0; index < MaximumVisibleBlocks; index++)
-            {
-                var block = new GameObject("Block " + (index + 1));
-                block.transform.SetParent(_panel, false);
-                var rect = block.AddComponent<RectTransform>();
-                rect.anchorMin = new Vector2(0.5f, 1f);
-                rect.anchorMax = new Vector2(0.5f, 1f);
-                rect.pivot = new Vector2(0.5f, 1f);
-                rect.anchoredPosition =
-                    new Vector2(0f, -108f - index * 48f);
-                rect.sizeDelta = new Vector2(
-                    264f - Mathf.Min(index, 8) * 4f,
-                    40f);
-                _blocks[index] = block.AddComponent<Image>();
-                _blocks[index].raycastTarget = false;
-                _blockLabels[index] = CreateText(
-                    "Label",
-                    rect,
-                    Vector2.zero,
-                    rect.sizeDelta,
-                    18,
-                    index == 0 ? FontStyle.Bold : FontStyle.Normal);
-            }
-        }
-
         private void Refresh(NetworkMatchState match, bool revealed)
         {
-            _title.text = "MINIGAME TOWER";
-            _subtitle.text =
+            subtitle.text =
                 "TURN " + match.Turn + "  ·  " +
                 match.RemainingMinigameSlots + " BLOCKS LEFT";
 
@@ -154,64 +136,74 @@ namespace MazeParty.Multiplayer
                 match.RemainingMinigameSlots,
                 0,
                 MaximumVisibleBlocks);
-            for (var index = 0; index < _blocks.Length; index++)
+            for (var index = 0; index < blocks.Length; index++)
             {
                 var active = index < visibleCount;
-                if (_blocks[index].gameObject.activeSelf != active)
+                if (blocks[index].gameObject.activeSelf != active)
                 {
-                    _blocks[index].gameObject.SetActive(active);
+                    blocks[index].gameObject.SetActive(active);
                 }
 
                 if (!active)
                 {
+                    ApplyBlockScale(index, 1f);
                     continue;
                 }
 
                 var current = index == 0;
-                _blockLabels[index].text =
+                blockLabels[index].text =
                     current && revealed
                         ? DisplayName(match.CurrentMinigame)
                         : "???";
-                _blocks[index].color =
+                blocks[index].color =
                     current
                         ? CurrentColor(match.CurrentMinigame, revealed)
-                        : new Color(0.12f, 0.16f, 0.23f, 0.98f);
+                        : futureBlockColor;
 
                 var pulse = current && !revealed
                     ? 1f + Mathf.Sin(Time.unscaledTime * 10f) * 0.025f
                     : current && revealed
                         ? 1.04f
                         : 1f;
-                _blocks[index].rectTransform.localScale =
-                    new Vector3(pulse, pulse, 1f);
+                ApplyBlockScale(index, pulse);
             }
         }
 
-        private static Text CreateText(
-            string name,
-            Transform parent,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            FontStyle style)
+        private void CacheBlockBaseScales()
         {
-            var textObject = new GameObject(name);
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.AddComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            var text = textObject.AddComponent<Text>();
-            text.font =
-                Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            return text;
+            _blockBaseScales = new Vector3[blocks.Length];
+            for (var index = 0; index < blocks.Length; index++)
+            {
+                _blockBaseScales[index] =
+                    blocks[index].rectTransform.localScale;
+            }
+        }
+
+        private void ResetBlockScales()
+        {
+            var count = Mathf.Min(
+                blocks != null ? blocks.Length : 0,
+                _blockBaseScales.Length);
+            for (var index = 0; index < count; index++)
+            {
+                if (blocks[index] != null)
+                {
+                    blocks[index].rectTransform.localScale =
+                        _blockBaseScales[index];
+                }
+            }
+        }
+
+        private void ApplyBlockScale(int index, float multiplier)
+        {
+            if (index < 0 || index >= _blockBaseScales.Length)
+            {
+                return;
+            }
+
+            blocks[index].rectTransform.localScale = Vector3.Scale(
+                _blockBaseScales[index],
+                new Vector3(multiplier, multiplier, 1f));
         }
 
         private static string DisplayName(ScheduledMinigameId minigame)
@@ -220,27 +212,31 @@ namespace MazeParty.Multiplayer
             {
                 case ScheduledMinigameId.Minefield: return "MINEFIELD";
                 case ScheduledMinigameId.WrongWay: return "WRONG WAY";
+                case ScheduledMinigameId.RedLightGreenLight:
+                    return "RED LIGHT / GREEN LIGHT";
                 default: return "SKIP";
             }
         }
 
-        private static Color CurrentColor(
+        private Color CurrentColor(
             ScheduledMinigameId minigame,
             bool revealed)
         {
             if (!revealed)
             {
-                return new Color(0.28f, 0.32f, 0.43f, 1f);
+                return hiddenCurrentColor;
             }
 
             switch (minigame)
             {
                 case ScheduledMinigameId.Minefield:
-                    return new Color(0.12f, 0.58f, 0.42f, 1f);
+                    return minefieldColor;
                 case ScheduledMinigameId.WrongWay:
-                    return new Color(0.95f, 0.42f, 0.12f, 1f);
+                    return wrongWayColor;
+                case ScheduledMinigameId.RedLightGreenLight:
+                    return redLightGreenLightColor;
                 default:
-                    return new Color(0.44f, 0.46f, 0.52f, 1f);
+                    return skipColor;
             }
         }
     }

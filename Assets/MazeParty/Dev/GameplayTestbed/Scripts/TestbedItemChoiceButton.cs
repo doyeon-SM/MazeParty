@@ -19,9 +19,21 @@ namespace MazeParty.Gameplay.Testbed
             slotIndex = index;
         }
 
+        public void Bind(GameplayTestbedController controller)
+        {
+            _controller = controller;
+        }
+
+        public void Unbind(GameplayTestbedController controller)
+        {
+            if (_controller == controller)
+            {
+                _controller = null;
+            }
+        }
+
         private void Awake()
         {
-            _controller = FindAnyObjectByType<GameplayTestbedController>();
             _button = GetComponent<Button>();
             _button.onClick.AddListener(ChooseItem);
         }

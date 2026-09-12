@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -186,6 +187,15 @@ namespace MazeParty.Multiplayer
              FlowState == BoardFlowState.SkippedResult);
         public bool IsWrongWayPlaying =>
             IsWrongWayPhase && FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsRedLightGreenLightPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.RedLightGreenLight &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsRedLightGreenLightPlaying =>
+            IsRedLightGreenLightPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
 
         public static bool IsGameplayReady =>
             Instance != null && Instance.IsSpawned && Instance.GameplayEnabled &&
@@ -828,6 +838,76 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        public bool TryCompleteRedLightGreenLightOnServer(
+            IReadOnlyList<RedLightGreenLightLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame !=
+                ScheduledMinigameId.RedLightGreenLight ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!RedLightGreenLightRules.IsValidPlayerSlot(
+                        entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    RedLightGreenLightRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
         public void PauseForReconnectOnServer(ulong disconnectedClientId)
         {
             if (!IsServer || !_gameplayEnabled.Value)
@@ -865,6 +945,7 @@ namespace MazeParty.Multiplayer
             }
             NetworkMinefieldState.Instance?.PauseOnServer(now);
             NetworkWrongWayState.Instance?.PauseOnServer(now);
+            NetworkRedLightGreenLightState.Instance?.PauseOnServer(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
@@ -960,6 +1041,8 @@ namespace MazeParty.Multiplayer
 
             RefreshPresentMask();
             NetworkMinefieldState.Instance?.RestoreAvatarForReconnectOnServer(avatar);
+            NetworkRedLightGreenLightState.Instance?.RestoreAvatarForReconnectOnServer(
+                avatar);
             if (_reconnectPaused.Value && HasFourBoardReadyPlayers())
             {
                 ResumeAfterReconnectOnServer(ServerNow);
@@ -1012,6 +1095,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.TurnOverview:
                     NetworkMinefieldState.Instance?.EndMatchOnServer();
                     NetworkWrongWayState.Instance?.EndMatchOnServer();
+                    NetworkRedLightGreenLightState.Instance?.EndMatchOnServer();
                     _selectedMinigameNetworkLoadCompleted = false;
                     ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
@@ -1063,6 +1147,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.MatchComplete:
                     NetworkMinefieldState.Instance?.EndMatchOnServer();
                     NetworkWrongWayState.Instance?.EndMatchOnServer();
+                    NetworkRedLightGreenLightState.Instance?.EndMatchOnServer();
                     StopAllAvatarInputOnServer();
                     _remainingMinigameSlots.Value = 0;
                     _scheduledSkipAt = 0d;
@@ -1126,6 +1211,7 @@ namespace MazeParty.Multiplayer
             }
             NetworkMinefieldState.Instance?.ResumeOnServer(now);
             NetworkWrongWayState.Instance?.ResumeOnServer(now);
+            NetworkRedLightGreenLightState.Instance?.ResumeOnServer(now);
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
             TryStartLoadedMinigameOnServer(now);
@@ -1216,8 +1302,14 @@ namespace MazeParty.Multiplayer
             var wrongWay = CurrentMinigame == ScheduledMinigameId.WrongWay
                 ? NetworkWrongWayState.Instance
                 : null;
+            var redLightGreenLight =
+                CurrentMinigame == ScheduledMinigameId.RedLightGreenLight
+                    ? NetworkRedLightGreenLightState.Instance
+                    : null;
             if ((minefield == null || !minefield.IsSpawned) &&
-                (wrongWay == null || !wrongWay.IsSpawned))
+                (wrongWay == null || !wrongWay.IsSpawned) &&
+                (redLightGreenLight == null ||
+                 !redLightGreenLight.IsSpawned))
             {
                 return;
             }
@@ -1228,9 +1320,14 @@ namespace MazeParty.Multiplayer
                 {
                     minefield.BeginMatchOnServer();
                 }
-                else
+                else if (wrongWay != null)
                 {
                     wrongWay.BeginMatchOnServer(_currentMinigameSeed.Value);
+                }
+                else
+                {
+                    redLightGreenLight.BeginMatchOnServer(
+                        _currentMinigameSeed.Value);
                 }
             }
         }
@@ -1289,6 +1386,8 @@ namespace MazeParty.Multiplayer
                     return MultiplayerConstants.MinefieldScene;
                 case ScheduledMinigameId.WrongWay:
                     return MultiplayerConstants.WrongWayScene;
+                case ScheduledMinigameId.RedLightGreenLight:
+                    return MultiplayerConstants.RedLightGreenLightScene;
                 default:
                     return string.Empty;
             }

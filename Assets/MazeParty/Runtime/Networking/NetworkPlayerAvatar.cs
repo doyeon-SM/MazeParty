@@ -135,6 +135,7 @@ namespace MazeParty.Multiplayer
         private Vector2 _serverInput;
         private Vector2 _lastSentInput;
         private Vector2 _lastSentMinefieldInput;
+        private Vector2 _lastSentRedLightGreenLightInput;
         private bool _serverQuietWalkHeld;
         private bool _lastSentQuietWalkHeld;
         private float _serverYaw;
@@ -145,6 +146,7 @@ namespace MazeParty.Multiplayer
         private float _localPitch;
         private float _nextInputRefresh;
         private float _nextMinefieldInputRefresh;
+        private float _nextRedLightGreenLightInputRefresh;
         private float _nextSlotResolveAttempt;
         private double _nextLocalPrimaryRepeatAt;
         private double _nextLobbyPunchAllowedAt;
@@ -376,7 +378,12 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
-            var handlingMinigame = SubmitLocalWrongWayDirection();
+            var handlingMinigame =
+                SubmitLocalRedLightGreenLightMovement();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalWrongWayDirection();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame = SubmitLocalMinefieldMovement();
@@ -1509,6 +1516,11 @@ namespace MazeParty.Multiplayer
         private void HandleLocalActionButtons()
         {
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsRedLightGreenLightPlaying)
+            {
+                return;
+            }
+
             var mouse = Mouse.current;
             if (mouse == null)
             {
@@ -1744,6 +1756,41 @@ namespace MazeParty.Multiplayer
                 _lastSentMinefieldInput = input;
                 _nextMinefieldInputRefresh = Time.unscaledTime + 0.1f;
                 SubmitMinefieldInputRpc(input);
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalRedLightGreenLightMovement()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsRedLightGreenLightPlaying)
+            {
+                _lastSentRedLightGreenLightInput = Vector2.zero;
+                return false;
+            }
+
+            var state = NetworkRedLightGreenLightState.Instance;
+            var input = Vector2.zero;
+            var keyboard = Keyboard.current;
+            if (state != null && keyboard != null &&
+                state.CanAcceptInputForSlot(AssignedSlot))
+            {
+                input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
+                          (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y = (keyboard.wKey.isPressed ? 1f : 0f) -
+                          (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentRedLightGreenLightInput ||
+                Time.unscaledTime >=
+                _nextRedLightGreenLightInputRefresh)
+            {
+                _lastSentRedLightGreenLightInput = input;
+                _nextRedLightGreenLightInputRefresh =
+                    Time.unscaledTime + 0.1f;
+                SubmitRedLightGreenLightInputRpc(input);
             }
 
             return true;
@@ -2618,6 +2665,23 @@ namespace MazeParty.Multiplayer
             }
 
             NetworkMinefieldState.Instance?.ReceiveInputOnServer(
+                this,
+                Vector2.ClampMagnitude(input, 1f));
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitRedLightGreenLightInputRpc(
+            Vector2 input,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkRedLightGreenLightState.Instance?.ReceiveInputOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f));
         }

@@ -134,9 +134,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
-  shopOffer: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 2
+  shopOffer: 1
 --- !u!1 &205915841266734887
 GameObject:
   m_ObjectHideFlags: 0
@@ -1109,8 +1109,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 1
   shopOffer: 0
 --- !u!1 &864754729619168059
 GameObject:
@@ -3303,6 +3303,7 @@ GameObject:
   - component: {fileID: 1076833368338647132}
   - component: {fileID: 7919398160125056903}
   - component: {fileID: 8800340177372016627}
+  - component: {fileID: 2019785348979693211}
   m_Layer: 5
   m_Name: BoardCanvas
   m_TagString: Untagged
@@ -3319,7 +3320,7 @@ RectTransform:
   m_GameObject: {fileID: 2769638015134659521}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1453178077244549186}
@@ -3431,6 +3432,152 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardFlowView
   cameraDirector: {fileID: 0}
+  uiBindings: {fileID: 2019785348979693211}
+--- !u!114 &2019785348979693211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2769638015134659521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 478363997d3165d419dde80c53b40047, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardCanvasBindings
+  references:
+    RootCanvas: {fileID: 4318934716147439226}
+    RootRaycaster: {fileID: 1076833368338647132}
+    ItemSelectionPanel: {fileID: 1621994921237849244}
+    MinigameReadyPanel: {fileID: 2662882042419113601}
+    ResultPanel: {fileID: 4080565256780862912}
+    ReconnectOverlay: {fileID: 1534147962965574055}
+    Reticle: {fileID: 7302854566434752922}
+    ItemShopPanel: {fileID: 2058008268472203909}
+    TurnText: {fileID: 3426083237695331163}
+    PhaseText: {fileID: 2033599159824165800}
+    PhaseTimerText: {fileID: 2265626090355326490}
+    ChoiceTimerText: {fileID: 3549695292389995548}
+    ShieldText: {fileID: 4746570602481901814}
+    DiceText: {fileID: 4581217562007812813}
+    MovesText: {fileID: 3342097385190222411}
+    AmmoText: {fileID: 6714939632395465505}
+    StatusText: {fileID: 1859900376323593165}
+    TooltipText: {fileID: 7434240417400583269}
+    ReconnectText: {fileID: 3766223560357808653}
+    ItemShopTitle: {fileID: 8497461664479516279}
+    ItemShopTooltip: {fileID: 5729543178677927169}
+    ItemShopStatus: {fileID: 109503696071007095}
+    MinigameReadyTitle: {fileID: 857227605046387987}
+    MinigameReadyNote: {fileID: 4752112107107332157}
+    MinigameReadyStatus: {fileID: 2091921909522303126}
+    MinigameRulePlaceholder: {fileID: 3120127887873585126}
+    ResultTitle: {fileID: 2773590008719824518}
+    ResultNote: {fileID: 6888671243932038323}
+    ResultSummary: {fileID: 8834152678068540469}
+    ReadyButtonLabel: {fileID: 6972179166045150921}
+    MinigameRuleImage: {fileID: 1349471513532708963}
+    NoItemButton: {fileID: 7973943413270892604}
+    ReadyButton: {fileID: 1487080001163358834}
+    ItemShopCloseButton: {fileID: 7416134621527772071}
+    InventorySlotBackgrounds:
+    - {fileID: 3034119749749060888}
+    - {fileID: 952692860409238107}
+    - {fileID: 3629503288676235670}
+    InventorySlotLabels:
+    - {fileID: 4109758889821836104}
+    - {fileID: 4277434778922884719}
+    - {fileID: 8420887406733409162}
+    ItemChoiceButtons:
+    - {fileID: 2421198183598146502}
+    - {fileID: 4381177500433214832}
+    - {fileID: 9014772651959903160}
+    ItemChoiceLabels:
+    - {fileID: 8347409568172097491}
+    - {fileID: 2776087749734866317}
+    - {fileID: 7652775830380529628}
+    ItemChoiceHovers:
+    - {fileID: 8697378130169014638}
+    - {fileID: 8810594286744660336}
+    - {fileID: 2668166663708321722}
+    ShopOfferButtons:
+    - {fileID: 714966255228757913}
+    - {fileID: 796454137488198473}
+    - {fileID: 8963572969828712592}
+    - {fileID: 4108182120485667925}
+    - {fileID: 2442532573976766582}
+    ShopOfferLabels:
+    - {fileID: 2990461746248286617}
+    - {fileID: 7681026282779870697}
+    - {fileID: 6881650184668875430}
+    - {fileID: 2441639105845624407}
+    - {fileID: 7012173882683647196}
+    ShopOfferHovers:
+    - {fileID: 5409974314328113}
+    - {fileID: 7375401443867401367}
+    - {fileID: 2257327101203030451}
+    - {fileID: 8603504360225183718}
+    - {fileID: 137665821505591210}
+    PlayerRows:
+    - {fileID: 3595554943746405712}
+    - {fileID: 5271000699908571816}
+    - {fileID: 7528803862394769494}
+    - {fileID: 7744703875925046104}
+    PlayerCards:
+    - {fileID: 3595135217545045475}
+    - {fileID: 7378879688164200269}
+    - {fileID: 2905282032412981184}
+    - {fileID: 7806533652491714480}
+    PlayerHealthFills:
+    - {fileID: 9168580807785874924}
+    - {fileID: 5946210266435490455}
+    - {fileID: 7616163698198691572}
+    - {fileID: 1009393713618432781}
+    PlayerHealthTexts:
+    - {fileID: 7138056027683003076}
+    - {fileID: 5200710599182260458}
+    - {fileID: 6802569278583911325}
+    - {fileID: 1558502631204904357}
+    PlayerCurrencyTexts:
+    - {fileID: 8985431315814958040}
+    - {fileID: 7975184184551363218}
+    - {fileID: 3622605115216863110}
+    - {fileID: 2317821166897702405}
+    PlayerActionIcons:
+    - {fileID: 2038321024184352275}
+    - {fileID: 8976372135980040085}
+    - {fileID: 7066298713362883123}
+    - {fileID: 771249179257421181}
+    PlayerRankTexts:
+    - {fileID: 3159755997161473024}
+    - {fileID: 3635307555605700278}
+    - {fileID: 5672389599063028462}
+    - {fileID: 3301699087262320683}
+  statePalette:
+    ShieldActive: {r: 0.25, g: 1, b: 0.75, a: 1}
+    ShieldInactive: {r: 1, g: 0.45, b: 0.45, a: 1}
+    InventorySelected: {r: 1, g: 0.72, b: 0.15, a: 0.97}
+    InventoryOccupied: {r: 0.18, g: 0.36, b: 0.58, a: 0.94}
+    InventoryEmpty: {r: 0.1, g: 0.12, b: 0.16, a: 0.88}
+    DisconnectedPlayer: {r: 1, g: 0.45, b: 0.35, a: 1}
+    LocalPlayerCard: {r: 0.16, g: 0.3, b: 0.5, a: 0.98}
+    RemotePlayerCard: {r: 0.055, g: 0.085, b: 0.13, a: 0.94}
+    HealthyHealth: {r: 0.2, g: 0.82, b: 0.38, a: 1}
+    WoundedHealth: {r: 1, g: 0.7, b: 0.16, a: 1}
+    CriticalHealth: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+    CombatOut: {r: 1, g: 0.25, b: 0.2, a: 1}
+    RuleImageContent: {r: 1, g: 1, b: 1, a: 1}
+    RuleImagePlaceholder: {r: 0.055, g: 0.09, b: 0.14, a: 1}
+    Players:
+    - {r: 1, g: 0.42, b: 0.42, a: 1}
+    - {r: 0.42, g: 0.7, b: 1, a: 1}
+    - {r: 0.42, g: 1, b: 0.58, a: 1}
+    - {r: 1, g: 0.82, b: 0.35, a: 1}
+    ActionDice: {r: 0.4, g: 0.75, b: 1, a: 1}
+    ActionMoving: {r: 0.35, g: 1, b: 0.55, a: 1}
+    ActionArrived: {r: 1, g: 0.82, b: 0.3, a: 1}
+    ActionFighting: {r: 1, g: 0.3, b: 0.25, a: 1}
+    ActionHidden: {r: 0, g: 0, b: 0, a: 0}
 --- !u!1 &2806563915062768437
 GameObject:
   m_ObjectHideFlags: 0
@@ -4115,8 +4262,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 2
   shopOffer: 0
 --- !u!1 &3329661257595161229
 GameObject:
@@ -4410,9 +4557,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
-  shopOffer: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 4
+  shopOffer: 1
 --- !u!1 &3930290234656622836
 GameObject:
   m_ObjectHideFlags: 0
@@ -6195,7 +6342,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
+  view: {fileID: 8800340177372016627}
   slotIndex: 0
   shopOffer: 0
 --- !u!1 &5829447773709229683
@@ -6453,9 +6600,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
-  shopOffer: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 3
+  shopOffer: 1
 --- !u!1 &5983642093439828223
 GameObject:
   m_ObjectHideFlags: 0
@@ -7459,9 +7606,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
-  slotIndex: 0
-  shopOffer: 0
+  view: {fileID: 8800340177372016627}
+  slotIndex: 1
+  shopOffer: 1
 --- !u!1 &7999878192601013205
 GameObject:
   m_ObjectHideFlags: 0
@@ -7997,9 +8144,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4f0006fa7d3b08e46abaf70092eb317d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardItemChoiceButton
-  view: {fileID: 0}
+  view: {fileID: 8800340177372016627}
   slotIndex: 0
-  shopOffer: 0
+  shopOffer: 1
 --- !u!1 &9030723926000568025
 GameObject:
   m_ObjectHideFlags: 0

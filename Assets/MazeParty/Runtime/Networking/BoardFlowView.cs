@@ -3,6 +3,7 @@ using System.Text;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -16,6 +17,7 @@ namespace MazeParty.Multiplayer
     public sealed class BoardFlowView : MonoBehaviour
     {
         [SerializeField] private GameplayCameraDirector cameraDirector;
+        [SerializeField] private BoardCanvasBindings uiBindings;
 
         private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
@@ -77,6 +79,13 @@ namespace MazeParty.Multiplayer
         private NetworkWrongWayPhase _lastWrongWayPhase =
             NetworkWrongWayPhase.Inactive;
         private int _lastWrongWayRound = -1;
+        private NetworkRedLightGreenLightPhase
+            _lastRedLightGreenLightPhase =
+                NetworkRedLightGreenLightPhase.Inactive;
+        private RedLightGreenLightSignalPhase
+            _lastRedLightGreenLightSignal =
+                RedLightGreenLightSignalPhase.Green;
+        private int _lastRedLightGreenLightRound = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _lastMinigameRevealPending;
@@ -88,6 +97,9 @@ namespace MazeParty.Multiplayer
         public static bool IsItemShopOpen =>
             Instance != null && Instance._openItemShopIndex >= 0;
         public bool BoardUiVisible => _boardCanvas == null || _boardCanvas.enabled;
+        public BoardCanvasBindings UiBindings => uiBindings;
+        public bool HasRequiredUiReferences =>
+            uiBindings != null && uiBindings.HasRequiredReferences;
 
         public void SetTopViewShopHighlights(bool visible)
         {
@@ -102,15 +114,20 @@ namespace MazeParty.Multiplayer
             BindUi();
         }
 
+        public void ConfigureUiBindings(BoardCanvasBindings bindings)
+        {
+            uiBindings = bindings;
+        }
+
         public void SetBoardUiVisible(bool visible)
         {
-            if (_boardCanvas == null)
+            if (_boardCanvas == null && uiBindings != null)
             {
-                _boardCanvas = GetComponent<Canvas>();
+                _boardCanvas = uiBindings.RootCanvas;
             }
-            if (_boardRaycaster == null)
+            if (_boardRaycaster == null && uiBindings != null)
             {
-                _boardRaycaster = GetComponent<GraphicRaycaster>();
+                _boardRaycaster = uiBindings.RootRaycaster;
             }
 
             if (_boardCanvas != null)
@@ -290,75 +307,68 @@ namespace MazeParty.Multiplayer
 
         private void BindUi()
         {
-            _boardCanvas = GetComponent<Canvas>();
-            _boardRaycaster = GetComponent<GraphicRaycaster>();
-            _selectionPanel = FindNamed("ItemSelectionPanel");
-            _readyPanel = FindNamed("MinigameReadyPanel");
-            _resultPanel = FindNamed("SkippedResultPanel");
-            _reconnectOverlay = FindNamed("ReconnectOverlay");
-            _reticle = FindNamed("BoardReticle");
-            _itemShopPanel = FindNamed("ItemShopPanel");
-            _turnText = FindNamedComponent<Text>("TurnText");
-            _phaseText = FindNamedComponent<Text>("PhaseText");
-            _phaseTimerText = FindNamedComponent<Text>("PhaseTimerText");
-            _choiceTimerText = FindNamedComponent<Text>("BoardChoiceTimerText");
-            _shieldText = FindNamedComponent<Text>("BoardShieldText");
-            _diceText = FindNamedComponent<Text>("DiceText");
-            _movesText = FindNamedComponent<Text>("MovesText");
-            _ammoText = FindNamedComponent<Text>("BoardAmmoText");
-            _statusText = FindNamedComponent<Text>("BoardStatusText");
-            _tooltipText = FindNamedComponent<Text>("BoardTooltipText");
-            _reconnectText = FindNamedComponent<Text>("ReconnectText");
-            _itemShopTitle = FindNamedComponent<Text>("ItemShopTitle");
-            _itemShopTooltip = FindNamedComponent<Text>("ItemShopTooltip");
-            _itemShopStatus = FindNamedComponent<Text>("ItemShopStatus");
-            _minigameReadyTitle = FindNamedComponent<Text>("Ready Title");
-            _minigameReadyNote = FindNamedComponent<Text>("Ready Note");
-            _minigameReadyStatus =
-                FindNamedComponent<Text>("MinigameReadyStatus");
-            _minigameRulePlaceholder =
-                FindNamedComponent<Text>("MinigameRulePlaceholderText");
-            _minefieldResultTitle = FindNamedComponent<Text>("Result Title");
-            _minefieldResultNote = FindNamedComponent<Text>("Result Note");
-            _minefieldResultSummary =
-                FindNamedComponent<Text>("MinefieldResultSummary");
-            _minefieldRuleImage =
-                FindNamedComponent<Image>("MinigameRuleImage");
-            _noItemButton = FindNamedComponent<Button>("NoItemButton");
-            _readyButton = FindNamedComponent<Button>("ReadyButton");
-            _readyButtonLabel = _readyButton != null
-                ? _readyButton.GetComponentInChildren<Text>(true)
-                : null;
-            _itemShopCloseButton = FindNamedComponent<Button>("ItemShopCloseButton");
-
-            for (var i = 0; i < GameplayInventory.Capacity; i++)
+            if (!HasRequiredUiReferences)
             {
-                _slotBackgrounds[i] = FindNamedComponent<Image>("BoardInventorySlot" + i);
-                _slotLabels[i] = FindNamedComponent<Text>("BoardInventorySlotLabel" + i);
-                _choiceButtons[i] = FindNamedComponent<Button>("ItemChoiceButton" + i);
-                _choiceLabels[i] = FindNamedComponent<Text>("ItemChoiceLabel" + i);
-                var hover = FindNamedComponent<BoardItemChoiceButton>("ItemChoiceButton" + i);
-                hover?.Configure(this, i);
+                Debug.LogError(
+                    "BoardFlowView requires the serialized BoardCanvasBindings " +
+                    "contract from BoardCanvas.prefab.",
+                    this);
+                enabled = false;
+                return;
             }
 
-            for (var i = 0; i < ItemShopRules.OfferCount; i++)
-            {
-                _shopOfferButtons[i] = FindNamedComponent<Button>("ItemShopOffer" + i);
-                _shopOfferLabels[i] = FindNamedComponent<Text>("ItemShopOfferLabel" + i);
-                var hover = FindNamedComponent<BoardItemChoiceButton>("ItemShopOffer" + i);
-                hover?.ConfigureShop(this, i);
-            }
+            _boardCanvas = uiBindings.RootCanvas;
+            _boardRaycaster = uiBindings.RootRaycaster;
+            _selectionPanel = uiBindings.ItemSelectionPanel;
+            _readyPanel = uiBindings.MinigameReadyPanel;
+            _resultPanel = uiBindings.ResultPanel;
+            _reconnectOverlay = uiBindings.ReconnectOverlay;
+            _reticle = uiBindings.Reticle;
+            _itemShopPanel = uiBindings.ItemShopPanel;
+            _turnText = uiBindings.TurnText;
+            _phaseText = uiBindings.PhaseText;
+            _phaseTimerText = uiBindings.PhaseTimerText;
+            _choiceTimerText = uiBindings.ChoiceTimerText;
+            _shieldText = uiBindings.ShieldText;
+            _diceText = uiBindings.DiceText;
+            _movesText = uiBindings.MovesText;
+            _ammoText = uiBindings.AmmoText;
+            _statusText = uiBindings.StatusText;
+            _tooltipText = uiBindings.TooltipText;
+            _reconnectText = uiBindings.ReconnectText;
+            _itemShopTitle = uiBindings.ItemShopTitle;
+            _itemShopTooltip = uiBindings.ItemShopTooltip;
+            _itemShopStatus = uiBindings.ItemShopStatus;
+            _minigameReadyTitle = uiBindings.MinigameReadyTitle;
+            _minigameReadyNote = uiBindings.MinigameReadyNote;
+            _minigameReadyStatus = uiBindings.MinigameReadyStatus;
+            _minigameRulePlaceholder = uiBindings.MinigameRulePlaceholder;
+            _minefieldResultTitle = uiBindings.ResultTitle;
+            _minefieldResultNote = uiBindings.ResultNote;
+            _minefieldResultSummary = uiBindings.ResultSummary;
+            _minefieldRuleImage = uiBindings.MinigameRuleImage;
+            _noItemButton = uiBindings.NoItemButton;
+            _readyButton = uiBindings.ReadyButton;
+            _readyButtonLabel = uiBindings.ReadyButtonLabel;
+            _itemShopCloseButton = uiBindings.ItemShopCloseButton;
 
-            for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
-            {
-                _playerRows[i] = FindNamedComponent<Text>("PlayerState" + i);
-                _playerCards[i] = FindNamedComponent<Image>("PlayerCard" + i);
-                _playerHealthFills[i] = FindNamedComponent<Image>("PlayerHealthFill" + i);
-                _playerHealthTexts[i] = FindNamedComponent<Text>("PlayerHealthText" + i);
-                _playerCurrencyTexts[i] = FindNamedComponent<Text>("PlayerCurrency" + i);
-                _playerActionIcons[i] = FindNamedComponent<Text>("PlayerActionIcon" + i);
-                _playerRankTexts[i] = FindNamedComponent<Text>("PlayerRank" + i);
-            }
+            CopyReferences(
+                uiBindings.InventorySlotBackgrounds,
+                _slotBackgrounds);
+            CopyReferences(uiBindings.InventorySlotLabels, _slotLabels);
+            CopyReferences(uiBindings.ItemChoiceButtons, _choiceButtons);
+            CopyReferences(uiBindings.ItemChoiceLabels, _choiceLabels);
+            CopyReferences(uiBindings.ShopOfferButtons, _shopOfferButtons);
+            CopyReferences(uiBindings.ShopOfferLabels, _shopOfferLabels);
+            CopyReferences(uiBindings.PlayerRows, _playerRows);
+            CopyReferences(uiBindings.PlayerCards, _playerCards);
+            CopyReferences(uiBindings.PlayerHealthFills, _playerHealthFills);
+            CopyReferences(uiBindings.PlayerHealthTexts, _playerHealthTexts);
+            CopyReferences(
+                uiBindings.PlayerCurrencyTexts,
+                _playerCurrencyTexts);
+            CopyReferences(uiBindings.PlayerActionIcons, _playerActionIcons);
+            CopyReferences(uiBindings.PlayerRankTexts, _playerRankTexts);
 
             WireButtons();
         }
@@ -461,6 +471,8 @@ namespace MazeParty.Multiplayer
         {
             var minefield = NetworkMinefieldState.Instance;
             var wrongWay = NetworkWrongWayState.Instance;
+            var redLightGreenLight =
+                NetworkRedLightGreenLightState.Instance;
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
@@ -473,6 +485,10 @@ namespace MazeParty.Multiplayer
                     : match.FlowState == BoardFlowState.MinigamePlaying
                         ? match.CurrentMinigame == ScheduledMinigameId.WrongWay
                             ? WrongWayPhaseLabel(wrongWay)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.RedLightGreenLight
+                                ? RedLightGreenLightPhaseLabel(
+                                    redLightGreenLight)
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
@@ -504,6 +520,11 @@ namespace MazeParty.Multiplayer
                         ? wrongWay != null
                             ? FormatClock(wrongWay.Remaining)
                             : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.RedLightGreenLight
+                            ? redLightGreenLight != null
+                                ? FormatClock(redLightGreenLight.Remaining)
+                                : "--:--"
                         : minefield != null
                             ? FormatClock(minefield.Remaining)
                             : "--:--";
@@ -542,8 +563,8 @@ namespace MazeParty.Multiplayer
                     ? "SHIELD  " + shieldRemaining.ToString("0.0") + "s"
                     : "SHIELD  OFF";
                 _shieldText.color = shieldRemaining > 0d
-                    ? new Color(0.25f, 1f, 0.75f)
-                    : new Color(1f, 0.45f, 0.45f);
+                    ? uiBindings.ShieldActiveColor
+                    : uiBindings.ShieldInactiveColor;
             }
         }
 
@@ -613,10 +634,10 @@ namespace MazeParty.Multiplayer
                 if (_slotBackgrounds[i] != null)
                 {
                     _slotBackgrounds[i].color = selected
-                        ? new Color(1f, 0.72f, 0.15f, 0.97f)
+                        ? uiBindings.InventorySelectedColor
                         : occupied
-                            ? new Color(0.18f, 0.36f, 0.58f, 0.94f)
-                            : new Color(0.1f, 0.12f, 0.16f, 0.88f);
+                            ? uiBindings.InventoryOccupiedColor
+                            : uiBindings.InventoryEmptyColor;
                 }
 
                 if (_choiceButtons[i] != null)
@@ -658,15 +679,15 @@ namespace MazeParty.Multiplayer
                 if (_playerRows[slot] != null)
                 {
                     _playerRows[slot].color = isPresent
-                    ? PlayerColor(slot)
-                    : new Color(1f, 0.45f, 0.35f);
+                        ? uiBindings.GetPlayerColor(slot)
+                        : uiBindings.DisconnectedPlayerColor;
                 }
 
                 if (_playerCards[slot] != null)
                 {
                     _playerCards[slot].color = isLocal
-                        ? new Color(0.16f, 0.3f, 0.5f, 0.98f)
-                        : new Color(0.055f, 0.085f, 0.13f, 0.94f);
+                        ? uiBindings.LocalPlayerCardColor
+                        : uiBindings.RemotePlayerCardColor;
                 }
 
                 var showCombatHealth = avatar != null && match.IsCombatPhase &&
@@ -684,10 +705,10 @@ namespace MazeParty.Multiplayer
                 {
                     _playerHealthFills[slot].fillAmount = healthRatio;
                     _playerHealthFills[slot].color = healthRatio > 0.5f
-                        ? new Color(0.2f, 0.82f, 0.38f, 1f)
+                        ? uiBindings.HealthyHealthColor
                         : healthRatio > 0.25f
-                            ? new Color(1f, 0.7f, 0.16f, 1f)
-                            : new Color(0.95f, 0.2f, 0.2f, 1f);
+                            ? uiBindings.WoundedHealthColor
+                            : uiBindings.CriticalHealthColor;
                 }
                 SetText(_playerHealthTexts[slot], avatar != null
                     ? currentHealth + "/" + maxHealth
@@ -709,8 +730,8 @@ namespace MazeParty.Multiplayer
                 if (_playerActionIcons[slot] != null)
                 {
                     _playerActionIcons[slot].color = isCombatOut
-                        ? new Color(1f, 0.25f, 0.2f)
-                        : ActionIconColor(actionState);
+                        ? uiBindings.CombatOutColor
+                        : uiBindings.GetActionIconColor(actionState);
                 }
             }
         }
@@ -882,6 +903,17 @@ namespace MazeParty.Multiplayer
             var wrongWayRound = wrongWay != null
                 ? wrongWay.RoundNumber
                 : -1;
+            var redLightGreenLight =
+                NetworkRedLightGreenLightState.Instance;
+            var redLightGreenLightPhase = redLightGreenLight != null
+                ? redLightGreenLight.Phase
+                : NetworkRedLightGreenLightPhase.Inactive;
+            var redLightGreenLightSignal = redLightGreenLight != null
+                ? redLightGreenLight.SignalPhase
+                : RedLightGreenLightSignalPhase.Green;
+            var redLightGreenLightRound = redLightGreenLight != null
+                ? redLightGreenLight.RoundNumber
+                : -1;
             var revealPending = IsMinigameRevealPending(match);
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
@@ -889,6 +921,12 @@ namespace MazeParty.Multiplayer
                 _lastMinefieldRound == minefieldRound &&
                 _lastWrongWayPhase == wrongWayPhase &&
                 _lastWrongWayRound == wrongWayRound &&
+                _lastRedLightGreenLightPhase ==
+                redLightGreenLightPhase &&
+                _lastRedLightGreenLightSignal ==
+                redLightGreenLightSignal &&
+                _lastRedLightGreenLightRound ==
+                redLightGreenLightRound &&
                 _lastMinigameRevealPending == revealPending)
             {
                 return;
@@ -900,6 +938,9 @@ namespace MazeParty.Multiplayer
             _lastMinefieldRound = minefieldRound;
             _lastWrongWayPhase = wrongWayPhase;
             _lastWrongWayRound = wrongWayRound;
+            _lastRedLightGreenLightPhase = redLightGreenLightPhase;
+            _lastRedLightGreenLightSignal = redLightGreenLightSignal;
+            _lastRedLightGreenLightRound = redLightGreenLightRound;
             _lastMinigameRevealPending = revealPending;
             if (match.IsKeyShopRevealActive)
             {
@@ -963,6 +1004,10 @@ namespace MazeParty.Multiplayer
                         _statusText,
                         match.CurrentMinigame == ScheduledMinigameId.WrongWay
                             ? WrongWayStatus(wrongWay)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.RedLightGreenLight
+                                ? RedLightGreenLightStatus(
+                                    redLightGreenLight)
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -999,6 +1044,8 @@ namespace MazeParty.Multiplayer
             var selected = match.CurrentMinigame;
             var isMinefield = selected == ScheduledMinigameId.Minefield;
             var isWrongWay = selected == ScheduledMinigameId.WrongWay;
+            var isRedLightGreenLight =
+                selected == ScheduledMinigameId.RedLightGreenLight;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1009,6 +1056,8 @@ namespace MazeParty.Multiplayer
                     ? "???"
                     : isWrongWay
                     ? "WRONG WAY / STAIR RACE"
+                    : isRedLightGreenLight
+                        ? "RED LIGHT / GREEN LIGHT"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1021,6 +1070,12 @@ namespace MazeParty.Multiplayer
                       "you down for 0.5 seconds. First to step 50 ends the round. " +
                       "Two rounds, 60 seconds each.\nALL 4 PLAYERS READY  -  READY " +
                       readyCount + " / 4"
+                    : isRedLightGreenLight
+                        ? "Move with WASD during GREEN and freeze when RED begins. " +
+                          "The first violation injures you and slows you to walking " +
+                          "speed; the second eliminates you. First finisher ends the " +
+                          "round. Three rounds, 60 seconds each.\n" +
+                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
                           "The next turn starts automatically."
@@ -1061,11 +1116,16 @@ namespace MazeParty.Multiplayer
                 _minefieldResultTitle,
                 isWrongWay
                     ? "WRONG WAY RESULTS"
+                    : isRedLightGreenLight
+                        ? "RED LIGHT / GREEN LIGHT RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
             var resultSummary = isWrongWay
                 ? BuildWrongWayResultSummary(NetworkWrongWayState.Instance)
+                : isRedLightGreenLight
+                    ? BuildRedLightGreenLightResultSummary(
+                        NetworkRedLightGreenLightState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1085,15 +1145,18 @@ namespace MazeParty.Multiplayer
 
             if (_minefieldRuleImage != null)
             {
-                _minefieldRuleImage.preserveAspect = true;
                 _minefieldRuleImage.color = hasRuleImage
-                    ? Color.white
-                    : new Color(0.055f, 0.09f, 0.14f, 1f);
+                    ? uiBindings.RuleImageContentColor
+                    : uiBindings.RuleImagePlaceholderColor;
                 _minefieldRuleImage.gameObject.SetActive(isMinefield);
             }
             SetText(
                 _minigameRulePlaceholder,
-                isWrongWay ? "W  A  S  D\n50 STEPS" : "RULE IMAGE");
+                isWrongWay
+                    ? "W  A  S  D\n50 STEPS"
+                    : isRedLightGreenLight
+                        ? "GREEN: MOVE\nRED: FREEZE"
+                        : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
                     ? _minigameRulePlaceholder.gameObject
@@ -1209,6 +1272,60 @@ namespace MazeParty.Multiplayer
             return builder.ToString();
         }
 
+        private static string BuildRedLightGreenLightResultSummary(
+            NetworkRedLightGreenLightState redLightGreenLight)
+        {
+            if (redLightGreenLight == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= RedLightGreenLightRules.PlayerCount;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < RedLightGreenLightRules.PlayerCount;
+                     slot++)
+                {
+                    if (redLightGreenLight.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar =
+                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(redLightGreenLight.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        RedLightGreenLightRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
         private static string MinefieldPhaseLabel(
             NetworkMinefieldState minefield)
         {
@@ -1308,6 +1425,95 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private static string RedLightGreenLightPhaseLabel(
+            NetworkRedLightGreenLightState redLightGreenLight)
+        {
+            if (redLightGreenLight == null)
+            {
+                return "RED LIGHT / GREEN LIGHT";
+            }
+
+            var round = Mathf.Clamp(
+                redLightGreenLight.RoundNumber,
+                1,
+                RedLightGreenLightRules.RoundCount);
+            switch (redLightGreenLight.Phase)
+            {
+                case NetworkRedLightGreenLightPhase.Countdown:
+                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
+                           " / 3  -  COUNTDOWN";
+                case NetworkRedLightGreenLightPhase.Running:
+                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
+                           " / 3  -  " +
+                           RedLightGreenLightSignalLabel(
+                               redLightGreenLight.SignalPhase);
+                case NetworkRedLightGreenLightPhase.RoundResult:
+                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
+                           " / 3  -  RESULT";
+                case NetworkRedLightGreenLightPhase.Complete:
+                    return "RED LIGHT / GREEN LIGHT COMPLETE";
+                default:
+                    return "RED LIGHT / GREEN LIGHT";
+            }
+        }
+
+        private static string RedLightGreenLightStatus(
+            NetworkRedLightGreenLightState redLightGreenLight)
+        {
+            if (redLightGreenLight == null)
+            {
+                return "Synchronizing the Red Light / Green Light race...";
+            }
+
+            switch (redLightGreenLight.Phase)
+            {
+                case NetworkRedLightGreenLightPhase.Countdown:
+                    return "Get ready at the shared start line.";
+                case NetworkRedLightGreenLightPhase.Running:
+                    var remaining =
+                        redLightGreenLight.SignalRemaining.ToString("0.0") +
+                        "s";
+                    switch (redLightGreenLight.SignalPhase)
+                    {
+                        case RedLightGreenLightSignalPhase.Green:
+                            return "GREEN  " + remaining +
+                                   ": move toward the finish.";
+                        case RedLightGreenLightSignalPhase.TurnWarning:
+                            return "TURNING  " + remaining +
+                                   ": movement remains legal until RED begins.";
+                        case RedLightGreenLightSignalPhase.Red:
+                            return "RED  " + remaining +
+                                   ": freeze; voluntary movement is a violation.";
+                        default:
+                            return "Follow the synchronized signal.";
+                    }
+                case NetworkRedLightGreenLightPhase.RoundResult:
+                    return "Finishers rank first, then survivors by forward " +
+                           "progress, with eliminated players placed last.";
+                case NetworkRedLightGreenLightPhase.Complete:
+                    return "All three rounds complete. Final points determine " +
+                           "rank and gold.";
+                default:
+                    return "Preparing Red Light / Green Light...";
+            }
+        }
+
+        private static string RedLightGreenLightSignalLabel(
+            RedLightGreenLightSignalPhase signal)
+        {
+            switch (signal)
+            {
+                case RedLightGreenLightSignalPhase.Green:
+                    return "GREEN";
+                case RedLightGreenLightSignalPhase.TurnWarning:
+                    return "TURNING";
+                case RedLightGreenLightSignalPhase.Red:
+                    return "RED";
+                default:
+                    return signal.ToString().ToUpperInvariant();
+            }
+        }
+
 
 
 
@@ -1327,30 +1533,12 @@ namespace MazeParty.Multiplayer
             cameraDirector?.SetUiPointerVisible(true);
         }
 
-        private T FindNamedComponent<T>(string objectName) where T : Component
+        private static void CopyReferences<T>(T[] source, T[] destination)
         {
-            var components = GetComponentsInChildren<T>(true);
-            for (var i = 0; i < components.Length; i++)
+            for (var index = 0; index < destination.Length; index++)
             {
-                if (components[i].gameObject.name == objectName)
-                {
-                    return components[i];
-                }
+                destination[index] = source[index];
             }
-            return null;
-        }
-
-        private GameObject FindNamed(string objectName)
-        {
-            var transforms = GetComponentsInChildren<Transform>(true);
-            for (var i = 0; i < transforms.Length; i++)
-            {
-                if (transforms[i].gameObject.name == objectName)
-                {
-                    return transforms[i].gameObject;
-                }
-            }
-            return null;
         }
 
         private static void SetText(Text target, string value)
@@ -1400,6 +1588,8 @@ namespace MazeParty.Multiplayer
             {
                 case ScheduledMinigameId.Minefield: return "MINEFIELD";
                 case ScheduledMinigameId.WrongWay: return "WRONG WAY";
+                case ScheduledMinigameId.RedLightGreenLight:
+                    return "RED LIGHT / GREEN LIGHT";
                 default: return "SKIP";
             }
         }
@@ -1435,17 +1625,6 @@ namespace MazeParty.Multiplayer
             return (whole / 60).ToString("00") + ":" + (whole % 60).ToString("00");
         }
 
-        private static Color PlayerColor(int slot)
-        {
-            switch (slot)
-            {
-                case 0: return new Color(1f, 0.42f, 0.42f);
-                case 1: return new Color(0.42f, 0.7f, 1f);
-                case 2: return new Color(0.42f, 1f, 0.58f);
-                default: return new Color(1f, 0.82f, 0.35f);
-            }
-        }
-
         private static string ActionIconLabel(PlayerBoardActionState state)
         {
             switch (state)
@@ -1458,16 +1637,5 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static Color ActionIconColor(PlayerBoardActionState state)
-        {
-            switch (state)
-            {
-                case PlayerBoardActionState.Dice: return new Color(0.4f, 0.75f, 1f);
-                case PlayerBoardActionState.Moving: return new Color(0.35f, 1f, 0.55f);
-                case PlayerBoardActionState.Arrived: return new Color(1f, 0.82f, 0.3f);
-                case PlayerBoardActionState.Fighting: return new Color(1f, 0.3f, 0.25f);
-                default: return Color.clear;
-            }
-        }
     }
 }

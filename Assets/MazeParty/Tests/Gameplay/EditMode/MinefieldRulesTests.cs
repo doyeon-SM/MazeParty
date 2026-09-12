@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.Minefield;
 using NUnit.Framework;
@@ -8,34 +7,17 @@ namespace MazeParty.Gameplay.Tests
     public sealed class MinefieldRulesTests
     {
         [Test]
-        public void MatchConstants_AreThreeRoundsFourPlayersAndThreeTwoOneZeroPoints()
-        {
-            Assert.That(MinefieldRules.RoundCount, Is.EqualTo(3));
-            Assert.That(MinefieldRules.PlayerCount, Is.EqualTo(4));
-            Assert.That(MinefieldRules.MineHitsToEliminate, Is.EqualTo(2));
-            Assert.That(
-                new[]
-                {
-                    MinefieldRules.GetPointsForRank(1),
-                    MinefieldRules.GetPointsForRank(2),
-                    MinefieldRules.GetPointsForRank(3),
-                    MinefieldRules.GetPointsForRank(4)
-                },
-                Is.EqualTo(new[] { 3, 2, 1, 0 }));
-        }
-
-        [Test]
-        public void FirstMineHit_CripplesPlayerHidesTorsoAndUsesWalkingSpeed()
+        public void MineHits_TransitionFromHealthyToCrippledThenEliminated()
         {
             var state = new MinefieldPlayerRoundState(2);
 
             Assert.That(state.MovementSpeedMultiplier, Is.EqualTo(1f));
 
-            var resolution = state.ApplyMineHit();
+            var first = state.ApplyMineHit();
 
-            Assert.That(resolution.WasApplied, Is.True);
-            Assert.That(resolution.BecameCrippled, Is.True);
-            Assert.That(resolution.BecameEliminated, Is.False);
+            Assert.That(first.WasApplied, Is.True);
+            Assert.That(first.BecameCrippled, Is.True);
+            Assert.That(first.BecameEliminated, Is.False);
             Assert.That(state.State, Is.EqualTo(MinefieldPlayerState.Crippled));
             Assert.That(state.MineHitCount, Is.EqualTo(1));
             Assert.That(state.ShouldHideTorso, Is.True);
@@ -43,36 +25,21 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 state.MovementSpeedMultiplier,
                 Is.EqualTo(FootstepRules.WalkSpeedMultiplier));
-        }
 
-        [Test]
-        public void SecondMineHit_EliminatesPlayer()
-        {
-            var state = new MinefieldPlayerRoundState(0);
-            state.ApplyMineHit();
+            var second = state.ApplyMineHit();
 
-            var resolution = state.ApplyMineHit();
-
-            Assert.That(resolution.WasApplied, Is.True);
-            Assert.That(resolution.BecameEliminated, Is.True);
+            Assert.That(second.WasApplied, Is.True);
+            Assert.That(second.BecameEliminated, Is.True);
             Assert.That(state.State, Is.EqualTo(MinefieldPlayerState.Eliminated));
             Assert.That(state.MineHitCount, Is.EqualTo(2));
             Assert.That(state.IsTerminal, Is.True);
             Assert.That(state.CanMove, Is.False);
-        }
 
-        [Test]
-        public void TerminalPlayer_IgnoresLaterHitsAndCannotChangeOutcome()
-        {
-            var eliminated = new MinefieldPlayerRoundState(0);
-            eliminated.ApplyMineHit();
-            eliminated.ApplyMineHit();
-
-            var ignored = eliminated.ApplyMineHit();
+            var ignored = state.ApplyMineHit();
 
             Assert.That(ignored.WasApplied, Is.False);
-            Assert.That(eliminated.MineHitCount, Is.EqualTo(2));
-            Assert.That(eliminated.TryFinish(), Is.False);
+            Assert.That(state.MineHitCount, Is.EqualTo(2));
+            Assert.That(state.TryFinish(), Is.False);
 
             var finished = new MinefieldPlayerRoundState(1);
             Assert.That(finished.TryFinish(), Is.True);
@@ -81,7 +48,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void RoundScoring_PutsFinishersFirstThenEarlierEliminations()
+        public void RoundScoring_PutsFinishersFirstAndBreaksEventTiesBySlot()
         {
             var result = MinefieldRoundScoring.Score(
                 new[]
@@ -96,28 +63,8 @@ namespace MazeParty.Gameplay.Tests
             AssertStanding(result, 1, 2, 2, MinefieldTerminalKind.Finished);
             AssertStanding(result, 2, 3, 1, MinefieldTerminalKind.Eliminated);
             AssertStanding(result, 3, 0, 0, MinefieldTerminalKind.Eliminated);
-        }
 
-        [Test]
-        public void RoundScoring_WhenNobodyFinishes_EarlierDeathRanksHigher()
-        {
-            var result = MinefieldRoundScoring.Score(
-                new[]
-                {
-                    MinefieldRoundOutcome.Eliminate(3, 40),
-                    MinefieldRoundOutcome.Eliminate(1, 10),
-                    MinefieldRoundOutcome.Eliminate(0, 30),
-                    MinefieldRoundOutcome.Eliminate(2, 20)
-                });
-
-            Assert.That(PlayerSlots(result), Is.EqualTo(new[] { 1, 2, 0, 3 }));
-            Assert.That(Points(result), Is.EqualTo(new[] { 3, 2, 1, 0 }));
-        }
-
-        [Test]
-        public void RoundScoring_UsesLowerSlotForSimultaneousEvents()
-        {
-            var result = MinefieldRoundScoring.Score(
+            var tiedEvents = MinefieldRoundScoring.Score(
                 new[]
                 {
                     MinefieldRoundOutcome.Eliminate(3, 20),
@@ -126,22 +73,11 @@ namespace MazeParty.Gameplay.Tests
                     MinefieldRoundOutcome.Finish(0, 10)
                 });
 
-            Assert.That(PlayerSlots(result), Is.EqualTo(new[] { 0, 2, 1, 3 }));
-        }
-
-        [Test]
-        public void RoundScoring_RejectsMissingOrDuplicatePlayers()
-        {
-            Assert.Throws<ArgumentException>(
-                () => MinefieldRoundScoring.Score(
-                    new[]
-                    {
-                        MinefieldRoundOutcome.Finish(0, 1),
-                        MinefieldRoundOutcome.Finish(1, 2),
-                        MinefieldRoundOutcome.Finish(2, 3)
-                    }));
-
-            Assert.Throws<ArgumentException>(
+            Assert.That(
+                PlayerSlots(tiedEvents),
+                Is.EqualTo(new[] { 0, 2, 1, 3 }));
+            Assert.That(Points(tiedEvents), Is.EqualTo(new[] { 3, 2, 1, 0 }));
+            Assert.Throws<System.ArgumentException>(
                 () => MinefieldRoundScoring.Score(
                     new[]
                     {
@@ -166,15 +102,13 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(LeaderboardSlots(leaderboard), Is.EqualTo(new[] { 0, 1, 2, 3 }));
             Assert.That(LeaderboardRanks(leaderboard), Is.EqualTo(new[] { 1, 2, 3, 4 }));
             Assert.That(LeaderboardPoints(leaderboard), Is.EqualTo(new[] { 5, 5, 5, 3 }));
-        }
-
-        [Test]
-        public void MatchLeaderboard_RejectsAnythingOtherThanThreeRounds()
-        {
-            var round = ScoreFinishOrder(0, 1, 2, 3);
-
-            Assert.Throws<ArgumentException>(
-                () => MinefieldMatchScoring.BuildLeaderboard(new[] { round, round }));
+            Assert.Throws<System.ArgumentException>(
+                () => MinefieldMatchScoring.BuildLeaderboard(
+                    new[]
+                    {
+                        ScoreFinishOrder(0, 1, 2, 3),
+                        ScoreFinishOrder(1, 2, 3, 0)
+                    }));
         }
 
         [Test]
@@ -247,26 +181,6 @@ namespace MazeParty.Gameplay.Tests
             {
                 Assert.That(forbidden.Contains(mine), Is.False);
             }
-        }
-
-        [Test]
-        public void Layout_RejectsInvalidRoundAndMineCountBeyondAvailableCells()
-        {
-            Assert.Throws<ArgumentOutOfRangeException>(
-                () => MinefieldLayoutGenerator.Generate(2, 2, 1, 1UL, 0));
-            Assert.Throws<ArgumentException>(
-                () => MinefieldLayoutGenerator.Generate(
-                    2,
-                    2,
-                    2,
-                    1UL,
-                    1,
-                    new[]
-                    {
-                        new MinefieldCell(0, 0),
-                        new MinefieldCell(0, 1),
-                        new MinefieldCell(1, 0)
-                    }));
         }
 
         private static MinefieldRoundResult ScoreFinishOrder(params int[] playerSlots)

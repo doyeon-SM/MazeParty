@@ -100,10 +100,6 @@ namespace MazeParty.Multiplayer
             _localProfile = PlayerProfilePreferences.Load();
             var displayName = _localProfile.DisplayName;
             LobbyArena.EnsureRuntimeCreated(lobbyCamera);
-            if (lobbyView == null)
-            {
-                lobbyView = FindAnyObjectByType<OnlineLobbyView>();
-            }
 
             lobbyView?.SetDisplayName(displayName);
             lobbyView?.SetAppearance(_localProfile.Appearance);
@@ -977,6 +973,13 @@ namespace MazeParty.Multiplayer
 
         private void UnloadBoardLocally()
         {
+            var redLightGreenLight = SceneManager.GetSceneByName(
+                MultiplayerConstants.RedLightGreenLightScene);
+            if (redLightGreenLight.IsValid() && redLightGreenLight.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(redLightGreenLight);
+            }
+
             var wrongWay = SceneManager.GetSceneByName(
                 MultiplayerConstants.WrongWayScene);
             if (wrongWay.IsValid() && wrongWay.isLoaded)

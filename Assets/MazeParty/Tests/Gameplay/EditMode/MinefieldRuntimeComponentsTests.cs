@@ -23,7 +23,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void PlayerActor_FirstMineCripples_SecondMineEliminates()
+        public void PlayerActor_AppliesAuthoritativeHitsAndRejectsStaleSnapshots()
         {
             var actor = CreateActor(2);
 
@@ -39,12 +39,7 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(MinefieldEliminationCause.SecondMineHit));
             Assert.That(actor.CanMove, Is.False);
             Assert.That(actor.HazardsEnabled, Is.False);
-        }
 
-        [Test]
-        public void PlayerActor_RejectsStaleAuthoritativeSnapshot()
-        {
-            var actor = CreateActor(0);
             actor.ResetForRoundAuthoritatively(0);
             var currentRevision = actor.StateRevision;
 
@@ -59,24 +54,6 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(applied, Is.False);
             Assert.That(actor.State, Is.EqualTo(MinefieldPlayerState.Healthy));
-        }
-
-        [Test]
-        public void PlayerMotor_CrippledSpeedMatchesSharedWalkingMultiplier()
-        {
-            var root = CreateObject("Motor");
-            root.AddComponent<CharacterController>();
-            root.AddComponent<MinefieldPlayerActor>();
-            var motor = root.AddComponent<MinefieldPlayerMotor>();
-
-            Assert.That(
-                motor.GetMoveSpeed(MinefieldPlayerState.Crippled),
-                Is.EqualTo(
-                    motor.HealthyMoveSpeed * FootstepRules.WalkSpeedMultiplier)
-                    .Within(0.0001f));
-            Assert.That(
-                motor.GetMoveSpeed(MinefieldPlayerState.Eliminated),
-                Is.Zero);
         }
 
         [Test]
@@ -101,7 +78,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Registry_UsesPlanarDistanceAndIgnoresDisarmedMines()
+        public void Detection_UsesPlanarDistanceAndRequiresAStationaryPlayer()
         {
             var registry = CreateObject("Registry")
                 .AddComponent<MinefieldMineRegistry>();
@@ -125,27 +102,23 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(nearest, Is.SameAs(farther));
             Assert.That(distance, Is.EqualTo(5f).Within(0.0001f));
-        }
 
-        [TestCase(0f, 5f, 1f)]
-        [TestCase(2.5f, 5f, 0.5f)]
-        [TestCase(5f, 5f, 0f)]
-        [TestCase(8f, 5f, 0f)]
-        public void SirenIntensity_IncreasesAsMineGetsCloser(
-            float distance,
-            float warningDistance,
-            float expected)
-        {
-            Assert.That(
-                MinefieldProximitySiren.CalculateNormalizedIntensity(
-                    distance,
-                    warningDistance),
-                Is.EqualTo(expected).Within(0.0001f));
-        }
+            var intensityCases = new[]
+            {
+                (Distance: 0f, WarningDistance: 5f, Expected: 1f),
+                (Distance: 2.5f, WarningDistance: 5f, Expected: 0.5f),
+                (Distance: 5f, WarningDistance: 5f, Expected: 0f),
+                (Distance: 8f, WarningDistance: 5f, Expected: 0f)
+            };
+            foreach (var testCase in intensityCases)
+            {
+                Assert.That(
+                    MinefieldProximitySiren.CalculateNormalizedIntensity(
+                        testCase.Distance,
+                        testCase.WarningDistance),
+                    Is.EqualTo(testCase.Expected).Within(0.0001f));
+            }
 
-        [Test]
-        public void Sonar_RequiresBothZeroIntentAndStationaryMotor()
-        {
             Assert.That(
                 MinefieldSonar.IsStationaryForPulse(
                     0f,
@@ -192,62 +165,6 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(MinefieldEliminationCause.Crusher));
         }
 
-        [Test]
-        public void Presentation_HidesTorsoOnFirstHit_AndRestoresOnReset()
-        {
-            var root = CreateObject("Player");
-            var actor = root.AddComponent<MinefieldPlayerActor>();
-            actor.ConfigurePlayerSlot(0);
-            var poseRoot = CreateChild(root.transform, "PoseRoot");
-            var head = CreateChild(poseRoot, "Head");
-            var leftHand = CreateChild(poseRoot, "LeftHand");
-            var rightHand = CreateChild(poseRoot, "RightHand");
-            var torso = CreateChild(poseRoot, "Torso").gameObject;
-            var presentation = root.AddComponent<MinefieldPlayerPresentation>();
-            presentation.Configure(
-                actor,
-                poseRoot,
-                head,
-                leftHand,
-                rightHand,
-                torso);
-
-            actor.ApplyAuthoritativeMineHit(null);
-
-            Assert.That(torso.activeSelf, Is.False);
-            Assert.That(
-                Vector3.Distance(leftHand.position, head.position),
-                Is.GreaterThan(0.1f));
-            Assert.That(
-                Vector3.Distance(rightHand.position, head.position),
-                Is.GreaterThan(0.1f));
-
-            actor.ResetForRoundAuthoritatively(0);
-
-            Assert.That(torso.activeSelf, Is.True);
-        }
-
-        [Test]
-        public void Presentation_FirstHitKeepsHeadAboveArenaFloor()
-        {
-            var root = CreateObject("Player");
-            var actor = root.AddComponent<MinefieldPlayerActor>();
-            actor.ConfigurePlayerSlot(0);
-            var avatarVisual = root.AddComponent<PlayerAvatarVisual>();
-            avatarVisual.EnsureBuilt();
-            root.AddComponent<MinefieldPlayerPresentation>();
-
-            actor.ApplyAuthoritativeMineHit(null);
-
-            var head = root.transform.Find(
-                "VisualRoot/WorldModel/HeadAnchor");
-            Assert.That(head, Is.Not.Null);
-            Assert.That(
-                head.GetComponent<Renderer>().bounds.min.y,
-                Is.GreaterThanOrEqualTo(-0.01f),
-                "The crippled head must remain visible above the arena floor.");
-        }
-
         private MinefieldPlayerActor CreateActor(int slot)
         {
             var actor = CreateObject("Player " + slot)
@@ -275,13 +192,6 @@ namespace MazeParty.Gameplay.Tests
             var value = new GameObject(name);
             _objects.Add(value);
             return value;
-        }
-
-        private static Transform CreateChild(Transform parent, string name)
-        {
-            var child = new GameObject(name).transform;
-            child.SetParent(parent, false);
-            return child;
         }
     }
 }

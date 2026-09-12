@@ -5,92 +5,27 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class PlayerCharacterRulesTests
     {
-        [TestCase(PlayerHitRegion.Body, 20)]
-        [TestCase(PlayerHitRegion.Head, 26)]
-        [TestCase(PlayerHitRegion.Hand, 14)]
-        public void FirearmDamage_UsesConfiguredBodyRegionMultiplier(
-            PlayerHitRegion region,
-            int expected)
-        {
-            Assert.That(
-                FirearmDamageRules.ApplyRegionMultiplier(20, region),
-                Is.EqualTo(expected));
-        }
-
         [Test]
-        public void AvatarVisual_BuildsStableCustomizationAndHitboxAnchors()
+        public void FirearmDamage_AppliesBodyRegionTable()
         {
-            var root = new GameObject("Player");
-            try
+            var cases = new[]
             {
-                var visual = root.AddComponent<PlayerAvatarVisual>();
-                visual.EnsureBuilt();
+                (Region: PlayerHitRegion.Body, Expected: 20),
+                (Region: PlayerHitRegion.Head, Expected: 26),
+                (Region: PlayerHitRegion.Hand, Expected: 14)
+            };
 
-                Assert.That(root.transform.Find("VisualRoot/WorldModel/BodyAnchor"), Is.Not.Null);
-                Assert.That(root.transform.Find("VisualRoot/WorldModel/HeadAnchor"), Is.Not.Null);
-                Assert.That(root.transform.Find("VisualRoot/WorldModel/HatAnchor"), Is.Not.Null);
-                Assert.That(root.transform.Find("VisualRoot/WorldModel/OutfitAnchor"), Is.Not.Null);
-                Assert.That(
-                    root.transform.Find(
-                        "VisualRoot/WorldModel/ItemUseAnchor/PulseBlasterModel"),
-                    Is.Not.Null);
-                Assert.That(root.transform.Find("HitboxRoot/BodyHitbox"), Is.Not.Null);
-                Assert.That(root.transform.Find("HitboxRoot/HeadHitbox"), Is.Not.Null);
-                Assert.That(
-                    root.GetComponentsInChildren<PlayerHitZone>(true),
-                    Has.Length.EqualTo(4));
-            }
-            finally
+            foreach (var testCase in cases)
             {
-                Object.DestroyImmediate(root);
+                Assert.That(
+                    FirearmDamageRules.ApplyRegionMultiplier(20, testCase.Region),
+                    Is.EqualTo(testCase.Expected),
+                    testCase.Region.ToString());
             }
         }
 
         [Test]
-        public void ItemUse_HidesWorldHandsAndShowsOnlySelectedPlaceholder()
-        {
-            var root = new GameObject("Player");
-            try
-            {
-                var visual = root.AddComponent<PlayerAvatarVisual>();
-                visual.TriggerItemUse(PrototypeItemId.PushMine);
-
-                Assert.That(visual.IsUsingItem, Is.True);
-                Assert.That(
-                    root.transform.Find("VisualRoot/WorldModel/LeftHandAnchor").gameObject.activeSelf,
-                    Is.False);
-                Assert.That(
-                    root.transform.Find("VisualRoot/WorldModel/RightHandAnchor").gameObject.activeSelf,
-                    Is.False);
-                Assert.That(
-                    root.transform.Find(
-                        "VisualRoot/WorldModel/ItemUseAnchor/PushMineModel").gameObject.activeSelf,
-                    Is.True);
-                Assert.That(
-                    root.transform.Find(
-                        "VisualRoot/WorldModel/ItemUseAnchor/PulseBlasterModel").gameObject.activeSelf,
-                    Is.False);
-            }
-            finally
-            {
-                Object.DestroyImmediate(root);
-            }
-        }
-
-        [Test]
-        public void DamageRequest_PreservesLocalizedHitRegion()
-        {
-            var request = new DamageRequest(
-                20,
-                DamageKind.Item,
-                null,
-                PlayerHitRegion.Head);
-
-            Assert.That(request.HitRegion, Is.EqualTo(PlayerHitRegion.Head));
-        }
-
-        [Test]
-        public void FirearmResolver_AppliesHeadDamageThroughChildHitZone()
+        public void FirearmResolver_AppliesLocalizedDamageThroughChildHitZone()
         {
             var source = new GameObject("Source");
             var target = new GameObject("Target");

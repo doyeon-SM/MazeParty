@@ -11,17 +11,22 @@ namespace MazeParty.Gameplay.Minigames
     {
         Skip = 0,
         Minefield = 1,
-        WrongWay = 2
+        WrongWay = 2,
+        RedLightGreenLight = 3
     }
 
     public static class MinigameScheduleRules
     {
         public const int DefaultTurnCount = 15;
 
+        // Append only. Persistence schemas restore against a prefix of this
+        // catalog so an in-progress match keeps its original queue after an
+        // application update adds another minigame.
         private static readonly ScheduledMinigameId[] RegisteredGames =
         {
             ScheduledMinigameId.Minefield,
-            ScheduledMinigameId.WrongWay
+            ScheduledMinigameId.WrongWay,
+            ScheduledMinigameId.RedLightGreenLight
         };
 
         public static int RegisteredGameCount => RegisteredGames.Length;
@@ -54,6 +59,26 @@ namespace MazeParty.Gameplay.Minigames
             return minigame == ScheduledMinigameId.Skip ||
                    IsRegisteredGame(minigame);
         }
+
+        internal static bool IsKnownValue(
+            ScheduledMinigameId minigame,
+            int registeredGameCount)
+        {
+            if (minigame == ScheduledMinigameId.Skip)
+            {
+                return true;
+            }
+
+            for (var index = 0; index < registeredGameCount; index++)
+            {
+                if (RegisteredGames[index] == minigame)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     /// <summary>
@@ -65,14 +90,19 @@ namespace MazeParty.Gameplay.Minigames
     {
         private readonly ScheduledMinigameId[] _entries;
 
-        private HostMinigameSchedule(int seed, ScheduledMinigameId[] entries)
+        private HostMinigameSchedule(
+            int seed,
+            ScheduledMinigameId[] entries,
+            int registeredGameCount)
         {
             Seed = seed;
             _entries = entries;
+            RegisteredGameCountAtCreation = registeredGameCount;
         }
 
         public int Seed { get; }
         public int TurnCount => _entries.Length;
+        internal int RegisteredGameCountAtCreation { get; }
 
         public static HostMinigameSchedule Create(
             int seed,
@@ -119,7 +149,10 @@ namespace MazeParty.Gameplay.Minigames
                 entries[swapIndex] = swap;
             }
 
-            return new HostMinigameSchedule(seed, entries);
+            return new HostMinigameSchedule(
+                seed,
+                entries,
+                MinigameScheduleRules.RegisteredGameCount);
         }
 
         public ScheduledMinigameId GetMinigameForTurn(int oneBasedTurn)
@@ -150,6 +183,17 @@ namespace MazeParty.Gameplay.Minigames
             int seed,
             IReadOnlyList<ScheduledMinigameId> entries)
         {
+            return Restore(
+                seed,
+                entries,
+                MinigameScheduleRules.RegisteredGameCount);
+        }
+
+        internal static HostMinigameSchedule Restore(
+            int seed,
+            IReadOnlyList<ScheduledMinigameId> entries,
+            int registeredGameCount)
+        {
             if (entries == null)
             {
                 throw new ArgumentNullException(nameof(entries));
@@ -161,16 +205,25 @@ namespace MazeParty.Gameplay.Minigames
                     "The stored schedule is empty.",
                     nameof(entries));
             }
+            if (registeredGameCount < 1 ||
+                registeredGameCount >
+                MinigameScheduleRules.RegisteredGameCount)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(registeredGameCount));
+            }
 
             var restored = new ScheduledMinigameId[entries.Count];
             var registeredSeen =
-                new bool[MinigameScheduleRules.RegisteredGameCount];
+                new bool[registeredGameCount];
             var scheduledGameCount = 0;
 
             for (var index = 0; index < entries.Count; index++)
             {
                 var entry = entries[index];
-                if (!MinigameScheduleRules.IsKnownValue(entry))
+                if (!MinigameScheduleRules.IsKnownValue(
+                        entry,
+                        registeredGameCount))
                 {
                     throw new ArgumentException(
                         "The stored schedule contains an unknown minigame id.",
@@ -179,7 +232,7 @@ namespace MazeParty.Gameplay.Minigames
 
                 restored[index] = entry;
                 for (var gameIndex = 0;
-                     gameIndex < MinigameScheduleRules.RegisteredGameCount;
+                     gameIndex < registeredGameCount;
                      gameIndex++)
                 {
                     if (entry == MinigameScheduleRules.GetRegisteredGame(gameIndex))
@@ -200,7 +253,7 @@ namespace MazeParty.Gameplay.Minigames
 
             var expectedGameCount = Math.Min(
                 entries.Count,
-                MinigameScheduleRules.RegisteredGameCount);
+                registeredGameCount);
             if (scheduledGameCount != expectedGameCount)
             {
                 throw new ArgumentException(
@@ -209,7 +262,10 @@ namespace MazeParty.Gameplay.Minigames
                     nameof(entries));
             }
 
-            return new HostMinigameSchedule(seed, restored);
+            return new HostMinigameSchedule(
+                seed,
+                restored,
+                registeredGameCount);
         }
 
         internal ScheduledMinigameId[] CopyEntriesForHostPersistence()
