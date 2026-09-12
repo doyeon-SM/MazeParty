@@ -21,8 +21,20 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(3),
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
+                (int)ScheduledMinigameId.StableFooting,
+                Is.EqualTo(4),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                (int)ScheduledMinigameId.BalloonBlow,
+                Is.EqualTo(5),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                (int)ScheduledMinigameId.GiftGrab,
+                Is.EqualTo(6),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(3));
+                Is.EqualTo(6));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
@@ -34,6 +46,15 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(1));
             Assert.That(
                 counts[ScheduledMinigameId.RedLightGreenLight],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.StableFooting],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.BalloonBlow],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.GiftGrab],
                 Is.EqualTo(1));
             Assert.That(
                 counts[ScheduledMinigameId.Skip],
@@ -55,6 +76,7 @@ namespace MazeParty.Gameplay.Tests
                 out var restored);
 
             Assert.That(decoded, Is.True);
+            Assert.That(payload, Does.Contain("\"schemaVersion\":5"));
             Assert.That(matchKey, Is.EqualTo("session:room-42"));
             AssertSchedulesEqual(original, restored);
         }
@@ -90,6 +112,60 @@ namespace MazeParty.Gameplay.Tests
                 codec.TryDecode(reencoded, out _, out var roundTripped),
                 Is.True);
             AssertSchedulesEqual(restored, roundTripped);
+
+            const string threeGamePayload =
+                "{\"schemaVersion\":2,\"matchKey\":\"three-game-match\"," +
+                "\"seed\":2718,\"turnCount\":5," +
+                "\"entries\":[3,0,2,0,1]}";
+            Assert.That(
+                codec.TryDecode(
+                    threeGamePayload,
+                    out var threeGameMatchKey,
+                    out var threeGameSchedule),
+                Is.True);
+            Assert.That(threeGameMatchKey, Is.EqualTo("three-game-match"));
+            Assert.That(
+                threeGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.RedLightGreenLight));
+            Assert.That(
+                codec.Encode(threeGameMatchKey, threeGameSchedule),
+                Does.Contain("\"schemaVersion\":2"));
+
+            const string fourGamePayload =
+                "{\"schemaVersion\":3,\"matchKey\":\"four-game-match\"," +
+                "\"seed\":1618,\"turnCount\":6," +
+                "\"entries\":[4,0,3,2,0,1]}";
+            Assert.That(
+                codec.TryDecode(
+                    fourGamePayload,
+                    out var fourGameMatchKey,
+                    out var fourGameSchedule),
+                Is.True);
+            Assert.That(fourGameMatchKey, Is.EqualTo("four-game-match"));
+            Assert.That(
+                fourGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.StableFooting));
+            Assert.That(
+                codec.Encode(fourGameMatchKey, fourGameSchedule),
+                Does.Contain("\"schemaVersion\":3"));
+
+            const string fiveGamePayload =
+                "{\"schemaVersion\":4,\"matchKey\":\"five-game-match\"," +
+                "\"seed\":1414,\"turnCount\":7," +
+                "\"entries\":[5,0,4,3,2,0,1]}";
+            Assert.That(
+                codec.TryDecode(
+                    fiveGamePayload,
+                    out var fiveGameMatchKey,
+                    out var fiveGameSchedule),
+                Is.True);
+            Assert.That(fiveGameMatchKey, Is.EqualTo("five-game-match"));
+            Assert.That(
+                fiveGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.BalloonBlow));
+            Assert.That(
+                codec.Encode(fiveGameMatchKey, fiveGameSchedule),
+                Does.Contain("\"schemaVersion\":4"));
         }
 
         [Test]
@@ -147,7 +223,10 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.Skip] = 0,
                 [ScheduledMinigameId.Minefield] = 0,
                 [ScheduledMinigameId.WrongWay] = 0,
-                [ScheduledMinigameId.RedLightGreenLight] = 0
+                [ScheduledMinigameId.RedLightGreenLight] = 0,
+                [ScheduledMinigameId.StableFooting] = 0,
+                [ScheduledMinigameId.BalloonBlow] = 0,
+                [ScheduledMinigameId.GiftGrab] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)

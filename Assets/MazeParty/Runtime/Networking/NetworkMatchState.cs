@@ -2,8 +2,11 @@ using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
+using MazeParty.Gameplay.Minigames.BalloonBlow;
+using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -195,6 +198,33 @@ namespace MazeParty.Multiplayer
              FlowState == BoardFlowState.SkippedResult);
         public bool IsRedLightGreenLightPlaying =>
             IsRedLightGreenLightPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsStableFootingPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.StableFooting &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsStableFootingPlaying =>
+            IsStableFootingPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsBalloonBlowPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.BalloonBlow &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsBalloonBlowPlaying =>
+            IsBalloonBlowPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsGiftGrabPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.GiftGrab &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsGiftGrabPlaying =>
+            IsGiftGrabPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
 
         public static bool IsGameplayReady =>
@@ -908,6 +938,210 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        public bool TryCompleteStableFootingOnServer(
+            IReadOnlyList<StableFootingLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.StableFooting ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!StableFootingRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    StableFootingRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteBalloonBlowOnServer(
+            IReadOnlyList<BalloonBlowLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.BalloonBlow ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!BalloonBlowRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    BalloonBlowRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteGiftGrabOnServer(
+            IReadOnlyList<GiftGrabLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.GiftGrab ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!GiftGrabRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    GiftGrabRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
         public void PauseForReconnectOnServer(ulong disconnectedClientId)
         {
             if (!IsServer || !_gameplayEnabled.Value)
@@ -946,6 +1180,9 @@ namespace MazeParty.Multiplayer
             NetworkMinefieldState.Instance?.PauseOnServer(now);
             NetworkWrongWayState.Instance?.PauseOnServer(now);
             NetworkRedLightGreenLightState.Instance?.PauseOnServer(now);
+            NetworkStableFootingState.Instance?.PauseOnServer(now);
+            NetworkBalloonBlowState.Instance?.PauseOnServer(now);
+            NetworkGiftGrabState.Instance?.PauseOnServer(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
@@ -1043,6 +1280,12 @@ namespace MazeParty.Multiplayer
             NetworkMinefieldState.Instance?.RestoreAvatarForReconnectOnServer(avatar);
             NetworkRedLightGreenLightState.Instance?.RestoreAvatarForReconnectOnServer(
                 avatar);
+            NetworkStableFootingState.Instance?.RestoreAvatarForReconnectOnServer(
+                avatar);
+            NetworkBalloonBlowState.Instance?.RestoreAvatarForReconnectOnServer(
+                avatar);
+            NetworkGiftGrabState.Instance?.RestoreAvatarForReconnectOnServer(
+                avatar);
             if (_reconnectPaused.Value && HasFourBoardReadyPlayers())
             {
                 ResumeAfterReconnectOnServer(ServerNow);
@@ -1096,6 +1339,9 @@ namespace MazeParty.Multiplayer
                     NetworkMinefieldState.Instance?.EndMatchOnServer();
                     NetworkWrongWayState.Instance?.EndMatchOnServer();
                     NetworkRedLightGreenLightState.Instance?.EndMatchOnServer();
+                    NetworkStableFootingState.Instance?.EndMatchOnServer();
+                    NetworkBalloonBlowState.Instance?.EndMatchOnServer();
+                    NetworkGiftGrabState.Instance?.EndMatchOnServer();
                     _selectedMinigameNetworkLoadCompleted = false;
                     ResetCombatRuntimeOnServer();
                     _rolledMask.Value = 0;
@@ -1148,6 +1394,9 @@ namespace MazeParty.Multiplayer
                     NetworkMinefieldState.Instance?.EndMatchOnServer();
                     NetworkWrongWayState.Instance?.EndMatchOnServer();
                     NetworkRedLightGreenLightState.Instance?.EndMatchOnServer();
+                    NetworkStableFootingState.Instance?.EndMatchOnServer();
+                    NetworkBalloonBlowState.Instance?.EndMatchOnServer();
+                    NetworkGiftGrabState.Instance?.EndMatchOnServer();
                     StopAllAvatarInputOnServer();
                     _remainingMinigameSlots.Value = 0;
                     _scheduledSkipAt = 0d;
@@ -1212,6 +1461,9 @@ namespace MazeParty.Multiplayer
             NetworkMinefieldState.Instance?.ResumeOnServer(now);
             NetworkWrongWayState.Instance?.ResumeOnServer(now);
             NetworkRedLightGreenLightState.Instance?.ResumeOnServer(now);
+            NetworkStableFootingState.Instance?.ResumeOnServer(now);
+            NetworkBalloonBlowState.Instance?.ResumeOnServer(now);
+            NetworkGiftGrabState.Instance?.ResumeOnServer(now);
             SyncFlowSnapshot(now);
             ForEachAvatar(avatar => avatar.StopServerInputOnServer());
             TryStartLoadedMinigameOnServer(now);
@@ -1306,10 +1558,25 @@ namespace MazeParty.Multiplayer
                 CurrentMinigame == ScheduledMinigameId.RedLightGreenLight
                     ? NetworkRedLightGreenLightState.Instance
                     : null;
+            var stableFooting =
+                CurrentMinigame == ScheduledMinigameId.StableFooting
+                    ? NetworkStableFootingState.Instance
+                    : null;
+            var balloonBlow =
+                CurrentMinigame == ScheduledMinigameId.BalloonBlow
+                    ? NetworkBalloonBlowState.Instance
+                    : null;
+            var giftGrab =
+                CurrentMinigame == ScheduledMinigameId.GiftGrab
+                    ? NetworkGiftGrabState.Instance
+                    : null;
             if ((minefield == null || !minefield.IsSpawned) &&
                 (wrongWay == null || !wrongWay.IsSpawned) &&
                 (redLightGreenLight == null ||
-                 !redLightGreenLight.IsSpawned))
+                 !redLightGreenLight.IsSpawned) &&
+                (stableFooting == null || !stableFooting.IsSpawned) &&
+                (balloonBlow == null || !balloonBlow.IsSpawned) &&
+                (giftGrab == null || !giftGrab.IsSpawned))
             {
                 return;
             }
@@ -1324,9 +1591,24 @@ namespace MazeParty.Multiplayer
                 {
                     wrongWay.BeginMatchOnServer(_currentMinigameSeed.Value);
                 }
-                else
+                else if (redLightGreenLight != null)
                 {
                     redLightGreenLight.BeginMatchOnServer(
+                        _currentMinigameSeed.Value);
+                }
+                else if (stableFooting != null)
+                {
+                    stableFooting.BeginMatchOnServer(
+                        _currentMinigameSeed.Value);
+                }
+                else if (balloonBlow != null)
+                {
+                    balloonBlow.BeginMatchOnServer(
+                        _currentMinigameSeed.Value);
+                }
+                else
+                {
+                    giftGrab.BeginMatchOnServer(
                         _currentMinigameSeed.Value);
                 }
             }
@@ -1388,6 +1670,12 @@ namespace MazeParty.Multiplayer
                     return MultiplayerConstants.WrongWayScene;
                 case ScheduledMinigameId.RedLightGreenLight:
                     return MultiplayerConstants.RedLightGreenLightScene;
+                case ScheduledMinigameId.StableFooting:
+                    return MultiplayerConstants.StableFootingScene;
+                case ScheduledMinigameId.BalloonBlow:
+                    return MultiplayerConstants.BalloonBlowScene;
+                case ScheduledMinigameId.GiftGrab:
+                    return MultiplayerConstants.GiftGrabScene;
                 default:
                     return string.Empty;
             }

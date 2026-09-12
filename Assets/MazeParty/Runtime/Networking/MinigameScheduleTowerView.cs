@@ -36,6 +36,12 @@ namespace MazeParty.Multiplayer
             new Color(0.95f, 0.42f, 0.12f, 1f);
         [SerializeField] private Color redLightGreenLightColor =
             new Color(0.84f, 0.16f, 0.2f, 1f);
+        [SerializeField] private Color stableFootingColor =
+            new Color(0.2f, 0.7f, 0.86f, 1f);
+        [SerializeField] private Color balloonBlowColor =
+            new Color(0.94f, 0.28f, 0.62f, 1f);
+        [SerializeField] private Color giftGrabColor =
+            new Color(0.72f, 0.36f, 0.92f, 1f);
         [SerializeField] private Color skipColor =
             new Color(0.44f, 0.46f, 0.52f, 1f);
         private Vector3[] _blockBaseScales = Array.Empty<Vector3>();
@@ -214,6 +220,12 @@ namespace MazeParty.Multiplayer
                 case ScheduledMinigameId.WrongWay: return "WRONG WAY";
                 case ScheduledMinigameId.RedLightGreenLight:
                     return "RED LIGHT / GREEN LIGHT";
+                case ScheduledMinigameId.StableFooting:
+                    return "STABLE FOOTING";
+                case ScheduledMinigameId.BalloonBlow:
+                    return "BALLOON BLOW";
+                case ScheduledMinigameId.GiftGrab:
+                    return "GIFT GRAB";
                 default: return "SKIP";
             }
         }
@@ -235,6 +247,12 @@ namespace MazeParty.Multiplayer
                     return wrongWayColor;
                 case ScheduledMinigameId.RedLightGreenLight:
                     return redLightGreenLightColor;
+                case ScheduledMinigameId.StableFooting:
+                    return stableFootingColor;
+                case ScheduledMinigameId.BalloonBlow:
+                    return balloonBlowColor;
+                case ScheduledMinigameId.GiftGrab:
+                    return giftGrabColor;
                 default:
                     return skipColor;
             }

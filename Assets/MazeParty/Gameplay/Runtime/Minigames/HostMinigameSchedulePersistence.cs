@@ -35,10 +35,22 @@ namespace MazeParty.Gameplay.Minigames
         IHostMinigameScheduleCodec
     {
         private const int LegacySchemaVersion = 1;
-        private const int CurrentSchemaVersion = 2;
+        private const int RedLightGreenLightSchemaVersion = 2;
+        private const int StableFootingSchemaVersion = 3;
+        private const int BalloonBlowSchemaVersion = 4;
+        private const int CurrentSchemaVersion = 5;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
+        // Schema 2 predates Stable Footing and validates against the first
+        // three append-only catalog entries.
+        private const int RedLightGreenLightRegisteredGameCount = 3;
+        // Schema 3 predates Balloon Blow and validates against the first four
+        // append-only catalog entries.
+        private const int StableFootingRegisteredGameCount = 4;
+        // Schema 4 predates Gift Grab and validates against the first five
+        // append-only catalog entries.
+        private const int BalloonBlowRegisteredGameCount = 5;
 
         public string Encode(
             string matchKey,
@@ -78,6 +90,21 @@ namespace MazeParty.Gameplay.Minigames
                 return LegacySchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                RedLightGreenLightRegisteredGameCount)
+            {
+                return RedLightGreenLightSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                StableFootingRegisteredGameCount)
+            {
+                return StableFootingSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                BalloonBlowRegisteredGameCount)
+            {
+                return BalloonBlowSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -104,6 +131,12 @@ namespace MazeParty.Gameplay.Minigames
                 var document = JsonUtility.FromJson<ScheduleDocument>(payload);
                 if (document == null ||
                     (document.schemaVersion != LegacySchemaVersion &&
+                     document.schemaVersion !=
+                     RedLightGreenLightSchemaVersion &&
+                     document.schemaVersion !=
+                     StableFootingSchemaVersion &&
+                     document.schemaVersion !=
+                     BalloonBlowSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -126,10 +159,17 @@ namespace MazeParty.Gameplay.Minigames
                     entries[index] = (ScheduledMinigameId)rawEntry;
                 }
 
-                var registeredGameCount =
-                    document.schemaVersion == LegacySchemaVersion
-                        ? LegacyRegisteredGameCount
-                        : MinigameScheduleRules.RegisteredGameCount;
+                var registeredGameCount = document.schemaVersion switch
+                {
+                    LegacySchemaVersion => LegacyRegisteredGameCount,
+                    RedLightGreenLightSchemaVersion =>
+                        RedLightGreenLightRegisteredGameCount,
+                    StableFootingSchemaVersion =>
+                        StableFootingRegisteredGameCount,
+                    BalloonBlowSchemaVersion =>
+                        BalloonBlowRegisteredGameCount,
+                    _ => MinigameScheduleRules.RegisteredGameCount
+                };
                 var restored = HostMinigameSchedule.Restore(
                     document.seed,
                     entries,

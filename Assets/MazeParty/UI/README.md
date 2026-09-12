@@ -16,12 +16,24 @@ Editor setup commands follow two rules:
 
 1. Create a usable default prefab only when the asset is missing.
 2. Reuse the existing prefab unchanged and validate its binding contract on all
-   later scene rebuilds.
+later scene rebuilds.
+
+The same contract applies to every new minigame HUD, including
+`StableFootingHud.prefab`, `BalloonBlowHud.prefab`, and
+`GiftGrabHud.prefab`: edit a prefab to change
+layout or styling, while the scene keeps only serialized gameplay-object
+references. Balloon Blow's fixed world labels are likewise authored once in
+`BalloonBlowStationLabel.prefab`; runtime code updates only the player name,
+progress, highlight, and visibility through `BalloonBlowStationLabel` bindings.
+Gift Grab follows the same rule with `GiftGrabBaseLabel.prefab`, reused for both
+moving player names and four base owner/gift-count signs. Its HUD root must keep
+a unit scale so the screen-space Canvas remains renderable.
 
 Scene instances must be created with `PrefabUtility.InstantiatePrefab` so their
-prefab provenance remains inspectable. Editor-only windows and non-Canvas world
-presentation such as character nameplates or shop signs are outside this Canvas
-UI contract.
+prefab provenance remains inspectable. Editor-only windows are outside the
+Canvas UI contract. New player-visible world labels must likewise come from a
+serialized prefab binding; runtime code may update their content and state but
+must not procedurally author their typography or layout.
 
 ## Board Canvas workflow
 

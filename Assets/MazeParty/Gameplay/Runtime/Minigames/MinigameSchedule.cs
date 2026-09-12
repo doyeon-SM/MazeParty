@@ -12,7 +12,10 @@ namespace MazeParty.Gameplay.Minigames
         Skip = 0,
         Minefield = 1,
         WrongWay = 2,
-        RedLightGreenLight = 3
+        RedLightGreenLight = 3,
+        StableFooting = 4,
+        BalloonBlow = 5,
+        GiftGrab = 6
     }
 
     public static class MinigameScheduleRules
@@ -26,7 +29,10 @@ namespace MazeParty.Gameplay.Minigames
         {
             ScheduledMinigameId.Minefield,
             ScheduledMinigameId.WrongWay,
-            ScheduledMinigameId.RedLightGreenLight
+            ScheduledMinigameId.RedLightGreenLight,
+            ScheduledMinigameId.StableFooting,
+            ScheduledMinigameId.BalloonBlow,
+            ScheduledMinigameId.GiftGrab
         };
 
         public static int RegisteredGameCount => RegisteredGames.Length;

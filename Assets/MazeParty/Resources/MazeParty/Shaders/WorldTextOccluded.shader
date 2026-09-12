@@ -65,8 +65,17 @@ Shader "MazeParty/WorldTextOccluded"
 
             half4 Frag(Varyings input) : SV_Target
             {
-                return SAMPLE_TEXTURE2D(_MainTex, sampler_MainTex, input.uv) *
-                       input.color * _Color;
+                // Legacy dynamic-font atlases store glyph coverage in alpha;
+                // their RGB is not a usable text colour (and may be black).
+                // Preserve prefab/runtime vertex tint and use only atlas alpha
+                // to mask the glyph.
+                half coverage = SAMPLE_TEXTURE2D(
+                    _MainTex,
+                    sampler_MainTex,
+                    input.uv).a;
+                return half4(
+                    input.color.rgb * _Color.rgb,
+                    coverage * input.color.a * _Color.a);
             }
             ENDHLSL
         }

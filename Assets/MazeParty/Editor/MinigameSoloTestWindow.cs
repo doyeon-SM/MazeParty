@@ -134,6 +134,15 @@ namespace MazeParty.EditorTools
                 case MinigameSoloTestId.RedLightGreenLight:
                     return "WASD move on green · freeze on red · " +
                            "R restart · N next seed · Esc stop";
+                case MinigameSoloTestId.StableFooting:
+                    return "WASD move · LMB push · R restart · " +
+                           "N next seed · Esc stop";
+                case MinigameSoloTestId.BalloonBlow:
+                    return "Hold LMB inflate · release to rest · " +
+                           "R restart · N next seed · Esc stop";
+                case MinigameSoloTestId.GiftGrab:
+                    return "WASD move + auto pickup · LMB throw / push · " +
+                           "R restart · N next seed · Esc stop";
                 case MinigameSoloTestId.Minefield:
                 default:
                     return "WASD move · stop + RMB sonar · " +
@@ -164,6 +173,12 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play WrongWay Solo";
         private const string QuickPlayRedLightGreenLightMenuPath =
             "MazeParty/Developer/Play Red Light Green Light Solo";
+        private const string QuickPlayStableFootingMenuPath =
+            "MazeParty/Developer/Play Stable Footing Solo";
+        private const string QuickPlayBalloonBlowMenuPath =
+            "MazeParty/Developer/Play Balloon Blow Solo";
+        private const string QuickPlayGiftGrabMenuPath =
+            "MazeParty/Developer/Play Gift Grab Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -240,6 +255,48 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlayRedLightGreenLightMenuPath, true)]
         private static bool ValidateQuickPlayRedLightGreenLight()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayStableFootingMenuPath, false, 2103)]
+        private static void QuickPlayStableFooting()
+        {
+            Start(
+                MinigameSoloTestId.StableFooting,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayStableFootingMenuPath, true)]
+        private static bool ValidateQuickPlayStableFooting()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayBalloonBlowMenuPath, false, 2104)]
+        private static void QuickPlayBalloonBlow()
+        {
+            Start(
+                MinigameSoloTestId.BalloonBlow,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayBalloonBlowMenuPath, true)]
+        private static bool ValidateQuickPlayBalloonBlow()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayGiftGrabMenuPath, false, 2105)]
+        private static void QuickPlayGiftGrab()
+        {
+            Start(
+                MinigameSoloTestId.GiftGrab,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayGiftGrabMenuPath, true)]
+        private static bool ValidateQuickPlayGiftGrab()
         {
             return CanStart;
         }
@@ -436,6 +493,62 @@ namespace MazeParty.EditorTools
                             throw new InvalidOperationException(
                                 "Could not attach the Red Light, Green Light " +
                                 "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.StableFooting:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                StableFootingSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Stable Footing " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.BalloonBlow:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                BalloonBlowSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Balloon Blow " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.GiftGrab:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                GiftGrabSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Gift Grab solo harness.");
                         }
                         controller.ConfigureHud(
                             InstantiateSoloHud(bootstrap.transform));
@@ -903,10 +1016,34 @@ namespace MazeParty.EditorTools
             var wrongWay =
                 FindRuntimeHarnessOfType<
                     WrongWaySoloTestController>();
-            return wrongWay != null
-                ? (Component)wrongWay
-                : FindRuntimeHarnessOfType<
+            if (wrongWay != null)
+            {
+                return wrongWay;
+            }
+
+            var redLightGreenLight =
+                FindRuntimeHarnessOfType<
                     RedLightGreenLightSoloTestController>();
+            if (redLightGreenLight != null)
+            {
+                return redLightGreenLight;
+            }
+
+            var stableFooting =
+                FindRuntimeHarnessOfType<
+                    StableFootingSoloTestController>();
+            if (stableFooting != null)
+            {
+                return stableFooting;
+            }
+
+            var balloonBlow =
+                FindRuntimeHarnessOfType<
+                    BalloonBlowSoloTestController>();
+            return balloonBlow != null
+                ? (Component)balloonBlow
+                : FindRuntimeHarnessOfType<
+                    GiftGrabSoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -917,6 +1054,12 @@ namespace MazeParty.EditorTools
                 WrongWaySoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 RedLightGreenLightSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                StableFootingSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                BalloonBlowSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                GiftGrabSoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()

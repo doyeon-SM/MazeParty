@@ -28,6 +28,12 @@ namespace MazeParty.Editor
         private const string WrongWayPath = ScenesFolder + "/WrongWay.unity";
         private const string RedLightGreenLightPath =
             ScenesFolder + "/RedLightGreenLight.unity";
+        private const string StableFootingPath =
+            ScenesFolder + "/StableFooting.unity";
+        private const string BalloonBlowPath =
+            ScenesFolder + "/BalloonBlow.unity";
+        private const string GiftGrabPath =
+            ScenesFolder + "/GiftGrab.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
         private const string LobbyCanvasPrefabPath =
             UiPrefabsFolder + "/LobbyCanvas.prefab";
@@ -56,6 +62,9 @@ namespace MazeParty.Editor
             MinefieldProjectSetup.BuildMinefieldAssets();
             WrongWayProjectSetup.BuildWrongWayAssets();
             RedLightGreenLightProjectSetup.BuildRedLightGreenLightAssets();
+            StableFootingProjectSetup.BuildStableFootingAssets();
+            BalloonBlowProjectSetup.BuildBalloonBlowAssets();
+            GiftGrabProjectSetup.BuildGiftGrabAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -1122,7 +1131,10 @@ namespace MazeParty.Editor
                 new EditorBuildSettingsScene(BoardPath, true),
                 new EditorBuildSettingsScene(MinefieldPath, true),
                 new EditorBuildSettingsScene(WrongWayPath, true),
-                new EditorBuildSettingsScene(RedLightGreenLightPath, true)
+                new EditorBuildSettingsScene(RedLightGreenLightPath, true),
+                new EditorBuildSettingsScene(StableFootingPath, true),
+                new EditorBuildSettingsScene(BalloonBlowPath, true),
+                new EditorBuildSettingsScene(GiftGrabPath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";

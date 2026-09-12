@@ -2,8 +2,11 @@ using System;
 using System.Text;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
+using MazeParty.Gameplay.Minigames.BalloonBlow;
+using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -86,6 +89,17 @@ namespace MazeParty.Multiplayer
             _lastRedLightGreenLightSignal =
                 RedLightGreenLightSignalPhase.Green;
         private int _lastRedLightGreenLightRound = -1;
+        private NetworkStableFootingPhase _lastStableFootingPhase =
+            NetworkStableFootingPhase.Inactive;
+        private StableFootingCyclePhase _lastStableFootingCyclePhase =
+            StableFootingCyclePhase.RoundComplete;
+        private int _lastStableFootingRound = -1;
+        private NetworkBalloonBlowPhase _lastBalloonBlowPhase =
+            NetworkBalloonBlowPhase.Inactive;
+        private int _lastBalloonBlowRound = -1;
+        private NetworkGiftGrabPhase _lastGiftGrabPhase =
+            NetworkGiftGrabPhase.Inactive;
+        private int _lastGiftGrabRound = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _lastMinigameRevealPending;
@@ -473,6 +487,9 @@ namespace MazeParty.Multiplayer
             var wrongWay = NetworkWrongWayState.Instance;
             var redLightGreenLight =
                 NetworkRedLightGreenLightState.Instance;
+            var stableFooting = NetworkStableFootingState.Instance;
+            var balloonBlow = NetworkBalloonBlowState.Instance;
+            var giftGrab = NetworkGiftGrabState.Instance;
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
@@ -489,6 +506,15 @@ namespace MazeParty.Multiplayer
                               ScheduledMinigameId.RedLightGreenLight
                                 ? RedLightGreenLightPhaseLabel(
                                     redLightGreenLight)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.StableFooting
+                                ? StableFootingPhaseLabel(stableFooting)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BalloonBlow
+                                ? BalloonBlowPhaseLabel(balloonBlow)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.GiftGrab
+                                ? GiftGrabPhaseLabel(giftGrab)
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
@@ -524,6 +550,21 @@ namespace MazeParty.Multiplayer
                           ScheduledMinigameId.RedLightGreenLight
                             ? redLightGreenLight != null
                                 ? FormatClock(redLightGreenLight.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.StableFooting
+                            ? stableFooting != null
+                                ? FormatClock(stableFooting.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.BalloonBlow
+                            ? balloonBlow != null
+                                ? FormatClock(balloonBlow.RemainingSeconds)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.GiftGrab
+                            ? giftGrab != null
+                                ? FormatClock(giftGrab.RemainingSeconds)
                                 : "--:--"
                         : minefield != null
                             ? FormatClock(minefield.Remaining)
@@ -914,6 +955,30 @@ namespace MazeParty.Multiplayer
             var redLightGreenLightRound = redLightGreenLight != null
                 ? redLightGreenLight.RoundNumber
                 : -1;
+            var stableFooting = NetworkStableFootingState.Instance;
+            var stableFootingPhase = stableFooting != null
+                ? stableFooting.Phase
+                : NetworkStableFootingPhase.Inactive;
+            var stableFootingCyclePhase = stableFooting != null
+                ? stableFooting.CyclePhase
+                : StableFootingCyclePhase.RoundComplete;
+            var stableFootingRound = stableFooting != null
+                ? stableFooting.RoundNumber
+                : -1;
+            var balloonBlow = NetworkBalloonBlowState.Instance;
+            var balloonBlowPhase = balloonBlow != null
+                ? balloonBlow.Phase
+                : NetworkBalloonBlowPhase.Inactive;
+            var balloonBlowRound = balloonBlow != null
+                ? balloonBlow.RoundNumber
+                : -1;
+            var giftGrab = NetworkGiftGrabState.Instance;
+            var giftGrabPhase = giftGrab != null
+                ? giftGrab.Phase
+                : NetworkGiftGrabPhase.Inactive;
+            var giftGrabRound = giftGrab != null
+                ? giftGrab.RoundNumber
+                : -1;
             var revealPending = IsMinigameRevealPending(match);
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
@@ -927,6 +992,13 @@ namespace MazeParty.Multiplayer
                 redLightGreenLightSignal &&
                 _lastRedLightGreenLightRound ==
                 redLightGreenLightRound &&
+                _lastStableFootingPhase == stableFootingPhase &&
+                _lastStableFootingCyclePhase == stableFootingCyclePhase &&
+                _lastStableFootingRound == stableFootingRound &&
+                _lastBalloonBlowPhase == balloonBlowPhase &&
+                _lastBalloonBlowRound == balloonBlowRound &&
+                _lastGiftGrabPhase == giftGrabPhase &&
+                _lastGiftGrabRound == giftGrabRound &&
                 _lastMinigameRevealPending == revealPending)
             {
                 return;
@@ -941,6 +1013,13 @@ namespace MazeParty.Multiplayer
             _lastRedLightGreenLightPhase = redLightGreenLightPhase;
             _lastRedLightGreenLightSignal = redLightGreenLightSignal;
             _lastRedLightGreenLightRound = redLightGreenLightRound;
+            _lastStableFootingPhase = stableFootingPhase;
+            _lastStableFootingCyclePhase = stableFootingCyclePhase;
+            _lastStableFootingRound = stableFootingRound;
+            _lastBalloonBlowPhase = balloonBlowPhase;
+            _lastBalloonBlowRound = balloonBlowRound;
+            _lastGiftGrabPhase = giftGrabPhase;
+            _lastGiftGrabRound = giftGrabRound;
             _lastMinigameRevealPending = revealPending;
             if (match.IsKeyShopRevealActive)
             {
@@ -1008,6 +1087,15 @@ namespace MazeParty.Multiplayer
                               ScheduledMinigameId.RedLightGreenLight
                                 ? RedLightGreenLightStatus(
                                     redLightGreenLight)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.StableFooting
+                                ? StableFootingStatus(stableFooting)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BalloonBlow
+                                ? BalloonBlowStatus(balloonBlow)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.GiftGrab
+                                ? GiftGrabStatus(giftGrab)
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -1046,6 +1134,11 @@ namespace MazeParty.Multiplayer
             var isWrongWay = selected == ScheduledMinigameId.WrongWay;
             var isRedLightGreenLight =
                 selected == ScheduledMinigameId.RedLightGreenLight;
+            var isStableFooting =
+                selected == ScheduledMinigameId.StableFooting;
+            var isBalloonBlow =
+                selected == ScheduledMinigameId.BalloonBlow;
+            var isGiftGrab = selected == ScheduledMinigameId.GiftGrab;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1058,6 +1151,12 @@ namespace MazeParty.Multiplayer
                     ? "WRONG WAY / STAIR RACE"
                     : isRedLightGreenLight
                         ? "RED LIGHT / GREEN LIGHT"
+                    : isStableFooting
+                        ? "STABLE FOOTING"
+                    : isBalloonBlow
+                        ? "BALLOON BLOW"
+                    : isGiftGrab
+                        ? "GIFT GRAB"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1076,6 +1175,30 @@ namespace MazeParty.Multiplayer
                           "speed; the second eliminates you. First finisher ends the " +
                           "round. Three rounds, 60 seconds each.\n" +
                           "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                    : isStableFooting
+                        ? "Move with WASD and press LMB to push the nearest player " +
+                          "in front of you. Reach the announced X, circle or square " +
+                          "before unsafe platforms drop. Two dropped platforms are " +
+                          "removed each cycle. Last survivor wins each of three " +
+                          "60-second rounds.\nALL 4 PLAYERS READY  -  READY " +
+                           readyCount + " / 4"
+                    : isBalloonBlow
+                        ? "Hold LMB to inflate at 10% per second. Release before " +
+                          "two seconds for a 1-second cooldown; reaching two " +
+                          "seconds forces a stop and a 1.5-second cooldown, then " +
+                          "requires a fresh click. Progress decays 3% per second " +
+                          "while not inflating. First to pop ranks first. Three " +
+                          "30-second rounds.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isGiftGrab
+                        ? "Ten gifts start; three more drop at 15, 30 and 45 " +
+                          "seconds. Move with WASD. Touch a gift to carry one, " +
+                          "then return it to your base or press LMB to throw it. " +
+                          "Without a gift, LMB pushes and makes opponents drop " +
+                          "theirs. Steal stored gifts from rival bases. Two " +
+                          "60-second rounds; most stored gifts wins.\n" +
+                          "ALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
                           "The next turn starts automatically."
@@ -1118,6 +1241,12 @@ namespace MazeParty.Multiplayer
                     ? "WRONG WAY RESULTS"
                     : isRedLightGreenLight
                         ? "RED LIGHT / GREEN LIGHT RESULTS"
+                    : isStableFooting
+                        ? "STABLE FOOTING RESULTS"
+                    : isBalloonBlow
+                        ? "BALLOON BLOW RESULTS"
+                    : isGiftGrab
+                        ? "GIFT GRAB RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
@@ -1126,6 +1255,15 @@ namespace MazeParty.Multiplayer
                 : isRedLightGreenLight
                     ? BuildRedLightGreenLightResultSummary(
                         NetworkRedLightGreenLightState.Instance)
+                : isStableFooting
+                    ? BuildStableFootingResultSummary(
+                        NetworkStableFootingState.Instance)
+                : isBalloonBlow
+                    ? BuildBalloonBlowResultSummary(
+                        NetworkBalloonBlowState.Instance)
+                : isGiftGrab
+                    ? BuildGiftGrabResultSummary(
+                        NetworkGiftGrabState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1156,6 +1294,12 @@ namespace MazeParty.Multiplayer
                     ? "W  A  S  D\n50 STEPS"
                     : isRedLightGreenLight
                         ? "GREEN: MOVE\nRED: FREEZE"
+                    : isStableFooting
+                        ? "WASD: MOVE\nLMB: PUSH\nX  O  □"
+                    : isBalloonBlow
+                        ? "HOLD LMB\nPOP FIRST"
+                    : isGiftGrab
+                        ? "WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS"
                         : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
@@ -1321,6 +1465,164 @@ namespace MazeParty.Multiplayer
                     .Append("  GOLD +")
                     .Append(
                         RedLightGreenLightRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildStableFootingResultSummary(
+            NetworkStableFootingState stableFooting)
+        {
+            if (stableFooting == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= StableFootingRules.PlayerCount;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < StableFootingRules.PlayerCount;
+                     slot++)
+                {
+                    if (stableFooting.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar =
+                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(stableFooting.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(StableFootingRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildBalloonBlowResultSummary(
+            NetworkBalloonBlowState balloonBlow)
+        {
+            if (balloonBlow == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= BalloonBlowRules.PlayerCount;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < BalloonBlowRules.PlayerCount;
+                     slot++)
+                {
+                    if (balloonBlow.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar =
+                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(balloonBlow.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(BalloonBlowRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildGiftGrabResultSummary(
+            NetworkGiftGrabState giftGrab)
+        {
+            if (giftGrab == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1; rank <= GiftGrabRules.PlayerCount; rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
+                {
+                    if (giftGrab.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(giftGrab.GetScore(rankedSlot))
+                    .Append("  GIFTS ")
+                    .Append(giftGrab.GetTotalStoredGiftCount(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(GiftGrabRules.GetPointsForRank(rank));
             }
 
             return builder.ToString();
@@ -1514,6 +1816,181 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private static string StableFootingPhaseLabel(
+            NetworkStableFootingState stableFooting)
+        {
+            if (stableFooting == null)
+            {
+                return "STABLE FOOTING";
+            }
+
+            var round = Mathf.Clamp(
+                stableFooting.RoundNumber,
+                1,
+                StableFootingRules.RoundCount);
+            switch (stableFooting.Phase)
+            {
+                case NetworkStableFootingPhase.Countdown:
+                    return "STABLE FOOTING  ROUND " + round +
+                           " / 3  -  COUNTDOWN";
+                case NetworkStableFootingPhase.Running:
+                    return "STABLE FOOTING  ROUND " + round +
+                           " / 3  -  " +
+                           stableFooting.CyclePhase.ToString().ToUpperInvariant();
+                case NetworkStableFootingPhase.RoundResult:
+                    return "STABLE FOOTING  ROUND " + round +
+                           " / 3  -  RESULT";
+                case NetworkStableFootingPhase.Complete:
+                    return "STABLE FOOTING COMPLETE";
+                default:
+                    return "STABLE FOOTING";
+            }
+        }
+
+        private static string StableFootingStatus(
+            NetworkStableFootingState stableFooting)
+        {
+            if (stableFooting == null)
+            {
+                return "Synchronizing the Stable Footing arena...";
+            }
+
+            switch (stableFooting.Phase)
+            {
+                case NetworkStableFootingPhase.Countdown:
+                    return "Get ready on the shared 6 x 8 platform arena.";
+                case NetworkStableFootingPhase.Running:
+                    switch (stableFooting.CyclePhase)
+                    {
+                        case StableFootingCyclePhase.ShuffleReveal:
+                            return "Symbols are shuffling. Watch the shared safe-symbol display.";
+                        case StableFootingCyclePhase.Move:
+                            return "WASD moves. LMB pushes the nearest player in front of you.";
+                        case StableFootingCyclePhase.Drop:
+                            return "Unsafe platforms are dropping. Falling eliminates immediately.";
+                        case StableFootingCyclePhase.Restore:
+                            return "Platforms are returning; two remain permanently removed.";
+                        default:
+                            return "Stay on the announced safe symbol.";
+                    }
+                case NetworkStableFootingPhase.RoundResult:
+                    return "The last survivor ranks first; later falls rank above earlier falls.";
+                case NetworkStableFootingPhase.Complete:
+                    return "All three rounds complete. Final points determine rank and gold.";
+                default:
+                    return "Preparing Stable Footing...";
+            }
+        }
+
+        private static string BalloonBlowPhaseLabel(
+            NetworkBalloonBlowState balloonBlow)
+        {
+            if (balloonBlow == null)
+            {
+                return "BALLOON BLOW";
+            }
+
+            var round = Mathf.Clamp(
+                balloonBlow.RoundNumber,
+                1,
+                BalloonBlowRules.RoundCount);
+            switch (balloonBlow.Phase)
+            {
+                case NetworkBalloonBlowPhase.Countdown:
+                    return "BALLOON BLOW  ROUND " + round +
+                           " / 3  -  COUNTDOWN";
+                case NetworkBalloonBlowPhase.Running:
+                    return "BALLOON BLOW  ROUND " + round +
+                           " / 3  -  INFLATE";
+                case NetworkBalloonBlowPhase.RoundResult:
+                    return "BALLOON BLOW  ROUND " + round +
+                           " / 3  -  RESULT";
+                case NetworkBalloonBlowPhase.Complete:
+                    return "BALLOON BLOW COMPLETE";
+                default:
+                    return "BALLOON BLOW";
+            }
+        }
+
+        private static string BalloonBlowStatus(
+            NetworkBalloonBlowState balloonBlow)
+        {
+            if (balloonBlow == null)
+            {
+                return "Synchronizing the Balloon Blow arena...";
+            }
+
+            switch (balloonBlow.Phase)
+            {
+                case NetworkBalloonBlowPhase.Countdown:
+                    return "Get ready. Hold LMB after the countdown to inflate.";
+                case NetworkBalloonBlowPhase.Running:
+                    return "Hold LMB to inflate. Release before two seconds; " +
+                           "idle and cooldown time slowly deflate your balloon.";
+                case NetworkBalloonBlowPhase.RoundResult:
+                    return "Popped balloons rank by pop order; remaining balloons " +
+                           "rank by progress, then server player order.";
+                case NetworkBalloonBlowPhase.Complete:
+                    return "All three rounds complete. Final points determine rank and gold.";
+                default:
+                    return "Preparing Balloon Blow...";
+            }
+        }
+
+        private static string GiftGrabPhaseLabel(
+            NetworkGiftGrabState giftGrab)
+        {
+            if (giftGrab == null)
+            {
+                return "GIFT GRAB";
+            }
+
+            var round = Mathf.Clamp(
+                giftGrab.RoundNumber,
+                1,
+                GiftGrabRules.RoundCount);
+            switch (giftGrab.Phase)
+            {
+                case NetworkGiftGrabPhase.Countdown:
+                    return "GIFT GRAB  ROUND " + round +
+                           " / 2  -  COUNTDOWN";
+                case NetworkGiftGrabPhase.Running:
+                    return "GIFT GRAB  ROUND " + round +
+                           " / 2  -  STEAL";
+                case NetworkGiftGrabPhase.RoundResult:
+                    return "GIFT GRAB  ROUND " + round +
+                           " / 2  -  RESULT";
+                case NetworkGiftGrabPhase.Complete:
+                    return "GIFT GRAB COMPLETE";
+                default:
+                    return "GIFT GRAB";
+            }
+        }
+
+        private static string GiftGrabStatus(NetworkGiftGrabState giftGrab)
+        {
+            if (giftGrab == null)
+            {
+                return "Synchronizing the Gift Grab arena...";
+            }
+
+            switch (giftGrab.Phase)
+            {
+                case NetworkGiftGrabPhase.Countdown:
+                    return "Get ready. Ten gifts begin in the shared arena.";
+                case NetworkGiftGrabPhase.Running:
+                    return "WASD moves. Carry gifts home, throw while carrying, " +
+                           "or push while empty-handed. Three gifts drop every 15 seconds.";
+                case NetworkGiftGrabPhase.RoundResult:
+                    return "Stored gifts decide the round; gift ownership time breaks ties.";
+                case NetworkGiftGrabPhase.Complete:
+                    return "Two rounds complete. Points, total stored gifts, final-round rank, " +
+                           "then server player order determine placement.";
+                default:
+                    return "Preparing Gift Grab...";
+            }
+        }
+
 
 
 
@@ -1590,6 +2067,12 @@ namespace MazeParty.Multiplayer
                 case ScheduledMinigameId.WrongWay: return "WRONG WAY";
                 case ScheduledMinigameId.RedLightGreenLight:
                     return "RED LIGHT / GREEN LIGHT";
+                case ScheduledMinigameId.StableFooting:
+                    return "STABLE FOOTING";
+                case ScheduledMinigameId.BalloonBlow:
+                    return "BALLOON BLOW";
+                case ScheduledMinigameId.GiftGrab:
+                    return "GIFT GRAB";
                 default: return "SKIP";
             }
         }

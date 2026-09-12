@@ -20,6 +20,15 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MazeParty/Scenes/RedLightGreenLight.unity
     guid: 171e5af7aad752e4da7cd71ec8c522dd
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/StableFooting.unity
+    guid: f9392ab9712ea61479ef26d5a9df97a4
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/BalloonBlow.unity
+    guid: 81016af6ce98f1d48abf72b3c054b2dd
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/GiftGrab.unity
+    guid: bc939918032d49e439c569c1d823adeb
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05

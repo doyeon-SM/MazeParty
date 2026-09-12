@@ -7,7 +7,10 @@ namespace MazeParty.Dev.MinigameSoloTest
     {
         Minefield = 0,
         WrongWay = 1,
-        RedLightGreenLight = 3
+        RedLightGreenLight = 3,
+        StableFooting = 4,
+        BalloonBlow = 5,
+        GiftGrab = 6
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -52,6 +55,12 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/WrongWay.unity";
         public const string RedLightGreenLightScenePath =
             "Assets/MazeParty/Scenes/RedLightGreenLight.unity";
+        public const string StableFootingScenePath =
+            "Assets/MazeParty/Scenes/StableFooting.unity";
+        public const string BalloonBlowScenePath =
+            "Assets/MazeParty/Scenes/BalloonBlow.unity";
+        public const string GiftGrabScenePath =
+            "Assets/MazeParty/Scenes/GiftGrab.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
@@ -66,7 +75,19 @@ namespace MazeParty.Dev.MinigameSoloTest
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.RedLightGreenLight,
                 "Red Light, Green Light",
-                RedLightGreenLightScenePath)
+                RedLightGreenLightScenePath),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.StableFooting,
+                "Stable Footing",
+                StableFootingScenePath),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.BalloonBlow,
+                "Balloon Blow",
+                BalloonBlowScenePath),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.GiftGrab,
+                "Gift Grab",
+                GiftGrabScenePath)
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>

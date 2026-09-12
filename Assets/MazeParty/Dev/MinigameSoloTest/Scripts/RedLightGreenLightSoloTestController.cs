@@ -697,8 +697,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         private static Transform FindNamedTransform(string objectName)
         {
             var transforms = FindObjectsByType<Transform>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             for (var index = 0; index < transforms.Length; index++)
             {
                 if (transforms[index] != null &&

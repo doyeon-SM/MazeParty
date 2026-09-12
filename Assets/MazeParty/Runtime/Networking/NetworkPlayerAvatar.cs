@@ -136,6 +136,13 @@ namespace MazeParty.Multiplayer
         private Vector2 _lastSentInput;
         private Vector2 _lastSentMinefieldInput;
         private Vector2 _lastSentRedLightGreenLightInput;
+        private Vector2 _lastSentStableFootingInput;
+        private Vector2 _lastSentGiftGrabInput;
+        private bool _lastSentBalloonBlowHeld;
+        private int _lastSentBalloonBlowRound = -1;
+        private uint _lastSentBalloonBlowInputEpoch;
+        private int _lastSentGiftGrabRound = -1;
+        private uint _lastSentGiftGrabInputEpoch;
         private bool _serverQuietWalkHeld;
         private bool _lastSentQuietWalkHeld;
         private float _serverYaw;
@@ -147,6 +154,9 @@ namespace MazeParty.Multiplayer
         private float _nextInputRefresh;
         private float _nextMinefieldInputRefresh;
         private float _nextRedLightGreenLightInputRefresh;
+        private float _nextStableFootingInputRefresh;
+        private float _nextGiftGrabInputRefresh;
+        private float _nextBalloonBlowInputRefresh;
         private float _nextSlotResolveAttempt;
         private double _nextLocalPrimaryRepeatAt;
         private double _nextLobbyPunchAllowedAt;
@@ -379,7 +389,19 @@ namespace MazeParty.Multiplayer
 
             HandleLocalLook();
             var handlingMinigame =
-                SubmitLocalRedLightGreenLightMovement();
+                SubmitLocalGiftGrabInput();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalBalloonBlowInput();
+            }
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalStableFootingMovement();
+            }
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalRedLightGreenLightMovement();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame = SubmitLocalWrongWayDirection();
@@ -1521,6 +1543,21 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (match != null && match.IsStableFootingPlaying)
+            {
+                return;
+            }
+
+            if (match != null && match.IsBalloonBlowPlaying)
+            {
+                return;
+            }
+
+            if (match != null && match.IsGiftGrabPlaying)
+            {
+                return;
+            }
+
             var mouse = Mouse.current;
             if (mouse == null)
             {
@@ -1791,6 +1828,144 @@ namespace MazeParty.Multiplayer
                 _nextRedLightGreenLightInputRefresh =
                     Time.unscaledTime + 0.1f;
                 SubmitRedLightGreenLightInputRpc(input);
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalStableFootingMovement()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsStableFootingPlaying)
+            {
+                _lastSentStableFootingInput = Vector2.zero;
+                return false;
+            }
+
+            var state = NetworkStableFootingState.Instance;
+            var input = Vector2.zero;
+            var canAccept = state != null &&
+                            state.CanAcceptInputForSlot(AssignedSlot);
+            var keyboard = Keyboard.current;
+            if (canAccept && keyboard != null)
+            {
+                input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
+                          (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y = (keyboard.wKey.isPressed ? 1f : 0f) -
+                          (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentStableFootingInput ||
+                Time.unscaledTime >= _nextStableFootingInputRefresh)
+            {
+                _lastSentStableFootingInput = input;
+                _nextStableFootingInputRefresh = Time.unscaledTime + 0.1f;
+                SubmitStableFootingInputRpc(input);
+            }
+
+            var mouse = Mouse.current;
+            if (canAccept && mouse != null &&
+                mouse.leftButton.wasPressedThisFrame)
+            {
+                RequestStableFootingPushRpc();
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalBalloonBlowInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsBalloonBlowPlaying)
+            {
+                _lastSentBalloonBlowHeld = false;
+                _lastSentBalloonBlowRound = -1;
+                _lastSentBalloonBlowInputEpoch = 0U;
+                return false;
+            }
+
+            var state = NetworkBalloonBlowState.Instance;
+            if (state == null || !state.IsSpawned ||
+                state.InputEpoch == 0U)
+            {
+                return true;
+            }
+
+            var mouse = Mouse.current;
+            var isHeld = mouse != null &&
+                         mouse.leftButton.isPressed &&
+                         !IsPointerOverUi();
+            if (isHeld != _lastSentBalloonBlowHeld ||
+                state.RoundNumber != _lastSentBalloonBlowRound ||
+                state.InputEpoch != _lastSentBalloonBlowInputEpoch ||
+                Time.unscaledTime >= _nextBalloonBlowInputRefresh)
+            {
+                _lastSentBalloonBlowHeld = isHeld;
+                _lastSentBalloonBlowRound = state.RoundNumber;
+                _lastSentBalloonBlowInputEpoch = state.InputEpoch;
+                _nextBalloonBlowInputRefresh =
+                    Time.unscaledTime + 0.1f;
+                SubmitBalloonBlowHeldRpc(
+                    isHeld,
+                    (byte)state.RoundNumber,
+                    state.InputEpoch);
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalGiftGrabInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsGiftGrabPlaying)
+            {
+                _lastSentGiftGrabInput = Vector2.zero;
+                _lastSentGiftGrabRound = -1;
+                _lastSentGiftGrabInputEpoch = 0U;
+                return false;
+            }
+
+            var state = NetworkGiftGrabState.Instance;
+            if (state == null || !state.IsSpawned || state.InputEpoch == 0U)
+            {
+                return true;
+            }
+
+            var input = Vector2.zero;
+            var canAccept = state.CanAcceptInputForSlot(AssignedSlot);
+            var keyboard = Keyboard.current;
+            if (canAccept && keyboard != null)
+            {
+                input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
+                          (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y = (keyboard.wKey.isPressed ? 1f : 0f) -
+                          (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentGiftGrabInput ||
+                state.RoundNumber != _lastSentGiftGrabRound ||
+                state.InputEpoch != _lastSentGiftGrabInputEpoch ||
+                Time.unscaledTime >= _nextGiftGrabInputRefresh)
+            {
+                _lastSentGiftGrabInput = input;
+                _lastSentGiftGrabRound = state.RoundNumber;
+                _lastSentGiftGrabInputEpoch = state.InputEpoch;
+                _nextGiftGrabInputRefresh = Time.unscaledTime + 0.1f;
+                SubmitGiftGrabInputRpc(
+                    input,
+                    (byte)state.RoundNumber,
+                    state.InputEpoch);
+            }
+
+            var mouse = Mouse.current;
+            if (canAccept && mouse != null &&
+                mouse.leftButton.wasPressedThisFrame)
+            {
+                RequestGiftGrabActionRpc(
+                    (byte)state.RoundNumber,
+                    state.InputEpoch);
             }
 
             return true;
@@ -2425,8 +2600,7 @@ namespace MazeParty.Multiplayer
             }
 
             var dice = FindObjectsByType<NetworkWorldDie>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
+                FindObjectsInactive.Include);
             for (var index = 0; index < dice.Length; index++)
             {
                 var candidate = dice[index];
@@ -2684,6 +2858,86 @@ namespace MazeParty.Multiplayer
             NetworkRedLightGreenLightState.Instance?.ReceiveInputOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f));
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitStableFootingInputRpc(
+            Vector2 input,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkStableFootingState.Instance?.ReceiveInputOnServer(
+                this,
+                Vector2.ClampMagnitude(input, 1f));
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestStableFootingPushRpc(
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkStableFootingState.Instance?.TryPushOnServer(this);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitBalloonBlowHeldRpc(
+            bool isHeld,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkBalloonBlowState.Instance?.SetInflateHeldOnServer(
+                    this,
+                    isHeld,
+                    roundNumber,
+                    inputEpoch);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitGiftGrabInputRpc(
+            Vector2 input,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkGiftGrabState.Instance?.ReceiveInputOnServer(
+                this,
+                Vector2.ClampMagnitude(input, 1f),
+                roundNumber,
+                inputEpoch);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestGiftGrabActionRpc(
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkGiftGrabState.Instance?.TryPrimaryActionOnServer(
+                    this,
+                    roundNumber,
+                    inputEpoch);
+            }
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

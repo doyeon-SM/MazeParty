@@ -973,6 +973,27 @@ namespace MazeParty.Multiplayer
 
         private void UnloadBoardLocally()
         {
+            var giftGrab = SceneManager.GetSceneByName(
+                MultiplayerConstants.GiftGrabScene);
+            if (giftGrab.IsValid() && giftGrab.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(giftGrab);
+            }
+
+            var balloonBlow = SceneManager.GetSceneByName(
+                MultiplayerConstants.BalloonBlowScene);
+            if (balloonBlow.IsValid() && balloonBlow.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(balloonBlow);
+            }
+
+            var stableFooting = SceneManager.GetSceneByName(
+                MultiplayerConstants.StableFootingScene);
+            if (stableFooting.IsValid() && stableFooting.isLoaded)
+            {
+                SceneManager.UnloadSceneAsync(stableFooting);
+            }
+
             var redLightGreenLight = SceneManager.GetSceneByName(
                 MultiplayerConstants.RedLightGreenLightScene);
             if (redLightGreenLight.IsValid() && redLightGreenLight.isLoaded)

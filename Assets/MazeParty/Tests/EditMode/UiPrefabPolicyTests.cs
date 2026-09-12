@@ -27,6 +27,11 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
             "Assets/MazeParty/UI/Prefabs/WrongWayHud.prefab",
             "Assets/MazeParty/UI/Prefabs/RedLightGreenLightHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/StableFootingHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/BalloonBlowHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/BalloonBlowStationLabel.prefab",
+            "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/GiftGrabBaseLabel.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameScheduleTower.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/MinigameSoloHud.prefab",
@@ -40,6 +45,11 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinefieldHudBindings",
             "MazeParty.Multiplayer.WrongWayHudBindings",
             "MazeParty.Multiplayer.RedLightGreenLightHudBindings",
+            "MazeParty.Multiplayer.StableFootingHudBindings",
+            "MazeParty.Multiplayer.BalloonBlowHudBindings",
+            "MazeParty.Multiplayer.BalloonBlowStationLabel",
+            "MazeParty.Multiplayer.GiftGrabHudBindings",
+            "MazeParty.Multiplayer.GiftGrabBaseLabel",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Gameplay.Testbed.GameplayTestbedUiBindings",
             "MazeParty.Multiplayer.MinigameSoloHudView",
@@ -69,7 +79,16 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/WrongWayHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/RedLightGreenLight.unity",
-                "Assets/MazeParty/UI/Prefabs/RedLightGreenLightHud.prefab")
+                "Assets/MazeParty/UI/Prefabs/RedLightGreenLightHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/StableFooting.unity",
+                "Assets/MazeParty/UI/Prefabs/StableFootingHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/BalloonBlow.unity",
+                "Assets/MazeParty/UI/Prefabs/BalloonBlowHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/GiftGrab.unity",
+                "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =
