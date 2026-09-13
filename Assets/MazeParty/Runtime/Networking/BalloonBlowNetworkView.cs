@@ -1,4 +1,5 @@
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -398,9 +399,11 @@ namespace MazeParty.Multiplayer
             }
 
             hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerText.text = FormatClock(state.RemainingSeconds);
+            hud.TimerText.text =
+                MinigameDisplayFormatter.FormatClock(state.RemainingSeconds);
             hud.RoundText.text = "ROUND " + state.RoundNumber + " / " +
-                                 BalloonBlowRules.RoundCount;
+                                 MinigameCatalog.GetRoundCount(
+                                     ScheduledMinigameId.BalloonBlow);
             hud.InstructionText.text = GetLocalInstruction();
             hud.PausePanel.SetActive(state.IsPaused);
             hud.ControlsPanel.SetActive(
@@ -464,7 +467,8 @@ namespace MazeParty.Multiplayer
         {
             if (state.IsPlayerPopped(slot))
             {
-                return ToOrdinal(state.GetPopOrder(slot));
+                return MinigameDisplayFormatter.ToOrdinal(
+                    state.GetPopOrder(slot));
             }
             if (state.IsPlayerInflating(slot))
             {
@@ -493,10 +497,14 @@ namespace MazeParty.Multiplayer
 
             if (state.Phase == NetworkBalloonBlowPhase.Complete)
             {
-                return "MATCH " + ToOrdinal(state.GetFinalRank(_localSlot)) +
+                return "MATCH " +
+                       MinigameDisplayFormatter.ToOrdinal(
+                           state.GetFinalRank(_localSlot)) +
                        "\n" + state.GetScore(_localSlot) + " POINTS";
             }
-            return "ROUND " + ToOrdinal(state.GetRoundRank(_localSlot)) +
+            return "ROUND " +
+                   MinigameDisplayFormatter.ToOrdinal(
+                       state.GetRoundRank(_localSlot)) +
                    "\n+" + state.GetRoundPoints(_localSlot) + " POINTS";
         }
 
@@ -584,25 +592,6 @@ namespace MazeParty.Multiplayer
                 }
             }
             return null;
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            var whole = Mathf.Max(0, Mathf.CeilToInt((float)seconds));
-            return (whole / 60).ToString("00") + ":" +
-                   (whole % 60).ToString("00");
-        }
-
-        private static string ToOrdinal(int rank)
-        {
-            switch (rank)
-            {
-                case 1: return "1ST";
-                case 2: return "2ND";
-                case 3: return "3RD";
-                case 4: return "4TH";
-                default: return "--";
-            }
         }
 
         private sealed class PlayerView

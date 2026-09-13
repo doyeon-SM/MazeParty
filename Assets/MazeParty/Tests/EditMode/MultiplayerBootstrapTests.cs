@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
@@ -346,6 +347,21 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void MinigameRuntimeRegistration_AlignsWithCatalog()
+        {
+            var runtimeIds =
+                MinigameRuntimeRegistry.RegisteredIds.ToArray();
+            var catalogIds = MinigameCatalog.RegisteredMinigames
+                .Select(definition => definition.Id)
+                .ToArray();
+
+            Assert.That(runtimeIds, Has.Length.EqualTo(catalogIds.Length));
+            Assert.That(runtimeIds, Is.EquivalentTo(catalogIds));
+        }
+
+
+
         private static List<OnlinePlayerSnapshot> CreateReadyPlayers()
         {
             return new List<OnlinePlayerSnapshot>
@@ -364,5 +380,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(networkObject.InScenePlaced, Is.True, target.name);
             Assert.That(networkObject.PrefabIdHash, Is.Not.EqualTo(0u), target.name);
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -560,8 +561,11 @@ namespace MazeParty.Multiplayer
             }
 
             hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerText.text = FormatClock(state.RemainingSeconds);
-            hud.RoundText.text = "ROUND " + state.RoundNumber + " / 2";
+            hud.TimerText.text =
+                MinigameDisplayFormatter.FormatClock(state.RemainingSeconds);
+            hud.RoundText.text =
+                "ROUND " + state.RoundNumber + " / " +
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
             hud.InstructionText.text = GetLocalInstruction();
             hud.LocalStatusText.text = GetLocalStatus();
             hud.NeutralGiftText.text =
@@ -658,11 +662,15 @@ namespace MazeParty.Multiplayer
             }
             if (state.Phase == NetworkGiftGrabPhase.Complete)
             {
-                return "MATCH " + ToOrdinal(state.GetFinalRank(_localSlot)) +
+                return "MATCH " +
+                       MinigameDisplayFormatter.ToOrdinal(
+                           state.GetFinalRank(_localSlot)) +
                        "\n" + state.GetScore(_localSlot) + " POINTS · " +
                        state.GetTotalStoredGiftCount(_localSlot) + " GIFTS";
             }
-            return "ROUND " + ToOrdinal(state.GetRoundRank(_localSlot)) +
+            return "ROUND " +
+                   MinigameDisplayFormatter.ToOrdinal(
+                       state.GetRoundRank(_localSlot)) +
                    "\n+" + state.GetRoundPoints(_localSlot) + " POINTS · " +
                    state.GetStoredGiftCount(_localSlot) + " GIFTS";
         }
@@ -761,25 +769,6 @@ namespace MazeParty.Multiplayer
                 }
             }
             return null;
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            var whole = Mathf.Max(0, Mathf.CeilToInt((float)seconds));
-            return (whole / 60).ToString("00") + ":" +
-                   (whole % 60).ToString("00");
-        }
-
-        private static string ToOrdinal(int rank)
-        {
-            switch (rank)
-            {
-                case 1: return "1ST";
-                case 2: return "2ND";
-                case 3: return "3RD";
-                case 4: return "4TH";
-                default: return "--";
-            }
         }
 
         private sealed class PlayerView

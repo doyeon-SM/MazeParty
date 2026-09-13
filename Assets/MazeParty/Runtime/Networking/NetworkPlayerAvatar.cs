@@ -1571,9 +1571,7 @@ namespace MazeParty.Multiplayer
 
             if (match != null && match.IsMinefieldPlaying)
             {
-                var minefield = NetworkMinefieldState.Instance;
-                if (minefield != null &&
-                    minefield.CanAcceptInputForSlot(AssignedSlot) &&
+                if (match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot) &&
                     mouse.rightButton.wasPressedThisFrame)
                 {
                     RequestMinefieldSonarRpc(_lastSentMinefieldInput);
@@ -1769,8 +1767,7 @@ namespace MazeParty.Multiplayer
         private bool SubmitLocalMinefieldMovement()
         {
             var match = NetworkMatchState.Instance;
-            var minefield = NetworkMinefieldState.Instance;
-            if (match == null || !match.IsMinefieldPlaying || minefield == null)
+            if (match == null || !match.IsMinefieldPlaying)
             {
                 _lastSentMinefieldInput = Vector2.zero;
                 return false;
@@ -1778,7 +1775,8 @@ namespace MazeParty.Multiplayer
 
             var input = Vector2.zero;
             var keyboard = Keyboard.current;
-            if (keyboard != null && minefield.CanAcceptInputForSlot(AssignedSlot))
+            if (keyboard != null &&
+                match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
                           (keyboard.aKey.isPressed ? 1f : 0f);
@@ -1807,11 +1805,10 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var state = NetworkRedLightGreenLightState.Instance;
             var input = Vector2.zero;
             var keyboard = Keyboard.current;
-            if (state != null && keyboard != null &&
-                state.CanAcceptInputForSlot(AssignedSlot))
+            if (keyboard != null &&
+                match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
                           (keyboard.aKey.isPressed ? 1f : 0f);
@@ -1842,10 +1839,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var state = NetworkStableFootingState.Instance;
             var input = Vector2.zero;
-            var canAccept = state != null &&
-                            state.CanAcceptInputForSlot(AssignedSlot);
+            var canAccept = match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot);
             var keyboard = Keyboard.current;
             if (canAccept && keyboard != null)
             {
@@ -1885,9 +1880,9 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var state = NetworkBalloonBlowState.Instance;
-            if (state == null || !state.IsSpawned ||
-                state.InputEpoch == 0U)
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) || inputEpoch == 0U)
             {
                 return true;
             }
@@ -1897,19 +1892,19 @@ namespace MazeParty.Multiplayer
                          mouse.leftButton.isPressed &&
                          !IsPointerOverUi();
             if (isHeld != _lastSentBalloonBlowHeld ||
-                state.RoundNumber != _lastSentBalloonBlowRound ||
-                state.InputEpoch != _lastSentBalloonBlowInputEpoch ||
+                roundNumber != _lastSentBalloonBlowRound ||
+                inputEpoch != _lastSentBalloonBlowInputEpoch ||
                 Time.unscaledTime >= _nextBalloonBlowInputRefresh)
             {
                 _lastSentBalloonBlowHeld = isHeld;
-                _lastSentBalloonBlowRound = state.RoundNumber;
-                _lastSentBalloonBlowInputEpoch = state.InputEpoch;
+                _lastSentBalloonBlowRound = roundNumber;
+                _lastSentBalloonBlowInputEpoch = inputEpoch;
                 _nextBalloonBlowInputRefresh =
                     Time.unscaledTime + 0.1f;
                 SubmitBalloonBlowHeldRpc(
                     isHeld,
-                    (byte)state.RoundNumber,
-                    state.InputEpoch);
+                    roundNumber,
+                    inputEpoch);
             }
 
             return true;
@@ -1926,14 +1921,15 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var state = NetworkGiftGrabState.Instance;
-            if (state == null || !state.IsSpawned || state.InputEpoch == 0U)
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) || inputEpoch == 0U)
             {
                 return true;
             }
 
             var input = Vector2.zero;
-            var canAccept = state.CanAcceptInputForSlot(AssignedSlot);
+            var canAccept = match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot);
             var keyboard = Keyboard.current;
             if (canAccept && keyboard != null)
             {
@@ -1945,18 +1941,18 @@ namespace MazeParty.Multiplayer
             }
 
             if (input != _lastSentGiftGrabInput ||
-                state.RoundNumber != _lastSentGiftGrabRound ||
-                state.InputEpoch != _lastSentGiftGrabInputEpoch ||
+                roundNumber != _lastSentGiftGrabRound ||
+                inputEpoch != _lastSentGiftGrabInputEpoch ||
                 Time.unscaledTime >= _nextGiftGrabInputRefresh)
             {
                 _lastSentGiftGrabInput = input;
-                _lastSentGiftGrabRound = state.RoundNumber;
-                _lastSentGiftGrabInputEpoch = state.InputEpoch;
+                _lastSentGiftGrabRound = roundNumber;
+                _lastSentGiftGrabInputEpoch = inputEpoch;
                 _nextGiftGrabInputRefresh = Time.unscaledTime + 0.1f;
                 SubmitGiftGrabInputRpc(
                     input,
-                    (byte)state.RoundNumber,
-                    state.InputEpoch);
+                    roundNumber,
+                    inputEpoch);
             }
 
             var mouse = Mouse.current;
@@ -1964,8 +1960,8 @@ namespace MazeParty.Multiplayer
                 mouse.leftButton.wasPressedThisFrame)
             {
                 RequestGiftGrabActionRpc(
-                    (byte)state.RoundNumber,
-                    state.InputEpoch);
+                    roundNumber,
+                    inputEpoch);
             }
 
             return true;
@@ -1979,10 +1975,9 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var state = NetworkWrongWayState.Instance;
             var keyboard = Keyboard.current;
-            if (state == null || keyboard == null ||
-                !state.CanAcceptInputForSlot(AssignedSlot))
+            if (keyboard == null ||
+                !match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
                 return true;
             }
@@ -2838,7 +2833,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            NetworkMinefieldState.Instance?.ReceiveInputOnServer(
+            NetworkMatchState.Instance?.RouteMovementInputOnCurrentMinigameOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f));
         }
@@ -2855,7 +2850,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            NetworkRedLightGreenLightState.Instance?.ReceiveInputOnServer(
+            NetworkMatchState.Instance?.RouteMovementInputOnCurrentMinigameOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f));
         }
@@ -2872,7 +2867,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            NetworkStableFootingState.Instance?.ReceiveInputOnServer(
+            NetworkMatchState.Instance?.RouteMovementInputOnCurrentMinigameOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f));
         }
@@ -2883,7 +2878,7 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkStableFootingState.Instance?.TryPushOnServer(this);
+                NetworkMatchState.Instance?.RoutePushInputOnCurrentMinigameOnServer(this);
             }
         }
 
@@ -2896,7 +2891,7 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkBalloonBlowState.Instance?.SetInflateHeldOnServer(
+                NetworkMatchState.Instance?.RouteInflateHeldOnCurrentMinigameOnServer(
                     this,
                     isHeld,
                     roundNumber,
@@ -2918,7 +2913,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            NetworkGiftGrabState.Instance?.ReceiveInputOnServer(
+            NetworkMatchState.Instance?.RouteMovementInputOnCurrentMinigameOnServer(
                 this,
                 Vector2.ClampMagnitude(input, 1f),
                 roundNumber,
@@ -2933,7 +2928,7 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkGiftGrabState.Instance?.TryPrimaryActionOnServer(
+                NetworkMatchState.Instance?.RoutePrimaryActionOnCurrentMinigameOnServer(
                     this,
                     roundNumber,
                     inputEpoch);
@@ -2951,7 +2946,7 @@ namespace MazeParty.Multiplayer
                 !float.IsNaN(currentInput.y) &&
                 !float.IsInfinity(currentInput.y))
             {
-                NetworkMinefieldState.Instance?.TrySonarOnServer(
+                NetworkMatchState.Instance?.RouteSonarInputOnCurrentMinigameOnServer(
                     this,
                     Vector2.ClampMagnitude(currentInput, 1f));
             }
@@ -2968,7 +2963,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            NetworkWrongWayState.Instance?.TrySubmitDirectionOnServer(
+            NetworkMatchState.Instance?.RouteWrongWayDirectionOnCurrentMinigameOnServer(
                 this,
                 (WrongWayDirection)direction);
         }

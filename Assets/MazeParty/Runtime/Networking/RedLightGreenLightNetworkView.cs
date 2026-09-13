@@ -1,4 +1,5 @@
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -478,7 +479,8 @@ namespace MazeParty.Multiplayer
             {
                 phaseText.text =
                     "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
-                    FormatClock(match.ReconnectRemaining);
+                    MinigameDisplayFormatter.FormatClock(
+                        match.ReconnectRemaining);
                 hud.SetSignal(
                     "PAUSED",
                     RedLightGreenLightHudSignalStyle.Neutral);
@@ -506,14 +508,16 @@ namespace MazeParty.Multiplayer
                 var stateLabel = PlayerStateLabel(playerState);
                 scoreRows[slot].text =
                     (slot == _localSlot ? "> " : string.Empty) +
-                    ToOrdinal(rank) + "  " + displayName + "\n" +
+                    MinigameDisplayFormatter.ToOrdinal(rank) +
+                    "  " + displayName + "\n" +
                     stateLabel + "  ·  " +
                     state.GetForwardProgress(slot).ToString("0.0") + "m\n" +
                     "+" + state.GetRoundPoints(slot) +
                     "  ·  TOTAL " + state.GetScore(slot) +
                     (state.GetFinalRank(slot) > 0
                         ? "\nFINAL " +
-                          ToOrdinal(state.GetFinalRank(slot)) +
+                          MinigameDisplayFormatter.ToOrdinal(
+                              state.GetFinalRank(slot)) +
                           "  ·  GOLD +" +
                           RedLightGreenLightRules.GetPointsForRank(
                               state.GetFinalRank(slot))
@@ -526,20 +530,24 @@ namespace MazeParty.Multiplayer
 
         private string BuildPhaseLabel()
         {
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.RedLightGreenLight);
             var round = Mathf.Clamp(
                 state.RoundNumber,
                 1,
-                RedLightGreenLightRules.RoundCount);
+                totalRounds);
             switch (state.Phase)
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
                     return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / 3  ·  START IN " +
+                           round + " / " + totalRounds + "  ·  START IN " +
                            Mathf.CeilToInt((float)state.Remaining);
                 case NetworkRedLightGreenLightPhase.Running:
                     return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / 3  ·  " +
-                           FormatClock(state.Remaining);
+                           round + " / " + totalRounds + "  ·  " +
+                           MinigameDisplayFormatter.FormatClock(
+                               state.Remaining);
                 case NetworkRedLightGreenLightPhase.RoundResult:
                     return "ROUND " + round +
                            " RESULTS  ·  NEXT IN " +
@@ -700,26 +708,6 @@ namespace MazeParty.Multiplayer
             {
                 hud.gameObject.SetActive(active);
             }
-        }
-
-        private static string ToOrdinal(int rank)
-        {
-            switch (rank)
-            {
-                case 1: return "1ST";
-                case 2: return "2ND";
-                case 3: return "3RD";
-                case 4: return "4TH";
-                default: return "--";
-            }
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            seconds = System.Math.Max(0d, seconds);
-            var whole = Mathf.CeilToInt((float)seconds);
-            return (whole / 60).ToString("00") + ":" +
-                   (whole % 60).ToString("00");
         }
 
         private static void DisableGeneratedHitColliders(

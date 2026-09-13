@@ -1,4 +1,5 @@
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -451,7 +452,7 @@ namespace MazeParty.Multiplayer
                 var prefix = slot == _localSlot ? ">  " : "   ";
                 progressRows[slot].text =
                     prefix +
-                    ToOrdinal(rank) +
+                    MinigameDisplayFormatter.ToOrdinal(rank) +
                     "   " +
                     displayName +
                     "   STEP " +
@@ -469,10 +470,13 @@ namespace MazeParty.Multiplayer
 
         private string BuildPhaseLabel()
         {
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.WrongWay);
             var round = Mathf.Clamp(
                 state.RoundNumber,
                 1,
-                WrongWayRules.RoundCount);
+                totalRounds);
             var pauseSuffix = state.IsPaused ? "  ·  PAUSED" : string.Empty;
 
             switch (state.Phase)
@@ -481,7 +485,7 @@ namespace MazeParty.Multiplayer
                     return "WRONG WAY  ·  ROUND " +
                            round +
                            " / " +
-                           WrongWayRules.RoundCount +
+                           totalRounds +
                            "  ·  START IN " +
                            Mathf.CeilToInt((float)state.Remaining) +
                            pauseSuffix;
@@ -489,7 +493,7 @@ namespace MazeParty.Multiplayer
                     return "WRONG WAY  ·  ROUND " +
                            round +
                            " / " +
-                           WrongWayRules.RoundCount +
+                           totalRounds +
                            "  ·  " +
                            state.Remaining.ToString("0.0") +
                            "s" +
@@ -543,13 +547,15 @@ namespace MazeParty.Multiplayer
                         state.GetCurrentDirection(_localSlot));
                 case NetworkWrongWayPhase.RoundResult:
                     return "ROUND " +
-                           ToOrdinal(state.GetRoundRank(_localSlot)) +
+                           MinigameDisplayFormatter.ToOrdinal(
+                               state.GetRoundRank(_localSlot)) +
                            "  ·  +" +
                            state.GetRoundPoints(_localSlot) +
                            " POINTS";
                 case NetworkWrongWayPhase.Complete:
                     return "FINAL " +
-                           ToOrdinal(state.GetFinalRank(_localSlot));
+                           MinigameDisplayFormatter.ToOrdinal(
+                               state.GetFinalRank(_localSlot));
                 default:
                     return "GET READY";
             }
@@ -637,23 +643,6 @@ private void SetWorldPresentationActive(bool active)
                     return "D    →";
                 default:
                     return "?";
-            }
-        }
-
-        private static string ToOrdinal(int rank)
-        {
-            switch (rank)
-            {
-                case 1:
-                    return "1ST";
-                case 2:
-                    return "2ND";
-                case 3:
-                    return "3RD";
-                case 4:
-                    return "4TH";
-                default:
-                    return "--";
             }
         }
 

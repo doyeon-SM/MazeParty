@@ -67,6 +67,61 @@
   Build Settings를 수정하지 않는다. RPC와 4인 동기화는 별도 멀티플레이 테스트로
   검증한다.
 
+## 진행 중 리팩터 기록 (2026-09-13)
+
+- 미니게임 공통 텍스트 포맷(남은 시간/순위)을 `MinigameDisplayFormatter`로 정리해
+  보드 UI와 각 미니게임 뷰에서 중복 호출을 제거했다.
+- `MinigameCatalog`를 추가해 등록된 미니게임 메타데이터(표시명, 라운드 수, 라운드
+  시간, 등록 ID 목록)를 한 곳에 정의했으며, `MinigameScheduleRules`는 이 카탈로그를
+  통해 조회하도록 리팩터링했다.
+- 2차 리팩터 대상으로 `BoardFlow`/`MinigameScheduleTower`의 미니게임 표시명 조회를
+  카탈로그로 이관했으며, 상태별 색상·규칙 클래스 바인딩도 같은 방향으로 확장했다.
+- 3차 반영: `BoardFlow`/각 미니게임 HUD 텍스트에서 시간 포맷(`FormatClock`)과
+  등수 표기(`ToOrdinal`)를 `MinigameDisplayFormatter` 공통 유틸로 이동했다.
+- 3차 반영: `NetworkMatchState`의 씬 조회를 `MinigameCatalog` 기반으로 변경해 새 미니게임
+  등록 시 이름/씬/라운드 수/컬러를 카탈로그 한 곳에서 갱신하면 흐름 분기를 덜 수정하도록
+  정리했다.
+- 3차 반영: `OnlineSessionController`에서 미니게임 씬 언로드도 등록된 카탈로그 목록을 순회하도록
+  변경해 추가/삭제되는 미니게임에 대응력을 높였다.
+- 4차 반영: `NetworkMatchState`의 미니게임 런타임 제어(일시정지/재개/복귀/종료/시작)를
+  직접 분기 호출에서 `MinigameRuntimeController` 레지스트리 순회 헬퍼로 통일해, 추후
+  미니게임 추가 시 `NetworkMatchState` 수정 없이 `MinigameCatalog` 등록·기능 래퍼 추가만으로
+  동작하도록 정리했다.
+- 5차 반영: `NetworkPlayerAvatar`의 미니게임 입력 RPC를 직접 미니게임 State 호출에서
+  분리해 `NetworkMatchState` 라우팅 API로 통합했다. `MinigameRuntimeController`에
+  입력/행동별 위임(이동, 푸시, 풍선불기 홀드, 메인 액션, 소나, WrongWay 방향)을
+  묶어, 새 미니게임 추가 시 공통 입력 브릿지 확장만으로 Avatar 의존도를 줄였다.
+- 6차 반영: `NetworkPlayerAvatar` 로컬 입력 수집부에서 `Network*State.Instance` 직접
+  참조를 제거하고, `NetworkMatchState`에 미니게임 공통 질의 API를 추가했다.
+  (`CanCurrentMinigameAcceptInputForSlot`, `TryGetCurrentMinigameRoundAndInputEpoch`)
+  이제 새 미니게임 추가 시 공통 입력 허용 여부/라운드·에폭 조회도 런타임 레지스트리 경유로
+  통일된다.
+- 7차 반영: `MultiplayerBootstrapTests`에 미니게임 런타임 레지스트리 정합성 테스트를
+  추가했다. `RegisteredMinigameRuntimes`와 `MinigameCatalog`의 ID 일치, 미니게임 상태
+  쿼리의 기본 폴백 동작을 회귀 테스트로 고정했다.
+- 8차 반영: `MINIGAME_EXTENSION_CHECKLIST.md`에 추가 미니게임 등록 체크리스트를 작성해
+  운영 지침으로 반영했고, 수동 계약 검증 항목을 분리해 정리했다.
+- 9차 반영: `MinigameCatalog`를 참조하는 뷰/컨트롤러들에서 네임스페이스 누락 가능성을 점검해
+  필요한 `using MazeParty.Gameplay.Minigames`를 보강, 타입 해석 실패로 인한 컴파일/콘솔 에러
+  위험을 선제 제거했다.
+- 10차 반영: Unity 콘솔에서 확인된 카탈로그 접근 제한 오류 21건과 WrongWay의 잘못된
+  이동 입력 위임 1건, 계약 테스트의 `System.Array` 타입 해석 오류 1건을 수정했다.
+  WrongWay는 방향 전용 입력 위임만 유지하며, 네트워킹 어셈블리에서 사용하는 카탈로그
+  조회 API(라운드 수/씬 이름/타워 색)는 공개 계약으로 정리했다.
+- 최종 검증(11차 분리 후 재실행): Unity 6000.6.0f1에서 컴파일 오류·경고 0건, 전체 EditMode 테스트
+  90/90 통과, `OnlineBootstrap` Play Mode 초기화 스모크 테스트 오류·경고 0건을 확인했다.
+- 현재 리팩터링 단계는 완료 상태다. 새 미니게임 추가 시
+  `MINIGAME_EXTENSION_CHECKLIST.md`의 등록 절차를 기준으로 확장한다.
+- 11차 반영: `NetworkMatchState` 안에 있던 미니게임별 delegate 런타임 등록부와
+  `MinigameRuntimeController`를 제거했다. 공통 계약은 `IMinigameRuntimeAdapter`와
+  `MinigameRuntimeAdapter<TState>`로, 여섯 미니게임의 수명주기·입력 처리는 개별
+  어댑터 클래스로, 전체 등록과 일괄 pause/resume/reconnect/end 처리는
+  `MinigameRuntimeRegistry`로 분리했다.
+- `NetworkMatchState`는 현재 미니게임을 레지스트리에서 조회해 보드 흐름과 입력을
+  중계하는 역할만 유지한다. 새 미니게임의 런타임 연동은 전용 어댑터 추가와
+  레지스트리 등록으로 확장하며, 등록 ID 정합성 테스트는 공개 `RegisteredIds`
+  계약을 사용해 private 구현 반사 의존성을 제거했다.
+
 ## 현재 구현 기준: 무궁화꽃이 피었습니다
 
 - Machine Party의 Table Manners처럼 신호 전환을 보고 멈추는 Red Light / Green Light

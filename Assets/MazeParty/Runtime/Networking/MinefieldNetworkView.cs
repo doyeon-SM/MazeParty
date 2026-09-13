@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -509,10 +510,13 @@ namespace MazeParty.Multiplayer
             var phaseText = hud.PhaseText;
             var instructionText = hud.InstructionText;
             var scoreRows = hud.ScoreRows;
+            var totalRounds = MinigameCatalog.GetRoundCount(
+                ScheduledMinigameId.Minefield);
             if (match.IsReconnectPaused)
             {
                 phaseText.text = "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
-                                 FormatClock(match.ReconnectRemaining);
+                                 MinigameDisplayFormatter.FormatClock(
+                                     match.ReconnectRemaining);
                 instructionText.text =
                     "Waiting up to 60 seconds for the player to reconnect.";
             }
@@ -522,12 +526,15 @@ namespace MazeParty.Multiplayer
                 switch (state.Phase)
                 {
                     case NetworkMinefieldPhase.Countdown:
-                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  START IN " +
+                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber +
+                                         " / " + totalRounds + "  ·  START IN " +
                                          Mathf.CeilToInt((float)state.Remaining);
                         break;
                     case NetworkMinefieldPhase.Running:
-                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber + " / 3  ·  " +
-                                         FormatClock(state.Remaining);
+                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber +
+                                         " / " + totalRounds + "  ·  " +
+                                         MinigameDisplayFormatter.FormatClock(
+                                             state.Remaining);
                         break;
                     case NetworkMinefieldPhase.RoundResult:
                         phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
@@ -693,13 +700,6 @@ namespace MazeParty.Multiplayer
             properties.SetColor("_Color", color);
             properties.SetColor("_EmissionColor", emission);
             renderer.SetPropertyBlock(properties);
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            var safeSeconds = Mathf.Max(0, Mathf.CeilToInt((float)seconds));
-            return (safeSeconds / 60).ToString("00") + ":" +
-                   (safeSeconds % 60).ToString("00");
         }
 
         private sealed class RunnerView

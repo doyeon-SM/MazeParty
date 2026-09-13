@@ -25,39 +25,17 @@ namespace MazeParty.Gameplay.Minigames
         // Append only. Persistence schemas restore against a prefix of this
         // catalog so an in-progress match keeps its original queue after an
         // application update adds another minigame.
-        private static readonly ScheduledMinigameId[] RegisteredGames =
-        {
-            ScheduledMinigameId.Minefield,
-            ScheduledMinigameId.WrongWay,
-            ScheduledMinigameId.RedLightGreenLight,
-            ScheduledMinigameId.StableFooting,
-            ScheduledMinigameId.BalloonBlow,
-            ScheduledMinigameId.GiftGrab
-        };
-
-        public static int RegisteredGameCount => RegisteredGames.Length;
+        public static int RegisteredGameCount =>
+            MinigameCatalog.RegisteredCount;
 
         public static ScheduledMinigameId GetRegisteredGame(int index)
         {
-            if (index < 0 || index >= RegisteredGames.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
-            return RegisteredGames[index];
+            return MinigameCatalog.GetRegisteredGame(index);
         }
 
         public static bool IsRegisteredGame(ScheduledMinigameId minigame)
         {
-            for (var index = 0; index < RegisteredGames.Length; index++)
-            {
-                if (RegisteredGames[index] == minigame)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return MinigameCatalog.IsRegistered(minigame);
         }
 
         internal static bool IsKnownValue(ScheduledMinigameId minigame)
@@ -70,20 +48,7 @@ namespace MazeParty.Gameplay.Minigames
             ScheduledMinigameId minigame,
             int registeredGameCount)
         {
-            if (minigame == ScheduledMinigameId.Skip)
-            {
-                return true;
-            }
-
-            for (var index = 0; index < registeredGameCount; index++)
-            {
-                if (RegisteredGames[index] == minigame)
-                {
-                    return true;
-                }
-            }
-
-            return false;
+            return MinigameCatalog.IsKnownValue(minigame, registeredGameCount);
         }
     }
 

@@ -477,7 +477,8 @@ namespace MazeParty.Multiplayer
             if (_reconnectText != null)
             {
                 _reconnectText.text = "PLAYER DISCONNECTED\nMATCH PAUSED\n" +
-                                      FormatClock(match.ReconnectRemaining) + " remaining";
+                                      MinigameDisplayFormatter.FormatClock(
+                                          match.ReconnectRemaining) + " remaining";
             }
         }
 
@@ -532,7 +533,8 @@ namespace MazeParty.Multiplayer
             }
             else if (match.IsKeyShopRevealActive)
             {
-                timerLabel = FormatClock(match.KeyShopRevealRemaining);
+                timerLabel = MinigameDisplayFormatter.FormatClock(
+                    match.KeyShopRevealRemaining);
             }
             else if (match.FlowState == BoardFlowState.MinigameIntroReady ||
                      match.FlowState == BoardFlowState.MinigameLoading)
@@ -544,30 +546,36 @@ namespace MazeParty.Multiplayer
                 timerLabel =
                     match.CurrentMinigame == ScheduledMinigameId.WrongWay
                         ? wrongWay != null
-                            ? FormatClock(wrongWay.Remaining)
+                            ? MinigameDisplayFormatter.FormatClock(
+                                wrongWay.Remaining)
                             : "--:--"
                         : match.CurrentMinigame ==
                           ScheduledMinigameId.RedLightGreenLight
                             ? redLightGreenLight != null
-                                ? FormatClock(redLightGreenLight.Remaining)
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    redLightGreenLight.Remaining)
                                 : "--:--"
                         : match.CurrentMinigame ==
                           ScheduledMinigameId.StableFooting
                             ? stableFooting != null
-                                ? FormatClock(stableFooting.Remaining)
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    stableFooting.Remaining)
                                 : "--:--"
                         : match.CurrentMinigame ==
                           ScheduledMinigameId.BalloonBlow
                             ? balloonBlow != null
-                                ? FormatClock(balloonBlow.RemainingSeconds)
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    balloonBlow.RemainingSeconds)
                                 : "--:--"
                         : match.CurrentMinigame ==
                           ScheduledMinigameId.GiftGrab
                             ? giftGrab != null
-                                ? FormatClock(giftGrab.RemainingSeconds)
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    giftGrab.RemainingSeconds)
                                 : "--:--"
-                        : minefield != null
-                            ? FormatClock(minefield.Remaining)
+                            : minefield != null
+                            ? MinigameDisplayFormatter.FormatClock(
+                                minefield.Remaining)
                             : "--:--";
             }
             else if (match.FlowState == BoardFlowState.MatchComplete)
@@ -582,7 +590,7 @@ namespace MazeParty.Multiplayer
                         ? match.CombatRemaining
                         : match.StateRemaining;
                 timerLabel = HasCountdown(match.FlowState)
-                    ? FormatClock(remaining)
+                    ? MinigameDisplayFormatter.FormatClock(remaining)
                     : "--:--";
             }
             SetText(_phaseTimerText, timerLabel);
@@ -590,7 +598,9 @@ namespace MazeParty.Multiplayer
             SetText(_choiceTimerText,
                 match.FlowState == BoardFlowState.Action && _localAvatar != null &&
                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending
-                    ? "CHOOSE  " + FormatClock(match.ChoiceRemaining)
+                    ? "CHOOSE  " +
+                      MinigameDisplayFormatter.FormatClock(
+                          match.ChoiceRemaining)
                     : "CHOICE  " + ChoiceLabel(_localAvatar));
 
             if (_shieldText != null)
@@ -1636,18 +1646,23 @@ namespace MazeParty.Multiplayer
                 return "MINEFIELD";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.Minefield);
             var round = Mathf.Clamp(
                 minefield.RoundNumber,
                 1,
-                MinefieldRules.RoundCount);
+                totalRounds);
             switch (minefield.Phase)
             {
                 case NetworkMinefieldPhase.Countdown:
-                    return "MINEFIELD  ROUND " + round + " / 3  -  COUNTDOWN";
+                    return "MINEFIELD  ROUND " + round + " / " +
+                           totalRounds + "  -  COUNTDOWN";
                 case NetworkMinefieldPhase.Running:
-                    return "MINEFIELD  ROUND " + round + " / 3  -  RUN";
+                    return "MINEFIELD  ROUND " + round + " / " +
+                           totalRounds + "  -  RUN";
                 case NetworkMinefieldPhase.RoundResult:
-                    return "MINEFIELD  ROUND " + round + " / 3  -  RESULT";
+                    return "MINEFIELD  ROUND " + round + " / " +
+                           totalRounds + "  -  RESULT";
                 case NetworkMinefieldPhase.Complete:
                     return "MINEFIELD COMPLETE";
                 default:
@@ -1662,6 +1677,8 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the Minefield simulation...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.Minefield);
             switch (minefield.Phase)
             {
                 case NetworkMinefieldPhase.Countdown:
@@ -1671,7 +1688,8 @@ namespace MazeParty.Multiplayer
                 case NetworkMinefieldPhase.RoundResult:
                     return "Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.";
                 case NetworkMinefieldPhase.Complete:
-                    return "All three rounds complete. Final points determine rank and gold.";
+                    return "All " + totalRounds +
+                           " rounds complete. Final points determine rank and gold.";
                 default:
                     return "Preparing Minefield...";
             }
@@ -1685,18 +1703,23 @@ namespace MazeParty.Multiplayer
                 return "WRONG WAY";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.WrongWay);
             var round = Mathf.Clamp(
                 wrongWay.RoundNumber,
                 1,
-                WrongWayRules.RoundCount);
+                totalRounds);
             switch (wrongWay.Phase)
             {
                 case NetworkWrongWayPhase.Countdown:
-                    return "WRONG WAY  ROUND " + round + " / 2  -  COUNTDOWN";
+                    return "WRONG WAY  ROUND " + round + " / " +
+                           totalRounds + "  -  COUNTDOWN";
                 case NetworkWrongWayPhase.Running:
-                    return "WRONG WAY  ROUND " + round + " / 2  -  CLIMB";
+                    return "WRONG WAY  ROUND " + round + " / " +
+                           totalRounds + "  -  CLIMB";
                 case NetworkWrongWayPhase.RoundResult:
-                    return "WRONG WAY  ROUND " + round + " / 2  -  RESULT";
+                    return "WRONG WAY  ROUND " + round + " / " +
+                           totalRounds + "  -  RESULT";
                 case NetworkWrongWayPhase.Complete:
                     return "WRONG WAY COMPLETE";
                 default:
@@ -1712,6 +1735,8 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the WrongWay race...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.WrongWay);
             switch (wrongWay.Phase)
             {
                 case NetworkWrongWayPhase.Countdown:
@@ -1721,7 +1746,8 @@ namespace MazeParty.Multiplayer
                 case NetworkWrongWayPhase.RoundResult:
                     return "Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.";
                 case NetworkWrongWayPhase.Complete:
-                    return "Both rounds complete. Final points determine rank and gold.";
+                    return totalRounds +
+                           " rounds complete. Final points determine rank and gold.";
                 default:
                     return "Preparing WrongWay...";
             }
@@ -1735,23 +1761,26 @@ namespace MazeParty.Multiplayer
                 return "RED LIGHT / GREEN LIGHT";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.RedLightGreenLight);
             var round = Mathf.Clamp(
                 redLightGreenLight.RoundNumber,
                 1,
-                RedLightGreenLightRules.RoundCount);
+                totalRounds);
             switch (redLightGreenLight.Phase)
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
                     return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / 3  -  COUNTDOWN";
+                           " / " + totalRounds + "  -  COUNTDOWN";
                 case NetworkRedLightGreenLightPhase.Running:
                     return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / 3  -  " +
+                           " / " + totalRounds + "  -  " +
                            RedLightGreenLightSignalLabel(
                                redLightGreenLight.SignalPhase);
                 case NetworkRedLightGreenLightPhase.RoundResult:
                     return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / 3  -  RESULT";
+                           " / " + totalRounds + "  -  RESULT";
                 case NetworkRedLightGreenLightPhase.Complete:
                     return "RED LIGHT / GREEN LIGHT COMPLETE";
                 default:
@@ -1767,6 +1796,9 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the Red Light / Green Light race...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.RedLightGreenLight);
             switch (redLightGreenLight.Phase)
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
@@ -1793,7 +1825,8 @@ namespace MazeParty.Multiplayer
                     return "Finishers rank first, then survivors by forward " +
                            "progress, with eliminated players placed last.";
                 case NetworkRedLightGreenLightPhase.Complete:
-                    return "All three rounds complete. Final points determine " +
+                    return "All " + totalRounds +
+                           " rounds complete. Final points determine " +
                            "rank and gold.";
                 default:
                     return "Preparing Red Light / Green Light...";
@@ -1824,22 +1857,25 @@ namespace MazeParty.Multiplayer
                 return "STABLE FOOTING";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.StableFooting);
             var round = Mathf.Clamp(
                 stableFooting.RoundNumber,
                 1,
-                StableFootingRules.RoundCount);
+                totalRounds);
             switch (stableFooting.Phase)
             {
                 case NetworkStableFootingPhase.Countdown:
                     return "STABLE FOOTING  ROUND " + round +
-                           " / 3  -  COUNTDOWN";
+                           " / " + totalRounds + "  -  COUNTDOWN";
                 case NetworkStableFootingPhase.Running:
                     return "STABLE FOOTING  ROUND " + round +
-                           " / 3  -  " +
+                           " / " + totalRounds + "  -  " +
                            stableFooting.CyclePhase.ToString().ToUpperInvariant();
                 case NetworkStableFootingPhase.RoundResult:
                     return "STABLE FOOTING  ROUND " + round +
-                           " / 3  -  RESULT";
+                           " / " + totalRounds + "  -  RESULT";
                 case NetworkStableFootingPhase.Complete:
                     return "STABLE FOOTING COMPLETE";
                 default:
@@ -1855,6 +1891,9 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the Stable Footing arena...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.StableFooting);
             switch (stableFooting.Phase)
             {
                 case NetworkStableFootingPhase.Countdown:
@@ -1876,7 +1915,8 @@ namespace MazeParty.Multiplayer
                 case NetworkStableFootingPhase.RoundResult:
                     return "The last survivor ranks first; later falls rank above earlier falls.";
                 case NetworkStableFootingPhase.Complete:
-                    return "All three rounds complete. Final points determine rank and gold.";
+                    return "All " + totalRounds +
+                           " rounds complete. Final points determine rank and gold.";
                 default:
                     return "Preparing Stable Footing...";
             }
@@ -1890,21 +1930,24 @@ namespace MazeParty.Multiplayer
                 return "BALLOON BLOW";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.BalloonBlow);
             var round = Mathf.Clamp(
                 balloonBlow.RoundNumber,
                 1,
-                BalloonBlowRules.RoundCount);
+                totalRounds);
             switch (balloonBlow.Phase)
             {
                 case NetworkBalloonBlowPhase.Countdown:
                     return "BALLOON BLOW  ROUND " + round +
-                           " / 3  -  COUNTDOWN";
+                           " / " + totalRounds + "  -  COUNTDOWN";
                 case NetworkBalloonBlowPhase.Running:
                     return "BALLOON BLOW  ROUND " + round +
-                           " / 3  -  INFLATE";
+                           " / " + totalRounds + "  -  INFLATE";
                 case NetworkBalloonBlowPhase.RoundResult:
                     return "BALLOON BLOW  ROUND " + round +
-                           " / 3  -  RESULT";
+                           " / " + totalRounds + "  -  RESULT";
                 case NetworkBalloonBlowPhase.Complete:
                     return "BALLOON BLOW COMPLETE";
                 default:
@@ -1920,6 +1963,9 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the Balloon Blow arena...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.BalloonBlow);
             switch (balloonBlow.Phase)
             {
                 case NetworkBalloonBlowPhase.Countdown:
@@ -1931,7 +1977,8 @@ namespace MazeParty.Multiplayer
                     return "Popped balloons rank by pop order; remaining balloons " +
                            "rank by progress, then server player order.";
                 case NetworkBalloonBlowPhase.Complete:
-                    return "All three rounds complete. Final points determine rank and gold.";
+                    return "All " + totalRounds +
+                           " rounds complete. Final points determine rank and gold.";
                 default:
                     return "Preparing Balloon Blow...";
             }
@@ -1945,21 +1992,23 @@ namespace MazeParty.Multiplayer
                 return "GIFT GRAB";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
             var round = Mathf.Clamp(
                 giftGrab.RoundNumber,
                 1,
-                GiftGrabRules.RoundCount);
+                totalRounds);
             switch (giftGrab.Phase)
             {
                 case NetworkGiftGrabPhase.Countdown:
                     return "GIFT GRAB  ROUND " + round +
-                           " / 2  -  COUNTDOWN";
+                           " / " + totalRounds + "  -  COUNTDOWN";
                 case NetworkGiftGrabPhase.Running:
                     return "GIFT GRAB  ROUND " + round +
-                           " / 2  -  STEAL";
+                           " / " + totalRounds + "  -  STEAL";
                 case NetworkGiftGrabPhase.RoundResult:
                     return "GIFT GRAB  ROUND " + round +
-                           " / 2  -  RESULT";
+                           " / " + totalRounds + "  -  RESULT";
                 case NetworkGiftGrabPhase.Complete:
                     return "GIFT GRAB COMPLETE";
                 default:
@@ -1974,6 +2023,8 @@ namespace MazeParty.Multiplayer
                 return "Synchronizing the Gift Grab arena...";
             }
 
+            var totalRounds =
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
             switch (giftGrab.Phase)
             {
                 case NetworkGiftGrabPhase.Countdown:
@@ -1984,8 +2035,10 @@ namespace MazeParty.Multiplayer
                 case NetworkGiftGrabPhase.RoundResult:
                     return "Stored gifts decide the round; gift ownership time breaks ties.";
                 case NetworkGiftGrabPhase.Complete:
-                    return "Two rounds complete. Points, total stored gifts, final-round rank, " +
-                           "then server player order determine placement.";
+                    return totalRounds +
+                           " rounds complete. Points, total stored gifts, " +
+                           "final-round rank, then server player order " +
+                           "determine placement.";
                 default:
                     return "Preparing Gift Grab...";
             }
@@ -2061,20 +2114,7 @@ namespace MazeParty.Multiplayer
 
         private static string MinigameName(ScheduledMinigameId minigame)
         {
-            switch (minigame)
-            {
-                case ScheduledMinigameId.Minefield: return "MINEFIELD";
-                case ScheduledMinigameId.WrongWay: return "WRONG WAY";
-                case ScheduledMinigameId.RedLightGreenLight:
-                    return "RED LIGHT / GREEN LIGHT";
-                case ScheduledMinigameId.StableFooting:
-                    return "STABLE FOOTING";
-                case ScheduledMinigameId.BalloonBlow:
-                    return "BALLOON BLOW";
-                case ScheduledMinigameId.GiftGrab:
-                    return "GIFT GRAB";
-                default: return "SKIP";
-            }
+            return MinigameCatalog.GetDisplayName(minigame);
         }
 
         private bool IsMinigameRevealPending(NetworkMatchState match)
@@ -2100,12 +2140,6 @@ namespace MazeParty.Multiplayer
                 case ItemChoiceResolution.Pending: return "PENDING";
                 default: return "--";
             }
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            var whole = Mathf.Max(0, Mathf.CeilToInt((float)seconds));
-            return (whole / 60).ToString("00") + ":" + (whole % 60).ToString("00");
         }
 
         private static string ActionIconLabel(PlayerBoardActionState state)

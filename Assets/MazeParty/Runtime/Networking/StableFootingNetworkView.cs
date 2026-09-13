@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -466,11 +467,14 @@ namespace MazeParty.Multiplayer
                 Mathf.Clamp(
                     state.RoundNumber,
                     1,
-                    StableFootingRules.RoundCount) +
-                " / " + StableFootingRules.RoundCount;
+                    MinigameCatalog.GetRoundCount(
+                        ScheduledMinigameId.StableFooting)) +
+                " / " + MinigameCatalog.GetRoundCount(
+                    ScheduledMinigameId.StableFooting);
             hud.TimerText.text = reconnectPaused
-                ? FormatClock(match.ReconnectRemaining)
-                : FormatClock(state.Remaining);
+                ? MinigameDisplayFormatter.FormatClock(
+                    match.ReconnectRemaining)
+                : MinigameDisplayFormatter.FormatClock(state.Remaining);
             hud.PhaseText.text = reconnectPaused
                 ? "PLAYER DISCONNECTED · MATCH PAUSED"
                 : BuildPhaseLabel();
@@ -492,7 +496,8 @@ namespace MazeParty.Multiplayer
                 var eliminated = state.IsEliminated(slot);
                 hud.PlayerRows[slot].text =
                     (slot == _localSlot ? "> " : string.Empty) +
-                    ToOrdinal(rank) + "  " + displayName + "\n" +
+                    MinigameDisplayFormatter.ToOrdinal(rank) +
+                    "  " + displayName + "\n" +
                     (eliminated
                         ? "OUT  ·  FALL " +
                           state.GetEliminationOrder(slot)
@@ -501,7 +506,8 @@ namespace MazeParty.Multiplayer
                     "  ·  TOTAL " + state.GetScore(slot) +
                     (state.GetFinalRank(slot) > 0
                         ? "\nFINAL " +
-                          ToOrdinal(state.GetFinalRank(slot)) +
+                          MinigameDisplayFormatter.ToOrdinal(
+                              state.GetFinalRank(slot)) +
                           "  ·  GOLD +" +
                           StableFootingRules.GetPointsForRank(
                               state.GetFinalRank(slot))
@@ -686,26 +692,6 @@ namespace MazeParty.Multiplayer
                 case StableFootingSymbol.Square: return "SQUARE";
                 default: return "CROSS";
             }
-        }
-
-        private static string ToOrdinal(int rank)
-        {
-            switch (rank)
-            {
-                case 1: return "1ST";
-                case 2: return "2ND";
-                case 3: return "3RD";
-                case 4: return "4TH";
-                default: return "--";
-            }
-        }
-
-        private static string FormatClock(double seconds)
-        {
-            seconds = Math.Max(0d, seconds);
-            var whole = Mathf.CeilToInt((float)seconds);
-            return (whole / 60).ToString("00") + ":" +
-                   (whole % 60).ToString("00");
         }
 
         private static void DisableGeneratedHitColliders(
