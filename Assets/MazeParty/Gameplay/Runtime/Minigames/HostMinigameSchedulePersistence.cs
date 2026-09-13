@@ -40,7 +40,8 @@ namespace MazeParty.Gameplay.Minigames
         private const int BalloonBlowSchemaVersion = 4;
         private const int GiftGrabSchemaVersion = 5;
         private const int TerritoryPaintSchemaVersion = 6;
-        private const int CurrentSchemaVersion = 7;
+        private const int TagChaseSchemaVersion = 7;
+        private const int CurrentSchemaVersion = 8;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
@@ -59,6 +60,9 @@ namespace MazeParty.Gameplay.Minigames
         // Schema 6 predates Tag Chase and validates against the first seven
         // append-only catalog entries.
         private const int TerritoryPaintRegisteredGameCount = 7;
+        // Schema 7 predates Race and validates against the first eight
+        // append-only catalog entries.
+        private const int TagChaseRegisteredGameCount = 8;
 
         public string Encode(
             string matchKey,
@@ -123,6 +127,11 @@ namespace MazeParty.Gameplay.Minigames
                 return TerritoryPaintSchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                TagChaseRegisteredGameCount)
+            {
+                return TagChaseSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -159,6 +168,8 @@ namespace MazeParty.Gameplay.Minigames
                      GiftGrabSchemaVersion &&
                      document.schemaVersion !=
                      TerritoryPaintSchemaVersion &&
+                     document.schemaVersion !=
+                     TagChaseSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -194,6 +205,8 @@ namespace MazeParty.Gameplay.Minigames
                         GiftGrabRegisteredGameCount,
                     TerritoryPaintSchemaVersion =>
                         TerritoryPaintRegisteredGameCount,
+                    TagChaseSchemaVersion =>
+                        TagChaseRegisteredGameCount,
                     _ => MinigameScheduleRules.RegisteredGameCount
                 };
                 var restored = HostMinigameSchedule.Restore(

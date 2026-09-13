@@ -149,6 +149,9 @@ namespace MazeParty.EditorTools
                 case MinigameSoloTestId.TagChase:
                     return "WASD move · mouse look + LMB catch as tagger · " +
                            "R restart · N next seed · Esc stop";
+                case MinigameSoloTestId.Race:
+                    return "Alternate A / D · first to 500 · " +
+                           "R restart · N next seed · Esc stop";
                 case MinigameSoloTestId.Minefield:
                 default:
                     return "WASD move · stop + RMB sonar · " +
@@ -187,6 +190,8 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play Gift Grab Solo";
         private const string QuickPlayTagChaseMenuPath =
             "MazeParty/Developer/Play Tag Chase Solo";
+        private const string QuickPlayRaceMenuPath =
+            "MazeParty/Developer/Play Race Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -319,6 +324,20 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlayTagChaseMenuPath, true)]
         private static bool ValidateQuickPlayTagChase()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayRaceMenuPath, false, 2107)]
+        private static void QuickPlayRace()
+        {
+            Start(
+                MinigameSoloTestId.Race,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayRaceMenuPath, true)]
+        private static bool ValidateQuickPlayRace()
         {
             return CanStart;
         }
@@ -609,6 +628,23 @@ namespace MazeParty.EditorTools
                             throw new InvalidOperationException(
                                 "Could not attach the Tag Chase " +
                                 "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.Race:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<RaceSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Race solo harness.");
                         }
                         controller.ConfigureHud(
                             InstantiateSoloHud(bootstrap.transform));
@@ -1116,10 +1152,16 @@ namespace MazeParty.EditorTools
             var territoryPaint =
                 FindRuntimeHarnessOfType<
                     TerritoryPaintSoloTestController>();
-            return territoryPaint != null
-                ? (Component)territoryPaint
-                : FindRuntimeHarnessOfType<
-                    TagChaseSoloTestController>();
+            if (territoryPaint != null)
+            {
+                return territoryPaint;
+            }
+
+            var tagChase = FindRuntimeHarnessOfType<
+                TagChaseSoloTestController>();
+            return tagChase != null
+                ? (Component)tagChase
+                : FindRuntimeHarnessOfType<RaceSoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -1140,6 +1182,8 @@ namespace MazeParty.EditorTools
                 TerritoryPaintSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 TagChaseSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                RaceSoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()

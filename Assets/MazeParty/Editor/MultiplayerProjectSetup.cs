@@ -38,6 +38,8 @@ namespace MazeParty.Editor
             ScenesFolder + "/TerritoryPaint.unity";
         private const string TagChasePath =
             ScenesFolder + "/TagChase.unity";
+        private const string RacePath =
+            ScenesFolder + "/Race.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
         private const string LobbyCanvasPrefabPath =
             UiPrefabsFolder + "/LobbyCanvas.prefab";
@@ -72,6 +74,7 @@ namespace MazeParty.Editor
             GiftGrabProjectSetup.BuildGiftGrabAssets();
             TerritoryPaintProjectSetup.BuildTerritoryPaintAssets();
             TagChaseProjectSetup.BuildTagChaseAssets();
+            RaceProjectSetup.BuildRaceAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -1143,7 +1146,8 @@ namespace MazeParty.Editor
                 new EditorBuildSettingsScene(BalloonBlowPath, true),
                 new EditorBuildSettingsScene(GiftGrabPath, true),
                 new EditorBuildSettingsScene(TerritoryPaintPath, true),
-                new EditorBuildSettingsScene(TagChasePath, true)
+                new EditorBuildSettingsScene(TagChasePath, true),
+                new EditorBuildSettingsScene(RacePath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";

@@ -6,6 +6,7 @@ using MazeParty.Gameplay.Minigames.BalloonBlow;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -291,6 +292,22 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void RouteRaceStepOnCurrentMinigameOnServer(
+            NetworkPlayerAvatar avatar,
+            RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+            if (TryGetCurrentMinigameRuntime(out var runtime))
+            {
+                runtime.TrySubmitRaceStepOnServer(
+                    avatar,
+                    input,
+                    roundNumber,
+                    inputEpoch);
+            }
+        }
+
         public bool GameplayEnabled => _gameplayEnabled.Value;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
@@ -399,6 +416,15 @@ namespace MazeParty.Multiplayer
              FlowState == BoardFlowState.SkippedResult);
         public bool IsTagChasePlaying =>
             IsTagChasePhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsRacePhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.Race &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsRacePlaying =>
+            IsRacePhase &&
             FlowState == BoardFlowState.MinigamePlaying;
         public bool IsTerritoryPaintPlaying =>
             IsTerritoryPaintPhase &&
@@ -1448,6 +1474,74 @@ namespace MazeParty.Multiplayer
                 var avatar = rewardAvatars[entry.PlayerSlot];
                 avatar.ApplyGoldDeltaOnServer(
                     TagChaseRules.GetRewardForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteRaceOnServer(
+            IReadOnlyList<RaceLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.Race ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!RaceRules.IsValidPlayerSlot(entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    RaceRules.GetPointsForRank(entry.Rank));
                 if (entry.Rank == 1)
                 {
                     avatar.AddMinigameWinOnServer();

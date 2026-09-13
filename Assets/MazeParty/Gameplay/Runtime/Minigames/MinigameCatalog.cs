@@ -4,6 +4,7 @@ using MazeParty.Gameplay.Minigames.BalloonBlow;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -119,7 +120,14 @@ namespace MazeParty.Gameplay.Minigames
                 TagChaseRules.RoundCount,
                 (float)TagChaseRules.RoundSeconds,
                 "TagChase",
-                new Color(0.94f, 0.18f, 0.28f, 1f))
+                new Color(0.94f, 0.18f, 0.28f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.Race,
+                "RACE",
+                RaceRules.RoundCount,
+                (float)RaceRules.RoundSeconds,
+                "Race",
+                new Color(0.98f, 0.64f, 0.12f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;

@@ -12,7 +12,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         BalloonBlow = 5,
         GiftGrab = 6,
         TerritoryPaint = 7,
-        TagChase = 8
+        TagChase = 8,
+        Race = 9
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -67,6 +68,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/TerritoryPaint.unity";
         public const string TagChaseScenePath =
             "Assets/MazeParty/Scenes/TagChase.unity";
+        public const string RaceScenePath =
+            "Assets/MazeParty/Scenes/Race.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
@@ -101,7 +104,11 @@ namespace MazeParty.Dev.MinigameSoloTest
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.TagChase,
                 "Tag Chase",
-                TagChaseScenePath)
+                TagChaseScenePath),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.Race,
+                "Race",
+                RaceScenePath)
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>

@@ -28,7 +28,9 @@ namespace MazeParty.Editor
             UiPrefabFolder + "/StableFootingHud.prefab",
             UiPrefabFolder + "/BalloonBlowHud.prefab",
             UiPrefabFolder + "/GiftGrabHud.prefab",
-            UiPrefabFolder + "/TerritoryPaintHud.prefab"
+            UiPrefabFolder + "/TerritoryPaintHud.prefab",
+            UiPrefabFolder + "/TagChaseHud.prefab",
+            UiPrefabFolder + "/RaceHud.prefab"
         };
 
         [MenuItem(MenuPath)]

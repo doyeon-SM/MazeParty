@@ -16,6 +16,7 @@ namespace MazeParty.Multiplayer
         public const string GiftGrabScene = "GiftGrab";
         public const string TagChaseScene = "TagChase";
         public const string TerritoryPaintScene = "TerritoryPaint";
+        public const string RaceScene = "Race";
 
         public const string DisplayNameProperty = "displayName";
         public const string NetworkClientIdProperty = "ngoClientId";

@@ -1,4 +1,5 @@
 using MazeParty.Gameplay.Minigames;
+using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -47,6 +48,11 @@ namespace MazeParty.Multiplayer
         void TrySubmitDirectionOnServer(
             NetworkPlayerAvatar avatar,
             WrongWayDirection direction);
+        void TrySubmitRaceStepOnServer(
+            NetworkPlayerAvatar avatar,
+            RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch);
     }
 
     internal abstract class MinigameRuntimeAdapter<TState> :
@@ -152,6 +158,14 @@ namespace MazeParty.Multiplayer
         public virtual void TrySubmitDirectionOnServer(
             NetworkPlayerAvatar avatar,
             WrongWayDirection direction)
+        {
+        }
+
+        public virtual void TrySubmitRaceStepOnServer(
+            NetworkPlayerAvatar avatar,
+            RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch)
         {
         }
     }

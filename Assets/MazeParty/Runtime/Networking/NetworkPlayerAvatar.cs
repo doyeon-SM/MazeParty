@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Collections;
 using Unity.Netcode;
@@ -399,8 +400,11 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
-            var handlingMinigame =
-                SubmitLocalTagChaseInput();
+            var handlingMinigame = SubmitLocalRaceInput();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalTagChaseInput();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame =
@@ -1566,6 +1570,11 @@ namespace MazeParty.Multiplayer
         private void HandleLocalActionButtons()
         {
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsRacePlaying)
+            {
+                return;
+            }
+
             if (match != null && match.IsRedLightGreenLightPlaying)
             {
                 return;
@@ -2045,6 +2054,43 @@ namespace MazeParty.Multiplayer
                     inputEpoch);
             }
 
+            return true;
+        }
+
+        private bool SubmitLocalRaceInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsRacePlaying)
+            {
+                return false;
+            }
+
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) ||
+                inputEpoch == 0U ||
+                !match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return true;
+            }
+
+            var leftPressed = keyboard.aKey.wasPressedThisFrame;
+            var rightPressed = keyboard.dKey.wasPressedThisFrame;
+            if (leftPressed == rightPressed)
+            {
+                return true;
+            }
+
+            SubmitRaceStepRpc(
+                leftPressed ? RaceStepInput.Left : RaceStepInput.Right,
+                roundNumber,
+                inputEpoch);
             return true;
         }
 
@@ -3129,6 +3175,30 @@ namespace MazeParty.Multiplayer
                 Vector2.ClampMagnitude(input, 1f),
                 roundNumber,
                 inputEpoch);
+        }
+
+        [Rpc(
+            SendTo.Server,
+            InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitRaceStepRpc(
+            RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                (input != RaceStepInput.Left &&
+                 input != RaceStepInput.Right))
+            {
+                return;
+            }
+
+            NetworkMatchState.Instance?.
+                RouteRaceStepOnCurrentMinigameOnServer(
+                    this,
+                    input,
+                    roundNumber,
+                    inputEpoch);
         }
 
         [Rpc(
