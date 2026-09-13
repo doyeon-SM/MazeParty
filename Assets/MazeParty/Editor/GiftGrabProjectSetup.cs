@@ -605,6 +605,8 @@ namespace MazeParty.Editor
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             }
 
+            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var binding = prefab != null
                 ? prefab.GetComponent<GiftGrabHudBindings>()
                 : null;

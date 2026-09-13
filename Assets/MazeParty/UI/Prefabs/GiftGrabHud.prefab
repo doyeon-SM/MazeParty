@@ -248,7 +248,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3084289348569780621
 RectTransform:
   m_ObjectHideFlags: 0
@@ -1292,6 +1292,7 @@ RectTransform:
   - {fileID: 6808463213424916543}
   - {fileID: 6843481786579115000}
   - {fileID: 2098910577878720596}
+  - {fileID: 4734284298213188444}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -1360,7 +1361,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabHudBindings
   rootCanvas: {fileID: 1894207490517325070}
   phaseText: {fileID: 5552957532439064582}
-  timerText: {fileID: 4902410358952682634}
+  timerDial: {fileID: 6685934085645370664}
+  timerText: {fileID: 4208895405328071015}
   roundText: {fileID: 334692261434923065}
   instructionText: {fileID: 7709022012887772395}
   localStatusText: {fileID: 4484979373174836454}
@@ -1764,3 +1766,127 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1001 &4689724789874477659
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7098078143699619026}
+    m_Modifications:
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_Pivot.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_Pivot.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 144
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 144
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: -30
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -30
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1171340173204774156, guid: 886c67187610957469e17cab934264a1, type: 3}
+      propertyPath: m_Name
+      value: MinigameTimerDial
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 886c67187610957469e17cab934264a1, type: 3}
+--- !u!114 &4208895405328071015 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 8898057105585845052, guid: 886c67187610957469e17cab934264a1, type: 3}
+  m_PrefabInstance: {fileID: 4689724789874477659}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
+--- !u!224 &4734284298213188444 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 46920168470423815, guid: 886c67187610957469e17cab934264a1, type: 3}
+  m_PrefabInstance: {fileID: 4689724789874477659}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &6685934085645370664 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2151606240883396467, guid: 886c67187610957469e17cab934264a1, type: 3}
+  m_PrefabInstance: {fileID: 4689724789874477659}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 35230158ca3ff0646aefa07387c3111d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.MinigameTimerDial

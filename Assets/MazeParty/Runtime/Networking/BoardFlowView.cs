@@ -7,6 +7,7 @@ using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.StableFooting;
+using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -491,6 +492,8 @@ namespace MazeParty.Multiplayer
             var stableFooting = NetworkStableFootingState.Instance;
             var balloonBlow = NetworkBalloonBlowState.Instance;
             var giftGrab = NetworkGiftGrabState.Instance;
+            var territoryPaint =
+                NetworkTerritoryPaintState.Instance;
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
@@ -516,6 +519,10 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.GiftGrab
                                 ? GiftGrabPhaseLabel(giftGrab)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.TerritoryPaint
+                                ? TerritoryPaintPhaseLabel(
+                                    territoryPaint)
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
@@ -572,6 +579,12 @@ namespace MazeParty.Multiplayer
                             ? giftGrab != null
                                 ? MinigameDisplayFormatter.FormatClock(
                                     giftGrab.RemainingSeconds)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.TerritoryPaint
+                            ? territoryPaint != null
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    territoryPaint.Remaining)
                                 : "--:--"
                             : minefield != null
                             ? MinigameDisplayFormatter.FormatClock(
@@ -1106,6 +1119,10 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.GiftGrab
                                 ? GiftGrabStatus(giftGrab)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.TerritoryPaint
+                                ? TerritoryPaintStatus(
+                                    NetworkTerritoryPaintState.Instance)
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -1149,6 +1166,8 @@ namespace MazeParty.Multiplayer
             var isBalloonBlow =
                 selected == ScheduledMinigameId.BalloonBlow;
             var isGiftGrab = selected == ScheduledMinigameId.GiftGrab;
+            var isTerritoryPaint =
+                selected == ScheduledMinigameId.TerritoryPaint;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1167,6 +1186,8 @@ namespace MazeParty.Multiplayer
                         ? "BALLOON BLOW"
                     : isGiftGrab
                         ? "GIFT GRAB"
+                    : isTerritoryPaint
+                        ? "TERRITORY PAINT"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1208,6 +1229,12 @@ namespace MazeParty.Multiplayer
                           "theirs. Steal stored gifts from rival bases. Two " +
                           "60-second rounds; most stored gifts wins.\n" +
                           "ALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isTerritoryPaint
+                        ? "Move with WASD. Your circular trail paints the " +
+                          "arena and can overwrite rival colors. The full " +
+                          "arena is worth 1000 points. One 60-second round; " +
+                          "highest current area wins.\nALL 4 PLAYERS READY  -  READY " +
                           readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
@@ -1257,6 +1284,8 @@ namespace MazeParty.Multiplayer
                         ? "BALLOON BLOW RESULTS"
                     : isGiftGrab
                         ? "GIFT GRAB RESULTS"
+                    : isTerritoryPaint
+                        ? "TERRITORY PAINT RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
@@ -1274,6 +1303,9 @@ namespace MazeParty.Multiplayer
                 : isGiftGrab
                     ? BuildGiftGrabResultSummary(
                         NetworkGiftGrabState.Instance)
+                : isTerritoryPaint
+                    ? BuildTerritoryPaintResultSummary(
+                        NetworkTerritoryPaintState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1310,6 +1342,8 @@ namespace MazeParty.Multiplayer
                         ? "HOLD LMB\nPOP FIRST"
                     : isGiftGrab
                         ? "WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS"
+                    : isTerritoryPaint
+                        ? "WASD: MOVE\nPAINT THE ARENA"
                         : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
@@ -1633,6 +1667,57 @@ namespace MazeParty.Multiplayer
                     .Append(giftGrab.GetTotalStoredGiftCount(rankedSlot))
                     .Append("  GOLD +")
                     .Append(GiftGrabRules.GetPointsForRank(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildTerritoryPaintResultSummary(
+            NetworkTerritoryPaintState territoryPaint)
+        {
+            if (territoryPaint == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= TerritoryPaintRules.PlayerCount;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < TerritoryPaintRules.PlayerCount;
+                     slot++)
+                {
+                    if (territoryPaint.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  ")
+                    .Append(territoryPaint.GetScore(rankedSlot));
             }
 
             return builder.ToString();
@@ -2013,6 +2098,52 @@ namespace MazeParty.Multiplayer
                     return "GIFT GRAB COMPLETE";
                 default:
                     return "GIFT GRAB";
+            }
+        }
+
+        private static string TerritoryPaintPhaseLabel(
+            NetworkTerritoryPaintState territoryPaint)
+        {
+            if (territoryPaint == null)
+            {
+                return "TERRITORY PAINT";
+            }
+
+            switch (territoryPaint.Phase)
+            {
+                case NetworkTerritoryPaintPhase.Countdown:
+                    return "TERRITORY PAINT  -  COUNTDOWN";
+                case NetworkTerritoryPaintPhase.Running:
+                    return "TERRITORY PAINT";
+                case NetworkTerritoryPaintPhase.RoundResult:
+                    return "TERRITORY PAINT  -  RESULT";
+                case NetworkTerritoryPaintPhase.Complete:
+                    return "TERRITORY PAINT COMPLETE";
+                default:
+                    return "TERRITORY PAINT";
+            }
+        }
+
+        private static string TerritoryPaintStatus(
+            NetworkTerritoryPaintState territoryPaint)
+        {
+            if (territoryPaint == null)
+            {
+                return "Synchronizing the Territory Paint arena...";
+            }
+
+            switch (territoryPaint.Phase)
+            {
+                case NetworkTerritoryPaintPhase.Countdown:
+                    return "Get ready at your corner.";
+                case NetworkTerritoryPaintPhase.Running:
+                    return "WASD moves and continuously paints a circular trail.";
+                case NetworkTerritoryPaintPhase.RoundResult:
+                    return "Current owned area decides the final score.";
+                case NetworkTerritoryPaintPhase.Complete:
+                    return "Territory Paint complete.";
+                default:
+                    return "Preparing Territory Paint...";
             }
         }
 

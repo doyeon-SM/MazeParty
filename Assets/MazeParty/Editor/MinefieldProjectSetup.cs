@@ -387,6 +387,10 @@ namespace MazeParty.Editor
                 MinefieldHudPrefabPath);
             if (existing != null)
             {
+                MinigameTimerDialProjectSetup.EnsureHudTimer(
+                    MinefieldHudPrefabPath);
+                existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    MinefieldHudPrefabPath);
                 ValidateMinefieldHudPrefab(existing);
                 return existing;
             }
@@ -403,6 +407,10 @@ namespace MazeParty.Editor
                         "MinefieldHud.prefab could not be created.");
                 }
 
+                MinigameTimerDialProjectSetup.EnsureHudTimer(
+                    MinefieldHudPrefabPath);
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    MinefieldHudPrefabPath);
                 ValidateMinefieldHudPrefab(prefab);
                 return prefab;
             }

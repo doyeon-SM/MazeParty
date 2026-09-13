@@ -13,6 +13,7 @@ namespace MazeParty.Multiplayer
     public sealed class WrongWayHudBindings : MonoBehaviour
     {
         [SerializeField] private Canvas canvas;
+        [SerializeField] private MinigameTimerDial timerDial;
         [SerializeField] private Text phaseText;
         [SerializeField] private Text instructionText;
         [SerializeField] private Text promptText;
@@ -21,6 +22,7 @@ namespace MazeParty.Multiplayer
         private Color[] _defaultProgressRowColors;
 
         public Canvas Canvas => canvas;
+        public MinigameTimerDial TimerDial => timerDial;
         public Text PhaseText => phaseText;
         public Text InstructionText => instructionText;
         public Text PromptText => promptText;
@@ -28,6 +30,8 @@ namespace MazeParty.Multiplayer
 
         public bool HasRequiredReferences =>
             canvas != null &&
+            timerDial != null &&
+            timerDial.HasRequiredReferences &&
             phaseText != null &&
             instructionText != null &&
             promptText != null &&
@@ -48,6 +52,12 @@ namespace MazeParty.Multiplayer
             promptText = targetPromptText;
             progressRows = targetProgressRows;
         }
+
+        public void ConfigureTimerDial(MinigameTimerDial timer)
+        {
+            timerDial = timer;
+        }
+
 
         public Color GetDefaultProgressRowColor(int index)
         {

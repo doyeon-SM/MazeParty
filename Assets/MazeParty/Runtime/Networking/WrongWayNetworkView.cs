@@ -436,6 +436,13 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            hud.TimerDial.SetTime(
+                match.IsReconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.Remaining,
+                match.IsReconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             hud.PhaseText.text = BuildPhaseLabel();
             hud.PromptText.text = BuildLocalPrompt();
             var progressRows = hud.ProgressRows;
@@ -477,40 +484,45 @@ namespace MazeParty.Multiplayer
                 state.RoundNumber,
                 1,
                 totalRounds);
-            var pauseSuffix = state.IsPaused ? "  ·  PAUSED" : string.Empty;
+            var pauseSuffix =
+                state.IsPaused ? "  ·  PAUSED" : string.Empty;
 
             switch (state.Phase)
             {
                 case NetworkWrongWayPhase.Countdown:
                     return "WRONG WAY  ·  ROUND " +
-                           round +
-                           " / " +
-                           totalRounds +
-                           "  ·  START IN " +
-                           Mathf.CeilToInt((float)state.Remaining) +
-                           pauseSuffix;
+                           round + " / " + totalRounds +
+                           "  ·  COUNTDOWN" + pauseSuffix;
                 case NetworkWrongWayPhase.Running:
                     return "WRONG WAY  ·  ROUND " +
-                           round +
-                           " / " +
-                           totalRounds +
-                           "  ·  " +
-                           state.Remaining.ToString("0.0") +
-                           "s" +
+                           round + " / " + totalRounds +
                            pauseSuffix;
                 case NetworkWrongWayPhase.RoundResult:
-                    return "ROUND " +
-                           round +
-                           " RESULTS  ·  " +
-                           state.Remaining.ToString("0.0") +
-                           "s" +
-                           pauseSuffix;
+                    return "ROUND " + round +
+                           " RESULTS" + pauseSuffix;
                 case NetworkWrongWayPhase.Complete:
                     return "WRONG WAY  ·  FINAL RESULTS";
                 default:
                     return "WRONG WAY";
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkWrongWayPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkWrongWayPhase.Countdown:
+                    return WrongWayRules.CountdownSeconds;
+                case NetworkWrongWayPhase.Running:
+                    return WrongWayRules.RoundSeconds;
+                case NetworkWrongWayPhase.RoundResult:
+                    return NetworkWrongWayState.RoundResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private string BuildLocalPrompt()
         {

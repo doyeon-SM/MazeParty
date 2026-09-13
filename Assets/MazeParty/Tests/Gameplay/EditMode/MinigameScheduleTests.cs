@@ -33,8 +33,16 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(6),
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
+                (int)ScheduledMinigameId.TerritoryPaint,
+                Is.EqualTo(7),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                (int)ScheduledMinigameId.TagChase,
+                Is.EqualTo(8),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(6));
+                Is.EqualTo(8));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
@@ -57,6 +65,12 @@ namespace MazeParty.Gameplay.Tests
                 counts[ScheduledMinigameId.GiftGrab],
                 Is.EqualTo(1));
             Assert.That(
+                counts[ScheduledMinigameId.TerritoryPaint],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.TagChase],
+                Is.EqualTo(1));
+            Assert.That(
                 counts[ScheduledMinigameId.Skip],
                 Is.EqualTo(
                     schedule.TurnCount -
@@ -76,7 +90,7 @@ namespace MazeParty.Gameplay.Tests
                 out var restored);
 
             Assert.That(decoded, Is.True);
-            Assert.That(payload, Does.Contain("\"schemaVersion\":5"));
+            Assert.That(payload, Does.Contain("\"schemaVersion\":7"));
             Assert.That(matchKey, Is.EqualTo("session:room-42"));
             AssertSchedulesEqual(original, restored);
         }
@@ -166,6 +180,44 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 codec.Encode(fiveGameMatchKey, fiveGameSchedule),
                 Does.Contain("\"schemaVersion\":4"));
+
+            const string sixGamePayload =
+                "{\"schemaVersion\":5,\"matchKey\":\"six-game-match\"," +
+                "\"seed\":1732,\"turnCount\":7," +
+                "\"entries\":[6,0,5,4,3,2,1]}";
+            Assert.That(
+                codec.TryDecode(
+                    sixGamePayload,
+                    out var sixGameMatchKey,
+                    out var sixGameSchedule),
+                Is.True);
+            Assert.That(sixGameMatchKey, Is.EqualTo("six-game-match"));
+            Assert.That(
+                sixGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.GiftGrab));
+            Assert.That(
+                codec.Encode(sixGameMatchKey, sixGameSchedule),
+                Does.Contain("\"schemaVersion\":5"));
+
+            const string sevenGamePayload =
+                "{\"schemaVersion\":6,\"matchKey\":\"seven-game-match\"," +
+                "\"seed\":2048,\"turnCount\":8," +
+                "\"entries\":[7,6,5,4,3,2,1,0]}";
+            Assert.That(
+                codec.TryDecode(
+                    sevenGamePayload,
+                    out var sevenGameMatchKey,
+                    out var sevenGameSchedule),
+                Is.True);
+            Assert.That(
+                sevenGameMatchKey,
+                Is.EqualTo("seven-game-match"));
+            Assert.That(
+                sevenGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.TerritoryPaint));
+            Assert.That(
+                codec.Encode(sevenGameMatchKey, sevenGameSchedule),
+                Does.Contain("\"schemaVersion\":6"));
         }
 
         [Test]
@@ -226,7 +278,9 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.RedLightGreenLight] = 0,
                 [ScheduledMinigameId.StableFooting] = 0,
                 [ScheduledMinigameId.BalloonBlow] = 0,
-                [ScheduledMinigameId.GiftGrab] = 0
+                [ScheduledMinigameId.GiftGrab] = 0,
+                [ScheduledMinigameId.TerritoryPaint] = 0,
+                [ScheduledMinigameId.TagChase] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)

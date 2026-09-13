@@ -5,6 +5,8 @@ using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.StableFooting;
+using MazeParty.Gameplay.Minigames.TagChase;
+using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 
@@ -103,7 +105,21 @@ namespace MazeParty.Gameplay.Minigames
                 GiftGrabRules.RoundCount,
                 60f,
                 "GiftGrab",
-                new Color(0.72f, 0.36f, 0.92f, 1f))
+                new Color(0.72f, 0.36f, 0.92f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.TerritoryPaint,
+                "TERRITORY PAINT",
+                TerritoryPaintRules.RoundCount,
+                (float)TerritoryPaintRules.RoundSeconds,
+                "TerritoryPaint",
+                new Color(0.16f, 0.72f, 0.68f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.TagChase,
+                "TAG CHASE",
+                TagChaseRules.RoundCount,
+                (float)TagChaseRules.RoundSeconds,
+                "TagChase",
+                new Color(0.94f, 0.18f, 0.28f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;

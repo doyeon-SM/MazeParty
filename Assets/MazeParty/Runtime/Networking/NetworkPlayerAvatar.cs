@@ -138,11 +138,18 @@ namespace MazeParty.Multiplayer
         private Vector2 _lastSentRedLightGreenLightInput;
         private Vector2 _lastSentStableFootingInput;
         private Vector2 _lastSentGiftGrabInput;
+        private Vector2 _lastSentTagChaseInput;
+        private Vector2 _lastSentTerritoryPaintInput;
         private bool _lastSentBalloonBlowHeld;
         private int _lastSentBalloonBlowRound = -1;
         private uint _lastSentBalloonBlowInputEpoch;
         private int _lastSentGiftGrabRound = -1;
         private uint _lastSentGiftGrabInputEpoch;
+        private int _lastSentTagChaseRound = -1;
+        private uint _lastSentTagChaseInputEpoch;
+        private float _lastSentTagChaseYaw;
+        private int _lastSentTerritoryPaintRound = -1;
+        private uint _lastSentTerritoryPaintInputEpoch;
         private bool _serverQuietWalkHeld;
         private bool _lastSentQuietWalkHeld;
         private float _serverYaw;
@@ -156,6 +163,8 @@ namespace MazeParty.Multiplayer
         private float _nextRedLightGreenLightInputRefresh;
         private float _nextStableFootingInputRefresh;
         private float _nextGiftGrabInputRefresh;
+        private float _nextTagChaseInputRefresh;
+        private float _nextTerritoryPaintInputRefresh;
         private float _nextBalloonBlowInputRefresh;
         private float _nextSlotResolveAttempt;
         private double _nextLocalPrimaryRepeatAt;
@@ -175,6 +184,8 @@ namespace MazeParty.Multiplayer
         private int _cachedLocalWorldDieSlot = -1;
         private float _nextLocalWorldDieResolveAt;
 
+        public float LocalLookYaw => _localYaw;
+        public float LocalLookPitch => _localPitch;
         public int AssignedSlot => _slot.Value;
         public int LocalVisibleRoll
         {
@@ -389,7 +400,16 @@ namespace MazeParty.Multiplayer
 
             HandleLocalLook();
             var handlingMinigame =
-                SubmitLocalGiftGrabInput();
+                SubmitLocalTagChaseInput();
+            if (!handlingMinigame)
+            {
+                handlingMinigame =
+                    SubmitLocalTerritoryPaintInput();
+            }
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalGiftGrabInput();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame = SubmitLocalBalloonBlowInput();
@@ -1518,11 +1538,19 @@ namespace MazeParty.Multiplayer
         private void HandleLocalLook()
         {
             var match = NetworkMatchState.Instance;
-            var canLook = match != null &&
-                          ((match.CanAcceptActionInput && HasResolvedItemChoice &&
-                            !BoardFlowView.IsItemShopOpen) ||
-                           match.CanAvatarUseCombatInput(this)) &&
-                          Cursor.lockState == CursorLockMode.Locked;
+            var minigameFirstPerson =
+                match != null &&
+                match.IsTagChasePlaying &&
+                match.CurrentMinigameUsesFirstPersonForSlot(
+                    AssignedSlot);
+            var canLook =
+                minigameFirstPerson ||
+                (match != null &&
+                 ((match.CanAcceptActionInput &&
+                   HasResolvedItemChoice &&
+                   !BoardFlowView.IsItemShopOpen) ||
+                  match.CanAvatarUseCombatInput(this)) &&
+                 Cursor.lockState == CursorLockMode.Locked);
             var mouse = Mouse.current;
             if (!canLook || mouse == null)
             {
@@ -1966,6 +1994,133 @@ namespace MazeParty.Multiplayer
 
             return true;
         }
+
+        private bool SubmitLocalTerritoryPaintInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsTerritoryPaintPlaying)
+            {
+                _lastSentTerritoryPaintInput = Vector2.zero;
+                _lastSentTerritoryPaintRound = -1;
+                _lastSentTerritoryPaintInputEpoch = 0U;
+                return false;
+            }
+
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) || inputEpoch == 0U)
+            {
+                return true;
+            }
+
+            var input = Vector2.zero;
+            var keyboard = Keyboard.current;
+            if (keyboard != null &&
+                match.CanCurrentMinigameAcceptInputForSlot(
+                    AssignedSlot))
+            {
+                input.x =
+                    (keyboard.dKey.isPressed ? 1f : 0f) -
+                    (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y =
+                    (keyboard.wKey.isPressed ? 1f : 0f) -
+                    (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentTerritoryPaintInput ||
+                roundNumber != _lastSentTerritoryPaintRound ||
+                inputEpoch != _lastSentTerritoryPaintInputEpoch ||
+                Time.unscaledTime >=
+                _nextTerritoryPaintInputRefresh)
+            {
+                _lastSentTerritoryPaintInput = input;
+                _lastSentTerritoryPaintRound = roundNumber;
+                _lastSentTerritoryPaintInputEpoch = inputEpoch;
+                _nextTerritoryPaintInputRefresh =
+                    Time.unscaledTime + 0.1f;
+                SubmitTerritoryPaintInputRpc(
+                    input,
+                    roundNumber,
+                    inputEpoch);
+            }
+
+            return true;
+        }
+
+        private bool SubmitLocalTagChaseInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsTagChasePlaying)
+            {
+                _lastSentTagChaseInput = Vector2.zero;
+                _lastSentTagChaseRound = -1;
+                _lastSentTagChaseInputEpoch = 0U;
+                return false;
+            }
+
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) ||
+                inputEpoch == 0U)
+            {
+                return true;
+            }
+
+            var input = Vector2.zero;
+            var canAccept =
+                match.CanCurrentMinigameAcceptInputForSlot(
+                    AssignedSlot);
+            var keyboard = Keyboard.current;
+            if (canAccept && keyboard != null)
+            {
+                input.x =
+                    (keyboard.dKey.isPressed ? 1f : 0f) -
+                    (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y =
+                    (keyboard.wKey.isPressed ? 1f : 0f) -
+                    (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentTagChaseInput ||
+                Mathf.Abs(Mathf.DeltaAngle(
+                    _lastSentTagChaseYaw,
+                    _localYaw)) >= 1f ||
+                roundNumber != _lastSentTagChaseRound ||
+                inputEpoch != _lastSentTagChaseInputEpoch ||
+                Time.unscaledTime >=
+                _nextTagChaseInputRefresh)
+            {
+                _lastSentTagChaseInput = input;
+                _lastSentTagChaseYaw = _localYaw;
+                _lastSentTagChaseRound = roundNumber;
+                _lastSentTagChaseInputEpoch = inputEpoch;
+                _nextTagChaseInputRefresh =
+                    Time.unscaledTime + 0.1f;
+                SubmitTagChaseInputRpc(
+                    input,
+                    _localYaw,
+                    roundNumber,
+                    inputEpoch);
+            }
+
+            var mouse = Mouse.current;
+            if (canAccept &&
+                match.CurrentMinigameUsesFirstPersonForSlot(
+                    AssignedSlot) &&
+                mouse != null &&
+                mouse.leftButton.wasPressedThisFrame &&
+                !IsPointerOverUi())
+            {
+                RequestTagChaseCatchRpc(
+                    roundNumber,
+                    inputEpoch);
+            }
+
+            return true;
+        }
+
 
         private bool SubmitLocalWrongWayDirection()
         {
@@ -2919,6 +3074,82 @@ namespace MazeParty.Multiplayer
                 roundNumber,
                 inputEpoch);
         }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitTerritoryPaintInputRpc(
+            Vector2 input,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkMatchState.Instance?.
+                RouteMovementInputOnCurrentMinigameOnServer(
+                    this,
+                    Vector2.ClampMagnitude(input, 1f),
+                    roundNumber,
+                    inputEpoch);
+        }
+
+        [Rpc(
+            SendTo.Server,
+            InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitTagChaseInputRpc(
+            Vector2 input,
+            float yaw,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) ||
+                float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) ||
+                float.IsInfinity(input.y) ||
+                float.IsNaN(yaw) ||
+                float.IsInfinity(yaw))
+            {
+                return;
+            }
+
+            var match = NetworkMatchState.Instance;
+            match?.RouteLookInputOnCurrentMinigameOnServer(
+                this,
+                yaw,
+                roundNumber,
+                inputEpoch);
+            match?.RouteMovementInputOnCurrentMinigameOnServer(
+                this,
+                Vector2.ClampMagnitude(input, 1f),
+                roundNumber,
+                inputEpoch);
+        }
+
+        [Rpc(
+            SendTo.Server,
+            InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestTagChaseCatchRpc(
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.
+                    RoutePrimaryActionOnCurrentMinigameOnServer(
+                        this,
+                        roundNumber,
+                        inputEpoch);
+            }
+        }
+
+
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void RequestGiftGrabActionRpc(

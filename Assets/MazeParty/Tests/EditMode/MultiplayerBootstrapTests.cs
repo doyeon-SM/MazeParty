@@ -33,6 +33,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/BalloonBlow.unity";
         private const string GiftGrabScenePath =
             "Assets/MazeParty/Scenes/GiftGrab.unity";
+        private const string TerritoryPaintScenePath =
+            "Assets/MazeParty/Scenes/TerritoryPaint.unity";
+        private const string TagChaseScenePath =
+            "Assets/MazeParty/Scenes/TagChase.unity";
         private const string PlayerPrefabPath =
             "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
@@ -79,9 +83,9 @@ namespace MazeParty.Multiplayer.Tests
                 .Where(scene => scene.enabled)
                 .Select(scene => scene.path)
                 .ToArray();
-            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(8));
+            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(10));
             Assert.That(
-                enabledScenes.Take(8),
+                enabledScenes.Take(10),
                 Is.EqualTo(new[]
                 {
                     BootstrapScenePath,
@@ -91,7 +95,9 @@ namespace MazeParty.Multiplayer.Tests
                     RedLightGreenLightScenePath,
                     StableFootingScenePath,
                     BalloonBlowScenePath,
-                    GiftGrabScenePath
+                    GiftGrabScenePath,
+                    TerritoryPaintScenePath,
+                    TagChaseScenePath
                 }));
 
             var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(

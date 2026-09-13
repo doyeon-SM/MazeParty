@@ -471,10 +471,13 @@ namespace MazeParty.Multiplayer
                         ScheduledMinigameId.StableFooting)) +
                 " / " + MinigameCatalog.GetRoundCount(
                     ScheduledMinigameId.StableFooting);
-            hud.TimerText.text = reconnectPaused
-                ? MinigameDisplayFormatter.FormatClock(
-                    match.ReconnectRemaining)
-                : MinigameDisplayFormatter.FormatClock(state.Remaining);
+            hud.TimerDial.SetTime(
+                reconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.Remaining,
+                reconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             hud.PhaseText.text = reconnectPaused
                 ? "PLAYER DISCONNECTED · MATCH PAUSED"
                 : BuildPhaseLabel();
@@ -517,6 +520,23 @@ namespace MazeParty.Multiplayer
                     : hud.GetDefaultPlayerRowColor(slot);
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkStableFootingPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkStableFootingPhase.Countdown:
+                    return NetworkStableFootingState.CountdownSeconds;
+                case NetworkStableFootingPhase.Running:
+                    return StableFootingRules.RoundSeconds;
+                case NetworkStableFootingPhase.RoundResult:
+                    return NetworkStableFootingState.RoundResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private string BuildPhaseLabel()
         {

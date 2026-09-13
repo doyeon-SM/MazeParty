@@ -15,6 +15,7 @@ namespace MazeParty.Multiplayer
     {
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private Text phaseText;
+        [SerializeField] private MinigameTimerDial timerDial;
         [SerializeField] private Text timerText;
         [SerializeField] private Text roundText;
         [SerializeField] private Text instructionText;
@@ -28,6 +29,7 @@ namespace MazeParty.Multiplayer
 
         public Canvas RootCanvas => rootCanvas;
         public Text PhaseText => phaseText;
+        public MinigameTimerDial TimerDial => timerDial;
         public Text TimerText => timerText;
         public Text RoundText => roundText;
         public Text InstructionText => instructionText;
@@ -39,6 +41,8 @@ namespace MazeParty.Multiplayer
         public bool HasRequiredReferences =>
             rootCanvas != null &&
             phaseText != null &&
+            timerDial != null &&
+            timerDial.HasRequiredReferences &&
             timerText != null &&
             roundText != null &&
             instructionText != null &&
@@ -72,6 +76,12 @@ namespace MazeParty.Multiplayer
             _defaultPlayerRowColors = null;
             CaptureDefaultPlayerRowColors();
         }
+
+        public void ConfigureTimerDial(MinigameTimerDial timer)
+        {
+            timerDial = timer;
+        }
+
 
         public Color GetDefaultPlayerRowColor(int index)
         {

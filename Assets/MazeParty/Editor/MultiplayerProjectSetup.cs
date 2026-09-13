@@ -34,6 +34,10 @@ namespace MazeParty.Editor
             ScenesFolder + "/BalloonBlow.unity";
         private const string GiftGrabPath =
             ScenesFolder + "/GiftGrab.unity";
+        private const string TerritoryPaintPath =
+            ScenesFolder + "/TerritoryPaint.unity";
+        private const string TagChasePath =
+            ScenesFolder + "/TagChase.unity";
         private const string PlayerPrefabPath = PrefabsFolder + "/NetworkPlayer.prefab";
         private const string LobbyCanvasPrefabPath =
             UiPrefabsFolder + "/LobbyCanvas.prefab";
@@ -54,6 +58,7 @@ namespace MazeParty.Editor
             }
 
             EnsureFolders();
+            MinigameTimerDialProjectSetup.EnsurePrefabExists();
 
             var playerPrefab = CreatePlayerPrefab();
             CreateBootstrapScene(playerPrefab);
@@ -65,6 +70,8 @@ namespace MazeParty.Editor
             StableFootingProjectSetup.BuildStableFootingAssets();
             BalloonBlowProjectSetup.BuildBalloonBlowAssets();
             GiftGrabProjectSetup.BuildGiftGrabAssets();
+            TerritoryPaintProjectSetup.BuildTerritoryPaintAssets();
+            TagChaseProjectSetup.BuildTagChaseAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -1134,7 +1141,9 @@ namespace MazeParty.Editor
                 new EditorBuildSettingsScene(RedLightGreenLightPath, true),
                 new EditorBuildSettingsScene(StableFootingPath, true),
                 new EditorBuildSettingsScene(BalloonBlowPath, true),
-                new EditorBuildSettingsScene(GiftGrabPath, true)
+                new EditorBuildSettingsScene(GiftGrabPath, true),
+                new EditorBuildSettingsScene(TerritoryPaintPath, true),
+                new EditorBuildSettingsScene(TagChasePath, true)
             };
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";

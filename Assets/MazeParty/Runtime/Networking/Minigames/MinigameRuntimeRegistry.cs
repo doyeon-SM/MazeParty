@@ -13,7 +13,9 @@ namespace MazeParty.Multiplayer
             new RedLightGreenLightRuntimeAdapter(),
             new StableFootingRuntimeAdapter(),
             new BalloonBlowRuntimeAdapter(),
-            new GiftGrabRuntimeAdapter()
+            new GiftGrabRuntimeAdapter(),
+            new TerritoryPaintRuntimeAdapter(),
+            new TagChaseRuntimeAdapter()
         };
 
         private static readonly IReadOnlyList<ScheduledMinigameId>

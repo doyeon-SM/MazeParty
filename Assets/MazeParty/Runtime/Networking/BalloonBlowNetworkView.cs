@@ -399,8 +399,13 @@ namespace MazeParty.Multiplayer
             }
 
             hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerText.text =
-                MinigameDisplayFormatter.FormatClock(state.RemainingSeconds);
+            hud.TimerDial.SetTime(
+                match.IsReconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.RemainingSeconds,
+                match.IsReconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             hud.RoundText.text = "ROUND " + state.RoundNumber + " / " +
                                  MinigameCatalog.GetRoundCount(
                                      ScheduledMinigameId.BalloonBlow);
@@ -440,6 +445,23 @@ namespace MazeParty.Multiplayer
                 hud.PlayerRows[slot].color = rowColor;
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkBalloonBlowPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkBalloonBlowPhase.Countdown:
+                    return NetworkBalloonBlowState.CountdownSeconds;
+                case NetworkBalloonBlowPhase.Running:
+                    return BalloonBlowRules.RoundSeconds;
+                case NetworkBalloonBlowPhase.RoundResult:
+                    return NetworkBalloonBlowState.RoundResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private string GetLocalInstruction()
         {

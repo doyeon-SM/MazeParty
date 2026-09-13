@@ -22,6 +22,7 @@ namespace MazeParty.Multiplayer
     public sealed class RedLightGreenLightHudBindings : MonoBehaviour
     {
         [SerializeField] private Canvas rootCanvas;
+        [SerializeField] private MinigameTimerDial timerDial;
         [SerializeField] private Text phaseText;
         [SerializeField] private Text signalText;
         [SerializeField] private Text instructionText;
@@ -40,6 +41,7 @@ namespace MazeParty.Multiplayer
         private Color[] _defaultPlayerRowColors;
 
         public Canvas RootCanvas => rootCanvas;
+        public MinigameTimerDial TimerDial => timerDial;
         public Text PhaseText => phaseText;
         public Text SignalText => signalText;
         public Text InstructionText => instructionText;
@@ -51,6 +53,8 @@ namespace MazeParty.Multiplayer
 
         public bool HasRequiredReferences =>
             rootCanvas != null &&
+            timerDial != null &&
+            timerDial.HasRequiredReferences &&
             phaseText != null &&
             signalText != null &&
             instructionText != null &&
@@ -79,6 +83,12 @@ namespace MazeParty.Multiplayer
             turnWarningSignalColor = turnWarning;
             redSignalColor = red;
         }
+
+        public void ConfigureTimerDial(MinigameTimerDial timer)
+        {
+            timerDial = timer;
+        }
+
 
         public Color GetDefaultPlayerRowColor(int index)
         {

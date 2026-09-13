@@ -24,6 +24,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/LobbyCanvas.prefab",
+            "Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab",
             "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
             "Assets/MazeParty/UI/Prefabs/WrongWayHud.prefab",
             "Assets/MazeParty/UI/Prefabs/RedLightGreenLightHud.prefab",
@@ -32,6 +33,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/BalloonBlowStationLabel.prefab",
             "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab",
             "Assets/MazeParty/UI/Prefabs/GiftGrabBaseLabel.prefab",
+            "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameScheduleTower.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/MinigameSoloHud.prefab",
@@ -42,6 +45,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
             "MazeParty.Multiplayer.OnlineLobbyView",
+            "MazeParty.Multiplayer.MinigameTimerDial",
             "MazeParty.Multiplayer.MinefieldHudBindings",
             "MazeParty.Multiplayer.WrongWayHudBindings",
             "MazeParty.Multiplayer.RedLightGreenLightHudBindings",
@@ -50,6 +54,8 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.BalloonBlowStationLabel",
             "MazeParty.Multiplayer.GiftGrabHudBindings",
             "MazeParty.Multiplayer.GiftGrabBaseLabel",
+            "MazeParty.Multiplayer.TerritoryPaintHudBindings",
+            "MazeParty.Multiplayer.TagChaseHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Gameplay.Testbed.GameplayTestbedUiBindings",
             "MazeParty.Multiplayer.MinigameSoloHudView",
@@ -88,7 +94,13 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/BalloonBlowHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/GiftGrab.unity",
-                "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab")
+                "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/TerritoryPaint.unity",
+                "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/TagChase.unity",
+                "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =
@@ -260,7 +272,11 @@ namespace MazeParty.Multiplayer.Tests
                             instanceRoot,
                             Is.Not.Null,
                             contract.Path + " :: " + component.name);
-                        visualPrefabRoots.Add(instanceRoot);
+                        visualPrefabRoots.Add(
+                            PrefabUtility
+                                .GetOutermostPrefabInstanceRoot(
+                                    component.gameObject) ??
+                            instanceRoot);
                         Assert.That(
                             RequiredPrefabPaths,
                             Does.Contain(PrefabUtility
@@ -315,6 +331,41 @@ namespace MazeParty.Multiplayer.Tests
                         EditorSceneManager.CloseScene(scene, true);
                     }
                 }
+            }
+        }
+
+        [Test]
+        public void MinigameHuds_UseNestedSharedTimerDialPrefab()
+        {
+            const string timerPath =
+                "Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab";
+            var hudPaths = new[]
+            {
+                "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/WrongWayHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/RedLightGreenLightHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/StableFootingHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/BalloonBlowHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab"
+            };
+
+            foreach (var hudPath in hudPaths)
+            {
+                var prefab =
+                    AssetDatabase.LoadAssetAtPath<GameObject>(hudPath);
+                Assert.That(prefab, Is.Not.Null, hudPath);
+                var timer = prefab.GetComponentInChildren<
+                    MinigameTimerDial>(true);
+                Assert.That(timer, Is.Not.Null, hudPath);
+                Assert.That(timer.HasRequiredReferences, Is.True, hudPath);
+                Assert.That(
+                    PrefabUtility
+                        .GetPrefabAssetPathOfNearestInstanceRoot(
+                            timer.gameObject),
+                    Is.EqualTo(timerPath),
+                    hudPath);
             }
         }
 

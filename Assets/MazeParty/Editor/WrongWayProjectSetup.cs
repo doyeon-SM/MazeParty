@@ -536,6 +536,10 @@ namespace MazeParty.Editor
                 WrongWayHudPrefabPath);
             if (existing != null)
             {
+                MinigameTimerDialProjectSetup.EnsureHudTimer(
+                    WrongWayHudPrefabPath);
+                existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    WrongWayHudPrefabPath);
                 ValidateWrongWayHudPrefab(existing);
                 return existing;
             }
@@ -552,6 +556,10 @@ namespace MazeParty.Editor
                         "WrongWayHud.prefab could not be created.");
                 }
 
+                MinigameTimerDialProjectSetup.EnsureHudTimer(
+                    WrongWayHudPrefabPath);
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    WrongWayHudPrefabPath);
                 ValidateWrongWayHudPrefab(prefab);
                 return prefab;
             }

@@ -32,5 +32,11 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/Scenes/SampleScene.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/TerritoryPaint.unity
+    guid: a38007c26bd2c77429b14fd022e2e30a
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/TagChase.unity
+    guid: 18a5b53eb3097754fb2f2ab01508b17b
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

@@ -80,6 +80,31 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 giftGrab.ScenePath,
                 Is.EqualTo(MinigameSoloTestCatalog.GiftGrabScenePath));
+            Assert.That(
+                (byte)MinigameSoloTestId.TerritoryPaint,
+                Is.EqualTo(7),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.TerritoryPaint,
+                    out var territoryPaint),
+                Is.True);
+            Assert.That(
+                territoryPaint.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.TerritoryPaintScenePath));
+            Assert.That(
+                (byte)MinigameSoloTestId.TagChase,
+                Is.EqualTo(8),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.TagChase,
+                    out var tagChase),
+                Is.True);
+            Assert.That(
+                tagChase.ScenePath,
+                Is.EqualTo(MinigameSoloTestCatalog.TagChaseScenePath));
 
             var session = new StableFootingSoloSession();
             session.Begin(12345);

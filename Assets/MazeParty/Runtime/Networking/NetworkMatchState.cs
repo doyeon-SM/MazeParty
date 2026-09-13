@@ -7,6 +7,8 @@ using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.StableFooting;
+using MazeParty.Gameplay.Minigames.TagChase;
+using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -152,6 +154,14 @@ namespace MazeParty.Multiplayer
                    runtime.CanAcceptInputForSlot(slot);
         }
 
+        public bool CurrentMinigameUsesFirstPersonForSlot(int slot)
+        {
+            return TryGetCurrentMinigameRuntime(out var runtime) &&
+                   runtime != null &&
+                   runtime.UsesFirstPersonControlsForSlot(slot);
+        }
+
+
         public bool TryGetCurrentMinigameRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
@@ -205,6 +215,23 @@ namespace MazeParty.Multiplayer
                     inputEpoch);
             }
         }
+
+        public void RouteLookInputOnCurrentMinigameOnServer(
+            NetworkPlayerAvatar avatar,
+            float yaw,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+            if (TryGetCurrentMinigameRuntime(out var runtime))
+            {
+                runtime.ReceiveLookInputOnServer(
+                    avatar,
+                    yaw,
+                    roundNumber,
+                    inputEpoch);
+            }
+        }
+
 
         public void RoutePushInputOnCurrentMinigameOnServer(NetworkPlayerAvatar avatar)
         {
@@ -356,6 +383,25 @@ namespace MazeParty.Multiplayer
              FlowState == BoardFlowState.SkippedResult);
         public bool IsGiftGrabPlaying =>
             IsGiftGrabPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsTerritoryPaintPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.TerritoryPaint &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+
+        public bool IsTagChasePhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.TagChase &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsTagChasePlaying =>
+            IsTagChasePhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsTerritoryPaintPlaying =>
+            IsTerritoryPaintPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
 
         public static bool IsGameplayReady =>
@@ -1272,6 +1318,145 @@ namespace MazeParty.Multiplayer
 
             return true;
         }
+
+        public bool TryCompleteTerritoryPaintOnServer(
+            IReadOnlyList<TerritoryPaintLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.TerritoryPaint ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!TerritoryPaintRules.IsValidPlayerSlot(
+                        entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    TerritoryPaintRules.GetPointsForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteTagChaseOnServer(
+            IReadOnlyList<TagChaseLeaderboardEntry> leaderboard)
+        {
+            if (!IsServer || leaderboard == null ||
+                leaderboard.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.TagChase ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                if (!TagChaseRules.IsValidPlayerSlot(
+                        entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < leaderboard.Count; index++)
+            {
+                var entry = leaderboard[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                avatar.ApplyGoldDeltaOnServer(
+                    TagChaseRules.GetRewardForRank(entry.Rank));
+                if (entry.Rank == 1)
+                {
+                    avatar.AddMinigameWinOnServer();
+                }
+            }
+
+            return true;
+        }
+
 
         public void PauseForReconnectOnServer(ulong disconnectedClientId)
         {

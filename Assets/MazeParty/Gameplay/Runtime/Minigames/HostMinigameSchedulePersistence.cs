@@ -38,7 +38,9 @@ namespace MazeParty.Gameplay.Minigames
         private const int RedLightGreenLightSchemaVersion = 2;
         private const int StableFootingSchemaVersion = 3;
         private const int BalloonBlowSchemaVersion = 4;
-        private const int CurrentSchemaVersion = 5;
+        private const int GiftGrabSchemaVersion = 5;
+        private const int TerritoryPaintSchemaVersion = 6;
+        private const int CurrentSchemaVersion = 7;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
@@ -51,6 +53,12 @@ namespace MazeParty.Gameplay.Minigames
         // Schema 4 predates Gift Grab and validates against the first five
         // append-only catalog entries.
         private const int BalloonBlowRegisteredGameCount = 5;
+        // Schema 5 predates Territory Paint and validates against the first
+        // six append-only catalog entries.
+        private const int GiftGrabRegisteredGameCount = 6;
+        // Schema 6 predates Tag Chase and validates against the first seven
+        // append-only catalog entries.
+        private const int TerritoryPaintRegisteredGameCount = 7;
 
         public string Encode(
             string matchKey,
@@ -105,6 +113,16 @@ namespace MazeParty.Gameplay.Minigames
                 return BalloonBlowSchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                GiftGrabRegisteredGameCount)
+            {
+                return GiftGrabSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                TerritoryPaintRegisteredGameCount)
+            {
+                return TerritoryPaintSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -137,6 +155,10 @@ namespace MazeParty.Gameplay.Minigames
                      StableFootingSchemaVersion &&
                      document.schemaVersion !=
                      BalloonBlowSchemaVersion &&
+                     document.schemaVersion !=
+                     GiftGrabSchemaVersion &&
+                     document.schemaVersion !=
+                     TerritoryPaintSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -168,6 +190,10 @@ namespace MazeParty.Gameplay.Minigames
                         StableFootingRegisteredGameCount,
                     BalloonBlowSchemaVersion =>
                         BalloonBlowRegisteredGameCount,
+                    GiftGrabSchemaVersion =>
+                        GiftGrabRegisteredGameCount,
+                    TerritoryPaintSchemaVersion =>
+                        TerritoryPaintRegisteredGameCount,
                     _ => MinigameScheduleRules.RegisteredGameCount
                 };
                 var restored = HostMinigameSchedule.Restore(

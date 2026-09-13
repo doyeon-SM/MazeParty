@@ -12,6 +12,7 @@ namespace MazeParty.Multiplayer
         bool IsSpawned { get; }
 
         bool CanAcceptInputForSlot(int slot);
+        bool UsesFirstPersonControlsForSlot(int slot);
         bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch);
@@ -23,6 +24,11 @@ namespace MazeParty.Multiplayer
         void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
+            byte roundNumber,
+            uint inputEpoch);
+        void ReceiveLookInputOnServer(
+            NetworkPlayerAvatar avatar,
+            float yaw,
             byte roundNumber,
             uint inputEpoch);
         void RequestPushOnServer(NetworkPlayerAvatar avatar);
@@ -67,6 +73,11 @@ namespace MazeParty.Multiplayer
             return false;
         }
 
+        public virtual bool UsesFirstPersonControlsForSlot(int slot)
+        {
+            return false;
+        }
+
         public virtual bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
@@ -100,6 +111,14 @@ namespace MazeParty.Multiplayer
         public virtual void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+        }
+
+        public virtual void ReceiveLookInputOnServer(
+            NetworkPlayerAvatar avatar,
+            float yaw,
             byte roundNumber,
             uint inputEpoch)
         {

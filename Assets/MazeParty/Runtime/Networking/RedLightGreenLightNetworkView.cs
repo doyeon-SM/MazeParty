@@ -473,14 +473,19 @@ namespace MazeParty.Multiplayer
 
             var phaseText = hud.PhaseText;
             var instructionText = hud.InstructionText;
+            hud.TimerDial.SetTime(
+                match.IsReconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.Remaining,
+                match.IsReconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             var scoreRows = hud.PlayerRows;
 
             if (match.IsReconnectPaused)
             {
                 phaseText.text =
-                    "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
-                    MinigameDisplayFormatter.FormatClock(
-                        match.ReconnectRemaining);
+                    "PLAYER DISCONNECTED  ·  MATCH PAUSED";
                 hud.SetSignal(
                     "PAUSED",
                     RedLightGreenLightHudSignalStyle.Neutral);
@@ -541,23 +546,36 @@ namespace MazeParty.Multiplayer
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
                     return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / " + totalRounds + "  ·  START IN " +
-                           Mathf.CeilToInt((float)state.Remaining);
+                           round + " / " + totalRounds +
+                           "  ·  COUNTDOWN";
                 case NetworkRedLightGreenLightPhase.Running:
                     return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / " + totalRounds + "  ·  " +
-                           MinigameDisplayFormatter.FormatClock(
-                               state.Remaining);
+                           round + " / " + totalRounds;
                 case NetworkRedLightGreenLightPhase.RoundResult:
-                    return "ROUND " + round +
-                           " RESULTS  ·  NEXT IN " +
-                           Mathf.CeilToInt((float)state.Remaining);
+                    return "ROUND " + round + " RESULTS";
                 case NetworkRedLightGreenLightPhase.Complete:
                     return "RED LIGHT, GREEN LIGHT  ·  FINAL RESULTS";
                 default:
                     return "RED LIGHT, GREEN LIGHT";
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkRedLightGreenLightPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkRedLightGreenLightPhase.Countdown:
+                    return RedLightGreenLightRules.CountdownSeconds;
+                case NetworkRedLightGreenLightPhase.Running:
+                    return RedLightGreenLightRules.RoundSeconds;
+                case NetworkRedLightGreenLightPhase.RoundResult:
+                    return RedLightGreenLightRules.ResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private void BuildSignalLabel(
             out string label,

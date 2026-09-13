@@ -510,13 +510,19 @@ namespace MazeParty.Multiplayer
             var phaseText = hud.PhaseText;
             var instructionText = hud.InstructionText;
             var scoreRows = hud.ScoreRows;
+            hud.TimerDial.SetTime(
+                match.IsReconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.Remaining,
+                match.IsReconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             var totalRounds = MinigameCatalog.GetRoundCount(
                 ScheduledMinigameId.Minefield);
             if (match.IsReconnectPaused)
             {
-                phaseText.text = "PLAYER DISCONNECTED  ·  MATCH PAUSED  ·  " +
-                                 MinigameDisplayFormatter.FormatClock(
-                                     match.ReconnectRemaining);
+                phaseText.text =
+                    "PLAYER DISCONNECTED  ·  MATCH PAUSED";
                 instructionText.text =
                     "Waiting up to 60 seconds for the player to reconnect.";
             }
@@ -526,19 +532,21 @@ namespace MazeParty.Multiplayer
                 switch (state.Phase)
                 {
                     case NetworkMinefieldPhase.Countdown:
-                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber +
-                                         " / " + totalRounds + "  ·  START IN " +
-                                         Mathf.CeilToInt((float)state.Remaining);
+                        phaseText.text =
+                            "MINEFIELD  ·  ROUND " +
+                            state.RoundNumber + " / " +
+                            totalRounds + "  ·  COUNTDOWN";
                         break;
                     case NetworkMinefieldPhase.Running:
-                        phaseText.text = "MINEFIELD  ·  ROUND " + state.RoundNumber +
-                                         " / " + totalRounds + "  ·  " +
-                                         MinigameDisplayFormatter.FormatClock(
-                                             state.Remaining);
+                        phaseText.text =
+                            "MINEFIELD  ·  ROUND " +
+                            state.RoundNumber + " / " +
+                            totalRounds;
                         break;
                     case NetworkMinefieldPhase.RoundResult:
-                        phaseText.text = "ROUND " + state.RoundNumber + " RESULTS  ·  NEXT IN " +
-                                         Mathf.CeilToInt((float)state.Remaining);
+                        phaseText.text =
+                            "ROUND " + state.RoundNumber +
+                            " RESULTS";
                         break;
                     case NetworkMinefieldPhase.Complete:
                         phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
@@ -576,6 +584,23 @@ namespace MazeParty.Multiplayer
                 }
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkMinefieldPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkMinefieldPhase.Countdown:
+                    return NetworkMinefieldState.CountdownSeconds;
+                case NetworkMinefieldPhase.Running:
+                    return NetworkMinefieldState.RunSeconds;
+                case NetworkMinefieldPhase.RoundResult:
+                    return NetworkMinefieldState.RoundResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private void SetWorldPresentationActive(bool active)
         {

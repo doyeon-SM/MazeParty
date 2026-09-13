@@ -15,7 +15,9 @@ namespace MazeParty.Gameplay.Minigames
         RedLightGreenLight = 3,
         StableFooting = 4,
         BalloonBlow = 5,
-        GiftGrab = 6
+        GiftGrab = 6,
+        TerritoryPaint = 7,
+        TagChase = 8
     }
 
     public static class MinigameScheduleRules

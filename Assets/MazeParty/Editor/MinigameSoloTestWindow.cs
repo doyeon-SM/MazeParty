@@ -143,6 +143,12 @@ namespace MazeParty.EditorTools
                 case MinigameSoloTestId.GiftGrab:
                     return "WASD move + auto pickup · LMB throw / push · " +
                            "R restart · N next seed · Esc stop";
+                case MinigameSoloTestId.TerritoryPaint:
+                    return "WASD move + paint · R restart · " +
+                           "N next seed · Esc stop";
+                case MinigameSoloTestId.TagChase:
+                    return "WASD move · mouse look + LMB catch as tagger · " +
+                           "R restart · N next seed · Esc stop";
                 case MinigameSoloTestId.Minefield:
                 default:
                     return "WASD move · stop + RMB sonar · " +
@@ -179,6 +185,8 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play Balloon Blow Solo";
         private const string QuickPlayGiftGrabMenuPath =
             "MazeParty/Developer/Play Gift Grab Solo";
+        private const string QuickPlayTagChaseMenuPath =
+            "MazeParty/Developer/Play Tag Chase Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -297,6 +305,20 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlayGiftGrabMenuPath, true)]
         private static bool ValidateQuickPlayGiftGrab()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayTagChaseMenuPath, false, 2106)]
+        private static void QuickPlayTagChase()
+        {
+            Start(
+                MinigameSoloTestId.TagChase,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayTagChaseMenuPath, true)]
+        private static bool ValidateQuickPlayTagChase()
         {
             return CanStart;
         }
@@ -549,6 +571,44 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Gift Grab solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.TerritoryPaint:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                TerritoryPaintSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Territory Paint " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.TagChase:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                TagChaseSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Tag Chase " +
+                                "solo harness.");
                         }
                         controller.ConfigureHud(
                             InstantiateSoloHud(bootstrap.transform));
@@ -1040,10 +1100,26 @@ namespace MazeParty.EditorTools
             var balloonBlow =
                 FindRuntimeHarnessOfType<
                     BalloonBlowSoloTestController>();
-            return balloonBlow != null
-                ? (Component)balloonBlow
-                : FindRuntimeHarnessOfType<
+            if (balloonBlow != null)
+            {
+                return balloonBlow;
+            }
+
+            var giftGrab =
+                FindRuntimeHarnessOfType<
                     GiftGrabSoloTestController>();
+            if (giftGrab != null)
+            {
+                return giftGrab;
+            }
+
+            var territoryPaint =
+                FindRuntimeHarnessOfType<
+                    TerritoryPaintSoloTestController>();
+            return territoryPaint != null
+                ? (Component)territoryPaint
+                : FindRuntimeHarnessOfType<
+                    TagChaseSoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -1060,6 +1136,10 @@ namespace MazeParty.EditorTools
                 BalloonBlowSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 GiftGrabSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                TerritoryPaintSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                TagChaseSoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()

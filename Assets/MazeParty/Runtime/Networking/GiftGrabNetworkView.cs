@@ -561,8 +561,13 @@ namespace MazeParty.Multiplayer
             }
 
             hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerText.text =
-                MinigameDisplayFormatter.FormatClock(state.RemainingSeconds);
+            hud.TimerDial.SetTime(
+                match.IsReconnectPaused
+                    ? match.ReconnectRemaining
+                    : state.RemainingSeconds,
+                match.IsReconnectPaused
+                    ? NetworkMatchState.ReconnectGraceSeconds
+                    : GetTimerDuration(state.Phase));
             hud.RoundText.text =
                 "ROUND " + state.RoundNumber + " / " +
                 MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
@@ -599,6 +604,23 @@ namespace MazeParty.Multiplayer
                     : hud.GetDefaultPlayerRowColor(slot);
             }
         }
+
+        private static double GetTimerDuration(
+            NetworkGiftGrabPhase phase)
+        {
+            switch (phase)
+            {
+                case NetworkGiftGrabPhase.Countdown:
+                    return NetworkGiftGrabState.CountdownSeconds;
+                case NetworkGiftGrabPhase.Running:
+                    return GiftGrabRules.RoundSeconds;
+                case NetworkGiftGrabPhase.RoundResult:
+                    return NetworkGiftGrabState.RoundResultSeconds;
+                default:
+                    return 1d;
+            }
+        }
+
 
         private int CountLooseGifts()
         {

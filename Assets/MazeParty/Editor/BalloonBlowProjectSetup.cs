@@ -407,6 +407,8 @@ namespace MazeParty.Editor
                 }
             }
 
+            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var bindings = prefab != null
                 ? prefab.GetComponent<BalloonBlowHudBindings>()
                 : null;
