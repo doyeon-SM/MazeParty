@@ -22,6 +22,7 @@ namespace MazeParty.Multiplayer.Tests
                     Is.True,
                     descriptor.Id.ToString());
                 Assert.That(descriptor.DisplayName, Is.Not.Empty);
+                Assert.That(descriptor.ControlsLabel, Is.Not.Empty);
                 Assert.That(
                     AssetDatabase.LoadAssetAtPath<SceneAsset>(
                         descriptor.ScenePath),
@@ -117,6 +118,25 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 race.ScenePath,
                 Is.EqualTo(MinigameSoloTestCatalog.RaceScenePath));
+            Assert.That(
+                (byte)MinigameSoloTestId.SequenceMemory,
+                Is.EqualTo(10),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.SequenceMemory,
+                    out var sequenceMemory),
+                Is.True);
+            Assert.That(
+                sequenceMemory.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.SequenceMemoryScenePath));
+            Assert.That(
+                sequenceMemory.DisplayName,
+                Is.EqualTo("Sequence Memory"));
+            Assert.That(
+                sequenceMemory.ControlsLabel,
+                Does.Contain("A / S / D"));
 
             var session = new StableFootingSoloSession();
             session.Begin(12345);

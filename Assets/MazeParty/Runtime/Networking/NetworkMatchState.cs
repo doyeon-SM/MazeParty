@@ -7,6 +7,7 @@ using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.Race;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -308,6 +309,22 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void RouteSequenceMemoryInputOnCurrentMinigameOnServer(
+            NetworkPlayerAvatar avatar,
+            SequenceMemoryInput input,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+            if (TryGetCurrentMinigameRuntime(out var runtime))
+            {
+                runtime.TrySubmitSequenceMemoryInputOnServer(
+                    avatar,
+                    input,
+                    roundNumber,
+                    inputEpoch);
+            }
+        }
+
         public bool GameplayEnabled => _gameplayEnabled.Value;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
@@ -425,6 +442,15 @@ namespace MazeParty.Multiplayer
              FlowState == BoardFlowState.SkippedResult);
         public bool IsRacePlaying =>
             IsRacePhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsSequenceMemoryPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.SequenceMemory &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsSequenceMemoryPlaying =>
+            IsSequenceMemoryPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
         public bool IsTerritoryPaintPlaying =>
             IsTerritoryPaintPhase &&
@@ -990,14 +1016,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-
-                // Until a separate economy table is authored, the final placement
-                // uses the same transparent 3/2/1/0 schedule as each round.
-                avatar.ApplyGoldDeltaOnServer(MinefieldRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1060,12 +1079,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    WrongWayRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1130,12 +1144,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    RedLightGreenLightRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1198,12 +1207,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    StableFootingRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1266,12 +1270,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    BalloonBlowRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1334,12 +1333,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    GiftGrabRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1403,12 +1397,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    TerritoryPaintRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1472,12 +1461,7 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    TagChaseRules.GetRewardForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
@@ -1540,15 +1524,86 @@ namespace MazeParty.Multiplayer
             {
                 var entry = leaderboard[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
-                avatar.ApplyGoldDeltaOnServer(
-                    RaceRules.GetPointsForRank(entry.Rank));
-                if (entry.Rank == 1)
-                {
-                    avatar.AddMinigameWinOnServer();
-                }
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
             }
 
             return true;
+        }
+
+        public bool TryCompleteSequenceMemoryOnServer(
+            IReadOnlyList<SequenceMemoryStanding> standings)
+        {
+            if (!IsServer || standings == null ||
+                standings.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.SequenceMemory ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenSlots = 0;
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < standings.Count; index++)
+            {
+                var entry = standings[index];
+                if (!SequenceMemoryRules.IsValidPlayerSlot(
+                        entry.PlayerSlot) ||
+                    entry.Rank < 1 ||
+                    entry.Rank > MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var slotBit = 1 << entry.PlayerSlot;
+                var rankBit = 1 << (entry.Rank - 1);
+                if ((seenSlots & slotBit) != 0 ||
+                    (seenRanks & rankBit) != 0)
+                {
+                    return false;
+                }
+
+                seenSlots |= slotBit;
+                seenRanks |= rankBit;
+                var avatar = GetAvatarForSlot(entry.PlayerSlot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[entry.PlayerSlot] = avatar;
+            }
+
+            if (seenSlots != AllPlayersMask ||
+                seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var index = 0; index < standings.Count; index++)
+            {
+                var entry = standings[index];
+                var avatar = rewardAvatars[entry.PlayerSlot];
+                SettleMinigamePlacementOnServer(avatar, entry.Rank);
+            }
+
+            return true;
+        }
+
+        private static void SettleMinigamePlacementOnServer(
+            NetworkPlayerAvatar avatar,
+            int rank)
+        {
+            avatar.ApplyGoldDeltaOnServer(
+                MinigameRewardRules.GetFinalPlacementGold(rank));
+            if (rank == 1)
+            {
+                avatar.AddMinigameWinOnServer();
+            }
         }
 
 

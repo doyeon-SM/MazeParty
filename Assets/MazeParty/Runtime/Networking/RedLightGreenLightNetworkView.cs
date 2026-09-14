@@ -524,7 +524,7 @@ namespace MazeParty.Multiplayer
                           MinigameDisplayFormatter.ToOrdinal(
                               state.GetFinalRank(slot)) +
                           "  ·  GOLD +" +
-                          RedLightGreenLightRules.GetPointsForRank(
+                          MinigameRewardRules.GetFinalPlacementGold(
                               state.GetFinalRank(slot))
                         : string.Empty);
                 scoreRows[slot].color = avatar != null

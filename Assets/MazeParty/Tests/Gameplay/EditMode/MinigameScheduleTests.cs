@@ -45,8 +45,12 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(9),
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
+                (int)ScheduledMinigameId.SequenceMemory,
+                Is.EqualTo(10),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(9));
+                Is.EqualTo(10));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
@@ -78,6 +82,9 @@ namespace MazeParty.Gameplay.Tests
                 counts[ScheduledMinigameId.Race],
                 Is.EqualTo(1));
             Assert.That(
+                counts[ScheduledMinigameId.SequenceMemory],
+                Is.EqualTo(1));
+            Assert.That(
                 counts[ScheduledMinigameId.Skip],
                 Is.EqualTo(
                     schedule.TurnCount -
@@ -97,7 +104,7 @@ namespace MazeParty.Gameplay.Tests
                 out var restored);
 
             Assert.That(decoded, Is.True);
-            Assert.That(payload, Does.Contain("\"schemaVersion\":8"));
+            Assert.That(payload, Does.Contain("\"schemaVersion\":9"));
             Assert.That(matchKey, Is.EqualTo("session:room-42"));
             AssertSchedulesEqual(original, restored);
         }
@@ -242,6 +249,23 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 codec.Encode(eightGameMatchKey, eightGameSchedule),
                 Does.Contain("\"schemaVersion\":7"));
+
+            const string nineGamePayload =
+                "{\"schemaVersion\":8,\"matchKey\":\"nine-game-match\"," +
+                "\"seed\":8192,\"turnCount\":10," +
+                "\"entries\":[9,8,7,6,5,4,3,2,1,0]}";
+            Assert.That(
+                codec.TryDecode(
+                    nineGamePayload,
+                    out var nineGameMatchKey,
+                    out var nineGameSchedule),
+                Is.True);
+            Assert.That(
+                nineGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.Race));
+            Assert.That(
+                codec.Encode(nineGameMatchKey, nineGameSchedule),
+                Does.Contain("\"schemaVersion\":8"));
         }
 
         [Test]
@@ -305,7 +329,8 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.GiftGrab] = 0,
                 [ScheduledMinigameId.TerritoryPaint] = 0,
                 [ScheduledMinigameId.TagChase] = 0,
-                [ScheduledMinigameId.Race] = 0
+                [ScheduledMinigameId.Race] = 0,
+                [ScheduledMinigameId.SequenceMemory] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)

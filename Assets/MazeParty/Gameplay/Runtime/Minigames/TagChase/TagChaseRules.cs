@@ -141,13 +141,6 @@ namespace MazeParty.Gameplay.Minigames.TagChase
             return result;
         }
 
-        public static int GetRewardForRank(int rank)
-        {
-            return rank >= 1 && rank <= PlayerCount
-                ? PlayerCount - rank
-                : 0;
-        }
-
         private static void ValidateSlot(int slot)
         {
             if (!IsValidPlayerSlot(slot))

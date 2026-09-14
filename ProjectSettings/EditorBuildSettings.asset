@@ -41,5 +41,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MazeParty/Scenes/Race.unity
     guid: 1f55f52987b7aa249a13ffbb7d67625e
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity
+    guid: cb125742b2984d34f9f9f32dedb47b75
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

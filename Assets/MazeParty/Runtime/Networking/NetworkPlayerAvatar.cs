@@ -1,6 +1,7 @@
 using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.Race;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Collections;
 using Unity.Netcode;
@@ -400,7 +401,11 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
-            var handlingMinigame = SubmitLocalRaceInput();
+            var handlingMinigame = SubmitLocalSequenceMemoryInput();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalRaceInput();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame = SubmitLocalTagChaseInput();
@@ -1570,6 +1575,11 @@ namespace MazeParty.Multiplayer
         private void HandleLocalActionButtons()
         {
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsSequenceMemoryPlaying)
+            {
+                return;
+            }
+
             if (match != null && match.IsRacePlaying)
             {
                 return;
@@ -2054,6 +2064,53 @@ namespace MazeParty.Multiplayer
                     inputEpoch);
             }
 
+            return true;
+        }
+
+        private bool SubmitLocalSequenceMemoryInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsSequenceMemoryPlaying)
+            {
+                return false;
+            }
+
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) ||
+                inputEpoch == 0U ||
+                !match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
+            {
+                return true;
+            }
+
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+            {
+                return true;
+            }
+
+            var aPressed = keyboard.aKey.wasPressedThisFrame;
+            var sPressed = keyboard.sKey.wasPressedThisFrame;
+            var dPressed = keyboard.dKey.wasPressedThisFrame;
+            var pressedCount =
+                (aPressed ? 1 : 0) +
+                (sPressed ? 1 : 0) +
+                (dPressed ? 1 : 0);
+            if (pressedCount != 1)
+            {
+                return true;
+            }
+
+            var input = aPressed
+                ? SequenceMemoryInput.A
+                : sPressed
+                    ? SequenceMemoryInput.S
+                    : SequenceMemoryInput.D;
+            SubmitSequenceMemoryInputRpc(
+                input,
+                roundNumber,
+                inputEpoch);
             return true;
         }
 
@@ -3195,6 +3252,29 @@ namespace MazeParty.Multiplayer
 
             NetworkMatchState.Instance?.
                 RouteRaceStepOnCurrentMinigameOnServer(
+                    this,
+                    input,
+                    roundNumber,
+                    inputEpoch);
+        }
+
+        [Rpc(
+            SendTo.Server,
+            InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitSequenceMemoryInputRpc(
+            SequenceMemoryInput input,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                !SequenceMemoryRules.IsValidInput(input))
+            {
+                return;
+            }
+
+            NetworkMatchState.Instance?.
+                RouteSequenceMemoryInputOnCurrentMinigameOnServer(
                     this,
                     input,
                     roundNumber,

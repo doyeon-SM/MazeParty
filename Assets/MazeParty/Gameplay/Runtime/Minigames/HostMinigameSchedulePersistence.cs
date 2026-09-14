@@ -41,7 +41,8 @@ namespace MazeParty.Gameplay.Minigames
         private const int GiftGrabSchemaVersion = 5;
         private const int TerritoryPaintSchemaVersion = 6;
         private const int TagChaseSchemaVersion = 7;
-        private const int CurrentSchemaVersion = 8;
+        private const int RaceSchemaVersion = 8;
+        private const int CurrentSchemaVersion = 9;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
@@ -63,6 +64,9 @@ namespace MazeParty.Gameplay.Minigames
         // Schema 7 predates Race and validates against the first eight
         // append-only catalog entries.
         private const int TagChaseRegisteredGameCount = 8;
+        // Schema 8 predates Sequence Memory and validates against the first
+        // nine append-only catalog entries.
+        private const int RaceRegisteredGameCount = 9;
 
         public string Encode(
             string matchKey,
@@ -132,6 +136,11 @@ namespace MazeParty.Gameplay.Minigames
                 return TagChaseSchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                RaceRegisteredGameCount)
+            {
+                return RaceSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -170,6 +179,7 @@ namespace MazeParty.Gameplay.Minigames
                      TerritoryPaintSchemaVersion &&
                      document.schemaVersion !=
                      TagChaseSchemaVersion &&
+                     document.schemaVersion != RaceSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -207,6 +217,7 @@ namespace MazeParty.Gameplay.Minigames
                         TerritoryPaintRegisteredGameCount,
                     TagChaseSchemaVersion =>
                         TagChaseRegisteredGameCount,
+                    RaceSchemaVersion => RaceRegisteredGameCount,
                     _ => MinigameScheduleRules.RegisteredGameCount
                 };
                 var restored = HostMinigameSchedule.Restore(

@@ -13,7 +13,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         GiftGrab = 6,
         TerritoryPaint = 7,
         TagChase = 8,
-        Race = 9
+        Race = 9,
+        SequenceMemory = 10
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -21,7 +22,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         public MinigameSoloTestDescriptor(
             MinigameSoloTestId id,
             string displayName,
-            string scenePath)
+            string scenePath,
+            string controlsLabel)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -35,15 +37,23 @@ namespace MazeParty.Dev.MinigameSoloTest
                     "A scene path is required.",
                     nameof(scenePath));
             }
+            if (string.IsNullOrWhiteSpace(controlsLabel))
+            {
+                throw new ArgumentException(
+                    "A controls label is required.",
+                    nameof(controlsLabel));
+            }
 
             Id = id;
             DisplayName = displayName;
             ScenePath = scenePath;
+            ControlsLabel = controlsLabel;
         }
 
         public MinigameSoloTestId Id { get; }
         public string DisplayName { get; }
         public string ScenePath { get; }
+        public string ControlsLabel { get; }
     }
 
     /// <summary>
@@ -70,45 +80,72 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/TagChase.unity";
         public const string RaceScenePath =
             "Assets/MazeParty/Scenes/Race.unity";
+        public const string SequenceMemoryScenePath =
+            "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.Minefield,
                 "Minefield",
-                MinefieldScenePath),
+                MinefieldScenePath,
+                "WASD move · stop + RMB sonar · R restart · " +
+                "N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.WrongWay,
                 "WrongWay",
-                WrongWayScenePath),
+                WrongWayScenePath,
+                "WASD match prompt · R restart · " +
+                "N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.RedLightGreenLight,
                 "Red Light, Green Light",
-                RedLightGreenLightScenePath),
+                RedLightGreenLightScenePath,
+                "WASD move on green · freeze on red · " +
+                "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.StableFooting,
                 "Stable Footing",
-                StableFootingScenePath),
+                StableFootingScenePath,
+                "WASD move · LMB push · R restart · " +
+                "N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.BalloonBlow,
                 "Balloon Blow",
-                BalloonBlowScenePath),
+                BalloonBlowScenePath,
+                "Hold LMB inflate · release to rest · " +
+                "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.GiftGrab,
                 "Gift Grab",
-                GiftGrabScenePath),
+                GiftGrabScenePath,
+                "WASD move + auto pickup · LMB throw / push · " +
+                "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.TerritoryPaint,
                 "Territory Paint",
-                TerritoryPaintScenePath),
+                TerritoryPaintScenePath,
+                "WASD move + paint · R restart · " +
+                "N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.TagChase,
                 "Tag Chase",
-                TagChaseScenePath),
+                TagChaseScenePath,
+                "WASD move · mouse look + LMB catch as tagger · " +
+                "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.Race,
                 "Race",
-                RaceScenePath)
+                RaceScenePath,
+                "Alternate A / D · first to 500 · " +
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.SequenceMemory,
+                "Sequence Memory",
+                SequenceMemoryScenePath,
+                "Repeat with A / S / D · one mistake loses torso · " +
+                "two mistakes eliminate · R restart · " +
+                "N next seed · Esc stop")
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>

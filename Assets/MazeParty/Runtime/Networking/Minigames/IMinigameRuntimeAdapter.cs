@@ -1,5 +1,6 @@
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Race;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -51,6 +52,11 @@ namespace MazeParty.Multiplayer
         void TrySubmitRaceStepOnServer(
             NetworkPlayerAvatar avatar,
             RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch);
+        void TrySubmitSequenceMemoryInputOnServer(
+            NetworkPlayerAvatar avatar,
+            SequenceMemoryInput input,
             byte roundNumber,
             uint inputEpoch);
     }
@@ -164,6 +170,14 @@ namespace MazeParty.Multiplayer
         public virtual void TrySubmitRaceStepOnServer(
             NetworkPlayerAvatar avatar,
             RaceStepInput input,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+        }
+
+        public virtual void TrySubmitSequenceMemoryInputOnServer(
+            NetworkPlayerAvatar avatar,
+            SequenceMemoryInput input,
             byte roundNumber,
             uint inputEpoch)
         {

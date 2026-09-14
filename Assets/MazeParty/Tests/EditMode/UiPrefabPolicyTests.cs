@@ -36,6 +36,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
             "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
             "Assets/MazeParty/UI/Prefabs/RaceHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameScheduleTower.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/MinigameSoloHud.prefab",
@@ -58,6 +59,7 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.TerritoryPaintHudBindings",
             "MazeParty.Multiplayer.TagChaseHudBindings",
             "MazeParty.Multiplayer.RaceHudBindings",
+            "MazeParty.Multiplayer.SequenceMemoryHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Gameplay.Testbed.GameplayTestbedUiBindings",
             "MazeParty.Multiplayer.MinigameSoloHudView",
@@ -105,7 +107,10 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Race.unity",
-                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab")
+                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity",
+                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =
@@ -354,7 +359,8 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
-                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab"
+                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab"
             };
 
             foreach (var hudPath in hudPaths)

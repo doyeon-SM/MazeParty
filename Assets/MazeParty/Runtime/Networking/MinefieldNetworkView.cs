@@ -576,7 +576,8 @@ namespace MazeParty.Multiplayer
                                        "  ·  TOTAL " + state.GetScore(slot) +
                                        (finalRank > 0
                                            ? "\n#" + finalRank + "  ·  GOLD +" +
-                                             MinefieldRules.GetPointsForRank(finalRank)
+                                             MinigameRewardRules.GetFinalPlacementGold(
+                                                 finalRank)
                                            : string.Empty);
                 if (avatar != null)
                 {

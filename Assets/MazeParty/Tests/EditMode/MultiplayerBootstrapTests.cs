@@ -39,6 +39,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/TagChase.unity";
         private const string RaceScenePath =
             "Assets/MazeParty/Scenes/Race.unity";
+        private const string SequenceMemoryScenePath =
+            "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity";
         private const string PlayerPrefabPath =
             "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
@@ -85,9 +87,9 @@ namespace MazeParty.Multiplayer.Tests
                 .Where(scene => scene.enabled)
                 .Select(scene => scene.path)
                 .ToArray();
-            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(11));
+            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(12));
             Assert.That(
-                enabledScenes.Take(11),
+                enabledScenes.Take(12),
                 Is.EqualTo(new[]
                 {
                     BootstrapScenePath,
@@ -100,7 +102,8 @@ namespace MazeParty.Multiplayer.Tests
                     GiftGrabScenePath,
                     TerritoryPaintScenePath,
                     TagChaseScenePath,
-                    RaceScenePath
+                    RaceScenePath,
+                    SequenceMemoryScenePath
                 }));
 
             var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(

@@ -47,9 +47,8 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(leaderboard[2].PlayerSlot, Is.EqualTo(0));
             Assert.That(leaderboard[3].PlayerSlot, Is.EqualTo(3));
             Assert.That(
-                leaderboard.Select(entry =>
-                    TagChaseRules.GetRewardForRank(entry.Rank)),
-                Is.EqualTo(new[] { 3, 2, 1, 0 }));
+                leaderboard.Select(entry => entry.TotalPoints),
+                Is.EqualTo(new[] { 7, 7, 5, 2 }));
         }
     }
 }

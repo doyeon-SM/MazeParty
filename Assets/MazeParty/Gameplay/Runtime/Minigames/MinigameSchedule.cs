@@ -18,7 +18,8 @@ namespace MazeParty.Gameplay.Minigames
         GiftGrab = 6,
         TerritoryPaint = 7,
         TagChase = 8,
-        Race = 9
+        Race = 9,
+        SequenceMemory = 10
     }
 
     public static class MinigameScheduleRules

@@ -5,8 +5,11 @@ using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
+using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.StableFooting;
+using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
@@ -101,6 +104,15 @@ namespace MazeParty.Multiplayer
         private NetworkGiftGrabPhase _lastGiftGrabPhase =
             NetworkGiftGrabPhase.Inactive;
         private int _lastGiftGrabRound = -1;
+        private NetworkTagChasePhase _lastTagChasePhase =
+            NetworkTagChasePhase.Inactive;
+        private int _lastTagChaseRound = -1;
+        private NetworkRacePhase _lastRacePhase =
+            NetworkRacePhase.Inactive;
+        private int _lastRaceRound = -1;
+        private NetworkSequenceMemoryPhase _lastSequenceMemoryPhase =
+            NetworkSequenceMemoryPhase.Inactive;
+        private int _lastSequenceMemoryRound = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _lastMinigameRevealPending;
@@ -494,6 +506,9 @@ namespace MazeParty.Multiplayer
             var giftGrab = NetworkGiftGrabState.Instance;
             var territoryPaint =
                 NetworkTerritoryPaintState.Instance;
+            var tagChase = NetworkTagChaseState.Instance;
+            var race = NetworkRaceState.Instance;
+            var sequenceMemory = NetworkSequenceMemoryState.Instance;
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
@@ -523,6 +538,15 @@ namespace MazeParty.Multiplayer
                               ScheduledMinigameId.TerritoryPaint
                                 ? TerritoryPaintPhaseLabel(
                                     territoryPaint)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.TagChase
+                                ? TagChasePhaseLabel(tagChase)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.Race
+                                ? RacePhaseLabel(race)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.SequenceMemory
+                                ? SequenceMemoryPhaseLabel(sequenceMemory)
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
@@ -585,6 +609,24 @@ namespace MazeParty.Multiplayer
                             ? territoryPaint != null
                                 ? MinigameDisplayFormatter.FormatClock(
                                     territoryPaint.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.TagChase
+                            ? tagChase != null
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    tagChase.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.Race
+                            ? race != null
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    race.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.SequenceMemory
+                            ? sequenceMemory != null
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    sequenceMemory.Remaining)
                                 : "--:--"
                             : minefield != null
                             ? MinigameDisplayFormatter.FormatClock(
@@ -1002,6 +1044,27 @@ namespace MazeParty.Multiplayer
             var giftGrabRound = giftGrab != null
                 ? giftGrab.RoundNumber
                 : -1;
+            var tagChase = NetworkTagChaseState.Instance;
+            var tagChasePhase = tagChase != null
+                ? tagChase.Phase
+                : NetworkTagChasePhase.Inactive;
+            var tagChaseRound = tagChase != null
+                ? tagChase.RoundNumber
+                : -1;
+            var race = NetworkRaceState.Instance;
+            var racePhase = race != null
+                ? race.Phase
+                : NetworkRacePhase.Inactive;
+            var raceRound = race != null
+                ? race.RoundNumber
+                : -1;
+            var sequenceMemory = NetworkSequenceMemoryState.Instance;
+            var sequenceMemoryPhase = sequenceMemory != null
+                ? sequenceMemory.Phase
+                : NetworkSequenceMemoryPhase.Inactive;
+            var sequenceMemoryRound = sequenceMemory != null
+                ? sequenceMemory.RoundNumber
+                : -1;
             var revealPending = IsMinigameRevealPending(match);
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
@@ -1022,6 +1085,12 @@ namespace MazeParty.Multiplayer
                 _lastBalloonBlowRound == balloonBlowRound &&
                 _lastGiftGrabPhase == giftGrabPhase &&
                 _lastGiftGrabRound == giftGrabRound &&
+                _lastTagChasePhase == tagChasePhase &&
+                _lastTagChaseRound == tagChaseRound &&
+                _lastRacePhase == racePhase &&
+                _lastRaceRound == raceRound &&
+                _lastSequenceMemoryPhase == sequenceMemoryPhase &&
+                _lastSequenceMemoryRound == sequenceMemoryRound &&
                 _lastMinigameRevealPending == revealPending)
             {
                 return;
@@ -1043,6 +1112,12 @@ namespace MazeParty.Multiplayer
             _lastBalloonBlowRound = balloonBlowRound;
             _lastGiftGrabPhase = giftGrabPhase;
             _lastGiftGrabRound = giftGrabRound;
+            _lastTagChasePhase = tagChasePhase;
+            _lastTagChaseRound = tagChaseRound;
+            _lastRacePhase = racePhase;
+            _lastRaceRound = raceRound;
+            _lastSequenceMemoryPhase = sequenceMemoryPhase;
+            _lastSequenceMemoryRound = sequenceMemoryRound;
             _lastMinigameRevealPending = revealPending;
             if (match.IsKeyShopRevealActive)
             {
@@ -1123,6 +1198,15 @@ namespace MazeParty.Multiplayer
                               ScheduledMinigameId.TerritoryPaint
                                 ? TerritoryPaintStatus(
                                     NetworkTerritoryPaintState.Instance)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.TagChase
+                                ? TagChaseStatus(tagChase)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.Race
+                                ? RaceStatus(race)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.SequenceMemory
+                                ? SequenceMemoryStatus(sequenceMemory)
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -1131,7 +1215,9 @@ namespace MazeParty.Multiplayer
                         match.CurrentMinigame == ScheduledMinigameId.Skip
                             ? "SKIPPED: moving to the next block in the minigame tower."
                             : MinigameName(match.CurrentMinigame) +
-                              " COMPLETE: final standings and 3/2/1/0 gold rewards are shown.");
+                              " COMPLETE: final standings and " +
+                              MinigameRewardRules.FinalPlacementGoldSchedule +
+                              " gold rewards are shown.");
                     break;
                 case BoardFlowState.MatchComplete:
                     SetText(
@@ -1168,6 +1254,10 @@ namespace MazeParty.Multiplayer
             var isGiftGrab = selected == ScheduledMinigameId.GiftGrab;
             var isTerritoryPaint =
                 selected == ScheduledMinigameId.TerritoryPaint;
+            var isTagChase = selected == ScheduledMinigameId.TagChase;
+            var isRace = selected == ScheduledMinigameId.Race;
+            var isSequenceMemory =
+                selected == ScheduledMinigameId.SequenceMemory;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1188,6 +1278,12 @@ namespace MazeParty.Multiplayer
                         ? "GIFT GRAB"
                     : isTerritoryPaint
                         ? "TERRITORY PAINT"
+                    : isTagChase
+                        ? "TAG CHASE"
+                    : isRace
+                        ? "RACE"
+                    : isSequenceMemory
+                        ? "SEQUENCE MEMORY"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1235,6 +1331,25 @@ namespace MazeParty.Multiplayer
                           "arena and can overwrite rival colors. The full " +
                           "arena is worth 1000 points. One 60-second round; " +
                           "highest current area wins.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isTagChase
+                        ? "Each round assigns one player as the tagger. Runners " +
+                          "move with WASD using a shared camera. The tagger moves " +
+                          "with WASD in first person and presses LMB to catch. " +
+                          "Every player tags once across four 60-second rounds.\n" +
+                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                    : isRace
+                        ? "Alternate A and D to advance. Pressing the same key " +
+                          "twice does not count. The first player to reach 500 " +
+                          "steps ends the round. Three rounds, 60 seconds each.\n" +
+                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                    : isSequenceMemory
+                        ? "Watch and listen to the shared A/S/D sequence, then " +
+                          "repeat it after it is hidden. A is high, S is middle " +
+                          "and D is low. A wrong key locks the current problem. " +
+                          "Your first mistake removes your torso; your second " +
+                          "eliminates you. Ten problems, one final placement, " +
+                          "no per-problem score.\nALL 4 PLAYERS READY  -  READY " +
                           readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
@@ -1286,6 +1401,12 @@ namespace MazeParty.Multiplayer
                         ? "GIFT GRAB RESULTS"
                     : isTerritoryPaint
                         ? "TERRITORY PAINT RESULTS"
+                    : isTagChase
+                        ? "TAG CHASE RESULTS"
+                    : isRace
+                        ? "RACE RESULTS"
+                    : isSequenceMemory
+                        ? "SEQUENCE MEMORY RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
@@ -1306,6 +1427,14 @@ namespace MazeParty.Multiplayer
                 : isTerritoryPaint
                     ? BuildTerritoryPaintResultSummary(
                         NetworkTerritoryPaintState.Instance)
+                : isTagChase
+                    ? BuildTagChaseResultSummary(
+                        NetworkTagChaseState.Instance)
+                : isRace
+                    ? BuildRaceResultSummary(NetworkRaceState.Instance)
+                : isSequenceMemory
+                    ? BuildSequenceMemoryResultSummary(
+                        NetworkSequenceMemoryState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1315,7 +1444,9 @@ namespace MazeParty.Multiplayer
                     _minefieldResultNote,
                     isSkip
                         ? "No rewards are awarded for an empty queue slot."
-                        : "Final placement awards 3 / 2 / 1 / 0 gold.");
+                        : "Final placement awards " +
+                          MinigameRewardRules.FinalPlacementGoldSchedule +
+                          " gold.");
                 SetText(_minefieldResultSummary, resultSummary);
             }
             else
@@ -1344,6 +1475,12 @@ namespace MazeParty.Multiplayer
                         ? "WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS"
                     : isTerritoryPaint
                         ? "WASD: MOVE\nPAINT THE ARENA"
+                    : isTagChase
+                        ? "RUNNERS: WASD\nTAGGER: WASD + LMB"
+                    : isRace
+                        ? "ALTERNATE A / D\n500 STEPS"
+                    : isSequenceMemory
+                        ? "A: HIGH\nS: MIDDLE\nD: LOW"
                         : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
@@ -1405,7 +1542,8 @@ namespace MazeParty.Multiplayer
                     .Append("  SCORE ")
                     .Append(minefield.GetScore(rankedSlot))
                     .Append("  GOLD +")
-                    .Append(MinefieldRules.GetPointsForRank(rank));
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1454,7 +1592,8 @@ namespace MazeParty.Multiplayer
                     .Append("  SCORE ")
                     .Append(wrongWay.GetScore(rankedSlot))
                     .Append("  GOLD +")
-                    .Append(WrongWayRules.GetPointsForRank(rank));
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1508,7 +1647,7 @@ namespace MazeParty.Multiplayer
                     .Append(redLightGreenLight.GetScore(rankedSlot))
                     .Append("  GOLD +")
                     .Append(
-                        RedLightGreenLightRules.GetPointsForRank(rank));
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1561,7 +1700,8 @@ namespace MazeParty.Multiplayer
                     .Append("  SCORE ")
                     .Append(stableFooting.GetScore(rankedSlot))
                     .Append("  GOLD +")
-                    .Append(StableFootingRules.GetPointsForRank(rank));
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1614,7 +1754,8 @@ namespace MazeParty.Multiplayer
                     .Append("  SCORE ")
                     .Append(balloonBlow.GetScore(rankedSlot))
                     .Append("  GOLD +")
-                    .Append(BalloonBlowRules.GetPointsForRank(rank));
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1666,7 +1807,8 @@ namespace MazeParty.Multiplayer
                     .Append("  GIFTS ")
                     .Append(giftGrab.GetTotalStoredGiftCount(rankedSlot))
                     .Append("  GOLD +")
-                    .Append(GiftGrabRules.GetPointsForRank(rank));
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1717,7 +1859,165 @@ namespace MazeParty.Multiplayer
                             ? avatar.DisplayName
                             : "P" + (rankedSlot + 1))
                     .Append("  ")
-                    .Append(territoryPaint.GetScore(rankedSlot));
+                    .Append(territoryPaint.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildTagChaseResultSummary(
+            NetworkTagChaseState tagChase)
+        {
+            if (tagChase == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1; rank <= TagChaseRules.PlayerCount; rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
+                {
+                    if (tagChase.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(tagChase.GetTotalScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildRaceResultSummary(
+            NetworkRaceState race)
+        {
+            if (race == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1; rank <= RaceRules.PlayerCount; rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
+                {
+                    if (race.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(race.GetTotalScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildSequenceMemoryResultSummary(
+            NetworkSequenceMemoryState sequenceMemory)
+        {
+            if (sequenceMemory == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= SequenceMemoryRules.PlayerCount;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < SequenceMemoryRules.PlayerCount;
+                     slot++)
+                {
+                    if (sequenceMemory.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(
+                        avatar != null
+                            ? avatar.DisplayName
+                            : "P" + (rankedSlot + 1))
+                    .Append(sequenceMemory.IsPlayerEliminated(rankedSlot)
+                        ? "  OUT"
+                        : "  SURVIVED")
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
             }
 
             return builder.ToString();
@@ -1774,7 +2074,7 @@ namespace MazeParty.Multiplayer
                     return "Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.";
                 case NetworkMinefieldPhase.Complete:
                     return "All " + totalRounds +
-                           " rounds complete. Final points determine rank and gold.";
+                           " rounds complete. Final points determine rank; placement awards gold.";
                 default:
                     return "Preparing Minefield...";
             }
@@ -1832,7 +2132,7 @@ namespace MazeParty.Multiplayer
                     return "Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.";
                 case NetworkWrongWayPhase.Complete:
                     return totalRounds +
-                           " rounds complete. Final points determine rank and gold.";
+                           " rounds complete. Final points determine rank; placement awards gold.";
                 default:
                     return "Preparing WrongWay...";
             }
@@ -1912,7 +2212,7 @@ namespace MazeParty.Multiplayer
                 case NetworkRedLightGreenLightPhase.Complete:
                     return "All " + totalRounds +
                            " rounds complete. Final points determine " +
-                           "rank and gold.";
+                           "rank; placement awards gold.";
                 default:
                     return "Preparing Red Light / Green Light...";
             }
@@ -2001,7 +2301,7 @@ namespace MazeParty.Multiplayer
                     return "The last survivor ranks first; later falls rank above earlier falls.";
                 case NetworkStableFootingPhase.Complete:
                     return "All " + totalRounds +
-                           " rounds complete. Final points determine rank and gold.";
+                           " rounds complete. Final points determine rank; placement awards gold.";
                 default:
                     return "Preparing Stable Footing...";
             }
@@ -2063,7 +2363,7 @@ namespace MazeParty.Multiplayer
                            "rank by progress, then server player order.";
                 case NetworkBalloonBlowPhase.Complete:
                     return "All " + totalRounds +
-                           " rounds complete. Final points determine rank and gold.";
+                           " rounds complete. Final points determine rank; placement awards gold.";
                 default:
                     return "Preparing Balloon Blow...";
             }
@@ -2121,6 +2421,182 @@ namespace MazeParty.Multiplayer
                     return "TERRITORY PAINT COMPLETE";
                 default:
                     return "TERRITORY PAINT";
+            }
+        }
+
+        private static string TagChasePhaseLabel(
+            NetworkTagChaseState tagChase)
+        {
+            if (tagChase == null)
+            {
+                return "TAG CHASE";
+            }
+
+            var round = Mathf.Clamp(
+                tagChase.RoundNumber,
+                1,
+                TagChaseRules.RoundCount);
+            switch (tagChase.Phase)
+            {
+                case NetworkTagChasePhase.Countdown:
+                    return "TAG CHASE  ROUND " + round + " / " +
+                           TagChaseRules.RoundCount + "  -  COUNTDOWN";
+                case NetworkTagChasePhase.Running:
+                    return "TAG CHASE  ROUND " + round + " / " +
+                           TagChaseRules.RoundCount + "  -  CHASE";
+                case NetworkTagChasePhase.RoundResult:
+                    return "TAG CHASE  ROUND " + round + " / " +
+                           TagChaseRules.RoundCount + "  -  RESULT";
+                case NetworkTagChasePhase.Complete:
+                    return "TAG CHASE COMPLETE";
+                default:
+                    return "TAG CHASE";
+            }
+        }
+
+        private static string TagChaseStatus(
+            NetworkTagChaseState tagChase)
+        {
+            if (tagChase == null)
+            {
+                return "Synchronizing the Tag Chase arena...";
+            }
+
+            var taggerLabel = tagChase.TaggerSlot >= 0
+                ? "P" + (tagChase.TaggerSlot + 1)
+                : "The selected player";
+            switch (tagChase.Phase)
+            {
+                case NetworkTagChasePhase.Countdown:
+                    return taggerLabel +
+                           " is the tagger. Get ready for the chase.";
+                case NetworkTagChasePhase.Running:
+                    return "Runners escape with WASD on the shared camera. " +
+                           "The tagger uses WASD and LMB in first person.";
+                case NetworkTagChasePhase.RoundResult:
+                    return "The tagger earns 3 points only after catching every " +
+                           "runner; surviving and caught runners score separately.";
+                case NetworkTagChasePhase.Complete:
+                    return "All " + TagChaseRules.RoundCount +
+                           " rounds complete. Total points determine rank; " +
+                           "placement awards gold.";
+                default:
+                    return "Preparing Tag Chase...";
+            }
+        }
+
+        private static string RacePhaseLabel(NetworkRaceState race)
+        {
+            if (race == null)
+            {
+                return "RACE";
+            }
+
+            var round = Mathf.Clamp(
+                race.RoundNumber,
+                1,
+                RaceRules.RoundCount);
+            switch (race.Phase)
+            {
+                case NetworkRacePhase.Countdown:
+                    return "RACE  ROUND " + round + " / " +
+                           RaceRules.RoundCount + "  -  COUNTDOWN";
+                case NetworkRacePhase.Running:
+                    return "RACE  ROUND " + round + " / " +
+                           RaceRules.RoundCount + "  -  RUN";
+                case NetworkRacePhase.RoundResult:
+                    return "RACE  ROUND " + round + " / " +
+                           RaceRules.RoundCount + "  -  RESULT";
+                case NetworkRacePhase.Complete:
+                    return "RACE COMPLETE";
+                default:
+                    return "RACE";
+            }
+        }
+
+        private static string RaceStatus(NetworkRaceState race)
+        {
+            if (race == null)
+            {
+                return "Synchronizing the Race arena...";
+            }
+
+            switch (race.Phase)
+            {
+                case NetworkRacePhase.Countdown:
+                    return "Get ready to alternate A and D.";
+                case NetworkRacePhase.Running:
+                    return "Alternate A and D. Repeating the same key does not " +
+                           "advance; first to 500 steps ends the round.";
+                case NetworkRacePhase.RoundResult:
+                    return "More steps rank higher; server input order breaks " +
+                           "equal-progress ties.";
+                case NetworkRacePhase.Complete:
+                    return "All " + RaceRules.RoundCount +
+                           " rounds complete. Total points determine rank; " +
+                           "placement awards gold.";
+                default:
+                    return "Preparing Race...";
+            }
+        }
+
+        private static string SequenceMemoryPhaseLabel(
+            NetworkSequenceMemoryState sequenceMemory)
+        {
+            if (sequenceMemory == null)
+            {
+                return "SEQUENCE MEMORY";
+            }
+
+            var round = Mathf.Clamp(
+                sequenceMemory.RoundNumber,
+                1,
+                SequenceMemoryRules.RoundCount);
+            switch (sequenceMemory.Phase)
+            {
+                case NetworkSequenceMemoryPhase.Countdown:
+                    return "SEQUENCE MEMORY  -  COUNTDOWN";
+                case NetworkSequenceMemoryPhase.PresentingProblem:
+                    return "SEQUENCE MEMORY  PROBLEM " + round +
+                           " / " + SequenceMemoryRules.RoundCount +
+                           "  -  WATCH";
+                case NetworkSequenceMemoryPhase.AcceptingInput:
+                    return "SEQUENCE MEMORY  PROBLEM " + round +
+                           " / " + SequenceMemoryRules.RoundCount +
+                           "  -  INPUT";
+                case NetworkSequenceMemoryPhase.RevealingAnswer:
+                    return "SEQUENCE MEMORY  PROBLEM " + round +
+                           " / " + SequenceMemoryRules.RoundCount +
+                           "  -  ANSWER";
+                case NetworkSequenceMemoryPhase.Complete:
+                    return "SEQUENCE MEMORY COMPLETE";
+                default:
+                    return "SEQUENCE MEMORY";
+            }
+        }
+
+        private static string SequenceMemoryStatus(
+            NetworkSequenceMemoryState sequenceMemory)
+        {
+            if (sequenceMemory == null)
+            {
+                return "Synchronizing the Sequence Memory game...";
+            }
+
+            switch (sequenceMemory.Phase)
+            {
+                case NetworkSequenceMemoryPhase.Countdown:
+                    return "Get ready. The NPC will play one shared A/S/D sequence.";
+                case NetworkSequenceMemoryPhase.PresentingProblem:
+                    return "Watch and listen: A is high, S is middle and D is low.";
+                case NetworkSequenceMemoryPhase.AcceptingInput:
+                    return "Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.";
+                case NetworkSequenceMemoryPhase.RevealingAnswer:
+                    return "The answer is visible. One mistake loses the torso; the second eliminates.";
+                case NetworkSequenceMemoryPhase.Complete:
+                    return "The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.";
+                default:
+                    return "Preparing Sequence Memory...";
             }
         }
 

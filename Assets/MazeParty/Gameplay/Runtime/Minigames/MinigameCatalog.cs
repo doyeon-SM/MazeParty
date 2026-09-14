@@ -5,6 +5,7 @@ using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.Race;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -127,7 +128,14 @@ namespace MazeParty.Gameplay.Minigames
                 RaceRules.RoundCount,
                 (float)RaceRules.RoundSeconds,
                 "Race",
-                new Color(0.98f, 0.64f, 0.12f, 1f))
+                new Color(0.98f, 0.64f, 0.12f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.SequenceMemory,
+                "SEQUENCE MEMORY",
+                SequenceMemoryRules.RoundCount,
+                (float)SequenceMemoryRules.InputWindowSeconds,
+                "SequenceMemory",
+                new Color(0.48f, 0.36f, 0.94f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;

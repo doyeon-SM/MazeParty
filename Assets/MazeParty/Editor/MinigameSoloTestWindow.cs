@@ -78,8 +78,7 @@ namespace MazeParty.EditorTools
             EditorGUILayout.Space(8f);
             EditorGUILayout.LabelField(
                 "Controls",
-                GetControlsLabel(
-                    descriptors[_selectedIndex].Id));
+                descriptors[_selectedIndex].ControlsLabel);
             EditorGUILayout.HelpBox(
                 "This harness validates local controls, penalties, presentation, " +
                 "round timing, and deterministic layouts. NGO RPC and server " +
@@ -123,42 +122,6 @@ namespace MazeParty.EditorTools
             EditorPrefs.SetBool(RandomSeedKey, _randomSeed);
         }
 
-        private static string GetControlsLabel(
-            MinigameSoloTestId id)
-        {
-            switch (id)
-            {
-                case MinigameSoloTestId.WrongWay:
-                    return "WASD match prompt · R restart · " +
-                           "N next seed · Esc stop";
-                case MinigameSoloTestId.RedLightGreenLight:
-                    return "WASD move on green · freeze on red · " +
-                           "R restart · N next seed · Esc stop";
-                case MinigameSoloTestId.StableFooting:
-                    return "WASD move · LMB push · R restart · " +
-                           "N next seed · Esc stop";
-                case MinigameSoloTestId.BalloonBlow:
-                    return "Hold LMB inflate · release to rest · " +
-                           "R restart · N next seed · Esc stop";
-                case MinigameSoloTestId.GiftGrab:
-                    return "WASD move + auto pickup · LMB throw / push · " +
-                           "R restart · N next seed · Esc stop";
-                case MinigameSoloTestId.TerritoryPaint:
-                    return "WASD move + paint · R restart · " +
-                           "N next seed · Esc stop";
-                case MinigameSoloTestId.TagChase:
-                    return "WASD move · mouse look + LMB catch as tagger · " +
-                           "R restart · N next seed · Esc stop";
-                case MinigameSoloTestId.Race:
-                    return "Alternate A / D · first to 500 · " +
-                           "R restart · N next seed · Esc stop";
-                case MinigameSoloTestId.Minefield:
-                default:
-                    return "WASD move · stop + RMB sonar · " +
-                           "R restart · N next seed · Esc stop";
-            }
-        }
-
         internal static void RepaintOpenWindows()
         {
             var windows =
@@ -192,6 +155,8 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play Tag Chase Solo";
         private const string QuickPlayRaceMenuPath =
             "MazeParty/Developer/Play Race Solo";
+        private const string QuickPlaySequenceMemoryMenuPath =
+            "MazeParty/Developer/Play Sequence Memory Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -338,6 +303,20 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlayRaceMenuPath, true)]
         private static bool ValidateQuickPlayRace()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlaySequenceMemoryMenuPath, false, 2108)]
+        private static void QuickPlaySequenceMemory()
+        {
+            Start(
+                MinigameSoloTestId.SequenceMemory,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlaySequenceMemoryMenuPath, true)]
+        private static bool ValidateQuickPlaySequenceMemory()
         {
             return CanStart;
         }
@@ -645,6 +624,24 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Race solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.SequenceMemory:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            SequenceMemorySoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Sequence Memory " +
+                                "solo harness.");
                         }
                         controller.ConfigureHud(
                             InstantiateSoloHud(bootstrap.transform));
@@ -1159,9 +1156,17 @@ namespace MazeParty.EditorTools
 
             var tagChase = FindRuntimeHarnessOfType<
                 TagChaseSoloTestController>();
-            return tagChase != null
-                ? (Component)tagChase
-                : FindRuntimeHarnessOfType<RaceSoloTestController>();
+            if (tagChase != null)
+            {
+                return tagChase;
+            }
+
+            var race = FindRuntimeHarnessOfType<
+                RaceSoloTestController>();
+            return race != null
+                ? (Component)race
+                : FindRuntimeHarnessOfType<
+                    SequenceMemorySoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -1184,6 +1189,8 @@ namespace MazeParty.EditorTools
                 TagChaseSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 RaceSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                SequenceMemorySoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()
