@@ -12,6 +12,16 @@ namespace MazeParty.Multiplayer
         protected override NetworkSequenceMemoryState CurrentState =>
             NetworkSequenceMemoryState.Instance;
 
+        public override bool TryGetInitialCountdown(out double remainingSeconds)
+        {
+            var state = CurrentState;
+            remainingSeconds = state != null && state.RoundNumber == 1 &&
+                               state.Phase == NetworkSequenceMemoryPhase.Countdown
+                ? state.Remaining
+                : 0d;
+            return remainingSeconds > 0d;
+        }
+
         public override bool CanAcceptInputForSlot(int slot)
         {
             return CurrentState != null &&

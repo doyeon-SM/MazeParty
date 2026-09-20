@@ -3,6 +3,7 @@ using System.Text;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
+using MazeParty.Gameplay.Minigames.BouncingBalls;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.Race;
@@ -113,6 +114,9 @@ namespace MazeParty.Multiplayer
         private NetworkSequenceMemoryPhase _lastSequenceMemoryPhase =
             NetworkSequenceMemoryPhase.Inactive;
         private int _lastSequenceMemoryRound = -1;
+        private NetworkBouncingBallsPhase _lastBouncingBallsPhase =
+            NetworkBouncingBallsPhase.Inactive;
+        private int _lastBouncingBallsRound = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
         private bool _lastMinigameRevealPending;
@@ -171,6 +175,7 @@ namespace MazeParty.Multiplayer
         {
             Instance = this;
             BindUi();
+            MinigameLocalPlayerHighlight.EnsureInstalled(gameObject);
         }
 
         private void OnDestroy()
@@ -509,6 +514,7 @@ namespace MazeParty.Multiplayer
             var tagChase = NetworkTagChaseState.Instance;
             var race = NetworkRaceState.Instance;
             var sequenceMemory = NetworkSequenceMemoryState.Instance;
+            var bouncingBalls = NetworkBouncingBallsState.Instance;
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
@@ -547,6 +553,15 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.SequenceMemory
                                 ? SequenceMemoryPhaseLabel(sequenceMemory)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BouncingBalls
+                                ? BouncingBallsPhaseLabel(bouncingBalls)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BombPassing
+                                ? "BOMB PASSING"
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.SnowySpin
+                                ? "SNOWY SPIN"
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
@@ -628,6 +643,18 @@ namespace MazeParty.Multiplayer
                                 ? MinigameDisplayFormatter.FormatClock(
                                     sequenceMemory.Remaining)
                                 : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.BouncingBalls
+                            ? bouncingBalls != null
+                                ? MinigameDisplayFormatter.FormatClock(
+                                    bouncingBalls.Remaining)
+                                : "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.BombPassing
+                            ? "--:--"
+                        : match.CurrentMinigame ==
+                          ScheduledMinigameId.SnowySpin
+                            ? "--:--"
                             : minefield != null
                             ? MinigameDisplayFormatter.FormatClock(
                                 minefield.Remaining)
@@ -1065,6 +1092,13 @@ namespace MazeParty.Multiplayer
             var sequenceMemoryRound = sequenceMemory != null
                 ? sequenceMemory.RoundNumber
                 : -1;
+            var bouncingBalls = NetworkBouncingBallsState.Instance;
+            var bouncingBallsPhase = bouncingBalls != null
+                ? bouncingBalls.Phase
+                : NetworkBouncingBallsPhase.Inactive;
+            var bouncingBallsRound = bouncingBalls != null
+                ? bouncingBalls.RoundNumber
+                : -1;
             var revealPending = IsMinigameRevealPending(match);
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
@@ -1091,6 +1125,8 @@ namespace MazeParty.Multiplayer
                 _lastRaceRound == raceRound &&
                 _lastSequenceMemoryPhase == sequenceMemoryPhase &&
                 _lastSequenceMemoryRound == sequenceMemoryRound &&
+                _lastBouncingBallsPhase == bouncingBallsPhase &&
+                _lastBouncingBallsRound == bouncingBallsRound &&
                 _lastMinigameRevealPending == revealPending)
             {
                 return;
@@ -1118,6 +1154,8 @@ namespace MazeParty.Multiplayer
             _lastRaceRound = raceRound;
             _lastSequenceMemoryPhase = sequenceMemoryPhase;
             _lastSequenceMemoryRound = sequenceMemoryRound;
+            _lastBouncingBallsPhase = bouncingBallsPhase;
+            _lastBouncingBallsRound = bouncingBallsRound;
             _lastMinigameRevealPending = revealPending;
             if (match.IsKeyShopRevealActive)
             {
@@ -1207,6 +1245,16 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.SequenceMemory
                                 ? SequenceMemoryStatus(sequenceMemory)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BouncingBalls
+                                ? BouncingBallsStatus(bouncingBalls)
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.BombPassing
+                                ? "Keep the bomb away. Its light flashes " +
+                                  "faster as detonation approaches."
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.SnowySpin
+                                ? "Roll and push opponents off the ice."
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -1258,6 +1306,12 @@ namespace MazeParty.Multiplayer
             var isRace = selected == ScheduledMinigameId.Race;
             var isSequenceMemory =
                 selected == ScheduledMinigameId.SequenceMemory;
+            var isBouncingBalls =
+                selected == ScheduledMinigameId.BouncingBalls;
+            var isBombPassing =
+                selected == ScheduledMinigameId.BombPassing;
+            var isSnowySpin =
+                selected == ScheduledMinigameId.SnowySpin;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1284,6 +1338,12 @@ namespace MazeParty.Multiplayer
                         ? "RACE"
                     : isSequenceMemory
                         ? "SEQUENCE MEMORY"
+                    : isBouncingBalls
+                        ? "BOUNCING BALLS"
+                    : isBombPassing
+                        ? "BOMB PASSING"
+                    : isSnowySpin
+                        ? "SNOWY SPIN"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1351,6 +1411,33 @@ namespace MazeParty.Multiplayer
                           "eliminates you. Ten problems, one final placement, " +
                           "no per-problem score.\nALL 4 PLAYERS READY  -  READY " +
                           readyCount + " / 4"
+                    : isBouncingBalls
+                        ? "Move your goal shield with A and D. Three neutral balls " +
+                          "launch from the center. Touching one claims your color; " +
+                          "when it passes a shield into any goal, its color owner " +
+                          "scores. A scored ball relaunches from the conceding " +
+                          "player's shield in their color. Two 60-second rounds; " +
+                          "highest combined score wins.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isBombPassing
+                        ? "Move with WASD. Touch the center bomb to pick it up. " +
+                          "Click a nearby player in front of you to pass it; " +
+                          "the receiver is stunned for 0.5 seconds. Empty-hand " +
+                          "click stuns a nearby player for 0.5 seconds. The " +
+                          "fuse starts at spawn and lasts 20–25 seconds. " +
+                          "At half time, an unheld bomb chases the nearest " +
+                          "survivor. Only the carrier is eliminated when it " +
+                          "explodes. Last survivor wins.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isSnowySpin
+                        ? "Roll your colored ball with WASD. Holding a direction " +
+                          "accelerates; colliding with other balls pushes them " +
+                          "toward the edge. A fall eliminates you for that round. " +
+                          "Three rounds, up to 60 seconds each. If time runs " +
+                          "out, surviving balls nearer the center rank higher. " +
+                          "Round placement points are combined; final placement " +
+                          "awards gold once.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
                           "The next turn starts automatically."
@@ -1407,6 +1494,12 @@ namespace MazeParty.Multiplayer
                         ? "RACE RESULTS"
                     : isSequenceMemory
                         ? "SEQUENCE MEMORY RESULTS"
+                    : isBouncingBalls
+                        ? "BOUNCING BALLS RESULTS"
+                    : isBombPassing
+                        ? "BOMB PASSING RESULTS"
+                    : isSnowySpin
+                        ? "SNOWY SPIN RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
@@ -1435,6 +1528,15 @@ namespace MazeParty.Multiplayer
                 : isSequenceMemory
                     ? BuildSequenceMemoryResultSummary(
                         NetworkSequenceMemoryState.Instance)
+                : isBouncingBalls
+                    ? BuildBouncingBallsResultSummary(
+                        NetworkBouncingBallsState.Instance)
+                : isBombPassing
+                    ? BuildBombPassingResultSummary(
+                        NetworkBombPassingState.Instance)
+                : isSnowySpin
+                    ? BuildSnowySpinResultSummary(
+                        NetworkSnowySpinState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1481,6 +1583,12 @@ namespace MazeParty.Multiplayer
                         ? "ALTERNATE A / D\n500 STEPS"
                     : isSequenceMemory
                         ? "A: HIGH\nS: MIDDLE\nD: LOW"
+                    : isBouncingBalls
+                        ? "A / D: MOVE SHIELD\nCLAIM BALLS · SCORE GOALS"
+                    : isBombPassing
+                        ? "WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB"
+                    : isSnowySpin
+                        ? "WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF"
                         : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
@@ -1960,6 +2068,168 @@ namespace MazeParty.Multiplayer
                             : "P" + (rankedSlot + 1))
                     .Append("  SCORE ")
                     .Append(race.GetTotalScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildSnowySpinResultSummary(
+            NetworkSnowySpinState snowySpin)
+        {
+            if (snowySpin == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= MultiplayerConstants.MaxPlayers;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (snowySpin.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(snowySpin.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildBombPassingResultSummary(
+            NetworkBombPassingState bombPassing)
+        {
+            if (bombPassing == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= MultiplayerConstants.MaxPlayers;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (bombPassing.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1))
+                    .Append(bombPassing.IsEliminated(rankedSlot)
+                        ? "  OUT"
+                        : "  SURVIVED")
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildBouncingBallsResultSummary(
+            NetworkBouncingBallsState bouncingBalls)
+        {
+            if (bouncingBalls == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= MultiplayerConstants.MaxPlayers;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (bouncingBalls.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1))
+                    .Append("  GOALS ")
+                    .Append(bouncingBalls.GetScore(rankedSlot))
+                    .Append("  CONCEDED ")
+                    .Append(bouncingBalls.GetConceded(rankedSlot))
                     .Append("  GOLD +")
                     .Append(
                         MinigameRewardRules.GetFinalPlacementGold(rank));
@@ -2537,6 +2807,63 @@ namespace MazeParty.Multiplayer
                            "placement awards gold.";
                 default:
                     return "Preparing Race...";
+            }
+        }
+
+        private static string BouncingBallsPhaseLabel(
+            NetworkBouncingBallsState bouncingBalls)
+        {
+            if (bouncingBalls == null)
+            {
+                return "BOUNCING BALLS";
+            }
+
+            var round = Mathf.Clamp(
+                bouncingBalls.RoundNumber,
+                1,
+                BouncingBallsRules.RoundCount);
+            switch (bouncingBalls.Phase)
+            {
+                case NetworkBouncingBallsPhase.Countdown:
+                    return "BOUNCING BALLS  ROUND " + round + " / " +
+                           BouncingBallsRules.RoundCount + "  -  COUNTDOWN";
+                case NetworkBouncingBallsPhase.Playing:
+                    return "BOUNCING BALLS  ROUND " + round + " / " +
+                           BouncingBallsRules.RoundCount + "  -  PLAY";
+                case NetworkBouncingBallsPhase.RoundBreak:
+                    return "BOUNCING BALLS  ROUND " + round + " / " +
+                           BouncingBallsRules.RoundCount + "  -  RESULT";
+                case NetworkBouncingBallsPhase.Complete:
+                    return "BOUNCING BALLS COMPLETE";
+                default:
+                    return "BOUNCING BALLS";
+            }
+        }
+
+        private static string BouncingBallsStatus(
+            NetworkBouncingBallsState bouncingBalls)
+        {
+            if (bouncingBalls == null)
+            {
+                return "Synchronizing the Bouncing Balls arena...";
+            }
+
+            switch (bouncingBalls.Phase)
+            {
+                case NetworkBouncingBallsPhase.Countdown:
+                    return "Three neutral balls will launch from the center.";
+                case NetworkBouncingBallsPhase.Playing:
+                    return "Hold A or D to slide your shield. A touched ball " +
+                           "takes your color; a goal scores for its color owner.";
+                case NetworkBouncingBallsPhase.RoundBreak:
+                    return "Round over. Combined goals across both rounds " +
+                           "determine final placement.";
+                case NetworkBouncingBallsPhase.Complete:
+                    return "Two rounds complete. Final placement awards " +
+                           MinigameRewardRules.FinalPlacementGoldSchedule +
+                           " gold.";
+                default:
+                    return "Preparing Bouncing Balls...";
             }
         }
 

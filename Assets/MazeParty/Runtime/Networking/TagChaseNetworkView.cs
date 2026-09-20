@@ -223,6 +223,8 @@ namespace MazeParty.Multiplayer
         {
             var localIsTagger =
                 state.IsTagger(_localSlot);
+            var showingStartCountdown =
+                match.IsMinigameStartCountdown;
             for (var slot = 0;
                  slot < _players.Length;
                  slot++)
@@ -295,6 +297,7 @@ namespace MazeParty.Multiplayer
                     state.IsCaught(slot));
                 player.Visual.SetOwnerFirstPerson(
                     localIsTagger &&
+                    !showingStartCountdown &&
                     slot == _localSlot);
                 player.Visual.SetTopViewHighlight(
                     !localIsTagger &&
@@ -307,13 +310,20 @@ namespace MazeParty.Multiplayer
         {
             var localIsTagger =
                 state.IsTagger(_localSlot);
+            // The tagger must see their own player and countdown outline
+            // before play starts. Switch back to the original owner-only
+            // first-person camera as soon as the shared countdown ends.
+            var showingStartCountdown =
+                match.IsMinigameStartCountdown;
+            var useTaggerCamera =
+                localIsTagger && !showingStartCountdown;
             var desiredCamera =
-                localIsTagger
+                useTaggerCamera
                     ? taggerCamera
                     : sharedRunnerCamera;
             RegisterCamera(desiredCamera);
 
-            if (localIsTagger)
+            if (useTaggerCamera)
             {
                 RefreshTaggerCamera(match);
                 Cursor.lockState =
@@ -322,7 +332,7 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                RefreshSharedRunnerCamera();
+                RefreshSharedRunnerCamera(showingStartCountdown);
                 Cursor.lockState =
                     CursorLockMode.Confined;
                 Cursor.visible = true;
@@ -366,7 +376,7 @@ namespace MazeParty.Multiplayer
                 Quaternion.Euler(pitch, yaw, 0f));
         }
 
-        private void RefreshSharedRunnerCamera()
+        private void RefreshSharedRunnerCamera(bool includeTagger)
         {
             if (sharedRunnerCamera == null)
             {
@@ -379,7 +389,7 @@ namespace MazeParty.Multiplayer
                  slot < TagChaseRules.PlayerCount;
                  slot++)
             {
-                if (state.IsTagger(slot) ||
+                if ((!includeTagger && state.IsTagger(slot)) ||
                     state.IsCaught(slot))
                 {
                     continue;
@@ -409,7 +419,7 @@ namespace MazeParty.Multiplayer
                  slot < TagChaseRules.PlayerCount;
                  slot++)
             {
-                if (state.IsTagger(slot) ||
+                if ((!includeTagger && state.IsTagger(slot)) ||
                     state.IsCaught(slot))
                 {
                     continue;

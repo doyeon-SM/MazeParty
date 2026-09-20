@@ -12,6 +12,16 @@ namespace MazeParty.Multiplayer
         protected override NetworkStableFootingState CurrentState =>
             NetworkStableFootingState.Instance;
 
+        public override bool TryGetInitialCountdown(out double remainingSeconds)
+        {
+            var state = CurrentState;
+            remainingSeconds = state != null && state.RoundNumber == 1 &&
+                               state.Phase == NetworkStableFootingPhase.Countdown
+                ? state.Remaining
+                : 0d;
+            return remainingSeconds > 0d;
+        }
+
         public override bool CanAcceptInputForSlot(int slot)
         {
             var state = CurrentState;

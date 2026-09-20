@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
+using MazeParty.Gameplay.Minigames.BouncingBalls;
+using MazeParty.Gameplay.Minigames.BombPassing;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
 using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
+using MazeParty.Gameplay.Minigames.SnowySpin;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -135,7 +138,29 @@ namespace MazeParty.Gameplay.Minigames
                 SequenceMemoryRules.RoundCount,
                 (float)SequenceMemoryRules.InputWindowSeconds,
                 "SequenceMemory",
-                new Color(0.48f, 0.36f, 0.94f, 1f))
+                new Color(0.48f, 0.36f, 0.94f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.BouncingBalls,
+                "BOUNCING BALLS",
+                BouncingBallsRules.RoundCount,
+                (float)BouncingBallsRules.RoundSeconds,
+                "BouncingBalls",
+                new Color(0.26f, 0.66f, 0.92f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.BombPassing,
+                "BOMB PASSING",
+                BombPassingRules.RoundCount,
+                // Metadata only: one bomb's maximum fuse, not a match limit.
+                (float)BombPassingRules.MaximumFuseSeconds,
+                "BombPassing",
+                new Color(0.95f, 0.55f, 0.11f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.SnowySpin,
+                "SNOWY SPIN",
+                SnowySpinRules.RoundCount,
+                (float)SnowySpinRules.RoundDurationSeconds,
+                "SnowySpin",
+                new Color(0.62f, 0.83f, 0.98f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;

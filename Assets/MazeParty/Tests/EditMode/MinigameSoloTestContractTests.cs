@@ -137,6 +137,63 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 sequenceMemory.ControlsLabel,
                 Does.Contain("A / S / D"));
+            Assert.That(
+                (byte)MinigameSoloTestId.BouncingBalls,
+                Is.EqualTo(11),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.BouncingBalls,
+                    out var bouncingBalls),
+                Is.True);
+            Assert.That(
+                bouncingBalls.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.BouncingBallsScenePath));
+            Assert.That(
+                bouncingBalls.DisplayName,
+                Is.EqualTo("Bouncing Balls"));
+            Assert.That(
+                bouncingBalls.ControlsLabel,
+                Does.Contain("A / D"));
+            Assert.That(
+                (byte)MinigameSoloTestId.BombPassing,
+                Is.EqualTo(12),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.BombPassing,
+                    out var bombPassing),
+                Is.True);
+            Assert.That(
+                bombPassing.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.BombPassingScenePath));
+            Assert.That(
+                bombPassing.DisplayName,
+                Is.EqualTo("Bomb Passing"));
+            Assert.That(
+                bombPassing.ControlsLabel,
+                Does.Contain("LMB"));
+            Assert.That(
+                (byte)MinigameSoloTestId.SnowySpin,
+                Is.EqualTo(13),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.SnowySpin,
+                    out var snowySpin),
+                Is.True);
+            Assert.That(
+                snowySpin.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.SnowySpinScenePath));
+            Assert.That(
+                snowySpin.DisplayName,
+                Is.EqualTo("Snowy Spin"));
+            Assert.That(
+                snowySpin.ControlsLabel,
+                Does.Contain("WASD"));
 
             var session = new StableFootingSoloSession();
             session.Begin(12345);

@@ -44,5 +44,14 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity
     guid: cb125742b2984d34f9f9f32dedb47b75
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/BouncingBalls.unity
+    guid: 2c12be82936581644b75108b95af676c
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/BombPassing.unity
+    guid: dc4c493b08d7acb4b930081679716bd5
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/SnowySpin.unity
+    guid: 106a9a6f89ffad64ab3189a80adae31e
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

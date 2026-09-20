@@ -17,7 +17,10 @@ namespace MazeParty.Multiplayer
             new TerritoryPaintRuntimeAdapter(),
             new TagChaseRuntimeAdapter(),
             new RaceRuntimeAdapter(),
-            new SequenceMemoryRuntimeAdapter()
+            new SequenceMemoryRuntimeAdapter(),
+            new BouncingBallsRuntimeAdapter(),
+            new BombPassingRuntimeAdapter(),
+            new SnowySpinRuntimeAdapter()
         };
 
         private static readonly IReadOnlyList<ScheduledMinigameId>

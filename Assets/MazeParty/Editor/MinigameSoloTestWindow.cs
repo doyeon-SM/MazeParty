@@ -157,6 +157,12 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play Race Solo";
         private const string QuickPlaySequenceMemoryMenuPath =
             "MazeParty/Developer/Play Sequence Memory Solo";
+        private const string QuickPlayBouncingBallsMenuPath =
+            "MazeParty/Developer/Play Bouncing Balls Solo";
+        private const string QuickPlayBombPassingMenuPath =
+            "MazeParty/Developer/Play Bomb Passing Solo";
+        private const string QuickPlaySnowySpinMenuPath =
+            "MazeParty/Developer/Play Snowy Spin Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -317,6 +323,48 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlaySequenceMemoryMenuPath, true)]
         private static bool ValidateQuickPlaySequenceMemory()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayBouncingBallsMenuPath, false, 2109)]
+        private static void QuickPlayBouncingBalls()
+        {
+            Start(
+                MinigameSoloTestId.BouncingBalls,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayBouncingBallsMenuPath, true)]
+        private static bool ValidateQuickPlayBouncingBalls()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayBombPassingMenuPath, false, 2110)]
+        private static void QuickPlayBombPassing()
+        {
+            Start(
+                MinigameSoloTestId.BombPassing,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayBombPassingMenuPath, true)]
+        private static bool ValidateQuickPlayBombPassing()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlaySnowySpinMenuPath, false, 2111)]
+        private static void QuickPlaySnowySpin()
+        {
+            Start(
+                MinigameSoloTestId.SnowySpin,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlaySnowySpinMenuPath, true)]
+        private static bool ValidateQuickPlaySnowySpin()
         {
             return CanStart;
         }
@@ -641,6 +689,61 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Sequence Memory " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.BouncingBalls:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller =
+                            bootstrap.AddComponent<
+                                BouncingBallsSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Bouncing Balls " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.BombPassing:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            BombPassingSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Bomb Passing " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.SnowySpin:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            SnowySpinSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Snowy Spin " +
                                 "solo harness.");
                         }
                         controller.ConfigureHud(
@@ -1163,10 +1266,31 @@ namespace MazeParty.EditorTools
 
             var race = FindRuntimeHarnessOfType<
                 RaceSoloTestController>();
-            return race != null
-                ? (Component)race
+            if (race != null)
+            {
+                return race;
+            }
+
+            var sequenceMemory = FindRuntimeHarnessOfType<
+                SequenceMemorySoloTestController>();
+            if (sequenceMemory != null)
+            {
+                return sequenceMemory;
+            }
+
+            var bouncingBalls = FindRuntimeHarnessOfType<
+                BouncingBallsSoloTestController>();
+            if (bouncingBalls != null)
+            {
+                return bouncingBalls;
+            }
+
+            var bombPassing = FindRuntimeHarnessOfType<
+                BombPassingSoloTestController>();
+            return bombPassing != null
+                ? (Component)bombPassing
                 : FindRuntimeHarnessOfType<
-                    SequenceMemorySoloTestController>();
+                    SnowySpinSoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -1191,6 +1315,12 @@ namespace MazeParty.EditorTools
                 RaceSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 SequenceMemorySoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                BouncingBallsSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                BombPassingSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                SnowySpinSoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()

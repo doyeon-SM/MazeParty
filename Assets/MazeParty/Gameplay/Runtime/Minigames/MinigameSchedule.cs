@@ -19,7 +19,10 @@ namespace MazeParty.Gameplay.Minigames
         TerritoryPaint = 7,
         TagChase = 8,
         Race = 9,
-        SequenceMemory = 10
+        SequenceMemory = 10,
+        BouncingBalls = 11,
+        BombPassing = 12,
+        SnowySpin = 13
     }
 
     public static class MinigameScheduleRules

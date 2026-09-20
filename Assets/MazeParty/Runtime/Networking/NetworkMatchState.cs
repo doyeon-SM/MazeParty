@@ -325,6 +325,22 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void RouteBouncingShieldAxisOnCurrentMinigameOnServer(
+            NetworkPlayerAvatar avatar,
+            float axis,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+            if (TryGetCurrentMinigameRuntime(out var runtime))
+            {
+                runtime.SetBouncingShieldAxisOnServer(
+                    avatar,
+                    axis,
+                    roundNumber,
+                    inputEpoch);
+            }
+        }
+
         public bool GameplayEnabled => _gameplayEnabled.Value;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
@@ -334,6 +350,12 @@ namespace MazeParty.Multiplayer
         public int RemainingMinigameSlots => _remainingMinigameSlots.Value;
         public int MinigameRevealRevision => _minigameRevealRevision.Value;
         public ulong CurrentMinigameSeed => _currentMinigameSeed.Value;
+        public bool IsMinigameStartCountdown =>
+            TryGetMinigameStartCountdown(out _);
+        public double MinigameStartCountdownRemaining =>
+            TryGetMinigameStartCountdown(out var remainingSeconds)
+                ? remainingSeconds
+                : 0d;
         public bool IsReconnectPaused => _reconnectPaused.Value;
         public bool IsKeyShopRevealActive => _keyShopRevealActive.Value;
         public bool IsGlobalSimulationPaused => IsReconnectPaused || IsKeyShopRevealActive;
@@ -452,6 +474,33 @@ namespace MazeParty.Multiplayer
         public bool IsSequenceMemoryPlaying =>
             IsSequenceMemoryPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsBouncingBallsPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.BouncingBalls &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsBouncingBallsPlaying =>
+            IsBouncingBallsPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsBombPassingPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.BombPassing &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsBombPassingPlaying =>
+            IsBombPassingPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsSnowySpinPhase =>
+            GameplayEnabled &&
+            CurrentMinigame == ScheduledMinigameId.SnowySpin &&
+            (FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying ||
+             FlowState == BoardFlowState.SkippedResult);
+        public bool IsSnowySpinPlaying =>
+            IsSnowySpinPhase &&
+            FlowState == BoardFlowState.MinigamePlaying;
         public bool IsTerritoryPaintPlaying =>
             IsTerritoryPaintPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -476,6 +525,18 @@ namespace MazeParty.Multiplayer
                 : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
             : 0d;
         public double SynchronizedNow => ServerNow;
+
+        private bool TryGetMinigameStartCountdown(
+            out double remainingSeconds)
+        {
+            remainingSeconds = 0d;
+            return GameplayEnabled &&
+                   FlowState == BoardFlowState.MinigamePlaying &&
+                   TryGetCurrentMinigameRuntime(out var runtime) &&
+                   runtime != null &&
+                   runtime.TryGetInitialCountdown(out remainingSeconds) &&
+                   remainingSeconds > 0d;
+        }
 
         public ItemShopSnapshot GetItemShopSnapshot(int shopIndex)
         {
@@ -1589,6 +1650,157 @@ namespace MazeParty.Multiplayer
                 var entry = standings[index];
                 var avatar = rewardAvatars[entry.PlayerSlot];
                 SettleMinigamePlacementOnServer(avatar, entry.Rank);
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteBouncingBallsOnServer(
+            IReadOnlyList<int> ranks)
+        {
+            if (!IsServer || ranks == null ||
+                ranks.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.BouncingBalls ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                var rank = ranks[slot];
+                if (rank < 1 || rank > MultiplayerConstants.MaxPlayers ||
+                    (seenRanks & (1 << (rank - 1))) != 0)
+                {
+                    return false;
+                }
+
+                seenRanks |= 1 << (rank - 1);
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[slot] = avatar;
+            }
+
+            if (seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                SettleMinigamePlacementOnServer(
+                    rewardAvatars[slot],
+                    ranks[slot]);
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteBombPassingOnServer(
+            IReadOnlyList<int> ranks)
+        {
+            if (!IsServer || ranks == null ||
+                ranks.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.BombPassing ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                var rank = ranks[slot];
+                if (rank < 1 || rank > MultiplayerConstants.MaxPlayers ||
+                    (seenRanks & (1 << (rank - 1))) != 0)
+                {
+                    return false;
+                }
+
+                seenRanks |= 1 << (rank - 1);
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[slot] = avatar;
+            }
+
+            if (seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                SettleMinigamePlacementOnServer(
+                    rewardAvatars[slot], ranks[slot]);
+            }
+
+            return true;
+        }
+
+        public bool TryCompleteSnowySpinOnServer(
+            IReadOnlyList<int> ranks)
+        {
+            if (!IsServer || ranks == null ||
+                ranks.Count != MultiplayerConstants.MaxPlayers ||
+                FlowState != BoardFlowState.MinigamePlaying ||
+                CurrentMinigame != ScheduledMinigameId.SnowySpin ||
+                _settledMinigameTurn == Turn)
+            {
+                return false;
+            }
+
+            var seenRanks = 0;
+            var rewardAvatars =
+                new NetworkPlayerAvatar[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                var rank = ranks[slot];
+                if (rank < 1 || rank > MultiplayerConstants.MaxPlayers ||
+                    (seenRanks & (1 << (rank - 1))) != 0)
+                {
+                    return false;
+                }
+
+                seenRanks |= 1 << (rank - 1);
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                rewardAvatars[slot] = avatar;
+            }
+
+            if (seenRanks != AllPlayersMask ||
+                !_flow.TryCompleteMinigame(ServerNow))
+            {
+                return false;
+            }
+
+            _settledMinigameTurn = Turn;
+            for (var slot = 0; slot < ranks.Count; slot++)
+            {
+                SettleMinigamePlacementOnServer(
+                    rewardAvatars[slot], ranks[slot]);
             }
 
             return true;

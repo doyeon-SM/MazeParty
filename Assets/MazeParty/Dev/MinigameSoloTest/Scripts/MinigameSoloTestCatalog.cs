@@ -14,7 +14,10 @@ namespace MazeParty.Dev.MinigameSoloTest
         TerritoryPaint = 7,
         TagChase = 8,
         Race = 9,
-        SequenceMemory = 10
+        SequenceMemory = 10,
+        BouncingBalls = 11,
+        BombPassing = 12,
+        SnowySpin = 13
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -82,6 +85,12 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/Race.unity";
         public const string SequenceMemoryScenePath =
             "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity";
+        public const string BouncingBallsScenePath =
+            "Assets/MazeParty/Scenes/Minigames/BouncingBalls.unity";
+        public const string BombPassingScenePath =
+            "Assets/MazeParty/Scenes/Minigames/BombPassing.unity";
+        public const string SnowySpinScenePath =
+            "Assets/MazeParty/Scenes/Minigames/SnowySpin.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
@@ -145,7 +154,25 @@ namespace MazeParty.Dev.MinigameSoloTest
                 SequenceMemoryScenePath,
                 "Repeat with A / S / D · one mistake loses torso · " +
                 "two mistakes eliminate · R restart · " +
-                "N next seed · Esc stop")
+                "N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.BouncingBalls,
+                "Bouncing Balls",
+                BouncingBallsScenePath,
+                "Hold A / D to move shield · claim and score with balls · " +
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.BombPassing,
+                "Bomb Passing",
+                BombPassingScenePath,
+                "WASD move · LMB pass bomb / stun nearby player · " +
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.SnowySpin,
+                "Snowy Spin",
+                SnowySpinScenePath,
+                "WASD roll · accelerate and push balls off the ice · " +
+                "R restart · N next seed · Esc stop")
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>

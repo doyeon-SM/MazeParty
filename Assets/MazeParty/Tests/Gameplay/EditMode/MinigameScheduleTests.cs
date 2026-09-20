@@ -49,8 +49,20 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(10),
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
+                (int)ScheduledMinigameId.BouncingBalls,
+                Is.EqualTo(11),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                (int)ScheduledMinigameId.BombPassing,
+                Is.EqualTo(12),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
+                (int)ScheduledMinigameId.SnowySpin,
+                Is.EqualTo(13),
+                "Serialized production minigame ids must remain stable.");
+            Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(10));
+                Is.EqualTo(13));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
@@ -85,6 +97,15 @@ namespace MazeParty.Gameplay.Tests
                 counts[ScheduledMinigameId.SequenceMemory],
                 Is.EqualTo(1));
             Assert.That(
+                counts[ScheduledMinigameId.BouncingBalls],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.BombPassing],
+                Is.EqualTo(1));
+            Assert.That(
+                counts[ScheduledMinigameId.SnowySpin],
+                Is.EqualTo(1));
+            Assert.That(
                 counts[ScheduledMinigameId.Skip],
                 Is.EqualTo(
                     schedule.TurnCount -
@@ -104,7 +125,7 @@ namespace MazeParty.Gameplay.Tests
                 out var restored);
 
             Assert.That(decoded, Is.True);
-            Assert.That(payload, Does.Contain("\"schemaVersion\":9"));
+            Assert.That(payload, Does.Contain("\"schemaVersion\":12"));
             Assert.That(matchKey, Is.EqualTo("session:room-42"));
             AssertSchedulesEqual(original, restored);
         }
@@ -266,6 +287,57 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 codec.Encode(nineGameMatchKey, nineGameSchedule),
                 Does.Contain("\"schemaVersion\":8"));
+
+            const string tenGamePayload =
+                "{\"schemaVersion\":9,\"matchKey\":\"ten-game-match\"," +
+                "\"seed\":8193,\"turnCount\":11," +
+                "\"entries\":[10,9,8,7,6,5,4,3,2,1,0]}";
+            Assert.That(
+                codec.TryDecode(
+                    tenGamePayload,
+                    out var tenGameMatchKey,
+                    out var tenGameSchedule),
+                Is.True);
+            Assert.That(
+                tenGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.SequenceMemory));
+            Assert.That(
+                codec.Encode(tenGameMatchKey, tenGameSchedule),
+                Does.Contain("\"schemaVersion\":9"));
+
+            const string elevenGamePayload =
+                "{\"schemaVersion\":10,\"matchKey\":\"eleven-game-match\"," +
+                "\"seed\":8194,\"turnCount\":12," +
+                "\"entries\":[11,10,9,8,7,6,5,4,3,2,1,0]}";
+            Assert.That(
+                codec.TryDecode(
+                    elevenGamePayload,
+                    out var elevenGameMatchKey,
+                    out var elevenGameSchedule),
+                Is.True);
+            Assert.That(
+                elevenGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.BouncingBalls));
+            Assert.That(
+                codec.Encode(elevenGameMatchKey, elevenGameSchedule),
+                Does.Contain("\"schemaVersion\":10"));
+
+            const string twelveGamePayload =
+                "{\"schemaVersion\":11,\"matchKey\":\"twelve-game-match\"," +
+                "\"seed\":8195,\"turnCount\":13," +
+                "\"entries\":[12,11,10,9,8,7,6,5,4,3,2,1,0]}";
+            Assert.That(
+                codec.TryDecode(
+                    twelveGamePayload,
+                    out var twelveGameMatchKey,
+                    out var twelveGameSchedule),
+                Is.True);
+            Assert.That(
+                twelveGameSchedule.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.BombPassing));
+            Assert.That(
+                codec.Encode(twelveGameMatchKey, twelveGameSchedule),
+                Does.Contain("\"schemaVersion\":11"));
         }
 
         [Test]
@@ -330,7 +402,10 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.TerritoryPaint] = 0,
                 [ScheduledMinigameId.TagChase] = 0,
                 [ScheduledMinigameId.Race] = 0,
-                [ScheduledMinigameId.SequenceMemory] = 0
+                [ScheduledMinigameId.SequenceMemory] = 0,
+                [ScheduledMinigameId.BouncingBalls] = 0,
+                [ScheduledMinigameId.BombPassing] = 0,
+                [ScheduledMinigameId.SnowySpin] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)

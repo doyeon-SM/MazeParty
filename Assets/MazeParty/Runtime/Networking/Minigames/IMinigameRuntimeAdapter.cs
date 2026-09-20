@@ -18,6 +18,7 @@ namespace MazeParty.Multiplayer
         bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch);
+        bool TryGetInitialCountdown(out double remainingSeconds);
         void BeginMatchOnServer(ulong matchSeed);
         void PauseOnServer(double now);
         void ResumeOnServer(double now);
@@ -59,6 +60,11 @@ namespace MazeParty.Multiplayer
             SequenceMemoryInput input,
             byte roundNumber,
             uint inputEpoch);
+        void SetBouncingShieldAxisOnServer(
+            NetworkPlayerAvatar avatar,
+            float axis,
+            byte roundNumber,
+            uint inputEpoch);
     }
 
     internal abstract class MinigameRuntimeAdapter<TState> :
@@ -96,6 +102,12 @@ namespace MazeParty.Multiplayer
         {
             roundNumber = 0;
             inputEpoch = 0U;
+            return false;
+        }
+
+        public virtual bool TryGetInitialCountdown(out double remainingSeconds)
+        {
+            remainingSeconds = 0d;
             return false;
         }
 
@@ -178,6 +190,14 @@ namespace MazeParty.Multiplayer
         public virtual void TrySubmitSequenceMemoryInputOnServer(
             NetworkPlayerAvatar avatar,
             SequenceMemoryInput input,
+            byte roundNumber,
+            uint inputEpoch)
+        {
+        }
+
+        public virtual void SetBouncingShieldAxisOnServer(
+            NetworkPlayerAvatar avatar,
+            float axis,
             byte roundNumber,
             uint inputEpoch)
         {

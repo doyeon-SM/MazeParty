@@ -42,7 +42,10 @@ namespace MazeParty.Gameplay.Minigames
         private const int TerritoryPaintSchemaVersion = 6;
         private const int TagChaseSchemaVersion = 7;
         private const int RaceSchemaVersion = 8;
-        private const int CurrentSchemaVersion = 9;
+        private const int SequenceMemorySchemaVersion = 9;
+        private const int BouncingBallsSchemaVersion = 10;
+        private const int BombPassingSchemaVersion = 11;
+        private const int CurrentSchemaVersion = 12;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
@@ -67,6 +70,15 @@ namespace MazeParty.Gameplay.Minigames
         // Schema 8 predates Sequence Memory and validates against the first
         // nine append-only catalog entries.
         private const int RaceRegisteredGameCount = 9;
+        // Schema 9 predates Bouncing Balls and validates against the first
+        // ten append-only catalog entries.
+        private const int SequenceMemoryRegisteredGameCount = 10;
+        // Schema 10 predates Bomb Passing and validates against the first
+        // eleven append-only catalog entries.
+        private const int BouncingBallsRegisteredGameCount = 11;
+        // Schema 11 predates Snowy Spin and validates against the first
+        // twelve append-only catalog entries.
+        private const int BombPassingRegisteredGameCount = 12;
 
         public string Encode(
             string matchKey,
@@ -141,6 +153,21 @@ namespace MazeParty.Gameplay.Minigames
                 return RaceSchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                SequenceMemoryRegisteredGameCount)
+            {
+                return SequenceMemorySchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                BouncingBallsRegisteredGameCount)
+            {
+                return BouncingBallsSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                BombPassingRegisteredGameCount)
+            {
+                return BombPassingSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -180,6 +207,12 @@ namespace MazeParty.Gameplay.Minigames
                      document.schemaVersion !=
                      TagChaseSchemaVersion &&
                      document.schemaVersion != RaceSchemaVersion &&
+                     document.schemaVersion !=
+                     SequenceMemorySchemaVersion &&
+                     document.schemaVersion !=
+                     BouncingBallsSchemaVersion &&
+                     document.schemaVersion !=
+                     BombPassingSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -218,6 +251,12 @@ namespace MazeParty.Gameplay.Minigames
                     TagChaseSchemaVersion =>
                         TagChaseRegisteredGameCount,
                     RaceSchemaVersion => RaceRegisteredGameCount,
+                    SequenceMemorySchemaVersion =>
+                        SequenceMemoryRegisteredGameCount,
+                    BouncingBallsSchemaVersion =>
+                        BouncingBallsRegisteredGameCount,
+                    BombPassingSchemaVersion =>
+                        BombPassingRegisteredGameCount,
                     _ => MinigameScheduleRules.RegisteredGameCount
                 };
                 var restored = HostMinigameSchedule.Restore(

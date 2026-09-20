@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredPrefabPaths =
         {
             "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
+            "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab",
             "Assets/MazeParty/UI/Prefabs/LobbyCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab",
             "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
@@ -37,6 +38,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
             "Assets/MazeParty/UI/Prefabs/RaceHud.prefab",
             "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameScheduleTower.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/Dev/MinigameSoloHud.prefab",
@@ -46,6 +48,7 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredBindingTypeNames =
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
+            "MazeParty.Multiplayer.MinigameStartCountdownView",
             "MazeParty.Multiplayer.OnlineLobbyView",
             "MazeParty.Multiplayer.MinigameTimerDial",
             "MazeParty.Multiplayer.MinefieldHudBindings",
@@ -60,6 +63,7 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.TagChaseHudBindings",
             "MazeParty.Multiplayer.RaceHudBindings",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
+            "MazeParty.Multiplayer.BouncingBallsHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Gameplay.Testbed.GameplayTestbedUiBindings",
             "MazeParty.Multiplayer.MinigameSoloHudView",
@@ -74,7 +78,8 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/MinigameScheduleTower.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board.unity",
-                "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab"),
+                "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
+                "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Dev/BoardFlowTestbed/BoardFlowTestbed.unity",
                 "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab"),
@@ -110,7 +115,10 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/RaceHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity",
-                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab")
+                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/Minigames/BouncingBalls.unity",
+                "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =
@@ -360,7 +368,8 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/RaceHud.prefab",
-                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab"
+                "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab"
             };
 
             foreach (var hudPath in hudPaths)

@@ -41,6 +41,12 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Race.unity";
         private const string SequenceMemoryScenePath =
             "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity";
+        private const string BouncingBallsScenePath =
+            "Assets/MazeParty/Scenes/Minigames/BouncingBalls.unity";
+        private const string BombPassingScenePath =
+            "Assets/MazeParty/Scenes/Minigames/BombPassing.unity";
+        private const string SnowySpinScenePath =
+            "Assets/MazeParty/Scenes/Minigames/SnowySpin.unity";
         private const string PlayerPrefabPath =
             "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
@@ -87,9 +93,9 @@ namespace MazeParty.Multiplayer.Tests
                 .Where(scene => scene.enabled)
                 .Select(scene => scene.path)
                 .ToArray();
-            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(12));
+            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(15));
             Assert.That(
-                enabledScenes.Take(12),
+                enabledScenes.Take(15),
                 Is.EqualTo(new[]
                 {
                     BootstrapScenePath,
@@ -103,7 +109,10 @@ namespace MazeParty.Multiplayer.Tests
                     TerritoryPaintScenePath,
                     TagChaseScenePath,
                     RaceScenePath,
-                    SequenceMemoryScenePath
+                    SequenceMemoryScenePath,
+                    BouncingBallsScenePath,
+                    BombPassingScenePath,
+                    SnowySpinScenePath
                 }));
 
             var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -370,6 +379,29 @@ namespace MazeParty.Multiplayer.Tests
 
             Assert.That(runtimeIds, Has.Length.EqualTo(catalogIds.Length));
             Assert.That(runtimeIds, Is.EquivalentTo(catalogIds));
+        }
+
+        [Test]
+        public void RegisteredMinigames_ExposeTheirOwnInitialCountdown()
+        {
+            var registeredAdapters = typeof(MinigameRuntimeRegistry).GetField(
+                "RegisteredAdapters",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.That(registeredAdapters, Is.Not.Null);
+
+            var adapters = (System.Array)registeredAdapters.GetValue(null);
+            Assert.That(adapters.Length,
+                Is.EqualTo(MinigameCatalog.RegisteredMinigames.Count));
+            foreach (var adapter in adapters)
+            {
+                var method = adapter.GetType().GetMethod(
+                    "TryGetInitialCountdown",
+                    BindingFlags.Instance | BindingFlags.Public);
+                Assert.That(method, Is.Not.Null);
+                Assert.That(method.DeclaringType,
+                    Is.EqualTo(adapter.GetType()),
+                    adapter.GetType().Name + " must project its own first countdown.");
+            }
         }
 
 

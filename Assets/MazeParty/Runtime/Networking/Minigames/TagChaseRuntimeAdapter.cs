@@ -12,6 +12,16 @@ namespace MazeParty.Multiplayer
         protected override NetworkTagChaseState CurrentState =>
             NetworkTagChaseState.Instance;
 
+        public override bool TryGetInitialCountdown(out double remainingSeconds)
+        {
+            var state = CurrentState;
+            remainingSeconds = state != null && state.RoundNumber == 1 &&
+                               state.Phase == NetworkTagChasePhase.Countdown
+                ? state.Remaining
+                : 0d;
+            return remainingSeconds > 0d;
+        }
+
         public override bool CanAcceptInputForSlot(int slot)
         {
             var state = CurrentState;
