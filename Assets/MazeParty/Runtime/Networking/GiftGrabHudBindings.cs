@@ -15,17 +15,9 @@ namespace MazeParty.Multiplayer
         public const int PlayerCount = 4;
 
         [SerializeField] private Canvas rootCanvas;
-        [SerializeField] private Text phaseText;
-        [SerializeField] private MinigameTimerDial timerDial;
-        [SerializeField] private Text timerText;
-        [SerializeField] private Text roundText;
-        [SerializeField] private Text instructionText;
         [SerializeField] private Text localStatusText;
-        [SerializeField] private Text neutralGiftText;
         [SerializeField] private Text[] playerRows = new Text[PlayerCount];
         [SerializeField] private Text resultText;
-        [SerializeField] private GameObject pausePanel;
-        [SerializeField] private GameObject controlsPanel;
         [SerializeField] private GameObject resultPanel;
         [SerializeField] private Color localPlayerRowColor =
             new Color(1f, 0.88f, 0.25f, 1f);
@@ -33,75 +25,39 @@ namespace MazeParty.Multiplayer
         private Color[] _defaultRowColors;
 
         public Canvas RootCanvas => rootCanvas;
-        public Text PhaseText => phaseText;
-        public MinigameTimerDial TimerDial => timerDial;
-        public Text TimerText => timerText;
-        public Text RoundText => roundText;
-        public Text InstructionText => instructionText;
         public Text LocalStatusText => localStatusText;
-        public Text NeutralGiftText => neutralGiftText;
         public Text[] PlayerRows => playerRows;
         public Text ResultText => resultText;
-        public GameObject PausePanel => pausePanel;
-        public GameObject ControlsPanel => controlsPanel;
         public GameObject ResultPanel => resultPanel;
         public Color LocalPlayerRowColor => localPlayerRowColor;
 
         public bool HasRequiredReferences =>
             rootCanvas != null &&
-            phaseText != null &&
-            timerDial != null &&
-            timerDial.HasRequiredReferences &&
-            timerText != null &&
-            roundText != null &&
-            instructionText != null &&
             localStatusText != null &&
-            neutralGiftText != null &&
             playerRows != null &&
             playerRows.Length == PlayerCount &&
             Array.TrueForAll(playerRows, row => row != null) &&
             resultText != null &&
-            pausePanel != null &&
-            controlsPanel != null &&
-            resultPanel != null;
+            resultPanel != null &&
+            resultPanel.GetComponent<Canvas>() != null;
 
         public void Configure(
             Canvas canvas,
-            Text phase,
-            Text timer,
-            Text round,
-            Text instructions,
             Text localStatus,
-            Text neutralGifts,
             Text[] rows,
             Text resultMessage,
-            GameObject pause,
-            GameObject controls,
             GameObject resultPanelObject,
             Color localRowColor)
         {
             rootCanvas = canvas;
-            phaseText = phase;
-            timerText = timer;
-            roundText = round;
-            instructionText = instructions;
             localStatusText = localStatus;
-            neutralGiftText = neutralGifts;
             playerRows = rows;
             resultText = resultMessage;
-            pausePanel = pause;
-            controlsPanel = controls;
             resultPanel = resultPanelObject;
             localPlayerRowColor = localRowColor;
             _defaultRowColors = null;
             CaptureDefaults();
         }
-
-        public void ConfigureTimerDial(MinigameTimerDial timer)
-        {
-            timerDial = timer;
-        }
-
 
         public Color GetDefaultPlayerRowColor(int index)
         {

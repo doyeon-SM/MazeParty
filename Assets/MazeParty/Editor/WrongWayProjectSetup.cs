@@ -536,8 +536,6 @@ namespace MazeParty.Editor
                 WrongWayHudPrefabPath);
             if (existing != null)
             {
-                MinigameTimerDialProjectSetup.EnsureHudTimer(
-                    WrongWayHudPrefabPath);
                 existing = AssetDatabase.LoadAssetAtPath<GameObject>(
                     WrongWayHudPrefabPath);
                 ValidateWrongWayHudPrefab(existing);
@@ -556,8 +554,6 @@ namespace MazeParty.Editor
                         "WrongWayHud.prefab could not be created.");
                 }
 
-                MinigameTimerDialProjectSetup.EnsureHudTimer(
-                    WrongWayHudPrefabPath);
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     WrongWayHudPrefabPath);
                 ValidateWrongWayHudPrefab(prefab);
@@ -607,37 +603,17 @@ namespace MazeParty.Editor
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
             panelRect.anchoredPosition = new Vector2(0f, -22f);
-            panelRect.sizeDelta = new Vector2(1120f, 330f);
+            panelRect.sizeDelta = new Vector2(1120f, 220f);
             var panelImage = panel.GetComponent<Image>();
             panelImage.color =
                 new Color(0.025f, 0.035f, 0.07f, 0.88f);
             panelImage.raycastTarget = false;
 
-            var phaseText = CreateHudText(
-                "Phase",
-                panel.transform,
-                font,
-                new Vector2(0f, -16f),
-                new Vector2(1060f, 44f),
-                30,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            var instructionText = CreateHudText(
-                "Instruction",
-                panel.transform,
-                font,
-                new Vector2(0f, -58f),
-                new Vector2(1060f, 34f),
-                19,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            instructionText.text =
-                "W A S D  ·  Match the shown direction and climb 50 steps";
             var promptText = CreateHudText(
                 "Local Prompt",
                 panel.transform,
                 font,
-                new Vector2(0f, -115f),
+                new Vector2(0f, -20f),
                 new Vector2(1060f, 78f),
                 50,
                 TextAnchor.MiddleCenter,
@@ -657,7 +633,7 @@ namespace MazeParty.Editor
                     "Player " + (slot + 1) + " Progress",
                     panel.transform,
                     font,
-                    new Vector2(0f, -194f - slot * 29f),
+                    new Vector2(0f, -100f - slot * 29f),
                     new Vector2(1000f, 28f),
                     19,
                     TextAnchor.MiddleLeft,
@@ -667,12 +643,7 @@ namespace MazeParty.Editor
 
             var bindings =
                 canvasObject.AddComponent<WrongWayHudBindings>();
-            bindings.Configure(
-                canvas,
-                phaseText,
-                instructionText,
-                promptText,
-                progressRows);
+            bindings.Configure(canvas, promptText, progressRows);
             canvasObject.SetActive(false);
             return canvasObject;
         }

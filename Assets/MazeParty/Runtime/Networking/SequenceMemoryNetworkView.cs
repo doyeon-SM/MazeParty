@@ -275,27 +275,6 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var remaining = state.Remaining;
-            var duration = GetPhaseDuration(state.Phase);
-            if (match.IsReconnectPaused)
-            {
-                remaining = match.ReconnectRemaining;
-                duration = NetworkMatchState.ReconnectGraceSeconds;
-            }
-            hud.TimerDial.SetTime(remaining, duration);
-            hud.RoundText.text = "PROBLEM " +
-                                 Mathf.Clamp(
-                                     state.RoundNumber,
-                                     1,
-                                     SequenceMemoryRules.RoundCount) +
-                                 " / " +
-                                 SequenceMemoryRules.RoundCount;
-            hud.PhaseText.text = match.IsReconnectPaused
-                ? "PLAYER DISCONNECTED · MATCH PAUSED"
-                : GetPhaseLabel(state.Phase);
-            hud.InstructionText.text = match.IsReconnectPaused
-                ? "Waiting up to 60 seconds for reconnection."
-                : GetInstructionLabel(state.Phase);
             hud.NpcSequenceText.text = GetNpcSequenceLabel();
 
             for (var slot = 0;
@@ -333,13 +312,6 @@ namespace MazeParty.Multiplayer
 
         private string GetPlayerStatusLabel(int slot)
         {
-            if (state.GetFinalRank(slot) > 0)
-            {
-                var rank = state.GetFinalRank(slot);
-                return MinigameDisplayFormatter.ToOrdinal(rank) +
-                       " · GOLD +" +
-                       MinigameRewardRules.GetFinalPlacementGold(rank);
-            }
             if (state.IsPlayerEliminated(slot))
             {
                 return "OUT · 2 MISSES";
@@ -371,70 +343,6 @@ namespace MazeParty.Multiplayer
                     return "OUT";
                 default:
                     return "WATCHING";
-            }
-        }
-
-        private static string GetPhaseLabel(
-            NetworkSequenceMemoryPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return "SEQUENCE MEMORY · GET READY";
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "SEQUENCE MEMORY · WATCH";
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "SEQUENCE MEMORY · REPEAT";
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "SEQUENCE MEMORY · ANSWER";
-                case NetworkSequenceMemoryPhase.Complete:
-                    return "SEQUENCE MEMORY · FINAL RESULT";
-                default:
-                    return "SEQUENCE MEMORY";
-            }
-        }
-
-        private static string GetInstructionLabel(
-            NetworkSequenceMemoryPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return "GET READY TO LISTEN";
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "WATCH AND LISTEN TO THE NPC";
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "REPEAT THE HIDDEN SEQUENCE WITH A / S / D";
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "ANSWER REVEALED · NEXT PROBLEM SOON";
-                case NetworkSequenceMemoryPhase.Complete:
-                    return "MATCH COMPLETE";
-                default:
-                    return string.Empty;
-            }
-        }
-
-        private double GetPhaseDuration(
-            NetworkSequenceMemoryPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return SequenceMemoryRules.CountdownSeconds;
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return SequenceMemoryRules.GetProblemPresentationSeconds(
-                        Mathf.Clamp(
-                            state != null ? state.RoundNumber : 1,
-                            1,
-                            SequenceMemoryRules.RoundCount));
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return SequenceMemoryRules.InputWindowSeconds;
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return SequenceMemoryRules.AnswerRevealSeconds;
-                case NetworkSequenceMemoryPhase.Complete:
-                    return SequenceMemoryRules.ResultSeconds;
-                default:
-                    return 1d;
             }
         }
 

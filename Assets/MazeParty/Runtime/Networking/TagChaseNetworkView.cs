@@ -33,7 +33,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera taggerCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private GameObject arenaPresentation;
-        [SerializeField] private TagChaseHudBindings hud;
 
         private readonly PlayerView[] _players =
             new PlayerView[TagChaseRules.PlayerCount];
@@ -61,15 +60,13 @@ namespace MazeParty.Multiplayer
             CinemachineCamera runnerCamera,
             CinemachineCamera firstPersonCamera,
             Transform players,
-            GameObject arena,
-            TagChaseHudBindings hudBindings)
+            GameObject arena)
         {
             state = networkState;
             sharedRunnerCamera = runnerCamera;
             taggerCamera = firstPersonCamera;
             playerRoot = players;
             arenaPresentation = arena;
-            hud = hudBindings;
             ConfigureCameras();
             if (Application.isPlaying)
             {
@@ -83,13 +80,11 @@ namespace MazeParty.Multiplayer
             ConfigureCameras();
             EnsurePlayers();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -111,11 +106,6 @@ namespace MazeParty.Multiplayer
                     BoardFlowState.MinigamePlaying ||
                  match.FlowState ==
                     BoardFlowState.SkippedResult);
-            var shouldShowHud =
-                shouldShowWorld &&
-                match.FlowState ==
-                BoardFlowState.MinigamePlaying;
-            SetHudActive(shouldShowHud);
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
@@ -127,7 +117,6 @@ namespace MazeParty.Multiplayer
             ResolveLocalSlot(match);
             RefreshPlayers(match);
             RefreshCamera(match);
-            RefreshHud(match);
         }
 
         private void ConfigureCameras()
@@ -484,44 +473,6 @@ namespace MazeParty.Multiplayer
             _registeredCamera = null;
         }
 
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null ||
-                !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            var remaining = state.Remaining;
-            var duration = GetPhaseDuration(state.Phase);
-            if (match.IsReconnectPaused)
-            {
-                remaining = match.ReconnectRemaining;
-                duration =
-                    NetworkMatchState.ReconnectGraceSeconds;
-            }
-
-            hud.TimerDial.SetTime(
-                remaining,
-                duration);
-        }
-
-        private static double GetPhaseDuration(
-            NetworkTagChasePhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkTagChasePhase.Countdown:
-                    return NetworkTagChaseState.CountdownSeconds;
-                case NetworkTagChasePhase.Running:
-                    return TagChaseRules.RoundSeconds;
-                case NetworkTagChasePhase.RoundResult:
-                    return NetworkTagChaseState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
         private void SetWorldPresentationActive(bool active)
         {
             if (_visibilityInitialized &&
@@ -539,16 +490,6 @@ namespace MazeParty.Multiplayer
             if (playerRoot != null)
             {
                 playerRoot.gameObject.SetActive(active);
-            }
-        }
-
-        private void SetHudActive(bool active)
-        {
-            if (hud != null &&
-                hud.RootCanvas != null &&
-                hud.RootCanvas.gameObject.activeSelf != active)
-            {
-                hud.RootCanvas.gameObject.SetActive(active);
             }
         }
 

@@ -4,8 +4,8 @@ using UnityEngine.UI;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Prefab-authored countdown overlay shared by every online minigame.
-    /// It is a Board scene root, independent of the hidden Board Canvas.
+    /// Countdown section of the shared minigame HUD prefab. It is a Board
+    /// scene root, independent of the hidden Board Canvas.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinigameStartCountdownView : MonoBehaviour

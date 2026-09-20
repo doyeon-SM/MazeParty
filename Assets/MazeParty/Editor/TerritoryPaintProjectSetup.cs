@@ -411,7 +411,6 @@ namespace MazeParty.Editor
                     HudPrefabPath);
             }
 
-            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var binding = prefab != null
                 ? prefab.GetComponent<TerritoryPaintHudBindings>()
@@ -455,27 +454,6 @@ namespace MazeParty.Editor
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             scaler.matchWidthOrHeight = 0.5f;
 
-            var timerPanel = CreatePanel(
-                "Timer Panel",
-                root.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -22f),
-                new Vector2(260f, 82f),
-                new Color(0.025f, 0.03f, 0.045f, 0.9f));
-            var timer = CreateHudText(
-                "Timer",
-                timerPanel.transform,
-                font,
-                Vector2.zero,
-                new Vector2(230f, 68f),
-                44,
-                "01:00");
-            timer.rectTransform.anchorMin =
-                timer.rectTransform.anchorMax =
-                    new Vector2(0.5f, 0.5f);
-            timer.rectTransform.pivot =
-                new Vector2(0.5f, 0.5f);
-
             var scorePanel = CreatePanel(
                 "Score Panel",
                 root.transform,
@@ -501,7 +479,7 @@ namespace MazeParty.Editor
             }
 
             root.GetComponent<TerritoryPaintHudBindings>()
-                .Configure(canvas, timer, rows);
+                .Configure(canvas, rows);
             root.transform.localScale = Vector3.one;
             return root;
         }

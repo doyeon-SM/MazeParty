@@ -16,12 +16,6 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private GameObject root;
-        [SerializeField] private MinigameTimerDial timerDial;
-        [SerializeField] private MinigameTimerRingGraphic timerImage;
-        [SerializeField] private Text timerText;
-        [SerializeField] private Text roundText;
-        [SerializeField] private Text phaseText;
-        [SerializeField] private Text instructionText;
         [SerializeField] private Text npcSequenceText;
         [SerializeField] private Image[] playerRows =
             new Image[PlayerCount];
@@ -39,12 +33,6 @@ namespace MazeParty.Multiplayer
 
         public Canvas RootCanvas => rootCanvas;
         public GameObject Root => root;
-        public MinigameTimerDial TimerDial => timerDial;
-        public MinigameTimerRingGraphic TimerImage => timerImage;
-        public Text TimerText => timerText;
-        public Text RoundText => roundText;
-        public Text PhaseText => phaseText;
-        public Text InstructionText => instructionText;
         public Text NpcSequenceText => npcSequenceText;
         public Image[] PlayerRows => playerRows;
         public Text[] PlayerNameTexts => playerNameTexts;
@@ -54,15 +42,6 @@ namespace MazeParty.Multiplayer
         public bool HasRequiredReferences =>
             rootCanvas != null &&
             root != null &&
-            timerDial != null &&
-            timerDial.HasRequiredReferences &&
-            timerImage != null &&
-            timerImage == timerDial.Ring &&
-            timerText != null &&
-            timerText == timerDial.TimeText &&
-            roundText != null &&
-            phaseText != null &&
-            instructionText != null &&
             npcSequenceText != null &&
             HasFourNonNull(playerRows) &&
             HasFourNonNull(playerNameTexts) &&
@@ -72,10 +51,6 @@ namespace MazeParty.Multiplayer
         public void Configure(
             Canvas canvas,
             GameObject visibleRoot,
-            MinigameTimerDial timer,
-            Text round,
-            Text phase,
-            Text instructions,
             Text npcSequence,
             Image[] rows,
             Text[] names,
@@ -84,12 +59,6 @@ namespace MazeParty.Multiplayer
         {
             rootCanvas = canvas;
             root = visibleRoot;
-            timerDial = timer;
-            timerImage = timer != null ? timer.Ring : null;
-            timerText = timer != null ? timer.TimeText : null;
-            roundText = round;
-            phaseText = phase;
-            instructionText = instructions;
             npcSequenceText = npcSequence;
             playerRows = rows;
             playerNameTexts = names;

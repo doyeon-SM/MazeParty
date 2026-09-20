@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Shared serialized timer binding used by every minigame HUD prefab.
+    /// Shared timer graphic nested in the single common minigame HUD.
     /// Runtime code only supplies remaining and total time.
     /// </summary>
     [DisallowMultipleComponent]

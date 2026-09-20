@@ -88,7 +88,9 @@ namespace MazeParty.Multiplayer
 
             if (_target == null || _targetMinigame != match.CurrentMinigame ||
                 _targetSlot != slot || _targetScene != scene ||
-                _target.gameObject.scene != scene ||
+                (match.CurrentMinigame !=
+                     ScheduledMinigameId.ArenaCombat &&
+                 _target.gameObject.scene != scene) ||
                 !_target.gameObject.activeInHierarchy)
             {
                 _target = ResolveTarget(match.CurrentMinigame, scene, slot);
@@ -128,6 +130,15 @@ namespace MazeParty.Multiplayer
             Scene scene,
             int slot)
         {
+            // Arena Combat reuses the persistent, network-authoritative board
+            // avatars. Their GameObjects live in the bootstrap scene while the
+            // authored arena scene is loaded additively.
+            if (minigame == ScheduledMinigameId.ArenaCombat)
+            {
+                return NetworkMatchState.Instance?
+                    .GetAvatarForSlot(slot)?.transform;
+            }
+
             if (minigame == ScheduledMinigameId.SnowySpin)
             {
                 var views = FindObjectsByType<SnowySpinNetworkView>(
@@ -213,6 +224,9 @@ namespace MazeParty.Multiplayer
                     break;
                 case ScheduledMinigameId.BombPassing:
                     prefix = "Bomb Passing Player ";
+                    break;
+                case ScheduledMinigameId.CliffBarrage:
+                    prefix = "Cliff Barrage Player ";
                     break;
                 default:
                     return null;

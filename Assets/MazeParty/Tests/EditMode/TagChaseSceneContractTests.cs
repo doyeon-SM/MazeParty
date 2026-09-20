@@ -13,11 +13,8 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/TagChase.unity";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab";
-
         [Test]
-        public void Scene_PreservesArenaRoleCamerasAndTimerOnlyHudContract()
+        public void Scene_PreservesArenaAndRoleCameras()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -52,8 +49,7 @@ namespace MazeParty.Multiplayer.Tests
                              "sharedRunnerCamera",
                              "taggerCamera",
                              "playerRoot",
-                             "arenaPresentation",
-                             "hud"
+                             "arenaPresentation"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -63,20 +59,6 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Not.Null,
                         propertyName);
                 }
-
-                var hud = state.GetComponentInChildren<
-                    TagChaseHudBindings>(true);
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
-                Assert.That(
-                    hud.GetComponentsInChildren<UnityEngine.UI.Text>(true),
-                    Has.Length.EqualTo(1),
-                    "The production HUD may show only the shared timer text.");
-                Assert.That(
-                    PrefabUtility
-                        .GetPrefabAssetPathOfNearestInstanceRoot(
-                            hud.gameObject),
-                    Is.EqualTo(HudPrefabPath));
 
                 Assert.That(
                     FindDescendant(state.transform, "Arena Floor"),

@@ -47,6 +47,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/BombPassing.unity";
         private const string SnowySpinScenePath =
             "Assets/MazeParty/Scenes/Minigames/SnowySpin.unity";
+        private const string ArenaCombatScenePath =
+            "Assets/MazeParty/Scenes/Minigames/ArenaCombat.unity";
+        private const string CliffBarrageScenePath =
+            "Assets/MazeParty/Scenes/Minigames/CliffBarrage.unity";
         private const string PlayerPrefabPath =
             "Assets/MazeParty/Prefabs/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
@@ -93,9 +97,9 @@ namespace MazeParty.Multiplayer.Tests
                 .Where(scene => scene.enabled)
                 .Select(scene => scene.path)
                 .ToArray();
-            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(15));
+            Assert.That(enabledScenes.Length, Is.GreaterThanOrEqualTo(17));
             Assert.That(
-                enabledScenes.Take(15),
+                enabledScenes.Take(17),
                 Is.EqualTo(new[]
                 {
                     BootstrapScenePath,
@@ -112,7 +116,9 @@ namespace MazeParty.Multiplayer.Tests
                     SequenceMemoryScenePath,
                     BouncingBallsScenePath,
                     BombPassingScenePath,
-                    SnowySpinScenePath
+                    SnowySpinScenePath,
+                    ArenaCombatScenePath,
+                    CliffBarrageScenePath
                 }));
 
             var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(

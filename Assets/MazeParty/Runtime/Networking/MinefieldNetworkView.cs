@@ -35,8 +35,6 @@ namespace MazeParty.Multiplayer
         private int _mineLayoutHash;
         private bool _cameraConfigured;
         private bool _hudContractErrorLogged;
-        private bool _hudDefaultsCaptured;
-        private string _defaultInstructionText;
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
             90f - PlayerCameraTiltDegrees,
@@ -158,13 +156,6 @@ namespace MazeParty.Multiplayer
             {
                 var arena = FindDescendant(transform, "Arena Presentation");
                 arenaPresentation = arena != null ? arena.gameObject : null;
-            }
-            if (!_hudDefaultsCaptured &&
-                hud != null &&
-                hud.InstructionText != null)
-            {
-                _defaultInstructionText = hud.InstructionText.text;
-                _hudDefaultsCaptured = true;
             }
             if (runnerRoot == null)
             {
@@ -507,101 +498,35 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var phaseText = hud.PhaseText;
-            var instructionText = hud.InstructionText;
             var scoreRows = hud.ScoreRows;
-            hud.TimerDial.SetTime(
-                match.IsReconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.Remaining,
-                match.IsReconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
-            var totalRounds = MinigameCatalog.GetRoundCount(
-                ScheduledMinigameId.Minefield);
-            if (match.IsReconnectPaused)
-            {
-                phaseText.text =
-                    "PLAYER DISCONNECTED  ·  MATCH PAUSED";
-                instructionText.text =
-                    "Waiting up to 60 seconds for the player to reconnect.";
-            }
-            else
-            {
-                instructionText.text = _defaultInstructionText;
-                switch (state.Phase)
-                {
-                    case NetworkMinefieldPhase.Countdown:
-                        phaseText.text =
-                            "MINEFIELD  ·  ROUND " +
-                            state.RoundNumber + " / " +
-                            totalRounds + "  ·  COUNTDOWN";
-                        break;
-                    case NetworkMinefieldPhase.Running:
-                        phaseText.text =
-                            "MINEFIELD  ·  ROUND " +
-                            state.RoundNumber + " / " +
-                            totalRounds;
-                        break;
-                    case NetworkMinefieldPhase.RoundResult:
-                        phaseText.text =
-                            "ROUND " + state.RoundNumber +
-                            " RESULTS";
-                        break;
-                    case NetworkMinefieldPhase.Complete:
-                        phaseText.text = "MINEFIELD  ·  FINAL RESULTS";
-                        break;
-                    default:
-                        phaseText.text = "MINEFIELD";
-                        break;
-                }
-            }
-
             for (var slot = 0; slot < scoreRows.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
                 var displayName = avatar != null ? avatar.DisplayName : "PLAYER " + (slot + 1);
                 var playerState = state.GetPlayerState(slot);
-                var finalRank = state.GetFinalRank(slot);
                 var stateLabel = playerState == MinefieldPlayerState.Crippled
-                    ? "CRIPPLED"
+                    ? "INJURED"
                     : playerState == MinefieldPlayerState.Eliminated
                         ? "OUT"
                         : playerState == MinefieldPlayerState.Finished
                             ? "FINISHED"
                             : "RUNNING";
-                scoreRows[slot].text = displayName + "\n" +
-                                       stateLabel + "\n" +
-                                       "+" + state.GetRoundPoints(slot) +
-                                       "  ·  TOTAL " + state.GetScore(slot) +
-                                       (finalRank > 0
-                                           ? "\n#" + finalRank + "  ·  GOLD +" +
-                                             MinigameRewardRules.GetFinalPlacementGold(
-                                                 finalRank)
-                                           : string.Empty);
+                var progress = Mathf.Clamp(
+                    Mathf.RoundToInt(
+                        100f * (state.GetRunnerPosition(slot).z -
+                                NetworkMinefieldState.ArenaMinZ) /
+                        (NetworkMinefieldState.ArenaMaxZ -
+                         NetworkMinefieldState.ArenaMinZ)),
+                    0,
+                    100);
+                scoreRows[slot].text = displayName + "  ·  " +
+                                       stateLabel + "  ·  " + progress + "%";
                 if (avatar != null)
                 {
                     scoreRows[slot].color = avatar.Appearance.BodyColor;
                 }
             }
         }
-
-        private static double GetTimerDuration(
-            NetworkMinefieldPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkMinefieldPhase.Countdown:
-                    return NetworkMinefieldState.CountdownSeconds;
-                case NetworkMinefieldPhase.Running:
-                    return NetworkMinefieldState.RunSeconds;
-                case NetworkMinefieldPhase.RoundResult:
-                    return NetworkMinefieldState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
 
         private void SetWorldPresentationActive(bool active)
         {

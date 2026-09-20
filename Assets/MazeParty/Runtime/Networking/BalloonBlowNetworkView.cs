@@ -398,90 +398,57 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerDial.SetTime(
-                match.IsReconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.RemainingSeconds,
-                match.IsReconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
-            hud.RoundText.text = "ROUND " + state.RoundNumber + " / " +
-                                 MinigameCatalog.GetRoundCount(
-                                     ScheduledMinigameId.BalloonBlow);
             hud.InstructionText.text = GetLocalInstruction();
-            hud.PausePanel.SetActive(state.IsPaused);
-            hud.ControlsPanel.SetActive(
-                state.Phase == NetworkBalloonBlowPhase.Countdown ||
-                state.Phase == NetworkBalloonBlowPhase.Running);
             var showResult =
-                state.Phase == NetworkBalloonBlowPhase.RoundResult ||
-                state.Phase == NetworkBalloonBlowPhase.Complete;
+                state.Phase == NetworkBalloonBlowPhase.RoundResult;
             hud.ResultPanel.SetActive(showResult);
             if (showResult)
             {
                 hud.ResultText.text = GetResultLabel();
             }
 
-            for (var slot = 0; slot < BalloonBlowRules.PlayerCount; slot++)
+            if (_localSlot >= 0 &&
+                _localSlot < BalloonBlowRules.PlayerCount)
             {
+                var localAvatar = match.GetAvatarForSlot(_localSlot);
+                var localColor = localAvatar != null
+                    ? localAvatar.Appearance.BodyColor
+                    : FallbackPlayerColors[_localSlot];
+                hud.LocalProgressText.color = localColor;
+                hud.LocalProgressFill.color = localColor;
                 var progress = Mathf.Clamp(
-                    state.GetPlayerProgress(slot),
+                    state.GetPlayerProgress(_localSlot),
                     0f,
                     BalloonBlowRules.MaxProgressPercent);
-                var avatar = match.GetAvatarForSlot(slot);
-                var playerName = avatar != null
-                    ? avatar.DisplayName
-                    : "PLAYER " + (slot + 1);
-                hud.PlayerRows[slot].text =
-                    playerName.ToUpperInvariant() + "  ·  " +
-                    Mathf.RoundToInt(progress) + "%  ·  " +
-                    GetPlayerStateLabel(slot);
-                hud.PlayerProgressFills[slot].fillAmount =
+                hud.LocalProgressText.text =
+                    "YOU  ·  " + Mathf.RoundToInt(progress) +
+                    "%  ·  " + GetPlayerStateLabel(_localSlot);
+                hud.LocalProgressFill.fillAmount =
                     progress / BalloonBlowRules.MaxProgressPercent;
-                var rowColor = slot == _localSlot
-                    ? new Color(1f, 0.88f, 0.25f, 1f)
-                    : hud.GetDefaultPlayerRowColor(slot);
-                hud.PlayerRows[slot].color = rowColor;
             }
         }
-
-        private static double GetTimerDuration(
-            NetworkBalloonBlowPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkBalloonBlowPhase.Countdown:
-                    return NetworkBalloonBlowState.CountdownSeconds;
-                case NetworkBalloonBlowPhase.Running:
-                    return BalloonBlowRules.RoundSeconds;
-                case NetworkBalloonBlowPhase.RoundResult:
-                    return NetworkBalloonBlowState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
 
         private string GetLocalInstruction()
         {
             if (_localSlot < 0)
             {
-                return "HOLD LEFT CLICK TO INFLATE";
+                return "SPECTATING";
             }
 
             switch (state.GetPlayerPhase(_localSlot))
             {
                 case BalloonBlowPlayerPhase.Inflating:
-                    return "INFLATING · RELEASE BEFORE 2.0 SECONDS";
+                    return "INFLATING";
                 case BalloonBlowPlayerPhase.Cooldown:
-                    return "RESTING · THE BALLOON IS SLOWLY SHRINKING";
+                    return "COOLDOWN " +
+                           state.GetPlayerCooldownRemainingSeconds(_localSlot)
+                               .ToString("0.0") + "s";
                 case BalloonBlowPlayerPhase.AwaitingRelease:
-                    return "RELEASE LEFT CLICK TO REARM";
+                    return "RELEASE TO REARM";
                 case BalloonBlowPlayerPhase.Popped:
-                    return "BALLOON POPPED · WAIT FOR THE ROUND";
+                    return "POPPED";
                 default:
-                    return "HOLD LEFT CLICK TO INFLATE";
+                    return "READY";
             }
         }
 
@@ -512,39 +479,12 @@ namespace MazeParty.Multiplayer
         {
             if (_localSlot < 0)
             {
-                return state.Phase == NetworkBalloonBlowPhase.Complete
-                    ? "MATCH COMPLETE"
-                    : "ROUND COMPLETE";
-            }
-
-            if (state.Phase == NetworkBalloonBlowPhase.Complete)
-            {
-                return "MATCH " +
-                       MinigameDisplayFormatter.ToOrdinal(
-                           state.GetFinalRank(_localSlot)) +
-                       "\n" + state.GetScore(_localSlot) + " POINTS";
+                return "ROUND COMPLETE";
             }
             return "ROUND " +
                    MinigameDisplayFormatter.ToOrdinal(
                        state.GetRoundRank(_localSlot)) +
                    "\n+" + state.GetRoundPoints(_localSlot) + " POINTS";
-        }
-
-        private static string GetPhaseLabel(NetworkBalloonBlowPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkBalloonBlowPhase.Countdown:
-                    return "BALLOON BLOW · GET READY";
-                case NetworkBalloonBlowPhase.Running:
-                    return "BALLOON BLOW · INFLATE";
-                case NetworkBalloonBlowPhase.RoundResult:
-                    return "BALLOON BLOW · ROUND RESULT";
-                case NetworkBalloonBlowPhase.Complete:
-                    return "BALLOON BLOW · MATCH RESULT";
-                default:
-                    return "BALLOON BLOW";
-            }
         }
 
         private void SetWorldPresentationActive(bool active)

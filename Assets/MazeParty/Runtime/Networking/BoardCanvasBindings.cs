@@ -21,7 +21,6 @@ namespace MazeParty.Multiplayer
 
             public GameObject ItemSelectionPanel;
             public GameObject MinigameReadyPanel;
-            public GameObject ResultPanel;
             public GameObject ReconnectOverlay;
             public GameObject Reticle;
             public GameObject ItemShopPanel;
@@ -44,9 +43,6 @@ namespace MazeParty.Multiplayer
             public Text MinigameReadyNote;
             public Text MinigameReadyStatus;
             public Text MinigameRulePlaceholder;
-            public Text ResultTitle;
-            public Text ResultNote;
-            public Text ResultSummary;
             public Text ReadyButtonLabel;
 
             public Image MinigameRuleImage;
@@ -121,7 +117,6 @@ namespace MazeParty.Multiplayer
         public GraphicRaycaster RootRaycaster => references.RootRaycaster;
         public GameObject ItemSelectionPanel => references.ItemSelectionPanel;
         public GameObject MinigameReadyPanel => references.MinigameReadyPanel;
-        public GameObject ResultPanel => references.ResultPanel;
         public GameObject ReconnectOverlay => references.ReconnectOverlay;
         public GameObject Reticle => references.Reticle;
         public GameObject ItemShopPanel => references.ItemShopPanel;
@@ -144,9 +139,6 @@ namespace MazeParty.Multiplayer
         public Text MinigameReadyStatus => references.MinigameReadyStatus;
         public Text MinigameRulePlaceholder =>
             references.MinigameRulePlaceholder;
-        public Text ResultTitle => references.ResultTitle;
-        public Text ResultNote => references.ResultNote;
-        public Text ResultSummary => references.ResultSummary;
         public Text ReadyButtonLabel => references.ReadyButtonLabel;
         public Image MinigameRuleImage => references.MinigameRuleImage;
         public Button NoItemButton => references.NoItemButton;
@@ -194,7 +186,6 @@ namespace MazeParty.Multiplayer
             references.RootRaycaster != null &&
             references.ItemSelectionPanel != null &&
             references.MinigameReadyPanel != null &&
-            references.ResultPanel != null &&
             references.ReconnectOverlay != null &&
             references.Reticle != null &&
             references.ItemShopPanel != null &&
@@ -216,9 +207,6 @@ namespace MazeParty.Multiplayer
             references.MinigameReadyNote != null &&
             references.MinigameReadyStatus != null &&
             references.MinigameRulePlaceholder != null &&
-            references.ResultTitle != null &&
-            references.ResultNote != null &&
-            references.ResultSummary != null &&
             references.ReadyButtonLabel != null &&
             references.MinigameRuleImage != null &&
             references.NoItemButton != null &&

@@ -11,7 +11,7 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class MinigameStartCountdownUiTests
     {
         private const string PrefabPath =
-            "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab";
+            "Assets/MazeParty/UI/Prefabs/MinigameCommonHud.prefab";
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board.unity";
 
@@ -21,10 +21,17 @@ namespace MazeParty.Multiplayer.Tests
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
             var view = prefab.GetComponent<MinigameStartCountdownView>();
+            var common = prefab.GetComponent<MinigameCommonHudView>();
             var canvas = prefab.GetComponent<Canvas>();
-            var numeral = prefab.GetComponentInChildren<Text>(true);
+            var numeral = prefab.GetComponentsInChildren<Text>(true)
+                .Single(text => text.gameObject.name == "Numeral");
             Assert.That(view, Is.Not.Null);
             Assert.That(view.HasRequiredReferences, Is.True);
+            Assert.That(common, Is.Not.Null);
+            Assert.That(common.HasRequiredReferences, Is.True);
+            Assert.That(common.RootCanvas, Is.SameAs(canvas));
+            Assert.That(common.TimerDial, Is.Not.Null);
+            Assert.That(common.RoundText, Is.Not.Null);
             Assert.That(canvas, Is.Not.Null);
             Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
             Assert.That(canvas.sortingOrder, Is.GreaterThanOrEqualTo(500));
@@ -36,7 +43,8 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 var runtimeView = instance.GetComponent<MinigameStartCountdownView>();
-                var runtimeNumeral = instance.GetComponentInChildren<Text>(true);
+                var runtimeNumeral = instance.GetComponentsInChildren<Text>(true)
+                    .Single(text => text.gameObject.name == "Numeral");
                 runtimeView.SetCountdown(3, true);
                 Assert.That(runtimeView.IsVisible, Is.True);
                 Assert.That(runtimeNumeral.text, Is.EqualTo("3"));
@@ -78,6 +86,8 @@ namespace MazeParty.Multiplayer.Tests
                 var view = views[0];
                 Assert.That(view.transform.parent, Is.Null);
                 Assert.That(view.HasRequiredReferences, Is.True);
+                Assert.That(view.GetComponent<MinigameCommonHudView>()
+                    .HasRequiredReferences, Is.True);
                 Assert.That(view.MatchState, Is.Not.Null);
                 Assert.That(view.MatchState.gameObject.scene, Is.EqualTo(scene));
                 Assert.That(

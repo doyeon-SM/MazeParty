@@ -58,7 +58,6 @@ namespace MazeParty.Editor
         public static void BuildRaceAssets()
         {
             EnsureFolders();
-            MinigameTimerDialProjectSetup.EnsurePrefabExists();
             var floor = CreateOrLoadMaterial(
                 "RaceFloor",
                 new Color(0.08f, 0.11f, 0.16f),
@@ -75,7 +74,7 @@ namespace MazeParty.Editor
                 "RaceFinish",
                 new Color(0.2f, 0.82f, 0.45f),
                 0.1f);
-            BuildScene(floor, lane, boundary, finish, LoadOrCreateHudPrefab());
+            BuildScene(floor, lane, boundary, finish);
             AssetDatabase.SaveAssets();
         }
 
@@ -83,8 +82,7 @@ namespace MazeParty.Editor
             Material floorMaterial,
             Material laneMaterial,
             Material boundaryMaterial,
-            Material finishMaterial,
-            GameObject hudPrefab)
+            Material finishMaterial)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousPath = previousActive.path;
@@ -137,19 +135,7 @@ namespace MazeParty.Editor
             var state = root.AddComponent<NetworkRaceState>();
             var view = root.AddComponent<RaceNetworkView>();
 
-            var hudObject = PrefabUtility.InstantiatePrefab(
-                hudPrefab,
-                root.transform) as GameObject;
-            var hud = hudObject != null
-                ? hudObject.GetComponent<RaceHudBindings>()
-                : null;
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "RaceHud.prefab has invalid serialized bindings.");
-            }
-
-            view.Configure(state, camera, playerRoot.transform, arena, hud);
+            view.Configure(state, camera, playerRoot.transform, arena);
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, RaceScenePath);
             EnsureInBuildSettings();
@@ -454,11 +440,10 @@ namespace MazeParty.Editor
 
         private static void ValidateSceneContract(GameObject root)
         {
-            var hud = root.GetComponentInChildren<RaceHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkRaceState>() == null ||
                 root.GetComponent<RaceNetworkView>() == null ||
-                hud == null || !hud.HasRequiredReferences ||
+                root.GetComponentInChildren<Canvas>(true) != null ||
                 root.GetComponentsInChildren<CinemachineCamera>(true).Length != 1 ||
                 root.GetComponentsInChildren<Camera>(true).Length != 0 ||
                 root.GetComponentsInChildren<AudioListener>(true).Length != 0 ||
@@ -471,7 +456,8 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Race scene is missing its network state, " +
-                    "track, shared camera, light, art anchors or prefab HUD.");
+                    "track, shared camera, light or art anchors; " +
+                    "it must not contain a dedicated Canvas.");
             }
 
             for (var divider = 1; divider < RaceRules.PlayerCount; divider++)
@@ -495,13 +481,6 @@ namespace MazeParty.Editor
                 }
             }
 
-            var sourcePath = PrefabUtility
-                .GetPrefabAssetPathOfNearestInstanceRoot(hud.gameObject);
-            if (sourcePath != HudPrefabPath)
-            {
-                throw new InvalidOperationException(
-                    "Race Canvas must be instantiated from RaceHud.prefab.");
-            }
         }
 
         private static Transform FindDescendant(Transform root, string name)

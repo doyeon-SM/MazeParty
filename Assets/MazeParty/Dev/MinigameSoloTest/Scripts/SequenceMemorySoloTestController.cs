@@ -460,14 +460,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 return;
             }
 
-            _productionHud.TimerDial.SetTime(
-                Remaining,
-                Math.Max(1d, _phaseDuration));
-            _productionHud.RoundText.text = "PROBLEM " +
-                _match.CurrentRoundNumber + " / " +
-                SequenceMemoryRules.RoundCount;
-            _productionHud.PhaseText.text = GetPhaseLabel();
-            _productionHud.InstructionText.text = GetInstructionLabel();
             _productionHud.NpcSequenceText.text = GetNpcSequenceLabel();
 
             for (var slot = 0;
@@ -501,7 +493,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 ? BuildFinalLabel()
                 : "PROBLEM " + _match.CurrentRoundNumber + "/" +
                   SequenceMemoryRules.RoundCount + " · " +
-                  _phase.ToString().ToUpperInvariant();
+                  _phase.ToString().ToUpperInvariant() + " · " +
+                  Remaining.ToString("0.0") + "s";
             var secondary = "P1 INPUT " +
                 (string.IsNullOrEmpty(localInput) ? "—" : localInput) +
                 " · MISSES " + localPlayer.MistakeCount + "/" +
@@ -615,44 +608,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 return new Color(1f, 0.72f, 0.15f, 1f);
             }
             return _productionHud.GetDefaultStatusColor(slot);
-        }
-
-        private string GetPhaseLabel()
-        {
-            switch (_phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return "SEQUENCE MEMORY · GET READY";
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "SEQUENCE MEMORY · WATCH";
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "SEQUENCE MEMORY · REPEAT";
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "SEQUENCE MEMORY · ANSWER";
-                case NetworkSequenceMemoryPhase.Complete:
-                    return "SEQUENCE MEMORY · FINAL RESULT";
-                default:
-                    return "SEQUENCE MEMORY";
-            }
-        }
-
-        private string GetInstructionLabel()
-        {
-            switch (_phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return "GET READY TO LISTEN";
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "WATCH THE NPC SEQUENCE";
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "REPEAT THE HIDDEN SEQUENCE WITH A / S / D";
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "ANSWER REVEALED · NEXT PROBLEM SOON";
-                case NetworkSequenceMemoryPhase.Complete:
-                    return "MATCH COMPLETE";
-                default:
-                    return string.Empty;
-            }
         }
 
         private string BuildFinalLabel()

@@ -28,7 +28,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private MinigameSoloHudView _hud;
         private NetworkTagChaseState _productionState;
         private TagChaseNetworkView _productionView;
-        private TagChaseHudBindings _productionHud;
         private GameObject _arenaPresentation;
         private GameObject _productionPlayerRoot;
         private Transform _runtimeRoot;
@@ -139,12 +138,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionPlayerRoot = FindDescendant(
                 _productionState.transform,
                 "Runtime Players")?.gameObject;
-            _productionHud = _productionState
-                .GetComponentInChildren<TagChaseHudBindings>(true);
             if (_arenaPresentation == null ||
-                _productionPlayerRoot == null ||
-                _productionHud == null ||
-                !_productionHud.HasRequiredReferences)
+                _productionPlayerRoot == null)
             {
                 throw new InvalidOperationException(
                     "Tag Chase scene presentation contract is incomplete.");
@@ -152,7 +147,6 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _arenaPresentation.SetActive(true);
             _productionPlayerRoot.SetActive(false);
-            _productionHud.gameObject.SetActive(true);
         }
 
         private void CreateRuntimePresentation()
@@ -303,11 +297,6 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void RefreshHud(bool localIsTagger)
         {
-            var timerDuration = GetPhaseDuration(_session.Phase);
-            _productionHud.TimerDial.SetTime(
-                _session.Remaining,
-                timerDuration);
-
             var stateLabel =
                 _session.Phase == TagChaseSoloPhase.Complete
                     ? BuildFinalLabel()
@@ -317,7 +306,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                           : _session.IsCaught(
                               TagChaseSoloSession.LocalPlayerSlot)
                               ? "CAUGHT · SPECTATING"
-                              : "YOU ARE RUNNER");
+                              : "YOU ARE RUNNER") +
+                      " · " + _session.Remaining.ToString("0.0") + "s";
             var scores =
                 "P1 " + _session.GetTotalScore(0) +
                 "  ·  P2 " + _session.GetTotalScore(1) +
@@ -431,21 +421,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 return true;
             }
             return false;
-        }
-
-        private static double GetPhaseDuration(TagChaseSoloPhase phase)
-        {
-            switch (phase)
-            {
-                case TagChaseSoloPhase.Countdown:
-                    return NetworkTagChaseState.CountdownSeconds;
-                case TagChaseSoloPhase.Running:
-                    return TagChaseRules.RoundSeconds;
-                case TagChaseSoloPhase.RoundResult:
-                    return NetworkTagChaseState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

@@ -650,7 +650,6 @@ namespace MazeParty.Editor
                 }
             }
 
-            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var bindings = prefab != null
                 ? prefab.GetComponent<RedLightGreenLightHudBindings>()
@@ -702,70 +701,23 @@ namespace MazeParty.Editor
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
             panelRect.anchoredPosition = new Vector2(0f, -22f);
-            panelRect.sizeDelta = new Vector2(1120f, 335f);
+            panelRect.sizeDelta = new Vector2(1120f, 125f);
             panel.GetComponent<Image>().color =
                 new Color(0.025f, 0.035f, 0.055f, 0.88f);
 
-            var phase = CreateHudText(
-                "Phase",
-                panel.transform,
-                font,
-                new Vector2(0f, -12f),
-                new Vector2(1060f, 42f),
-                28,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "RED LIGHT, GREEN LIGHT  ·  ROUND 1 / 3");
             var signal = CreateHudText(
                 "Signal",
                 panel.transform,
                 font,
-                new Vector2(0f, -52f),
+                new Vector2(0f, -28f),
                 new Vector2(1060f, 72f),
                 48,
                 TextAnchor.MiddleCenter,
                 FontStyle.Bold,
                 "GREEN LIGHT  ·  MOVE");
-            var instructions = CreateHudText(
-                "Instructions",
-                panel.transform,
-                font,
-                new Vector2(0f, -124f),
-                new Vector2(1060f, 36f),
-                18,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal,
-                "WASD MOVE  ·  FREEZE ON RED  ·  FIRST CATCH: SLOWED  ·  SECOND: OUT");
-
-            var rows = new Text[
-                RedLightGreenLightRules.PlayerCount];
-            for (var slot = 0; slot < rows.Length; slot++)
-            {
-                rows[slot] = CreateHudText(
-                    "Player" + (slot + 1) + "Row",
-                    panel.transform,
-                    font,
-                    new Vector2(-405f + slot * 270f, -174f),
-                    new Vector2(255f, 145f),
-                    18,
-                    TextAnchor.UpperCenter,
-                    FontStyle.Bold,
-                    "PLAYER " + (slot + 1));
-                rows[slot].color = new[]
-                {
-                    new Color(0.16f, 0.48f, 0.95f),
-                    new Color(0.92f, 0.2f, 0.16f),
-                    new Color(0.18f, 0.78f, 0.32f),
-                    new Color(0.7f, 0.26f, 0.9f)
-                }[slot];
-            }
-
             root.GetComponent<RedLightGreenLightHudBindings>().Configure(
                 canvas,
-                phase,
                 signal,
-                instructions,
-                rows,
                 Color.white,
                 new Color(0.22f, 1f, 0.35f, 1f),
                 new Color(1f, 0.74f, 0.12f, 1f),

@@ -267,27 +267,6 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var remaining = state.Remaining;
-            var duration = GetPhaseDuration(state.Phase);
-            if (match.IsReconnectPaused)
-            {
-                remaining = match.ReconnectRemaining;
-                duration = NetworkMatchState.ReconnectGraceSeconds;
-            }
-            hud.TimerDial.SetTime(remaining, duration);
-            hud.RoundText.text = "ROUND " +
-                Mathf.Clamp(
-                    state.RoundNumber,
-                    1,
-                    BouncingBallsRules.RoundCount) +
-                " / " + BouncingBallsRules.RoundCount;
-            hud.PhaseText.text = match.IsReconnectPaused
-                ? "PLAYER DISCONNECTED · MATCH PAUSED"
-                : GetPhaseLabel(state.Phase);
-            hud.InstructionText.text = match.IsReconnectPaused
-                ? "Waiting up to 60 seconds for reconnection."
-                : GetInstructionLabel(state.Phase);
-
             for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
                  slot++)
             {
@@ -298,70 +277,8 @@ namespace MazeParty.Multiplayer
                         : "PLAYER " + (slot + 1);
                 hud.PlayerNameTexts[slot].color =
                     GetPlayerColor(match, slot);
-                var rank = state.GetFinalRank(slot);
-                hud.PlayerScoreTexts[slot].text = rank > 0
-                    ? MinigameDisplayFormatter.ToOrdinal(rank) +
-                      " · SCORE " + state.GetScore(slot)
-                    : "SCORE " + state.GetScore(slot);
-                hud.PlayerConcededTexts[slot].text = rank > 0
-                    ? "GOLD +" +
-                      MinigameRewardRules.GetFinalPlacementGold(rank) +
-                      " · CONCEDED " + state.GetConceded(slot)
-                    : "CONCEDED " + state.GetConceded(slot);
-            }
-        }
-
-        private static string GetPhaseLabel(
-            NetworkBouncingBallsPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkBouncingBallsPhase.Countdown:
-                    return "BOUNCING BALLS · GET READY";
-                case NetworkBouncingBallsPhase.Playing:
-                    return "BOUNCING BALLS · DEFEND AND SCORE";
-                case NetworkBouncingBallsPhase.RoundBreak:
-                    return "BOUNCING BALLS · ROUND RESULT";
-                case NetworkBouncingBallsPhase.Complete:
-                    return "BOUNCING BALLS · FINAL RESULT";
-                default:
-                    return "BOUNCING BALLS";
-            }
-        }
-
-        private static string GetInstructionLabel(
-            NetworkBouncingBallsPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkBouncingBallsPhase.Countdown:
-                    return "A / D · MOVE YOUR SHIELD";
-                case NetworkBouncingBallsPhase.Playing:
-                    return "BLOCK BALLS TO CLAIM YOUR COLOR · SCORE IN A GOAL";
-                case NetworkBouncingBallsPhase.RoundBreak:
-                    return "ROUND 2 STARTS SOON · SCORES CARRY OVER";
-                case NetworkBouncingBallsPhase.Complete:
-                    return "FINAL STANDINGS · PLACEMENT AWARDS GOLD";
-                default:
-                    return string.Empty;
-            }
-        }
-
-        private static double GetPhaseDuration(
-            NetworkBouncingBallsPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkBouncingBallsPhase.Countdown:
-                    return BouncingBallsRules.CountdownSeconds;
-                case NetworkBouncingBallsPhase.Playing:
-                    return BouncingBallsRules.RoundSeconds;
-                case NetworkBouncingBallsPhase.RoundBreak:
-                    return NetworkBouncingBallsState.RoundBreakSeconds;
-                case NetworkBouncingBallsPhase.Complete:
-                    return BouncingBallsRules.ResultSeconds;
-                default:
-                    return 1d;
+                hud.PlayerScoreTexts[slot].text =
+                    "SCORE " + state.GetScore(slot);
             }
         }
 

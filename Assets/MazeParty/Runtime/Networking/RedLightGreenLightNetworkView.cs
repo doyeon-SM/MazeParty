@@ -49,8 +49,6 @@ namespace MazeParty.Multiplayer
 
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraConfigured;
-        private bool _hudDefaultsCaptured;
-        private string _defaultInstructionText = string.Empty;
         private int _localSlot = -1;
         private RedLightGreenLightSignalPhase _lastSignalPhase =
             (RedLightGreenLightSignalPhase)byte.MaxValue;
@@ -166,13 +164,6 @@ namespace MazeParty.Multiplayer
                 transform,
                 "Red Signal Light");
             cueAudioSource ??= GetComponentInChildren<AudioSource>(true);
-            if (!_hudDefaultsCaptured &&
-                hud != null &&
-                hud.InstructionText != null)
-            {
-                _defaultInstructionText = hud.InstructionText.text;
-                _hudDefaultsCaptured = true;
-            }
         }
 
         private void ConfigureCamera()
@@ -471,111 +462,18 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var phaseText = hud.PhaseText;
-            var instructionText = hud.InstructionText;
-            hud.TimerDial.SetTime(
-                match.IsReconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.Remaining,
-                match.IsReconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
-            var scoreRows = hud.PlayerRows;
-
             if (match.IsReconnectPaused)
             {
-                phaseText.text =
-                    "PLAYER DISCONNECTED  ·  MATCH PAUSED";
                 hud.SetSignal(
                     "PAUSED",
                     RedLightGreenLightHudSignalStyle.Neutral);
-                instructionText.text =
-                    "Waiting up to 60 seconds for the player to reconnect.";
             }
             else
             {
-                instructionText.text = _defaultInstructionText;
-                phaseText.text = BuildPhaseLabel();
                 BuildSignalLabel(out var label, out var signalStyle);
                 hud.SetSignal(label, signalStyle);
             }
-
-            for (var slot = 0; slot < scoreRows.Length; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                var displayName = avatar != null &&
-                                  !string.IsNullOrWhiteSpace(
-                                      avatar.DisplayName)
-                    ? avatar.DisplayName
-                    : "PLAYER " + (slot + 1);
-                var playerState = state.GetPlayerState(slot);
-                var rank = ResolveDisplayedRank(slot);
-                var stateLabel = PlayerStateLabel(playerState);
-                scoreRows[slot].text =
-                    (slot == _localSlot ? "> " : string.Empty) +
-                    MinigameDisplayFormatter.ToOrdinal(rank) +
-                    "  " + displayName + "\n" +
-                    stateLabel + "  ·  " +
-                    state.GetForwardProgress(slot).ToString("0.0") + "m\n" +
-                    "+" + state.GetRoundPoints(slot) +
-                    "  ·  TOTAL " + state.GetScore(slot) +
-                    (state.GetFinalRank(slot) > 0
-                        ? "\nFINAL " +
-                          MinigameDisplayFormatter.ToOrdinal(
-                              state.GetFinalRank(slot)) +
-                          "  ·  GOLD +" +
-                          MinigameRewardRules.GetFinalPlacementGold(
-                              state.GetFinalRank(slot))
-                        : string.Empty);
-                scoreRows[slot].color = avatar != null
-                    ? avatar.Appearance.BodyColor
-                    : hud.GetDefaultPlayerRowColor(slot);
-            }
         }
-
-        private string BuildPhaseLabel()
-        {
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.RedLightGreenLight);
-            var round = Mathf.Clamp(
-                state.RoundNumber,
-                1,
-                totalRounds);
-            switch (state.Phase)
-            {
-                case NetworkRedLightGreenLightPhase.Countdown:
-                    return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / " + totalRounds +
-                           "  ·  COUNTDOWN";
-                case NetworkRedLightGreenLightPhase.Running:
-                    return "RED LIGHT, GREEN LIGHT  ·  ROUND " +
-                           round + " / " + totalRounds;
-                case NetworkRedLightGreenLightPhase.RoundResult:
-                    return "ROUND " + round + " RESULTS";
-                case NetworkRedLightGreenLightPhase.Complete:
-                    return "RED LIGHT, GREEN LIGHT  ·  FINAL RESULTS";
-                default:
-                    return "RED LIGHT, GREEN LIGHT";
-            }
-        }
-
-        private static double GetTimerDuration(
-            NetworkRedLightGreenLightPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkRedLightGreenLightPhase.Countdown:
-                    return RedLightGreenLightRules.CountdownSeconds;
-                case NetworkRedLightGreenLightPhase.Running:
-                    return RedLightGreenLightRules.RoundSeconds;
-                case NetworkRedLightGreenLightPhase.RoundResult:
-                    return RedLightGreenLightRules.ResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
 
         private void BuildSignalLabel(
             out string label,

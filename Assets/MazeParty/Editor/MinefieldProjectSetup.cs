@@ -387,8 +387,6 @@ namespace MazeParty.Editor
                 MinefieldHudPrefabPath);
             if (existing != null)
             {
-                MinigameTimerDialProjectSetup.EnsureHudTimer(
-                    MinefieldHudPrefabPath);
                 existing = AssetDatabase.LoadAssetAtPath<GameObject>(
                     MinefieldHudPrefabPath);
                 ValidateMinefieldHudPrefab(existing);
@@ -407,8 +405,6 @@ namespace MazeParty.Editor
                         "MinefieldHud.prefab could not be created.");
                 }
 
-                MinigameTimerDialProjectSetup.EnsureHudTimer(
-                    MinefieldHudPrefabPath);
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     MinefieldHudPrefabPath);
                 ValidateMinefieldHudPrefab(prefab);
@@ -458,32 +454,10 @@ namespace MazeParty.Editor
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
             panelRect.anchoredPosition = new Vector2(0f, -24f);
-            panelRect.sizeDelta = new Vector2(950f, 265f);
+            panelRect.sizeDelta = new Vector2(950f, 100f);
             var panelImage = panel.GetComponent<Image>();
             panelImage.color = new Color(0.025f, 0.035f, 0.055f, 0.88f);
             panelImage.raycastTarget = false;
-
-            var phaseText = CreateHudText(
-                "Minefield Phase",
-                panel.transform,
-                font,
-                new Vector2(0f, -20f),
-                new Vector2(900f, 48f),
-                34,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-            var instructionText = CreateHudText(
-                "Minefield Instructions",
-                panel.transform,
-                font,
-                new Vector2(0f, -68f),
-                new Vector2(900f, 34f),
-                20,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal);
-            instructionText.text =
-                "WASD MOVE   |   STOP + RMB SONAR   |   " +
-                "FIRST MINE: CRIPPLED   |   SECOND: OUT";
 
             var scoreRows = new Text[MinefieldRules.PlayerCount];
             for (var slot = 0; slot < scoreRows.Length; slot++)
@@ -492,8 +466,8 @@ namespace MazeParty.Editor
                     "Minefield Score " + slot,
                     panel.transform,
                     font,
-                    new Vector2(-330f + slot * 220f, -133f),
-                    new Vector2(205f, 105f),
+                    new Vector2(-330f + slot * 220f, -24f),
+                    new Vector2(205f, 50f),
                     19,
                     TextAnchor.UpperCenter,
                     FontStyle.Bold);
@@ -501,11 +475,7 @@ namespace MazeParty.Editor
 
             var bindings =
                 canvasObject.AddComponent<MinefieldHudBindings>();
-            bindings.Configure(
-                canvas,
-                phaseText,
-                instructionText,
-                scoreRows);
+            bindings.Configure(canvas, scoreRows);
             canvasObject.SetActive(false);
             return canvasObject;
         }

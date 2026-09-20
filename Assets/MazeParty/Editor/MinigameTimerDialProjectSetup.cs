@@ -7,48 +7,23 @@ using UnityEngine.UI;
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Owns the reusable timer prefab and nests it into every production
-    /// minigame HUD without rebuilding or restyling the surrounding prefab.
+    /// Owns the reusable timer graphic nested inside the common HUD.
     /// </summary>
     public static class MinigameTimerDialProjectSetup
     {
         private const string MenuPath =
-            "MazeParty/Minigames/Migrate Shared Timer Dial";
+            "MazeParty/Minigames/Install Common Minigame Timer";
         private const string UiPrefabFolder =
             "Assets/MazeParty/UI/Prefabs";
 
         public const string TimerPrefabPath =
             UiPrefabFolder + "/MinigameTimerDial.prefab";
 
-        private static readonly string[] HudPrefabPaths =
-        {
-            UiPrefabFolder + "/MinefieldHud.prefab",
-            UiPrefabFolder + "/WrongWayHud.prefab",
-            UiPrefabFolder + "/RedLightGreenLightHud.prefab",
-            UiPrefabFolder + "/StableFootingHud.prefab",
-            UiPrefabFolder + "/BalloonBlowHud.prefab",
-            UiPrefabFolder + "/GiftGrabHud.prefab",
-            UiPrefabFolder + "/TerritoryPaintHud.prefab",
-            UiPrefabFolder + "/TagChaseHud.prefab",
-            UiPrefabFolder + "/RaceHud.prefab"
-        };
-
         [MenuItem(MenuPath)]
         public static void BuildAndMigrateAll()
         {
             EnsurePrefabExists();
-            for (var index = 0;
-                 index < HudPrefabPaths.Length;
-                 index++)
-            {
-                EnsureHudTimer(HudPrefabPaths[index]);
-            }
-
-            AssetDatabase.SaveAssets();
-            AssetDatabase.Refresh();
-            Debug.Log(
-                "Shared minigame timer dial created and nested into " +
-                HudPrefabPaths.Length + " existing HUD prefabs.");
+            MinigameStartCountdownProjectSetup.Install();
         }
 
         [MenuItem(MenuPath, true)]
@@ -122,131 +97,6 @@ namespace MazeParty.Editor
             }
 
             return binding;
-        }
-
-        public static void EnsureHudTimer(string hudPrefabPath)
-        {
-            if (string.IsNullOrWhiteSpace(hudPrefabPath))
-            {
-                throw new ArgumentException(
-                    "A HUD prefab path is required.",
-                    nameof(hudPrefabPath));
-            }
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(
-                    hudPrefabPath) == null)
-            {
-                return;
-            }
-
-            var contents =
-                PrefabUtility.LoadPrefabContents(
-                    hudPrefabPath);
-            try
-            {
-                var canvas =
-                    contents.GetComponentInChildren<Canvas>(true);
-                if (canvas == null)
-                {
-                    throw new InvalidOperationException(
-                        hudPrefabPath +
-                        " does not contain a Canvas.");
-                }
-
-                var timer =
-                    contents.GetComponentInChildren<
-                        MinigameTimerDial>(true);
-                if (timer == null)
-                {
-                    timer = InstantiateTimer(
-                        canvas.transform);
-                }
-
-                BindTimerToHud(
-                    contents,
-                    timer);
-                SetUiLayer(timer.gameObject);
-                PrefabUtility.SaveAsPrefabAsset(
-                    contents,
-                    hudPrefabPath);
-            }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(
-                    contents);
-            }
-        }
-
-        private static void BindTimerToHud(
-            GameObject root,
-            MinigameTimerDial timer)
-        {
-            var bindings =
-                root.GetComponentsInChildren<MonoBehaviour>(true);
-            var bound = false;
-            for (var index = 0;
-                 index < bindings.Length;
-                 index++)
-            {
-                var binding = bindings[index];
-                if (binding == null ||
-                    binding is MinigameTimerDial ||
-                    binding is MinigameTimerRingGraphic)
-                {
-                    continue;
-                }
-
-                var serialized =
-                    new SerializedObject(binding);
-                var timerProperty =
-                    serialized.FindProperty("timerDial");
-                if (timerProperty == null)
-                {
-                    continue;
-                }
-
-                timerProperty.objectReferenceValue =
-                    timer;
-                var legacyTimer =
-                    serialized.FindProperty("timerText");
-                if (legacyTimer != null)
-                {
-                    var legacyText =
-                        legacyTimer.objectReferenceValue as Text;
-                    if (legacyText != null &&
-                        legacyText != timer.TimeText)
-                    {
-                        HideLegacyTimer(legacyText);
-                    }
-                    legacyTimer.objectReferenceValue =
-                        timer.TimeText;
-                }
-
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                EditorUtility.SetDirty(binding);
-                bound = true;
-            }
-
-            if (!bound)
-            {
-                throw new InvalidOperationException(
-                    root.name +
-                    " does not expose a serialized timerDial binding.");
-            }
-        }
-
-        private static void HideLegacyTimer(Text legacyText)
-        {
-            var parent = legacyText.transform.parent;
-            if (parent != null &&
-                parent.name.IndexOf(
-                    "Timer",
-                    StringComparison.OrdinalIgnoreCase) >= 0)
-            {
-                parent.gameObject.SetActive(false);
-                return;
-            }
-
-            legacyText.gameObject.SetActive(false);
         }
 
         private static GameObject CreateTemplate()

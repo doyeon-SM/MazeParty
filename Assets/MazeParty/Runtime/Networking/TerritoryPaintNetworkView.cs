@@ -402,13 +402,6 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            hud.TimerDial.SetTime(
-                match.IsReconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.Remaining,
-                match.IsReconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
             for (var slot = 0;
                  slot < TerritoryPaintRules.PlayerCount;
                  slot++)
@@ -429,23 +422,6 @@ namespace MazeParty.Multiplayer
                         : hud.GetDefaultPlayerRowColor(slot);
             }
         }
-
-        private static double GetTimerDuration(
-            NetworkTerritoryPaintPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkTerritoryPaintPhase.Countdown:
-                    return NetworkTerritoryPaintState.CountdownSeconds;
-                case NetworkTerritoryPaintPhase.Running:
-                    return TerritoryPaintRules.RoundSeconds;
-                case NetworkTerritoryPaintPhase.RoundResult:
-                    return NetworkTerritoryPaintState.ResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
 
         private void SetWorldPresentationActive(bool active)
         {

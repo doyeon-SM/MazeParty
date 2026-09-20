@@ -560,28 +560,9 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            hud.PhaseText.text = GetPhaseLabel(state.Phase);
-            hud.TimerDial.SetTime(
-                match.IsReconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.RemainingSeconds,
-                match.IsReconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
-            hud.RoundText.text =
-                "ROUND " + state.RoundNumber + " / " +
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
-            hud.InstructionText.text = GetLocalInstruction();
             hud.LocalStatusText.text = GetLocalStatus();
-            hud.NeutralGiftText.text =
-                "LOOSE GIFTS  " + CountLooseGifts();
-            hud.PausePanel.SetActive(state.IsPaused);
-            hud.ControlsPanel.SetActive(
-                state.Phase == NetworkGiftGrabPhase.Countdown ||
-                state.Phase == NetworkGiftGrabPhase.Running);
             var showResult =
-                state.Phase == NetworkGiftGrabPhase.RoundResult ||
-                state.Phase == NetworkGiftGrabPhase.Complete;
+                state.Phase == NetworkGiftGrabPhase.RoundResult;
             hud.ResultPanel.SetActive(showResult);
             if (showResult)
             {
@@ -596,66 +577,11 @@ namespace MazeParty.Multiplayer
                     : "PLAYER " + (slot + 1);
                 hud.PlayerRows[slot].text =
                     playerName.ToUpperInvariant() + "  ·  " +
-                    state.GetStoredGiftCount(slot) + " STORED" +
-                    (state.GetCarriedGiftId(slot) >= 0 ? "  ·  CARRY" : "") +
-                    (state.GetPlayerStunRemaining(slot) > 0d ? "  ·  STUN" : "");
+                    state.GetStoredGiftCount(slot) + " STORED";
                 hud.PlayerRows[slot].color = slot == _localSlot
                     ? hud.LocalPlayerRowColor
                     : hud.GetDefaultPlayerRowColor(slot);
             }
-        }
-
-        private static double GetTimerDuration(
-            NetworkGiftGrabPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkGiftGrabPhase.Countdown:
-                    return NetworkGiftGrabState.CountdownSeconds;
-                case NetworkGiftGrabPhase.Running:
-                    return GiftGrabRules.RoundSeconds;
-                case NetworkGiftGrabPhase.RoundResult:
-                    return NetworkGiftGrabState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
-
-        private int CountLooseGifts()
-        {
-            var count = 0;
-            for (var giftId = 0;
-                 giftId < state.GiftSpawnedCount;
-                 giftId++)
-            {
-                if (state.GetGiftState(giftId) == GiftGrabGiftState.Loose)
-                {
-                    count++;
-                }
-            }
-            return count;
-        }
-
-        private string GetLocalInstruction()
-        {
-            if (_localSlot < 0)
-            {
-                return "WASD MOVE · LEFT CLICK ACTION";
-            }
-            if (state.GetPlayerStunRemaining(_localSlot) > 0d)
-            {
-                return "STUNNED · YOUR GIFT WAS DROPPED";
-            }
-            if (state.GetActionCooldownRemainingSeconds(_localSlot) > 0d)
-            {
-                return "ACTION RECOVERING · KEEP MOVING";
-            }
-            if (state.GetCarriedGiftId(_localSlot) >= 0)
-            {
-                return "RETURN TO YOUR BASE · LEFT CLICK THROWS";
-            }
-            return "GRAB LOOSE GIFTS · STEAL FROM RIVAL BASES · PUSH WITH CLICK";
         }
 
         private string GetLocalStatus()
@@ -665,53 +591,22 @@ namespace MazeParty.Multiplayer
                 return "SPECTATING";
             }
             var carried = state.GetCarriedGiftId(_localSlot);
-            var stun = state.GetPlayerStunRemaining(_localSlot);
-            var cooldown = state.GetActionCooldownRemainingSeconds(_localSlot);
             return "YOU  ·  " + state.GetStoredGiftCount(_localSlot) +
                    " STORED  ·  " +
-                   (carried >= 0 ? "CARRYING #" + (carried + 1) : "HANDS FREE") +
-                   "  ·  STUN " + stun.ToString("0.0") + "s" +
-                   "  ·  ACTION " + cooldown.ToString("0.0") + "s";
+                   (carried >= 0 ? "CARRYING" : "HANDS FREE");
         }
 
         private string GetResultLabel()
         {
             if (_localSlot < 0)
             {
-                return state.Phase == NetworkGiftGrabPhase.Complete
-                    ? "MATCH COMPLETE"
-                    : "ROUND COMPLETE";
-            }
-            if (state.Phase == NetworkGiftGrabPhase.Complete)
-            {
-                return "MATCH " +
-                       MinigameDisplayFormatter.ToOrdinal(
-                           state.GetFinalRank(_localSlot)) +
-                       "\n" + state.GetScore(_localSlot) + " POINTS · " +
-                       state.GetTotalStoredGiftCount(_localSlot) + " GIFTS";
+                return "ROUND COMPLETE";
             }
             return "ROUND " +
                    MinigameDisplayFormatter.ToOrdinal(
                        state.GetRoundRank(_localSlot)) +
                    "\n+" + state.GetRoundPoints(_localSlot) + " POINTS · " +
                    state.GetStoredGiftCount(_localSlot) + " GIFTS";
-        }
-
-        private static string GetPhaseLabel(NetworkGiftGrabPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkGiftGrabPhase.Countdown:
-                    return "GIFT GRAB · GET READY";
-                case NetworkGiftGrabPhase.Running:
-                    return "GIFT GRAB · COLLECT";
-                case NetworkGiftGrabPhase.RoundResult:
-                    return "GIFT GRAB · ROUND RESULT";
-                case NetworkGiftGrabPhase.Complete:
-                    return "GIFT GRAB · MATCH RESULT";
-                default:
-                    return "GIFT GRAB";
-            }
         }
 
         private void SetWorldPresentationActive(bool active)

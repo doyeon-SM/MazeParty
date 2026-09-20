@@ -15,26 +15,28 @@ namespace MazeParty.Editor
     public static class MinigameStartCountdownProjectSetup
     {
         public const string PrefabPath =
+            "Assets/MazeParty/UI/Prefabs/MinigameCommonHud.prefab";
+        private const string LegacyPrefabPath =
             "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab";
         public const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board.unity";
 
-        [MenuItem("MazeParty/Minigames/Install Shared Start Countdown")]
+        [MenuItem("MazeParty/Minigames/Install Shared Minigame HUD")]
         public static void Install()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
             {
                 throw new InvalidOperationException(
-                    "Stop Play mode before installing the countdown UI.");
+                    "Stop Play mode before installing the shared HUD.");
             }
 
             EnsurePrefabExists();
             EnsureBoardSceneInstance();
             AssetDatabase.SaveAssets();
-            Debug.Log("Shared minigame start countdown UI is installed.");
+            Debug.Log("Shared minigame HUD is installed.");
         }
 
-        [MenuItem("MazeParty/Minigames/Install Shared Start Countdown", true)]
+        [MenuItem("MazeParty/Minigames/Install Shared Minigame HUD", true)]
         private static bool CanInstall()
         {
             return !EditorApplication.isPlayingOrWillChangePlaymode;
@@ -45,25 +47,48 @@ namespace MazeParty.Editor
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             if (prefab == null)
             {
-                var template = CreateTemplate();
-                try
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(
+                        LegacyPrefabPath) != null)
                 {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(template, PrefabPath);
+                    var moveError = AssetDatabase.MoveAsset(
+                        LegacyPrefabPath, PrefabPath);
+                    if (!string.IsNullOrEmpty(moveError))
+                    {
+                        throw new InvalidOperationException(moveError);
+                    }
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                        PrefabPath);
                 }
-                finally
+                else
                 {
-                    UnityEngine.Object.DestroyImmediate(template);
+                    var template = CreateTemplate();
+                    try
+                    {
+                        prefab = PrefabUtility.SaveAsPrefabAsset(
+                            template, PrefabPath);
+                    }
+                    finally
+                    {
+                        UnityEngine.Object.DestroyImmediate(template);
+                    }
                 }
             }
+
+            EnsureCommonHudBindings(prefab);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
 
             var view = prefab != null
                 ? prefab.GetComponent<MinigameStartCountdownView>()
                 : null;
+            var commonHud = prefab != null
+                ? prefab.GetComponent<MinigameCommonHudView>()
+                : null;
             if (view == null || !view.HasRequiredReferences ||
+                commonHud == null || !commonHud.HasRequiredReferences ||
                 prefab.GetComponent<Canvas>() == null)
             {
                 throw new InvalidOperationException(
-                    "The shared countdown prefab needs its Canvas and " +
+                    "The shared minigame HUD prefab needs its Canvas and " +
                     "serialized UI bindings.");
             }
 
@@ -107,7 +132,7 @@ namespace MazeParty.Editor
                             "Could not instantiate the countdown prefab.");
                     }
 
-                    instance.name = "Minigame Start Countdown";
+                    instance.name = "Minigame Common HUD";
                     changed = true;
                 }
 
@@ -116,7 +141,7 @@ namespace MazeParty.Editor
                         view.gameObject) != PrefabPath)
                 {
                     throw new InvalidOperationException(
-                        "Countdown must be a standalone Board scene " +
+                        "Common HUD must be a standalone Board scene " +
                         "instance of its authored prefab.");
                 }
 
@@ -155,6 +180,88 @@ namespace MazeParty.Editor
             }
 
             return null;
+        }
+
+        private static void EnsureCommonHudBindings(GameObject prefab)
+        {
+            if (prefab == null)
+            {
+                throw new InvalidOperationException(
+                    "Shared minigame HUD prefab is missing.");
+            }
+            var existing = prefab.GetComponent<MinigameCommonHudView>();
+            if (existing != null)
+            {
+                if (!existing.HasRequiredReferences)
+                {
+                    throw new InvalidOperationException(
+                        "Repair the shared HUD's serialized bindings " +
+                        "on its prefab; setup will not replace its design.");
+                }
+                return;
+            }
+
+            MinigameTimerDialProjectSetup.EnsurePrefabExists();
+            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                root.name = "Minigame Common HUD";
+                root.transform.localScale = Vector3.one;
+                var timer = MinigameTimerDialProjectSetup.InstantiateTimer(
+                    root.transform);
+                var font = Resources.GetBuiltinResource<Font>(
+                    "LegacyRuntime.ttf");
+                if (font == null)
+                {
+                    throw new InvalidOperationException(
+                        "Unity LegacyRuntime.ttf was not found.");
+                }
+
+                var round = new GameObject("Round Label",
+                    typeof(RectTransform), typeof(CanvasRenderer),
+                    typeof(Image));
+                round.transform.SetParent(root.transform, false);
+                var roundRect = round.GetComponent<RectTransform>();
+                roundRect.anchorMin = roundRect.anchorMax =
+                    new Vector2(1f, 1f);
+                roundRect.pivot = new Vector2(1f, 1f);
+                roundRect.anchoredPosition = new Vector2(-30f, -185f);
+                roundRect.sizeDelta = new Vector2(144f, 34f);
+                var background = round.GetComponent<Image>();
+                background.color = new Color(0.018f, 0.029f,
+                    0.064f, 0.86f);
+                background.raycastTarget = false;
+
+                var label = new GameObject("Round",
+                    typeof(RectTransform), typeof(CanvasRenderer),
+                    typeof(Text));
+                label.transform.SetParent(round.transform, false);
+                var labelRect = label.GetComponent<RectTransform>();
+                labelRect.anchorMin = Vector2.zero;
+                labelRect.anchorMax = Vector2.one;
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
+                var text = label.GetComponent<Text>();
+                text.font = font;
+                text.fontSize = 19;
+                text.fontStyle = FontStyle.Bold;
+                text.alignment = TextAnchor.MiddleCenter;
+                text.color = new Color(0.92f, 0.97f, 1f);
+                text.raycastTarget = false;
+                text.text = "ROUND 1 / 3";
+
+                var common = root.AddComponent<MinigameCommonHudView>();
+                common.Configure(root.GetComponent<Canvas>(),
+                    timer, round, text);
+                round.SetActive(false);
+                timer.gameObject.SetActive(false);
+                SetUiLayer(root);
+                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static GameObject CreateTemplate()

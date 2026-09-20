@@ -53,5 +53,11 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MazeParty/Scenes/Minigames/SnowySpin.unity
     guid: 106a9a6f89ffad64ab3189a80adae31e
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/ArenaCombat.unity
+    guid: 2bacc174cd6dcbe4eb0b95ebea73a643
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/CliffBarrage.unity
+    guid: 11643c18df7069b408223e1221037a28
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

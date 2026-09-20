@@ -28,7 +28,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private MinigameSoloHudView _hud;
         private NetworkRaceState _productionState;
         private RaceNetworkView _productionView;
-        private RaceHudBindings _productionHud;
         private GameObject _arenaPresentation;
         private GameObject _productionPlayerRoot;
         private Transform _runtimeRoot;
@@ -113,12 +112,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionPlayerRoot = FindDescendant(
                 _productionState.transform,
                 "Runtime Players")?.gameObject;
-            _productionHud = _productionState
-                .GetComponentInChildren<RaceHudBindings>(true);
             if (_arenaPresentation == null ||
-                _productionPlayerRoot == null ||
-                _productionHud == null ||
-                !_productionHud.HasRequiredReferences)
+                _productionPlayerRoot == null)
             {
                 throw new InvalidOperationException(
                     "Race scene presentation contract is incomplete.");
@@ -126,7 +121,6 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _arenaPresentation.SetActive(true);
             _productionPlayerRoot.SetActive(false);
-            _productionHud.gameObject.SetActive(true);
         }
 
         private void CreateRuntimePresentation()
@@ -189,9 +183,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _players[slot].rotation = Quaternion.identity;
             }
 
-            _productionHud.TimerDial.SetTime(
-                _session.Remaining,
-                GetPhaseDuration(_session.Phase));
             RefreshDeveloperHud();
         }
 
@@ -201,7 +192,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 ? BuildFinalLabel()
                 : "ROUND " + _session.RoundNumber + "/" +
                   RaceRules.RoundCount + "  ·  " +
-                  _session.Phase.ToString().ToUpperInvariant();
+                  _session.Phase.ToString().ToUpperInvariant() +
+                  " · " + _session.Remaining.ToString("0.0") + "s";
             var progress =
                 "P1 " + _session.GetProgress(0) + "/500  ·  P2 " +
                 _session.GetProgress(1) + "/500  ·  P3 " +
@@ -292,21 +284,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 return true;
             }
             return false;
-        }
-
-        private static double GetPhaseDuration(RaceSoloPhase phase)
-        {
-            switch (phase)
-            {
-                case RaceSoloPhase.Countdown:
-                    return NetworkRaceState.CountdownSeconds;
-                case RaceSoloPhase.Running:
-                    return RaceRules.RoundSeconds;
-                case RaceSoloPhase.RoundResult:
-                    return NetworkRaceState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

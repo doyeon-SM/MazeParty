@@ -31,6 +31,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private GameObject worldDieVisualPrefab;
         [SerializeField] private BoardCanvasBindings boardUiBindings;
+        [SerializeField] private MinigameResultCanvasBindings resultUiBindings;
         [SerializeField] private BoardFlowTestToolsBindings testToolsBindings;
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
@@ -179,7 +180,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             GameplayCameraDirector director,
             GameObject dieVisualPrefab = null,
             BoardCanvasBindings boardBindings = null,
-            BoardFlowTestToolsBindings toolBindings = null)
+            BoardFlowTestToolsBindings toolBindings = null,
+            MinigameResultCanvasBindings resultBindings = null)
         {
             player = localPlayer;
             eyePivot = localEye;
@@ -188,6 +190,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             worldDieVisualPrefab = dieVisualPrefab;
             boardUiBindings = boardBindings;
             testToolsBindings = toolBindings;
+            resultUiBindings = resultBindings;
         }
 
         private void Awake()
@@ -3037,19 +3040,21 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             if (boardUiBindings == null ||
                 !boardUiBindings.HasRequiredReferences ||
+                resultUiBindings == null ||
+                !resultUiBindings.HasRequiredReferences ||
                 testToolsBindings == null ||
                 !testToolsBindings.HasRequiredReferences)
             {
                 Debug.LogError(
-                    "BoardFlowLocalSimulator requires serialized BoardCanvas " +
-                    "and BoardFlowTestTools prefab bindings.",
+                    "BoardFlowLocalSimulator requires serialized BoardCanvas, " +
+                    "MinigameResultCanvas and BoardFlowTestTools prefab bindings.",
                     this);
                 return false;
             }
 
             _selectionPanel = boardUiBindings.ItemSelectionPanel;
             _readyPanel = boardUiBindings.MinigameReadyPanel;
-            _resultPanel = boardUiBindings.ResultPanel;
+            _resultPanel = resultUiBindings.ResultPanel;
             _reticle = boardUiBindings.Reticle;
             _itemShopPanel = boardUiBindings.ItemShopPanel;
             _turnText = boardUiBindings.TurnText;

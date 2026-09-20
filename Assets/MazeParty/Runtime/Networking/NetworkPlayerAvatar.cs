@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.ArenaCombat;
 using MazeParty.Gameplay.Minigames.Race;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.WrongWay;
@@ -145,6 +146,9 @@ namespace MazeParty.Multiplayer
         private Vector2 _lastSentBombPassingInput;
         private int _lastSentBombPassingRound = -1;
         private uint _lastSentBombPassingInputEpoch;
+        private Vector2 _lastSentCliffBarrageInput;
+        private int _lastSentCliffBarrageRound = -1;
+        private uint _lastSentCliffBarrageInputEpoch;
         private Vector2 _lastSentSnowySpinInput;
         private int _lastSentSnowySpinRound = -1;
         private uint _lastSentSnowySpinInputEpoch;
@@ -177,6 +181,7 @@ namespace MazeParty.Multiplayer
         private float _nextTagChaseInputRefresh;
         private float _nextTerritoryPaintInputRefresh;
         private float _nextBombPassingInputRefresh;
+        private float _nextCliffBarrageInputRefresh;
         private float _nextSnowySpinInputRefresh;
         private float _nextBalloonBlowInputRefresh;
         private float _nextBouncingShieldInputRefresh;
@@ -413,7 +418,11 @@ namespace MazeParty.Multiplayer
             }
 
             HandleLocalLook();
-            var handlingMinigame = SubmitLocalSnowySpinInput();
+            var handlingMinigame = SubmitLocalCliffBarrageInput();
+            if (!handlingMinigame)
+            {
+                handlingMinigame = SubmitLocalSnowySpinInput();
+            }
             if (!handlingMinigame)
             {
                 handlingMinigame = SubmitLocalBombPassingInput();
@@ -463,8 +472,17 @@ namespace MazeParty.Multiplayer
             {
                 handlingMinigame = SubmitLocalMinefieldMovement();
             }
+            // Submit the latest first-person aim before a punch so the
+            // server validates that punch against this frame's yaw/pitch.
+            var arenaCombatInput = !handlingMinigame &&
+                NetworkMatchState.Instance != null &&
+                NetworkMatchState.Instance.IsArenaCombatPlaying;
+            if (arenaCombatInput)
+            {
+                SubmitLocalMovement();
+            }
             HandleLocalActionButtons();
-            if (!handlingMinigame)
+            if (!handlingMinigame && !arenaCombatInput)
             {
                 SubmitLocalMovement();
             }
@@ -506,6 +524,7 @@ namespace MazeParty.Multiplayer
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
                                   HasResolvedItemChoice;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
+            var canMoveInArenaCombat = canMoveInCombat && match.IsArenaCombatPlaying;
             if (!canMoveInAction && !canMoveInCombat)
             {
                 StopServerInputOnServer();
@@ -513,8 +532,11 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            EnsureTraversalInitialized();
-            if (!_traversal.IsInitialized)
+            if (!canMoveInArenaCombat)
+            {
+                EnsureTraversalInitialized();
+            }
+            if (!canMoveInArenaCombat && !_traversal.IsInitialized)
             {
                 StopServerInputOnServer();
                 return;
@@ -563,7 +585,11 @@ namespace MazeParty.Multiplayer
                 hasMovementIntent,
                 quietWalking);
 
-            if (canMoveInCombat)
+            if (canMoveInArenaCombat)
+            {
+                ClampControllerInsideArenaCombat();
+            }
+            else if (canMoveInCombat)
             {
                 ClampControllerInsideTile(_traversal.CurrentTile);
             }
@@ -890,6 +916,30 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void BeginArenaCombatOnServer(
+            Vector3 position,
+            Quaternion rotation)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            StopServerInputOnServer();
+            _combatKnockbackVelocity = Vector3.zero;
+            _combatHealth.Value = BoardCombatRules.TemporaryHealth;
+            _combatState.Value = (byte)NetworkCombatState.Active;
+            _actionState.Value = (byte)PlayerBoardActionState.Fighting;
+            _isCrouching.Value = false;
+            _isQuietWalking.Value = false;
+            ApplyCrouchControllerState(false);
+            ApplyCombatColliderState(NetworkCombatState.Active);
+            HideBoundaryWalls();
+            TeleportController(position, rotation);
+            _serverYaw = rotation.eulerAngles.y;
+            _serverPitch = 0f;
+        }
+
         public bool ApplyCombatPunchOnServer(Vector3 knockbackVelocity)
         {
             if (!IsServer || CombatState != NetworkCombatState.Active ||
@@ -980,6 +1030,21 @@ namespace MazeParty.Multiplayer
             StopServerInputOnServer();
             HideBoundaryWalls();
             ApplyCombatColliderState(NetworkCombatState.None);
+        }
+
+        public void EndArenaCombatOnServer(
+            Vector3 restorePosition,
+            Quaternion restoreRotation)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            EndCombatOnServer(false);
+            TeleportController(restorePosition, restoreRotation);
+            _serverYaw = restoreRotation.eulerAngles.y;
+            _serverPitch = 0f;
         }
 
         public void PausePersonalProtectionOnServer(double now)
@@ -1599,6 +1664,10 @@ namespace MazeParty.Multiplayer
         private void HandleLocalActionButtons()
         {
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsCliffBarragePlaying)
+            {
+                return;
+            }
             if (match != null && match.IsSequenceMemoryPlaying)
             {
                 return;
@@ -2148,6 +2217,60 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        private bool SubmitLocalCliffBarrageInput()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsCliffBarragePlaying)
+            {
+                _lastSentCliffBarrageInput = Vector2.zero;
+                _lastSentCliffBarrageRound = -1;
+                _lastSentCliffBarrageInputEpoch = 0U;
+                return false;
+            }
+
+            if (!match.TryGetCurrentMinigameRoundAndInputEpoch(
+                    out var roundNumber,
+                    out var inputEpoch) || inputEpoch == 0U)
+            {
+                return true;
+            }
+
+            var input = Vector2.zero;
+            var canAccept = match.CanCurrentMinigameAcceptInputForSlot(
+                AssignedSlot);
+            var keyboard = Keyboard.current;
+            if (canAccept && keyboard != null)
+            {
+                input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
+                          (keyboard.aKey.isPressed ? 1f : 0f);
+                input.y = (keyboard.wKey.isPressed ? 1f : 0f) -
+                          (keyboard.sKey.isPressed ? 1f : 0f);
+                input = Vector2.ClampMagnitude(input, 1f);
+            }
+
+            if (input != _lastSentCliffBarrageInput ||
+                roundNumber != _lastSentCliffBarrageRound ||
+                inputEpoch != _lastSentCliffBarrageInputEpoch ||
+                Time.unscaledTime >= _nextCliffBarrageInputRefresh)
+            {
+                _lastSentCliffBarrageInput = input;
+                _lastSentCliffBarrageRound = roundNumber;
+                _lastSentCliffBarrageInputEpoch = inputEpoch;
+                _nextCliffBarrageInputRefresh = Time.unscaledTime + 0.1f;
+                SubmitCliffBarrageInputRpc(
+                    input, roundNumber, inputEpoch);
+            }
+
+            var mouse = Mouse.current;
+            if (canAccept && mouse != null &&
+                mouse.leftButton.wasPressedThisFrame)
+            {
+                RequestCliffBarragePushRpc(roundNumber, inputEpoch);
+            }
+
+            return true;
+        }
+
         private bool SubmitLocalSnowySpinInput()
         {
             var match = NetworkMatchState.Instance;
@@ -2552,7 +2675,8 @@ namespace MazeParty.Multiplayer
         {
             var match = NetworkMatchState.Instance;
             var showForAction = match != null && match.IsActionPhase;
-            var showForCombat = match != null && match.CanAvatarUseCombatInput(this);
+            var showForCombat = match != null && match.IsCombatPhase &&
+                                match.CanAvatarUseCombatInput(this);
             if (!IsOwner || match == null || (!showForAction && !showForCombat) ||
                 !_hasLogicalTile.Value)
             {
@@ -3000,6 +3124,30 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void ClampControllerInsideArenaCombat()
+        {
+            if (_characterController == null)
+            {
+                return;
+            }
+
+            var safeX = ArenaCombatRules.ArenaHalfWidth -
+                        _characterController.radius - 0.02f;
+            var safeZ = ArenaCombatRules.ArenaHalfDepth -
+                        _characterController.radius - 0.02f;
+            var position = transform.position;
+            var clamped = new Vector3(
+                Mathf.Clamp(position.x,
+                    ArenaCombatRules.ArenaCenterX - safeX,
+                    ArenaCombatRules.ArenaCenterX + safeX),
+                position.y,
+                Mathf.Clamp(position.z, -safeZ, safeZ));
+            if ((clamped - position).sqrMagnitude > 0.000001f)
+            {
+                TeleportController(clamped, transform.rotation);
+            }
+        }
+
         private NetworkWorldDie ResolveLocalWorldDie(int slot)
         {
             if (slot < 0)
@@ -3241,6 +3389,11 @@ namespace MazeParty.Multiplayer
         private void PresentHitRpc(byte region)
         {
             _avatarVisual?.TriggerHit((PlayerHitRegion)region);
+            if (IsOwner && NetworkMatchState.Instance != null &&
+                NetworkMatchState.Instance.IsArenaCombatPhase)
+            {
+                ArenaCombatHitFlashView.Instance?.Flash();
+            }
         }
 
         [Rpc(SendTo.ClientsAndHost)]
@@ -3355,6 +3508,28 @@ namespace MazeParty.Multiplayer
                 Vector2.ClampMagnitude(input, 1f),
                 roundNumber,
                 inputEpoch);
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void SubmitCliffBarrageInputRpc(
+            Vector2 input,
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId != OwnerClientId ||
+                float.IsNaN(input.x) || float.IsInfinity(input.x) ||
+                float.IsNaN(input.y) || float.IsInfinity(input.y))
+            {
+                return;
+            }
+
+            NetworkMatchState.Instance?.
+                RouteMovementInputOnCurrentMinigameOnServer(
+                    this,
+                    Vector2.ClampMagnitude(input, 1f),
+                    roundNumber,
+                    inputEpoch);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
@@ -3564,6 +3739,20 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestCliffBarragePushRpc(
+            byte roundNumber,
+            uint inputEpoch,
+            RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.
+                    RoutePrimaryActionOnCurrentMinigameOnServer(
+                        this, roundNumber, inputEpoch);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void RequestBombPassingActionRpc(
             byte roundNumber,
             uint inputEpoch,
@@ -3644,10 +3833,21 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkMatchState.Instance?.TryCombatPunchOnServer(
-                    this,
-                    claimedOrigin,
-                    claimedDirection);
+                var match = NetworkMatchState.Instance;
+                if (match != null && match.IsArenaCombatPlaying)
+                {
+                    NetworkArenaCombatState.Instance?.TryPunchOnServer(
+                        this,
+                        claimedOrigin,
+                        claimedDirection);
+                }
+                else
+                {
+                    match?.TryCombatPunchOnServer(
+                        this,
+                        claimedOrigin,
+                        claimedDirection);
+                }
             }
         }
 

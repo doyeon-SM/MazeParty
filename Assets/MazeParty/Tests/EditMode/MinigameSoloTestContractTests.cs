@@ -194,6 +194,38 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 snowySpin.ControlsLabel,
                 Does.Contain("WASD"));
+            Assert.That(
+                (byte)MinigameSoloTestId.ArenaCombat,
+                Is.EqualTo(14),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.ArenaCombat,
+                    out var arenaCombat),
+                Is.True);
+            Assert.That(
+                arenaCombat.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.ArenaCombatScenePath));
+            Assert.That(
+                arenaCombat.ControlsLabel,
+                Does.Contain("LMB"));
+            Assert.That(
+                (byte)MinigameSoloTestId.CliffBarrage,
+                Is.EqualTo(15),
+                "Serialized solo-test IDs must remain stable.");
+            Assert.That(
+                MinigameSoloTestCatalog.TryGet(
+                    MinigameSoloTestId.CliffBarrage,
+                    out var cliffBarrage),
+                Is.True);
+            Assert.That(
+                cliffBarrage.ScenePath,
+                Is.EqualTo(
+                    MinigameSoloTestCatalog.CliffBarrageScenePath));
+            Assert.That(
+                cliffBarrage.ControlsLabel,
+                Does.Contain("LMB"));
 
             var session = new StableFootingSoloSession();
             session.Begin(12345);

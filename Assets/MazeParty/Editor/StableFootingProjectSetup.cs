@@ -502,7 +502,6 @@ namespace MazeParty.Editor
                 }
             }
 
-            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var bindings = prefab != null
                 ? prefab.GetComponent<StableFootingHudBindings>()
@@ -548,119 +547,18 @@ namespace MazeParty.Editor
                 root.transform,
                 new Vector2(0f, 1f),
                 new Vector2(24f, -24f),
-                new Vector2(500f, 190f),
+                new Vector2(500f, 82f),
                 new Color(0.025f, 0.035f, 0.055f, 0.84f));
-
-            var phase = CreateHudText(
-                "Phase",
-                panel.transform,
-                font,
-                new Vector2(0f, -14f),
-                new Vector2(450f, 38f),
-                24,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "STABLE FOOTING  ·  MOVE");
-            var timer = CreateHudText(
-                "Timer",
-                panel.transform,
-                font,
-                new Vector2(0f, -54f),
-                new Vector2(450f, 52f),
-                36,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "01:00");
-
-            var statusPanel = CreatePanel(
-                "StatusPanel",
-                root.transform,
-                new Vector2(1f, 1f),
-                new Vector2(-24f, -24f),
-                new Vector2(500f, 190f),
-                new Color(0.025f, 0.035f, 0.055f, 0.84f));
-            var round = CreateHudText(
-                "Round",
-                statusPanel.transform,
-                font,
-                new Vector2(0f, -14f),
-                new Vector2(450f, 38f),
-                24,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "ROUND 1 / 3");
             var instructions = CreateHudText(
                 "Instructions",
                 panel.transform,
                 font,
-                new Vector2(0f, -118f),
+                new Vector2(0f, -12f),
                 new Vector2(450f, 50f),
-                16,
-                TextAnchor.MiddleCenter,
-                FontStyle.Normal,
-                "WASD MOVE  ·  LEFT CLICK PUSH  ·  STAND ON THE SAFE SYMBOL");
-
-            var rows = new Text[StableFootingRules.PlayerCount];
-            var playerColors = new[]
-            {
-                new Color(0.16f, 0.48f, 0.95f),
-                new Color(0.92f, 0.2f, 0.16f),
-                new Color(0.18f, 0.78f, 0.32f),
-                new Color(0.7f, 0.26f, 0.9f)
-            };
-            for (var slot = 0; slot < rows.Length; slot++)
-            {
-                rows[slot] = CreateHudText(
-                    "Player" + (slot + 1) + "Row",
-                    statusPanel.transform,
-                    font,
-                    new Vector2(
-                        slot % 2 == 0 ? -120f : 120f,
-                        slot < 2 ? -58f : -116f),
-                    new Vector2(220f, 52f),
-                    16,
-                    TextAnchor.MiddleCenter,
-                    FontStyle.Bold,
-                    "PLAYER " + (slot + 1) + "\nALIVE");
-                rows[slot].color = playerColors[slot];
-            }
-
-            var controlsPanel = CreatePanel(
-                "ControlsPanel",
-                root.transform,
-                new Vector2(0f, 0f),
-                new Vector2(24f, 24f),
-                new Vector2(460f, 90f),
-                new Color(0.025f, 0.035f, 0.055f, 0.82f));
-            CreateHudText(
-                "Controls",
-                controlsPanel.transform,
-                font,
-                Vector2.zero,
-                new Vector2(420f, 70f),
-                18,
+                24,
                 TextAnchor.MiddleCenter,
                 FontStyle.Bold,
-                "WASD  MOVE\nLEFT CLICK  PUSH");
-
-            var pausePanel = CreatePanel(
-                "PausePanel",
-                root.transform,
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(720f, 180f),
-                new Color(0.02f, 0.025f, 0.04f, 0.94f));
-            CreateHudText(
-                "PauseMessage",
-                pausePanel.transform,
-                font,
-                Vector2.zero,
-                new Vector2(680f, 140f),
-                28,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "PLAYER DISCONNECTED\nMATCH PAUSED");
-            pausePanel.SetActive(false);
+                "SAFE: X");
 
             var resultPanel = CreatePanel(
                 "ResultPanel",
@@ -679,17 +577,18 @@ namespace MazeParty.Editor
                 TextAnchor.MiddleCenter,
                 FontStyle.Bold,
                 "ROUND RESULTS");
+            var resultCanvas = resultPanel.AddComponent<Canvas>();
+            resultCanvas.overrideSorting = true;
+            resultCanvas.sortingOrder = 100;
+            var resultSorting = new SerializedObject(resultCanvas)
+                .FindProperty("m_OverrideSorting");
+            resultSorting.boolValue = true;
+            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
             resultPanel.SetActive(false);
 
             root.GetComponent<StableFootingHudBindings>().Configure(
                 canvas,
-                phase,
-                timer,
-                round,
                 instructions,
-                rows,
-                pausePanel,
-                controlsPanel,
                 resultPanel);
             return root;
         }

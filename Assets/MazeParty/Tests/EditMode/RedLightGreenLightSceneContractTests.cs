@@ -26,7 +26,7 @@ namespace MazeParty.Multiplayer.Tests
                 hudPrefab.GetComponent<RedLightGreenLightHudBindings>();
             Assert.That(prefabBindings, Is.Not.Null);
             Assert.That(prefabBindings.HasRequiredReferences, Is.True);
-            Assert.That(prefabBindings.PlayerRows, Has.Length.EqualTo(4));
+            Assert.That(prefabBindings.SignalText, Is.Not.Null);
 
             var labelBuilder = typeof(RedLightGreenLightNetworkView).GetMethod(
                 "BuildSignalLabel",

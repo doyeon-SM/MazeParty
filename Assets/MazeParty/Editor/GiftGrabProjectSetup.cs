@@ -605,8 +605,6 @@ namespace MazeParty.Editor
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             }
 
-            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
-            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var binding = prefab != null
                 ? prefab.GetComponent<GiftGrabHudBindings>()
                 : null;
@@ -678,38 +676,13 @@ namespace MazeParty.Editor
                 root.transform,
                 new Vector2(0.5f, 1f),
                 new Vector2(0f, -18f),
-                new Vector2(900f, 214f),
+                new Vector2(620f, 90f),
                 new Color(0.055f, 0.025f, 0.09f, 0.92f));
-            var phase = CreateHudText(
-                "Phase", header.transform, font,
-                new Vector2(0f, -10f), new Vector2(850f, 34f), 22,
-                FontStyle.Bold, "GIFT GRAB · GET READY");
-            var timer = CreateHudText(
-                "Timer", header.transform, font,
-                new Vector2(-190f, -46f), new Vector2(230f, 48f), 38,
-                FontStyle.Bold, "01:00");
-            var round = CreateHudText(
-                "Round", header.transform, font,
-                new Vector2(190f, -52f), new Vector2(230f, 34f), 18,
-                FontStyle.Bold, "ROUND 1 / 2");
-            var instruction = CreateHudText(
-                "Instructions", header.transform, font,
-                new Vector2(0f, -101f), new Vector2(850f, 40f), 16,
-                FontStyle.Bold,
-                "GRAB GIFTS · PROTECT YOUR BASE · PUSH WITH LEFT CLICK");
             var localStatus = CreateHudText(
                 "Local Status", header.transform, font,
-                new Vector2(0f, -150f), new Vector2(850f, 44f), 15,
+                new Vector2(0f, -22f), new Vector2(580f, 44f), 17,
                 FontStyle.Normal,
-                "YOU · 0 STORED · HANDS FREE · STUN 0.0s · ACTION 0.0s");
-
-            var neutralGift = CreateHudText(
-                "Loose Gift Count", root.transform, font,
-                new Vector2(-28f, -26f), new Vector2(300f, 42f), 18,
-                FontStyle.Bold, "LOOSE GIFTS  10");
-            var neutralRect = neutralGift.rectTransform;
-            neutralRect.anchorMin = neutralRect.anchorMax = Vector2.one;
-            neutralRect.pivot = Vector2.one;
+                "YOU · 0 STORED · HANDS FREE");
 
             var rows = new Text[GiftGrabRules.PlayerCount];
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
@@ -734,28 +707,6 @@ namespace MazeParty.Editor
                 rows[slot].color = PlayerColors[slot];
             }
 
-            var controls = CreatePanel(
-                "Controls Panel", root.transform,
-                new Vector2(0f, 1f), new Vector2(20f, -20f),
-                new Vector2(330f, 104f),
-                new Color(0.025f, 0.032f, 0.052f, 0.88f));
-            CreateHudText(
-                "Controls", controls.transform, font,
-                new Vector2(0f, -10f), new Vector2(300f, 78f), 16,
-                FontStyle.Bold,
-                "WASD · MOVE + AUTO PICKUP\nLEFT CLICK · THROW / PUSH");
-
-            var pause = CreatePanel(
-                "Pause Panel", root.transform,
-                new Vector2(0.5f, 0.5f), Vector2.zero,
-                new Vector2(720f, 180f),
-                new Color(0.02f, 0.02f, 0.04f, 0.97f));
-            CreateHudText(
-                "Pause Message", pause.transform, font,
-                new Vector2(0f, -24f), new Vector2(680f, 130f), 28,
-                FontStyle.Bold, "PLAYER DISCONNECTED\nMATCH PAUSED");
-            pause.SetActive(false);
-
             var resultPanel = CreatePanel(
                 "Result Panel", root.transform,
                 new Vector2(0.5f, 0.5f), Vector2.zero,
@@ -765,20 +716,20 @@ namespace MazeParty.Editor
                 "Result Message", resultPanel.transform, font,
                 new Vector2(0f, -28f), new Vector2(700f, 180f), 30,
                 FontStyle.Bold, "ROUND RESULTS");
+            var resultCanvas = resultPanel.AddComponent<Canvas>();
+            resultCanvas.overrideSorting = true;
+            resultCanvas.sortingOrder = 100;
+            var resultSorting = new SerializedObject(resultCanvas)
+                .FindProperty("m_OverrideSorting");
+            resultSorting.boolValue = true;
+            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
             resultPanel.SetActive(false);
 
             root.GetComponent<GiftGrabHudBindings>().Configure(
                 canvas,
-                phase,
-                timer,
-                round,
-                instruction,
                 localStatus,
-                neutralGift,
                 rows,
                 result,
-                pause,
-                controls,
                 resultPanel,
                 new Color(1f, 0.88f, 0.25f, 1f));
             root.transform.localScale = Vector3.one;

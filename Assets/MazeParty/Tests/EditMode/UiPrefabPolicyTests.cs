@@ -23,7 +23,10 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredPrefabPaths =
         {
             "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
-            "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab",
+            "Assets/MazeParty/UI/Prefabs/MinigameCommonHud.prefab",
+            "Assets/MazeParty/UI/Prefabs/MinigameResultCanvas.prefab",
+            "Assets/MazeParty/UI/Prefabs/ArenaCombatHitFlash.prefab",
+            "Assets/MazeParty/UI/Prefabs/CliffBarrageHud.prefab",
             "Assets/MazeParty/UI/Prefabs/LobbyCanvas.prefab",
             "Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab",
             "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
@@ -48,7 +51,10 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredBindingTypeNames =
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
-            "MazeParty.Multiplayer.MinigameStartCountdownView",
+            "MazeParty.Multiplayer.MinigameCommonHudView",
+            "MazeParty.Multiplayer.MinigameResultCanvasBindings",
+            "MazeParty.Multiplayer.ArenaCombatHitFlashView",
+            "MazeParty.Multiplayer.CliffBarrageHudView",
             "MazeParty.Multiplayer.OnlineLobbyView",
             "MazeParty.Multiplayer.MinigameTimerDial",
             "MazeParty.Multiplayer.MinefieldHudBindings",
@@ -79,10 +85,12 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board.unity",
                 "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
-                "Assets/MazeParty/UI/Prefabs/MinigameStartCountdown.prefab"),
+                "Assets/MazeParty/UI/Prefabs/MinigameCommonHud.prefab",
+                "Assets/MazeParty/UI/Prefabs/MinigameResultCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Dev/BoardFlowTestbed/BoardFlowTestbed.unity",
-                "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab"),
+                "Assets/MazeParty/UI/Prefabs/BoardCanvas.prefab",
+                "Assets/MazeParty/UI/Prefabs/MinigameResultCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Dev/GameplayTestbed/GameplayTestbed.unity",
                 "Assets/MazeParty/UI/Prefabs/Dev/GameplayTestbedCanvas.prefab"),
@@ -109,16 +117,24 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/TagChase.unity",
-                "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab"),
+                new string[0]),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Race.unity",
-                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab"),
+                new string[0]),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/SequenceMemory.unity",
                 "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/BouncingBalls.unity",
-                "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab")
+                "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/Minigames/ArenaCombat.unity",
+                "Assets/MazeParty/UI/Prefabs/ArenaCombatHitFlash.prefab"),
+            new SceneUiContract(
+                "Assets/MazeParty/Scenes/Minigames/CliffBarrage.unity",
+                new string[0]),
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/BombPassing.unity"),
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/SnowySpin.unity")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =
@@ -219,9 +235,10 @@ namespace MazeParty.Multiplayer.Tests
                             root.GetComponentsInChildren<Canvas>(true))
                         .ToArray();
                     Assert.That(
-                        canvases,
-                        Is.Not.Empty,
-                        contract.Path + " must contain prefab Canvas UI.");
+                        canvases.Length,
+                        contract.AllowedPrefabPaths.Count == 0
+                            ? Is.Zero : Is.GreaterThan(0),
+                        contract.Path + " has unexpected Canvas count.");
 
                     var actualPaths = canvases
                         .Select(canvas =>
@@ -353,10 +370,12 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void MinigameHuds_UseNestedSharedTimerDialPrefab()
+        public void ActiveMinigameHuds_UseOnlyOneSharedTimerDial()
         {
             const string timerPath =
                 "Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab";
+            const string commonPath =
+                "Assets/MazeParty/UI/Prefabs/MinigameCommonHud.prefab";
             var hudPaths = new[]
             {
                 "Assets/MazeParty/UI/Prefabs/MinefieldHud.prefab",
@@ -366,26 +385,29 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/UI/Prefabs/BalloonBlowHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/GiftGrabHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/TerritoryPaintHud.prefab",
-                "Assets/MazeParty/UI/Prefabs/TagChaseHud.prefab",
-                "Assets/MazeParty/UI/Prefabs/RaceHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/SequenceMemoryHud.prefab",
                 "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab"
             };
+
+            var common = AssetDatabase.LoadAssetAtPath<GameObject>(commonPath);
+            Assert.That(common, Is.Not.Null, commonPath);
+            var timer = common.GetComponentInChildren<MinigameTimerDial>(true);
+            Assert.That(timer, Is.Not.Null, commonPath);
+            Assert.That(timer.HasRequiredReferences, Is.True, commonPath);
+            Assert.That(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    timer.gameObject),
+                Is.EqualTo(timerPath),
+                commonPath);
 
             foreach (var hudPath in hudPaths)
             {
                 var prefab =
                     AssetDatabase.LoadAssetAtPath<GameObject>(hudPath);
                 Assert.That(prefab, Is.Not.Null, hudPath);
-                var timer = prefab.GetComponentInChildren<
-                    MinigameTimerDial>(true);
-                Assert.That(timer, Is.Not.Null, hudPath);
-                Assert.That(timer.HasRequiredReferences, Is.True, hudPath);
                 Assert.That(
-                    PrefabUtility
-                        .GetPrefabAssetPathOfNearestInstanceRoot(
-                            timer.gameObject),
-                    Is.EqualTo(timerPath),
+                    prefab.GetComponentsInChildren<MinigameTimerDial>(true),
+                    Is.Empty,
                     hudPath);
             }
         }

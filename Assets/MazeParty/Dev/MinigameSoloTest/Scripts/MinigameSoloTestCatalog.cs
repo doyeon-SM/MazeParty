@@ -17,7 +17,9 @@ namespace MazeParty.Dev.MinigameSoloTest
         SequenceMemory = 10,
         BouncingBalls = 11,
         BombPassing = 12,
-        SnowySpin = 13
+        SnowySpin = 13,
+        ArenaCombat = 14,
+        CliffBarrage = 15
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -91,6 +93,10 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/Minigames/BombPassing.unity";
         public const string SnowySpinScenePath =
             "Assets/MazeParty/Scenes/Minigames/SnowySpin.unity";
+        public const string ArenaCombatScenePath =
+            "Assets/MazeParty/Scenes/Minigames/ArenaCombat.unity";
+        public const string CliffBarrageScenePath =
+            "Assets/MazeParty/Scenes/Minigames/CliffBarrage.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
@@ -172,6 +178,18 @@ namespace MazeParty.Dev.MinigameSoloTest
                 "Snowy Spin",
                 SnowySpinScenePath,
                 "WASD roll · accelerate and push balls off the ice · " +
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.ArenaCombat,
+                "Arena Combat",
+                ArenaCombatScenePath,
+                "WASD move · mouse look · LMB punch · " +
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(
+                MinigameSoloTestId.CliffBarrage,
+                "Cliff Barrage",
+                CliffBarrageScenePath,
+                "WASD move · LMB push · dodge shells and lasers · " +
                 "R restart · N next seed · Esc stop")
         };
 

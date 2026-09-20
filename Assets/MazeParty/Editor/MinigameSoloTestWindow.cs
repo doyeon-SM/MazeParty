@@ -163,6 +163,10 @@ namespace MazeParty.EditorTools
             "MazeParty/Developer/Play Bomb Passing Solo";
         private const string QuickPlaySnowySpinMenuPath =
             "MazeParty/Developer/Play Snowy Spin Solo";
+        private const string QuickPlayArenaCombatMenuPath =
+            "MazeParty/Developer/Play Arena Combat Solo";
+        private const string QuickPlayCliffBarrageMenuPath =
+            "MazeParty/Developer/Play Cliff Barrage Solo";
         private const string ActiveKey =
             "MazeParty.MinigameSoloTest.Active";
         private const string TestIdKey =
@@ -365,6 +369,34 @@ namespace MazeParty.EditorTools
 
         [MenuItem(QuickPlaySnowySpinMenuPath, true)]
         private static bool ValidateQuickPlaySnowySpin()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayArenaCombatMenuPath, false, 2112)]
+        private static void QuickPlayArenaCombat()
+        {
+            Start(
+                MinigameSoloTestId.ArenaCombat,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayArenaCombatMenuPath, true)]
+        private static bool ValidateQuickPlayArenaCombat()
+        {
+            return CanStart;
+        }
+
+        [MenuItem(QuickPlayCliffBarrageMenuPath, false, 2113)]
+        private static void QuickPlayCliffBarrage()
+        {
+            Start(
+                MinigameSoloTestId.CliffBarrage,
+                CreateRandomSeed());
+        }
+
+        [MenuItem(QuickPlayCliffBarrageMenuPath, true)]
+        private static bool ValidateQuickPlayCliffBarrage()
         {
             return CanStart;
         }
@@ -744,6 +776,42 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Snowy Spin " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.ArenaCombat:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            ArenaCombatSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Arena Combat " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.CliffBarrage:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            CliffBarrageSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Cliff Barrage " +
                                 "solo harness.");
                         }
                         controller.ConfigureHud(
@@ -1287,10 +1355,23 @@ namespace MazeParty.EditorTools
 
             var bombPassing = FindRuntimeHarnessOfType<
                 BombPassingSoloTestController>();
-            return bombPassing != null
-                ? (Component)bombPassing
+            if (bombPassing != null)
+            {
+                return bombPassing;
+            }
+
+            var snowySpin = FindRuntimeHarnessOfType<
+                SnowySpinSoloTestController>();
+            if (snowySpin != null)
+            {
+                return snowySpin;
+            }
+            var arenaCombat = FindRuntimeHarnessOfType<
+                ArenaCombatSoloTestController>();
+            return arenaCombat != null
+                ? (Component)arenaCombat
                 : FindRuntimeHarnessOfType<
-                    SnowySpinSoloTestController>();
+                    CliffBarrageSoloTestController>();
         }
 
         private static void DestroyRuntimeHarnesses()
@@ -1321,6 +1402,10 @@ namespace MazeParty.EditorTools
                 BombPassingSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 SnowySpinSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                ArenaCombatSoloTestController>();
+            DestroyRuntimeHarnessesOfType<
+                CliffBarrageSoloTestController>();
         }
 
         private static T FindRuntimeHarnessOfType<T>()

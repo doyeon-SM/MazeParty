@@ -170,6 +170,7 @@ namespace MazeParty.Editor
             var topology = CreateTopology(materials);
             var cameras = CreateCameraRig();
             CreateBoardCanvas(cameras);
+            MinigameResultCanvasProjectSetup.EnsureSceneInstance(scene);
 
             var validation = topology.ValidateTopology();
             if (!validation.IsValid)
@@ -321,6 +322,8 @@ namespace MazeParty.Editor
             }
 
             var boardBindings = canvas.GetComponent<BoardCanvasBindings>();
+            var resultBindings =
+                MinigameResultCanvasProjectSetup.EnsureSceneInstance(scene);
             if (boardBindings == null || !boardBindings.HasRequiredReferences)
             {
                 throw new InvalidOperationException(
@@ -336,7 +339,8 @@ namespace MazeParty.Editor
                 director,
                 d12VisualPrefab,
                 boardBindings,
-                testToolBindings);
+                testToolBindings,
+                resultBindings);
 
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
@@ -949,7 +953,6 @@ namespace MazeParty.Editor
             CreateSelectionPanel(root.transform, font);
             CreateItemShopPanel(root.transform, font);
             CreateReadyPanel(root.transform, font);
-            CreateResultPanel(root.transform, font);
             CreateReticle(root.transform, font);
             CreateReconnectOverlay(root.transform, font);
             var bindings = root.GetComponent<BoardCanvasBindings>();
@@ -1013,6 +1016,9 @@ namespace MazeParty.Editor
             }
 
             prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
+            MinigameResultCanvasProjectSetup.EnsurePrefabMigrated();
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
             ValidateBoardCanvasPrefab(prefab);
             return prefab;
         }
@@ -1259,9 +1265,6 @@ namespace MazeParty.Editor
                 MinigameReadyPanel = RequireBoardUiObject(
                     root,
                     "MinigameReadyPanel"),
-                ResultPanel = RequireBoardUiObject(
-                    root,
-                    "SkippedResultPanel"),
                 ReconnectOverlay = RequireBoardUiObject(
                     root,
                     "ReconnectOverlay"),
@@ -1315,15 +1318,6 @@ namespace MazeParty.Editor
                 MinigameRulePlaceholder = RequireBoardUiComponent<Text>(
                     root,
                     "MinigameRulePlaceholderText"),
-                ResultTitle = RequireBoardUiComponent<Text>(
-                    root,
-                    "Result Title"),
-                ResultNote = RequireBoardUiComponent<Text>(
-                    root,
-                    "Result Note"),
-                ResultSummary = RequireBoardUiComponent<Text>(
-                    root,
-                    "MinefieldResultSummary"),
                 ReadyButtonLabel = readyButtonLabel,
                 MinigameRuleImage = RequireBoardUiComponent<Image>(
                     root,
@@ -1685,28 +1679,6 @@ namespace MazeParty.Editor
                 new Vector2(0f, -190f), new Vector2(880f, 35f), TextAnchor.MiddleCenter);
             CreateButton("ItemShopCloseButton", panel.transform, "CLOSE", font,
                 new Vector2(0f, -245f), new Vector2(260f, 48f));
-            panel.SetActive(false);
-        }
-
-        private static void CreateResultPanel(Transform canvas, Font font)
-        {
-            var panel = CreatePanel("SkippedResultPanel", canvas, new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(760f, 420f),
-                new Vector2(0.5f, 0.5f), new Color(0.08f, 0.045f, 0.1f, 0.98f));
-            CreateText("Result Title", panel.transform, "RESULT PLACEHOLDER", font, 30,
-                new Vector2(0f, 155f), new Vector2(680f, 44f), TextAnchor.MiddleCenter);
-            CreateText("Result Note", panel.transform,
-                "No minigame reward or currency transfer. Next turn begins in 3 seconds.", font, 18,
-                new Vector2(0f, 105f), new Vector2(680f, 60f), TextAnchor.MiddleCenter);
-            CreateText(
-                "MinefieldResultSummary",
-                panel.transform,
-                "1ST  --\n2ND  --\n3RD  --\n4TH  --",
-                font,
-                22,
-                new Vector2(0f, -42f),
-                new Vector2(680f, 180f),
-                TextAnchor.MiddleCenter);
             panel.SetActive(false);
         }
 

@@ -51,10 +51,8 @@ namespace MazeParty.Multiplayer
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraConfigured;
         private bool _tileViewsCached;
-        private bool _hudDefaultsCaptured;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
-        private string _defaultInstructionText = string.Empty;
         private int _localSlot = -1;
         private int _lastCueCycle = -1;
         private StableFootingCyclePhase _lastCuePhase =
@@ -94,7 +92,6 @@ namespace MazeParty.Multiplayer
             hud = hudBindings;
             _cameraConfigured = false;
             _tileViewsCached = false;
-            _hudDefaultsCaptured = false;
             ResolveSceneReferences();
             ConfigureCamera();
             CacheTileViews();
@@ -172,12 +169,6 @@ namespace MazeParty.Multiplayer
         private void ResolveSceneReferences()
         {
             state ??= GetComponent<NetworkStableFootingState>();
-            if (!_hudDefaultsCaptured &&
-                hud != null && hud.InstructionText != null)
-            {
-                _defaultInstructionText = hud.InstructionText.text;
-                _hudDefaultsCaptured = true;
-            }
         }
 
         private void ConfigureCamera()
@@ -455,142 +446,31 @@ namespace MazeParty.Multiplayer
             }
 
             var reconnectPaused = match.IsReconnectPaused;
-            hud.PausePanel.SetActive(reconnectPaused);
-            hud.ControlsPanel.SetActive(
-                !reconnectPaused &&
-                state.Phase == NetworkStableFootingPhase.Running);
             hud.ResultPanel.SetActive(
-                state.Phase == NetworkStableFootingPhase.RoundResult ||
-                state.Phase == NetworkStableFootingPhase.Complete);
+                state.Phase == NetworkStableFootingPhase.RoundResult);
 
-            hud.RoundText.text = "ROUND " +
-                Mathf.Clamp(
-                    state.RoundNumber,
-                    1,
-                    MinigameCatalog.GetRoundCount(
-                        ScheduledMinigameId.StableFooting)) +
-                " / " + MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.StableFooting);
-            hud.TimerDial.SetTime(
-                reconnectPaused
-                    ? match.ReconnectRemaining
-                    : state.Remaining,
-                reconnectPaused
-                    ? NetworkMatchState.ReconnectGraceSeconds
-                    : GetTimerDuration(state.Phase));
-            hud.PhaseText.text = reconnectPaused
-                ? "PLAYER DISCONNECTED · MATCH PAUSED"
-                : BuildPhaseLabel();
             hud.InstructionText.text = reconnectPaused
-                ? "Waiting up to 60 seconds for the player to reconnect."
+                ? "PAUSED"
                 : BuildInstructionLabel();
-
-            for (var slot = 0;
-                 slot < StableFootingRules.PlayerCount;
-                 slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                var displayName = avatar != null &&
-                                  !string.IsNullOrWhiteSpace(
-                                      avatar.DisplayName)
-                    ? avatar.DisplayName
-                    : "PLAYER " + (slot + 1);
-                var rank = ResolveDisplayedRank(slot);
-                var eliminated = state.IsEliminated(slot);
-                hud.PlayerRows[slot].text =
-                    (slot == _localSlot ? "> " : string.Empty) +
-                    MinigameDisplayFormatter.ToOrdinal(rank) +
-                    "  " + displayName + "\n" +
-                    (eliminated
-                        ? "OUT  ·  FALL " +
-                          state.GetEliminationOrder(slot)
-                        : "STANDING") +
-                    "\n+" + state.GetRoundPoints(slot) +
-                    "  ·  TOTAL " + state.GetScore(slot) +
-                    (state.GetFinalRank(slot) > 0
-                        ? "\nFINAL " +
-                          MinigameDisplayFormatter.ToOrdinal(
-                              state.GetFinalRank(slot)) +
-                          "  ·  GOLD +" +
-                          MinigameRewardRules.GetFinalPlacementGold(
-                              state.GetFinalRank(slot))
-                        : string.Empty);
-                hud.PlayerRows[slot].color = avatar != null
-                    ? avatar.Appearance.BodyColor
-                    : hud.GetDefaultPlayerRowColor(slot);
-            }
-        }
-
-        private static double GetTimerDuration(
-            NetworkStableFootingPhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkStableFootingPhase.Countdown:
-                    return NetworkStableFootingState.CountdownSeconds;
-                case NetworkStableFootingPhase.Running:
-                    return StableFootingRules.RoundSeconds;
-                case NetworkStableFootingPhase.RoundResult:
-                    return NetworkStableFootingState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
-
-        private string BuildPhaseLabel()
-        {
-            switch (state.Phase)
-            {
-                case NetworkStableFootingPhase.Countdown:
-                    return "GET READY";
-                case NetworkStableFootingPhase.RoundResult:
-                    return "ROUND RESULTS";
-                case NetworkStableFootingPhase.Complete:
-                    return "FINAL RESULTS";
-                case NetworkStableFootingPhase.Running:
-                    switch (state.CyclePhase)
-                    {
-                        case StableFootingCyclePhase.ShuffleReveal:
-                            return "SYMBOL SHUFFLE";
-                        case StableFootingCyclePhase.Move:
-                            return "MOVE TO " +
-                                   SymbolLabel(state.SafeSymbol);
-                        case StableFootingCyclePhase.Drop:
-                            return "FLOOR DROPPING";
-                        case StableFootingCyclePhase.Restore:
-                            return "STABILIZING";
-                        default:
-                            return "HOLD ON";
-                    }
-                default:
-                    return "STABLE FOOTING";
-            }
         }
 
         private string BuildInstructionLabel()
         {
             if (state.Phase != NetworkStableFootingPhase.Running)
             {
-                return string.IsNullOrWhiteSpace(_defaultInstructionText)
-                    ? "WASD MOVE  ·  LEFT CLICK PUSH"
-                    : _defaultInstructionText;
+                return string.Empty;
             }
 
             switch (state.CyclePhase)
             {
                 case StableFootingCyclePhase.ShuffleReveal:
-                    return "TARGET: " +
-                           SymbolLabel(state.SafeSymbol) +
-                           "  ·  WATCH THE TILE SYMBOLS";
+                    return "SAFE: " + SymbolLabel(state.SafeSymbol);
                 case StableFootingCyclePhase.Move:
-                    return "STAND ON " +
-                           SymbolLabel(state.SafeSymbol) +
-                           "  ·  LEFT CLICK PUSH";
+                    return "SAFE: " + SymbolLabel(state.SafeSymbol);
                 case StableFootingCyclePhase.Drop:
-                    return "UNSAFE TILES ARE FALLING";
+                    return "DROPPING";
                 default:
-                    return "GET READY FOR THE NEXT SYMBOL";
+                    return string.Empty;
             }
         }
 

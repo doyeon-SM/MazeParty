@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/UI/Prefabs/BouncingBallsHud.prefab";
 
         [Test]
-        public void HudPrefab_HasFourPlayerScoresAndSharedTimer()
+        public void HudPrefab_HasFourPlayerScores()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             Assert.That(prefab, Is.Not.Null, HudPrefabPath);
@@ -25,17 +25,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(hud, Is.Not.Null);
             Assert.That(hud.HasRequiredReferences, Is.True);
             Assert.That(hud.RootCanvas, Is.SameAs(prefab.GetComponent<Canvas>()));
-            Assert.That(hud.TimerDial, Is.Not.Null);
             Assert.That(hud.PlayerNameTexts, Has.Length.EqualTo(4));
             Assert.That(hud.PlayerScoreTexts, Has.Length.EqualTo(4));
-            Assert.That(hud.PlayerConcededTexts, Has.Length.EqualTo(4));
             Assert.That(hud.PlayerNameTexts, Has.All.Not.Null);
             Assert.That(hud.PlayerScoreTexts, Has.All.Not.Null);
-            Assert.That(hud.PlayerConcededTexts, Has.All.Not.Null);
-            Assert.That(
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    hud.TimerDial.gameObject),
-                Is.EqualTo("Assets/MazeParty/UI/Prefabs/MinigameTimerDial.prefab"));
         }
 
         [Test]

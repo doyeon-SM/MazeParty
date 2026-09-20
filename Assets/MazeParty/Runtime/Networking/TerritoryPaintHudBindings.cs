@@ -6,51 +6,35 @@ using UnityEngine.UI;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Prefab-owned HUD contract. Only time plus the four player names and
-    /// normalized area scores are exposed during this minigame.
+    /// Prefab-owned HUD contract for player names and area scores.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TerritoryPaintHudBindings : MonoBehaviour
     {
         [SerializeField] private Canvas rootCanvas;
-        [SerializeField] private MinigameTimerDial timerDial;
-        [SerializeField] private Text timerText;
         [SerializeField] private Text[] playerRows =
             new Text[TerritoryPaintRules.PlayerCount];
 
         private Color[] _defaultRowColors;
 
         public Canvas RootCanvas => rootCanvas;
-        public MinigameTimerDial TimerDial => timerDial;
-        public Text TimerText => timerText;
         public Text[] PlayerRows => playerRows;
 
         public bool HasRequiredReferences =>
             rootCanvas != null &&
-            timerDial != null &&
-            timerDial.HasRequiredReferences &&
-            timerText != null &&
             playerRows != null &&
             playerRows.Length == TerritoryPaintRules.PlayerCount &&
             Array.TrueForAll(playerRows, row => row != null);
 
         public void Configure(
             Canvas canvas,
-            Text timer,
             Text[] rows)
         {
             rootCanvas = canvas;
-            timerText = timer;
             playerRows = rows;
             _defaultRowColors = null;
             CaptureDefaults();
         }
-
-        public void ConfigureTimerDial(MinigameTimerDial timer)
-        {
-            timerDial = timer;
-        }
-
 
         public Color GetDefaultPlayerRowColor(int slot)
         {

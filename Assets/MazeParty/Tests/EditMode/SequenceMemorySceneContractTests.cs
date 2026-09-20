@@ -30,9 +30,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(hud.HasRequiredReferences, Is.True);
             Assert.That(hud.RootCanvas, Is.SameAs(prefab.GetComponent<Canvas>()));
             Assert.That(hud.Root, Is.Not.Null);
-            Assert.That(hud.TimerDial, Is.Not.Null);
-            Assert.That(hud.TimerImage, Is.SameAs(hud.TimerDial.Ring));
-            Assert.That(hud.TimerText, Is.SameAs(hud.TimerDial.TimeText));
+            Assert.That(hud.NpcSequenceText, Is.Not.Null);
             Assert.That(
                 hud.PlayerRows,
                 Has.Length.EqualTo(SequenceMemoryRules.PlayerCount));

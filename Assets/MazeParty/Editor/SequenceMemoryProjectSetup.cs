@@ -97,7 +97,6 @@ namespace MazeParty.Editor
         public static void BuildSequenceMemoryAssets()
         {
             EnsureFolders();
-            MinigameTimerDialProjectSetup.EnsurePrefabExists();
             var materials = CreateMaterials();
             var hudPrefab = LoadOrCreateHudPrefab();
             BuildScene(materials, hudPrefab);
@@ -530,41 +529,12 @@ namespace MazeParty.Editor
             visibleRoot.transform.SetParent(canvasObject.transform, false);
             StretchToParent(visibleRoot.GetComponent<RectTransform>());
 
-            var header = CreatePanel(
-                "Header Panel",
-                visibleRoot.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -22f),
-                new Vector2(820f, 120f),
-                new Color(0.025f, 0.035f, 0.075f, 0.92f));
-            var phaseText = CreateHudText(
-                "Phase",
-                header.transform,
-                font,
-                new Vector2(0f, -10f),
-                new Vector2(760f, 42f),
-                25,
-                FontStyle.Bold,
-                "SEQUENCE MEMORY · GET READY");
-            var roundText = CreateHudText(
-                "Round",
-                header.transform,
-                font,
-                new Vector2(0f, -54f),
-                new Vector2(760f, 34f),
-                20,
-                FontStyle.Bold,
-                "PROBLEM 1 / 10");
-
-            var timer = MinigameTimerDialProjectSetup.InstantiateTimer(
-                visibleRoot.transform);
-
             var problemPanel = CreatePanel(
                 "NPC Problem Panel",
                 visibleRoot.transform,
                 new Vector2(0.5f, 1f),
-                new Vector2(0f, -166f),
-                new Vector2(1080f, 202f),
+                new Vector2(0f, -22f),
+                new Vector2(1080f, 160f),
                 new Color(0.045f, 0.055f, 0.12f, 0.94f));
             CreateHudText(
                 "Problem Label",
@@ -585,16 +555,6 @@ namespace MazeParty.Editor
                 FontStyle.Bold,
                 "A  S  D  A  S");
             npcSequenceText.color = new Color(1f, 0.82f, 0.25f);
-            var instructionText = CreateHudText(
-                "Instructions",
-                problemPanel.transform,
-                font,
-                new Vector2(0f, -135f),
-                new Vector2(1000f, 34f),
-                19,
-                FontStyle.Normal,
-                "LISTEN AND REMEMBER · THEN ENTER WITH A / S / D");
-
             var playerRows =
                 new Image[SequenceMemoryRules.PlayerCount];
             var playerNames = new Text[SequenceMemoryRules.PlayerCount];
@@ -654,30 +614,9 @@ namespace MazeParty.Editor
                     new Color(0.72f, 0.8f, 0.94f);
             }
 
-            var controls = CreatePanel(
-                "Controls Panel",
-                visibleRoot.transform,
-                new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(330f, 96f),
-                new Color(0.02f, 0.027f, 0.055f, 0.9f));
-            CreateHudText(
-                "Controls",
-                controls.transform,
-                font,
-                new Vector2(0f, -18f),
-                new Vector2(300f, 56f),
-                19,
-                FontStyle.Bold,
-                "A · HIGH\nS · MIDDLE    D · LOW");
-
             canvasObject.GetComponent<SequenceMemoryHudBindings>().Configure(
                 canvas,
                 visibleRoot,
-                timer,
-                roundText,
-                phaseText,
-                instructionText,
                 npcSequenceText,
                 playerRows,
                 playerNames,

@@ -407,8 +407,6 @@ namespace MazeParty.Editor
                 }
             }
 
-            MinigameTimerDialProjectSetup.EnsureHudTimer(HudPrefabPath);
-            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             var bindings = prefab != null
                 ? prefab.GetComponent<BalloonBlowHudBindings>()
                 : null;
@@ -477,123 +475,54 @@ namespace MazeParty.Editor
                 root.transform,
                 new Vector2(0.5f, 1f),
                 new Vector2(0f, -20f),
-                new Vector2(760f, 164f),
+                new Vector2(560f, 86f),
                 new Color(0.035f, 0.025f, 0.07f, 0.9f));
-            var phase = CreateHudText(
-                "Phase",
-                headerPanel.transform,
-                font,
-                new Vector2(0f, -12f),
-                new Vector2(710f, 34f),
-                22,
-                FontStyle.Bold,
-                "BALLOON BLOW · GET READY");
-            var timer = CreateHudText(
-                "Timer",
-                headerPanel.transform,
-                font,
-                new Vector2(0f, -45f),
-                new Vector2(220f, 48f),
-                36,
-                FontStyle.Bold,
-                "00:30");
-            var round = CreateHudText(
-                "Round",
-                headerPanel.transform,
-                font,
-                new Vector2(250f, -52f),
-                new Vector2(200f, 34f),
-                18,
-                FontStyle.Bold,
-                "ROUND 1 / 3");
             var instructions = CreateHudText(
                 "Instructions",
                 headerPanel.transform,
                 font,
-                new Vector2(0f, -103f),
-                new Vector2(710f, 42f),
+                new Vector2(0f, -22f),
+                new Vector2(520f, 42f),
                 16,
                 FontStyle.Normal,
-                "HOLD LEFT CLICK TO INFLATE · RELEASE BEFORE 2.0 SECONDS");
+                "YOU · READY");
 
-            var rows = new Text[BalloonBlowRules.PlayerCount];
-            var fills = new Image[BalloonBlowRules.PlayerCount];
-            for (var slot = 0; slot < BalloonBlowRules.PlayerCount; slot++)
-            {
-                var x = -570f + slot * 380f;
-                var card = CreatePanel(
-                    "Player " + (slot + 1) + " Card",
-                    root.transform,
-                    new Vector2(0.5f, 0f),
-                    new Vector2(x, 22f),
-                    new Vector2(350f, 104f),
-                    new Color(0.025f, 0.032f, 0.052f, 0.9f));
-                rows[slot] = CreateHudText(
-                    "Player " + (slot + 1) + " Row",
-                    card.transform,
-                    font,
-                    new Vector2(0f, -12f),
-                    new Vector2(320f, 34f),
-                    15,
-                    FontStyle.Bold,
-                    "PLAYER " + (slot + 1) + " · 0% · READY");
-                rows[slot].color = PlayerColors[slot];
-
-                var barBack = CreatePanel(
-                    "Progress Back",
-                    card.transform,
-                    new Vector2(0.5f, 1f),
-                    new Vector2(0f, -60f),
-                    new Vector2(310f, 20f),
-                    new Color(0.09f, 0.105f, 0.15f, 1f));
-                var fillObject = CreatePanel(
-                    "Progress Fill",
-                    barBack.transform,
-                    new Vector2(0.5f, 0.5f),
-                    Vector2.zero,
-                    new Vector2(298f, 12f),
-                    PlayerColors[slot]);
-                fills[slot] = fillObject.GetComponent<Image>();
-                fills[slot].type = Image.Type.Filled;
-                fills[slot].fillMethod = Image.FillMethod.Horizontal;
-                fills[slot].fillOrigin = 0;
-                fills[slot].fillAmount = 0f;
-            }
-
-            var controlsPanel = CreatePanel(
-                "Controls Panel",
+            var card = CreatePanel(
+                "Player 1 Card",
                 root.transform,
-                new Vector2(0f, 1f),
-                new Vector2(22f, -22f),
-                new Vector2(330f, 88f),
-                new Color(0.025f, 0.032f, 0.052f, 0.86f));
-            CreateHudText(
-                "Controls",
-                controlsPanel.transform,
+                new Vector2(0.5f, 0f),
+                new Vector2(0f, 22f),
+                new Vector2(350f, 104f),
+                new Color(0.025f, 0.032f, 0.052f, 0.9f));
+            var localProgressText = CreateHudText(
+                "Player 1 Row",
+                card.transform,
                 font,
                 new Vector2(0f, -12f),
-                new Vector2(300f, 56f),
-                17,
+                new Vector2(320f, 34f),
+                15,
                 FontStyle.Bold,
-                "LEFT CLICK · HOLD TO INFLATE\nRELEASE · REST");
-
-            var pausePanel = CreatePanel(
-                "Pause Panel",
-                root.transform,
+                "YOU · 0% · READY");
+            localProgressText.color = new Color(1f, 0.88f, 0.25f);
+            var barBack = CreatePanel(
+                "Progress Back",
+                card.transform,
+                new Vector2(0.5f, 1f),
+                new Vector2(0f, -60f),
+                new Vector2(310f, 20f),
+                new Color(0.09f, 0.105f, 0.15f, 1f));
+            var fillObject = CreatePanel(
+                "Progress Fill",
+                barBack.transform,
                 new Vector2(0.5f, 0.5f),
                 Vector2.zero,
-                new Vector2(720f, 180f),
-                new Color(0.02f, 0.02f, 0.04f, 0.96f));
-            CreateHudText(
-                "Pause Message",
-                pausePanel.transform,
-                font,
-                new Vector2(0f, -24f),
-                new Vector2(680f, 130f),
-                28,
-                FontStyle.Bold,
-                "PLAYER DISCONNECTED\nMATCH PAUSED");
-            pausePanel.SetActive(false);
+                new Vector2(298f, 12f),
+                new Color(1f, 0.88f, 0.25f));
+            var localProgressFill = fillObject.GetComponent<Image>();
+            localProgressFill.type = Image.Type.Filled;
+            localProgressFill.fillMethod = Image.FillMethod.Horizontal;
+            localProgressFill.fillOrigin = 0;
+            localProgressFill.fillAmount = 0f;
 
             var resultPanel = CreatePanel(
                 "Result Panel",
@@ -611,19 +540,21 @@ namespace MazeParty.Editor
                 30,
                 FontStyle.Bold,
                 "ROUND RESULTS");
+            var resultCanvas = resultPanel.AddComponent<Canvas>();
+            resultCanvas.overrideSorting = true;
+            resultCanvas.sortingOrder = 100;
+            var resultSorting = new SerializedObject(resultCanvas)
+                .FindProperty("m_OverrideSorting");
+            resultSorting.boolValue = true;
+            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
             resultPanel.SetActive(false);
 
             root.GetComponent<BalloonBlowHudBindings>().Configure(
                 canvas,
-                phase,
-                timer,
-                round,
                 instructions,
-                rows,
-                fills,
+                localProgressText,
+                localProgressFill,
                 resultText,
-                pausePanel,
-                controlsPanel,
                 resultPanel);
             return root;
         }

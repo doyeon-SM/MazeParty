@@ -22,7 +22,9 @@ namespace MazeParty.Gameplay.Minigames
         SequenceMemory = 10,
         BouncingBalls = 11,
         BombPassing = 12,
-        SnowySpin = 13
+        SnowySpin = 13,
+        ArenaCombat = 14,
+        CliffBarrage = 15
     }
 
     public static class MinigameScheduleRules

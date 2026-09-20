@@ -13,11 +13,8 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Race.unity";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/UI/Prefabs/RaceHud.prefab";
-
         [Test]
-        public void Scene_PreservesFourLaneSharedCameraAndTimerOnlyContract()
+        public void Scene_PreservesFourLaneSharedCamera()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -49,8 +46,7 @@ namespace MazeParty.Multiplayer.Tests
                              "state",
                              "sharedCamera",
                              "playerRoot",
-                             "arenaPresentation",
-                             "hud"
+                             "arenaPresentation"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -60,18 +56,6 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Not.Null,
                         propertyName);
                 }
-
-                var hud = state.GetComponentInChildren<RaceHudBindings>(true);
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
-                Assert.That(
-                    hud.GetComponentsInChildren<UnityEngine.UI.Text>(true),
-                    Has.Length.EqualTo(1),
-                    "Production Race HUD may show only timer text.");
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject),
-                    Is.EqualTo(HudPrefabPath));
 
                 Assert.That(
                     FindDescendant(state.transform, "Race Track"),

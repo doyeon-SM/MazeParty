@@ -28,7 +28,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera sharedCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private GameObject arenaPresentation;
-        [SerializeField] private RaceHudBindings hud;
 
         private readonly PlayerView[] _players =
             new PlayerView[RaceRules.PlayerCount];
@@ -48,14 +47,12 @@ namespace MazeParty.Multiplayer
             NetworkRaceState networkState,
             CinemachineCamera raceCamera,
             Transform players,
-            GameObject arena,
-            RaceHudBindings hudBindings)
+            GameObject arena)
         {
             state = networkState;
             sharedCamera = raceCamera;
             playerRoot = players;
             arenaPresentation = arena;
-            hud = hudBindings;
             ConfigureCamera();
             if (Application.isPlaying)
             {
@@ -69,13 +66,11 @@ namespace MazeParty.Multiplayer
             ConfigureCamera();
             EnsurePlayers();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -89,10 +84,6 @@ namespace MazeParty.Multiplayer
                 state != null && state.IsSpawned && selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
                  match.FlowState == BoardFlowState.SkippedResult);
-            var shouldShowHud = shouldShowWorld &&
-                                match.FlowState ==
-                                BoardFlowState.MinigamePlaying;
-            SetHudActive(shouldShowHud);
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
@@ -104,7 +95,6 @@ namespace MazeParty.Multiplayer
             ResolveLocalSlot(match);
             RefreshPlayers(match);
             RegisterCamera();
-            RefreshHud(match);
         }
 
         private void ConfigureCamera()
@@ -249,37 +239,6 @@ namespace MazeParty.Multiplayer
             _cameraRegistered = false;
         }
 
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-            var remaining = state.Remaining;
-            var duration = GetPhaseDuration(state.Phase);
-            if (match.IsReconnectPaused)
-            {
-                remaining = match.ReconnectRemaining;
-                duration = NetworkMatchState.ReconnectGraceSeconds;
-            }
-            hud.TimerDial.SetTime(remaining, duration);
-        }
-
-        private static double GetPhaseDuration(NetworkRacePhase phase)
-        {
-            switch (phase)
-            {
-                case NetworkRacePhase.Countdown:
-                    return NetworkRaceState.CountdownSeconds;
-                case NetworkRacePhase.Running:
-                    return RaceRules.RoundSeconds;
-                case NetworkRacePhase.RoundResult:
-                    return NetworkRaceState.RoundResultSeconds;
-                default:
-                    return 1d;
-            }
-        }
-
         private void SetWorldPresentationActive(bool active)
         {
             if (_visibilityInitialized && _worldVisible == active)
@@ -295,15 +254,6 @@ namespace MazeParty.Multiplayer
             if (playerRoot != null)
             {
                 playerRoot.gameObject.SetActive(active);
-            }
-        }
-
-        private void SetHudActive(bool active)
-        {
-            if (hud != null && hud.RootCanvas != null &&
-                hud.RootCanvas.gameObject.activeSelf != active)
-            {
-                hud.RootCanvas.gameObject.SetActive(active);
             }
         }
 

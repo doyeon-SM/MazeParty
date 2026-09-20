@@ -45,7 +45,9 @@ namespace MazeParty.Gameplay.Minigames
         private const int SequenceMemorySchemaVersion = 9;
         private const int BouncingBallsSchemaVersion = 10;
         private const int BombPassingSchemaVersion = 11;
-        private const int CurrentSchemaVersion = 12;
+        private const int SnowySpinSchemaVersion = 12;
+        private const int ArenaCombatSchemaVersion = 13;
+        private const int CurrentSchemaVersion = 14;
         // Schema 1 predates Red Light / Green Light and therefore validates
         // against only the first two append-only catalog entries.
         private const int LegacyRegisteredGameCount = 2;
@@ -79,6 +81,12 @@ namespace MazeParty.Gameplay.Minigames
         // Schema 11 predates Snowy Spin and validates against the first
         // twelve append-only catalog entries.
         private const int BombPassingRegisteredGameCount = 12;
+        // Schema 12 predates Arena Combat and validates against the first
+        // thirteen append-only catalog entries.
+        private const int SnowySpinRegisteredGameCount = 13;
+        // Schema 13 predates Cliff Barrage and validates against the first
+        // fourteen append-only catalog entries.
+        private const int ArenaCombatRegisteredGameCount = 14;
 
         public string Encode(
             string matchKey,
@@ -168,6 +176,16 @@ namespace MazeParty.Gameplay.Minigames
                 return BombPassingSchemaVersion;
             }
             if (schedule.RegisteredGameCountAtCreation ==
+                SnowySpinRegisteredGameCount)
+            {
+                return SnowySpinSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
+                ArenaCombatRegisteredGameCount)
+            {
+                return ArenaCombatSchemaVersion;
+            }
+            if (schedule.RegisteredGameCountAtCreation ==
                 MinigameScheduleRules.RegisteredGameCount)
             {
                 return CurrentSchemaVersion;
@@ -213,6 +231,10 @@ namespace MazeParty.Gameplay.Minigames
                      BouncingBallsSchemaVersion &&
                      document.schemaVersion !=
                      BombPassingSchemaVersion &&
+                     document.schemaVersion !=
+                     SnowySpinSchemaVersion &&
+                     document.schemaVersion !=
+                     ArenaCombatSchemaVersion &&
                      document.schemaVersion != CurrentSchemaVersion) ||
                     string.IsNullOrWhiteSpace(document.matchKey) ||
                     document.entries == null ||
@@ -257,6 +279,10 @@ namespace MazeParty.Gameplay.Minigames
                         BouncingBallsRegisteredGameCount,
                     BombPassingSchemaVersion =>
                         BombPassingRegisteredGameCount,
+                    SnowySpinSchemaVersion =>
+                        SnowySpinRegisteredGameCount,
+                    ArenaCombatSchemaVersion =>
+                        ArenaCombatRegisteredGameCount,
                     _ => MinigameScheduleRules.RegisteredGameCount
                 };
                 var restored = HostMinigameSchedule.Restore(

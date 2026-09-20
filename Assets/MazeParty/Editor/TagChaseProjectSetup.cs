@@ -68,7 +68,6 @@ namespace MazeParty.Editor
         public static void BuildTagChaseAssets()
         {
             EnsureFolders();
-            MinigameTimerDialProjectSetup.EnsurePrefabExists();
             var floorMaterial =
                 CreateOrLoadMaterial(
                     "TagChaseFloor",
@@ -84,21 +83,17 @@ namespace MazeParty.Editor
                     "TagChaseObstacle",
                     new Color(0.58f, 0.13f, 0.18f),
                     0.2f);
-            var hudPrefab =
-                LoadOrCreateHudPrefab();
             BuildScene(
                 floorMaterial,
                 wallMaterial,
-                obstacleMaterial,
-                hudPrefab);
+                obstacleMaterial);
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildScene(
             Material floorMaterial,
             Material wallMaterial,
-            Material obstacleMaterial,
-            GameObject hudPrefab)
+            Material obstacleMaterial)
         {
             var previousActive =
                 SceneManager.GetActiveScene();
@@ -193,30 +188,12 @@ namespace MazeParty.Editor
                 root.AddComponent<
                     TagChaseNetworkView>();
 
-            var hudObject =
-                PrefabUtility.InstantiatePrefab(
-                    hudPrefab,
-                    root.transform) as GameObject;
-            var hud =
-                hudObject != null
-                    ? hudObject.GetComponent<
-                        TagChaseHudBindings>()
-                    : null;
-            if (hud == null ||
-                !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "TagChaseHud.prefab has invalid serialized " +
-                    "bindings.");
-            }
-
             view.Configure(
                 state,
                 sharedCamera,
                 taggerCamera,
                 playerRoot.transform,
-                arenaPresentation,
-                hud);
+                arenaPresentation);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(
@@ -647,17 +624,13 @@ namespace MazeParty.Editor
                     TagChaseNetworkView>();
             var networkObject =
                 root.GetComponent<NetworkObject>();
-            var hud =
-                root.GetComponentInChildren<
-                    TagChaseHudBindings>(true);
             var cameras =
                 root.GetComponentsInChildren<
                     CinemachineCamera>(true);
             if (state == null ||
                 view == null ||
                 networkObject == null ||
-                hud == null ||
-                !hud.HasRequiredReferences ||
+                root.GetComponentInChildren<Canvas>(true) != null ||
                 cameras.Length != 2 ||
                 FindDescendant(
                     root.transform,
@@ -672,8 +645,8 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Tag Chase scene is missing its network " +
-                    "state, arena, two cameras, light, art anchors or " +
-                    "timer-only prefab HUD.");
+                    "state, arena, two cameras, light or art anchors; " +
+                    "it must not contain a dedicated Canvas.");
             }
 
             for (var index = 0; index < 4; index++)
@@ -688,16 +661,6 @@ namespace MazeParty.Editor
                 }
             }
 
-            var sourcePath =
-                PrefabUtility
-                    .GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject);
-            if (sourcePath != HudPrefabPath)
-            {
-                throw new InvalidOperationException(
-                    "Tag Chase Canvas must be instantiated from " +
-                    "TagChaseHud.prefab.");
-            }
         }
 
         private static Transform FindDescendant(

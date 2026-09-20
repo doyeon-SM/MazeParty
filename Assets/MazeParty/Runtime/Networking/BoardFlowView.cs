@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
     {
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private BoardCanvasBindings uiBindings;
+        [SerializeField] private MinigameResultCanvasBindings resultUiBindings;
 
         private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
@@ -129,6 +130,8 @@ namespace MazeParty.Multiplayer
             Instance != null && Instance._openItemShopIndex >= 0;
         public bool BoardUiVisible => _boardCanvas == null || _boardCanvas.enabled;
         public BoardCanvasBindings UiBindings => uiBindings;
+        public MinigameResultCanvasBindings ResultUiBindings =>
+            resultUiBindings;
         public bool HasRequiredUiReferences =>
             uiBindings != null && uiBindings.HasRequiredReferences;
 
@@ -148,6 +151,13 @@ namespace MazeParty.Multiplayer
         public void ConfigureUiBindings(BoardCanvasBindings bindings)
         {
             uiBindings = bindings;
+        }
+
+        public void ConfigureResultUiBindings(
+            MinigameResultCanvasBindings bindings)
+        {
+            resultUiBindings = bindings;
+            BindResultUi();
         }
 
         public void SetBoardUiVisible(bool visible)
@@ -337,6 +347,22 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void BindResultUi()
+        {
+            _resultPanel = resultUiBindings != null
+                ? resultUiBindings.ResultPanel
+                : null;
+            _minefieldResultTitle = resultUiBindings != null
+                ? resultUiBindings.ResultTitle
+                : null;
+            _minefieldResultNote = resultUiBindings != null
+                ? resultUiBindings.ResultNote
+                : null;
+            _minefieldResultSummary = resultUiBindings != null
+                ? resultUiBindings.ResultSummary
+                : null;
+        }
+
         private void BindUi()
         {
             if (!HasRequiredUiReferences)
@@ -353,7 +379,6 @@ namespace MazeParty.Multiplayer
             _boardRaycaster = uiBindings.RootRaycaster;
             _selectionPanel = uiBindings.ItemSelectionPanel;
             _readyPanel = uiBindings.MinigameReadyPanel;
-            _resultPanel = uiBindings.ResultPanel;
             _reconnectOverlay = uiBindings.ReconnectOverlay;
             _reticle = uiBindings.Reticle;
             _itemShopPanel = uiBindings.ItemShopPanel;
@@ -375,14 +400,12 @@ namespace MazeParty.Multiplayer
             _minigameReadyNote = uiBindings.MinigameReadyNote;
             _minigameReadyStatus = uiBindings.MinigameReadyStatus;
             _minigameRulePlaceholder = uiBindings.MinigameRulePlaceholder;
-            _minefieldResultTitle = uiBindings.ResultTitle;
-            _minefieldResultNote = uiBindings.ResultNote;
-            _minefieldResultSummary = uiBindings.ResultSummary;
             _minefieldRuleImage = uiBindings.MinigameRuleImage;
             _noItemButton = uiBindings.NoItemButton;
             _readyButton = uiBindings.ReadyButton;
             _readyButtonLabel = uiBindings.ReadyButtonLabel;
             _itemShopCloseButton = uiBindings.ItemShopCloseButton;
+            BindResultUi();
 
             CopyReferences(
                 uiBindings.InventorySlotBackgrounds,
@@ -836,6 +859,8 @@ namespace MazeParty.Multiplayer
                     : 0f;
                 if (_playerHealthFills[slot] != null)
                 {
+                    _playerHealthFills[slot].gameObject.SetActive(
+                        !match.IsArenaCombatPhase);
                     _playerHealthFills[slot].fillAmount = healthRatio;
                     _playerHealthFills[slot].color = healthRatio > 0.5f
                         ? uiBindings.HealthyHealthColor
@@ -846,6 +871,11 @@ namespace MazeParty.Multiplayer
                 SetText(_playerHealthTexts[slot], avatar != null
                     ? currentHealth + "/" + maxHealth
                     : "--/--");
+                SetActive(
+                    _playerHealthTexts[slot] != null
+                        ? _playerHealthTexts[slot].gameObject
+                        : null,
+                    !match.IsArenaCombatPhase);
                 SetText(_playerCurrencyTexts[slot], avatar != null
                     ? "KEY  " + avatar.KeyCount + "    GOLD  " + avatar.Gold
                     : "KEY  --    GOLD  --");
@@ -1255,6 +1285,12 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.SnowySpin
                                 ? "Roll and push opponents off the ice."
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.ArenaCombat
+                                ? "Fight in first person. Eliminated players spectate."
+                            : match.CurrentMinigame ==
+                              ScheduledMinigameId.CliffBarrage
+                                ? "Dodge shells and lasers. Push rivals off the cliff."
                             : MinefieldStatus(minefield));
                     break;
                 case BoardFlowState.SkippedResult:
@@ -1312,6 +1348,10 @@ namespace MazeParty.Multiplayer
                 selected == ScheduledMinigameId.BombPassing;
             var isSnowySpin =
                 selected == ScheduledMinigameId.SnowySpin;
+            var isArenaCombat =
+                selected == ScheduledMinigameId.ArenaCombat;
+            var isCliffBarrage =
+                selected == ScheduledMinigameId.CliffBarrage;
             var isSkip = selected == ScheduledMinigameId.Skip;
             var hasRuleImage = _minefieldRuleImage != null &&
                                _minefieldRuleImage.sprite != null &&
@@ -1344,6 +1384,10 @@ namespace MazeParty.Multiplayer
                         ? "BOMB PASSING"
                     : isSnowySpin
                         ? "SNOWY SPIN"
+                    : isArenaCombat
+                        ? "ARENA COMBAT"
+                    : isCliffBarrage
+                        ? "CLIFF BARRAGE"
                     : isSkip
                         ? "NO MINIGAME / SKIP"
                         : "MINEFIELD / TOP-DOWN");
@@ -1438,6 +1482,20 @@ namespace MazeParty.Multiplayer
                           "Round placement points are combined; final placement " +
                           "awards gold once.\nALL 4 PLAYERS READY  -  READY " +
                           readyCount + " / 4"
+                    : isArenaCombat
+                        ? "Fight with WASD movement, mouse look and LMB punches. " +
+                          "Health is hidden. Defeated players spectate. " +
+                          "Last survivor wins, or remaining health decides " +
+                          "survivors after 60 seconds.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
+                    : isCliffBarrage
+                        ? "Move with WASD and click to push the nearest rival " +
+                          "in your last movement direction. Falling eliminates " +
+                          "you immediately. A shell or laser hit first removes " +
+                          "your torso; a second hit eliminates you, with one " +
+                          "second of safety after a hit. Survive three 60-second " +
+                          "rounds.\nALL 4 PLAYERS READY  -  READY " +
+                          readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
                           "The next turn starts automatically."
@@ -1500,6 +1558,10 @@ namespace MazeParty.Multiplayer
                         ? "BOMB PASSING RESULTS"
                     : isSnowySpin
                         ? "SNOWY SPIN RESULTS"
+                    : isArenaCombat
+                        ? "ARENA COMBAT RESULTS"
+                    : isCliffBarrage
+                        ? "CLIFF BARRAGE RESULTS"
                     : isSkip
                         ? "TURN SKIPPED"
                         : "MINEFIELD RESULTS");
@@ -1537,6 +1599,12 @@ namespace MazeParty.Multiplayer
                 : isSnowySpin
                     ? BuildSnowySpinResultSummary(
                         NetworkSnowySpinState.Instance)
+                : isArenaCombat
+                    ? BuildArenaCombatResultSummary(
+                        NetworkArenaCombatState.Instance)
+                : isCliffBarrage
+                    ? BuildCliffBarrageResultSummary(
+                        NetworkCliffBarrageState.Instance)
                 : isSkip
                     ? "No minigame was scheduled for this turn."
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
@@ -1589,6 +1657,10 @@ namespace MazeParty.Multiplayer
                         ? "WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB"
                     : isSnowySpin
                         ? "WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF"
+                    : isArenaCombat
+                        ? "WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH"
+                    : isCliffBarrage
+                        ? "WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS"
                         : "RULE IMAGE");
             SetActive(
                 _minigameRulePlaceholder != null
@@ -2121,6 +2193,110 @@ namespace MazeParty.Multiplayer
                         : "P" + (rankedSlot + 1))
                     .Append("  SCORE ")
                     .Append(snowySpin.GetScore(rankedSlot))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildArenaCombatResultSummary(
+            NetworkArenaCombatState arenaCombat)
+        {
+            if (arenaCombat == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= MultiplayerConstants.MaxPlayers;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (arenaCombat.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1))
+                    .Append("  GOLD +")
+                    .Append(
+                        MinigameRewardRules.GetFinalPlacementGold(rank));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildCliffBarrageResultSummary(
+            NetworkCliffBarrageState cliffBarrage)
+        {
+            if (cliffBarrage == null)
+            {
+                return "Final standings are synchronizing...";
+            }
+
+            var builder = new StringBuilder();
+            for (var rank = 1;
+                 rank <= MultiplayerConstants.MaxPlayers;
+                 rank++)
+            {
+                var rankedSlot = -1;
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (cliffBarrage.GetFinalRank(slot) == rank)
+                    {
+                        rankedSlot = slot;
+                        break;
+                    }
+                }
+
+                if (rankedSlot < 0)
+                {
+                    return "Final standings are synchronizing...";
+                }
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(rank)
+                    .Append(".  ")
+                    .Append(avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1))
+                    .Append("  SCORE ")
+                    .Append(cliffBarrage.GetScore(rankedSlot))
                     .Append("  GOLD +")
                     .Append(
                         MinigameRewardRules.GetFinalPlacementGold(rank));

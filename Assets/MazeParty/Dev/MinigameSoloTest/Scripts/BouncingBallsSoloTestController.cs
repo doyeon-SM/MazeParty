@@ -381,14 +381,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 return;
             }
 
-            _productionHud.TimerDial.SetTime(
-                Remaining,
-                PhaseDuration);
-            _productionHud.RoundText.text = "ROUND " +
-                _match.RoundNumber + " / " +
-                BouncingBallsRules.RoundCount;
-            _productionHud.PhaseText.text = PhaseLabel;
-            _productionHud.InstructionText.text = InstructionLabel;
             for (var slot = 0;
                  slot < BouncingBallsRules.PlayerCount;
                  slot++)
@@ -400,21 +392,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _productionHud.PlayerNameTexts[slot].color =
                     PlayerColors[slot];
                 var score = _match.GetScore(slot);
-                var conceded = _match.GetConceded(slot);
-                var rank = _match.IsComplete
-                    ? _match.GetFinalRank(slot)
-                    : 0;
                 _productionHud.PlayerScoreTexts[slot].text =
-                    rank > 0
-                        ? MinigameDisplayFormatter.ToOrdinal(rank) +
-                          " · SCORE " + score
-                        : "SCORE " + score;
-                _productionHud.PlayerConcededTexts[slot].text =
-                    rank > 0
-                        ? "GOLD +" +
-                          MinigameRewardRules.GetFinalPlacementGold(rank) +
-                          " · CONCEDED " + conceded
-                        : "CONCEDED " + conceded;
+                    "SCORE " + score;
             }
         }
 

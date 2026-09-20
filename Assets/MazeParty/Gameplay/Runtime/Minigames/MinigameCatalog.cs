@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
 using MazeParty.Gameplay.Minigames.BouncingBalls;
 using MazeParty.Gameplay.Minigames.BombPassing;
+using MazeParty.Gameplay.Minigames.CliffBarrage;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using MazeParty.Gameplay.Minigames.Minefield;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
@@ -160,7 +161,21 @@ namespace MazeParty.Gameplay.Minigames
                 SnowySpinRules.RoundCount,
                 (float)SnowySpinRules.RoundDurationSeconds,
                 "SnowySpin",
-                new Color(0.62f, 0.83f, 0.98f, 1f))
+                new Color(0.62f, 0.83f, 0.98f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.ArenaCombat,
+                "ARENA COMBAT",
+                1,
+                60f,
+                "ArenaCombat",
+                new Color(0.87f, 0.22f, 0.2f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.CliffBarrage,
+                "CLIFF BARRAGE",
+                CliffBarrageRules.RoundCount,
+                (float)CliffBarrageRules.RoundDurationSeconds,
+                "CliffBarrage",
+                new Color(0.98f, 0.48f, 0.14f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;

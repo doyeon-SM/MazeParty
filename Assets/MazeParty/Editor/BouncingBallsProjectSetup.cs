@@ -66,7 +66,6 @@ namespace MazeParty.Editor
         public static void BuildBouncingBallsAssets()
         {
             EnsureFolders();
-            MinigameTimerDialProjectSetup.EnsurePrefabExists();
             var materials = CreateMaterials();
             var hudPrefab = LoadOrCreateHudPrefab();
             BuildScene(materials, hudPrefab);
@@ -415,36 +414,14 @@ namespace MazeParty.Editor
             rootRect.offsetMin = Vector2.zero;
             rootRect.offsetMax = Vector2.zero;
 
-            var header = CreatePanel("Header Panel", visibleRoot.transform,
-                new Vector2(0.5f, 1f), new Vector2(0f, -22f),
-                new Vector2(840f, 118f),
-                new Color(0.024f, 0.034f, 0.075f, 0.92f));
-            var phaseText = CreateText("Phase", header.transform, font,
-                new Vector2(0f, -8f), new Vector2(760f, 44f), 26,
-                "BOUNCING BALLS · GET READY");
-            var roundText = CreateText("Round", header.transform, font,
-                new Vector2(0f, -57f), new Vector2(760f, 34f), 21,
-                "ROUND 1 / 2");
-            var timer = MinigameTimerDialProjectSetup.InstantiateTimer(
-                visibleRoot.transform);
-
-            var controls = CreatePanel("Controls Panel", visibleRoot.transform,
-                new Vector2(0f, 1f), new Vector2(24f, -24f),
-                new Vector2(350f, 104f),
-                new Color(0.018f, 0.03f, 0.065f, 0.92f));
-            var instructionText = CreateText("Instructions", controls.transform,
-                font, new Vector2(0f, -15f), new Vector2(326f, 80f), 19,
-                "A / D · MOVE SHIELD\nKEEP BALLS OUT OF YOUR GOAL");
-
             var names = new Text[PlayerCount];
             var scores = new Text[PlayerCount];
-            var conceded = new Text[PlayerCount];
             for (var slot = 0; slot < PlayerCount; slot++)
             {
                 var panel = CreatePanel("Player Card " + (slot + 1),
                     visibleRoot.transform, new Vector2(0.5f, 0f),
                     new Vector2(-690f + slot * 460f, 28f),
-                    new Vector2(420f, 158f),
+                    new Vector2(420f, 120f),
                     new Color(0.022f, 0.03f, 0.067f, 0.94f));
                 CreatePanel("Player Accent", panel.transform,
                     new Vector2(0.5f, 1f), Vector2.zero,
@@ -456,14 +433,10 @@ namespace MazeParty.Editor
                 scores[slot] = CreateText("Score", panel.transform, font,
                     new Vector2(0f, -58f), new Vector2(380f, 51f),
                     34, "SCORE 0");
-                conceded[slot] = CreateText("Conceded", panel.transform,
-                    font, new Vector2(0f, -113f), new Vector2(380f, 28f),
-                    16, "CONCEDED 0");
             }
 
             canvasObject.GetComponent<BouncingBallsHudBindings>().Configure(
-                canvas, visibleRoot, timer, roundText, phaseText,
-                instructionText, names, scores, conceded);
+                canvas, visibleRoot, names, scores);
             SetUiLayer(canvasObject);
             return canvasObject;
         }
