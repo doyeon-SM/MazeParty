@@ -109,6 +109,6 @@ EditMode 테스트는 좌석 할당, 시작 조건, 보드 흐름 상태 머신,
 빌드 씬, NetworkManager, UnityTransport, 플레이어 프리팹 및 Board 인씬
 NetworkObject 해시와 D12 메시·convex collider·1~12 숫자 면 매핑을 검증한다.
 에디터 전용 로컬 흐름 검증은 빌드 목록에서
-제외된 `Assets/MazeParty/Dev/BoardFlowTestbed/BoardFlowTestbed.unity`를 사용한다.
+제외된 `Assets/MazeParty/Scenes/Board/Dev/BoardFlowTestbed.unity`를 사용한다.
 실제 Relay 왕복과 4개 프로세스 동시 접속은 UGS 계정/환경이 필요하므로 로컬
 자동 테스트와 분리한다.

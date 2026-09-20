@@ -36,8 +36,9 @@
 
 ## UI 제작 규칙
 
-- 플레이 중 화면에 표시되는 모든 Canvas UI는 `Assets/MazeParty/UI/Prefabs` 아래의
-  프리팹을 원본으로 만든다. 런타임 코드에서 `new GameObject`, `AddComponent`,
+- 플레이 중 화면에 표시되는 모든 Canvas UI는 `Assets/MazeParty/Prefabs` 아래의
+  `Multiplayer/UI`, `Board/UI`, `Minigames/Common/UI` 또는
+  `Minigames/<게임명>/UI` 프리팹을 원본으로 만든다. 런타임 코드에서 `new GameObject`, `AddComponent`,
   `OnGUI` 또는 `GUILayout`로 대체 UI를 조립하지 않는다.
 - 런타임 코드는 직렬화된 전용 바인딩 컴포넌트를 통해 UI 값과 표시 상태만 갱신한다.
   레이아웃, 색상, 폰트와 기본 문구는 프리팹에서 편집 가능하게 유지한다.

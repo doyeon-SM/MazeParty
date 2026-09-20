@@ -4,7 +4,7 @@ GameplayTestbed.unity is an offline development scene and is intentionally exclu
 
 ## Open and rebuild
 
-- Open Assets/MazeParty/Dev/GameplayTestbed/GameplayTestbed.unity.
+- Open `Assets/MazeParty/Scenes/Board/Dev/GameplayTestbed.unity`.
 - Rebuild it from MazeParty > Gameplay > Rebuild Gameplay Testbed.
 - The generator preserves the currently open scene by building additively and then restoring it.
 

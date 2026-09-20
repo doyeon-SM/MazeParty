@@ -6,7 +6,7 @@
 
 ## 실행
 
-1. `Assets/MazeParty/Dev/BoardFlowTestbed/BoardFlowTestbed.unity`를 연다.
+1. `Assets/MazeParty/Scenes/Board/Dev/BoardFlowTestbed.unity`를 연다.
 2. Play를 누르고 탑뷰 → 하강 → 1인칭 전환을 확인한다.
 3. 아이템 또는 `USE NO ITEM`을 고른다.
 4. 선택 직후부터 WASD로 현재 칸 안을 움직인다. 플레이어 앞의 월드 주사위는
