@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -26,6 +27,23 @@ namespace MazeParty.Gameplay.Tests
             {
                 var topology = FindTopology(scene);
                 Assert.That(topology, Is.Not.Null, "Board scene must contain one BoardTopology.");
+                var tombstoneView = topology.GetComponents<MonoBehaviour>()
+                    .SingleOrDefault(component => component != null &&
+                        component.GetType().FullName ==
+                            "MazeParty.Multiplayer.BoardTombstoneWorldView");
+                Assert.That(tombstoneView, Is.Not.Null);
+                var hasReferences = tombstoneView.GetType()
+                    .GetProperty("HasRequiredReferences")?.GetValue(tombstoneView);
+                Assert.That(hasReferences, Is.EqualTo(true),
+                    "Board tombstones must use the authored world prefab.");
+                var tombstonePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Board/World/BoardTombstone.prefab");
+                Assert.That(tombstonePrefab, Is.Not.Null);
+                Assert.That(tombstonePrefab.GetComponent<BoxCollider>(), Is.Not.Null);
+                Assert.That(tombstonePrefab.GetComponents<MonoBehaviour>()
+                    .Any(component => component != null &&
+                        component.GetType().FullName ==
+                            "MazeParty.Multiplayer.BoardTombstoneMarker"), Is.True);
                 topology.RebuildIndex();
 
                 var tiles = topology.Tiles.Where(tile => tile != null).ToArray();

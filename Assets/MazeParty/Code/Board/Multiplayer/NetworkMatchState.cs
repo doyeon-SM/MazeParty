@@ -112,6 +112,12 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<int>();
         private readonly NetworkVariable<ulong> _currentMinigameSeed =
             new NetworkVariable<ulong>();
+        private readonly NetworkList<BoardTombstoneSnapshot> _tombstones =
+            new NetworkList<BoardTombstoneSnapshot>(
+                default,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+        private int _nextTombstoneId;
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
@@ -358,6 +364,7 @@ namespace MazeParty.Multiplayer
         }
 
         public bool GameplayEnabled => _gameplayEnabled.Value;
+        public NetworkList<BoardTombstoneSnapshot> Tombstones => _tombstones;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
         public int StateRevision => _stateRevision.Value;
@@ -686,7 +693,8 @@ namespace MazeParty.Multiplayer
             EnsureFlowModel();
             var deferActionTimeout =
                 ShouldDeferActionTimeoutForWorldDie();
-            _flow.Tick(now, deferActionTimeout);
+            ForEachAvatar(avatar => avatar.AdvanceBoardDeathOnServer(now));
+            _flow.Tick(now, deferActionTimeout, HasBoardDeathInProgressOnServer());
             if (deferActionTimeout &&
                 _flow.State == BoardFlowState.Action &&
                 _flow.GetActionRemaining(now) <= 0d)
@@ -756,6 +764,8 @@ namespace MazeParty.Multiplayer
             _itemShop0.Value = default;
             _itemShop1.Value = default;
             ResetCombatRuntimeOnServer();
+            _tombstones.Clear();
+            _nextTombstoneId = 0;
             SyncKeyShopSnapshot();
             InitializeBoardLandingEffectsOnServer();
             var now = ServerNow;
@@ -2024,7 +2034,8 @@ namespace MazeParty.Multiplayer
                 ResolveWorldDiceCoordinator();
                 _flow.Pause(
                     now,
-                    ShouldDeferActionTimeoutForWorldDie());
+                    ShouldDeferActionTimeoutForWorldDie(),
+                    HasBoardDeathInProgressOnServer());
                 _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
                 _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
                 _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
@@ -2619,7 +2630,87 @@ namespace MazeParty.Multiplayer
         {
             return CanProcessAvatarRequest(avatar) &&
                    FlowState == BoardFlowState.Action &&
-                   ActionRemaining > 0d;
+                   ActionRemaining > 0d &&
+                   !avatar.IsBoardDeathInProgressOnServer;
+        }
+
+        public void PlaceTombstoneOnServer(Vector3 deathPosition, int gold)
+        {
+            if (!IsServer || !_gameplayEnabled.Value || gold <= 0 ||
+                !IsFinite(deathPosition))
+            {
+                return;
+            }
+
+            _tombstones.Add(new BoardTombstoneSnapshot
+            {
+                Id = ++_nextTombstoneId,
+                Position = deathPosition,
+                Gold = gold
+            });
+        }
+
+        public bool TryCollectTombstoneOnServer(NetworkPlayerAvatar avatar, int id)
+        {
+            if (!CanProcessActionRequest(avatar) || avatar.CurrentHealth <= 0)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < _tombstones.Count; index++)
+            {
+                var tombstone = _tombstones[index];
+                if (tombstone.Id != id)
+                {
+                    continue;
+                }
+
+                var position = GetTombstoneDisplayPosition(index);
+                var eye = avatar.EyePivot != null
+                    ? avatar.EyePivot.position
+                    : avatar.transform.position + Vector3.up * 0.75f;
+                var toward = position + Vector3.up * 0.5f - eye;
+                if (toward.magnitude > BoardTombstoneRules.InteractionDistance ||
+                    toward.sqrMagnitude < 0.001f ||
+                    Vector3.Dot(
+                        avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward,
+                        toward.normalized) < 0.9f)
+                {
+                    return false;
+                }
+
+                _tombstones.RemoveAt(index);
+                avatar.ApplyGoldDeltaOnServer(tombstone.Gold);
+                return true;
+            }
+
+            return false;
+        }
+
+        public Vector3 GetTombstoneDisplayPosition(int index)
+        {
+            if (index < 0 || index >= _tombstones.Count)
+            {
+                return Vector3.zero;
+            }
+
+            var tombstone = _tombstones[index];
+            var ordinal = 0;
+            for (var previous = 0; previous < index; previous++)
+            {
+                if ((_tombstones[previous].Position - tombstone.Position).sqrMagnitude < 0.04f)
+                {
+                    ordinal++;
+                }
+            }
+            return BoardTombstoneRules.DisplayPosition(tombstone.Position, ordinal);
+        }
+
+        private bool HasBoardDeathInProgressOnServer()
+        {
+            var pending = false;
+            ForEachAvatar(avatar => pending |= avatar.IsBoardDeathInProgressOnServer);
+            return pending;
         }
 
         private bool ShouldDeferActionTimeoutForWorldDie()
@@ -3599,7 +3690,8 @@ namespace MazeParty.Multiplayer
             if (_keyShopRevealActive.Value ||
                 !_flow.Pause(
                     now,
-                    ShouldDeferActionTimeoutForWorldDie()))
+                    ShouldDeferActionTimeoutForWorldDie(),
+                    HasBoardDeathInProgressOnServer()))
             {
                 return;
             }
@@ -3699,6 +3791,7 @@ namespace MazeParty.Multiplayer
         public int CombatHealth;
         public bool PendingCombatProtection;
         public double PersonalProtectionRemaining;
+        public double DeathPresentationRemaining;
         public PlayerAppearanceState Appearance;
         public string DisplayName;
         public bool HasLogicalCurrentTile;

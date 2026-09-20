@@ -431,6 +431,7 @@ namespace MazeParty.Editor
             topology.Configure(tiles.ToArray(), gates.ToArray());
             root.AddComponent<KeyShopWorldMarker>();
             root.AddComponent<ItemShopWorldMarker>();
+            BoardTombstoneProjectSetup.EnsureView(root);
             EditorUtility.SetDirty(topology);
             return topology;
         }

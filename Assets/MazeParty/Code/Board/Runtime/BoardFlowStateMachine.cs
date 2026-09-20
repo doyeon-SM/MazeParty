@@ -71,6 +71,7 @@ namespace MazeParty.Gameplay
         private double _totalPausedDuration;
         private double _pauseStartedAt;
         private bool _actionTimeoutDeferred;
+        private bool _ascendingResolveDeferred;
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
@@ -127,11 +128,13 @@ namespace MazeParty.Gameplay
             _totalPausedDuration = 0d;
             _pauseStartedAt = 0d;
             _actionTimeoutDeferred = false;
+            _ascendingResolveDeferred = false;
         }
 
         public void Tick(
             double synchronizedNow,
-            bool deferExpiredAction = false)
+            bool deferExpiredAction = false,
+            bool deferAscendingResolve = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
@@ -198,8 +201,18 @@ namespace MazeParty.Gameplay
                         var boundary = _stateStartedAt + AscendingResolveDurationSeconds;
                         if (logicalNow >= boundary)
                         {
-                            TransitionTo(BoardFlowState.CombatResolve, boundary);
-                            keepAdvancing = true;
+                            if (deferAscendingResolve)
+                            {
+                                _ascendingResolveDeferred = true;
+                            }
+                            else
+                            {
+                                TransitionTo(
+                                    BoardFlowState.CombatResolve,
+                                    _ascendingResolveDeferred ? logicalNow : boundary);
+                                _ascendingResolveDeferred = false;
+                                keepAdvancing = true;
+                            }
                         }
 
                         break;
@@ -344,13 +357,14 @@ namespace MazeParty.Gameplay
 
         public bool Pause(
             double synchronizedNow,
-            bool deferExpiredAction = false)
+            bool deferExpiredAction = false,
+            bool deferAscendingResolve = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
                 return false;
 
-            Tick(synchronizedNow, deferExpiredAction);
+            Tick(synchronizedNow, deferExpiredAction, deferAscendingResolve);
             IsPaused = true;
             _pauseStartedAt = synchronizedNow;
             return true;
@@ -450,6 +464,7 @@ namespace MazeParty.Gameplay
             ActionClock.Stop();
             _actionTimeoutDeferred = false;
             LastActionEndReason = reason;
+            _ascendingResolveDeferred = false;
             TransitionTo(BoardFlowState.AscendingResolve, occurredAt);
 
             // NetworkMatchState settles unfinished movement when this phase ends,

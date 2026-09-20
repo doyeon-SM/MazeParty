@@ -83,6 +83,7 @@ namespace MazeParty.Multiplayer
         private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
         private int _lastRevision = -1;
+        private bool _lastLocalBoardDeath;
         private int _lastBoardEffectRevision = -1;
         private int _lastLandingEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
@@ -1139,7 +1140,10 @@ namespace MazeParty.Multiplayer
                 : -1;
             var revealPending = IsMinigameRevealPending(match);
             var landingEffectRevision = match.LastLandingEffectRevision;
+            var localBoardDeath = _localAvatar != null &&
+                                  _localAvatar.CurrentHealth <= 0;
             if (_lastRevision == match.StateRevision &&
+                _lastLocalBoardDeath == localBoardDeath &&
                 _lastChoiceResolution == choice &&
                 _lastMinefieldPhase == minefieldPhase &&
                 _lastMinefieldRound == minefieldRound &&
@@ -1173,6 +1177,7 @@ namespace MazeParty.Multiplayer
             }
 
             _lastRevision = match.StateRevision;
+            _lastLocalBoardDeath = localBoardDeath;
             _lastChoiceResolution = choice;
             _lastMinefieldPhase = minefieldPhase;
             _lastMinefieldRound = minefieldRound;
@@ -1202,6 +1207,14 @@ namespace MazeParty.Multiplayer
             {
                 SetText(_statusText,
                     "Key purchased. The new shop location is shown; play resumes when the countdown ends.");
+                return;
+            }
+            if (_localAvatar != null && _localAvatar.CurrentHealth <= 0 &&
+                (match.FlowState == BoardFlowState.Action ||
+                 match.FlowState == BoardFlowState.AscendingResolve))
+            {
+                SetText(_statusText,
+                    "KNOCKED OUT: respawning at the nearest marked room. Input is locked.");
                 return;
             }
             if (choice == ItemChoiceResolution.TimedOut)

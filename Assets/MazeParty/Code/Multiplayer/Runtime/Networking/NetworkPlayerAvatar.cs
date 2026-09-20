@@ -125,6 +125,8 @@ namespace MazeParty.Multiplayer
                 0d,
                 NetworkVariableReadPermission.Owner,
                 NetworkVariableWritePermission.Server);
+        private double _boardDeathEndsAt;
+        private double _pausedBoardDeathRemaining;
 
         private CharacterController _characterController;
         private FootstepAudioEmitter _footstepEmitter;
@@ -309,6 +311,8 @@ namespace MazeParty.Multiplayer
         }
         public BoardTile CurrentBoardTileOnServer =>
             IsServer && _traversal.IsInitialized ? _traversal.CurrentTile : null;
+        public bool IsBoardDeathInProgressOnServer =>
+            IsServer && (_boardDeathEndsAt > 0d || _pausedBoardDeathRemaining > 0d);
 
         private void Awake()
         {
@@ -337,6 +341,7 @@ namespace MazeParty.Multiplayer
         {
             _slot.OnValueChanged += OnSlotChanged;
             _combatState.OnValueChanged += OnCombatStateChanged;
+            _currentHealth.OnValueChanged += OnBoardHealthChanged;
             _isCrouching.OnValueChanged += OnCrouchingChanged;
             _appearance.OnValueChanged += OnAppearanceChanged;
             _displayName.OnValueChanged += OnDisplayNameChanged;
@@ -346,6 +351,7 @@ namespace MazeParty.Multiplayer
             ApplyDisplayName(_displayName.Value);
             ApplyCrouchPresentation(_isCrouching.Value);
             ApplyCombatColliderState(CombatState);
+            ApplyBoardDeathPresentation();
             _localYaw = transform.eulerAngles.y;
             _serverYaw = _localYaw;
             _serverPitch = 0f;
@@ -379,6 +385,7 @@ namespace MazeParty.Multiplayer
 
             _slot.OnValueChanged -= OnSlotChanged;
             _combatState.OnValueChanged -= OnCombatStateChanged;
+            _currentHealth.OnValueChanged -= OnBoardHealthChanged;
             _isCrouching.OnValueChanged -= OnCrouchingChanged;
             _appearance.OnValueChanged -= OnAppearanceChanged;
             _displayName.OnValueChanged -= OnDisplayNameChanged;
@@ -522,7 +529,7 @@ namespace MazeParty.Multiplayer
 
             var match = NetworkMatchState.Instance;
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
-                                  HasResolvedItemChoice;
+                                  HasResolvedItemChoice && !IsBoardDeathInProgressOnServer;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
             var canMoveInArenaCombat = canMoveInCombat && match.IsArenaCombatPlaying;
             if (!canMoveInAction && !canMoveInCombat)
@@ -737,6 +744,8 @@ namespace MazeParty.Multiplayer
             _pendingCombatProtection.Value = false;
             _personalProtectionEndsAt.Value = 0d;
             _pausedPersonalProtectionRemaining.Value = 0d;
+            _boardDeathEndsAt = 0d;
+            _pausedBoardDeathRemaining = 0d;
             _combatKnockbackVelocity = Vector3.zero;
             _serverQuietWalkHeld = false;
             _lastSentQuietWalkHeld = false;
@@ -755,6 +764,10 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsGlobalSimulationPaused)
+            {
+                return DamageResult.Blocked;
+            }
             if (request.Kind == DamageKind.Item &&
                 ((match != null && match.IsOpeningProtectionActive) ||
                  PersonalItemProtectionRemaining > 0d))
@@ -766,7 +779,67 @@ namespace MazeParty.Multiplayer
                 _currentHealth.Value - request.Amount,
                 _maxHealth.Value);
             PresentHitRpc((byte)request.HitRegion);
+            if (_currentHealth.Value == 0)
+            {
+                BeginBoardDeathOnServer();
+            }
             return DamageResult.Applied;
+        }
+
+        private void OnBoardHealthChanged(int _, int __)
+        {
+            ApplyBoardDeathPresentation();
+        }
+
+        private void ApplyBoardDeathPresentation()
+        {
+            _avatarVisual?.SetEliminated(_currentHealth.Value <= 0 ||
+                CombatState == NetworkCombatState.Eliminated);
+        }
+
+        private void BeginBoardDeathOnServer()
+        {
+            var match = NetworkMatchState.Instance;
+            var now = match != null ? match.SynchronizedNow : Time.unscaledTimeAsDouble;
+            var droppedGold = BoardDeathRules.DroppedGold(_gold.Value);
+            if (droppedGold > 0 && match != null && match.GameplayEnabled)
+            {
+                _gold.Value -= droppedGold;
+                match?.PlaceTombstoneOnServer(transform.position, droppedGold);
+            }
+
+            _boardDeathEndsAt = now + BoardDeathRules.DeathPresentationSeconds;
+            _pausedBoardDeathRemaining = 0d;
+            _personalProtectionEndsAt.Value = Math.Max(
+                _personalProtectionEndsAt.Value,
+                now + BoardDeathRules.RespawnProtectionSeconds);
+            StopServerInputOnServer();
+            HideBoundaryWalls();
+        }
+
+        public void AdvanceBoardDeathOnServer(double now)
+        {
+            if (!IsServer || _boardDeathEndsAt <= 0d || now < _boardDeathEndsAt)
+            {
+                return;
+            }
+
+            _boardDeathEndsAt = 0d;
+            ResolveTopology();
+            var respawn = BoardDeathRules.NearestRespawn(
+                _topology != null ? _topology.Tiles : null,
+                transform.position);
+            if (respawn != null)
+            {
+                var moves = _remainingMoves.Value;
+                EnsureTraversalInitialized();
+                _traversal.Relocate(respawn, moves);
+                TeleportController(respawn.GetRecoveryCenter(1f), transform.rotation);
+                SyncLogicalTileOnServer();
+            }
+
+            _currentHealth.Value = _maxHealth.Value;
+            RefreshBoundaryWallsOnServer();
         }
 
         public void ApplyPush(Vector3 impulse)
@@ -1049,7 +1122,24 @@ namespace MazeParty.Multiplayer
 
         public void PausePersonalProtectionOnServer(double now)
         {
-            if (!IsServer || _pausedPersonalProtectionRemaining.Value > 0d)
+            if (!IsServer)
+            {
+                return;
+            }
+
+            if (_boardDeathEndsAt > 0d)
+            {
+                if (now >= _boardDeathEndsAt)
+                {
+                    AdvanceBoardDeathOnServer(now);
+                }
+                else
+                {
+                    _pausedBoardDeathRemaining = _boardDeathEndsAt - now;
+                    _boardDeathEndsAt = 0d;
+                }
+            }
+            if (_pausedPersonalProtectionRemaining.Value > 0d)
             {
                 return;
             }
@@ -1071,6 +1161,11 @@ namespace MazeParty.Multiplayer
                 ? now + _pausedPersonalProtectionRemaining.Value
                 : 0d;
             _pausedPersonalProtectionRemaining.Value = 0d;
+            if (_pausedBoardDeathRemaining > 0d)
+            {
+                _boardDeathEndsAt = now + _pausedBoardDeathRemaining;
+                _pausedBoardDeathRemaining = 0d;
+            }
         }
 
         public void InitializeBoardStateOnServer()
@@ -1137,9 +1232,9 @@ namespace MazeParty.Multiplayer
             {
                 var match = NetworkMatchState.Instance;
                 var now = match != null ? match.SynchronizedNow : Time.unscaledTimeAsDouble;
-                _personalProtectionEndsAt.Value =
-                    now + BoardCombatRules.NextActionItemProtectionSeconds;
-                _pausedPersonalProtectionRemaining.Value = 0d;
+                _personalProtectionEndsAt.Value = Math.Max(
+                    _personalProtectionEndsAt.Value,
+                    now + BoardCombatRules.NextActionItemProtectionSeconds);
                 _pendingCombatProtection.Value = false;
             }
             EnsureTraversalInitialized();
@@ -1347,6 +1442,12 @@ namespace MazeParty.Multiplayer
                 CombatHealth = _combatHealth.Value,
                 PendingCombatProtection = _pendingCombatProtection.Value,
                 PersonalProtectionRemaining = PersonalItemProtectionRemaining,
+                DeathPresentationRemaining = _pausedBoardDeathRemaining > 0d
+                    ? _pausedBoardDeathRemaining
+                    : Math.Max(0d, _boardDeathEndsAt -
+                        (NetworkMatchState.Instance != null
+                            ? NetworkMatchState.Instance.SynchronizedNow
+                            : Time.unscaledTimeAsDouble)),
                 Appearance = _appearance.Value,
                 DisplayName = _displayName.Value.ToString(),
                 HasLogicalCurrentTile = logicalTile != null,
@@ -1403,11 +1504,21 @@ namespace MazeParty.Multiplayer
                 0,
                 BoardCombatRules.TemporaryHealth);
             _pendingCombatProtection.Value = snapshot.PendingCombatProtection;
-            _pausedPersonalProtectionRemaining.Value = 0d;
-            _personalProtectionEndsAt.Value = snapshot.PersonalProtectionRemaining > 0d
-                ? (NetworkMatchState.Instance != null
-                    ? NetworkMatchState.Instance.SynchronizedNow
-                    : Time.unscaledTimeAsDouble) + snapshot.PersonalProtectionRemaining
+            var match = NetworkMatchState.Instance;
+            var now = match != null ? match.SynchronizedNow : Time.unscaledTimeAsDouble;
+            var paused = match != null && match.IsGlobalSimulationPaused;
+            _pausedPersonalProtectionRemaining.Value = paused
+                ? snapshot.PersonalProtectionRemaining
+                : 0d;
+            _personalProtectionEndsAt.Value = !paused &&
+                snapshot.PersonalProtectionRemaining > 0d
+                    ? now + snapshot.PersonalProtectionRemaining
+                    : 0d;
+            _pausedBoardDeathRemaining = paused
+                ? snapshot.DeathPresentationRemaining
+                : 0d;
+            _boardDeathEndsAt = !paused && snapshot.DeathPresentationRemaining > 0d
+                ? now + snapshot.DeathPresentationRemaining
                 : 0d;
             _appearance.Value = snapshot.Appearance.Sanitized();
             _displayName.Value = new FixedString64Bytes(
@@ -1660,6 +1771,7 @@ namespace MazeParty.Multiplayer
                 (match != null &&
                  ((match.CanAcceptActionInput &&
                    HasResolvedItemChoice &&
+                   CurrentHealth > 0 &&
                    !BoardFlowView.IsItemShopOpen) ||
                   match.CanAvatarUseCombatInput(this)) &&
                  Cursor.lockState == CursorLockMode.Locked);
@@ -1785,6 +1897,7 @@ namespace MazeParty.Multiplayer
             }
 
             if (!match.CanAcceptActionInput || !HasResolvedItemChoice ||
+                CurrentHealth <= 0 ||
                 BoardFlowView.IsItemShopOpen)
             {
                 return;
@@ -1794,6 +1907,13 @@ namespace MazeParty.Multiplayer
             {
                 if (TryGetAimedBoardShop(out var shopHit))
                 {
+                    var tombstone = shopHit.collider.GetComponentInParent<BoardTombstoneMarker>();
+                    if (tombstone != null)
+                    {
+                        RequestTombstonePickupRpc(tombstone.Id);
+                        return;
+                    }
+
                     var keyTarget = shopHit.collider.GetComponentInParent<KeyShopWorldTarget>();
                     if (keyTarget != null)
                     {
@@ -1883,6 +2003,7 @@ namespace MazeParty.Multiplayer
             var lobbyInput = CanUseLobbyInput();
             var canMove = lobbyInput || (match != null &&
                           ((match.CanAcceptActionInput && HasResolvedItemChoice &&
+                            CurrentHealth > 0 &&
                             !BoardFlowView.IsItemShopOpen) ||
                            match.CanAvatarUseCombatInput(this)));
             if (keyboard != null && canMove)
@@ -2990,7 +3111,7 @@ namespace MazeParty.Multiplayer
             {
                 _characterController.enabled = state != NetworkCombatState.Eliminated;
             }
-            _avatarVisual?.SetEliminated(state == NetworkCombatState.Eliminated);
+            ApplyBoardDeathPresentation();
         }
 
         private void OnCrouchingChanged(bool _, bool current)
@@ -3312,7 +3433,8 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var canUseLobbyInput = CanUseLobbyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
-                                    HasResolvedItemChoice;
+                                    HasResolvedItemChoice &&
+                                    !IsBoardDeathInProgressOnServer;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
             if (!canUseLobbyInput && !canUseActionInput && !canUseCombatInput)
             {
@@ -3819,6 +3941,15 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TryPurchaseKeyOnServer(this, expectedRevision);
+            }
+        }
+
+        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
+        private void RequestTombstonePickupRpc(int tombstoneId, RpcParams rpcParams = default)
+        {
+            if (rpcParams.Receive.SenderClientId == OwnerClientId)
+            {
+                NetworkMatchState.Instance?.TryCollectTombstoneOnServer(this, tombstoneId);
             }
         }
 

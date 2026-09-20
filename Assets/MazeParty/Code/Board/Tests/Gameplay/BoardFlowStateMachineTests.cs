@@ -41,6 +41,25 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void AscendingResolve_WaitsForDeathPresentationAndPreservesPauseTime()
+        {
+            var flow = StartInAction();
+            ReportAllPlayersArrived(flow, 13d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(13d));
+
+            flow.Tick(18d, false, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
+            Assert.That(flow.Pause(18.2d, false, true), Is.True);
+            Assert.That(flow.Resume(28.2d), Is.True);
+            flow.Tick(28.7d, false, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
+            flow.Tick(29d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(19d));
+        }
+
+        [Test]
         public void MinigameReadyAndLoadingDeadlines_PreserveOneMinuteAcrossReconnectPause()
         {
             var flow = new BoardFlowStateMachine();
