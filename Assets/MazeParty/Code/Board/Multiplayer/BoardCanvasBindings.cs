@@ -1,5 +1,6 @@
 using System;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -42,6 +43,7 @@ namespace MazeParty.Multiplayer
             public Text MinigameReadyTitle;
             public Text MinigameReadyNote;
             public Text MinigameReadyStatus;
+            public Text[] MinigameReadyPlayerStates;
             public Text MinigameRulePlaceholder;
             public Text ReadyButtonLabel;
 
@@ -96,6 +98,10 @@ namespace MazeParty.Multiplayer
             public Color RuleImageContent = Color.white;
             public Color RuleImagePlaceholder =
                 new Color(0.055f, 0.09f, 0.14f, 1f);
+            public Color ReadyPlayerWaiting =
+                new Color(0.68f, 0.74f, 0.82f, 1f);
+            public Color ReadyPlayerComplete =
+                new Color(0.35f, 1f, 0.55f, 1f);
             public Color[] Players =
             {
                 new Color(1f, 0.42f, 0.42f),
@@ -112,6 +118,8 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private References references = new References();
         [SerializeField] private StatePalette statePalette = new StatePalette();
+        // Index matches the append-only ScheduledMinigameId value; Skip has no card.
+        [SerializeField] private Sprite[] minigameRuleCards = Array.Empty<Sprite>();
 
         public Canvas RootCanvas => references.RootCanvas;
         public GraphicRaycaster RootRaycaster => references.RootRaycaster;
@@ -137,10 +145,22 @@ namespace MazeParty.Multiplayer
         public Text MinigameReadyTitle => references.MinigameReadyTitle;
         public Text MinigameReadyNote => references.MinigameReadyNote;
         public Text MinigameReadyStatus => references.MinigameReadyStatus;
+        public Text[] MinigameReadyPlayerStates =>
+            references.MinigameReadyPlayerStates;
         public Text MinigameRulePlaceholder =>
             references.MinigameRulePlaceholder;
         public Text ReadyButtonLabel => references.ReadyButtonLabel;
         public Image MinigameRuleImage => references.MinigameRuleImage;
+
+        public Sprite GetMinigameRuleCard(ScheduledMinigameId minigame)
+        {
+            var index = (int)minigame;
+            return index > 0 &&
+                   minigameRuleCards != null &&
+                   index < minigameRuleCards.Length
+                ? minigameRuleCards[index]
+                : null;
+        }
         public Button NoItemButton => references.NoItemButton;
         public Button ReadyButton => references.ReadyButton;
         public Button ItemShopCloseButton => references.ItemShopCloseButton;
@@ -178,6 +198,8 @@ namespace MazeParty.Multiplayer
         public Color RuleImageContentColor => statePalette.RuleImageContent;
         public Color RuleImagePlaceholderColor =>
             statePalette.RuleImagePlaceholder;
+        public Color ReadyPlayerWaitingColor => statePalette.ReadyPlayerWaiting;
+        public Color ReadyPlayerCompleteColor => statePalette.ReadyPlayerComplete;
 
         public bool HasRequiredReferences =>
             references != null &&
@@ -206,6 +228,7 @@ namespace MazeParty.Multiplayer
             references.MinigameReadyTitle != null &&
             references.MinigameReadyNote != null &&
             references.MinigameReadyStatus != null &&
+            HasArray(references.MinigameReadyPlayerStates, MultiplayerConstants.MaxPlayers) &&
             references.MinigameRulePlaceholder != null &&
             references.ReadyButtonLabel != null &&
             references.MinigameRuleImage != null &&

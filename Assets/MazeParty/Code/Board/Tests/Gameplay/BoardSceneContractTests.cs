@@ -77,7 +77,21 @@ namespace MazeParty.Gameplay.Tests
                         CountReachableTiles(topology, start),
                         Is.EqualTo(tiles.Length),
                         "Every start must be able to reach the full directed board: " + start.Coordinate);
+                    var route = new List<BoardTile>();
+                    var target = tiles.Single(tile =>
+                        tile.Coordinate == new Vector2Int(3, 0));
+                    Assert.That(BoardMapRoute.TryFind(topology, start, target, route),
+                        Is.True);
+                    Assert.That(route[0], Is.SameAs(start));
+                    Assert.That(route[route.Count - 1], Is.SameAs(target));
+                    for (var index = 0; index + 1 < route.Count; index++)
+                    {
+                        Assert.That(topology.GetOutgoingGates(route[index])
+                                .Any(gate => gate.Destination == route[index + 1]),
+                            Is.True, "Map route must respect directed gates.");
+                    }
                 }
+
             }
             finally
             {

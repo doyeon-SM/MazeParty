@@ -28,6 +28,7 @@ namespace MazeParty.Gameplay
         public const int DefaultStartingKeys = 0;
         public const int DefaultStartingGold = 10;
         public const int KeyShopGoldPrice = 20;
+        public const int UnrolledActionTimeoutGoldPenalty = 5;
 
         public static int ClampHealth(int currentHealth, int maxHealth)
         {

@@ -12,6 +12,7 @@ using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
+using Unity.Collections;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -48,6 +49,16 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<byte> _arrivedMask = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _readyMask = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _presentMask = new NetworkVariable<byte>();
+        private readonly NetworkVariable<byte> _overviewPositionMask =
+            new NetworkVariable<byte>();
+        private readonly NetworkVariable<Vector2Int> _overviewPosition0 =
+            new NetworkVariable<Vector2Int>();
+        private readonly NetworkVariable<Vector2Int> _overviewPosition1 =
+            new NetworkVariable<Vector2Int>();
+        private readonly NetworkVariable<Vector2Int> _overviewPosition2 =
+            new NetworkVariable<Vector2Int>();
+        private readonly NetworkVariable<Vector2Int> _overviewPosition3 =
+            new NetworkVariable<Vector2Int>();
         private readonly NetworkVariable<byte> _snapshotRestoredMask = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _lastActionEndReason =
             new NetworkVariable<byte>((byte)BoardActionEndReason.None);
@@ -74,6 +85,10 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<ItemShopSnapshot>();
         private readonly NetworkVariable<int> _boardEffectSeed = new NetworkVariable<int>();
         private readonly NetworkVariable<int> _boardEffectRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<FixedString128Bytes> _lastLandingEffectMessage =
+            new NetworkVariable<FixedString128Bytes>();
+        private readonly NetworkVariable<int> _lastLandingEffectRevision =
+            new NetworkVariable<int>();
         private readonly NetworkVariable<bool> _combatActive = new NetworkVariable<bool>();
         private readonly NetworkVariable<Vector2Int> _combatTile =
             new NetworkVariable<Vector2Int>();
@@ -102,6 +117,7 @@ namespace MazeParty.Multiplayer
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
         private BoardFlowStateMachine _flow;
         private bool _endingForReconnectTimeout;
+        private bool _endingForMinigameLoadingTimeout;
         private int _arrivalGracePendingSlot = -1;
         private KeyShopRuntimeState _keyShopRuntime;
         private BoardTopology _boardTopology;
@@ -380,6 +396,9 @@ namespace MazeParty.Multiplayer
         public int KeyShopRevealRevision => _keyShopRevealRevision.Value;
         public int BoardEffectSeed => _boardEffectSeed.Value;
         public int BoardEffectRevision => _boardEffectRevision.Value;
+        public string LastLandingEffectMessage =>
+            _lastLandingEffectMessage.Value.ToString();
+        public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
         public bool IsCombatActive => _combatActive.Value;
         public Vector2Int CombatTile => _combatTile.Value;
         public byte CombatParticipantMask => _combatParticipantMask.Value;
@@ -691,7 +710,23 @@ namespace MazeParty.Multiplayer
                 _pausedScheduledSkipRemaining = 0d;
                 _flow.TrySkipMinigame(now);
             }
+            if (_flow.State == BoardFlowState.MinigameIntroReady &&
+                CurrentMinigame != ScheduledMinigameId.Skip &&
+                _flow.GetStateRemaining(now) <= 0d)
+            {
+                _readyMask.Value = (byte)AllPlayersMask;
+                _flow.TryBeginMinigameLoading(now);
+            }
             TryStartLoadedMinigameOnServer(now);
+            if (_flow.State == BoardFlowState.MinigameLoading &&
+                !_endingForMinigameLoadingTimeout &&
+                _flow.GetStateRemaining(now) <= 0d)
+            {
+                _endingForMinigameLoadingTimeout = true;
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    CurrentMinigame +
+                    " minigame did not finish loading within 60 seconds.");
+            }
             AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
             ResolveExpiredPersonalChoicesOnServer(now);
@@ -732,6 +767,7 @@ namespace MazeParty.Multiplayer
             _arrivalGraceEndsAt.Value = 0d;
             _pausedArrivalGraceRemaining.Value = 0d;
             _readyMask.Value = 0;
+            _endingForMinigameLoadingTimeout = false;
             _remainingMinigameSlots.Value = _minigameSchedule.TurnCount;
             _currentMinigame.Value = (byte)ScheduledMinigameId.Skip;
             _currentMinigameSeed.Value = 0UL;
@@ -2076,6 +2112,23 @@ namespace MazeParty.Multiplayer
 
         public bool HasRolled(int slot) => IsSlotSet(_rolledMask.Value, slot);
         public bool HasArrived(int slot) => IsSlotSet(_arrivedMask.Value, slot);
+        public bool TryGetOverviewEndTile(int slot, out Vector2Int coordinate)
+        {
+            coordinate = default;
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
+                !IsSlotSet(_overviewPositionMask.Value, slot))
+            {
+                return false;
+            }
+            coordinate = slot switch
+            {
+                0 => _overviewPosition0.Value,
+                1 => _overviewPosition1.Value,
+                2 => _overviewPosition2.Value,
+                _ => _overviewPosition3.Value
+            };
+            return true;
+        }
         public bool IsMinigameReady(int slot) => IsSlotSet(_readyMask.Value, slot);
         public bool IsPlayerPresent(int slot) => IsSlotSet(_presentMask.Value, slot);
 
@@ -2137,9 +2190,13 @@ namespace MazeParty.Multiplayer
                     _arrivedMask.Value = 0;
                     ClearArrivalGraceOnServer();
                     _readyMask.Value = 0;
+                    _overviewPositionMask.Value = 0;
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);
                     TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
+                    break;
+                case BoardFlowState.Descending:
+                    CaptureOverviewEndPositionsOnServer();
                     break;
                 case BoardFlowState.Action:
                     ResetArrivalTimes();
@@ -2150,15 +2207,16 @@ namespace MazeParty.Multiplayer
                     ForEachAvatar(avatar => avatar.BeginActionOnServer(transition.Turn));
                     break;
                 case BoardFlowState.AscendingResolve:
-                    if (_flow.LastActionEndReason == BoardActionEndReason.TimeExpired)
-                    {
-                        ForceTimedOutPlayersOneTileOnServer();
-                    }
                     ClearArrivalGraceOnServer();
-                    FillMissingArrivalTimes(transition.OccurredAt);
-                    ForEachAvatar(avatar => avatar.EndActionOnServer());
+                    StopAllAvatarInputOnServer();
                     break;
                 case BoardFlowState.CombatResolve:
+                    if (_flow.LastActionEndReason == BoardActionEndReason.TimeExpired)
+                    {
+                        SettleTimedOutPlayersOnServer();
+                    }
+                    FillMissingArrivalTimes(transition.OccurredAt);
+                    ForEachAvatar(avatar => avatar.EndActionOnServer());
                     BeginCombatSequenceOnServer(transition.OccurredAt);
                     break;
                 case BoardFlowState.LandingEffectResolve:
@@ -2170,6 +2228,7 @@ namespace MazeParty.Multiplayer
                     RevealScheduledMinigameOnServer(transition.Turn);
                     break;
                 case BoardFlowState.MinigameLoading:
+                    _endingForMinigameLoadingTimeout = false;
                     StopAllAvatarInputOnServer();
                     RequestSelectedMinigameLoadOnServer();
                     break;
@@ -2192,6 +2251,31 @@ namespace MazeParty.Multiplayer
 
             _lastActionEndReason.Value = (byte)_flow.LastActionEndReason;
             SyncFlowSnapshot(ServerNow);
+        }
+
+        private void CaptureOverviewEndPositionsOnServer()
+        {
+            byte mask = 0;
+            ForEachAvatar(avatar =>
+            {
+                var slot = avatar.AssignedSlot;
+                if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
+                    !avatar.HasLogicalBoardTile)
+                {
+                    return;
+                }
+
+                var coordinate = avatar.LogicalBoardTileCoordinate;
+                switch (slot)
+                {
+                    case 0: _overviewPosition0.Value = coordinate; break;
+                    case 1: _overviewPosition1.Value = coordinate; break;
+                    case 2: _overviewPosition2.Value = coordinate; break;
+                    case 3: _overviewPosition3.Value = coordinate; break;
+                }
+                mask |= (byte)(1 << slot);
+            });
+            _overviewPositionMask.Value = mask;
         }
 
         private void SyncFlowSnapshot(double now)
@@ -2460,14 +2544,29 @@ namespace MazeParty.Multiplayer
             _pausedArrivalGraceRemaining.Value = 0d;
         }
 
-        private void ForceTimedOutPlayersOneTileOnServer()
+        private void SettleTimedOutPlayersOnServer()
         {
+            BoardTile keyShopTile = null;
+            if (_keyShopRuntime != null && _keyShopRuntime.IsActive &&
+                _boardTopology != null)
+            {
+                _boardTopology.TryGetTile(_keyShopRuntime.Location, out keyShopTile);
+            }
+
             ForEachAvatar(avatar =>
             {
                 var slot = avatar.AssignedSlot;
                 if (!HasArrived(slot))
                 {
-                    avatar.ForceAdvanceOneTileOnServer(_turn.Value);
+                    if (!HasRolled(slot))
+                    {
+                        avatar.ApplyGoldDeltaOnServer(
+                            -PlayerStatRules.UnrolledActionTimeoutGoldPenalty);
+                    }
+                    else
+                    {
+                        avatar.ForceSettleRemainingMovesOnServer(keyShopTile);
+                    }
                     _arrivedMask.Value = (byte)(_arrivedMask.Value | (1 << slot));
                     avatar.MarkArrivedOnServer();
                 }
@@ -3149,6 +3248,7 @@ namespace MazeParty.Multiplayer
         private void BeginLandingEffectsOnServer()
         {
             _nextLandingEffectSlot = 0;
+            _lastLandingEffectMessage.Value = default;
             ResolveNextLandingEffectOnServer();
         }
 
@@ -3201,6 +3301,7 @@ namespace MazeParty.Multiplayer
             var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
             if (tile == null || !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
             {
+                PublishLandingEffectOnServer(slot, tile, "NO EFFECT (0 change)");
                 return;
             }
 
@@ -3208,19 +3309,49 @@ namespace MazeParty.Multiplayer
             {
                 case BoardLandingEffectType.GoldGain:
                 case BoardLandingEffectType.GoldLoss:
-                    avatar.ApplyGoldDeltaOnServer(
+                    var goldDelta = avatar.ApplyGoldDeltaOnServer(
                         BoardLandingEffectLayout.GetGoldDelta(effect));
+                    PublishLandingEffectOnServer(
+                        slot,
+                        tile,
+                        (effect == BoardLandingEffectType.GoldGain
+                            ? "GOLD GAIN "
+                            : "GOLD LOSS ") +
+                        (goldDelta > 0 ? "+" : string.Empty) + goldDelta + " GOLD");
                     break;
                 case BoardLandingEffectType.Healing:
-                    avatar.HealOnServer(BoardLandingEffectLayout.HealingAmount);
+                    var healed = avatar.HealOnServer(BoardLandingEffectLayout.HealingAmount);
+                    PublishLandingEffectOnServer(
+                        slot, tile, "HEALING +" + healed + " HP");
                     break;
                 case BoardLandingEffectType.ItemReward:
                     var random = new System.Random(unchecked(
                         _boardEffectSeed.Value ^ (_turn.Value * 486187739) ^
                         (slot * 16777619)));
-                    avatar.TryAddItemOnServer(PrototypeItemCatalog.GetRandomId(random));
+                    var reward = PrototypeItemCatalog.GetRandomId(random);
+                    var received = avatar.TryAddItemOnServer(reward);
+                    PublishLandingEffectOnServer(
+                        slot,
+                        tile,
+                        received
+                            ? "ITEM REWARD +1 " +
+                              PrototypeItemCatalog.Get(reward).DisplayName
+                            : "ITEM REWARD +0 (INVENTORY FULL)");
+                    break;
+                default:
+                    PublishLandingEffectOnServer(slot, tile, "NO EFFECT (0 change)");
                     break;
             }
+        }
+
+        private void PublishLandingEffectOnServer(int slot, BoardTile tile, string detail)
+        {
+            var location = tile != null
+                ? " (" + tile.Coordinate.x + "," + tile.Coordinate.y + ")"
+                : string.Empty;
+            _lastLandingEffectMessage.Value = new FixedString128Bytes(
+                "P" + (slot + 1) + location + ": " + detail);
+            _lastLandingEffectRevision.Value++;
         }
 
         private void ResolveWorldDiceCoordinator()

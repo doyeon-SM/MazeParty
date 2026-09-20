@@ -42,13 +42,28 @@ namespace MazeParty.Gameplay
             if (gate == null || CurrentTile != gate.Source || gate.Destination == null || RemainingMoves <= 0)
                 return false;
 
+            Commit(gate.Destination, RemainingMoves - 1);
+            return true;
+        }
+
+        public bool TryForceCommit(BoardGate gate)
+        {
+            if (gate == null || CurrentTile != gate.Source || gate.Destination == null ||
+                gate.Destination == CurrentTile)
+                return false;
+
+            Commit(gate.Destination, 0);
+            return true;
+        }
+
+        private void Commit(BoardTile destination, int remainingMoves)
+        {
             CurrentTile.Unregister(this);
-            CurrentTile = gate.Destination;
+            CurrentTile = destination;
             LastValidTile = CurrentTile;
-            RemainingMoves--;
+            RemainingMoves = remainingMoves;
             CurrentTile.Register(this);
             _history.Add(CurrentTile);
-            return true;
         }
 
         public BoardTile[] Retreat(int requestedSteps)

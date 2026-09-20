@@ -86,6 +86,168 @@ namespace MazeParty.Gameplay
                 : Array.Empty<BoardGate>();
         }
 
+        /// <summary>
+        /// Selects the next directed gate for a timed-out player. An available key
+        /// shop takes priority; otherwise continue straight from the arrival path,
+        /// falling back to the first exit that does not return to the previous tile.
+        /// </summary>
+        public BoardGate SelectForcedAdvanceGate(
+            BoardTile source,
+            BoardTile previousTile,
+            Vector3 facingDirection,
+            BoardTile keyShopTile)
+        {
+            var outgoing = GetOutgoingGates(source);
+            if (outgoing.Count == 0)
+            {
+                return null;
+            }
+
+            var forward = previousTile != null
+                ? source.WorldCenter - previousTile.WorldCenter
+                : facingDirection;
+            forward.y = 0f;
+            if (forward.sqrMagnitude > 0.0001f)
+            {
+                forward.Normalize();
+            }
+
+            if (keyShopTile != null)
+            {
+                if (source == keyShopTile)
+                {
+                    return null;
+                }
+
+                var distances = new Dictionary<BoardTile, int>
+                {
+                    [keyShopTile] = 0
+                };
+                var pending = new Queue<BoardTile>();
+                pending.Enqueue(keyShopTile);
+                while (pending.Count > 0)
+                {
+                    var current = pending.Dequeue();
+                    var incoming = GetIncomingGates(current);
+                    for (var index = 0; index < incoming.Count; index++)
+                    {
+                        var from = incoming[index].Source;
+                        if (from == null || distances.ContainsKey(from))
+                        {
+                            continue;
+                        }
+
+                        distances.Add(from, distances[current] + 1);
+                        pending.Enqueue(from);
+                    }
+                }
+
+                BoardGate shortestGate = null;
+                var shortestDistance = int.MaxValue;
+                var rightmostScore = float.NegativeInfinity;
+                for (var index = 0; index < outgoing.Count; index++)
+                {
+                    var gate = outgoing[index];
+                    if (gate == null || gate.Destination == null ||
+                        !distances.TryGetValue(gate.Destination, out var distance) ||
+                        distance > shortestDistance)
+                    {
+                        continue;
+                    }
+
+                    var direction = gate.Destination.WorldCenter - source.WorldCenter;
+                    direction.y = 0f;
+                    var rightTurnScore = forward.sqrMagnitude > 0.0001f &&
+                                         direction.sqrMagnitude > 0.0001f
+                        ? Vector3.SignedAngle(
+                            forward, direction.normalized, Vector3.up)
+                        : 0f;
+                    if (distance == shortestDistance &&
+                        rightTurnScore <= rightmostScore + 0.0001f)
+                    {
+                        continue;
+                    }
+
+                    shortestGate = gate;
+                    shortestDistance = distance;
+                    rightmostScore = rightTurnScore;
+                }
+
+                if (shortestGate != null)
+                {
+                    return shortestGate;
+                }
+            }
+
+            if (forward.sqrMagnitude > 0.0001f)
+            {
+                for (var index = 0; index < outgoing.Count; index++)
+                {
+                    var gate = outgoing[index];
+                    if (gate == null || gate.Destination == null ||
+                        gate.Destination == previousTile)
+                    {
+                        continue;
+                    }
+
+                    var direction = gate.Destination.WorldCenter - source.WorldCenter;
+                    direction.y = 0f;
+                    if (direction.sqrMagnitude > 0.0001f &&
+                        Vector3.Dot(forward, direction.normalized) > 0.999f)
+                    {
+                        return gate;
+                    }
+                }
+            }
+
+            for (var index = 0; index < outgoing.Count; index++)
+            {
+                var gate = outgoing[index];
+                if (gate != null && gate.Destination != null &&
+                    gate.Destination != previousTile)
+                {
+                    return gate;
+                }
+            }
+
+            return null;
+        }
+
+        public IReadOnlyList<BoardGate> PlanForcedAdvancePath(
+            BoardTile source,
+            BoardTile previousTile,
+            Vector3 facingDirection,
+            BoardTile keyShopTile,
+            int remainingMoves)
+        {
+            var path = new List<BoardGate>(Mathf.Max(0, remainingMoves));
+            if (source == null || remainingMoves <= 0 || source == keyShopTile)
+            {
+                return path;
+            }
+
+            var current = source;
+            var previous = previousTile;
+            for (var step = 0; step < remainingMoves; step++)
+            {
+                // A shop crossed mid-path does not stop the settlement. Once
+                // there, route by the same straight/default exit rule.
+                var target = current == keyShopTile ? null : keyShopTile;
+                var gate = SelectForcedAdvanceGate(
+                    current, previous, facingDirection, target);
+                if (gate == null)
+                {
+                    break;
+                }
+
+                path.Add(gate);
+                previous = current;
+                current = gate.Destination;
+            }
+
+            return path;
+        }
+
         public BoardTile FindContainingTile(Vector3 worldPoint, float tolerance = 0f)
         {
             for (var i = 0; i < tiles.Length; i++)

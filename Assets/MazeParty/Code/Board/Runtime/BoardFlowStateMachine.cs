@@ -57,6 +57,8 @@ namespace MazeParty.Gameplay
         public const double DescendingDurationSeconds = 1d;
         public const double AscendingResolveDurationSeconds = 5d;
         public const double LandingEffectResolveDurationSeconds = 4d;
+        public const double MinigameIntroReadyDurationSeconds = 60d;
+        public const double MinigameLoadingDurationSeconds = 60d;
         public const double SkippedResultDurationSeconds = 3d;
         public const int DefaultTotalTurns =
             MinigameScheduleRules.DefaultTurnCount;
@@ -397,6 +399,10 @@ namespace MazeParty.Gameplay
                     return Remaining(_stateStartedAt, AscendingResolveDurationSeconds, logicalNow);
                 case BoardFlowState.LandingEffectResolve:
                     return Remaining(_stateStartedAt, LandingEffectResolveDurationSeconds, logicalNow);
+                case BoardFlowState.MinigameIntroReady:
+                    return Remaining(_stateStartedAt, MinigameIntroReadyDurationSeconds, logicalNow);
+                case BoardFlowState.MinigameLoading:
+                    return Remaining(_stateStartedAt, MinigameLoadingDurationSeconds, logicalNow);
                 case BoardFlowState.SkippedResult:
                     return Remaining(_stateStartedAt, SkippedResultDurationSeconds, logicalNow);
                 default:
@@ -446,8 +452,8 @@ namespace MazeParty.Gameplay
             LastActionEndReason = reason;
             TransitionTo(BoardFlowState.AscendingResolve, occurredAt);
 
-            // TODO(BOARD-FLOW): authoritative forced movement and combat resolution
-            // are extension points for AscendingResolve and are intentionally absent.
+            // NetworkMatchState settles unfinished movement when this phase ends,
+            // then starts combat from the resulting final tiles.
         }
 
         private void BeginNextTurn(double occurredAt)

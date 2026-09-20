@@ -955,6 +955,7 @@ namespace MazeParty.Editor
             CreateReadyPanel(root.transform, font);
             CreateReticle(root.transform, font);
             CreateReconnectOverlay(root.transform, font);
+            BoardMapPrefabAuthoring.Ensure(root, font);
             var bindings = root.GetComponent<BoardCanvasBindings>();
             ConfigureBoardCanvasBindings(root, bindings);
             root.GetComponent<BoardFlowView>().ConfigureUiBindings(bindings);
@@ -1101,9 +1102,13 @@ namespace MazeParty.Editor
 
             var bindings = prefab.GetComponent<BoardCanvasBindings>();
             var view = prefab.GetComponent<BoardFlowView>();
+            var map = prefab.GetComponent<BoardMapView>();
+            var statusBadges = prefab.GetComponent<BoardPlayerStatusBadges>();
             if (!bindings.HasRequiredReferences ||
                 !view.HasRequiredUiReferences ||
                 view.UiBindings != bindings ||
+                map == null || !map.HasRequiredReferences ||
+                statusBadges == null || !statusBadges.HasRequiredReferences ||
                 !HasConfiguredBoardItemChoices(prefab))
             {
                 throw new InvalidOperationException(
@@ -1255,6 +1260,14 @@ namespace MazeParty.Editor
                     "Board Canvas ReadyButton requires its prefab-authored label.");
             }
 
+            var readyPlayerStates = new Text[MultiplayerConstants.MaxPlayers];
+            for (var index = 0; index < readyPlayerStates.Length; index++)
+            {
+                readyPlayerStates[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "MinigameReadyPlayerState" + index);
+            }
+
             bindings.Configure(new BoardCanvasBindings.References
             {
                 RootCanvas = root.GetComponent<Canvas>(),
@@ -1315,6 +1328,7 @@ namespace MazeParty.Editor
                 MinigameReadyStatus = RequireBoardUiComponent<Text>(
                     root,
                     "MinigameReadyStatus"),
+                MinigameReadyPlayerStates = readyPlayerStates,
                 MinigameRulePlaceholder = RequireBoardUiComponent<Text>(
                     root,
                     "MinigameRulePlaceholderText"),
@@ -1596,7 +1610,7 @@ namespace MazeParty.Editor
         private static void CreateReadyPanel(Transform canvas, Font font)
         {
             var panel = CreatePanel("MinigameReadyPanel", canvas, new Vector2(0.5f, 0.5f),
-                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1120f, 760f),
+                new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 840f),
                 new Vector2(0.5f, 0.5f), new Color(0.03f, 0.055f, 0.09f, 0.98f));
             CreateText("Ready Title", panel.transform, "MINIGAME INTRO / READY", font, 28,
                 new Vector2(0f, 330f), new Vector2(960f, 44f), TextAnchor.MiddleCenter);
@@ -1633,11 +1647,24 @@ namespace MazeParty.Editor
                 "READY 0 / 4",
                 font,
                 22,
-                new Vector2(0f, -270f),
-                new Vector2(900f, 48f),
+                new Vector2(0f, -255f),
+                new Vector2(900f, 40f),
                 TextAnchor.MiddleCenter);
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var playerReadyText = CreateText(
+                    "MinigameReadyPlayerState" + slot,
+                    panel.transform,
+                    "P" + (slot + 1) + "  WAITING",
+                    font,
+                    18,
+                    new Vector2(-360f + slot * 240f, -310f),
+                    new Vector2(210f, 36f),
+                    TextAnchor.MiddleCenter);
+                playerReadyText.color = new Color(0.68f, 0.74f, 0.82f, 1f);
+            }
             CreateButton("ReadyButton", panel.transform, "READY / SKIP", font,
-                new Vector2(0f, -330f), new Vector2(280f, 58f));
+                new Vector2(0f, -380f), new Vector2(320f, 64f));
             panel.SetActive(false);
         }
 

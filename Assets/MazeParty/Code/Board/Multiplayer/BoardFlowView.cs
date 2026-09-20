@@ -39,6 +39,8 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _playerCurrencyTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _minigameReadyPlayerStates =
+            new Text[MultiplayerConstants.MaxPlayers];
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
 
@@ -72,7 +74,7 @@ namespace MazeParty.Multiplayer
         private Text _minefieldResultNote;
         private Text _minefieldResultSummary;
         private Text _readyButtonLabel;
-        private Image _minefieldRuleImage;
+        private Image _minigameRuleImage;
         private Button _noItemButton;
         private Button _readyButton;
         private Button _itemShopCloseButton;
@@ -82,6 +84,7 @@ namespace MazeParty.Multiplayer
         private BoardTopology _topology;
         private int _lastRevision = -1;
         private int _lastBoardEffectRevision = -1;
+        private int _lastLandingEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private NetworkMinefieldPhase _lastMinefieldPhase = NetworkMinefieldPhase.Inactive;
         private int _lastMinefieldRound = -1;
@@ -400,7 +403,7 @@ namespace MazeParty.Multiplayer
             _minigameReadyNote = uiBindings.MinigameReadyNote;
             _minigameReadyStatus = uiBindings.MinigameReadyStatus;
             _minigameRulePlaceholder = uiBindings.MinigameRulePlaceholder;
-            _minefieldRuleImage = uiBindings.MinigameRuleImage;
+            _minigameRuleImage = uiBindings.MinigameRuleImage;
             _noItemButton = uiBindings.NoItemButton;
             _readyButton = uiBindings.ReadyButton;
             _readyButtonLabel = uiBindings.ReadyButtonLabel;
@@ -424,6 +427,9 @@ namespace MazeParty.Multiplayer
                 _playerCurrencyTexts);
             CopyReferences(uiBindings.PlayerActionIcons, _playerActionIcons);
             CopyReferences(uiBindings.PlayerRankTexts, _playerRankTexts);
+            CopyReferences(
+                uiBindings.MinigameReadyPlayerStates,
+                _minigameReadyPlayerStates);
 
             WireButtons();
         }
@@ -541,7 +547,7 @@ namespace MazeParty.Multiplayer
             var revealPending = IsMinigameRevealPending(match);
             SetText(_turnText, "TURN " + match.Turn);
             SetText(_phaseText, match.IsArrivalGraceActive
-                ? "DEBUG  ·  TOP VIEW DELAY"
+                ? "ARRIVAL COMPLETE"
                 : match.IsKeyShopRevealActive
                 ? "KEY SHOP MOVING"
                 : match.IsCombatPhase && match.IsCombatActive
@@ -608,7 +614,11 @@ namespace MazeParty.Multiplayer
             else if (match.FlowState == BoardFlowState.MinigameIntroReady ||
                      match.FlowState == BoardFlowState.MinigameLoading)
             {
-                timerLabel = "--:--";
+                timerLabel =
+                    match.CurrentMinigame == ScheduledMinigameId.Skip
+                        ? "--:--"
+                        : MinigameDisplayFormatter.FormatClock(
+                            match.StateRemaining);
             }
             else if (match.FlowState == BoardFlowState.MinigamePlaying)
             {
@@ -694,9 +704,7 @@ namespace MazeParty.Multiplayer
                     : match.IsCombatPhase
                         ? match.CombatRemaining
                         : match.StateRemaining;
-                timerLabel = HasCountdown(match.FlowState)
-                    ? MinigameDisplayFormatter.FormatClock(remaining)
-                    : "--:--";
+                timerLabel = MinigameDisplayFormatter.FormatClock(remaining);
             }
             SetText(_phaseTimerText, timerLabel);
 
@@ -1130,6 +1138,7 @@ namespace MazeParty.Multiplayer
                 ? bouncingBalls.RoundNumber
                 : -1;
             var revealPending = IsMinigameRevealPending(match);
+            var landingEffectRevision = match.LastLandingEffectRevision;
             if (_lastRevision == match.StateRevision &&
                 _lastChoiceResolution == choice &&
                 _lastMinefieldPhase == minefieldPhase &&
@@ -1157,7 +1166,8 @@ namespace MazeParty.Multiplayer
                 _lastSequenceMemoryRound == sequenceMemoryRound &&
                 _lastBouncingBallsPhase == bouncingBallsPhase &&
                 _lastBouncingBallsRound == bouncingBallsRound &&
-                _lastMinigameRevealPending == revealPending)
+                _lastMinigameRevealPending == revealPending &&
+                _lastLandingEffectRevision == landingEffectRevision)
             {
                 return;
             }
@@ -1187,10 +1197,11 @@ namespace MazeParty.Multiplayer
             _lastBouncingBallsPhase = bouncingBallsPhase;
             _lastBouncingBallsRound = bouncingBallsRound;
             _lastMinigameRevealPending = revealPending;
+            _lastLandingEffectRevision = landingEffectRevision;
             if (match.IsKeyShopRevealActive)
             {
                 SetText(_statusText,
-                    "Key purchased. Match paused while every player confirms the new shop location.");
+                    "Key purchased. The new shop location is shown; play resumes when the countdown ends.");
                 return;
             }
             if (choice == ItemChoiceResolution.TimedOut)
@@ -1209,7 +1220,7 @@ namespace MazeParty.Multiplayer
                     break;
                 case BoardFlowState.Action:
                     SetText(_statusText, match.IsArrivalGraceActive
-                        ? "DEBUG: all players arrived. Top view starts after the 3-second grace timer."
+                        ? "All players arrived. Top view opens when the countdown ends."
                         : choice == ItemChoiceResolution.Pending
                         ? "Choose an item or DO NOT USE. Your personal limit is 30 seconds."
                         : "WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item.");
@@ -1226,7 +1237,10 @@ namespace MazeParty.Multiplayer
                         : "SPECTATING: the camera follows the current fight room. Input is locked.");
                     break;
                 case BoardFlowState.LandingEffectResolve:
-                    SetText(_statusText, "All regular and chain fights resolved. Applying final landing effects in player order.");
+                    SetText(_statusText,
+                        string.IsNullOrEmpty(match.LastLandingEffectMessage)
+                            ? "Applying final landing effects in player order."
+                            : match.LastLandingEffectMessage);
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     SetText(
@@ -1236,13 +1250,13 @@ namespace MazeParty.Multiplayer
                             : match.CurrentMinigame == ScheduledMinigameId.Skip
                             ? "No minigame is available for this queue slot. It will advance automatically."
                             : MinigameName(match.CurrentMinigame) +
-                              ": review the rules. All four players must press READY.");
+                              ": review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.");
                     break;
                 case BoardFlowState.MinigameLoading:
                     SetText(_statusText,
                         "Loading the synchronized " +
                         MinigameName(match.CurrentMinigame) +
-                        " scene. Board movement is locked.");
+                        " scene. Board movement is locked; the match ends if loading reaches zero.");
                     break;
                 case BoardFlowState.MinigamePlaying:
                     SetText(
@@ -1353,9 +1367,10 @@ namespace MazeParty.Multiplayer
             var isCliffBarrage =
                 selected == ScheduledMinigameId.CliffBarrage;
             var isSkip = selected == ScheduledMinigameId.Skip;
-            var hasRuleImage = _minefieldRuleImage != null &&
-                               _minefieldRuleImage.sprite != null &&
-                               isMinefield;
+            var ruleCard = uiBindings.GetMinigameRuleCard(selected);
+            var hasRuleImage = _minigameRuleImage != null &&
+                               ruleCard != null &&
+                               !isSkip;
             SetText(
                 _minigameReadyTitle,
                 revealPending
@@ -1398,20 +1413,20 @@ namespace MazeParty.Multiplayer
                     : isWrongWay
                     ? "Press the shown WASD direction to climb. A wrong key knocks " +
                       "you down for 0.5 seconds. First to step 50 ends the round. " +
-                      "Two rounds, 60 seconds each.\nALL 4 PLAYERS READY  -  READY " +
+                      "Two rounds, 60 seconds each.\nREADY " +
                       readyCount + " / 4"
                     : isRedLightGreenLight
                         ? "Move with WASD during GREEN and freeze when RED begins. " +
                           "The first violation injures you and slows you to walking " +
                           "speed; the second eliminates you. First finisher ends the " +
                           "round. Three rounds, 60 seconds each.\n" +
-                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                          "READY " + readyCount + " / 4"
                     : isStableFooting
                         ? "Move with WASD and press LMB to push the nearest player " +
                           "in front of you. Reach the announced X, circle or square " +
                           "before unsafe platforms drop. Two dropped platforms are " +
                           "removed each cycle. Last survivor wins each of three " +
-                          "60-second rounds.\nALL 4 PLAYERS READY  -  READY " +
+                          "60-second rounds.\nREADY " +
                            readyCount + " / 4"
                     : isBalloonBlow
                         ? "Hold LMB to inflate at 10% per second. Release before " +
@@ -1419,7 +1434,7 @@ namespace MazeParty.Multiplayer
                           "seconds forces a stop and a 1.5-second cooldown, then " +
                           "requires a fresh click. Progress decays 3% per second " +
                           "while not inflating. First to pop ranks first. Three " +
-                          "30-second rounds.\nALL 4 PLAYERS READY  -  READY " +
+                          "30-second rounds.\nREADY " +
                           readyCount + " / 4"
                     : isGiftGrab
                         ? "Ten gifts start; three more drop at 15, 30 and 45 " +
@@ -1428,32 +1443,32 @@ namespace MazeParty.Multiplayer
                           "Without a gift, LMB pushes and makes opponents drop " +
                           "theirs. Steal stored gifts from rival bases. Two " +
                           "60-second rounds; most stored gifts wins.\n" +
-                          "ALL 4 PLAYERS READY  -  READY " +
+                          "READY " +
                           readyCount + " / 4"
                     : isTerritoryPaint
                         ? "Move with WASD. Your circular trail paints the " +
                           "arena and can overwrite rival colors. The full " +
                           "arena is worth 1000 points. One 60-second round; " +
-                          "highest current area wins.\nALL 4 PLAYERS READY  -  READY " +
+                          "highest current area wins.\nREADY " +
                           readyCount + " / 4"
                     : isTagChase
                         ? "Each round assigns one player as the tagger. Runners " +
                           "move with WASD using a shared camera. The tagger moves " +
                           "with WASD in first person and presses LMB to catch. " +
                           "Every player tags once across four 60-second rounds.\n" +
-                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                          "READY " + readyCount + " / 4"
                     : isRace
                         ? "Alternate A and D to advance. Pressing the same key " +
                           "twice does not count. The first player to reach 500 " +
                           "steps ends the round. Three rounds, 60 seconds each.\n" +
-                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4"
+                          "READY " + readyCount + " / 4"
                     : isSequenceMemory
                         ? "Watch and listen to the shared A/S/D sequence, then " +
                           "repeat it after it is hidden. A is high, S is middle " +
                           "and D is low. A wrong key locks the current problem. " +
                           "Your first mistake removes your torso; your second " +
                           "eliminates you. Ten problems, one final placement, " +
-                          "no per-problem score.\nALL 4 PLAYERS READY  -  READY " +
+                          "no per-problem score.\nREADY " +
                           readyCount + " / 4"
                     : isBouncingBalls
                         ? "Move your goal shield with A and D. Three neutral balls " +
@@ -1461,7 +1476,7 @@ namespace MazeParty.Multiplayer
                           "when it passes a shield into any goal, its color owner " +
                           "scores. A scored ball relaunches from the conceding " +
                           "player's shield in their color. Two 60-second rounds; " +
-                          "highest combined score wins.\nALL 4 PLAYERS READY  -  READY " +
+                          "highest combined score wins.\nREADY " +
                           readyCount + " / 4"
                     : isBombPassing
                         ? "Move with WASD. Touch the center bomb to pick it up. " +
@@ -1471,7 +1486,7 @@ namespace MazeParty.Multiplayer
                           "fuse starts at spawn and lasts 20–25 seconds. " +
                           "At half time, an unheld bomb chases the nearest " +
                           "survivor. Only the carrier is eliminated when it " +
-                          "explodes. Last survivor wins.\nALL 4 PLAYERS READY  -  READY " +
+                          "explodes. Last survivor wins.\nREADY " +
                           readyCount + " / 4"
                     : isSnowySpin
                         ? "Roll your colored ball with WASD. Holding a direction " +
@@ -1480,13 +1495,13 @@ namespace MazeParty.Multiplayer
                           "Three rounds, up to 60 seconds each. If time runs " +
                           "out, surviving balls nearer the center rank higher. " +
                           "Round placement points are combined; final placement " +
-                          "awards gold once.\nALL 4 PLAYERS READY  -  READY " +
+                          "awards gold once.\nREADY " +
                           readyCount + " / 4"
                     : isArenaCombat
                         ? "Fight with WASD movement, mouse look and LMB punches. " +
                           "Health is hidden. Defeated players spectate. " +
                           "Last survivor wins, or remaining health decides " +
-                          "survivors after 60 seconds.\nALL 4 PLAYERS READY  -  READY " +
+                          "survivors after 60 seconds.\nREADY " +
                           readyCount + " / 4"
                     : isCliffBarrage
                         ? "Move with WASD and click to push the nearest rival " +
@@ -1494,7 +1509,7 @@ namespace MazeParty.Multiplayer
                           "you immediately. A shell or laser hit first removes " +
                           "your torso; a second hit eliminates you, with one " +
                           "second of safety after a hit. Survive three 60-second " +
-                          "rounds.\nALL 4 PLAYERS READY  -  READY " +
+                          "rounds.\nREADY " +
                           readyCount + " / 4"
                     : isSkip
                         ? "This queue slot has no available minigame. " +
@@ -1502,14 +1517,41 @@ namespace MazeParty.Multiplayer
                         : (hasRuleImage ? string.Empty : "RULE IMAGE PLACEHOLDER\n") +
                           "Stop and RMB to scan. First mine cripples; second eliminates. " +
                           "Reach the finish before the crusher.\n" +
-                          "ALL 4 PLAYERS READY  -  READY " + readyCount + " / 4");
+                          "READY " + readyCount + " / 4");
             SetText(
                 _minigameReadyStatus,
                 revealPending
                     ? "REVEALING..."
                     : isSkip
                         ? "AUTO SKIP"
-                        : "READY " + readyCount + " / 4");
+                        : match.FlowState == BoardFlowState.MinigameLoading
+                            ? "LOADING  " +
+                              MinigameDisplayFormatter.FormatClock(match.StateRemaining)
+                            : "READY " + readyCount + " / 4  AUTO START " +
+                              MinigameDisplayFormatter.FormatClock(match.StateRemaining));
+
+            for (var slot = 0; slot < _minigameReadyPlayerStates.Length; slot++)
+            {
+                var playerState = _minigameReadyPlayerStates[slot];
+                if (playerState == null)
+                {
+                    continue;
+                }
+
+                playerState.gameObject.SetActive(!isSkip);
+                if (isSkip)
+                {
+                    continue;
+                }
+
+                var isReady = match.IsMinigameReady(slot);
+                SetText(
+                    playerState,
+                    "P" + (slot + 1) + (isReady ? "  READY" : "  WAITING"));
+                playerState.color = isReady
+                    ? uiBindings.ReadyPlayerCompleteColor
+                    : uiBindings.ReadyPlayerWaitingColor;
+            }
 
             var localReady = _localAvatar != null &&
                              MinefieldRules.IsValidPlayerSlot(_localAvatar.AssignedSlot) &&
@@ -1624,16 +1666,22 @@ namespace MazeParty.Multiplayer
                 SetText(_minefieldResultNote, resultSummary);
             }
 
-            if (_minefieldRuleImage != null)
+            if (_minigameRuleImage != null)
             {
-                _minefieldRuleImage.color = hasRuleImage
+                // Clear the previous card during the tower reveal so a new
+                // minigame cannot be inferred from a retained sprite.
+                _minigameRuleImage.sprite = revealPending ? null : ruleCard;
+                _minigameRuleImage.color = hasRuleImage
                     ? uiBindings.RuleImageContentColor
                     : uiBindings.RuleImagePlaceholderColor;
-                _minefieldRuleImage.gameObject.SetActive(isMinefield);
+                _minigameRuleImage.gameObject.SetActive(
+                    hasRuleImage && !revealPending);
             }
             SetText(
                 _minigameRulePlaceholder,
-                isWrongWay
+                revealPending
+                    ? "RULES REVEALING..."
+                    : isWrongWay
                     ? "W  A  S  D\n50 STEPS"
                     : isRedLightGreenLight
                         ? "GREEN: MOVE\nRED: FREEZE"
@@ -1666,7 +1714,7 @@ namespace MazeParty.Multiplayer
                 _minigameRulePlaceholder != null
                     ? _minigameRulePlaceholder.gameObject
                     : null,
-                !isSkip && !hasRuleImage);
+                revealPending || (!isSkip && !hasRuleImage));
         }
 
         private static int CountReadyPlayers(NetworkMatchState match)
@@ -3195,12 +3243,6 @@ namespace MazeParty.Multiplayer
             {
                 target.SetActive(active);
             }
-        }
-
-        private static bool HasCountdown(BoardFlowState state)
-        {
-            return state != BoardFlowState.MinigameIntroReady &&
-                   state != BoardFlowState.MinigameLoading;
         }
 
         private static string PhaseLabel(BoardFlowState state)

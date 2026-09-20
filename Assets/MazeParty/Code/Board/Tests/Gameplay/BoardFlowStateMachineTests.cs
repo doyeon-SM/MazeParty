@@ -41,6 +41,35 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void MinigameReadyAndLoadingDeadlines_PreserveOneMinuteAcrossReconnectPause()
+        {
+            var flow = new BoardFlowStateMachine();
+            flow.Start(100d);
+            flow.Tick(106d);
+            ReportAllPlayersArrived(flow, 113d);
+            flow.Tick(118d);
+            Assert.That(flow.TryCompleteCombat(118d), Is.True);
+            flow.Tick(122d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            Assert.That(flow.GetStateRemaining(122d), Is.EqualTo(60d));
+            Assert.That(flow.GetStateRemaining(129.999d), Is.GreaterThan(52d));
+
+            Assert.That(flow.Pause(130d), Is.True);
+            Assert.That(flow.GetStateRemaining(190d), Is.EqualTo(52d));
+            Assert.That(flow.Resume(190d), Is.True);
+            Assert.That(flow.GetStateRemaining(241.999d), Is.GreaterThan(0d));
+            Assert.That(flow.GetStateRemaining(242d), Is.Zero);
+            Assert.That(flow.TryBeginMinigameLoading(242d), Is.True);
+
+            Assert.That(flow.GetStateRemaining(242d), Is.EqualTo(60d));
+            Assert.That(flow.Pause(250d), Is.True);
+            Assert.That(flow.GetStateRemaining(280d), Is.EqualTo(52d));
+            Assert.That(flow.Resume(280d), Is.True);
+            Assert.That(flow.GetStateRemaining(331.999d), Is.GreaterThan(0d));
+            Assert.That(flow.GetStateRemaining(332d), Is.Zero);
+        }
+
+        [Test]
         public void ActionDeadline_WinsExactArrivalAndWaitsForApprovedRollSettlement()
         {
             var timedOut = StartInAction();

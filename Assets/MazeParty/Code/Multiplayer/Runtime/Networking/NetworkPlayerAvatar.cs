@@ -1251,7 +1251,7 @@ namespace MazeParty.Multiplayer
             SetActionStateOnServer(PlayerBoardActionState.Arrived);
         }
 
-        public bool ForceAdvanceOneTileOnServer(int turn)
+        public bool ForceSettleRemainingMovesOnServer(BoardTile keyShopTile)
         {
             if (!IsServer)
             {
@@ -1266,28 +1266,42 @@ namespace MazeParty.Multiplayer
             }
 
             var source = _traversal.CurrentTile;
-            var outgoing = _topology.GetOutgoingGates(source);
-            if (outgoing.Count == 0)
+            var history = _traversal.History;
+            var previousTile = history.Count > 1 ? history[history.Count - 2] : null;
+            var path = _topology.PlanForcedAdvancePath(
+                source,
+                previousTile,
+                transform.forward,
+                keyShopTile,
+                _remainingMoves.Value);
+
+            var destination = source;
+            var beforeDestination = source;
+            for (var index = 0; index < path.Count; index++)
             {
+                var gate = path[index];
+                if (!_traversal.TryForceCommit(gate))
+                {
+                    break;
+                }
+
+                beforeDestination = destination;
+                destination = gate.Destination;
+            }
+
+            _remainingMoves.Value = 0;
+            if (destination == source)
+            {
+                _traversal.ResetMoves(0);
+                RefreshBoundaryWallsOnServer();
                 return false;
             }
 
-            // Stable selection keeps every peer/replay deterministic while still
-            // distributing timed-out players across branching exits.
-            var gateIndex = Mathf.Abs(turn + _slot.Value) % outgoing.Count;
-            var destination = outgoing[gateIndex].Destination;
-            if (destination == null)
-            {
-                return false;
-            }
-
-            var direction = destination.WorldCenter - source.WorldCenter;
+            var direction = destination.WorldCenter - beforeDestination.WorldCenter;
             direction.y = 0f;
             var rotation = direction.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
                 : transform.rotation;
-            _traversal.Relocate(destination, 0);
-            _remainingMoves.Value = 0;
             TeleportController(destination.GetRecoveryCenter(1f), rotation);
             _serverYaw = rotation.eulerAngles.y;
             _serverPitch = 0f;
