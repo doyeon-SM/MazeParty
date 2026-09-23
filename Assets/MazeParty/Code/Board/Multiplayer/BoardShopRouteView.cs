@@ -39,9 +39,7 @@ namespace MazeParty.Multiplayer
                 ? manager.SpawnManager.GetLocalPlayerObject() : null;
             var local = playerObject != null ? playerObject.GetComponent<NetworkPlayerAvatar>() : null;
             if (local == null || !local.IsOwner || !local.IsSpawned || !local.HasLogicalBoardTile ||
-                match == null || !match.IsSpawned || !match.GameplayEnabled || !match.KeyShopHasLocation ||
-                (match.FlowState != BoardFlowState.TurnOverview && match.FlowState != BoardFlowState.Descending &&
-                 match.FlowState != BoardFlowState.Action))
+                match == null || !match.IsSpawned || !match.GameplayEnabled || !match.KeyShopHasLocation)
             {
                 SetVisible(false);
                 return;
@@ -54,9 +52,18 @@ namespace MazeParty.Multiplayer
                 SetVisible(false);
                 return;
             }
-            PresentRoute(_topology, source, shop);
+            PresentRouteForPhase(_topology, source, shop, match.FlowState);
         }
 
+        public void PresentRouteForPhase(BoardTopology topology, BoardTile source, BoardTile shop, BoardFlowState phase)
+        {
+            if (phase != BoardFlowState.TurnOverview && phase != BoardFlowState.Descending && phase != BoardFlowState.Action)
+            {
+                SetVisible(false);
+                return;
+            }
+            PresentRoute(topology, source, shop);
+        }
         public void PresentRoute(BoardTopology topology, BoardTile source, BoardTile shop)
         {
             if (hemispherePrefab == null) return;

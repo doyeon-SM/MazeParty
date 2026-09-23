@@ -10,6 +10,58 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardMinimapProjectionTests
     {
         [Test]
+        public void RouteDots_FollowLocalProjectionAndClearWhenShopIsUnavailable()
+        {
+            var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+            var board = new GameObject("Route board");
+            try
+            {
+                var tiles = new BoardTile[3];
+                var gates = new BoardGate[2];
+                for (var i = 0; i < tiles.Length; i++)
+                {
+                    var obj = new GameObject("Tile");
+                    obj.transform.SetParent(board.transform);
+                    obj.transform.position = new Vector3(31f + i * 8f, 0f, -19f);
+                    tiles[i] = obj.AddComponent<BoardTile>();
+                    tiles[i].Configure(new Vector2Int(i, 0), BoardTileType.Normal);
+                    if (i > 0) { gates[i - 1] = obj.AddComponent<BoardGate>(); gates[i - 1].Configure(tiles[i - 1], tiles[i]); }
+                }
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(tiles, gates);
+                foreach (var view in instance.GetComponentsInChildren<BoardMinimapView>(true))
+                {
+                    var data = new SerializedObject(view);
+                    var graphic = (BoardMapRouteGraphic)data.FindProperty("shopRouteGraphic").objectReferenceValue;
+                    var projection = (MiniMapView)data.FindProperty("projection").objectReferenceValue;
+                    Assert.That(graphic.transform.parent, Is.EqualTo(projection.otherDotCanvas));
+                    var mask = (Mask)data.FindProperty("circularMask").objectReferenceValue;
+                    if (mask != null) Assert.That(graphic.transform.IsChildOf(mask.transform), Is.True);
+                    view.PrepareMap(topology, tiles[0].Coordinate, 0, tiles[2].Coordinate, tiles[0].WorldCenter);
+                    Assert.That(graphic.PointCount, Is.GreaterThan(2), "The route is independent of the dice result.");
+                    var firstPoint = graphic.ProjectPoint(0);
+                    var endPoint = graphic.ProjectPoint(graphic.PointCount - 1);
+                    Assert.That(endPoint.x, Is.GreaterThan(firstPoint.x));
+                    view.SetHeading(270f);
+                    if (mask != null)
+                    {
+                        Assert.That(firstPoint.sqrMagnitude, Is.LessThan(.001f));
+                        var delta = projection.otherDotCanvas.localRotation * (Vector3)(endPoint - firstPoint);
+                        Assert.That(delta.y, Is.LessThan(0f), "East must appear below a west-facing player.");
+                        view.PrepareMap(topology, tiles[0].Coordinate, 0, tiles[2].Coordinate, tiles[0].WorldCenter + Vector3.right);
+                        Assert.That(graphic.ProjectPoint(0).x, Is.LessThan(firstPoint.x), "Dots must move with the actual local map center.");
+                    }
+                    foreach (var target in new Vector2Int?[] { null, tiles[2].Coordinate, tiles[0].Coordinate })
+                    {
+                        view.PrepareMap(topology, tiles[2].Coordinate, 0, target);
+                        Assert.That(graphic.PointCount, Is.Zero, "Missing shop, same tile and unreachable routes must clear old dots.");
+                    }
+                }
+            }
+            finally { Object.DestroyImmediate(instance); Object.DestroyImmediate(board); }
+        }
+        [Test]
         public void TileInformation_UsesDirectedDistanceAndOnlyImmediateAvailableExits()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(

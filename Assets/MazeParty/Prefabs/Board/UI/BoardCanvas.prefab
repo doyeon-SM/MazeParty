@@ -18153,6 +18153,74 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: <
+--- !u!1 &1211121940199731575
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3871333551404889414}
+  - component: {fileID: 8396375258821423073}
+  - component: {fileID: 2758113974257314688}
+  m_Layer: 5
+  m_Name: Key Shop Route Dots
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &3871333551404889414
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211121940199731575}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7216711429268957453}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &8396375258821423073
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211121940199731575}
+  m_CullTransparentMesh: 1
+--- !u!114 &2758113974257314688
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1211121940199731575}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c980fc87462eaa4a97dc1765fdff897, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMapRouteGraphic
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.82, b: 0.02, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  worldDotSpacing: 0.8
+  worldDotDiameter: 0.32
+  minimumPixelDiameter: 4
 --- !u!1 &1217359995567320834
 GameObject:
   m_ObjectHideFlags: 0
@@ -33566,6 +33634,7 @@ RectTransform:
   - {fileID: 5753833741141352119}
   - {fileID: 4975331665320199928}
   - {fileID: 3351812061738528049}
+  - {fileID: 2236127180951863384}
   - {fileID: 6614939010488527002}
   - {fileID: 6452071798255279194}
   - {fileID: 5348998842309301524}
@@ -44161,6 +44230,7 @@ MonoBehaviour:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
   - {r: 0.85, g: 0.5, b: 1, a: 1}
   - {r: 0.35, g: 1, b: 0.5, a: 1}
+  shopRouteGraphic: {fileID: 2758113974257314688}
   headingFormat: BOARD  /  {0} ^
   compassPoints:
   - N
@@ -55779,6 +55849,7 @@ RectTransform:
   - {fileID: 3630690335633954174}
   - {fileID: 8590505808810488272}
   - {fileID: 5053533804318572854}
+  - {fileID: 3871333551404889414}
   - {fileID: 2444837253461657157}
   - {fileID: 3410832960665714495}
   - {fileID: 6608691215337375932}
@@ -70436,6 +70507,74 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!1 &4480437766643963050
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2236127180951863384}
+  - component: {fileID: 465623831971894664}
+  - component: {fileID: 2485808251414372600}
+  m_Layer: 5
+  m_Name: Key Shop Route Dots
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &2236127180951863384
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4480437766643963050}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6708637559676884042}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!222 &465623831971894664
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4480437766643963050}
+  m_CullTransparentMesh: 1
+--- !u!114 &2485808251414372600
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4480437766643963050}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1c980fc87462eaa4a97dc1765fdff897, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMapRouteGraphic
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 0.82, b: 0.02, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  worldDotSpacing: 0.8
+  worldDotDiameter: 0.32
+  minimumPixelDiameter: 4
 --- !u!1 &4482744559368971231
 GameObject:
   m_ObjectHideFlags: 0
@@ -81561,6 +81700,7 @@ MonoBehaviour:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
   - {r: 0.85, g: 0.5, b: 1, a: 1}
   - {r: 0.35, g: 1, b: 0.5, a: 1}
+  shopRouteGraphic: {fileID: 2485808251414372600}
   headingFormat: FULL MAP / NORTH ^
   compassPoints:
   - N

@@ -40,6 +40,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private string shopUnknownText = ": --";
         [SerializeField] private Color[] typeIconColors = { Color.gray, Color.white, new Color(1f, .8f, .2f), new Color(.4f, .85f, 1f) };
         [SerializeField] private Color[] effectIconColors = { Color.white, new Color(1f, .8f, .2f), new Color(1f, .3f, .3f), new Color(.85f, .5f, 1f), new Color(.35f, 1f, .5f) };
+        [SerializeField] private BoardMapRouteGraphic shopRouteGraphic;
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
         private BoardTopology _distanceTopology;
         private Vector2Int? _distanceSource, _distanceShop;
@@ -62,7 +63,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-                if (projection == null || projection.otherDotCanvas == null ||
+                if (shopRouteGraphic == null || projection == null || projection.otherDotCanvas == null ||
                     projection.miniMapBounds == null || projection.miniMapBounds.topRight == null ||
                     projection.miniMapBounds.bottomLeft == null || currentTile == null || heading == null ||
                     rooms == null || players == null || localHighlights == null || tileNames == null ||
@@ -165,6 +166,7 @@ namespace MazeParty.Multiplayer
             projection.miniMapBounds.topRight.position = bounds.max;
             currentTile.text = unknownTileText;
             RefreshShopDistance(topology, localCoordinate, keyShop);
+            shopRouteGraphic.Present(_shopRoute, bounds);
 
             for (var index = 0; index < rooms.Length; index++)
             {
@@ -257,6 +259,7 @@ namespace MazeParty.Multiplayer
 
         public int GetMinimumShopDistance(BoardTopology topology, Vector2Int? source, Vector2Int? shop)
         {
+            _shopRoute.Clear();
             if (!source.HasValue || !shop.HasValue || topology == null ||
                 !topology.TryGetTile(source.Value, out var from) || !topology.TryGetTile(shop.Value, out var to) ||
                 !BoardMapRoute.TryFind(topology, from, to, _shopRoute)) return -1;

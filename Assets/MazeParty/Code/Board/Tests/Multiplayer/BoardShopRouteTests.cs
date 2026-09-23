@@ -55,6 +55,14 @@ namespace MazeParty.Multiplayer.Tests
                         "The guide must turn at the tile center instead of taking a diagonal shortcut.");
                 }
                 Assert.That(dots.Any(dot => Vector2.Distance(new Vector2(dot.transform.position.x, dot.transform.position.z), new Vector2(8f, 0f)) < .001f), Is.True);
+                foreach (var phase in new[] { BoardFlowState.TurnOverview, BoardFlowState.Descending,
+                    BoardFlowState.Action, BoardFlowState.MinigameIntroReady, BoardFlowState.TurnOverview })
+                {
+                    view.PresentRouteForPhase(topology, tiles[0], tiles[2], phase);
+                    Assert.That(presentation.GetComponentsInChildren<MeshRenderer>().Length,
+                        Is.EqualTo(phase == BoardFlowState.MinigameIntroReady ? 0 : dots.Length),
+                        "The local floor route must appear before rolling and return on the next overview.");
+                }
                 var allocated = presentation.transform.childCount;
                 view.SetVisible(false);
                 Assert.That(presentation.GetComponentsInChildren<MeshRenderer>(), Is.Empty);

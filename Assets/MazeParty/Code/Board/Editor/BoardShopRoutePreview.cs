@@ -46,7 +46,7 @@ namespace MazeParty.Editor
                 view.Configure(AssetDatabase.LoadAssetAtPath<GameObject>(BoardShopRouteProjectSetup.DotPath));
                 topology.TryGetTile(new Vector2Int(1, 1), out var source);
                 topology.TryGetTile(new Vector2Int(5, 2), out var shop);
-                view.PresentRoute(topology, source, shop);
+                view.PresentRouteForPhase(topology, source, shop, BoardFlowState.TurnOverview);
                 var lightObject = new GameObject("Preview Light", typeof(Light));
                 SceneManager.MoveGameObjectToScene(lightObject, preview);
                 var light = lightObject.GetComponent<Light>();
@@ -67,6 +67,22 @@ namespace MazeParty.Editor
                 pixels.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0); pixels.Apply();
                 Directory.CreateDirectory("Temp");
                 File.WriteAllBytes("Temp/BoardShopRoutePreview.png", pixels.EncodeToPNG());
+                // Verify the actual authored overview framing, including its culling mask.
+                GameplayCameraDirector director = null;
+                foreach (var root in scene.GetRootGameObjects())
+                {
+                    director = root.GetComponentInChildren<GameplayCameraDirector>();
+                    if (director != null) break;
+                }
+                if (director == null || director.BoardFramingAnchor == null)
+                    throw new System.InvalidOperationException("Board overview camera bindings are missing.");
+                var pose = director.BoardFramingAnchor.Evaluate((float)texture.width / texture.height);
+                camera.transform.SetPositionAndRotation(pose.Position, pose.Rotation);
+                camera.fieldOfView = pose.FieldOfView;
+                camera.cullingMask = director.OutputCamera.cullingMask;
+                camera.Render();
+                pixels.ReadPixels(new Rect(0, 0, texture.width, texture.height), 0, 0); pixels.Apply();
+                File.WriteAllBytes("Temp/BoardShopRouteTopViewPreview.png", pixels.EncodeToPNG());
             }
             finally
             {
