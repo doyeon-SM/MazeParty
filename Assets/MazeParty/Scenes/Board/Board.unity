@@ -3714,6 +3714,103 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1539060134}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &459171924
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2742803030017053419, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7924714383451942946, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
+      propertyPath: m_Name
+      value: Award Ceremony Canvas
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3c459ea8c6517f54e80c92e4b3e2e072, type: 3}
 --- !u!1001 &469668971
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13408,6 +13505,63 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0092c5ab8c9d82b4aa49e198f2e351a9, type: 3}
+--- !u!1001 &2083295096
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1860
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4747264593412740282, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4774746975837030048, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
+      propertyPath: m_Name
+      value: Award Ceremony Stage
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 4ac72387aef1be040bf89064b30f14f9, type: 3}
 --- !u!1 &2108020242
 GameObject:
   m_ObjectHideFlags: 0
@@ -13583,3 +13737,5 @@ SceneRoots:
   - {fileID: 287384967}
   - {fileID: 796139849}
   - {fileID: 1177310619}
+  - {fileID: 459171924}
+  - {fileID: 2083295096}

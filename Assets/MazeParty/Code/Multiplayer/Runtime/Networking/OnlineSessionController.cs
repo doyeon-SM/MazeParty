@@ -15,6 +15,7 @@ namespace MazeParty.Multiplayer
         private const int LobbyDisconnectForcedCleanupGraceMilliseconds = 5000;
         private const int NetworkIdentityPublishAttempts = 3;
         private const int NetworkIdentityPublishRetryBaseMilliseconds = 250;
+        private const double CompletedMatchUnloadClientGraceSeconds = 15d;
         private const string PlayingReconnectTicketPrefix =
             "MazeParty.PlayingReconnectSession.";
 
@@ -39,6 +40,19 @@ namespace MazeParty.Multiplayer
         private bool _destroyed;
         private string _playingReconnectTicketKey;
         private PlayerLocalProfile _localProfile;
+        private readonly Queue<string> _completedMatchSceneUnloadQueue =
+            new Queue<string>();
+        private readonly HashSet<ulong> _completedMatchPendingUnloadClients =
+            new HashSet<ulong>();
+        private readonly HashSet<ulong> _completedMatchDisconnectedClients =
+            new HashSet<ulong>();
+        private bool _completedMatchLobbyReturnInProgress;
+        private bool _completedMatchAvatarsPrepared;
+        private bool _completedMatchUnloadNextFrame;
+        private int _completedMatchUnloadEarliestFrame;
+        private string _completedMatchSceneBeingUnloaded = string.Empty;
+        private string _completedMatchPendingUnloadScene = string.Empty;
+        private double _completedMatchPendingUnloadDeadline;
 
         public static OnlineSessionController Instance { get; private set; }
 
@@ -138,9 +152,48 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void Update()
+        {
+            if (_completedMatchLobbyReturnInProgress &&
+                _completedMatchPendingUnloadClients.Count > 0 &&
+                _completedMatchPendingUnloadDeadline > 0d &&
+                Time.realtimeSinceStartupAsDouble >=
+                _completedMatchPendingUnloadDeadline)
+            {
+                ResolveCompletedMatchUnloadTimeout();
+            }
+
+            if (!_completedMatchLobbyReturnInProgress ||
+                !_completedMatchUnloadNextFrame ||
+                Time.frameCount < _completedMatchUnloadEarliestFrame)
+            {
+                return;
+            }
+
+            _completedMatchUnloadNextFrame = false;
+            if (!_completedMatchAvatarsPrepared)
+            {
+                var manager = _networkManager != null
+                    ? _networkManager
+                    : NetworkManager.Singleton;
+                if (!TryPrepareConnectedAvatarsForLobbyOnServer(manager))
+                {
+                    SetStatus(
+                        "Waiting for every connected player avatar before lobby return.");
+                    ScheduleCompletedMatchUnloadForNextFrame();
+                    return;
+                }
+
+                _completedMatchAvatarsPrepared = true;
+            }
+
+            TryBeginNextCompletedMatchSceneUnload();
+        }
+
         private void OnDestroy()
         {
             _destroyed = true;
+            ResetCompletedMatchLobbyReturnState();
             Application.quitting -= OnApplicationQuitting;
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
@@ -149,6 +202,10 @@ namespace MazeParty.Multiplayer
             if (_networkSceneManager != null)
             {
                 _networkSceneManager.OnLoadEventCompleted -= OnNetworkLoadEventCompleted;
+                _networkSceneManager.OnUnloadEventCompleted -=
+                    OnNetworkUnloadEventCompleted;
+                _networkSceneManager.OnUnloadComplete -=
+                    OnNetworkUnloadComplete;
                 _networkSceneManager = null;
             }
 
@@ -277,6 +334,13 @@ namespace MazeParty.Multiplayer
             RunAsync(
                 () => _sessions.SetReadyAsync(ready),
                 "Saving ready state...");
+        }
+
+        public void RequestCompletedMatchReturn()
+        {
+            RunAsync(
+                RequestCompletedMatchReturnAsync,
+                "Saving the return-to-lobby request...");
         }
 
         private void OnStartRequested()
@@ -508,6 +572,333 @@ namespace MazeParty.Multiplayer
             SetStatus("Waiting for every player to finish loading the Board scene.");
         }
 
+        private async Task RequestCompletedMatchReturnAsync()
+        {
+            if (_sessions == null ||
+                !_sessions.IsInSession ||
+                _sessions.Current.Phase != MultiplayerConstants.PlayingPhase)
+            {
+                throw new InvalidOperationException(
+                    "A completed online match is required before returning to the lobby.");
+            }
+
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.CanSubmitCeremonyReturn)
+            {
+                throw new InvalidOperationException(
+                    "The award ceremony is not accepting return requests yet.");
+            }
+
+            await _sessions.SetReadyAsync(false);
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            var playerObject = manager != null && manager.SpawnManager != null
+                ? manager.SpawnManager.GetLocalPlayerObject()
+                : null;
+            var avatar = playerObject != null
+                ? playerObject.GetComponent<NetworkPlayerAvatar>()
+                : null;
+            if (avatar == null || !avatar.IsSpawned || !avatar.IsOwner)
+            {
+                throw new InvalidOperationException(
+                    "The local network player is not ready to return to the lobby.");
+            }
+
+            avatar.RequestCompletedMatchReturn();
+        }
+
+        public bool BeginCompletedMatchLobbyReturnOnServer()
+        {
+            if (_destroyed || _completedMatchLobbyReturnInProgress)
+            {
+                return _completedMatchLobbyReturnInProgress;
+            }
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (manager == null ||
+                !manager.IsServer ||
+                manager.SceneManager == null ||
+                _sessions == null ||
+                !_sessions.IsInSession ||
+                !_sessions.Current.IsHost ||
+                _sessions.Current.Phase != MultiplayerConstants.PlayingPhase)
+            {
+                Debug.LogWarning(
+                    "Only the active session host can return a completed match to the lobby.");
+                return false;
+            }
+
+            if (!HasExactlyFourAssignedNetworkPlayers(manager))
+            {
+                SetStatus(
+                    "All four connected players are required to return to the ready screen.");
+                return false;
+            }
+
+            ObserveNetworkSceneManager(manager.SceneManager);
+            if (!TryQueueCompletedMatchSceneUnloads(
+                    manager.SceneManager,
+                    out var sceneValidationError))
+            {
+                SetStatus(sceneValidationError);
+                return false;
+            }
+
+            _completedMatchLobbyReturnInProgress = true;
+            _ = BeginCompletedMatchLobbyReturnAsync(manager);
+            return true;
+        }
+
+        private async Task BeginCompletedMatchLobbyReturnAsync(
+            NetworkManager manager)
+        {
+            try
+            {
+                SetStatus("Returning the completed match to the player ready screen...");
+                await _sessions.SetPlayingAsync(false);
+                QueueCompletedMatchDisconnectedLobbyCleanups();
+
+                if (_destroyed || !_completedMatchLobbyReturnInProgress)
+                {
+                    return;
+                }
+
+                if (manager != null &&
+                    manager.IsServer &&
+                    manager.SceneManager != null)
+                {
+                    ObserveNetworkSceneManager(manager.SceneManager);
+                }
+                ScheduleCompletedMatchUnloadForNextFrame();
+            }
+            catch (Exception exception)
+            {
+                if (!_destroyed &&
+                    _completedMatchLobbyReturnInProgress &&
+                    _sessions != null &&
+                    _sessions.IsInSession &&
+                    _sessions.Current.Phase == MultiplayerConstants.LobbyPhase)
+                {
+                    SetStatus(
+                        "The lobby phase was saved; retrying local match cleanup: " +
+                        exception.Message);
+                    Debug.LogWarning(exception);
+                    ScheduleCompletedMatchUnloadForNextFrame();
+                    return;
+                }
+
+                if (!_destroyed &&
+                    _completedMatchLobbyReturnInProgress &&
+                    _sessions != null &&
+                    _sessions.IsInSession &&
+                    _sessions.Current.IsHost &&
+                    _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
+                {
+                    SetStatus(
+                        "Could not save the lobby phase; retrying: " +
+                        exception.Message);
+                    Debug.LogWarning(exception);
+                    await Task.Delay(1000);
+                    if (_completedMatchLobbyReturnInProgress)
+                    {
+                        _ = BeginCompletedMatchLobbyReturnAsync(manager);
+                    }
+                    return;
+                }
+
+                ResetCompletedMatchLobbyReturnState();
+                SetStatus(
+                    "Could not return the completed match to the lobby: " +
+                    exception.Message);
+                Debug.LogException(exception);
+            }
+        }
+
+        private static bool TryPrepareConnectedAvatarsForLobbyOnServer(
+            NetworkManager manager)
+        {
+            if (manager == null || !manager.IsServer || manager.SpawnManager == null)
+            {
+                return false;
+            }
+
+            var avatars = new List<NetworkPlayerAvatar>(
+                manager.ConnectedClientsIds.Count);
+            foreach (var clientId in manager.ConnectedClientsIds)
+            {
+                var playerObject = manager.SpawnManager.GetPlayerNetworkObject(clientId);
+                var avatar = playerObject != null
+                    ? playerObject.GetComponent<NetworkPlayerAvatar>()
+                    : null;
+                if (avatar == null || !avatar.IsSpawned)
+                {
+                    return false;
+                }
+
+                avatars.Add(avatar);
+            }
+
+            for (var index = 0; index < avatars.Count; index++)
+            {
+                var avatar = avatars[index];
+                avatar.PrepareForLobbyOnServer();
+            }
+
+            return true;
+        }
+
+        private bool TryQueueCompletedMatchSceneUnloads(
+            NetworkSceneManager sceneManager,
+            out string error)
+        {
+            error = string.Empty;
+            _completedMatchSceneUnloadQueue.Clear();
+            _completedMatchSceneBeingUnloaded = string.Empty;
+            var queuedSceneNames = new HashSet<string>(StringComparer.Ordinal);
+            var synchronizedSceneHandles = new HashSet<SceneHandle>();
+            var synchronizedScenes = sceneManager.GetSynchronizedScenes();
+            for (var index = 0; index < synchronizedScenes.Count; index++)
+            {
+                synchronizedSceneHandles.Add(synchronizedScenes[index].handle);
+            }
+
+            foreach (var definition in MinigameCatalog.RegisteredMinigames)
+            {
+                var sceneName = definition.SceneName;
+                var scene = SceneManager.GetSceneByName(sceneName);
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    continue;
+                }
+
+                if (!synchronizedSceneHandles.Contains(scene.handle))
+                {
+                    _completedMatchSceneUnloadQueue.Clear();
+                    error = "The loaded minigame scene is not synchronized: " +
+                            sceneName;
+                    return false;
+                }
+
+                if (queuedSceneNames.Add(sceneName))
+                {
+                    _completedMatchSceneUnloadQueue.Enqueue(sceneName);
+                }
+            }
+
+            var board = SceneManager.GetSceneByName(MultiplayerConstants.BoardScene);
+            if (!board.IsValid() ||
+                !board.isLoaded ||
+                !synchronizedSceneHandles.Contains(board.handle))
+            {
+                _completedMatchSceneUnloadQueue.Clear();
+                error = "The synchronized Board scene is required for lobby return.";
+                return false;
+            }
+
+            if (queuedSceneNames.Add(MultiplayerConstants.BoardScene))
+            {
+                _completedMatchSceneUnloadQueue.Enqueue(
+                    MultiplayerConstants.BoardScene);
+            }
+
+            return true;
+        }
+
+        private void TryBeginNextCompletedMatchSceneUnload()
+        {
+            if (!_completedMatchLobbyReturnInProgress ||
+                !string.IsNullOrEmpty(_completedMatchSceneBeingUnloaded) ||
+                _completedMatchPendingUnloadClients.Count > 0)
+            {
+                return;
+            }
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (manager == null || !manager.IsServer || manager.SceneManager == null)
+            {
+                SetStatus(
+                    "Waiting for the server scene manager during lobby return.");
+                ScheduleCompletedMatchUnloadForNextFrame();
+                return;
+            }
+
+            ObserveNetworkSceneManager(manager.SceneManager);
+            while (_completedMatchSceneUnloadQueue.Count > 0)
+            {
+                var sceneName = _completedMatchSceneUnloadQueue.Peek();
+                var scene = SceneManager.GetSceneByName(sceneName);
+                if (!scene.IsValid() || !scene.isLoaded)
+                {
+                    _completedMatchSceneUnloadQueue.Dequeue();
+                    continue;
+                }
+
+                var result = manager.SceneManager.UnloadScene(scene);
+                if (result == SceneEventProgressStatus.Started)
+                {
+                    _completedMatchSceneUnloadQueue.Dequeue();
+                    _completedMatchSceneBeingUnloaded = sceneName;
+                    SetStatus("Synchronizing scene unload: " + sceneName);
+                    return;
+                }
+
+                if (result == SceneEventProgressStatus.SceneEventInProgress)
+                {
+                    ScheduleCompletedMatchUnloadForNextFrame();
+                    return;
+                }
+
+                if (result == SceneEventProgressStatus.SceneNotLoaded)
+                {
+                    _completedMatchSceneUnloadQueue.Dequeue();
+                    continue;
+                }
+
+                SetStatus(
+                    "Waiting to retry synchronized scene unload for " +
+                    sceneName + ": " + result);
+                ScheduleCompletedMatchUnloadForNextFrame();
+                return;
+            }
+
+            CompleteCompletedMatchLobbyReturn();
+        }
+
+        private void CompleteCompletedMatchLobbyReturn()
+        {
+            ResetCompletedMatchLobbyReturnState();
+            SetLobbyRendering(true);
+            SetStatus("Returned to the player ready screen.");
+        }
+
+        private void ResetCompletedMatchLobbyReturnState()
+        {
+            _completedMatchSceneUnloadQueue.Clear();
+            _completedMatchPendingUnloadClients.Clear();
+            _completedMatchDisconnectedClients.Clear();
+            _completedMatchSceneBeingUnloaded = string.Empty;
+            _completedMatchPendingUnloadScene = string.Empty;
+            _completedMatchPendingUnloadDeadline = 0d;
+            _completedMatchAvatarsPrepared = false;
+            _completedMatchUnloadNextFrame = false;
+            _completedMatchUnloadEarliestFrame = 0;
+            _completedMatchLobbyReturnInProgress = false;
+        }
+
+        private void ScheduleCompletedMatchUnloadForNextFrame()
+        {
+            _completedMatchUnloadNextFrame = true;
+            _completedMatchUnloadEarliestFrame = Math.Max(
+                _completedMatchUnloadEarliestFrame,
+                Time.frameCount + 1);
+        }
+
         private async void RunAsync(Func<Task> operation, string progress)
         {
             if (_busy)
@@ -546,6 +937,7 @@ namespace MazeParty.Multiplayer
         private void OnSessionChanged()
         {
             UpdatePlayingReconnectTicket();
+            QueueCompletedMatchDisconnectedLobbyCleanups();
             if (_networkManager != null)
             {
                 ObserveNetworkSceneManager(_networkManager.SceneManager);
@@ -553,6 +945,7 @@ namespace MazeParty.Multiplayer
 
             if (!_sessions.IsInSession)
             {
+                ResetCompletedMatchLobbyReturnState();
                 _networkIdentityPublished = false;
                 UnloadBoardLocally();
             }
@@ -609,12 +1002,20 @@ namespace MazeParty.Multiplayer
             if (_networkSceneManager != null)
             {
                 _networkSceneManager.OnLoadEventCompleted -= OnNetworkLoadEventCompleted;
+                _networkSceneManager.OnUnloadEventCompleted -=
+                    OnNetworkUnloadEventCompleted;
+                _networkSceneManager.OnUnloadComplete -=
+                    OnNetworkUnloadComplete;
             }
 
             _networkSceneManager = sceneManager;
             if (_networkSceneManager != null)
             {
                 _networkSceneManager.OnLoadEventCompleted += OnNetworkLoadEventCompleted;
+                _networkSceneManager.OnUnloadEventCompleted +=
+                    OnNetworkUnloadEventCompleted;
+                _networkSceneManager.OnUnloadComplete +=
+                    OnNetworkUnloadComplete;
             }
         }
 
@@ -656,6 +1057,117 @@ namespace MazeParty.Multiplayer
             SetStatus("All four players loaded the Board. Gameplay input is enabled.");
         }
 
+        private void OnNetworkUnloadEventCompleted(
+            string sceneName,
+            LoadSceneMode _,
+            List<ulong> clientsCompleted,
+            List<ulong> clientsTimedOut)
+        {
+            if (!_completedMatchLobbyReturnInProgress ||
+                !string.Equals(
+                    sceneName,
+                    _completedMatchSceneBeingUnloaded,
+                    StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            _completedMatchSceneBeingUnloaded = string.Empty;
+            _completedMatchPendingUnloadClients.Clear();
+            _completedMatchPendingUnloadScene = sceneName;
+            if (_networkManager != null)
+            {
+                foreach (var clientId in _networkManager.ConnectedClientsIds)
+                {
+                    if (clientsCompleted == null ||
+                        !clientsCompleted.Contains(clientId))
+                    {
+                        _completedMatchPendingUnloadClients.Add(clientId);
+                    }
+                }
+            }
+
+            if (_completedMatchPendingUnloadClients.Count > 0)
+            {
+                _completedMatchPendingUnloadDeadline =
+                    Time.realtimeSinceStartupAsDouble +
+                    CompletedMatchUnloadClientGraceSeconds;
+                SetStatus(
+                    "Waiting for " +
+                    _completedMatchPendingUnloadClients.Count +
+                    " player(s) to finish unloading " + sceneName + ".");
+                return;
+            }
+
+            _completedMatchPendingUnloadScene = string.Empty;
+            _completedMatchPendingUnloadDeadline = 0d;
+            // NGO does not permit another scene event from inside its completion
+            // notification. The next unload starts from Update on the next frame.
+            ScheduleCompletedMatchUnloadForNextFrame();
+        }
+
+        private void OnNetworkUnloadComplete(ulong clientId, string sceneName)
+        {
+            if (!_completedMatchLobbyReturnInProgress ||
+                !string.Equals(
+                    sceneName,
+                    _completedMatchPendingUnloadScene,
+                    StringComparison.Ordinal) ||
+                !_completedMatchPendingUnloadClients.Remove(clientId))
+            {
+                return;
+            }
+
+            if (_completedMatchPendingUnloadClients.Count == 0)
+            {
+                _completedMatchPendingUnloadScene = string.Empty;
+                _completedMatchPendingUnloadDeadline = 0d;
+                ScheduleCompletedMatchUnloadForNextFrame();
+            }
+        }
+
+        private void ResolveCompletedMatchUnloadTimeout()
+        {
+            if (_completedMatchPendingUnloadClients.Count == 0)
+            {
+                _completedMatchPendingUnloadDeadline = 0d;
+                return;
+            }
+
+            var timedOutClients = new List<ulong>(
+                _completedMatchPendingUnloadClients);
+            var timedOutScene = _completedMatchPendingUnloadScene;
+            _completedMatchPendingUnloadClients.Clear();
+            _completedMatchPendingUnloadScene = string.Empty;
+            _completedMatchPendingUnloadDeadline = 0d;
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (manager != null && manager.IsServer)
+            {
+                for (var index = 0; index < timedOutClients.Count; index++)
+                {
+                    var clientId = timedOutClients[index];
+                    if (clientId != NetworkManager.ServerClientId &&
+                        manager.ConnectedClients.ContainsKey(clientId))
+                    {
+                        manager.DisconnectClient(clientId);
+                    }
+                }
+            }
+
+            Debug.LogWarning(
+                "Stopped waiting for " + timedOutClients.Count +
+                " client(s) that did not finish unloading " +
+                timedOutScene + " within " +
+                CompletedMatchUnloadClientGraceSeconds + " seconds.");
+            SetStatus(
+                "Continuing lobby return after disconnecting clients that " +
+                "could not finish the scene unload.");
+            ScheduleCompletedMatchUnloadForNextFrame();
+        }
+
         private void OnClientConnected(ulong clientId)
         {
             if (_applicationQuitting ||
@@ -686,6 +1198,7 @@ namespace MazeParty.Multiplayer
 
         private void OnClientDisconnected(ulong clientId)
         {
+            ResolveCompletedMatchPendingUnloadClient(clientId);
             if (_applicationQuitting ||
                 _explicitLeaveQueued ||
                 _networkManager == null ||
@@ -704,7 +1217,14 @@ namespace MazeParty.Multiplayer
 
             if (remoteClientLost)
             {
-                if (_sessions.Current.Phase == MultiplayerConstants.LobbyPhase)
+                var disposition =
+                    CompletedMatchReturnRules.GetRemoteDisconnectDisposition(
+                        remoteClientLost,
+                        _sessions.Current.Phase ==
+                        MultiplayerConstants.LobbyPhase,
+                        _completedMatchLobbyReturnInProgress);
+                if (disposition ==
+                    RemoteDisconnectDisposition.QueueLobbyCleanup)
                 {
                     // Capture the service session identity now. The delayed cleanup must
                     // never target a replacement session that reuses the NGO client ID.
@@ -713,7 +1233,15 @@ namespace MazeParty.Multiplayer
                         expectedSessionId,
                         clientId);
                 }
-                else
+                else if (disposition ==
+                         RemoteDisconnectDisposition.DeferCleanupUntilLobby)
+                {
+                    _completedMatchDisconnectedClients.Add(clientId);
+                    SetStatus(
+                        "A player disconnected while the completed match was returning to the lobby.");
+                }
+                else if (disposition ==
+                         RemoteDisconnectDisposition.PauseForReconnect)
                 {
                     NetworkMatchState.Instance?.PauseForReconnectOnServer(clientId);
                     SetStatus(
@@ -725,6 +1253,44 @@ namespace MazeParty.Multiplayer
                 SetStatus(
                     "Relay connection lost. Waiting for the host or session service.");
             }
+        }
+
+        private void QueueCompletedMatchDisconnectedLobbyCleanups()
+        {
+            if (_completedMatchDisconnectedClients.Count == 0 ||
+                !_completedMatchLobbyReturnInProgress ||
+                _sessions == null ||
+                !_sessions.IsInSession ||
+                !_sessions.Current.IsHost ||
+                _sessions.Current.Phase != MultiplayerConstants.LobbyPhase)
+            {
+                return;
+            }
+
+            var expectedSessionId = _sessions.CurrentSessionId;
+            var disconnectedClients = new List<ulong>(
+                _completedMatchDisconnectedClients);
+            _completedMatchDisconnectedClients.Clear();
+            for (var index = 0; index < disconnectedClients.Count; index++)
+            {
+                QueueDisconnectedLobbyPlayerCleanup(
+                    expectedSessionId,
+                    disconnectedClients[index]);
+            }
+        }
+
+        private void ResolveCompletedMatchPendingUnloadClient(ulong clientId)
+        {
+            if (!_completedMatchLobbyReturnInProgress ||
+                !_completedMatchPendingUnloadClients.Remove(clientId) ||
+                _completedMatchPendingUnloadClients.Count > 0)
+            {
+                return;
+            }
+
+            _completedMatchPendingUnloadScene = string.Empty;
+            _completedMatchPendingUnloadDeadline = 0d;
+            ScheduleCompletedMatchUnloadForNextFrame();
         }
 
         private void OnClientStopped(bool _)

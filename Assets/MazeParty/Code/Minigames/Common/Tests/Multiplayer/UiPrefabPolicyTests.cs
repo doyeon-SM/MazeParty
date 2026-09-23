@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredPrefabPaths =
         {
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab",
@@ -54,6 +55,7 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredBindingTypeNames =
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
+            "MazeParty.Multiplayer.AwardCeremonyCanvasBindings",
             "MazeParty.Multiplayer.MinigameCommonHudView",
             "MazeParty.Multiplayer.MinigameResultCanvasBindings",
             "MazeParty.Multiplayer.ArenaCombatHitFlashView",
@@ -91,6 +93,7 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+                "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab"),
             new SceneUiContract(

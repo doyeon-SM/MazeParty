@@ -738,6 +738,7 @@ namespace MazeParty.Multiplayer
             _keyCount.Value = PlayerStatRules.DefaultStartingKeys;
             _gold.Value = PlayerStatRules.DefaultStartingGold;
             _minigameWins.Value = 0;
+            _matchAwardProgress.Reset(_gold.Value);
             _occupiedItemMask.Value = 0;
             SetItemSlotValue(0, PrototypeItemId.None);
             SetItemSlotValue(1, PrototypeItemId.None);
@@ -782,10 +783,23 @@ namespace MazeParty.Multiplayer
                 return DamageResult.Blocked;
             }
 
-            InterruptSwapOnDamage(Mathf.Min(_currentHealth.Value, request.Amount));
+            var appliedDamage = MatchAwardRules.GetAppliedDamageAmount(
+                _currentHealth.Value,
+                request.Amount);
+            InterruptSwapOnDamage(appliedDamage);
             _currentHealth.Value = PlayerStatRules.ClampHealth(
                 _currentHealth.Value - request.Amount,
                 _maxHealth.Value);
+            var sourceAvatar = request.Source != null
+                ? request.Source.GetComponentInParent<NetworkPlayerAvatar>()
+                : null;
+            var attacker = MatchAwardRules.CountsAsPlayerDamage(
+                request.Kind,
+                sourceAvatar != null,
+                sourceAvatar == this)
+                ? sourceAvatar
+                : null;
+            RecordDamageOnServer(appliedDamage, attacker);
             PresentHitRpc((byte)request.HitRegion);
             if (_currentHealth.Value == 0)
             {
@@ -888,6 +902,7 @@ namespace MazeParty.Multiplayer
 
             var previous = _gold.Value;
             _gold.Value = PlayerStatRules.ApplyGoldDelta(previous, delta);
+            _matchAwardProgress.RecordGoldBalance(previous, _gold.Value);
             return _gold.Value - previous;
         }
 
@@ -1023,7 +1038,9 @@ namespace MazeParty.Multiplayer
             _serverPitch = 0f;
         }
 
-        public bool ApplyCombatPunchOnServer(Vector3 knockbackVelocity)
+        public bool ApplyCombatPunchOnServer(
+            NetworkPlayerAvatar attacker,
+            Vector3 knockbackVelocity)
         {
             if (!IsServer || CombatState != NetworkCombatState.Active ||
                 _combatHealth.Value <= 0)
@@ -1031,9 +1048,11 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _combatHealth.Value = Math.Max(
-                0,
-                _combatHealth.Value - BoardCombatRules.PunchDamage);
+            var appliedDamage = MatchAwardRules.GetAppliedDamageAmount(
+                _combatHealth.Value,
+                BoardCombatRules.PunchDamage);
+            _combatHealth.Value -= appliedDamage;
+            RecordDamageOnServer(appliedDamage, attacker);
             PresentHitRpc((byte)PlayerHitRegion.Body);
             if (_combatHealth.Value > 0)
             {
@@ -1476,6 +1495,7 @@ namespace MazeParty.Multiplayer
                 KeyCount = _keyCount.Value,
                 Gold = _gold.Value,
                 MinigameWins = _minigameWins.Value,
+                MatchAwardProgress = _matchAwardProgress,
                 ActionState = (PlayerBoardActionState)_actionState.Value,
                 CombatState = CombatState,
                 CombatHealth = _combatHealth.Value,
@@ -1543,6 +1563,8 @@ namespace MazeParty.Multiplayer
             _keyCount.Value = Mathf.Max(0, snapshot.KeyCount);
             _gold.Value = Mathf.Max(0, snapshot.Gold);
             _minigameWins.Value = Mathf.Max(0, snapshot.MinigameWins);
+            _matchAwardProgress = snapshot.MatchAwardProgress.Sanitized();
+            _matchAwardProgress.RecordGoldBalance(_gold.Value, _gold.Value);
             _actionState.Value = (byte)snapshot.ActionState;
             _combatState.Value = (byte)snapshot.CombatState;
             _combatHealth.Value = Mathf.Clamp(

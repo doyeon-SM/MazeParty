@@ -211,7 +211,9 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SetBoardUiVisible(match.FlowState != BoardFlowState.MinigamePlaying);
+            SetBoardUiVisible(
+                match.FlowState != BoardFlowState.MinigamePlaying &&
+                match.FlowState != BoardFlowState.MatchComplete);
             RefreshPanels(match);
             RefreshHeader(match);
             RefreshLocalPlayer(match);

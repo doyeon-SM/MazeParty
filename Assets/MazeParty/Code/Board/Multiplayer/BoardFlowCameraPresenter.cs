@@ -26,8 +26,14 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             // Player objects persist with the bootstrap scene. Never carry the
-            // first-person hidden-body presentation out of the Board scene.
-            ApplyLocalBodyVisibility(GameplayMode.BoardTopDown);
+            // first-person hidden-body or board top-view highlight presentation
+            // out of the Board scene and into the lobby.
+            if (_localAvatar != null)
+            {
+                _localAvatar.AvatarVisual?.SetOwnerFirstPerson(false);
+                _localAvatar.AvatarVisual?.SetTopViewHighlight(false);
+            }
+            BoardFlowView.Instance?.SetTopViewShopHighlights(false);
         }
 
         private void Update()
@@ -146,7 +152,9 @@ namespace MazeParty.Multiplayer
                     : GameplayMode.CombatSpectator;
             }
 
-            if (match.FlowState == BoardFlowState.MinigamePlaying ||
+            if ((match.FlowState == BoardFlowState.MatchComplete &&
+                 match.IsAwardCeremonyActive) ||
+                match.FlowState == BoardFlowState.MinigamePlaying ||
                 (match.FlowState == BoardFlowState.SkippedResult &&
                  match.CurrentMinigame !=
                  MazeParty.Gameplay.Minigames.ScheduledMinigameId.Skip))

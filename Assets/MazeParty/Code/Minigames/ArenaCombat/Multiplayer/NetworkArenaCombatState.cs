@@ -277,6 +277,7 @@ namespace MazeParty.Multiplayer
             knockbackDirection.Normalize();
 
             var eliminated = target.ApplyCombatPunchOnServer(
+                attacker,
                 knockbackDirection *
                 BoardCombatRules.PunchKnockbackSpeed);
             IncrementHitSequenceOnServer(target.AssignedSlot);

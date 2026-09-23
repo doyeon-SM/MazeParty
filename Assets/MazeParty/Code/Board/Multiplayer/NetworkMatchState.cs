@@ -697,6 +697,12 @@ namespace MazeParty.Multiplayer
                 ShouldDeferActionTimeoutForWorldDie();
             ForEachAvatar(avatar => avatar.AdvanceBoardDeathOnServer(now));
             _flow.Tick(now, deferActionTimeout, HasBoardDeathInProgressOnServer());
+            if (_flow.State == BoardFlowState.MatchComplete)
+            {
+                StopAllAvatarInputOnServer();
+                AdvanceAwardCeremonyOnServer(now);
+                return;
+            }
             if (deferActionTimeout &&
                 _flow.State == BoardFlowState.Action &&
                 _flow.GetActionRemaining(now) <= 0d)
@@ -1915,10 +1921,7 @@ namespace MazeParty.Multiplayer
         {
             avatar.ApplyGoldDeltaOnServer(
                 MinigameRewardRules.GetFinalPlacementGold(rank));
-            if (rank == 1)
-            {
-                avatar.AddMinigameWinOnServer();
-            }
+            avatar.RecordMinigamePlacementOnServer(rank);
         }
 
 
@@ -1957,6 +1960,7 @@ namespace MazeParty.Multiplayer
                     Math.Max(0d, _scheduledSkipAt - now);
                 _scheduledSkipAt = 0d;
             }
+            PauseAwardCeremonyOnServer(now);
             PauseAllMinigameRuntimes(now);
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
@@ -2197,6 +2201,10 @@ namespace MazeParty.Multiplayer
                     _scheduledSkipPaused = false;
                     _pausedScheduledSkipRemaining = 0d;
                     _minigameScheduleSession?.CompleteActive();
+                    // Presentation time starts when the transition is actually
+                    // observed. A stalled server frame must not consume the first
+                    // bonus-award window before clients can render it.
+                    BeginAwardCeremonyOnServer(ServerNow);
                     break;
             }
 
@@ -2270,6 +2278,7 @@ namespace MazeParty.Multiplayer
                 }
                 _pausedArrivalGraceRemaining.Value = 0d;
             }
+            ResumeAwardCeremonyOnServer(now);
             if (_scheduledSkipPaused)
             {
                 _scheduledSkipAt =
@@ -2992,6 +3001,7 @@ namespace MazeParty.Multiplayer
             knockbackDirection.Normalize();
 
             var eliminated = target.ApplyCombatPunchOnServer(
+                attacker,
                 knockbackDirection * BoardCombatRules.PunchKnockbackSpeed);
             if (!eliminated)
             {
@@ -3740,6 +3750,7 @@ namespace MazeParty.Multiplayer
         public int KeyCount;
         public int Gold;
         public int MinigameWins;
+        public MatchAwardProgress MatchAwardProgress;
         public PlayerBoardActionState ActionState;
         public NetworkCombatState CombatState;
         public int CombatHealth;

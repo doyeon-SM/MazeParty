@@ -171,6 +171,7 @@ namespace MazeParty.Editor
             var cameras = CreateCameraRig();
             CreateBoardCanvas(cameras);
             MinigameResultCanvasProjectSetup.EnsureSceneInstance(scene);
+            AwardCeremonyProjectSetup.EnsureSceneInstances(scene);
 
             var validation = topology.ValidateTopology();
             if (!validation.IsValid)

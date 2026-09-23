@@ -40,6 +40,7 @@ namespace MazeParty.Multiplayer
         public bool SpendItemChargeOnServer(BoardItemDefinition item)
         {
             if (!CanUseItemChargeOnServer || GetSelectedItemOnServer() != item.Id) return false;
+            RecordItemUseOnServer();
             _itemCharges.Value--;
             _itemCooldownRemaining = item.FireInterval;
             if (_itemCharges.Value == 0) ConsumeSelectedItemOnServer();
@@ -52,7 +53,11 @@ namespace MazeParty.Multiplayer
                 _firstDieResult.Value, _secondDieResult.Value, index, face, out var first, out var second, out var total)) return 0;
             _firstDieResult.Value = first;
             _secondDieResult.Value = second;
-            if (total > 0 && (UsesDoubleDice || HasRangeDie)) ConsumeSelectedItemOnServer();
+            if (total > 0 && (UsesDoubleDice || HasRangeDie))
+            {
+                RecordItemUseOnServer();
+                ConsumeSelectedItemOnServer();
+            }
             return total;
         }
 
