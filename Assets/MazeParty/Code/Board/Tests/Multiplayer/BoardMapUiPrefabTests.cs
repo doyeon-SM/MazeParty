@@ -58,6 +58,9 @@ namespace MazeParty.Multiplayer.Tests
             var badges = root.GetComponent<BoardPlayerStatusBadges>();
             Assert.That(map, Is.Not.Null);
             Assert.That(map.HasRequiredReferences, Is.True);
+            var minimap = root.GetComponent<BoardMinimapView>();
+            Assert.That(minimap, Is.Not.Null);
+            Assert.That(minimap.HasRequiredReferences, Is.True);
             Assert.That(badges, Is.Not.Null);
             Assert.That(badges.HasRequiredReferences, Is.True);
         }

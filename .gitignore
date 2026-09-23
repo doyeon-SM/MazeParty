@@ -106,3 +106,12 @@ InitTestScene*.unity*
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
 Assets/Ignore/*
+
+# Required board minimap runtime; imported demos remain local.
+!Assets/Ignore/UnitySimpleMiniMap/
+!Assets/Ignore/UnitySimpleMiniMap.meta
+Assets/Ignore/UnitySimpleMiniMap/*
+!Assets/Ignore/UnitySimpleMiniMap/Runtime/
+!Assets/Ignore/UnitySimpleMiniMap/Runtime.meta
+!Assets/Ignore/UnitySimpleMiniMap/LICENSE
+!Assets/Ignore/UnitySimpleMiniMap/LICENSE.meta

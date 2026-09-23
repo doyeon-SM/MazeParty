@@ -4,12 +4,14 @@ using MazeParty.Gameplay;
 using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
 namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Updates the 7x7 map cells authored in BoardCanvas.prefab. The board is
-    /// north-up in both views; only the overview marks a directed shop route.
+    /// north-up in the overview; the live minimap follows the local eye heading.
     /// </summary>
     public sealed class BoardMapView : MonoBehaviour
     {
@@ -25,6 +27,11 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private GameObject overviewPanel;
         [SerializeField] private GameObject minimapPanel;
+        [SerializeField] private BoardMinimapView liveMinimap;
+        [SerializeField] private GameObject fullMapPanel;
+        [SerializeField] private BoardMinimapView fullMap;
+        private bool _fullMapOpen;
+        public bool FullMapOpen => _fullMapOpen;
         [SerializeField] private Cell[] overviewCells = Array.Empty<Cell>();
         [SerializeField] private Cell[] minimapCells = Array.Empty<Cell>();
         [Header("Map palette")]
@@ -43,7 +50,9 @@ namespace MazeParty.Multiplayer
 
         public bool HasRequiredReferences =>
             overviewPanel != null && minimapPanel != null &&
-            HasCells(overviewCells) && HasCells(minimapCells);
+            HasCells(overviewCells) && HasCells(minimapCells) &&
+            liveMinimap != null && liveMinimap.HasRequiredReferences &&
+            fullMapPanel != null && fullMap != null && fullMap.HasRequiredReferences;
 
         public void Configure(GameObject overview, GameObject minimap,
             Cell[] overviewMapCells, Cell[] minimapMapCells)
@@ -55,7 +64,7 @@ namespace MazeParty.Multiplayer
             _lastSignature = int.MinValue;
         }
 
-        private void Update()
+        private void LateUpdate()
         {
             if (!HasRequiredReferences)
             {
@@ -65,10 +74,17 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var isReady = match != null && match.IsSpawned && match.GameplayEnabled;
             var overview = isReady && match.FlowState == BoardFlowState.TurnOverview;
-            var action = isReady && match.FlowState == BoardFlowState.Action &&
-                         !match.IsGlobalSimulationPaused;
-            SetActive(overviewPanel, overview);
-            SetActive(minimapPanel, action);
+            var action = isReady && (match.FlowState == BoardFlowState.Descending ||
+                match.FlowState == BoardFlowState.Action ||
+                match.FlowState == BoardFlowState.AscendingResolve ||
+                match.FlowState == BoardFlowState.CombatResolve ||
+                match.FlowState == BoardFlowState.LandingEffectResolve);
+            var keyboard = Keyboard.current;
+            var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
+            var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
+            UpdateFullMapState(overview || action, !typing && keyboard != null && keyboard.mKey.wasPressedThisFrame);
+            SetActive(overviewPanel, overview && !_fullMapOpen);
+            SetActive(minimapPanel, action && !_fullMapOpen);
             if (!overview && !action)
             {
                 return;
@@ -90,6 +106,12 @@ namespace MazeParty.Multiplayer
             var localAvatar = localObject != null
                 ? localObject.GetComponent<NetworkPlayerAvatar>()
                 : null;
+            if (_fullMapOpen || action)
+            {
+                if (_fullMapOpen) fullMap.Refresh(_topology, match, localAvatar);
+                else liveMinimap.Refresh(_topology, match, localAvatar);
+                return;
+            }
             var signature = ComputeSignature(match, localAvatar, overview);
             if (signature == _lastSignature)
             {
@@ -122,6 +144,18 @@ namespace MazeParty.Multiplayer
                 }
             }
             if (overview) PulseRoute();
+        }
+
+        public void UpdateFullMapState(bool boardAvailable, bool toggleRequested)
+        {
+            if (!boardAvailable) _fullMapOpen = false;
+            else if (toggleRequested) _fullMapOpen = !_fullMapOpen;
+            if (fullMapPanel != null) SetActive(fullMapPanel, _fullMapOpen);
+        }
+
+        private void OnDisable()
+        {
+            UpdateFullMapState(false, false);
         }
 
         private void RefreshCell(Cell cell, Vector2Int coordinate,

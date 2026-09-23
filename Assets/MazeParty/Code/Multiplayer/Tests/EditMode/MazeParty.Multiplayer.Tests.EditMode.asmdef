@@ -8,7 +8,8 @@
     "Unity.Netcode.Runtime",
     "Unity.Networking.Transport",
     "UnityEngine.UI",
-    "Unity.InputSystem"
+    "Unity.InputSystem",
+    "Arikan.MiniMap"
   ],
   "includePlatforms": [
     "Editor"

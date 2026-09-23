@@ -45,6 +45,7 @@ namespace MazeParty.Editor
             {
                 CreateStatusBadges(root, font);
             }
+            BoardMinimapPrefabAuthoring.Ensure(root, font);
         }
 
         private static void CreateMaps(GameObject root, Font font)

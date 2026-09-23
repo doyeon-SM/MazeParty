@@ -12,7 +12,8 @@
     "UnityEngine.UI",
     "MazeParty.Gameplay",
     "Unity.Cinemachine",
-    "Unity.Collections"
+    "Unity.Collections",
+    "Arikan.MiniMap"
   ],
   "autoReferenced": true
 }
