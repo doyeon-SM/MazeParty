@@ -1,0 +1,19 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f1965dc24e0b3c546ab1343e165129a5, type: 3}
+  m_Name: BoardWorldPrefabs
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardWorldPrefabs
+  keyShop: {fileID: 1625244641333020503, guid: 3b08007a5d73b8f48bc377d7898541bc, type: 3}
+  itemShops:
+  - {fileID: 7674607633808116207, guid: 90960ef7f92f8624ebbae448d488edc4, type: 3}
+  - {fileID: 6051831692885822890, guid: 1fd6696881c2cb94791a5ce617195f03, type: 3}
+  boundaryWall: {fileID: 2038438990982792714, guid: a92e3d67a2ea1414a82e013247e58d6e, type: 3}

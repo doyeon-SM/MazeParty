@@ -142,7 +142,8 @@ namespace MazeParty.Multiplayer.Tests
             var boundaryWalls =
                 playerPrefab.GetComponent<PlayerBoardBoundaryWalls>();
             Assert.That(boundaryWalls, Is.Not.Null);
-            Assert.That(boundaryWalls.WallMaterial, Is.Not.Null);
+            Assert.That(boundaryWalls.WorldPrefabs, Is.Not.Null);
+            Assert.That(boundaryWalls.WorldPrefabs.HasRequiredReferences, Is.True);
 
             var scene = SceneManager.GetSceneByPath(BootstrapScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;

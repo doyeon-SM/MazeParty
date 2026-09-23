@@ -72,6 +72,15 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(westWall.enabled, Is.True);
             Assert.That(Physics.GetIgnoreCollision(westWall, secondController), Is.True);
             Assert.That(Physics.GetIgnoreCollision(westWall, firstController), Is.False);
+            first.SetPresentationVisible(false);
+            Assert.That(westWall.enabled, Is.True, "Hiding a remote wall must keep its owner collision active.");
+            Assert.That(westWall.GetComponentsInChildren<Renderer>(true),
+                Is.All.Matches<Renderer>(renderer => !renderer.enabled));
+            first.Refresh(source, 0);
+            Assert.That(eastWall.enabled, Is.True);
+            Assert.That(Physics.GetIgnoreCollision(eastWall, secondController), Is.True);
+            first.Hide();
+            Assert.That(westWall.gameObject.activeInHierarchy, Is.False);
         }
 
         private BoardTile CreateTile(string name, Vector2Int coordinate, Vector3 position)

@@ -239,6 +239,4 @@ MonoBehaviour:
   topology: {fileID: 0}
   wallThickness: 0.16
   wallHeight: 2.5
-  wallMaterial: {fileID: 2100000, guid: 3951dccd0d73efe4e9f16f1d83236235, type: 2}
-  passableColor: {r: 0.04, g: 0.32, b: 1, a: 0.72}
-  blockedColor: {r: 0.005, g: 0.008, b: 0.012, a: 1}
+  worldPrefabs: {fileID: 11400000, guid: eb5de4341874cd147b5b08fe901f25b1, type: 2}

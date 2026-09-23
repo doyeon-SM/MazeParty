@@ -429,9 +429,11 @@ namespace MazeParty.Editor
 
             var topology = root.AddComponent<BoardTopology>();
             topology.Configure(tiles.ToArray(), gates.ToArray());
-            root.AddComponent<KeyShopWorldMarker>();
-            root.AddComponent<ItemShopWorldMarker>();
+            var worldPrefabs = BoardWorldPrefabProjectSetup.EnsureAssets();
+            BoardWorldPrefabProjectSetup.Bind(root.AddComponent<KeyShopWorldMarker>(), worldPrefabs);
+            BoardWorldPrefabProjectSetup.Bind(root.AddComponent<ItemShopWorldMarker>(), worldPrefabs);
             BoardTombstoneProjectSetup.EnsureView(root);
+            BoardShopRouteProjectSetup.EnsureView(root);
             EditorUtility.SetDirty(topology);
             return topology;
         }
@@ -550,6 +552,8 @@ namespace MazeParty.Editor
 
         private static GameObject EnsureD12RuntimeAssets()
         {
+            var authored = AssetDatabase.LoadAssetAtPath<GameObject>(D12VisualPrefabPath);
+            if (authored != null) return authored;
             ConfigureD12ImportSettings();
             var material = CreateOrUpdateD12Material();
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(D12ModelPath);
@@ -702,6 +706,7 @@ namespace MazeParty.Editor
             }
 
             var material = AssetDatabase.LoadAssetAtPath<Material>(D12MaterialPath);
+            if (material != null) return material;
             if (material == null)
             {
                 material = new Material(shader) { name = "D12Tintable" };
@@ -811,29 +816,7 @@ namespace MazeParty.Editor
             BoardMaterials materials,
             int index)
         {
-            var tileObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            tileObject.name = "Room " + coordinate.x + "," + coordinate.y + " - " + type;
-            tileObject.transform.SetParent(parent);
-            tileObject.transform.position = GridToWorld(coordinate);
-            tileObject.transform.localScale = new Vector3(7.72f, 0.2f, 7.72f);
-            tileObject.GetComponent<Renderer>().sharedMaterial = MaterialFor(type, materials, index);
-
-            var tile = tileObject.AddComponent<BoardTile>();
-            tile.Configure(coordinate, type);
-
-            var labelObject = new GameObject("Room Label");
-            labelObject.transform.SetParent(tileObject.transform, false);
-            labelObject.transform.localPosition = new Vector3(0f, 0.56f, 0f);
-            labelObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            labelObject.transform.localScale = Vector3.one * 0.05f;
-            var label = labelObject.AddComponent<TextMesh>();
-            label.text = coordinate.x + "," + coordinate.y + "\n" + TileTypeLabel(type);
-            label.anchor = TextAnchor.MiddleCenter;
-            label.alignment = TextAlignment.Center;
-            label.fontSize = 30;
-            label.characterSize = 0.35f;
-            label.color = Color.white;
-            return tile;
+            return BoardWorldPrefabProjectSetup.CreateTile(parent, coordinate, type, index, GridToWorld(coordinate));
         }
 
         private static BoardGate CreateGate(
@@ -1810,18 +1793,10 @@ namespace MazeParty.Editor
 
         private static void CreateBoardBackdrop(Material material)
         {
-            var backdrop = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            var backdrop = (GameObject)PrefabUtility.InstantiatePrefab(BoardWorldPrefabProjectSetup.EnsureBackdrop());
             backdrop.name = "Board Backdrop (No Gameplay Collision)";
             backdrop.transform.position = new Vector3(0f, -0.42f, 0f);
-            backdrop.transform.localScale = new Vector3(60f, 0.4f, 60f);
-            backdrop.GetComponent<Renderer>().sharedMaterial = material;
-            var collider = backdrop.GetComponent<Collider>();
-            if (collider != null)
-            {
-                UnityEngine.Object.DestroyImmediate(collider);
-            }
         }
-
         private static BoardMaterials CreateMaterials()
         {
             return new BoardMaterials
@@ -1839,6 +1814,7 @@ namespace MazeParty.Editor
         {
             var path = MaterialFolder + "/" + name + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material != null) return material; // Preserve authored material design.
             if (material == null)
             {
                 var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");

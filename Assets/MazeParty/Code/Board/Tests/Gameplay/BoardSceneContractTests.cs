@@ -44,6 +44,31 @@ namespace MazeParty.Gameplay.Tests
                     .Any(component => component != null &&
                         component.GetType().FullName ==
                             "MazeParty.Multiplayer.BoardTombstoneMarker"), Is.True);
+                var routeView = topology.GetComponents<MonoBehaviour>().SingleOrDefault(component =>
+                    component != null && component.GetType().FullName == "MazeParty.Multiplayer.BoardShopRouteView");
+                Assert.That(routeView, Is.Not.Null, "Board scene must have exactly one local shop guide.");
+                Assert.That(routeView.GetType().GetProperty("HasRequiredReferences")?.GetValue(routeView), Is.EqualTo(true));
+                var worldAssets = BoardWorldPrefabs.LoadRequired();
+                Assert.That(worldAssets.HasRequiredReferences, Is.True);
+                foreach (var marker in new Component[] { topology.GetComponent<KeyShopWorldMarker>(), topology.GetComponent<ItemShopWorldMarker>() })
+                {
+                    Assert.That(marker, Is.Not.Null);
+                    Assert.That(new SerializedObject(marker).FindProperty("worldPrefabs").objectReferenceValue, Is.SameAs(worldAssets));
+                }
+                Assert.That(worldAssets.KeyShop.GetComponentsInChildren<KeyShopWorldTarget>(true), Is.Not.Empty);
+                for (var shop = 0; shop < 2; shop++)
+                {
+                    var targets = worldAssets.ItemShop(shop).GetComponentsInChildren<ItemShopWorldTarget>(true);
+                    Assert.That(targets, Is.Not.Empty, "Authored shop targets must survive prefab serialization.");
+                    Assert.That(targets.All(target => target.ShopIndex == shop), Is.True);
+                }
+                var wall = worldAssets.BoundaryWall;
+                Assert.That(wall.GetComponentsInChildren<Collider>(true), Has.Length.EqualTo(1),
+                    "Decorative wall children must not bypass owner-only collision isolation.");
+                Assert.That(wall.BlockingCollider.isTrigger, Is.False);
+                var backdrop = scene.GetRootGameObjects().Single(root => root.name == "Board Backdrop (No Gameplay Collision)");
+                Assert.That(PrefabUtility.IsPartOfPrefabInstance(backdrop), Is.True);
+                Assert.That(backdrop.GetComponentsInChildren<Collider>(true), Is.Empty);
                 topology.RebuildIndex();
 
                 var tiles = topology.Tiles.Where(tile => tile != null).ToArray();
@@ -83,6 +108,10 @@ namespace MazeParty.Gameplay.Tests
 
                 foreach (var tile in tiles)
                 {
+                    Assert.That(PrefabUtility.IsPartOfPrefabInstance(tile), Is.True,
+                        "Board rooms must inherit their authored prefab design.");
+                    Assert.That(tile.GetComponent<BoxCollider>(), Is.Not.Null);
+                    Assert.That(new SerializedObject(tile).FindProperty("landingEffectRenderer").objectReferenceValue, Is.Not.Null);
                     Assert.That(
                         topology.GetOutgoingGates(tile),
                         Is.Not.Empty,

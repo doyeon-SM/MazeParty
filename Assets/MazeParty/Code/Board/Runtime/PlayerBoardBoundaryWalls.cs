@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace MazeParty.Gameplay
@@ -25,9 +24,9 @@ namespace MazeParty.Gameplay
         [SerializeField] private BoardTopology topology;
         [SerializeField, Min(0.02f)] private float wallThickness = 0.16f;
         [SerializeField, Min(0.25f)] private float wallHeight = 2.5f;
-        [SerializeField] private Material wallMaterial;
-        [SerializeField] private Color passableColor = new Color(0.04f, 0.32f, 1f, 0.72f);
-        [SerializeField] private Color blockedColor = new Color(0.005f, 0.008f, 0.012f, 1f);
+
+        [SerializeField] private BoardWorldPrefabs worldPrefabs;
+
 
         private readonly WallRuntime[] _walls = new WallRuntime[WallsPerSlot];
         private readonly List<Vector2Int> _connectedCoordinates =
@@ -45,19 +44,11 @@ namespace MazeParty.Gameplay
         public BoardTile CurrentTile => _currentTile;
         public BoardBoundaryWallLayout CurrentLayout => _currentLayout;
         public bool PresentationVisible => _presentationVisible;
-        public Material WallMaterial => wallMaterial;
+        public BoardWorldPrefabs WorldPrefabs => worldPrefabs;
 
-        public void ConfigureVisualMaterial(Material material)
+        public void ConfigureWorldPrefabs(BoardWorldPrefabs assets)
         {
-            wallMaterial = material;
-            for (var index = 0; index < _walls.Length; index++)
-            {
-                var wall = _walls[index];
-                if (wall != null && wall.Renderer != null && wallMaterial != null)
-                {
-                    wall.Renderer.sharedMaterial = wallMaterial;
-                }
-            }
+            worldPrefabs = assets != null ? assets : throw new ArgumentNullException(nameof(assets));
         }
 
         public void Configure(
@@ -209,11 +200,7 @@ namespace MazeParty.Gameplay
             if (_wallRoot != null)
                 return;
 
-            if (wallMaterial == null)
-            {
-                wallMaterial = Resources.Load<Material>(
-                    "MazeParty/Materials/LobbySurface");
-            }
+            if (worldPrefabs == null) worldPrefabs = BoardWorldPrefabs.LoadRequired();
 
             _wallRoot = new GameObject(GetRootName())
             {
@@ -228,24 +215,12 @@ namespace MazeParty.Gameplay
             for (var i = 0; i < WallsPerSlot; i++)
             {
                 var side = (BoardBoundarySide)i;
-                var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                var visual = Instantiate(worldPrefabs.BoundaryWall, _wallRoot.transform, false);
+                var wall = visual.gameObject;
                 wall.name = "P" + (playerSlot + 1) + " Boundary " + side;
                 wall.hideFlags = HideFlags.DontSave;
-                wall.transform.SetParent(_wallRoot.transform, false);
-
-                var wallCollider = wall.GetComponent<BoxCollider>();
-                wallCollider.isTrigger = false;
-                var wallRenderer = wall.GetComponent<MeshRenderer>();
-                if (wallMaterial != null)
-                {
-                    // A serialized URP material keeps the shader in standalone
-                    // builds. Runtime primitive defaults can be stripped and render
-                    // magenta even though their property block contains a color.
-                    wallRenderer.sharedMaterial = wallMaterial;
-                }
-                wallRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                wallRenderer.receiveShadows = false;
-                _walls[i] = new WallRuntime(wall, wallCollider, wallRenderer);
+                var wallCollider = visual.BlockingCollider;
+                _walls[i] = new WallRuntime(wall, wallCollider, visual);
             }
 
             ApplyPresentationVisibility();
@@ -268,7 +243,7 @@ namespace MazeParty.Gameplay
                 if (!hasConnectedPath)
                 {
                     wall.Collider.enabled = false;
-                    wall.Renderer.enabled = false;
+                    wall.Visual.SetVisible(false);
                     continue;
                 }
 
@@ -286,9 +261,9 @@ namespace MazeParty.Gameplay
                     : new Vector3(thickness, height, BoardTile.RoomSize + thickness * 2f);
 
                 var passable = layout.IsPassable(side);
-                wall.Collider.enabled = !passable;
-                ApplyColor(wall.Renderer, passable ? passableColor : blockedColor);
-                wall.Renderer.enabled = _presentationVisible;
+                wall.Visual.SetPassable(passable);
+
+                wall.Visual.SetVisible(_presentationVisible);
             }
 
             RefreshCollisionIsolationForAllSystems();
@@ -299,8 +274,8 @@ namespace MazeParty.Gameplay
             for (var i = 0; i < _walls.Length; i++)
             {
                 var wall = _walls[i];
-                if (wall != null && wall.Renderer != null)
-                    wall.Renderer.enabled = _presentationVisible;
+                if (wall != null)
+                    wall.Visual.SetVisible(_presentationVisible);
             }
         }
 
@@ -420,32 +395,21 @@ namespace MazeParty.Gameplay
             }
         }
 
-        private static void ApplyColor(Renderer target, Color color)
-        {
-            if (target == null)
-                return;
-
-            var properties = new MaterialPropertyBlock();
-            target.GetPropertyBlock(properties);
-            properties.SetColor("_BaseColor", color);
-            properties.SetColor("_Color", color);
-            target.SetPropertyBlock(properties);
-        }
-
         private sealed class WallRuntime
         {
-            public WallRuntime(GameObject gameObject, BoxCollider collider, MeshRenderer renderer)
+            public WallRuntime(GameObject gameObject, BoxCollider collider, BoardBoundaryWallVisual visual)
             {
                 GameObject = gameObject;
                 Transform = gameObject.transform;
                 Collider = collider;
-                Renderer = renderer;
+                Visual = visual;
             }
 
+            public BoardBoundaryWallVisual Visual { get; }
             public GameObject GameObject { get; }
             public Transform Transform { get; }
             public BoxCollider Collider { get; }
-            public MeshRenderer Renderer { get; }
+
         }
     }
 }

@@ -139,8 +139,7 @@ namespace MazeParty.Editor
             // Four reusable boundaries are created by this component per player
             // instance (16 total for the fixed four-player match).
             var boundaryWalls = player.AddComponent<PlayerBoardBoundaryWalls>();
-            boundaryWalls.ConfigureVisualMaterial(
-                LoadRequiredMaterial(LobbyWallMaterialPath));
+            boundaryWalls.ConfigureWorldPrefabs(BoardWorldPrefabProjectSetup.EnsureAssets());
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
             Object.DestroyImmediate(player);

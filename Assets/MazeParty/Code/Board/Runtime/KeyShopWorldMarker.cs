@@ -41,8 +41,8 @@ namespace MazeParty.Gameplay
         public const float DefaultVerticalOffset = 0.12f;
 
         [SerializeField, Min(0f)] private float verticalOffset = DefaultVerticalOffset;
-        [SerializeField] private Color markerColor = new Color(1f, 0.66f, 0.08f, 1f);
-        [SerializeField] private Color labelColor = Color.white;
+        [SerializeField] private BoardWorldPrefabs worldPrefabs;
+
 
         private GameObject _markerObject;
         private TextMesh _worldText;
@@ -196,67 +196,12 @@ namespace MazeParty.Gameplay
             if (_markerObject != null)
                 return;
 
-            _markerObject = new GameObject("Key Shop World Marker");
-            _markerObject.transform.SetParent(transform, true);
-            _markerObject.layer = gameObject.layer;
-
-            var baseObject = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-            baseObject.name = "Marker Base";
-            baseObject.transform.SetParent(_markerObject.transform, false);
-            baseObject.transform.localPosition = new Vector3(0f, 0.12f, 0f);
-            baseObject.transform.localScale = new Vector3(1.65f, 0.12f, 1.65f);
-            baseObject.layer = gameObject.layer;
-            baseObject.AddComponent<KeyShopWorldTarget>();
-
-            var renderer = baseObject.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                WorldTextOcclusion.ApplyBuildSafeSurface(renderer);
-                var properties = new MaterialPropertyBlock();
-                properties.SetColor("_BaseColor", markerColor);
-                properties.SetColor("_Color", markerColor);
-                renderer.SetPropertyBlock(properties);
-            }
-
-            var bodyObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            bodyObject.name = "Key Shop Target";
-            bodyObject.transform.SetParent(_markerObject.transform, false);
-            bodyObject.transform.localPosition = new Vector3(0f, 0.9f, 0f);
-            bodyObject.transform.localScale = new Vector3(1.35f, 1.7f, 1.35f);
-            bodyObject.layer = gameObject.layer;
-            bodyObject.AddComponent<KeyShopWorldTarget>();
-            var bodyRenderer = bodyObject.GetComponent<Renderer>();
-            if (bodyRenderer != null)
-            {
-                WorldTextOcclusion.ApplyBuildSafeSurface(bodyRenderer);
-                var bodyProperties = new MaterialPropertyBlock();
-                bodyProperties.SetColor("_BaseColor", markerColor);
-                bodyProperties.SetColor("_Color", markerColor);
-                bodyRenderer.SetPropertyBlock(bodyProperties);
-            }
-
-            var textObject = new GameObject("Key Shop World Text");
-            textObject.transform.SetParent(_markerObject.transform, false);
-            textObject.transform.localPosition = new Vector3(0f, 1.95f, 0f);
-            textObject.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
-            textObject.layer = gameObject.layer;
-            _worldText = textObject.AddComponent<TextMesh>();
-            _worldText.text = WorldLabel + "\nRMB BUY  20 GOLD";
-            _worldText.anchor = TextAnchor.MiddleCenter;
-            _worldText.alignment = TextAlignment.Center;
-            _worldText.fontSize = 48;
-            _worldText.characterSize = 0.09f;
-            _worldText.color = labelColor;
-            WorldTextOcclusion.Apply(_worldText);
-
-            _topViewHighlight = TopViewHighlightUtility.CreateSquareOutline(
-                _markerObject.transform,
-                "Key Shop Top View Highlight",
-                1.12f,
-                0.1f,
-                0.04f);
+            if (worldPrefabs == null) worldPrefabs = BoardWorldPrefabs.LoadRequired();
+            var visual = Instantiate(worldPrefabs.KeyShop, transform, false);
+            _markerObject = visual.gameObject;
+            _worldText = visual.Label;
+            _topViewHighlight = visual.TopViewHighlight;
             _topViewHighlight.SetActive(_topViewHighlightRequested);
-
             _markerObject.SetActive(false);
         }
 
