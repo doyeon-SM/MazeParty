@@ -61,6 +61,16 @@ namespace MazeParty.Multiplayer.Tests
             var minimap = root.GetComponent<BoardMinimapView>();
             Assert.That(minimap, Is.Not.Null);
             Assert.That(minimap.HasRequiredReferences, Is.True);
+            var maps = root.GetComponentsInChildren<BoardMinimapView>(true);
+            Assert.That(maps.Length, Is.EqualTo(2));
+            foreach (var itemMap in maps)
+            {
+                var data = new SerializedObject(itemMap);
+                var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
+                var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
+                Assert.That(mines, Is.Not.Null);
+                Assert.That(mines.transform.parent, Is.EqualTo(route.transform.parent));
+            }
             Assert.That(badges, Is.Not.Null);
             Assert.That(badges.HasRequiredReferences, Is.True);
         }

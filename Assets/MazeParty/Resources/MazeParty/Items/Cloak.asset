@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b776a89c9180d414a978de024158e224, type: 3}
+  m_Name: Cloak
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
+  Id: 12
+  DisplayName: Invisibility Cloak
+  Description: 'LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.'
+  Price: 10
+  SpawnWeight: 1
+  Charges: 1
+  Damage: 0
+  Range: 0
+  FireInterval: 0.25
+  AimMagnification: 1
+  BlastRadius: 0
+  TriggerRadius: 0
+  ArmingDelay: 0
+  ThrowFlightSeconds: 1
+  ProjectileRadius: 0.12
+  ProjectileLifetime: 5
+  DiceMinimum: 1
+  DiceMaximum: 12
+  CastDuration: 2
+  HeldPrefab: {fileID: 3335841706652556144, guid: aa8deaf4aa13df14787e9f8e35f0df3b, type: 3}
+  WorldPrefab: {fileID: 3335841706652556144, guid: aa8deaf4aa13df14787e9f8e35f0df3b, type: 3}
+  ExplosionPrefab: {fileID: 1171816663760017513, guid: 5b4c0abfbc2abe142a80de4f63de8795, type: 3}

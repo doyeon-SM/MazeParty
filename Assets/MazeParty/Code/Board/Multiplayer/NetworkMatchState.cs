@@ -24,7 +24,7 @@ namespace MazeParty.Multiplayer
     /// their owned avatar; phase changes, timers, dice and arrival are validated here.
     /// </summary>
     [RequireComponent(typeof(NetworkObject))]
-    public sealed class NetworkMatchState : NetworkBehaviour
+    public sealed partial class NetworkMatchState : NetworkBehaviour
     {
         // The MPS/Lobby backend Disconnect Removal Time must outlive transport
         // detection plus this grace. Configure 75-90 seconds, not exactly 60.
@@ -611,6 +611,7 @@ namespace MazeParty.Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            ClearBoardItemWorld();
             if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
             {
                 NetworkManager.SceneManager.OnLoadEventCompleted -=
@@ -648,6 +649,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            TickBoardItemWorld();
             ResolveWorldDiceCoordinator();
             if (!_gameplayEnabled.Value)
             {
@@ -835,7 +837,7 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer || slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
                 face < WorldDieAuthorityModel.MinimumFace ||
-                face > WorldDieAuthorityModel.MaximumFace || HasRolled(slot) || HasArrived(slot))
+                face > WorldDieAuthorityModel.MaximumFace * 2 || HasRolled(slot) || HasArrived(slot))
             {
                 return false;
             }
@@ -853,69 +855,6 @@ namespace MazeParty.Multiplayer
             avatar.SetRollOnServer(face);
             _rolledMask.Value = (byte)(_rolledMask.Value | (1 << slot));
             return true;
-        }
-
-        public bool TryUseSelectedItemOnServer(
-            NetworkPlayerAvatar avatar,
-            Vector3 claimedOrigin,
-            Vector3 claimedDirection)
-        {
-            if (!CanProcessActionRequest(avatar))
-            {
-                return false;
-            }
-
-            var item = avatar.GetSelectedItemOnServer();
-            if (item == PrototypeItemId.None)
-            {
-                return false;
-            }
-
-            if (item == PrototypeItemId.PulseBlaster)
-            {
-                if (!IsFinite(claimedOrigin) || !IsFinite(claimedDirection) ||
-                    claimedDirection.sqrMagnitude < 0.0001f)
-                {
-                    return false;
-                }
-
-                var authoritativeOrigin = avatar.EyePivot != null
-                    ? avatar.EyePivot.position
-                    : avatar.transform.position +
-                      Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
-                if (Vector3.Distance(authoritativeOrigin, claimedOrigin) > 1.5f)
-                {
-                    return false;
-                }
-
-                var authoritativeDirection = avatar.EyePivot != null
-                    ? avatar.EyePivot.forward.normalized
-                    : avatar.transform.forward.normalized;
-                if (Vector3.Dot(
-                        authoritativeDirection,
-                        claimedDirection.normalized) < 0.94f)
-                {
-                    return false;
-                }
-
-                var direction = authoritativeDirection;
-                FirearmHitResolver.Raycast(
-                    avatar.gameObject,
-                    authoritativeOrigin,
-                    direction,
-                    FirearmDamageRules.PulseBlasterRange,
-                    FirearmDamageRules.PulseBlasterBaseDamage,
-                    direction * FirearmDamageRules.PulseBlasterPush + Vector3.up * 0.5f);
-            }
-
-            // Push Mine and Med Kit still use their existing prototype consume-only
-            // behavior until their authoritative effects are designed.
-            var consumed = avatar.ConsumeSelectedItemOnServer();
-            if (consumed)
-            {
-                avatar.PresentItemUseOnServer(item);
-            }
-            return consumed;
         }
 
         public bool TryPurchaseKeyOnServer(
@@ -2218,6 +2157,7 @@ namespace MazeParty.Multiplayer
                     ForEachAvatar(avatar => avatar.BeginActionOnServer(transition.Turn));
                     break;
                 case BoardFlowState.AscendingResolve:
+                    ForEachAvatar(avatar => avatar.ClearUtilityEffectsOnServer());
                     ClearArrivalGraceOnServer();
                     StopAllAvatarInputOnServer();
                     break;
@@ -2569,6 +2509,12 @@ namespace MazeParty.Multiplayer
                 var slot = avatar.AssignedSlot;
                 if (!HasArrived(slot))
                 {
+                    var completed = avatar.CompletePartialDiceOnTimeout();
+                    if (completed > 0)
+                    {
+                        avatar.SetRollOnServer(completed);
+                        _rolledMask.Value = (byte)(_rolledMask.Value | (1 << slot));
+                    }
                     if (!HasRolled(slot))
                     {
                         avatar.ApplyGoldDeltaOnServer(
@@ -2631,7 +2577,7 @@ namespace MazeParty.Multiplayer
             return CanProcessAvatarRequest(avatar) &&
                    FlowState == BoardFlowState.Action &&
                    ActionRemaining > 0d &&
-                   !avatar.IsBoardDeathInProgressOnServer;
+                   !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping;
         }
 
         public void PlaceTombstoneOnServer(Vector3 deathPosition, int gold)
@@ -3777,6 +3723,14 @@ namespace MazeParty.Multiplayer
         public int RemainingMoves;
         public ItemChoiceResolution ChoiceResolution;
         public int SelectedItemSlot;
+        public byte EquippedItem;
+        public int ItemCharges, FirstDieResult, SecondDieResult;
+        public double ItemCooldownRemaining;
+        public bool DoubleDice;
+        public bool Cloaked;
+        public byte RangeDieItem;
+        public int SwapTargetSlot;
+        public double SwapRemaining;
         public byte OccupiedItemMask;
         public byte ItemSlot0;
         public byte ItemSlot1;

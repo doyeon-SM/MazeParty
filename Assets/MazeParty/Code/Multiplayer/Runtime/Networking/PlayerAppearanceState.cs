@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -97,7 +98,7 @@ namespace MazeParty.Multiplayer
     [Serializable]
     public struct PlayerAppearanceState : INetworkSerializable, IEquatable<PlayerAppearanceState>
     {
-        public const byte CurrentVersion = 1;
+        public const byte CurrentVersion = 2;
 
         public byte Version;
         public byte BodyRed;
@@ -107,6 +108,7 @@ namespace MazeParty.Multiplayer
         public byte MouthId;
         public byte HatId;
         public byte OutfitId;
+        public byte ExpressionId;
 
         public Color BodyColor => new Color32(BodyRed, BodyGreen, BodyBlue, 255);
 
@@ -122,7 +124,8 @@ namespace MazeParty.Multiplayer
             byte eyeId,
             byte mouthId,
             byte hatId,
-            byte outfitId)
+            byte outfitId,
+            byte expressionId = 0)
         {
             var value = (Color32)color;
             return new PlayerAppearanceState
@@ -134,7 +137,8 @@ namespace MazeParty.Multiplayer
                 EyeId = eyeId,
                 MouthId = mouthId,
                 HatId = hatId,
-                OutfitId = outfitId
+                OutfitId = outfitId,
+                ExpressionId = expressionId
             }.Sanitized();
         }
 
@@ -152,6 +156,7 @@ namespace MazeParty.Multiplayer
             value.MouthId = 0;
             value.HatId = (byte)(value.HatId == 1 ? 1 : 0);
             value.OutfitId = 0;
+            value.ExpressionId = PlayerExpressionCatalog.SanitizeFace(value.ExpressionId);
             return value;
         }
 
@@ -176,6 +181,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref MouthId);
             serializer.SerializeValue(ref HatId);
             serializer.SerializeValue(ref OutfitId);
+            serializer.SerializeValue(ref ExpressionId);
         }
 
         public bool Equals(PlayerAppearanceState other)
@@ -187,7 +193,7 @@ namespace MazeParty.Multiplayer
                    EyeId == other.EyeId &&
                    MouthId == other.MouthId &&
                    HatId == other.HatId &&
-                   OutfitId == other.OutfitId;
+                   OutfitId == other.OutfitId && ExpressionId == other.ExpressionId;
         }
 
         public override bool Equals(object obj)
@@ -207,6 +213,7 @@ namespace MazeParty.Multiplayer
                 hash = hash * 31 + MouthId;
                 hash = hash * 31 + HatId;
                 hash = hash * 31 + OutfitId;
+                hash = hash * 31 + ExpressionId;
                 return hash;
             }
         }

@@ -425,9 +425,9 @@ namespace MazeParty.Gameplay.Testbed
         {
             switch (itemId)
             {
-                case "pulse_blaster": return PrototypeItemId.PulseBlaster;
-                case "push_mine": return PrototypeItemId.PushMine;
-                case "med_kit": return PrototypeItemId.MedKit;
+                case "pulse_blaster": return PrototypeItemId.Pistol;
+                case "push_mine": return PrototypeItemId.Mine;
+                case "med_kit": return PrototypeItemId.Grenade;
                 default: return PrototypeItemId.None;
             }
         }

@@ -4,88 +4,50 @@ using UnityEngine;
 
 namespace MazeParty.Gameplay
 {
+    // Values 1-3 belonged to retired prototypes; never reuse serialized IDs.
     public enum PrototypeItemId : byte
     {
-        None,
-        PulseBlaster,
-        PushMine,
-        MedKit
+        None = 0, DoubleDice = 4, Pistol = 5, Sniper = 6, Grenade = 7, Mine = 8, LowDice = 9, HighDice = 10, PositionSwapper = 11, Cloak = 12
     }
 
-    public readonly struct PrototypeItemDefinition
-    {
-        public PrototypeItemDefinition(
-            PrototypeItemId id,
-            string displayName,
-            string description,
-            int price)
-        {
-            Id = id;
-            DisplayName = displayName;
-            Description = description;
-            Price = price;
-        }
-
-        public PrototypeItemId Id { get; }
-        public string DisplayName { get; }
-        public string Description { get; }
-        public int Price { get; }
-    }
-
-    /// <summary>
-    /// Temporary three-item catalog shared by rewards, shops and inventory UI.
-    /// TODO(ITEM-CONTENT): replace this table with authored item assets.
-    /// </summary>
     public static class PrototypeItemCatalog
     {
-        private static readonly PrototypeItemDefinition[] Definitions =
+        private static BoardItemDefinition[] _definitions;
+        public static IReadOnlyList<BoardItemDefinition> All => Definitions;
+        private static BoardItemDefinition[] Definitions
         {
-            new PrototypeItemDefinition(
-                PrototypeItemId.PulseBlaster,
-                "Pulse Blaster",
-                "Prototype ranged item. LMB consumes its test charge.",
-                7),
-            new PrototypeItemDefinition(
-                PrototypeItemId.PushMine,
-                "Push Mine",
-                "Prototype area item. LMB consumes it; combat effect is TODO.",
-                5),
-            new PrototypeItemDefinition(
-                PrototypeItemId.MedKit,
-                "Med Kit",
-                "Prototype recovery item. LMB consumes it; healing is TODO.",
-                5)
-        };
-
-        public static int Count => Definitions.Length;
-
-        public static PrototypeItemDefinition Get(PrototypeItemId id)
-        {
-            for (var i = 0; i < Definitions.Length; i++)
+            get
             {
-                if (Definitions[i].Id == id)
+                if (_definitions == null)
                 {
-                    return Definitions[i];
+                    _definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
+                    Array.Sort(_definitions, (a, b) => a.Id.CompareTo(b.Id));
+                    if (_definitions.Length != 9) throw new InvalidOperationException("Expected nine board item SOs in Resources/MazeParty/Items.");
                 }
+                return _definitions;
             }
-
-            throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown prototype item.");
         }
-
+        public static int Count => Definitions.Length;
+        public static BoardItemDefinition Get(PrototypeItemId id)
+        {
+            foreach (var item in Definitions) if (item.Id == id) return item;
+            throw new ArgumentOutOfRangeException(nameof(id), id, "Unknown board item.");
+        }
         public static PrototypeItemId GetRandomId(System.Random random)
         {
-            if (random == null)
+            if (random == null) throw new ArgumentNullException(nameof(random));
+            int total = 0;
+            foreach (var item in Definitions) total = checked(total + Mathf.Max(0, item.SpawnWeight));
+            if (total == 0) throw new InvalidOperationException("At least one item needs a positive spawn weight.");
+            int selected = random.Next(total);
+            foreach (var item in Definitions)
             {
-                throw new ArgumentNullException(nameof(random));
+                selected -= Mathf.Max(0, item.SpawnWeight);
+                if (selected < 0) return item.Id;
             }
-
-            return Definitions[random.Next(Definitions.Length)].Id;
+            throw new InvalidOperationException("Invalid item weights.");
         }
-
-        public static bool IsValid(PrototypeItemId id)
-        {
-            return id >= PrototypeItemId.PulseBlaster && id <= PrototypeItemId.MedKit;
-        }
+        public static bool IsValid(PrototypeItemId id) => id >= PrototypeItemId.DoubleDice && id <= PrototypeItemId.Cloak;
     }
 
     public static class ItemShopRules

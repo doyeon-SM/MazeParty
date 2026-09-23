@@ -248,14 +248,14 @@ namespace MazeParty.Multiplayer.Tests
                 var dice = roots
                     .SelectMany(root => root.GetComponentsInChildren<
                         NetworkWorldDie>(true))
-                    .OrderBy(die => die.ConfiguredSlot)
+                    .OrderBy(die => die.ConfiguredSlot).ThenBy(die => die.DieIndex)
                     .ToArray();
                 Assert.That(
                     dice,
-                    Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
-                Assert.That(
-                    dice.Select(die => die.ConfiguredSlot),
-                    Is.EqualTo(new[] { 0, 1, 2, 3 }));
+                    Has.Length.EqualTo(MultiplayerConstants.MaxPlayers * 2));
+                Assert.That(dice.Select(die => die.ConfiguredSlot), Is.EqualTo(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }));
+                Assert.That(dice.Select(die => die.DieIndex), Is.EqualTo(new[] { 0, 1, 0, 1, 0, 1, 0, 1 }));
+                Assert.That(dice.Select(d => new SerializedObject(d.GetComponent<NetworkObject>()).FindProperty("GlobalObjectIdHash").longValue).Distinct().Count(), Is.EqualTo(8));
                 foreach (var die in dice)
                 {
                     AssertStableInSceneNetworkObject(die.gameObject);

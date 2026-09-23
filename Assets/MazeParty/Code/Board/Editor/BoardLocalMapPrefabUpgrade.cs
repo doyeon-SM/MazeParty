@@ -71,6 +71,7 @@ namespace MazeParty.Editor
                 var fullData = new SerializedObject(fullView);
                 fullData.FindProperty("radiusInTiles").floatValue = 0f;
                 fullData.FindProperty("followHeading").boolValue = false;
+                fullData.FindProperty("localPlayerOnly").boolValue = true;
                 fullData.FindProperty("headingFormat").stringValue = "FULL MAP / NORTH ^";
                 fullData.ApplyModifiedPropertiesWithoutUndo();
                 full.SetActive(false);

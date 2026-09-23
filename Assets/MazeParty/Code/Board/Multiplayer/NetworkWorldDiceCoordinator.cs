@@ -6,432 +6,169 @@ using UnityEngine;
 
 namespace MazeParty.Multiplayer
 {
-    /// <summary>
-    /// Server-only orchestration for four scene-placed NetworkWorldDie objects.
-    /// Dice stay server-owned and keyed by stable player slot, so reconnecting with a
-    /// new client id does not transfer Rigidbody authority or replace the die.
-    /// </summary>
-    [DisallowMultipleComponent]
-    [RequireComponent(typeof(NetworkObject))]
+    [DisallowMultipleComponent, RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkWorldDiceCoordinator : NetworkBehaviour
     {
-        [SerializeField] private NetworkWorldDie[] sceneDice =
-            Array.Empty<NetworkWorldDie>();
+        [SerializeField] private NetworkWorldDie[] sceneDice = Array.Empty<NetworkWorldDie>();
         [SerializeField] private BoardTopology topology;
         [SerializeField] private bool autoPrepareAfterItemChoice = true;
-
-        private readonly NetworkWorldDie[] _diceBySlot =
-            new NetworkWorldDie[MultiplayerConstants.MaxPlayers];
-        private readonly HashSet<NetworkWorldDie> _subscribedDice =
-            new HashSet<NetworkWorldDie>();
-
-        private int _observedTurn = -1;
-        private BoardFlowState _observedFlowState = (BoardFlowState)(-1);
-        private byte _inFlightRollMask;
-
+        private readonly NetworkWorldDie[] _dice = new NetworkWorldDie[8];
+        private readonly bool[] _started = new bool[8];
+        private readonly bool[] _prepared = new bool[8];
+        private readonly HashSet<NetworkWorldDie> _subscribed = new HashSet<NetworkWorldDie>();
+        private int _turn = -1;
+        private BoardFlowState _phase = (BoardFlowState)(-1);
         public static NetworkWorldDiceCoordinator Instance { get; private set; }
-
-        /// <summary>
-        /// Server integration seam. NetworkMatchState should consume this result and
-        /// atomically set the owner's private HUD roll, remaining moves and rolled mask.
-        /// </summary>
         public event Action<int, int> DieSettledOnServer;
+        private static int Index(int slot, int dieIndex) => slot * 2 + dieIndex;
 
-        public void ConfigureSceneDice(
-            NetworkWorldDie[] dice,
-            BoardTopology boardTopology)
-        {
-            sceneDice = dice != null
-                ? (NetworkWorldDie[])dice.Clone()
-                : Array.Empty<NetworkWorldDie>();
-            topology = boardTopology;
-
-            if (IsSpawned && IsServer)
-            {
-                ResolveDice();
-            }
-        }
-
-        public override void OnNetworkSpawn()
-        {
-            Instance = this;
-            if (IsServer)
-            {
-                ResolveTopology();
-                ResolveDice();
-            }
-        }
-
+        public void ConfigureSceneDice(NetworkWorldDie[] dice, BoardTopology boardTopology)
+        { sceneDice = dice; topology = boardTopology; }
+        public override void OnNetworkSpawn() { Instance = this; ResolveDice(); }
         public override void OnNetworkDespawn()
         {
-            foreach (var die in _subscribedDice)
-            {
-                if (die != null)
-                {
-                    die.RollStartedOnServer -= OnDieRollStartedOnServer;
-                    die.SettledOnServer -= OnDieSettledOnServer;
-                }
-            }
-
-            _subscribedDice.Clear();
-            Array.Clear(_diceBySlot, 0, _diceBySlot.Length);
-            _inFlightRollMask = 0;
-            if (Instance == this)
-            {
-                Instance = null;
-            }
-        }
-
-        private void Update()
-        {
-            if (!IsSpawned || !IsServer)
-            {
-                return;
-            }
-
-            ResolveDice();
-            var match = NetworkMatchState.Instance;
-            if (match == null || !match.GameplayEnabled)
-            {
-                return;
-            }
-
-            if (_observedTurn != match.Turn || _observedFlowState != match.FlowState)
-            {
-                var enteringAction = match.FlowState == BoardFlowState.Action &&
-                                     (_observedFlowState != BoardFlowState.Action ||
-                                      _observedTurn != match.Turn);
-                if (enteringAction)
-                {
-                    HideAllDiceOnServer();
-                }
-                else if (match.FlowState != BoardFlowState.Action)
-                {
-                    HideUnsettledDiceOnServer();
-                }
-
-                _observedTurn = match.Turn;
-                _observedFlowState = match.FlowState;
-            }
-
-            SetAllPausedOnServer(match.IsGlobalSimulationPaused);
-            if (autoPrepareAfterItemChoice && match.CanAcceptActionInput)
-            {
-                PrepareResolvedChoicesOnServer(match);
-            }
-        }
-
-        public bool TryGetDie(int slot, out NetworkWorldDie die)
-        {
-            if (slot < 0 || slot >= _diceBySlot.Length)
-            {
-                die = null;
-                return false;
-            }
-
-            die = _diceBySlot[slot];
-            return die != null && die.IsSpawned;
-        }
-
-        public bool PrepareDieForSlotOnServer(int slot, BoardTile currentTile)
-        {
-            return IsServer &&
-                   TryGetDie(slot, out var die) &&
-                   die.PrepareOnServer(currentTile);
-        }
-
-        public bool HasInFlightRollOnServer()
-        {
-            if (!IsServer)
-            {
-                return false;
-            }
-
-            ResolveDice();
-            return _inFlightRollMask != 0;
-        }
-
-        public bool IsRollInFlightOnServer(int slot)
-        {
-            return IsServer &&
-                   slot >= 0 &&
-                   slot < MultiplayerConstants.MaxPlayers &&
-                   (_inFlightRollMask & (1 << slot)) != 0;
-        }
-
-        public void HideAllDiceOnServer()
-        {
-            if (!IsServer)
-            {
-                return;
-            }
-
-            for (var slot = 0; slot < _diceBySlot.Length; slot++)
-            {
-                if (_diceBySlot[slot] != null)
-                {
-                    _diceBySlot[slot].HideOnServer();
-                }
-            }
-
-            _inFlightRollMask = 0;
-        }
-
-        private void HideUnsettledDiceOnServer()
-        {
-            for (var slot = 0; slot < _diceBySlot.Length; slot++)
-            {
-                var die = _diceBySlot[slot];
-                if (die == null ||
-                    WorldDieResultPresentationPolicy
-                        .ShouldPreserveAcrossActionExit(die.Phase))
-                {
-                    continue;
-                }
-
-                die.HideOnServer();
-                _inFlightRollMask =
-                    (byte)(_inFlightRollMask & ~(1 << slot));
-            }
-        }
-
-        public void SetAllPausedOnServer(bool paused)
-        {
-            if (!IsServer)
-            {
-                return;
-            }
-
-            var now = ServerNow;
-            for (var slot = 0; slot < _diceBySlot.Length; slot++)
-            {
-                if (_diceBySlot[slot] != null)
-                {
-                    _diceBySlot[slot].SetSimulationPausedOnServer(paused, now);
-                }
-            }
-        }
-
-        public WorldDieReconnectSnapshot[] CaptureSnapshotsOnServer()
-        {
-            var snapshots =
-                new WorldDieReconnectSnapshot[MultiplayerConstants.MaxPlayers];
-            if (!IsServer)
-            {
-                return snapshots;
-            }
-
-            for (var slot = 0; slot < _diceBySlot.Length; slot++)
-            {
-                if (_diceBySlot[slot] != null)
-                {
-                    snapshots[slot] =
-                        _diceBySlot[slot].CaptureReconnectSnapshotOnServer();
-                }
-            }
-
-            return snapshots;
-        }
-
-        public bool RestoreSnapshotsOnServer(
-            IReadOnlyList<WorldDieReconnectSnapshot> snapshots)
-        {
-            if (!IsServer ||
-                snapshots == null ||
-                snapshots.Count != MultiplayerConstants.MaxPlayers)
-            {
-                return false;
-            }
-
-            ResolveTopology();
-            if (topology == null)
-            {
-                return false;
-            }
-
-            for (var slot = 0; slot < snapshots.Count; slot++)
-            {
-                var snapshot = snapshots[slot];
-                if (!snapshot.IsValid)
-                {
-                    continue;
-                }
-
-                if (!TryGetDie(slot, out var die) ||
-                    snapshot.Authority.Slot != slot)
-                {
-                    return false;
-                }
-
-                BoardTile tile = null;
-                if (snapshot.Authority.Phase != WorldDiePhase.Hidden &&
-                    (!topology.TryGetTile(
-                         snapshot.Authority.TileCoordinate,
-                         out tile) ||
-                     tile == null))
-                {
-                    return false;
-                }
-
-                if (!die.RestoreReconnectSnapshotOnServer(snapshot, tile))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private void PrepareResolvedChoicesOnServer(NetworkMatchState match)
-        {
-            ResolveTopology();
-            if (topology == null)
-            {
-                return;
-            }
-
-            var avatars = FindObjectsByType<NetworkPlayerAvatar>(
-                FindObjectsInactive.Exclude);
-            for (var i = 0; i < avatars.Length; i++)
-            {
-                var avatar = avatars[i];
-                if (avatar == null ||
-                    !avatar.IsSpawned ||
-                    !avatar.IsBoardReady ||
-                    !avatar.HasResolvedItemChoice ||
-                    avatar.HasRolled ||
-                    match.HasRolled(avatar.AssignedSlot) ||
-                    !TryGetDie(avatar.AssignedSlot, out var die) ||
-                    die.Phase != WorldDiePhase.Hidden)
-                {
-                    continue;
-                }
-
-                var tile = avatar.CurrentBoardTileOnServer ??
-                           topology.FindContainingTile(
-                               avatar.transform.position,
-                               0.25f);
-                if (tile != null)
-                {
-                    die.PrepareOnServer(
-                        tile,
-                        avatar.transform.position,
-                        avatar.transform.forward);
-                }
-            }
+            foreach (var die in _subscribed) if (die != null)
+            { die.RollStartedOnServer -= OnStarted; die.SettledOnServer -= OnSettled; }
+            _subscribed.Clear();
+            if (Instance == this) Instance = null;
         }
 
         private void ResolveDice()
         {
-            if (!IsServer)
-            {
-                return;
-            }
-
             if (sceneDice == null || sceneDice.Length == 0)
+                sceneDice = FindObjectsByType<NetworkWorldDie>(FindObjectsInactive.Include);
+            foreach (var die in sceneDice)
             {
-                sceneDice = FindObjectsByType<NetworkWorldDie>(
-                    FindObjectsInactive.Include);
+                if (die == null || !die.IsSpawned || die.AssignedSlot < 0 || die.AssignedSlot >= 4) continue;
+                var index = Index(die.AssignedSlot, die.DieIndex);
+                if (_dice[index] != null && _dice[index] != die)
+                { Debug.LogError("Duplicate board die slot/index.", this); continue; }
+                _dice[index] = die;
+                if (IsServer && _subscribed.Add(die))
+                { die.RollStartedOnServer += OnStarted; die.SettledOnServer += OnSettled; }
             }
-
-            Array.Clear(_diceBySlot, 0, _diceBySlot.Length);
-            byte resolvedSlotMask = 0;
-            for (var i = 0; i < sceneDice.Length; i++)
-            {
-                var die = sceneDice[i];
-                if (die == null || !die.IsSpawned)
-                {
-                    continue;
-                }
-
-                var slot = die.AssignedSlot;
-                if (slot < 0 || slot >= _diceBySlot.Length)
-                {
-                    continue;
-                }
-
-                if (_diceBySlot[slot] != null && _diceBySlot[slot] != die)
-                {
-                    Debug.LogError(
-                        "Multiple world dice are configured for slot " + slot + ".",
-                        this);
-                    continue;
-                }
-
-                _diceBySlot[slot] = die;
-                resolvedSlotMask = (byte)(resolvedSlotMask | (1 << slot));
-                if (die.Phase == WorldDiePhase.Rolling)
-                {
-                    _inFlightRollMask =
-                        (byte)(_inFlightRollMask | (1 << slot));
-                }
-                else if (die.Phase != WorldDiePhase.Settled)
-                {
-                    _inFlightRollMask =
-                        (byte)(_inFlightRollMask & ~(1 << slot));
-                }
-                if (_subscribedDice.Add(die))
-                {
-                    die.RollStartedOnServer += OnDieRollStartedOnServer;
-                    die.SettledOnServer += OnDieSettledOnServer;
-                }
-            }
-
-            _inFlightRollMask =
-                (byte)(_inFlightRollMask & resolvedSlotMask);
         }
-
-        private void ResolveTopology()
+        private void Update()
         {
-            if (topology == null)
+            if (!IsSpawned || !IsServer) return;
+            ResolveDice();
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.GameplayEnabled) return;
+            if (_turn != match.Turn || _phase != match.FlowState)
             {
-                topology = FindAnyObjectByType<BoardTopology>();
+                if (match.IsActionPhase) HideAllDiceOnServer();
+                else foreach (var die in _dice)
+                    if (die != null && !WorldDieResultPresentationPolicy.ShouldPreserveAcrossActionExit(die.Phase)) die.HideOnServer();
+                _turn = match.Turn; _phase = match.FlowState;
+            }
+            SetAllPausedOnServer(match.IsGlobalSimulationPaused);
+            if (!autoPrepareAfterItemChoice || !match.CanAcceptActionInput) return;
+            if (topology == null) topology = FindAnyObjectByType<BoardTopology>();
+            if (topology == null) return;
+            for (int slot = 0; slot < 4; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.IsBoardReady || !avatar.HasResolvedItemChoice || avatar.HasRolled) continue;
+                var tile = avatar.CurrentBoardTileOnServer ?? topology.FindContainingTile(avatar.transform.position, .25f);
+                if (tile == null) continue;
+                for (int n = 0; n < (avatar.UsesDoubleDice ? 2 : 1); n++)
+                {
+                    var index = Index(slot, n);
+                    if (_prepared[index] || avatar.HasDieResultOnServer(n) || !TryGetDie(slot, n, out var die)) continue;
+                    var lateral = avatar.UsesDoubleDice ? avatar.transform.right * (n == 0 ? -.65f : .65f) : Vector3.zero;
+                    _prepared[index] = die.PrepareOnServer(tile, avatar.transform.position + lateral, avatar.transform.forward);
+                }
             }
         }
 
-        private void OnDieSettledOnServer(NetworkWorldDie die, int face)
+        public void RelocatePendingDiceOnServer(NetworkPlayerAvatar avatar)
         {
-            var slot = die != null ? die.AssignedSlot : -1;
-            if (!IsServer ||
-                die == null ||
-                face < WorldDieAuthorityModel.MinimumFace ||
-                face > WorldDieAuthorityModel.MaximumFace ||
-                !IsRollInFlightOnServer(slot) ||
-                !TryGetDie(slot, out var currentDie) ||
-                !ReferenceEquals(currentDie, die) ||
-                die.Phase != WorldDiePhase.Settled ||
-                die.PublicFace != face)
+            if (!IsServer || avatar == null || avatar.HasRolled || avatar.CurrentBoardTileOnServer == null) return;
+            for (int n = 0; n < (avatar.UsesDoubleDice ? 2 : 1); n++)
             {
-                return;
+                if (avatar.HasDieResultOnServer(n) || !TryGetDie(avatar.AssignedSlot, n, out var die) || die.Phase == WorldDiePhase.Rolling) continue;
+                die.HideOnServer();
+                var lateral = avatar.UsesDoubleDice ? avatar.transform.right * (n == 0 ? -.65f : .65f) : Vector3.zero;
+                _prepared[Index(avatar.AssignedSlot, n)] = die.PrepareOnServer(avatar.CurrentBoardTileOnServer,
+                    avatar.transform.position + lateral, avatar.transform.forward);
             }
+        }
 
+        public bool TryGetDie(int slot, out NetworkWorldDie die) => TryGetDie(slot, 0, out die);
+        public bool TryGetDie(int slot, int n, out NetworkWorldDie die)
+        {
+            ResolveDice();
+            die = slot >= 0 && slot < 4 && n >= 0 && n < 2 ? _dice[Index(slot, n)] : null;
+            return die != null && die.IsSpawned;
+        }
+        public bool PrepareDieForSlotOnServer(int slot, BoardTile tile) =>
+            IsServer && TryGetDie(slot, out var die) && die.PrepareOnServer(tile);
+        public bool HasInFlightRollOnServer()
+        { for (int slot = 0; slot < 4; slot++) if (IsRollInFlightOnServer(slot)) return true; return false; }
+        public bool IsRollInFlightOnServer(int slot)
+        {
+            if (!IsServer || slot < 0 || slot >= 4) return false;
+            return _started[Index(slot, 0)] || _started[Index(slot, 1)];
+        }
+        public void HideAllDiceOnServer()
+        {
+            if (!IsServer) return;
+            foreach (var die in _dice) if (die != null) die.HideOnServer();
+            Array.Clear(_prepared, 0, 8); Array.Clear(_started, 0, 8);
+        }
+        public void SetAllPausedOnServer(bool paused)
+        {
+            if (!IsServer) return;
+            foreach (var die in _dice) if (die != null) die.SetSimulationPausedOnServer(paused, ServerNow);
+        }
+        public WorldDieReconnectSnapshot[] CaptureSnapshotsOnServer()
+        {
+            var snapshots = new WorldDieReconnectSnapshot[8];
+            if (IsServer) for (int i = 0; i < 8; i++) if (_dice[i] != null)
+                snapshots[i] = _dice[i].CaptureReconnectSnapshotOnServer();
+            return snapshots;
+        }
+        public bool RestoreSnapshotsOnServer(IReadOnlyList<WorldDieReconnectSnapshot> snapshots)
+        {
+            if (!IsServer || snapshots == null || snapshots.Count != 8) return false;
+            ResolveDice();
+            if (topology == null) topology = FindAnyObjectByType<BoardTopology>();
+            if (topology == null) return false;
+            // Validate the entire snapshot before applying any state.
+            for (int i = 0; i < 8; i++)
+            {
+                var s = snapshots[i];
+                if (!s.IsValid) continue;
+                if (_dice[i] == null || s.Authority.Slot != i / 2 || s.DieIndex != i % 2 ||
+                    (s.Authority.Phase != WorldDiePhase.Hidden && !topology.TryGetTile(s.Authority.TileCoordinate, out _))) return false;
+            }
+            for (int i = 0; i < 8; i++)
+            {
+                var s = snapshots[i];
+                if (!s.IsValid) continue;
+                topology.TryGetTile(s.Authority.TileCoordinate, out var tile);
+                if (!_dice[i].RestoreReconnectSnapshotOnServer(s, tile)) return false;
+                _started[i] = s.Authority.Phase == WorldDiePhase.Rolling;
+                _prepared[i] = s.Authority.Phase != WorldDiePhase.Hidden;
+            }
+            return true;
+        }
+        private void OnStarted(NetworkWorldDie die)
+        { if (IsServer) _started[Index(die.AssignedSlot, die.DieIndex)] = true; }
+        private void OnSettled(NetworkWorldDie die, int face)
+        {
+            if (!IsServer || die == null || die.AssignedSlot < 0 || die.AssignedSlot >= 4) return;
+            var index = Index(die.AssignedSlot, die.DieIndex);
+            if (!_started[index] || _dice[index] != die || die.Phase != WorldDiePhase.Settled || die.PublicFace != face) return;
             try
             {
-                DieSettledOnServer?.Invoke(slot, face);
+                var avatar = NetworkMatchState.Instance?.GetAvatarForSlot(die.AssignedSlot);
+                int sum = avatar != null ? avatar.RecordDieResultOnServer(die.DieIndex, face) : 0;
+                if (sum > 0) DieSettledOnServer?.Invoke(die.AssignedSlot, sum);
             }
-            finally
-            {
-                _inFlightRollMask =
-                    (byte)(_inFlightRollMask & ~(1 << slot));
-            }
+            finally { _started[index] = false; }
         }
-
-        private void OnDieRollStartedOnServer(NetworkWorldDie die)
-        {
-            if (!IsServer || die == null ||
-                die.AssignedSlot < 0 ||
-                die.AssignedSlot >= MultiplayerConstants.MaxPlayers)
-            {
-                return;
-            }
-
-            _inFlightRollMask =
-                (byte)(_inFlightRollMask | (1 << die.AssignedSlot));
-        }
-
-        private double ServerNow =>
-            NetworkManager != null && NetworkManager.IsListening
-                ? NetworkManager.ServerTime.Time
-                : Time.timeAsDouble;
+        private double ServerNow => NetworkManager != null && NetworkManager.IsListening
+            ? NetworkManager.ServerTime.Time : Time.timeAsDouble;
     }
 }

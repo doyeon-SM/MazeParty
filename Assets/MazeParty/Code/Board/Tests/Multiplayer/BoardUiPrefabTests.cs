@@ -24,6 +24,7 @@ namespace MazeParty.Multiplayer.Tests
             var bindings = prefab.GetComponent<BoardCanvasBindings>();
             Assert.That(bindings, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
+            Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -63,6 +64,9 @@ namespace MazeParty.Multiplayer.Tests
                         sceneBindings.gameObject),
                     Is.EqualTo(PrefabPath));
                 Assert.That(sceneBindings.HasRequiredReferences, Is.True);
+                var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
+                Assert.That(utility.HasRequiredReferences, Is.True);
+                Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(utility), Is.Not.Null);
             }
             finally
             {

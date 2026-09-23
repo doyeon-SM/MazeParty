@@ -770,6 +770,8 @@ namespace MazeParty.Multiplayer
                     match.ActionRemaining > 0d,
                     diePhase,
                     publicFace));
+            if (isActionPhase && _localAvatar.UsesDoubleDice)
+                SetText(_diceText, _localAvatar.LocalDiceSummary);
             if (!isActionPhase)
             {
                 SetText(_movesText, "MOVES  --");
@@ -813,7 +815,8 @@ namespace MazeParty.Multiplayer
 
             SetText(_ammoText,
                 _localAvatar != null && _localAvatar.LocalSelectedItemSlot >= 0
-                    ? "CHARGE  1\nLMB  USE ITEM"
+                    ? _localAvatar.UsesDoubleDice ? "RMB  ROLL EACH DIE" :
+                        "AMMO  " + _localAvatar.LocalItemCharges + "\nLMB USE / RMB INTERACT"
                     : "CHARGE  --");
         }
 
@@ -1054,7 +1057,7 @@ namespace MazeParty.Multiplayer
                                  match.IsKeyShopRevealActive ||
                                  (match.FlowState != BoardFlowState.Action &&
                                   !localCombatActive) ||
-                                 choicePending || IsItemShopOpen;
+                                 choicePending || IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen;
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
 

@@ -45,7 +45,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/Dev/GameplayTestbedCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/Dev/MinigameSoloHud.prefab",
-            "Assets/MazeParty/Prefabs/Board/UI/Dev/BoardFlowTestTools.prefab"
+            "Assets/MazeParty/Prefabs/Board/UI/Dev/BoardFlowTestTools.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"
         };
 
         private static readonly string[] RequiredBindingTypeNames =
@@ -73,7 +76,10 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Gameplay.Testbed.GameplayTestbedUiBindings",
             "MazeParty.Multiplayer.MinigameSoloHudView",
-            "MazeParty.Gameplay.BoardFlowTestbed.BoardFlowTestToolsBindings"
+            "MazeParty.Gameplay.BoardFlowTestbed.BoardFlowTestToolsBindings",
+            "MazeParty.Multiplayer.LobbyExpressionView",
+            "MazeParty.Multiplayer.HandEmoteWheelView",
+            "MazeParty.Multiplayer.HandEmoteWheelView"
         };
 
         private static readonly SceneUiContract[] SceneContracts =
@@ -281,6 +287,14 @@ namespace MazeParty.Multiplayer.Tests
                             Is.EqualTo(
                                 "Assets/MazeParty/Prefabs/Board/UI/Dev/" +
                                 "BoardFlowTestTools.prefab"));
+                    }
+
+                    foreach (var component in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<MonoBehaviour>(true)))
+                    {
+                        if (component is HandEmoteWheelView wheel)
+                        { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
+                        if (component is LobbyExpressionView faces)
+                        { Assert.That(faces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(faces), Is.Not.Null); }
                     }
 
                     var visualUiComponents = scene.GetRootGameObjects()

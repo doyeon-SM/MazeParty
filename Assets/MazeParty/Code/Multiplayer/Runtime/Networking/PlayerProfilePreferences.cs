@@ -18,7 +18,7 @@ namespace MazeParty.Multiplayer
 
     public static class PlayerProfilePreferences
     {
-        private const int CurrentVersion = 1;
+        private const int CurrentVersion = 2;
         private const string KeyPrefix = "MazeParty.PlayerProfile.";
 
         [Serializable]
@@ -33,6 +33,7 @@ namespace MazeParty.Multiplayer
             public byte mouthId;
             public byte hatId;
             public byte outfitId;
+            public byte expressionId;
         }
 
         public static PlayerLocalProfile Load()
@@ -44,10 +45,15 @@ namespace MazeParty.Multiplayer
                 return new PlayerLocalProfile(fallbackName, PlayerAppearanceState.Default);
             }
 
+            return Decode(PlayerPrefs.GetString(key), fallbackName);
+        }
+
+        public static PlayerLocalProfile Decode(string json, string fallbackName)
+        {
             try
             {
-                var data = JsonUtility.FromJson<ProfileData>(PlayerPrefs.GetString(key));
-                if (data == null || data.version != CurrentVersion)
+                var data = JsonUtility.FromJson<ProfileData>(json);
+                if (data == null || (data.version < 1 || data.version > CurrentVersion))
                 {
                     return new PlayerLocalProfile(fallbackName, PlayerAppearanceState.Default);
                 }
@@ -61,7 +67,8 @@ namespace MazeParty.Multiplayer
                     EyeId = data.eyeId,
                     MouthId = data.mouthId,
                     HatId = data.hatId,
-                    OutfitId = data.outfitId
+                    OutfitId = data.outfitId,
+                    ExpressionId = data.expressionId
                 }.Sanitized();
                 return new PlayerLocalProfile(
                     SanitizeDisplayName(data.displayName, fallbackName),
@@ -75,6 +82,12 @@ namespace MazeParty.Multiplayer
 
         public static void Save(string displayName, PlayerAppearanceState appearance)
         {
+            PlayerPrefs.SetString(BuildKey(), Encode(displayName, appearance.Sanitized()));
+            PlayerPrefs.Save();
+        }
+
+        public static string Encode(string displayName, PlayerAppearanceState appearance)
+        {
             var data = new ProfileData
             {
                 version = CurrentVersion,
@@ -85,10 +98,10 @@ namespace MazeParty.Multiplayer
                 eyeId = appearance.EyeId,
                 mouthId = appearance.MouthId,
                 hatId = appearance.HatId,
-                outfitId = appearance.OutfitId
+                outfitId = appearance.OutfitId,
+                expressionId = appearance.ExpressionId
             };
-            PlayerPrefs.SetString(BuildKey(), JsonUtility.ToJson(data));
-            PlayerPrefs.Save();
+            return JsonUtility.ToJson(data);
         }
 
         public static string SanitizeDisplayName(string value, string fallback = "Player")

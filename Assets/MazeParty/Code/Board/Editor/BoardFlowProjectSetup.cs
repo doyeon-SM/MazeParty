@@ -331,6 +331,7 @@ namespace MazeParty.Editor
             }
             var testToolBindings = InstantiateEditorTools(canvas.transform);
             var simulator = rig.AddComponent<BoardFlowLocalSimulator>();
+            BoardItemProjectSetup.EnsureAssets();
             var d12VisualPrefab = EnsureD12RuntimeAssets();
             simulator.Configure(
                 controller,
@@ -450,13 +451,15 @@ namespace MazeParty.Editor
                 }
             }
 
+            BoardItemProjectSetup.EnsureAssets();
             var d12VisualPrefab = EnsureD12RuntimeAssets();
-            var dice = new NetworkWorldDie[MultiplayerConstants.MaxPlayers];
+            var dice = new NetworkWorldDie[MultiplayerConstants.MaxPlayers * 2];
             var playerMaterials =
                 CreateOrUpdateD12PlayerMaterials(D12PlayerColors);
 
-            for (var slot = 0; slot < dice.Length; slot++)
+            for (var index = 0; index < dice.Length; index++)
             {
+                var slot = index / 2;
                 var dieObject = PrefabUtility.InstantiatePrefab(d12VisualPrefab) as GameObject;
                 if (dieObject == null)
                 {
@@ -464,7 +467,7 @@ namespace MazeParty.Editor
                         "Failed to instantiate the generated D12 visual prefab.");
                 }
 
-                dieObject.name = "World Die P" + (slot + 1);
+                dieObject.name = "World Die P" + (slot + 1) + " Die " + (index % 2 + 1);
                 dieObject.transform.position = new Vector3(slot * 1.5f, -20f, 0f);
 
                 var dieRenderer = dieObject.GetComponent<MeshRenderer>();
@@ -544,7 +547,10 @@ namespace MazeParty.Editor
                 {
                     renderers[i].enabled = false;
                 }
-                dice[slot] = die;
+                var dieData = new SerializedObject(die);
+                dieData.FindProperty("dieIndex").intValue = index % 2;
+                dieData.ApplyModifiedPropertiesWithoutUndo();
+                dice[index] = die;
             }
 
             return dice;

@@ -45,6 +45,9 @@ namespace MazeParty.Multiplayer
         private bool _buttonEventsBound;
         private UnityAction[] _paletteButtonActions = Array.Empty<UnityAction>();
         private int _selectedPaletteIndex;
+        public byte SelectedExpression { get; private set; }
+        public void SelectExpression(byte id)
+        { SelectedExpression = MazeParty.Gameplay.PlayerExpressionCatalog.SanitizeFace(id); PublishAppearance(_selectedPaletteIndex); }
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
         private bool _presentationVisible = true;
@@ -161,6 +164,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            SelectedExpression = appearance.ExpressionId;
             _suppressAppearanceEvents = true;
             _selectedPaletteIndex = LobbyColorPalette.FindClosestIndex(
                 (Color32)appearance.BodyColor);
@@ -359,7 +363,7 @@ namespace MazeParty.Multiplayer
                 0,
                 0,
                 (byte)(testHatToggle.isOn ? 1 : 0),
-                0));
+                0, SelectedExpression));
         }
 
         private void RefreshPaletteAvailability()

@@ -15,7 +15,7 @@ namespace MazeParty.Multiplayer
 {
     [RequireComponent(typeof(NetworkObject))]
     [RequireComponent(typeof(CharacterController))]
-    public sealed class NetworkPlayerAvatar : NetworkBehaviour, IDamageable, IPushReceiver
+    public sealed partial class NetworkPlayerAvatar : NetworkBehaviour, IDamageable, IPushReceiver
     {
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
@@ -217,6 +217,7 @@ namespace MazeParty.Multiplayer
                     return 0;
                 }
 
+                if (UsesDoubleDice) return _privateRoll.Value;
                 var slot = _slot.Value;
                 var die = ResolveLocalWorldDie(slot);
                 var match = NetworkMatchState.Instance;
@@ -390,6 +391,7 @@ namespace MazeParty.Multiplayer
             _appearance.OnValueChanged -= OnAppearanceChanged;
             _displayName.OnValueChanged -= OnDisplayNameChanged;
             SceneManager.sceneLoaded -= OnSceneLoaded;
+            DisposeBoardItems();
             ClearLocalWorldDieCache();
             _traversal.Dispose();
         }
@@ -407,6 +409,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            TickBoardItems();
+            TickHandGestures();
             if (IsServer && _slot.Value < 0 && Time.unscaledTime >= _nextSlotResolveAttempt)
             {
                 _nextSlotResolveAttempt = Time.unscaledTime + 0.25f;
@@ -529,7 +533,7 @@ namespace MazeParty.Multiplayer
 
             var match = NetworkMatchState.Instance;
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
-                                  HasResolvedItemChoice && !IsBoardDeathInProgressOnServer;
+                                  HasResolvedItemChoice && !IsSwapping && !IsBoardDeathInProgressOnServer;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
             var canMoveInArenaCombat = canMoveInCombat && match.IsArenaCombatPlaying;
             if (!canMoveInAction && !canMoveInCombat)
@@ -723,6 +727,7 @@ namespace MazeParty.Multiplayer
 
         public void ResetMatchStatsOnServer()
         {
+            ClearUtilityEffectsOnServer();
             if (!IsServer)
             {
                 return;
@@ -738,6 +743,8 @@ namespace MazeParty.Multiplayer
             SetItemSlotValue(1, PrototypeItemId.None);
             SetItemSlotValue(2, PrototypeItemId.None);
             _selectedItemSlot.Value = -1;
+            _equippedItem.Value = 0;
+            _itemCharges.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             _combatState.Value = (byte)NetworkCombatState.None;
             _combatHealth.Value = 0;
@@ -775,6 +782,7 @@ namespace MazeParty.Multiplayer
                 return DamageResult.Blocked;
             }
 
+            InterruptSwapOnDamage(Mathf.Min(_currentHealth.Value, request.Amount));
             _currentHealth.Value = PlayerStatRules.ClampHealth(
                 _currentHealth.Value - request.Amount,
                 _maxHealth.Value);
@@ -799,6 +807,8 @@ namespace MazeParty.Multiplayer
 
         private void BeginBoardDeathOnServer()
         {
+            ClearUtilityEffectsOnServer();
+            CancelHandGestureOnServer();
             var match = NetworkMatchState.Instance;
             var now = match != null ? match.SynchronizedNow : Time.unscaledTimeAsDouble;
             var droppedGold = BoardDeathRules.DroppedGold(_gold.Value);
@@ -1204,9 +1214,16 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _privateRoll.Value = 0;
+            ClearUtilityEffectsOnServer();
+            _rangeDieItem.Value = 0;
+            _doubleDice.Value = false;
+            _firstDieResult.Value = 0;
+            _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _selectedItemSlot.Value = -1;
+            _equippedItem.Value = 0;
+            _itemCharges.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             if (_traversal.IsInitialized)
             {
@@ -1224,9 +1241,16 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _privateRoll.Value = 0;
+            ClearUtilityEffectsOnServer();
+            _rangeDieItem.Value = 0;
+            _doubleDice.Value = false;
+            _firstDieResult.Value = 0;
+            _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
             _choiceResolution.Value = (byte)ItemChoiceResolution.Pending;
             _selectedItemSlot.Value = -1;
+            _equippedItem.Value = 0;
+            _itemCharges.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Dice;
             if (_pendingCombatProtection.Value)
             {
@@ -1260,6 +1284,11 @@ namespace MazeParty.Multiplayer
 
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _privateRoll.Value = 0;
+            ClearUtilityEffectsOnServer();
+            _rangeDieItem.Value = 0;
+            _doubleDice.Value = false;
+            _firstDieResult.Value = 0;
+            _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             if (_traversal.IsInitialized)
@@ -1279,6 +1308,7 @@ namespace MazeParty.Multiplayer
             }
 
             _selectedItemSlot.Value = slotIndex;
+            InitializeSelectedItem();
             _choiceResolution.Value = (byte)ItemChoiceResolution.ItemSelected;
             return true;
         }
@@ -1291,6 +1321,8 @@ namespace MazeParty.Multiplayer
             }
 
             _selectedItemSlot.Value = -1;
+            _equippedItem.Value = 0;
+            _itemCharges.Value = 0;
             _choiceResolution.Value = (byte)(timedOut
                 ? ItemChoiceResolution.TimedOut
                 : ItemChoiceResolution.DoNotUse);
@@ -1314,6 +1346,8 @@ namespace MazeParty.Multiplayer
             _occupiedItemMask.Value = (byte)(_occupiedItemMask.Value & ~(1 << selected));
             SetItemSlotValue(selected, PrototypeItemId.None);
             _selectedItemSlot.Value = -1;
+            _equippedItem.Value = 0;
+            _itemCharges.Value = 0;
             return true;
         }
 
@@ -1327,7 +1361,7 @@ namespace MazeParty.Multiplayer
             var safeRoll = Mathf.Clamp(
                 roll,
                 0,
-                WorldDieAuthorityModel.MaximumFace);
+                WorldDieAuthorityModel.MaximumFace * 2);
             _privateRoll.Value = safeRoll;
             _remainingMoves.Value = safeRoll;
             _actionState.Value = safeRoll > 0
@@ -1428,6 +1462,11 @@ namespace MazeParty.Multiplayer
                 RemainingMoves = _remainingMoves.Value,
                 ChoiceResolution = (ItemChoiceResolution)_choiceResolution.Value,
                 SelectedItemSlot = _selectedItemSlot.Value,
+                EquippedItem = _equippedItem.Value, ItemCharges = _itemCharges.Value,
+                Cloaked = _cloaked.Value, RangeDieItem = _rangeDieItem.Value,
+                SwapTargetSlot = _swapChannel.TargetSlot, SwapRemaining = _swapChannel.Remaining,
+                ItemCooldownRemaining = _itemCooldownRemaining, DoubleDice = _doubleDice.Value,
+                FirstDieResult = _firstDieResult.Value, SecondDieResult = _secondDieResult.Value,
                 OccupiedItemMask = _occupiedItemMask.Value,
                 ItemSlot0 = _itemSlot0.Value,
                 ItemSlot1 = _itemSlot1.Value,
@@ -1482,10 +1521,17 @@ namespace MazeParty.Multiplayer
             _privateRoll.Value = Mathf.Clamp(
                 snapshot.Roll,
                 0,
-                WorldDieAuthorityModel.MaximumFace);
+                WorldDieAuthorityModel.MaximumFace * 2);
             _remainingMoves.Value = Mathf.Max(0, snapshot.RemainingMoves);
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
+            _equippedItem.Value = snapshot.EquippedItem; _itemCharges.Value = snapshot.ItemCharges;
+            _cloaked.Value = snapshot.Cloaked; _rangeDieItem.Value = snapshot.RangeDieItem;
+            _swapChannel.Clear();
+            if (snapshot.SwapRemaining > 0) _swapChannel.Begin(AssignedSlot, snapshot.SwapTargetSlot, snapshot.SwapRemaining);
+            _swapSeconds.Value = (float)_swapChannel.Remaining;
+            _itemCooldownRemaining = snapshot.ItemCooldownRemaining; _doubleDice.Value = snapshot.DoubleDice;
+            _firstDieResult.Value = snapshot.FirstDieResult; _secondDieResult.Value = snapshot.SecondDieResult;
             _occupiedItemMask.Value = snapshot.OccupiedItemMask;
             _itemSlot0.Value = snapshot.ItemSlot0;
             _itemSlot1.Value = snapshot.ItemSlot1;
@@ -1760,6 +1806,7 @@ namespace MazeParty.Multiplayer
 
         private void HandleLocalLook()
         {
+            if (HandEmoteWheelView.BlocksPointerInput) return;
             var match = NetworkMatchState.Instance;
             var minigameFirstPerson =
                 match != null &&
@@ -1772,7 +1819,7 @@ namespace MazeParty.Multiplayer
                  ((match.CanAcceptActionInput &&
                    HasResolvedItemChoice &&
                    CurrentHealth > 0 &&
-                   !BoardFlowView.IsItemShopOpen) ||
+                   !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
                   match.CanAvatarUseCombatInput(this)) &&
                  Cursor.lockState == CursorLockMode.Locked);
             var mouse = Mouse.current;
@@ -1789,6 +1836,7 @@ namespace MazeParty.Multiplayer
 
         private void HandleLocalActionButtons()
         {
+            if (HandEmoteWheelView.BlocksPointerInput) return;
             var match = NetworkMatchState.Instance;
             if (match != null && match.IsCliffBarragePlaying)
             {
@@ -1898,7 +1946,7 @@ namespace MazeParty.Multiplayer
 
             if (!match.CanAcceptActionInput || !HasResolvedItemChoice ||
                 CurrentHealth <= 0 ||
-                BoardFlowView.IsItemShopOpen)
+                (BoardFlowView.IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen || IsSwapping))
             {
                 return;
             }
@@ -1936,7 +1984,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (repeatPrimary)
+            if (repeatPrimary || (_selectedItemSlot.Value >= 0 && mouse.leftButton.wasPressedThisFrame))
             {
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay))
                 {
@@ -1960,7 +2008,9 @@ namespace MazeParty.Multiplayer
                         var direction = eyePivot != null
                             ? eyePivot.forward
                             : transform.forward;
-                        UseSelectedItemRpc(origin, direction);
+                        if (LocalEquippedItem == PrototypeItemId.PositionSwapper)
+                            BoardUtilityItemView.Instance?.Open(this);
+                        else UseSelectedItemRpc(origin, direction);
                     }
                 }
                 else
@@ -2004,7 +2054,7 @@ namespace MazeParty.Multiplayer
             var canMove = lobbyInput || (match != null &&
                           ((match.CanAcceptActionInput && HasResolvedItemChoice &&
                             CurrentHealth > 0 &&
-                            !BoardFlowView.IsItemShopOpen) ||
+                            !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
                            match.CanAvatarUseCombatInput(this)));
             if (keyboard != null && canMove)
             {
@@ -3145,6 +3195,7 @@ namespace MazeParty.Multiplayer
             var safe = appearance.Sanitized();
             _avatarVisual.SetBodyColor(safe.BodyColor);
             _avatarVisual.ApplyAppearance(safe.EyeId, safe.MouthId, safe.HatId);
+            _avatarVisual.SetFaceExpression(safe.ExpressionId);
         }
 
         private void ApplyDisplayName(FixedString64Bytes displayName)
@@ -3433,7 +3484,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var canUseLobbyInput = CanUseLobbyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
-                                    HasResolvedItemChoice &&
+                                    HasResolvedItemChoice && !IsSwapping &&
                                     !IsBoardDeathInProgressOnServer;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
             if (!canUseLobbyInput && !canUseActionInput && !canUseCombatInput)
@@ -4004,6 +4055,7 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
+                CancelHandGestureOnServer();
                 NetworkMatchState.Instance?.TryBoardPunchOnServer(
                     this,
                     claimedOrigin,
@@ -4019,6 +4071,7 @@ namespace MazeParty.Multiplayer
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
+                CancelHandGestureOnServer();
                 TryLobbyPunchOnServer(claimedOrigin, claimedDirection);
             }
         }

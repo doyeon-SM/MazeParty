@@ -18,6 +18,7 @@ namespace MazeParty.Multiplayer
     public struct WorldDieReconnectSnapshot
     {
         public bool IsValid;
+        public int DieIndex;
         public WorldDieAuthoritySnapshot Authority;
         public Vector3 Position;
         public Quaternion Rotation;
@@ -57,6 +58,8 @@ namespace MazeParty.Multiplayer
         [Header("Slot")]
         [SerializeField, Range(0, MultiplayerConstants.MaxPlayers - 1)]
         private int configuredSlot;
+        [SerializeField, Range(0, 1)] private int dieIndex;
+        public int DieIndex => dieIndex;
 
         [Header("Placement")]
         [SerializeField, Min(0.1f)] private float spawnHeight = 0.75f;
@@ -456,7 +459,7 @@ namespace MazeParty.Multiplayer
             var context = new WorldDiePushContext(
                 requester.AssignedSlot,
                 match.CanAcceptActionInput,
-                requester.HasResolvedItemChoice,
+                requester.HasResolvedItemChoice && !requester.IsSwapping,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
                 match.IsReconnectPaused,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
@@ -466,9 +469,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _targetFace = UnityEngine.Random.Range(
-                WorldDieAuthorityModel.MinimumFace,
-                WorldDieAuthorityModel.MaximumFace + 1);
+            _targetFace = requester.RollBoardFaceOnServer();
             _rollPresentationPhase = WorldDieRollPresentationPhase.Tumbling;
             _physicalTumbleStartedAt = now;
             _landingStartedAt = -1d;
@@ -612,7 +613,7 @@ namespace MazeParty.Multiplayer
             context = new WorldDiePushContext(
                 requester.AssignedSlot,
                 match.CanAcceptActionInput,
-                requester.HasResolvedItemChoice,
+                requester.HasResolvedItemChoice && !requester.IsSwapping,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
                 match.IsReconnectPaused,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
@@ -707,6 +708,7 @@ namespace MazeParty.Multiplayer
                 : now;
             return new WorldDieReconnectSnapshot
             {
+                DieIndex = dieIndex,
                 IsValid = true,
                 Authority = _authority.Capture(now),
                 Position = _body.position,

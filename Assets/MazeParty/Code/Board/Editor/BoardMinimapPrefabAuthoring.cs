@@ -32,6 +32,7 @@ namespace MazeParty.Editor
                 BoardLocalMapPrefabUpgrade.Ensure(root);
                 BoardMapInfoPrefabUpgrade.Ensure(root);
                 BoardMapRoutePrefabUpgrade.Ensure(root);
+            BoardItemProjectSetup.EnsureMapBindings(root);
                 if (!existing.HasRequiredReferences)
                     throw new InvalidOperationException("Board minimap bindings are incomplete.");
                 return;
@@ -140,6 +141,7 @@ namespace MazeParty.Editor
             BoardLocalMapPrefabUpgrade.Ensure(root);
             BoardMapInfoPrefabUpgrade.Ensure(root);
             BoardMapRoutePrefabUpgrade.Ensure(root);
+            BoardItemProjectSetup.EnsureMapBindings(root);
             if (!view.HasRequiredReferences) throw new InvalidOperationException("Minimap setup failed.");
         }
 

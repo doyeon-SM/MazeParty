@@ -74,6 +74,16 @@ namespace MazeParty.Gameplay
         public BoardCameraFramingAnchor BoardFramingAnchor => boardFramingAnchor;
         public bool IsTransitioning => _isTransitioning;
         public bool SmoothCameraTransitions => smoothCameraTransitions;
+        private float _itemBaseFov;
+        public void SetItemMagnification(float magnification)
+        {
+            if (firstPersonCamera == null) return;
+            if (_itemBaseFov <= 0) _itemBaseFov = firstPersonCamera.Lens.FieldOfView;
+            var lens = firstPersonCamera.Lens;
+            lens.FieldOfView = Mathf.Atan(Mathf.Tan(_itemBaseFov * Mathf.Deg2Rad * .5f) /
+                Mathf.Max(1f, magnification)) * 2f * Mathf.Rad2Deg;
+            firstPersonCamera.Lens = lens;
+        }
 
         public void Configure(
             Camera cameraOutput,

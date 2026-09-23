@@ -64,7 +64,8 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
-            _localAvatar?.AvatarVisual?.SetOwnerFirstPerson(false);
+            if (_localAvatar != null && _localAvatar.AvatarVisual != null)
+                _localAvatar.AvatarVisual.SetOwnerFirstPerson(false);
             UnregisterCamera();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -81,7 +82,8 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(showWorld);
             if (!showWorld)
             {
-                _localAvatar?.AvatarVisual?.SetOwnerFirstPerson(false);
+                if (_localAvatar != null && _localAvatar.AvatarVisual != null)
+                _localAvatar.AvatarVisual.SetOwnerFirstPerson(false);
                 UnregisterCamera();
                 return;
             }

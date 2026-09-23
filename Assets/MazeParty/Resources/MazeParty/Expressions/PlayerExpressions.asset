@@ -1,0 +1,30 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0e12a834b57e1da49b1a0129f906c2e0, type: 3}
+  m_Name: PlayerExpressions
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerExpressionCatalog
+  Faces:
+  - Name: Neutral
+    Sprite: {fileID: 3622792381989719942, guid: 0bfeecb6c125a154a931ebcaa036a0e5, type: 3}
+  - Name: Happy
+    Sprite: {fileID: 7985626363670038235, guid: 15a8d5f16b1a9854ebb9ed16d729360d, type: 3}
+  - Name: Angry
+    Sprite: {fileID: 621222158458474870, guid: d2d8dbfe8772b3b4d82ce7c9daa4feb4, type: 3}
+  - Name: Surprised
+    Sprite: {fileID: 5767058898976193538, guid: a87ba6672bdad4845852444b57191c0e, type: 3}
+  Gestures:
+  - Name: THUMBS UP
+    HandsPrefab: {fileID: 4684904999885387765, guid: a4ad932aedf08ee46ab2c16aec2911e9, type: 3}
+  - Name: PEACE
+    HandsPrefab: {fileID: 3028735145400870850, guid: 0fa25f7fe0f39984298f5d10b92cd5c7, type: 3}
+  - Name: HEART
+    HandsPrefab: {fileID: 1710408392164390971, guid: 327f6174dbc3a444b8226b73131d87ea, type: 3}

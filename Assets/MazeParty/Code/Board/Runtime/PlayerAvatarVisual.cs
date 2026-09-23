@@ -9,7 +9,7 @@ namespace MazeParty.Gameplay
     /// without changing gameplay or replication code.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class PlayerAvatarVisual : MonoBehaviour
+    public sealed partial class PlayerAvatarVisual : MonoBehaviour
     {
         public const float StandingControllerHeight = 2f;
         public const float CrouchingControllerHeight = 1.2f;
@@ -44,8 +44,8 @@ namespace MazeParty.Gameplay
         private Transform _worldItemRoot;
         private Transform _firstPersonItemRoot;
         private GameObject _topViewHighlight;
-        private readonly Transform[] _worldItemModels = new Transform[4];
-        private readonly Transform[] _firstPersonItemModels = new Transform[4];
+        private readonly Transform[] _worldItemModels = new Transform[13];
+        private readonly Transform[] _firstPersonItemModels = new Transform[13];
         private CapsuleCollider _bodyHitbox;
         private SphereCollider _headHitbox;
         private SphereCollider _leftHandHitbox;
@@ -68,17 +68,32 @@ namespace MazeParty.Gameplay
         private float _handHitTimer;
         private float _itemUseTimer;
         private PrototypeItemId _activeItemId;
+        private PrototypeItemId _equippedItemId;
         private bool _nextPunchUsesRightHand = true;
         private bool _crouching;
         private bool _eliminated;
         private bool _ownerFirstPerson;
+        private bool _hiddenFromViewer;
+        public void SetHiddenFromViewer(bool hidden)
+        {
+            if (_hiddenFromViewer == hidden) return;
+            _hiddenFromViewer = hidden;
+            RefreshVisibility();
+        }
         private byte _hatId;
         private Color _bodyColor = DefaultBodyColor;
 
         public bool IsBuilt => _worldModel != null;
         public bool IsCrouching => _crouching;
         public Color BodyColor => _bodyColor;
-        public bool IsUsingItem => _itemUseTimer > 0f;
+        public bool IsUsingItem => _itemUseTimer > 0f || _equippedItemId != PrototypeItemId.None;
+        public void SetEquippedItem(PrototypeItemId id)
+        {
+            if (_equippedItemId == id) return;
+            _equippedItemId = id;
+            _activeItemId = id;
+            RefreshVisibility();
+        }
 
         private void Awake()
         {
@@ -132,6 +147,7 @@ namespace MazeParty.Gameplay
             BuildTestHat();
             _worldItemRoot = CreateAnchor(_worldModel, "ItemUseAnchor");
             BuildItemModels(_worldItemRoot, _worldItemModels, false);
+            BuildExpressionVisuals();
             BuildNameplate();
             BuildHitboxes();
 
@@ -167,6 +183,7 @@ namespace MazeParty.Gameplay
             _firstPersonRightHand.localScale = Vector3.one * 0.22f;
             _firstPersonItemRoot = CreateAnchor(eyePivot, "FirstPersonItemUseAnchor");
             BuildItemModels(_firstPersonItemRoot, _firstPersonItemModels, true);
+            BuildFirstPersonGestures(eyePivot);
             ApplyBodyColor();
             RefreshVisibility();
         }
@@ -187,6 +204,7 @@ namespace MazeParty.Gameplay
             _leftEye.gameObject.SetActive(eyeId == 0);
             _rightEye.gameObject.SetActive(eyeId == 0);
             _mouth.gameObject.SetActive(mouthId == 0);
+            SetFaceExpression(0);
             _hatId = hatId;
             _hat.gameObject.SetActive(hatId == 1);
         }
@@ -317,7 +335,7 @@ namespace MazeParty.Gameplay
             _itemUseTimer = Mathf.MoveTowards(_itemUseTimer, 0f, Time.deltaTime);
             if (wasUsingItem && _itemUseTimer <= 0f)
             {
-                _activeItemId = PrototypeItemId.None;
+                _activeItemId = _equippedItemId;
                 RefreshVisibility();
             }
             UpdatePose(false);
@@ -411,6 +429,7 @@ namespace MazeParty.Gameplay
                 _firstPersonItemRoot.localPosition = new Vector3(0f, -0.2f + itemLift, 0.58f);
             }
 
+            if (_worldGestureRoot != null) _worldGestureRoot.localPosition = new Vector3(0f, handY + .2f, .35f);
             UpdateHitboxPose(t);
         }
 
@@ -429,9 +448,9 @@ namespace MazeParty.Gameplay
             Transform[] models,
             bool firstPerson)
         {
-            models[(int)PrototypeItemId.PulseBlaster] = BuildPulseBlaster(parent);
-            models[(int)PrototypeItemId.PushMine] = BuildPushMine(parent);
-            models[(int)PrototypeItemId.MedKit] = BuildMedKit(parent);
+            foreach (var item in PrototypeItemCatalog.All)
+                if (item.HeldPrefab != null)
+                    models[(int)item.Id] = Instantiate(item.HeldPrefab, parent, false).transform;
             parent.localScale = Vector3.one * (firstPerson ? 0.78f : 0.72f);
             SetItemModelVisibility(models, PrototypeItemId.None);
         }
@@ -540,31 +559,33 @@ namespace MazeParty.Gameplay
             ApplyProperties(_rightHand, _bodyProperties);
             ApplyProperties(_firstPersonLeftHand, _bodyProperties);
             ApplyProperties(_firstPersonRightHand, _bodyProperties);
+            ColorGestureModels();
         }
 
         private void RefreshVisibility()
         {
             var showingItem = IsUsingItem &&
                               PrototypeItemCatalog.IsValid(_activeItemId);
+            RefreshGestureVisibility(showingItem);
             if (_worldModel != null)
             {
-                _worldModel.gameObject.SetActive(!_ownerFirstPerson);
+                _worldModel.gameObject.SetActive(!_ownerFirstPerson && !_hiddenFromViewer);
             }
             if (_nameplate != null)
             {
-                _nameplate.gameObject.SetActive(!_ownerFirstPerson);
+                _nameplate.gameObject.SetActive(!_ownerFirstPerson && !_hiddenFromViewer);
             }
             if (_firstPersonHands != null)
             {
-                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem);
+                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem && _gesture == 0 && !_hiddenFromViewer);
             }
             if (_leftHand != null)
             {
-                _leftHand.gameObject.SetActive(!showingItem);
+                _leftHand.gameObject.SetActive(!showingItem && _gesture == 0);
             }
             if (_rightHand != null)
             {
-                _rightHand.gameObject.SetActive(!showingItem);
+                _rightHand.gameObject.SetActive(!showingItem && _gesture == 0);
             }
             if (_worldItemRoot != null)
             {
@@ -573,7 +594,7 @@ namespace MazeParty.Gameplay
             }
             if (_firstPersonItemRoot != null)
             {
-                _firstPersonItemRoot.gameObject.SetActive(_ownerFirstPerson && showingItem);
+                _firstPersonItemRoot.gameObject.SetActive(_ownerFirstPerson && showingItem && !_hiddenFromViewer);
                 SetItemModelVisibility(_firstPersonItemModels, _activeItemId);
             }
         }

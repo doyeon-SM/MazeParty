@@ -155,6 +155,34 @@ namespace MazeParty.Multiplayer.Tests
                 var full = (BoardMinimapView)controllerData.FindProperty("fullMap").objectReferenceValue;
                 var panel = (GameObject)controllerData.FindProperty("fullMapPanel").objectReferenceValue;
                 Assert.That(full.HasRequiredReferences, Is.True);
+                // Check the actual prefab policy for every possible local seat, including ownership changes.
+                foreach (var view in new[] { local, full })
+                {
+                    var viewData = new SerializedObject(view);
+                    var markers = viewData.FindProperty("players");
+                    var highlights = viewData.FindProperty("localHighlights");
+                    player.transform.position = Vector3.zero;
+                    view.PrepareMap(topology, Vector2Int.zero, 2, null, player.transform.position);
+                    for (var localSlot = 0; localSlot < MultiplayerConstants.MaxPlayers; localSlot++)
+                    {
+                        for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                        {
+                            var isLocal = slot == localSlot;
+                            view.PresentPlayer(slot, player.transform, Color.white, isLocal);
+                            var marker = (Image)markers.GetArrayElementAtIndex(slot).objectReferenceValue;
+                            var highlight = (GameObject)highlights.GetArrayElementAtIndex(slot).objectReferenceValue;
+                            Assert.That(marker.gameObject.activeSelf, Is.EqualTo(view == local || isLocal),
+                                "HUD shows nearby players; full map shows only the current local seat.");
+                            Assert.That(highlight.activeSelf, Is.EqualTo(isLocal));
+                        }
+                    }
+                    for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                    {
+                        view.PresentPlayer(slot, null, Color.white, false);
+                        Assert.That(((Image)markers.GetArrayElementAtIndex(slot).objectReferenceValue).gameObject.activeSelf, Is.False);
+                        Assert.That(((GameObject)highlights.GetArrayElementAtIndex(slot).objectReferenceValue).activeSelf, Is.False);
+                    }
+                }
                 full.PrepareMap(topology, Vector2Int.zero, 2, null, player.transform.position);
                 full.SetHeading(270f);
                 var fullProjection = full.GetComponentInChildren<MiniMapView>(true);

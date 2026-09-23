@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Mask circularMask;
         [SerializeField, Min(0f)] private float radiusInTiles = 2f;
         [SerializeField] private bool followHeading = true;
+        [SerializeField] private bool localPlayerOnly;
         private Vector3 _mapCenter;
         [SerializeField] private Room[] rooms = Array.Empty<Room>();
         [SerializeField] private Image[] players = Array.Empty<Image>();
@@ -41,6 +42,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Color[] typeIconColors = { Color.gray, Color.white, new Color(1f, .8f, .2f), new Color(.4f, .85f, 1f) };
         [SerializeField] private Color[] effectIconColors = { Color.white, new Color(1f, .8f, .2f), new Color(1f, .3f, .3f), new Color(.85f, .5f, 1f), new Color(.35f, 1f, .5f) };
         [SerializeField] private BoardMapRouteGraphic shopRouteGraphic;
+        [SerializeField] private BoardMapMineGraphic mineGraphic;
+        private Bounds _mineBounds;
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
         private BoardTopology _distanceTopology;
         private Vector2Int? _distanceSource, _distanceShop;
@@ -63,7 +66,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-                if (shopRouteGraphic == null || projection == null || projection.otherDotCanvas == null ||
+                if (mineGraphic == null || shopRouteGraphic == null || projection == null || projection.otherDotCanvas == null ||
                     projection.miniMapBounds == null || projection.miniMapBounds.topRight == null ||
                     projection.miniMapBounds.bottomLeft == null || currentTile == null || heading == null ||
                     rooms == null || players == null || localHighlights == null || tileNames == null ||
@@ -112,10 +115,12 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < players.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                PresentPlayer(slot, avatar != null && avatar.IsSpawned && avatar.HasLogicalBoardTile
+                PresentPlayer(slot, avatar != null && avatar.IsSpawned && avatar.HasLogicalBoardTile && (!avatar.IsCloaked || avatar == local)
                     ? avatar.transform : null, avatar != null ? avatar.Appearance.BodyColor : Color.white,
                     avatar != null && avatar == local);
             }
+            mineGraphic.Present(local != null ? local.LocalMinePositions : null, _mineBounds,
+                radiusInTiles * BoardTile.RoomSize);
             var eye = local != null ? local.EyePivot : null;
             SetHeading(eye != null ? eye.eulerAngles.y : local != null ? local.transform.eulerAngles.y : 0f);
         }
@@ -162,6 +167,7 @@ namespace MazeParty.Multiplayer
             }
             bounds.size = new Vector3(extent, 1f, extent);
             _mapCenter = bounds.center;
+            _mineBounds = bounds;
             projection.miniMapBounds.bottomLeft.position = bounds.min;
             projection.miniMapBounds.topRight.position = bounds.max;
             currentTile.text = unknownTileText;
@@ -226,9 +232,9 @@ namespace MazeParty.Multiplayer
         public void PresentPlayer(int slot, Transform target, Color color, bool isLocal)
         {
             var dot = players[slot];
-            var visible = target != null && IsPositionVisible(target.position);
+            var visible = target != null && (!localPlayerOnly || isLocal) && IsPositionVisible(target.position);
             dot.gameObject.SetActive(visible);
-            localHighlights[slot].SetActive(isLocal);
+            localHighlights[slot].SetActive(visible && isLocal);
             if (!visible) return;
             projection.Translate(target, dot.rectTransform);
             dot.rectTransform.localRotation = Quaternion.identity;
