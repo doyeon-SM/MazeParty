@@ -36,11 +36,18 @@ namespace MazeParty.Multiplayer
             }
 
             string contentFingerprint;
+            string legacyContentFingerprint;
             try
             {
                 contentFingerprint = MatchRecoveryFingerprint.CreateContentFingerprint(
                     _boardTopology,
                     _minigameSchedule);
+                legacyContentFingerprint =
+                    MatchRecoveryFingerprint.CreateContentFingerprint(
+                        _boardTopology,
+                        _minigameSchedule,
+                        MatchRecoverySnapshot.
+                            LegacyRecoveryVersionWithoutMines);
             }
             catch (Exception exception)
             {
@@ -58,6 +65,7 @@ namespace MazeParty.Multiplayer
                 status = _minigameScheduleSession.TryLoadRecovery(
                     rosterFingerprint,
                     contentFingerprint,
+                    legacyContentFingerprint,
                     out snapshot);
             }
             catch (Exception exception)
@@ -84,6 +92,7 @@ namespace MazeParty.Multiplayer
                     controller,
                     out var playerSnapshots,
                     out var avatars,
+                    out var mineOwnerSlots,
                     out var currentMinigameSeed,
                     out error))
             {
@@ -115,6 +124,7 @@ namespace MazeParty.Multiplayer
                         return false;
                     }
                 }
+                RestoreBoardMines(snapshot.mines, mineOwnerSlots);
 
                 _settledMinigameTurn = snapshot.settledMinigameTurn;
                 _remainingMinigameSlots.Value = snapshot.remainingMinigameSlots;
@@ -180,11 +190,13 @@ namespace MazeParty.Multiplayer
             OnlineSessionController controller,
             out MatchRecoveryPlayerSnapshot[] playerSnapshots,
             out NetworkPlayerAvatar[] avatars,
+            out int[] mineOwnerSlots,
             out ulong currentMinigameSeed,
             out string error)
         {
             playerSnapshots = null;
             avatars = null;
+            mineOwnerSlots = Array.Empty<int>();
             currentMinigameSeed = 0UL;
             error = string.Empty;
 
@@ -249,6 +261,11 @@ namespace MazeParty.Multiplayer
                 error = GameText.T("A saved shop location is no longer available.");
                 return false;
             }
+            if (!ValidateRecoveryMines(snapshot))
+            {
+                error = GameText.T("A saved mine location is no longer valid.");
+                return false;
+            }
 
             if (snapshot.players == null ||
                 snapshot.players.Length != MultiplayerConstants.MaxPlayers)
@@ -299,6 +316,17 @@ namespace MazeParty.Multiplayer
 
                 avatars[slot] = avatar;
                 playerSnapshots[slot] = saved;
+            }
+
+            if (!MatchRecoveryMineOwnership.TryMapToCurrentSlots(
+                    snapshot.mines,
+                    snapshot.players,
+                    playerSnapshots,
+                    out mineOwnerSlots))
+            {
+                error = GameText.T(
+                    "A saved mine owner is no longer part of this match.");
+                return false;
             }
 
             return true;
@@ -372,10 +400,53 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        private bool ValidateRecoveryMines(MatchRecoverySnapshot snapshot)
+        {
+            if (snapshot.mines == null ||
+                snapshot.checkpoint == MatchRecoveryCheckpoint.MatchComplete &&
+                snapshot.mines.Length != 0)
+            {
+                return false;
+            }
+
+            var armingDelay =
+                PrototypeItemCatalog.Get(PrototypeItemId.Mine).ArmingDelay;
+            for (var index = 0; index < snapshot.mines.Length; index++)
+            {
+                var mine = snapshot.mines[index];
+                if (mine.ownerSlot < 0 ||
+                    mine.ownerSlot >= MultiplayerConstants.MaxPlayers ||
+                    float.IsNaN(mine.position.x) ||
+                    float.IsInfinity(mine.position.x) ||
+                    float.IsNaN(mine.position.y) ||
+                    float.IsInfinity(mine.position.y) ||
+                    float.IsNaN(mine.position.z) ||
+                    float.IsInfinity(mine.position.z) ||
+                    float.IsNaN(mine.armRemaining) ||
+                    float.IsInfinity(mine.armRemaining) ||
+                    mine.armRemaining < 0f ||
+                    mine.armRemaining > armingDelay)
+                {
+                    return false;
+                }
+
+                if (!BoardItemLifecycleRules.IsValidMinePosition(
+                        _boardTopology,
+                        mine.position))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private void SaveMatchRecoveryCheckpoint(
             MatchRecoveryCheckpoint checkpoint)
         {
-            if (!IsServer || !_gameplayEnabled.Value ||
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsRecoveryWrite ||
+                !_gameplayEnabled.Value ||
                 _minigameSchedule == null || _minigameScheduleSession == null)
             {
                 return;
@@ -491,6 +562,20 @@ namespace MazeParty.Multiplayer
                 };
             }
 
+            var mines = checkpoint == MatchRecoveryCheckpoint.MatchComplete
+                ? Array.Empty<MatchRecoveryMineSnapshot>()
+                : new MatchRecoveryMineSnapshot[_boardMines.Count];
+            for (var index = 0; index < mines.Length; index++)
+            {
+                var mine = _boardMines[index];
+                mines[index] = new MatchRecoveryMineSnapshot
+                {
+                    ownerSlot = mine.OwnerSlot,
+                    position = mine.Position,
+                    armRemaining = mine.ArmRemaining
+                };
+            }
+
             var stableKeyShopState = _keyShopRuntime != null &&
                                      _keyShopRuntime.HasLocation
                 ? KeyShopLifecycleState.Active
@@ -539,6 +624,7 @@ namespace MazeParty.Multiplayer
                 itemShops = itemShops,
                 tombstones = tombstones,
                 nextTombstoneId = _nextTombstoneId,
+                mines = mines,
                 players = players
             };
         }
@@ -547,6 +633,7 @@ namespace MazeParty.Multiplayer
         {
             EndAllMinigameRuntimes();
             ResetCombatRuntimeOnServer();
+            ClearBoardItemWorld();
             _rolledMask.Value = 0;
             _arrivedMask.Value = 0;
             _readyMask.Value = 0;
@@ -577,11 +664,39 @@ namespace MazeParty.Multiplayer
             ResetAwardCeremonyForRecovery();
         }
 
+        private void RestoreBoardMines(
+            MatchRecoveryMineSnapshot[] snapshots,
+            int[] ownerSlots)
+        {
+            if (snapshots == null || ownerSlots == null ||
+                snapshots.Length != ownerSlots.Length)
+            {
+                throw new InvalidOperationException(
+                    "Saved mine ownership could not be restored safely.");
+            }
+
+            _boardMines.Clear();
+            for (var index = 0; index < snapshots.Length; index++)
+            {
+                var snapshot = snapshots[index];
+                _boardMines.Add(new PlantedMine
+                {
+                    OwnerSlot = ownerSlots[index],
+                    Position = snapshot.position,
+                    ArmRemaining = snapshot.armRemaining
+                });
+            }
+
+            SyncBoardMines();
+        }
+
         private void ResetAwardCeremonyForRecovery()
         {
             _awardCeremonyPhase.Value = (byte)AwardCeremonyPhase.None;
             _awardCeremonyPhaseEndsAt.Value = 0d;
             _pausedAwardCeremonyRemaining.Value = 0d;
+            _awardCeremonyAutoReturnEndsAt.Value = 0d;
+            _pausedAwardCeremonyAutoReturnRemaining.Value = 0d;
             _awardCeremonyCategory0.Value = 0;
             _awardCeremonyCategory1.Value = 0;
             _awardCeremonyWinnerMask0.Value = 0;

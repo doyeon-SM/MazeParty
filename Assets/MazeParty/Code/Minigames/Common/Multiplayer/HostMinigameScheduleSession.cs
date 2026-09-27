@@ -117,6 +117,7 @@ namespace MazeParty.Multiplayer
         public MatchRecoveryLoadStatus TryLoadRecovery(
             string rosterFingerprint,
             string contentFingerprint,
+            string legacyContentFingerprint,
             out MatchRecoverySnapshot snapshot)
         {
             snapshot = null;
@@ -130,11 +131,23 @@ namespace MazeParty.Multiplayer
                 matchKey,
                 DateTime.UtcNow,
                 rosterFingerprint,
-                contentFingerprint,
+                null,
                 out var record);
             if (status != MatchRecoveryLoadStatus.Loaded)
             {
                 return status;
+            }
+
+            if (!string.Equals(
+                    record.ContentFingerprint,
+                    contentFingerprint,
+                    StringComparison.Ordinal) &&
+                !string.Equals(
+                    record.ContentFingerprint,
+                    legacyContentFingerprint,
+                    StringComparison.Ordinal))
+            {
+                return MatchRecoveryLoadStatus.ContentMismatch;
             }
 
             return _recoveryCodec.TryDecode(record.Payload, out snapshot)

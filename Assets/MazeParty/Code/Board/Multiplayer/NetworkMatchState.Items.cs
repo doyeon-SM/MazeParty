@@ -42,9 +42,15 @@ namespace MazeParty.Multiplayer
                 return false;
 
             RaycastHit ground = default;
+            var minePosition = default(Vector3);
             if (id == PrototypeItemId.Mine &&
                 (!BoardItemPhysics.Cast(origin, direction, item.Range, avatar.gameObject, out ground) ||
-                 ground.normal.y < .5f || ground.collider.GetComponentInParent<NetworkPlayerAvatar>() != null)) return false;
+                 ground.collider.GetComponentInParent<NetworkPlayerAvatar>() != null ||
+                 !BoardItemLifecycleRules.TryGetMinePlacementPosition(
+                     _boardTopology,
+                     ground.point,
+                     ground.normal,
+                     out minePosition))) return false;
             if (!avatar.SpendItemChargeOnServer(item)) return false;
             avatar.PresentItemUseOnServer(id);
             if (id == PrototypeItemId.Cloak) avatar.ActivateCloakOnServer();
@@ -76,7 +82,7 @@ namespace MazeParty.Multiplayer
             else if (id == PrototypeItemId.Mine)
             {
                 _boardMines.Add(new PlantedMine { OwnerSlot = avatar.AssignedSlot,
-                    Position = ground.point + Vector3.up * .06f, ArmRemaining = item.ArmingDelay });
+                    Position = minePosition, ArmRemaining = item.ArmingDelay });
                 SyncBoardMines();
             }
             return true;
@@ -94,64 +100,141 @@ namespace MazeParty.Multiplayer
             if (FlowState == BoardFlowState.MatchComplete)
             {
                 if (_boardMines.Count > 0) { _boardMines.Clear(); SyncBoardMines(); }
-                if (_boardGrenades.Count > 0) { _boardGrenades.Clear(); SyncBoardGrenadesRpc(Array.Empty<Vector3>()); }
+                ClearBoardGrenadesOnServer();
                 return;
             }
-            if (!IsActionPhase)
+
+            var flowState = FlowState;
+            if (!BoardItemLifecycleRules.CanSimulateProjectile(flowState))
             {
-                // An airborne consumable cannot deal damage in the following minigame.
-                if (_boardGrenades.Count > 0) { _boardGrenades.Clear(); SyncBoardGrenadesRpc(Array.Empty<Vector3>()); }
+                ClearBoardGrenadesOnServer();
             }
-            if (IsActionPhase && !IsGlobalSimulationPaused)
+            else if (!IsGlobalSimulationPaused)
             {
                 var dt = Time.unscaledDeltaTime;
-                var bomb = PrototypeItemCatalog.Get(PrototypeItemId.Grenade);
-                for (int i = _boardGrenades.Count - 1; i >= 0; i--)
+                var clearAtSettlementBoundary = false;
+                if (flowState == BoardFlowState.AscendingResolve && _flow != null)
                 {
-                    var grenade = _boardGrenades[i];
-                    // Small swept steps keep the parabola stable under a long host frame.
-                    float remaining = dt;
-                    bool exploded = false;
-                    while (remaining > 0f && !exploded)
-                    {
-                        float step = Mathf.Min(remaining, .02f);
-                        remaining -= step;
-                        var delta = grenade.Velocity * step + Physics.gravity * (.5f * step * step);
-                        var owner = GetAvatarForSlot(grenade.OwnerSlot);
-                        bool hit = BoardItemPhysics.Cast(grenade.Position, delta.normalized, delta.magnitude,
-                            owner != null ? owner.gameObject : null, out var collision, bomb.ProjectileRadius);
-                        grenade.Position = hit ? collision.point + collision.normal * .08f : grenade.Position + delta;
-                        grenade.Velocity += Physics.gravity * step;
-                        grenade.Life += step;
-                        if (hit || grenade.Life >= bomb.ProjectileLifetime)
-                        {
-                            ExplodeBoardItem(grenade.Position, grenade.OwnerSlot, bomb);
-                            _boardGrenades.RemoveAt(i);
-                            exploded = true;
-                        }
-                    }
+                    var settlementRemaining = (float)Math.Max(
+                        0d,
+                        _flow.GetStateRemaining(ServerNow));
+                    clearAtSettlementBoundary = dt >= settlementRemaining;
+                    dt = Mathf.Min(dt, settlementRemaining);
                 }
-                var mineDefinition = PrototypeItemCatalog.Get(PrototypeItemId.Mine);
-                bool minesChanged = false;
-                for (int i = _boardMines.Count - 1; i >= 0; i--)
+
+                TickBoardGrenades(dt);
+                if (clearAtSettlementBoundary)
                 {
-                    var mine = _boardMines[i];
-                    mine.ArmRemaining = Mathf.Max(0f, mine.ArmRemaining - dt);
-                    if (mine.ArmRemaining > 0f) continue;
-                    for (int slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                    // AscendingResolve is the post-action settlement window.
+                    // No airborne board item may enter combat or a minigame.
+                    ClearBoardGrenadesOnServer();
+                }
+            }
+
+            if (BoardItemLifecycleRules.CanSimulateMine(flowState) &&
+                !IsGlobalSimulationPaused)
+            {
+                var frameDelta = Time.unscaledDeltaTime;
+                TickBoardMines(
+                    BoardItemLifecycleRules.GetMineSimulationDelta(
+                        _flow,
+                        ServerNow,
+                        frameDelta,
+                        _arrivalGracePendingSlot >= 0
+                            ? _arrivalGraceEndsAt.Value
+                            : 0d));
+            }
+            SyncBoardGrenadeViews();
+        }
+
+        private void TickBoardGrenades(float deltaTime)
+        {
+            if (deltaTime <= 0f || _boardGrenades.Count == 0)
+            {
+                return;
+            }
+
+            var bomb = PrototypeItemCatalog.Get(PrototypeItemId.Grenade);
+            for (int i = _boardGrenades.Count - 1; i >= 0; i--)
+            {
+                var grenade = _boardGrenades[i];
+                // Small swept steps keep the parabola stable under a long host frame.
+                float remaining = deltaTime;
+                bool exploded = false;
+                while (remaining > 0f && !exploded)
+                {
+                    var lifetimeRemaining = Mathf.Max(
+                        0f,
+                        bomb.ProjectileLifetime - grenade.Life);
+                    if (lifetimeRemaining <= 0f)
                     {
-                        var target = GetAvatarForSlot(slot);
-                        if (slot == mine.OwnerSlot || target == null || target.CurrentHealth <= 0 ||
-                            Vector3.Distance(target.transform.position, mine.Position) > mineDefinition.TriggerRadius ||
-                            !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position)) continue;
-                        _boardMines.RemoveAt(i);
-                        ExplodeBoardItem(mine.Position, mine.OwnerSlot, mineDefinition);
-                        minesChanged = true;
+                        ExplodeBoardItem(grenade.Position, grenade.OwnerSlot, bomb);
+                        _boardGrenades.RemoveAt(i);
                         break;
                     }
+
+                    float step = Mathf.Min(
+                        Mathf.Min(remaining, .02f),
+                        lifetimeRemaining);
+                    remaining -= step;
+                    var delta = grenade.Velocity * step +
+                                Physics.gravity * (.5f * step * step);
+                    var owner = GetAvatarForSlot(grenade.OwnerSlot);
+                    bool hit = BoardItemPhysics.Cast(
+                        grenade.Position,
+                        delta.normalized,
+                        delta.magnitude,
+                        owner != null ? owner.gameObject : null,
+                        out var collision,
+                        bomb.ProjectileRadius);
+                    grenade.Position = hit
+                        ? collision.point + collision.normal * .08f
+                        : grenade.Position + delta;
+                    grenade.Velocity += Physics.gravity * step;
+                    grenade.Life += step;
+                    if (hit || BoardItemLifecycleRules.HasReachedProjectileLifetime(
+                            grenade.Life,
+                            bomb.ProjectileLifetime))
+                    {
+                        ExplodeBoardItem(grenade.Position, grenade.OwnerSlot, bomb);
+                        _boardGrenades.RemoveAt(i);
+                        exploded = true;
+                    }
                 }
-                if (minesChanged) SyncBoardMines();
             }
+        }
+
+        private void TickBoardMines(float deltaTime)
+        {
+            if (deltaTime <= 0f || _boardMines.Count == 0)
+            {
+                return;
+            }
+
+            var mineDefinition = PrototypeItemCatalog.Get(PrototypeItemId.Mine);
+            bool minesChanged = false;
+            for (int i = _boardMines.Count - 1; i >= 0; i--)
+            {
+                var mine = _boardMines[i];
+                mine.ArmRemaining = Mathf.Max(0f, mine.ArmRemaining - deltaTime);
+                if (mine.ArmRemaining > 0f) continue;
+                for (int slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var target = GetAvatarForSlot(slot);
+                    if (slot == mine.OwnerSlot || target == null || target.CurrentHealth <= 0 ||
+                        Vector3.Distance(target.transform.position, mine.Position) > mineDefinition.TriggerRadius ||
+                        !BoardItemPhysics.HasBlastLineOfSight(mine.Position + Vector3.up * .15f, target.transform.position)) continue;
+                    _boardMines.RemoveAt(i);
+                    ExplodeBoardItem(mine.Position, mine.OwnerSlot, mineDefinition);
+                    minesChanged = true;
+                    break;
+                }
+            }
+            if (minesChanged) SyncBoardMines();
+        }
+
+        private void SyncBoardGrenadeViews()
+        {
             _nextItemSync -= Time.unscaledDeltaTime;
             if (_nextItemSync <= 0f)
             {
@@ -161,6 +244,18 @@ namespace MazeParty.Multiplayer
                 if (positions.Length > 0 || _lastGrenadeViewCount > 0) SyncBoardGrenadesRpc(positions);
                 _lastGrenadeViewCount = positions.Length;
             }
+        }
+
+        private void ClearBoardGrenadesOnServer()
+        {
+            if (_boardGrenades.Count == 0 && _lastGrenadeViewCount == 0)
+            {
+                return;
+            }
+
+            _boardGrenades.Clear();
+            _lastGrenadeViewCount = 0;
+            SyncBoardGrenadesRpc(Array.Empty<Vector3>());
         }
 
         private void ExplodeBoardItem(Vector3 position, int ownerSlot, BoardItemDefinition item)
@@ -228,6 +323,9 @@ namespace MazeParty.Multiplayer
             _boardMines.Clear(); _boardGrenades.Clear();
             foreach (var view in _grenadeViews) if (view != null) Destroy(view);
             _grenadeViews.Clear();
+            Array.Clear(_mineRecipients, 0, _mineRecipients.Length);
+            _lastGrenadeViewCount = 0;
+            _nextItemSync = 0f;
         }
     }
 }

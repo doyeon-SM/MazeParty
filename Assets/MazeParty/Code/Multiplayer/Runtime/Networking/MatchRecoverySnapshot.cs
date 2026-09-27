@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -17,7 +18,8 @@ namespace MazeParty.Multiplayer
     [Serializable]
     public sealed class MatchRecoverySnapshot
     {
-        public const int CurrentRecoveryVersion = 1;
+        public const int LegacyRecoveryVersionWithoutMines = 1;
+        public const int CurrentRecoveryVersion = 2;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public MatchRecoveryCheckpoint checkpoint;
@@ -39,6 +41,8 @@ namespace MazeParty.Multiplayer
         public MatchRecoveryTombstoneSnapshot[] tombstones =
             Array.Empty<MatchRecoveryTombstoneSnapshot>();
         public int nextTombstoneId;
+        public MatchRecoveryMineSnapshot[] mines =
+            Array.Empty<MatchRecoveryMineSnapshot>();
         public MatchRecoveryPlayerSnapshot[] players =
             Array.Empty<MatchRecoveryPlayerSnapshot>();
     }
@@ -97,5 +101,86 @@ namespace MazeParty.Multiplayer
         public int id;
         public Vector3 position;
         public int gold;
+    }
+
+    [Serializable]
+    public struct MatchRecoveryMineSnapshot
+    {
+        // Index into MatchRecoverySnapshot.players at capture time. Recovery
+        // resolves that player's key to the current authoritative seat.
+        public int ownerSlot;
+        public Vector3 position;
+        public float armRemaining;
+    }
+
+    /// <summary>
+    /// Resolves persisted mine ownership through the stable player identity.
+    /// Recovery rosters are order-independent, so a saved seat is never a
+    /// durable owner identifier by itself.
+    /// </summary>
+    public static class MatchRecoveryMineOwnership
+    {
+        public static bool TryMapToCurrentSlots(
+            MatchRecoveryMineSnapshot[] mines,
+            MatchRecoveryPlayerSnapshot[] savedPlayersBySlot,
+            MatchRecoveryPlayerSnapshot[] currentPlayersBySlot,
+            out int[] currentOwnerSlots)
+        {
+            currentOwnerSlots = Array.Empty<int>();
+            if (mines == null || savedPlayersBySlot == null ||
+                currentPlayersBySlot == null ||
+                savedPlayersBySlot.Length != MultiplayerConstants.MaxPlayers ||
+                currentPlayersBySlot.Length != MultiplayerConstants.MaxPlayers)
+            {
+                return false;
+            }
+
+            var currentSlotByPlayerKey = new Dictionary<string, int>(
+                StringComparer.Ordinal);
+            for (var slot = 0; slot < currentPlayersBySlot.Length; slot++)
+            {
+                var playerKey = currentPlayersBySlot[slot]?.playerKey;
+                if (string.IsNullOrWhiteSpace(playerKey) ||
+                    !currentSlotByPlayerKey.TryAdd(playerKey, slot))
+                {
+                    return false;
+                }
+            }
+
+            var savedPlayerKeys = new HashSet<string>(StringComparer.Ordinal);
+            for (var slot = 0; slot < savedPlayersBySlot.Length; slot++)
+            {
+                var playerKey = savedPlayersBySlot[slot]?.playerKey;
+                if (string.IsNullOrWhiteSpace(playerKey) ||
+                    !savedPlayerKeys.Add(playerKey) ||
+                    !currentSlotByPlayerKey.ContainsKey(playerKey))
+                {
+                    return false;
+                }
+            }
+
+            var mappedSlots = new int[mines.Length];
+            for (var index = 0; index < mines.Length; index++)
+            {
+                var savedOwnerSlot = mines[index].ownerSlot;
+                if (savedOwnerSlot < 0 ||
+                    savedOwnerSlot >= savedPlayersBySlot.Length)
+                {
+                    return false;
+                }
+
+                var savedOwnerKey =
+                    savedPlayersBySlot[savedOwnerSlot].playerKey;
+                if (!currentSlotByPlayerKey.TryGetValue(
+                        savedOwnerKey,
+                        out mappedSlots[index]))
+                {
+                    return false;
+                }
+            }
+
+            currentOwnerSlots = mappedSlots;
+            return true;
+        }
     }
 }

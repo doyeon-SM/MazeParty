@@ -243,7 +243,12 @@ namespace MazeParty.Multiplayer
                 bindings.LeaveRoomButton.interactable = false;
                 bindings.LeaveRoomButtonText.text = GameText.T("CLEAN UP BOARD");
                 bindings.ReturnStatusText.text =
-                    GameText.T("The first-place podium is in the spotlight.");
+                    GameText.F(
+                        "Returning to the waiting room automatically in {0} seconds.",
+                        Math.Max(
+                            0,
+                            (int)Math.Ceiling(
+                                match.CeremonyAutoReturnRemaining)));
                 return;
             }
 
@@ -267,9 +272,13 @@ namespace MazeParty.Multiplayer
                 : GameText.T("CLEAN UP BOARD");
             bindings.ReturnStatusText.text =
                 GameText.F(
-                    "Waiting for players  {0} / {1}",
+                    "Waiting for players  {0} / {1}  ·  automatic return in {2}s",
                     match.CeremonyReturnReadyCount,
-                    match.CeremonyReturnRequiredCount);
+                    match.CeremonyReturnRequiredCount,
+                    Math.Max(
+                        0,
+                        (int)Math.Ceiling(
+                            match.CeremonyAutoReturnRemaining)));
         }
 
         private void RequestReturnToLobby()

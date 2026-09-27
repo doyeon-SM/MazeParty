@@ -35,7 +35,9 @@ namespace MazeParty.Multiplayer
             out TCapability capability)
             where TCapability : class
         {
-            if (TryGetCurrentMinigameRuntime(out var runtime) &&
+            if (_activeMatchVoidGate.AllowsGameplayMutation &&
+                GameplayEnabled &&
+                TryGetCurrentMinigameRuntime(out var runtime) &&
                 runtime is TCapability supportedCapability)
             {
                 capability = supportedCapability;
@@ -435,6 +437,8 @@ namespace MazeParty.Multiplayer
             IReadOnlyList<PlayerPlacement> placements)
         {
             if (!IsServer ||
+                !_activeMatchVoidGate.AllowsResultMutation ||
+                !GameplayEnabled ||
                 FlowState != BoardFlowState.MinigamePlaying ||
                 CurrentMinigame != expectedMinigame ||
                 _settledMinigameTurn == Turn ||

@@ -1,5 +1,30 @@
 namespace MazeParty.Multiplayer
 {
+    /// <summary>
+    /// One-way server latch for a match that can no longer produce gameplay,
+    /// results or recovery data. A new Board scene gets a new latch; the
+    /// invalidated instance can never be resumed while its scenes unload.
+    /// </summary>
+    public sealed class ActiveMatchVoidGate
+    {
+        public bool IsVoided { get; private set; }
+
+        public bool AllowsGameplayMutation => !IsVoided;
+        public bool AllowsResultMutation => !IsVoided;
+        public bool AllowsRecoveryWrite => !IsVoided;
+
+        public bool TryVoid()
+        {
+            if (IsVoided)
+            {
+                return false;
+            }
+
+            IsVoided = true;
+            return true;
+        }
+    }
+
     public enum RemoteDisconnectDisposition : byte
     {
         Ignore,
@@ -21,6 +46,18 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public static class CompletedMatchReturnRules
     {
+        public const double ReconnectGraceSeconds = 60d;
+
+        public static double GetReconnectGraceEndsAt(double disconnectedAt)
+        {
+            return disconnectedAt + ReconnectGraceSeconds;
+        }
+
+        public static bool HasReconnectGraceExpired(double endsAt, double now)
+        {
+            return endsAt > 0d && now >= endsAt;
+        }
+
         public static RemoteDisconnectDisposition GetRemoteDisconnectDisposition(
             bool remoteClientLost,
             bool lobbyPhase,
@@ -56,6 +93,37 @@ namespace MazeParty.Multiplayer
             bool completedMatchReturnInProgress)
         {
             return finalRankingLocked || completedMatchReturnInProgress;
+        }
+
+        public static bool ShouldResetLocalReadyAfterLobbyReturn(
+            bool observedPlayingPhase,
+            bool isInSession,
+            bool isLobbyPhase,
+            bool localReady)
+        {
+            return observedPlayingPhase &&
+                   isInSession &&
+                   isLobbyPhase &&
+                   localReady;
+        }
+
+        public static bool ShouldKeepLocalReadyResetRequired(
+            bool resetRequired,
+            bool isInSession,
+            bool localReady)
+        {
+            return resetRequired && isInSession && localReady;
+        }
+
+        public static bool IsReconnectForTrackedSeat(
+            ulong disconnectedClientId,
+            int disconnectedSlot,
+            ulong connectedClientId,
+            int connectedSlot)
+        {
+            return disconnectedClientId == connectedClientId ||
+                   disconnectedSlot >= 0 &&
+                   connectedSlot == disconnectedSlot;
         }
     }
 }

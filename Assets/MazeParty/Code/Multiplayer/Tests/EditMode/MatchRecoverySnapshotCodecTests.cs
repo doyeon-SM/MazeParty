@@ -26,6 +26,12 @@ namespace MazeParty.Multiplayer.Tests
                 restored.players[0].personalProtectionRemaining,
                 Is.EqualTo(12.5d));
             Assert.That(restored.tombstones[0].id, Is.EqualTo(1));
+            Assert.That(restored.mines, Has.Length.EqualTo(1));
+            Assert.That(restored.mines[0].ownerSlot, Is.EqualTo(2));
+            Assert.That(
+                restored.mines[0].position,
+                Is.EqualTo(new Vector3(2f, 0.06f, 3f)));
+            Assert.That(restored.mines[0].armRemaining, Is.EqualTo(0.5f));
         }
 
         [Test]
@@ -122,6 +128,126 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
         }
 
+        [Test]
+        public void Decode_RejectsUnsafeMineStateAndCompletedMatchResidue()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.mines[0].ownerSlot = MultiplayerConstants.MaxPlayers;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+
+            snapshot = CreateValidSnapshot();
+            snapshot.mines[0].position = new Vector3(float.NaN, 0.06f, 3f);
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+
+            snapshot = CreateValidSnapshot();
+            snapshot.mines[0].armRemaining = -0.001f;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+
+            snapshot = CreateValidSnapshot();
+            snapshot.mines[0].armRemaining =
+                PrototypeItemCatalog.Get(PrototypeItemId.Mine).ArmingDelay + 0.001f;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+
+            snapshot = CreateValidSnapshot();
+            snapshot.checkpoint = MatchRecoveryCheckpoint.MatchComplete;
+            snapshot.turn = snapshot.scheduleTurnCount;
+            snapshot.remainingMinigameSlots = 0;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+
+            snapshot.mines = System.Array.Empty<MatchRecoveryMineSnapshot>();
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.True);
+        }
+
+        [Test]
+        public void Decode_MigratesVersionOneOnlyWhenItContainsNoMineState()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.recoveryVersion =
+                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines;
+
+            Assert.That(
+                codec.TryDecode(JsonUtility.ToJson(snapshot), out _),
+                Is.False,
+                "The v1 schema never contained mine state.");
+
+            snapshot.mines = System.Array.Empty<MatchRecoveryMineSnapshot>();
+            var legacyPayload = JsonUtility.ToJson(snapshot).Replace(
+                ",\"mines\":[]",
+                string.Empty);
+            Assert.That(legacyPayload, Does.Not.Contain("\"mines\""));
+            Assert.That(
+                codec.TryDecode(legacyPayload, out var migrated),
+                Is.True);
+            Assert.That(
+                migrated.recoveryVersion,
+                Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+            Assert.That(migrated.mines, Is.Empty);
+
+            var currentPlayers = CreatePlayers(
+                "player-3",
+                "player-2",
+                "player-1",
+                "player-0");
+            Assert.That(
+                MatchRecoveryMineOwnership.TryMapToCurrentSlots(
+                    migrated.mines,
+                    migrated.players,
+                    currentPlayers,
+                    out var currentOwnerSlots),
+                Is.True);
+            Assert.That(currentOwnerSlots, Is.Empty);
+        }
+
+        [Test]
+        public void MineOwnership_MapsSavedSeatsThroughPlayerIdentity()
+        {
+            var savedPlayers = CreatePlayers(
+                "player-a",
+                "player-b",
+                "player-c",
+                "player-d");
+            var currentPlayers = CreatePlayers(
+                "player-c",
+                "player-a",
+                "player-d",
+                "player-b");
+            var mines = new[]
+            {
+                new MatchRecoveryMineSnapshot { ownerSlot = 0 },
+                new MatchRecoveryMineSnapshot { ownerSlot = 3 }
+            };
+
+            Assert.That(
+                MatchRecoveryMineOwnership.TryMapToCurrentSlots(
+                    mines,
+                    savedPlayers,
+                    currentPlayers,
+                    out var currentOwnerSlots),
+                Is.True);
+            Assert.That(currentOwnerSlots, Is.EqualTo(new[] { 1, 2 }));
+            Assert.That(
+                mines[0].ownerSlot,
+                Is.Zero,
+                "The persisted saved-seat value remains immutable.");
+        }
+
+        private static MatchRecoveryPlayerSnapshot[] CreatePlayers(
+            params string[] playerKeys)
+        {
+            var players = new MatchRecoveryPlayerSnapshot[playerKeys.Length];
+            for (var index = 0; index < playerKeys.Length; index++)
+            {
+                players[index] = new MatchRecoveryPlayerSnapshot
+                {
+                    playerKey = playerKeys[index]
+                };
+            }
+
+            return players;
+        }
+
         private static MatchRecoverySnapshot CreateValidSnapshot()
         {
             var entries = new int[MinigameScheduleRules.DefaultTurnCount];
@@ -185,6 +311,15 @@ namespace MazeParty.Multiplayer.Tests
                     }
                 },
                 nextTombstoneId = 1,
+                mines = new[]
+                {
+                    new MatchRecoveryMineSnapshot
+                    {
+                        ownerSlot = 2,
+                        position = new Vector3(2f, 0.06f, 3f),
+                        armRemaining = 0.5f
+                    }
+                },
                 players = players
             };
         }

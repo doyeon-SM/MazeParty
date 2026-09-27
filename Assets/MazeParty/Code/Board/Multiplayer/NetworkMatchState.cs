@@ -29,7 +29,8 @@ namespace MazeParty.Multiplayer
     {
         // The MPS/Lobby backend Disconnect Removal Time must outlive transport
         // detection plus this grace. Configure 75-90 seconds, not exactly 60.
-        public const double ReconnectGraceSeconds = 60d;
+        public const double ReconnectGraceSeconds =
+            CompletedMatchReturnRules.ReconnectGraceSeconds;
         public const double KeyShopRevealSeconds = 5d;
         public const double AllPlayersArrivalGraceSeconds = 3d;
         public const double SkipRevealSeconds = 2d;
@@ -130,6 +131,8 @@ namespace MazeParty.Multiplayer
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
+        private readonly ActiveMatchVoidGate _activeMatchVoidGate =
+            new ActiveMatchVoidGate();
         private BoardFlowStateMachine _flow;
         private bool _endingForReconnectTimeout;
         private bool _endingForMinigameLoadingTimeout;
@@ -168,6 +171,7 @@ namespace MazeParty.Multiplayer
         public static NetworkMatchState Instance { get; private set; }
 
         public bool GameplayEnabled => _gameplayEnabled.Value;
+        public bool IsMatchVoided => _activeMatchVoidGate.IsVoided;
         public NetworkList<BoardTombstoneSnapshot> Tombstones => _tombstones;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
@@ -464,13 +468,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            TickBoardItemWorld();
             ResolveWorldDiceCoordinator();
-            if (!_gameplayEnabled.Value)
+            if (!_gameplayEnabled.Value ||
+                !_activeMatchVoidGate.AllowsGameplayMutation)
             {
                 return;
             }
 
+            TickBoardItemWorld();
             if (_boardEffectRevision.Value <= 0)
             {
                 InitializeBoardLandingEffectsOnServer();
@@ -485,11 +490,19 @@ namespace MazeParty.Multiplayer
                 {
                     ResumeAfterReconnectOnServer(now);
                 }
-                else if (!_endingForReconnectTimeout && now >= _reconnectGraceEndsAt.Value)
+                else if (!_endingForReconnectTimeout &&
+                         CompletedMatchReturnRules.HasReconnectGraceExpired(
+                             _reconnectGraceEndsAt.Value,
+                             now))
                 {
-                    _endingForReconnectTimeout = true;
-                    OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                        GameText.T("A player did not reconnect within 60 seconds. The fixed four-player match is ending."));
+                    var controller = OnlineSessionController.Instance;
+                    if (controller != null &&
+                        controller.VoidActiveMatchToLobbyOnServer(
+                            GameText.T(
+                                "A player did not reconnect within 60 seconds. The match was voided and everyone is returning to the waiting room.")))
+                    {
+                        _endingForReconnectTimeout = true;
+                    }
                 }
 
                 return;
@@ -578,7 +591,9 @@ namespace MazeParty.Multiplayer
 
         public void EnableGameplayOnServer()
         {
-            if (!IsServer || _gameplayEnabled.Value)
+            if (!IsServer ||
+                _gameplayEnabled.Value ||
+                !_activeMatchVoidGate.AllowsGameplayMutation)
             {
                 return;
             }
@@ -601,6 +616,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ClearBoardItemWorld();
             _keyShopRuntime.ResetToInactive();
             _keyShopAppearanceEndsAt = 0d;
             _keyShopRevealActive.Value = false;
@@ -638,6 +654,75 @@ namespace MazeParty.Multiplayer
             RefreshItemShopsForTurnOnServer(1);
             SyncFlowSnapshot(now);
             SaveMatchRecoveryCheckpoint(MatchRecoveryCheckpoint.TurnOverview);
+        }
+
+        /// <summary>
+        /// Irreversibly stops this Board instance after the host voids the
+        /// fixed-four match. The latch is set first so callbacks raised while
+        /// runtimes are ending cannot settle rewards or write recovery state.
+        /// </summary>
+        public bool VoidActiveMatchOnServer()
+        {
+            if (!IsServer)
+            {
+                return false;
+            }
+
+            if (!_activeMatchVoidGate.TryVoid())
+            {
+                return true;
+            }
+
+            _gameplayEnabled.Value = false;
+            StopAllAvatarInputOnServer();
+            ResolveWorldDiceCoordinator();
+            _diceCoordinator?.HideAllDiceOnServer();
+            EndAllMinigameRuntimes();
+            ResetCombatRuntimeOnServer();
+            ClearBoardItemWorld();
+
+            _stateEndsAt.Value = 0d;
+            _actionEndsAt.Value = 0d;
+            _choiceEndsAt.Value = 0d;
+            _shieldEndsAt.Value = 0d;
+            _pausedStateRemaining.Value = 0d;
+            _pausedActionRemaining.Value = 0d;
+            _pausedChoiceRemaining.Value = 0d;
+            _pausedShieldRemaining.Value = 0d;
+            ClearArrivalGraceOnServer();
+
+            _reconnectPaused.Value = false;
+            _reconnectGraceEndsAt.Value = 0d;
+            ClearPlayerPauseStateOnServer();
+            Array.Clear(_reconnectSnapshots, 0, _reconnectSnapshots.Length);
+
+            _keyShopAppearanceEndsAt = 0d;
+            _keyShopRevealActive.Value = false;
+            _keyShopRevealEndsAt.Value = 0d;
+            _keyShopRevealRemainingDuringReconnect = 0d;
+            _scheduledSkipAt = 0d;
+            _scheduledSkipPaused = false;
+            _pausedScheduledSkipRemaining = 0d;
+            _selectedMinigameNetworkLoadCompleted = false;
+            _readyMask.Value = 0;
+            _remainingMinigameSlots.Value = 0;
+            ResetAwardCeremonyForRecovery();
+
+            try
+            {
+                _minigameScheduleSession?.CompleteActive();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Could not discard the voided match recovery state: " +
+                    exception.Message);
+            }
+
+            _minigameSchedule = null;
+            _minigameScheduleSession = null;
+            _stateRevision.Value++;
+            return true;
         }
 
         public bool TryResolveItemChoiceOnServer(NetworkPlayerAvatar avatar, int slotIndex, bool chooseNoItem)
@@ -786,7 +871,8 @@ namespace MazeParty.Multiplayer
             RefreshPresentMask();
             _snapshotRestoredMask.Value = (byte)(_presentMask.Value & AllPlayersMask);
             _reconnectPaused.Value = true;
-            _reconnectGraceEndsAt.Value = now + ReconnectGraceSeconds;
+            _reconnectGraceEndsAt.Value =
+                CompletedMatchReturnRules.GetReconnectGraceEndsAt(now);
             StopAllAvatarInputOnServer();
         }
 
@@ -910,7 +996,9 @@ namespace MazeParty.Multiplayer
 
         public void CaptureDisconnectedAvatarOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!IsServer || avatar == null)
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                avatar == null)
             {
                 return;
             }
@@ -929,7 +1017,9 @@ namespace MazeParty.Multiplayer
 
         public bool TryRestoreAvatarOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!IsServer || avatar == null)
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                avatar == null)
             {
                 return false;
             }
@@ -963,7 +1053,9 @@ namespace MazeParty.Multiplayer
 
         public void NotifyAvatarBoardReadyOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!IsServer || avatar == null)
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                avatar == null)
             {
                 return;
             }
@@ -1041,7 +1133,10 @@ namespace MazeParty.Multiplayer
 
         private void OnFlowTransitioned(BoardFlowTransition transition)
         {
-            if (!IsServer)
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                !_activeMatchVoidGate.AllowsResultMutation ||
+                !_activeMatchVoidGate.AllowsRecoveryWrite)
             {
                 return;
             }
@@ -1086,6 +1181,7 @@ namespace MazeParty.Multiplayer
                     StopAllAvatarInputOnServer();
                     break;
                 case BoardFlowState.CombatResolve:
+                    ClearBoardGrenadesOnServer();
                     if (_flow.LastActionEndReason == BoardActionEndReason.TimeExpired)
                     {
                         SettleTimedOutPlayersOnServer();
@@ -1380,7 +1476,9 @@ namespace MazeParty.Multiplayer
 
         private bool CanProcessAvatarRequest(NetworkPlayerAvatar avatar)
         {
-            return IsServer && _gameplayEnabled.Value && !IsGlobalSimulationPaused &&
+            return IsServer &&
+                   _activeMatchVoidGate.AllowsGameplayMutation &&
+                   _gameplayEnabled.Value && !IsGlobalSimulationPaused &&
                    avatar != null && avatar.IsSpawned && avatar.IsBoardReady &&
                    avatar.AssignedSlot >= 0 && avatar.AssignedSlot < MultiplayerConstants.MaxPlayers;
         }

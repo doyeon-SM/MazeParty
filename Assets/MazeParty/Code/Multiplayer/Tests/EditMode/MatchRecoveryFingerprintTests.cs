@@ -63,6 +63,31 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void ContentFingerprint_CanRecreateTheVersionOneJournalIdentity()
+        {
+            var tile = CreateTile(Vector2Int.zero);
+            var topology = CreateObject("Topology").AddComponent<BoardTopology>();
+            topology.Configure(new[] { tile }, System.Array.Empty<BoardGate>());
+            var schedule = HostMinigameSchedule.Create(1234);
+
+            var current = MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology,
+                schedule);
+            var legacy = MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology,
+                schedule,
+                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines);
+
+            Assert.That(legacy, Is.Not.EqualTo(current));
+            Assert.That(
+                legacy,
+                Is.EqualTo(MatchRecoveryFingerprint.CreateContentFingerprint(
+                    topology,
+                    schedule,
+                    1)));
+        }
+
+        [Test]
         public void ContentFingerprint_ChangesWithGateTraversalContractAndOrder()
         {
             var first = CreateTile(new Vector2Int(0, 0));

@@ -21,6 +21,9 @@ namespace MazeParty.Multiplayer
         private const double VoluntaryLeaveAckTimeoutSeconds = 3d;
         private const double VoluntaryLeaveAnnouncementFlushSeconds = 0.35d;
         private const int VoluntaryLeaveSessionEndDelayMilliseconds = 350;
+        private const int LocalReadyResetAttemptsPerBatch = 3;
+        private const int LocalReadyResetRetryBaseMilliseconds = 500;
+        private const double LocalReadyResetBatchCooldownSeconds = 5d;
         private const string PlayingReconnectTicketPrefix =
             "MazeParty.PlayingReconnectSession.";
 
@@ -56,6 +59,10 @@ namespace MazeParty.Multiplayer
             new HashSet<ulong>();
         private readonly HashSet<ulong> _completedMatchDisconnectedClients =
             new HashSet<ulong>();
+        private readonly HashSet<ulong> _reconnectGraceDisconnectedClients =
+            new HashSet<ulong>();
+        private readonly Dictionary<int, ulong> _reconnectGraceClientBySlot =
+            new Dictionary<int, ulong>();
         private bool _completedMatchLobbyReturnInProgress;
         private bool _completedMatchAvatarsPrepared;
         private bool _completedMatchUnloadNextFrame;
@@ -66,6 +73,13 @@ namespace MazeParty.Multiplayer
         private bool _voluntaryLeavePending;
         private double _voluntaryLeaveDeadline;
         private double _voluntaryLeaveAcknowledgedAt = -1d;
+        private bool _observedPlayingPhase;
+        private bool _localReadyResetQueued;
+        private bool _localReadyResetRequired;
+        private double _localReadyResetRetryAt;
+        private bool _pendingBoardLoadReconnect;
+        private bool _pendingBoardLoadVoidRequested;
+        private double _pendingBoardLoadReconnectEndsAt;
         private readonly Queue<string> _pendingNotices = new Queue<string>();
         private bool _ceremonyWaitingRoomShown;
         private bool _ceremonyWaitingRoomStatusShown;
@@ -268,8 +282,18 @@ namespace MazeParty.Multiplayer
 
         private void Update()
         {
+            if (_sessions != null &&
+                _sessions.IsInSession &&
+                _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
+            {
+                _observedPlayingPhase = true;
+            }
+
             AdvanceVoluntaryMatchLeave();
             RefreshCeremonyWaitingRoomPresentation();
+            ResolveReconnectedGraceClients();
+            AdvanceLocalReadyReset();
+            AdvancePendingBoardLoadReconnect();
             if (_completedMatchLobbyReturnInProgress &&
                 _completedMatchPendingUnloadClients.Count > 0 &&
                 _completedMatchPendingUnloadDeadline > 0d &&
@@ -617,7 +641,7 @@ namespace MazeParty.Multiplayer
                     // Start the return before the announcement so the leaving
                     // player's disconnect is deferred to lobby cleanup instead of
                     // opening the 60-second reconnect pause.
-                    var returning = BeginMatchLobbyReturnOnServer();
+                    var returning = VoidActiveMatchToLobbyOnServer(string.Empty);
                     avatar.AnnounceMatchEndedByPlayerOnServer();
                     if (!returning)
                     {
@@ -644,10 +668,7 @@ namespace MazeParty.Multiplayer
                 ? GameText.T("A player")
                 : displayName;
             QueueNotice(GameText.F("The game was ended by {0}.", name));
-            if (_sessions != null && _sessions.IsInSession && _sessions.Current.LocalReady)
-            {
-                _sessionOperations.TryEnqueue(ResetLocalReadyAfterEndedMatchAsync);
-            }
+            QueueLocalReadyResetAfterMatch();
         }
 
         /// <summary>
@@ -813,25 +834,127 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void QueueLocalReadyResetAfterMatch()
+        {
+            if (_sessions == null || !_sessions.IsInSession)
+            {
+                ClearLocalReadyResetRequirement();
+                return;
+            }
+
+            _localReadyResetRequired = _sessions.Current.LocalReady;
+            if (!_localReadyResetRequired || _localReadyResetQueued)
+            {
+                return;
+            }
+
+            _localReadyResetRetryAt = 0d;
+            _localReadyResetQueued = _sessionOperations.TryEnqueue(
+                ResetLocalReadyAfterEndedMatchAsync);
+        }
+
+        private void AdvanceLocalReadyReset()
+        {
+            if (!CompletedMatchReturnRules.ShouldKeepLocalReadyResetRequired(
+                    _localReadyResetRequired,
+                    _sessions != null && _sessions.IsInSession,
+                    _sessions != null &&
+                    _sessions.IsInSession &&
+                    _sessions.Current.LocalReady))
+            {
+                if (_localReadyResetRequired)
+                {
+                    ClearLocalReadyResetRequirement();
+                }
+                return;
+            }
+
+            if (_localReadyResetQueued ||
+                Time.realtimeSinceStartupAsDouble < _localReadyResetRetryAt)
+            {
+                return;
+            }
+
+            _localReadyResetQueued = _sessionOperations.TryEnqueue(
+                ResetLocalReadyAfterEndedMatchAsync);
+        }
+
         private async Task ResetLocalReadyAfterEndedMatchAsync(
             CancellationToken cancellationToken)
         {
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-                await _sessions.SetReadyAsync(false);
-                cancellationToken.ThrowIfCancellationRequested();
+                for (var attempt = 0;
+                     attempt < LocalReadyResetAttemptsPerBatch;
+                     attempt++)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (!CompletedMatchReturnRules.
+                            ShouldKeepLocalReadyResetRequired(
+                                _localReadyResetRequired,
+                                _sessions != null && _sessions.IsInSession,
+                                _sessions != null &&
+                                _sessions.IsInSession &&
+                                _sessions.Current.LocalReady))
+                    {
+                        ClearLocalReadyResetRequirement();
+                        return;
+                    }
+
+                    try
+                    {
+                        await _sessions.SetReadyAsync(false);
+                    }
+                    catch (OperationCanceledException) when (
+                        cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch (Exception exception)
+                    {
+                        Debug.LogWarning(
+                            "Could not reset the ready state after the match ended " +
+                            "(attempt " + (attempt + 1) + "): " +
+                            exception.Message);
+                    }
+
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (_sessions == null ||
+                        !_sessions.IsInSession ||
+                        !_sessions.Current.LocalReady)
+                    {
+                        ClearLocalReadyResetRequirement();
+                        return;
+                    }
+
+                    if (attempt + 1 < LocalReadyResetAttemptsPerBatch)
+                    {
+                        await Task.Delay(
+                            LocalReadyResetRetryBaseMilliseconds << attempt,
+                            cancellationToken);
+                    }
+                }
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // The component lifetime ended while the provider operation settled.
             }
-            catch (Exception exception)
+            finally
             {
-                Debug.LogWarning(
-                    "Could not reset the ready state after the match ended: " +
-                    exception.Message);
+                _localReadyResetQueued = false;
+                if (_localReadyResetRequired)
+                {
+                    _localReadyResetRetryAt =
+                        Time.realtimeSinceStartupAsDouble +
+                        LocalReadyResetBatchCooldownSeconds;
+                }
             }
+        }
+
+        private void ClearLocalReadyResetRequirement()
+        {
+            _localReadyResetRequired = false;
+            _localReadyResetRetryAt = 0d;
         }
 
         private async Task CreateAndPublishAsync(string displayName)
@@ -1121,15 +1244,86 @@ namespace MazeParty.Multiplayer
         }
 
         /// <summary>
+        /// Server-only invalidation path for a fixed-four match that can no
+        /// longer continue. It deliberately reuses the completed-match scene
+        /// cleanup so the room, connected roster and invite code survive.
+        /// Repeated calls are safe while the return is already in progress.
+        /// </summary>
+        public bool VoidActiveMatchToLobbyOnServer(string reason)
+        {
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (_destroyed ||
+                manager == null ||
+                !manager.IsServer ||
+                _sessions == null ||
+                !_sessions.IsInSession ||
+                !_sessions.Current.IsHost ||
+                (!_completedMatchLobbyReturnInProgress &&
+                 _sessions.Current.Phase != MultiplayerConstants.PlayingPhase))
+            {
+                return false;
+            }
+
+            var match = NetworkMatchState.Instance;
+            if (match != null &&
+                match.IsSpawned &&
+                !match.VoidActiveMatchOnServer())
+            {
+                return false;
+            }
+
+            // The persistent session is invalidated before starting any async
+            // phase or scene work. A crash during lobby return must never offer
+            // this voided match as recoverable on the next launch.
+            try
+            {
+                new HostMinigameScheduleSession().CompleteActive();
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Could not discard the voided host match state: " +
+                    exception.Message);
+            }
+            ResetHostMatchRecoveryChoice();
+
+            var returning = BeginMatchLobbyReturnOnServer(
+                includeReconnectGraceDisconnects: true);
+            if (returning && !string.IsNullOrWhiteSpace(reason))
+            {
+                // TryEnqueue may synchronously publish its generic return status
+                // before its first await. Keep the concrete void reason visible.
+                SetStatus(reason);
+            }
+
+            return returning;
+        }
+
+        /// <summary>
         /// Returns the room to the player ready screen by unloading the match
         /// scenes for whoever is still connected: after a completed match, or
         /// after a player left an in-progress match through the menu.
         /// </summary>
-        private bool BeginMatchLobbyReturnOnServer()
+        private bool BeginMatchLobbyReturnOnServer(
+            bool includeReconnectGraceDisconnects = false)
         {
-            if (_destroyed || _completedMatchLobbyReturnInProgress)
+            if (_destroyed)
             {
-                return _completedMatchLobbyReturnInProgress;
+                return false;
+            }
+
+            if (_completedMatchLobbyReturnInProgress)
+            {
+                if (includeReconnectGraceDisconnects)
+                {
+                    PromoteReconnectGraceDisconnectsForLobbyCleanup();
+                    ClearReconnectGraceDisconnectTracking();
+                    QueueCompletedMatchDisconnectedLobbyCleanups();
+                }
+
+                return true;
             }
 
             var manager = _networkManager != null
@@ -1157,6 +1351,11 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (includeReconnectGraceDisconnects)
+            {
+                PromoteReconnectGraceDisconnectsForLobbyCleanup();
+            }
+
             _completedMatchLobbyReturnInProgress = true;
             if (!_sessionOperations.TryEnqueue(
                     SessionLifecycleState.ReturningToLobby,
@@ -1166,6 +1365,11 @@ namespace MazeParty.Multiplayer
             {
                 ResetCompletedMatchLobbyReturnState();
                 return false;
+            }
+
+            if (includeReconnectGraceDisconnects)
+            {
+                ClearReconnectGraceDisconnectTracking();
             }
 
             return true;
@@ -1180,7 +1384,7 @@ namespace MazeParty.Multiplayer
                 try
                 {
                     SetLocalizedStatus(
-                        "Returning the completed match to the player ready screen...");
+                        "Returning the match to the player ready screen...");
                     await _sessions.SetPlayingAsync(false);
                     cancellationToken.ThrowIfCancellationRequested();
                     QueueCompletedMatchDisconnectedLobbyCleanups();
@@ -1441,8 +1645,35 @@ namespace MazeParty.Multiplayer
                 ObserveNetworkSceneManager(_networkManager.SceneManager);
             }
 
-            if (!_sessions.IsInSession)
+            var isInSession = _sessions.IsInSession;
+            var isPlayingPhase = isInSession &&
+                _sessions.Current.Phase == MultiplayerConstants.PlayingPhase;
+            var isLobbyPhase = isInSession &&
+                _sessions.Current.Phase == MultiplayerConstants.LobbyPhase;
+            if (CompletedMatchReturnRules.
+                ShouldResetLocalReadyAfterLobbyReturn(
+                    _observedPlayingPhase,
+                    isInSession,
+                    isLobbyPhase,
+                    isInSession && _sessions.Current.LocalReady))
             {
+                QueueLocalReadyResetAfterMatch();
+            }
+
+            if (isPlayingPhase)
+            {
+                _observedPlayingPhase = true;
+            }
+            else if (!isInSession || isLobbyPhase)
+            {
+                _observedPlayingPhase = false;
+                ResetPendingBoardLoadReconnect();
+            }
+
+            if (!isInSession)
+            {
+                ClearLocalReadyResetRequirement();
+                ClearReconnectGraceDisconnectTracking();
                 ResetHostMatchRecoveryChoice();
                 ResetCompletedMatchLobbyReturnState();
                 _networkIdentityPublished = false;
@@ -1456,8 +1687,181 @@ namespace MazeParty.Multiplayer
         private void OnSessionEnded(string reason)
         {
             ClearPlayingReconnectTicket();
+            _observedPlayingPhase = false;
+            ClearLocalReadyResetRequirement();
+            ClearReconnectGraceDisconnectTracking();
+            ResetPendingBoardLoadReconnect();
             _sessionOperations.TryTransition(SessionLifecycleState.Terminating);
             SetStatus(reason);
+        }
+
+        private void BeginPendingBoardLoadReconnect()
+        {
+            if (!_pendingBoardLoadReconnect)
+            {
+                _pendingBoardLoadReconnect = true;
+                _pendingBoardLoadVoidRequested = false;
+                _pendingBoardLoadReconnectEndsAt =
+                    CompletedMatchReturnRules.GetReconnectGraceEndsAt(
+                        Time.realtimeSinceStartupAsDouble);
+            }
+
+            SetLocalizedStatus(
+                "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
+        }
+
+        private void AdvancePendingBoardLoadReconnect()
+        {
+            if (!_pendingBoardLoadReconnect)
+            {
+                return;
+            }
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (_destroyed ||
+                manager == null ||
+                !manager.IsServer ||
+                _sessions == null ||
+                !_sessions.IsInSession ||
+                _sessions.Current.Phase != MultiplayerConstants.PlayingPhase)
+            {
+                ResetPendingBoardLoadReconnect();
+                return;
+            }
+
+            var match = NetworkMatchState.Instance;
+            if (!_pendingBoardLoadVoidRequested &&
+                match != null &&
+                match.IsSpawned &&
+                HasExactlyFourBoardReadyNetworkPlayers(manager))
+            {
+                ResetPendingBoardLoadReconnect();
+                match.EnableGameplayOnServer();
+                SetLocalizedStatus(
+                    "All four players loaded the Board. Gameplay input is enabled.");
+                return;
+            }
+
+            if (!_pendingBoardLoadVoidRequested &&
+                !CompletedMatchReturnRules.HasReconnectGraceExpired(
+                    _pendingBoardLoadReconnectEndsAt,
+                    Time.realtimeSinceStartupAsDouble))
+            {
+                return;
+            }
+
+            _pendingBoardLoadVoidRequested = true;
+            if (VoidActiveMatchToLobbyOnServer(GameText.T(
+                    "A player did not reconnect within 60 seconds. The match was voided and everyone is returning to the waiting room.")))
+            {
+                ResetPendingBoardLoadReconnect();
+            }
+        }
+
+        private void ResetPendingBoardLoadReconnect()
+        {
+            _pendingBoardLoadReconnect = false;
+            _pendingBoardLoadVoidRequested = false;
+            _pendingBoardLoadReconnectEndsAt = 0d;
+        }
+
+        private void TrackReconnectGraceDisconnect(ulong clientId)
+        {
+            _reconnectGraceDisconnectedClients.Add(clientId);
+            if (_sessions == null ||
+                !_sessions.IsInSession ||
+                !_sessions.TryGetAuthoritativeSlot(clientId, out var slot) ||
+                slot < 0 ||
+                slot >= MultiplayerConstants.MaxPlayers)
+            {
+                return;
+            }
+
+            if (_reconnectGraceClientBySlot.TryGetValue(
+                    slot,
+                    out var previousClientId) &&
+                previousClientId != clientId)
+            {
+                _reconnectGraceDisconnectedClients.Remove(previousClientId);
+            }
+
+            _reconnectGraceClientBySlot[slot] = clientId;
+        }
+
+        private void ResolveReconnectedGraceClients()
+        {
+            if (_reconnectGraceDisconnectedClients.Count == 0 ||
+                _sessions == null ||
+                !_sessions.IsInSession)
+            {
+                return;
+            }
+
+            var manager = _networkManager != null
+                ? _networkManager
+                : NetworkManager.Singleton;
+            if (manager == null || !manager.IsServer)
+            {
+                return;
+            }
+
+            var connectedBySlot = new Dictionary<int, ulong>();
+            foreach (var connectedClientId in manager.ConnectedClientsIds)
+            {
+                _reconnectGraceDisconnectedClients.Remove(connectedClientId);
+                if (_sessions.TryGetAuthoritativeSlot(
+                        connectedClientId,
+                        out var connectedSlot))
+                {
+                    connectedBySlot[connectedSlot] = connectedClientId;
+                }
+            }
+
+            if (_reconnectGraceClientBySlot.Count == 0)
+            {
+                return;
+            }
+
+            var resolvedSlots = new List<int>();
+            foreach (var tracked in _reconnectGraceClientBySlot)
+            {
+                if (!connectedBySlot.TryGetValue(
+                        tracked.Key,
+                        out var connectedClientId) ||
+                    !CompletedMatchReturnRules.IsReconnectForTrackedSeat(
+                        tracked.Value,
+                        tracked.Key,
+                        connectedClientId,
+                        tracked.Key))
+                {
+                    continue;
+                }
+
+                _reconnectGraceDisconnectedClients.Remove(tracked.Value);
+                resolvedSlots.Add(tracked.Key);
+            }
+
+            for (var index = 0; index < resolvedSlots.Count; index++)
+            {
+                _reconnectGraceClientBySlot.Remove(resolvedSlots[index]);
+            }
+        }
+
+        private void PromoteReconnectGraceDisconnectsForLobbyCleanup()
+        {
+            ResolveReconnectedGraceClients();
+            foreach (var clientId in _reconnectGraceDisconnectedClients)
+            {
+                _completedMatchDisconnectedClients.Add(clientId);
+            }
+        }
+
+        private void ClearReconnectGraceDisconnectTracking()
+        {
+            _reconnectGraceDisconnectedClients.Clear();
+            _reconnectGraceClientBySlot.Clear();
         }
 
         private static bool HasExactlyFourAssignedNetworkPlayers(NetworkManager manager)
@@ -1491,6 +1895,31 @@ namespace MazeParty.Multiplayer
             }
 
             return assignedMask == (1 << MultiplayerConstants.MaxPlayers) - 1;
+        }
+
+        private static bool HasExactlyFourBoardReadyNetworkPlayers(
+            NetworkManager manager)
+        {
+            if (!HasExactlyFourAssignedNetworkPlayers(manager) ||
+                manager.SpawnManager == null)
+            {
+                return false;
+            }
+
+            foreach (var clientId in manager.ConnectedClientsIds)
+            {
+                var playerObject =
+                    manager.SpawnManager.GetPlayerNetworkObject(clientId);
+                var avatar = playerObject != null
+                    ? playerObject.GetComponent<NetworkPlayerAvatar>()
+                    : null;
+                if (avatar == null || !avatar.IsSpawned || !avatar.IsBoardReady)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private void ObserveNetworkSceneManager(NetworkSceneManager sceneManager)
@@ -1532,6 +1961,30 @@ namespace MazeParty.Multiplayer
                 _sessions == null ||
                 !_sessions.IsInSession)
             {
+                return;
+            }
+
+            // A reconnect timeout may switch the session back to Lobby while
+            // NGO is still completing the original Board load. The queued
+            // return owns cleanup now; never turn that late callback into a
+            // second, room-closing network failure.
+            if (_completedMatchLobbyReturnInProgress)
+            {
+                ScheduleCompletedMatchUnloadForNextFrame();
+                return;
+            }
+
+            var activeMatch = NetworkMatchState.Instance;
+            if (activeMatch != null &&
+                activeMatch.IsSpawned &&
+                activeMatch.GameplayEnabled)
+            {
+                return;
+            }
+
+            if (_pendingBoardLoadReconnect)
+            {
+                AdvancePendingBoardLoadReconnect();
                 return;
             }
 
@@ -1761,9 +2214,18 @@ namespace MazeParty.Multiplayer
                 else if (disposition ==
                          RemoteDisconnectDisposition.PauseForReconnect)
                 {
-                    NetworkMatchState.Instance?.PauseForReconnectOnServer(clientId);
-                    SetLocalizedStatus(
-                        "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
+                    TrackReconnectGraceDisconnect(clientId);
+                    var match = NetworkMatchState.Instance;
+                    if (match != null && match.IsSpawned && match.GameplayEnabled)
+                    {
+                        match.PauseForReconnectOnServer(clientId);
+                        SetLocalizedStatus(
+                            "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
+                    }
+                    else
+                    {
+                        BeginPendingBoardLoadReconnect();
+                    }
                 }
             }
             else if (localClientLost)

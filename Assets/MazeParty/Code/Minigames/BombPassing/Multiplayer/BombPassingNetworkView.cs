@@ -21,6 +21,8 @@ namespace MazeParty.Multiplayer
 
         private const float InterpolationSpeed = 20f;
         private const float ExplosionFlashSeconds = 0.35f;
+        private const float ExplosionShakeSeconds = 0.24f;
+        private const float ExplosionShakePeakOffset = 0.32f;
         private static readonly int BaseColorProperty =
             Shader.PropertyToID("_BaseColor");
         private static readonly int ColorProperty =
@@ -53,6 +55,9 @@ namespace MazeParty.Multiplayer
         private float _baseLightIntensity = 1f;
         private float _explosionPeakIntensity = 4f;
         private float _explosionFlashUntil;
+        private float _explosionShakeStartedAt;
+        private float _explosionShakeUntil;
+        private uint _explosionShakeSequence;
         private uint _lastExplosionSequence;
         private bool _cameraRegistered;
         private bool _visibilityInitialized;
@@ -145,6 +150,7 @@ namespace MazeParty.Multiplayer
             {
                 explosionFlashLight.enabled = false;
             }
+            StopCameraShake();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -172,6 +178,7 @@ namespace MazeParty.Multiplayer
             RefreshExplosionEvent();
             RefreshBomb();
             RefreshExplosionLight();
+            RefreshCameraShake();
             RegisterCamera();
             _hadVisibleFrame = true;
         }
@@ -347,17 +354,16 @@ namespace MazeParty.Multiplayer
 
             var fuse = Mathf.Max(0.01f, state.BombFuseSeconds);
             var ratio = Mathf.Clamp01(state.BombRemainingSeconds / fuse);
-            var frequency = ratio <= 0.1f
-                ? 9f
-                : ratio <= 0.2f
-                    ? 5f
-                    : ratio <= 0.5f
-                        ? 2f
-                        : 0f;
+            var frequency = ResolveWarningFrequency(
+                ratio,
+                PresentationAccessibility.ReduceFlashes);
             var on = frequency <= 0f || state.IsPaused ||
                 Mathf.Repeat(Time.unscaledTime * frequency, 1f) < 0.5f;
             bombLight.enabled = on;
-            bombLight.intensity = on ? _baseLightIntensity : 0f;
+            var warningScale =
+                PresentationAccessibility.FlashIntensityScale;
+            bombLight.intensity =
+                on ? _baseLightIntensity * warningScale : 0f;
             if (bombRenderer != null)
             {
                 _colorBlock ??= new MaterialPropertyBlock();
@@ -366,7 +372,9 @@ namespace MazeParty.Multiplayer
                 _colorBlock.SetColor(ColorProperty, BombColor);
                 _colorBlock.SetColor(
                     EmissionColorProperty,
-                    on ? BombColor * 3f : BombColor * 0.15f);
+                    on
+                        ? BombColor * (3f * warningScale)
+                        : BombColor * 0.15f);
                 bombRenderer.SetPropertyBlock(_colorBlock);
             }
         }
@@ -386,6 +394,10 @@ namespace MazeParty.Multiplayer
             }
 
             _lastExplosionSequence = sequence;
+            _explosionShakeSequence = sequence;
+            _explosionShakeStartedAt = Time.unscaledTime;
+            _explosionShakeUntil =
+                _explosionShakeStartedAt + ExplosionShakeSeconds;
             if (explosionFlashLight == null)
             {
                 return;
@@ -432,8 +444,120 @@ namespace MazeParty.Multiplayer
             }
 
             explosionFlashLight.intensity =
-                _explosionPeakIntensity *
-                (remaining / ExplosionFlashSeconds);
+                ResolveFlashIntensity(
+                    _explosionPeakIntensity,
+                    remaining / ExplosionFlashSeconds);
+        }
+
+        internal static float ResolveWarningFrequency(
+            float fuseRemainingRatio,
+            bool reduceFlashes)
+        {
+            if (reduceFlashes)
+            {
+                return 0f;
+            }
+
+            var ratio = Mathf.Clamp01(fuseRemainingRatio);
+            return ratio <= 0.1f
+                ? 9f
+                : ratio <= 0.2f
+                    ? 5f
+                    : ratio <= 0.5f
+                        ? 2f
+                        : 0f;
+        }
+
+        internal static float ResolveFlashIntensity(
+            float peakIntensity,
+            float normalizedRemaining)
+        {
+            return Mathf.Max(0f, peakIntensity) *
+                   PresentationAccessibility.FlashIntensityScale *
+                   Mathf.Clamp01(normalizedRemaining);
+        }
+
+        private void RefreshCameraShake()
+        {
+            if (sharedCamera == null || _explosionShakeUntil <= 0f)
+            {
+                return;
+            }
+
+            var now = Time.unscaledTime;
+            if (now >= _explosionShakeUntil)
+            {
+                StopCameraShake();
+                return;
+            }
+
+            var normalizedElapsed = Mathf.Clamp01(
+                (now - _explosionShakeStartedAt) /
+                ExplosionShakeSeconds);
+            ResolveExplosionCameraPose(
+                _explosionShakeSequence,
+                normalizedElapsed,
+                PresentationAccessibility.ScreenShakeScale,
+                out var position,
+                out var rotation);
+            sharedCamera.ForceCameraPosition(position, rotation);
+        }
+
+        private void StopCameraShake()
+        {
+            _explosionShakeStartedAt = 0f;
+            _explosionShakeUntil = 0f;
+            _explosionShakeSequence = 0U;
+            if (sharedCamera != null)
+            {
+                sharedCamera.ForceCameraPosition(
+                    SharedCameraPosition,
+                    SharedCameraRotation);
+            }
+        }
+
+        internal static void ResolveExplosionCameraPose(
+            uint explosionSequence,
+            float normalizedElapsed,
+            float amplitudeScale,
+            out Vector3 position,
+            out Quaternion rotation)
+        {
+            rotation = SharedCameraRotation;
+            if (float.IsNaN(normalizedElapsed) ||
+                float.IsInfinity(normalizedElapsed) ||
+                float.IsNaN(amplitudeScale) ||
+                float.IsInfinity(amplitudeScale) ||
+                normalizedElapsed >= 1f ||
+                amplitudeScale <= 0f)
+            {
+                position = SharedCameraPosition;
+                return;
+            }
+
+            var elapsed = Mathf.Clamp01(normalizedElapsed);
+            var envelope = 1f - elapsed;
+            envelope *= envelope;
+            var hash = unchecked(
+                explosionSequence * 747796405U + 2891336453U);
+            var phaseX =
+                (hash & 0xffffU) / 65535f * Mathf.PI * 2f;
+            var phaseZ =
+                ((hash >> 16) & 0xffffU) / 65535f * Mathf.PI * 2f;
+            var wave = new Vector3(
+                Mathf.Sin(phaseX + elapsed * Mathf.PI * 10f),
+                0f,
+                Mathf.Sin(phaseZ + elapsed * Mathf.PI * 13f));
+            if (wave.sqrMagnitude > 1f)
+            {
+                wave.Normalize();
+            }
+
+            position = SharedCameraPosition +
+                       wave *
+                       (ExplosionShakePeakOffset *
+                        Mathf.Max(0f, amplitudeScale) *
+                        envelope);
         }
 
         private void RegisterCamera()
@@ -469,6 +593,10 @@ namespace MazeParty.Multiplayer
             if (_visibilityInitialized && _worldVisible == active)
             {
                 return;
+            }
+            if (!active)
+            {
+                StopCameraShake();
             }
             _visibilityInitialized = true;
             _worldVisible = active;

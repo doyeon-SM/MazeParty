@@ -97,6 +97,27 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void FinalResultsAutoReturn_UsesExactSixtyActiveSecondBoundary()
+        {
+            var endsAt = AwardCeremonyFlowRules.
+                GetFinalResultsAutoReturnEndsAt(100d);
+            Assert.That(endsAt, Is.EqualTo(160d));
+            Assert.That(AwardCeremonyFlowRules.HasFinalResultsAutoReturnEnded(
+                endsAt,
+                159.999d), Is.False);
+            Assert.That(AwardCeremonyFlowRules.HasFinalResultsAutoReturnEnded(
+                endsAt,
+                160d), Is.True);
+
+            var held = AwardCeremonyFlowRules.
+                GetFinalResultsAutoReturnPauseRemaining(endsAt, 125d);
+            Assert.That(held, Is.EqualTo(35d));
+            Assert.That(AwardCeremonyFlowRules.
+                GetResumedFinalResultsAutoReturnEndsAt(500d, held),
+                Is.EqualTo(535d));
+        }
+
+        [Test]
         public void ReturnSubmission_RequiresUnlockedUnpausedCeremony()
         {
             Assert.That(AwardCeremonyFlowRules.CanSubmitReturn(
@@ -129,9 +150,16 @@ namespace MazeParty.Gameplay.Tests
                 returnQueued: false), Is.False);
             Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                 AwardCeremonyPhase.AwaitingReturn,
+                readyMask: 0b0000_0111,
+                remainingMask: allPlayers,
+                returnQueued: false,
+                autoReturnExpired: true), Is.True);
+            Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
+                AwardCeremonyPhase.AwaitingReturn,
                 readyMask: allPlayers,
                 remainingMask: allPlayers,
-                returnQueued: true), Is.False);
+                returnQueued: true,
+                autoReturnExpired: true), Is.False);
             Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                 AwardCeremonyPhase.FinalPodiumLocked,
                 readyMask: allPlayers,

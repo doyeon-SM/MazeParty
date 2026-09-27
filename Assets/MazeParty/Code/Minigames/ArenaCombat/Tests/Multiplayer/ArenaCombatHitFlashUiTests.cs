@@ -1,4 +1,5 @@
 using System.Linq;
+using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -43,11 +44,21 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 var runtimeView = instance.GetComponent<ArenaCombatHitFlashView>();
+                PresentationAccessibility.Apply(false, false);
                 runtimeView.Flash();
-                Assert.That(runtimeView.CurrentOpacity, Is.GreaterThan(0f));
+                var normalOpacity = runtimeView.CurrentOpacity;
+                PresentationAccessibility.Apply(false, true);
+                runtimeView.Flash();
+                Assert.That(normalOpacity, Is.GreaterThan(0f));
+                Assert.That(runtimeView.CurrentOpacity,
+                    Is.EqualTo(
+                        normalOpacity *
+                        PresentationAccessibility.ReducedFlashIntensityScale)
+                    .Within(0.0001f));
             }
             finally
             {
+                PresentationAccessibility.Apply(false, false);
                 Object.DestroyImmediate(instance);
             }
         }

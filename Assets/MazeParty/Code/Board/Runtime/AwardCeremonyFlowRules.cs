@@ -17,6 +17,7 @@ namespace MazeParty.Gameplay
     {
         public const double BonusAwardPresentationSeconds = 4d;
         public const double FinalPodiumInputLockSeconds = 5d;
+        public const double FinalResultsAutoReturnSeconds = 60d;
 
         public static bool IsTimedPhase(AwardCeremonyPhase phase)
         {
@@ -99,6 +100,38 @@ namespace MazeParty.Gameplay
                 : 0d;
         }
 
+        public static double GetFinalResultsAutoReturnEndsAt(double revealedAt)
+        {
+            return revealedAt + FinalResultsAutoReturnSeconds;
+        }
+
+        public static bool HasFinalResultsAutoReturnEnded(
+            double endsAt,
+            double now)
+        {
+            return endsAt > 0d && now >= endsAt;
+        }
+
+        public static double GetFinalResultsAutoReturnPauseRemaining(
+            double endsAt,
+            double now)
+        {
+            return endsAt > 0d
+                ? Math.Max(0d, endsAt - now)
+                : 0d;
+        }
+
+        public static double GetResumedFinalResultsAutoReturnEndsAt(
+            double now,
+            double pausedRemaining)
+        {
+            return pausedRemaining > 0d
+                ? now + Math.Min(
+                    FinalResultsAutoReturnSeconds,
+                    pausedRemaining)
+                : 0d;
+        }
+
         public static bool CanSubmitReturn(
             AwardCeremonyPhase phase,
             bool reconnectPaused,
@@ -129,12 +162,14 @@ namespace MazeParty.Gameplay
             AwardCeremonyPhase phase,
             byte readyMask,
             byte remainingMask,
-            bool returnQueued)
+            bool returnQueued,
+            bool autoReturnExpired = false)
         {
             return phase == AwardCeremonyPhase.AwaitingReturn &&
                    !returnQueued &&
                    remainingMask != 0 &&
-                   (readyMask & remainingMask) == remainingMask;
+                   (autoReturnExpired ||
+                    (readyMask & remainingMask) == remainingMask);
         }
 
         /// <summary>

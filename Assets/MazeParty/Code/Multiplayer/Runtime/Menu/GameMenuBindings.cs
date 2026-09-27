@@ -29,6 +29,20 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button displayPreviousButton;
         [SerializeField] private Button displayNextButton;
         [SerializeField] private Text displayValueText;
+        [SerializeField] private Button resolutionPreviousButton;
+        [SerializeField] private Button resolutionNextButton;
+        [SerializeField] private Text resolutionValueText;
+        [SerializeField] private Button qualityPreviousButton;
+        [SerializeField] private Button qualityNextButton;
+        [SerializeField] private Text qualityValueText;
+        [SerializeField] private Button frameRatePreviousButton;
+        [SerializeField] private Button frameRateNextButton;
+        [SerializeField] private Text frameRateValueText;
+        [SerializeField] private Slider mouseSensitivitySlider;
+        [SerializeField] private Text mouseSensitivityValueText;
+        [SerializeField] private Toggle invertYToggle;
+        [SerializeField] private Toggle reduceScreenShakeToggle;
+        [SerializeField] private Toggle reduceFlashesToggle;
         [SerializeField] private Button pauseButton;
         [SerializeField] private Text pauseButtonText;
         [SerializeField] private Button applyButton;
@@ -66,6 +80,20 @@ namespace MazeParty.Multiplayer
         public Button DisplayPreviousButton => displayPreviousButton;
         public Button DisplayNextButton => displayNextButton;
         public Text DisplayValueText => displayValueText;
+        public Button ResolutionPreviousButton => resolutionPreviousButton;
+        public Button ResolutionNextButton => resolutionNextButton;
+        public Text ResolutionValueText => resolutionValueText;
+        public Button QualityPreviousButton => qualityPreviousButton;
+        public Button QualityNextButton => qualityNextButton;
+        public Text QualityValueText => qualityValueText;
+        public Button FrameRatePreviousButton => frameRatePreviousButton;
+        public Button FrameRateNextButton => frameRateNextButton;
+        public Text FrameRateValueText => frameRateValueText;
+        public Slider MouseSensitivitySlider => mouseSensitivitySlider;
+        public Text MouseSensitivityValueText => mouseSensitivityValueText;
+        public Toggle InvertYToggle => invertYToggle;
+        public Toggle ReduceScreenShakeToggle => reduceScreenShakeToggle;
+        public Toggle ReduceFlashesToggle => reduceFlashesToggle;
         public Button PauseButton => pauseButton;
         public Text PauseButtonText => pauseButtonText;
         public Button ApplyButton => applyButton;
@@ -98,6 +126,20 @@ namespace MazeParty.Multiplayer
             displayPreviousButton != null &&
             displayNextButton != null &&
             displayValueText != null &&
+            resolutionPreviousButton != null &&
+            resolutionNextButton != null &&
+            resolutionValueText != null &&
+            qualityPreviousButton != null &&
+            qualityNextButton != null &&
+            qualityValueText != null &&
+            frameRatePreviousButton != null &&
+            frameRateNextButton != null &&
+            frameRateValueText != null &&
+            mouseSensitivitySlider != null &&
+            mouseSensitivityValueText != null &&
+            invertYToggle != null &&
+            reduceScreenShakeToggle != null &&
+            reduceFlashesToggle != null &&
             pauseButton != null &&
             pauseButtonText != null &&
             applyButton != null &&
@@ -134,6 +176,20 @@ namespace MazeParty.Multiplayer
             Button displayPrevious,
             Button displayNext,
             Text displayValue,
+            Button resolutionPrevious,
+            Button resolutionNext,
+            Text resolutionValue,
+            Button qualityPrevious,
+            Button qualityNext,
+            Text qualityValue,
+            Button frameRatePrevious,
+            Button frameRateNext,
+            Text frameRateValue,
+            Slider mouseSensitivity,
+            Text mouseSensitivityValue,
+            Toggle invertY,
+            Toggle reduceScreenShake,
+            Toggle reduceFlashes,
             Button pause,
             Text pauseText,
             Button apply,
@@ -165,6 +221,20 @@ namespace MazeParty.Multiplayer
             displayPreviousButton = displayPrevious;
             displayNextButton = displayNext;
             displayValueText = displayValue;
+            resolutionPreviousButton = resolutionPrevious;
+            resolutionNextButton = resolutionNext;
+            resolutionValueText = resolutionValue;
+            qualityPreviousButton = qualityPrevious;
+            qualityNextButton = qualityNext;
+            qualityValueText = qualityValue;
+            frameRatePreviousButton = frameRatePrevious;
+            frameRateNextButton = frameRateNext;
+            frameRateValueText = frameRateValue;
+            mouseSensitivitySlider = mouseSensitivity;
+            mouseSensitivityValueText = mouseSensitivityValue;
+            invertYToggle = invertY;
+            reduceScreenShakeToggle = reduceScreenShake;
+            reduceFlashesToggle = reduceFlashes;
             pauseButton = pause;
             pauseButtonText = pauseText;
             applyButton = apply;

@@ -147,6 +147,16 @@ namespace MazeParty.Multiplayer.Tests
             {
                 sources.Add(DisplayModeOptions.GetLabelSource((DisplayModeOption)index));
             }
+            for (var index = 0; index < QualityPresetOptions.Count; index++)
+            {
+                sources.Add(QualityPresetOptions.GetLabelSource(
+                    (QualityPresetOption)index));
+            }
+            for (var index = 0; index < FrameRateCapOptions.Count; index++)
+            {
+                sources.Add(FrameRateCapOptions.GetLabelSource(
+                    (FrameRateCapOption)index));
+            }
 
             sources.Add(GameMenuRules.GetExitLabelSource(GameMenuContext.Lobby));
             sources.Add(GameMenuRules.GetExitLabelSource(GameMenuContext.InGame));

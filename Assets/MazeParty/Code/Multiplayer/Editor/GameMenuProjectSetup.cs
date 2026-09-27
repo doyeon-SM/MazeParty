@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using MazeParty.Gameplay;
 using MazeParty.Multiplayer;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -329,6 +330,34 @@ namespace MazeParty.Editor
             var next = CreateButton(displayRow, "Next Button", ">", font, uiSprite, RowColor, 0f, false, out _);
             Anchor((RectTransform)next.transform, 0.92f, 1f, 4f);
 
+            CreateSelectorRow(
+                menuPanel, "Resolution Row", "Resolution", "1920 x 1080",
+                font, uiSprite, out var resolutionPrevious,
+                out var resolutionNext, out var resolutionValue);
+            CreateSelectorRow(
+                menuPanel, "Quality Row", "Quality", "High",
+                font, uiSprite, out var qualityPrevious,
+                out var qualityNext, out var qualityValue);
+            CreateSelectorRow(
+                menuPanel, "Frame Rate Row", "Frame Limit", "60 FPS",
+                font, uiSprite, out var framePrevious,
+                out var frameNext, out var frameValue);
+            var mouseSensitivity = CreateSliderRow(
+                menuPanel, "Mouse Sensitivity Row", "Mouse Sensitivity",
+                font, uiSprite, out var mouseSensitivityValue);
+            mouseSensitivity.minValue = GameSettingsData.MinimumMouseSensitivity;
+            mouseSensitivity.maxValue = GameSettingsData.MaximumMouseSensitivity;
+            mouseSensitivity.value = GameSettingsData.DefaultMouseSensitivity;
+            mouseSensitivityValue.text = "1.00x";
+            var invertY = CreateToggleRow(
+                menuPanel, "Invert Y Row", "Invert Y", font, uiSprite);
+            var reduceShake = CreateToggleRow(
+                menuPanel, "Reduce Screen Shake Row", "Reduce Screen Shake",
+                font, uiSprite);
+            var reduceFlashes = CreateToggleRow(
+                menuPanel, "Reduce Flashes Row", "Reduce Flashes",
+                font, uiSprite);
+
             CreateSpacer(menuPanel, 6f);
             var pauseButton = CreateButton(menuPanel, "Pause Button", "Request Pause", font, uiSprite, PauseColor, 54f, false, out var pauseText);
             var applyButton = CreateButton(menuPanel, "Apply Button", "Apply", font, uiSprite, ApplyColor, 54f, true, out _);
@@ -372,6 +401,20 @@ namespace MazeParty.Editor
                 previous,
                 next,
                 displayValue,
+                resolutionPrevious,
+                resolutionNext,
+                resolutionValue,
+                qualityPrevious,
+                qualityNext,
+                qualityValue,
+                framePrevious,
+                frameNext,
+                frameValue,
+                mouseSensitivity,
+                mouseSensitivityValue,
+                invertY,
+                reduceShake,
+                reduceFlashes,
                 pauseButton,
                 pauseText,
                 applyButton,
@@ -428,6 +471,73 @@ namespace MazeParty.Editor
             valueText = CreateText(row, "Value", "100", font, 22, MutedTextColor, TextAnchor.MiddleRight, false);
             Anchor(valueText.rectTransform, 0.88f, 1f);
             return slider;
+        }
+
+        private static void CreateSelectorRow(
+            RectTransform parent,
+            string name,
+            string label,
+            string value,
+            Font font,
+            Sprite uiSprite,
+            out Button previous,
+            out Button next,
+            out Text valueText)
+        {
+            var row = CreateRow(parent, name, 52f);
+            var labelText = CreateText(
+                row, "Label", label, font, 24, TextColor,
+                TextAnchor.MiddleLeft, true);
+            Anchor(labelText.rectTransform, 0f, 0.34f);
+            previous = CreateButton(
+                row, "Previous Button", "<", font, uiSprite,
+                RowColor, 0f, false, out _);
+            Anchor((RectTransform)previous.transform, 0.36f, 0.44f, 4f);
+            var valueBackground = CreateRect("Value Background", row);
+            Anchor(valueBackground, 0.45f, 0.91f, 4f);
+            var image = valueBackground.gameObject.AddComponent<Image>();
+            image.sprite = uiSprite;
+            image.type = Image.Type.Sliced;
+            image.color = RowColor;
+            image.raycastTarget = false;
+            valueText = CreateText(
+                valueBackground, "Value", value, font, 22, TextColor,
+                TextAnchor.MiddleCenter, false);
+            Stretch(valueText.rectTransform);
+            next = CreateButton(
+                row, "Next Button", ">", font, uiSprite,
+                RowColor, 0f, false, out _);
+            Anchor((RectTransform)next.transform, 0.92f, 1f, 4f);
+        }
+
+        private static Toggle CreateToggleRow(
+            RectTransform parent,
+            string name,
+            string label,
+            Font font,
+            Sprite uiSprite)
+        {
+            var row = CreateRow(parent, name, 44f);
+            var labelText = CreateText(
+                row, "Label", label, font, 24, TextColor,
+                TextAnchor.MiddleLeft, true);
+            Anchor(labelText.rectTransform, 0f, 0.82f);
+            var toggleObject =
+                DefaultControls.CreateToggle(DefaultResources(uiSprite));
+            toggleObject.name = "Toggle";
+            var rect = (RectTransform)toggleObject.transform;
+            rect.SetParent(row, false);
+            Anchor(rect, 0.9f, 1f, 4f);
+            var toggle = toggleObject.GetComponent<Toggle>();
+            var builtinLabel = toggleObject.transform.Find("Label");
+            if (builtinLabel != null)
+            {
+                builtinLabel.gameObject.SetActive(false);
+            }
+            toggle.isOn = false;
+            var soundEmitter = toggleObject.AddComponent<UiSoundEmitter>();
+            soundEmitter.Configure(SoundKeys.UiHover, SoundKeys.UiClick);
+            return toggle;
         }
 
         private static Dropdown CreateDropdown(RectTransform parent, Font font)
@@ -509,8 +619,8 @@ namespace MazeParty.Editor
             image.type = Image.Type.Sliced;
             image.color = PanelColor;
             var layout = rect.gameObject.AddComponent<VerticalLayoutGroup>();
-            layout.padding = new RectOffset(32, 32, 28, 28);
-            layout.spacing = 14f;
+            layout.padding = new RectOffset(32, 32, 20, 20);
+            layout.spacing = 8f;
             layout.childAlignment = TextAnchor.UpperCenter;
             layout.childControlWidth = true;
             layout.childControlHeight = true;

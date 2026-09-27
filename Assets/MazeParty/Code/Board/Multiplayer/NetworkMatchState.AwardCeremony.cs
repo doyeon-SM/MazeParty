@@ -10,6 +10,8 @@ namespace MazeParty.Multiplayer
             AwardCeremonyFlowRules.BonusAwardPresentationSeconds;
         public const double FinalPodiumInputLockSeconds =
             AwardCeremonyFlowRules.FinalPodiumInputLockSeconds;
+        public const double FinalResultsAutoReturnSeconds =
+            AwardCeremonyFlowRules.FinalResultsAutoReturnSeconds;
 
         private readonly NetworkVariable<byte> _awardCeremonyPhase =
             new NetworkVariable<byte>((byte)AwardCeremonyPhase.None);
@@ -17,6 +19,11 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedAwardCeremonyRemaining =
             new NetworkVariable<double>();
+        private readonly NetworkVariable<double> _awardCeremonyAutoReturnEndsAt =
+            new NetworkVariable<double>();
+        private readonly NetworkVariable<double>
+            _pausedAwardCeremonyAutoReturnRemaining =
+                new NetworkVariable<double>();
         private readonly NetworkVariable<byte> _awardCeremonyCategory0 =
             new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _awardCeremonyCategory1 =
@@ -59,6 +66,14 @@ namespace MazeParty.Multiplayer
             IsSimulationSuspended
                 ? Math.Max(0d, _pausedAwardCeremonyRemaining.Value)
                 : Math.Max(0d, _awardCeremonyPhaseEndsAt.Value - ServerNow);
+        public double CeremonyAutoReturnRemaining =>
+            IsSimulationSuspended
+                ? Math.Max(
+                    0d,
+                    _pausedAwardCeremonyAutoReturnRemaining.Value)
+                : Math.Max(
+                    0d,
+                    _awardCeremonyAutoReturnEndsAt.Value - ServerNow);
         public int CeremonyReturnReadyCount =>
             CountSetSlots((byte)(_awardCeremonyReturnReadyMask.Value &
                                  _awardCeremonyRemainingMask.Value));
@@ -199,6 +214,8 @@ namespace MazeParty.Multiplayer
             _awardCeremonyWinningValue1.Value = secondWinningValue;
             _awardCeremonyReturnReadyMask.Value = 0;
             _awardCeremonyRemainingMask.Value = (byte)AllPlayersMask;
+            _awardCeremonyAutoReturnEndsAt.Value = 0d;
+            _pausedAwardCeremonyAutoReturnRemaining.Value = 0d;
             _completedMatchReturnQueued = false;
             SetFinalCeremonyRanks(null);
 
@@ -238,7 +255,7 @@ namespace MazeParty.Multiplayer
                         _awardCeremonyWinnerMask1.Value);
                     break;
                 case AwardCeremonyServerAction.CalculateFinalRanks:
-                    CalculateFinalCeremonyRanksOnServer();
+                    CalculateFinalCeremonyRanksOnServer(now);
                     break;
             }
 
@@ -262,7 +279,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void CalculateFinalCeremonyRanksOnServer()
+        private void CalculateFinalCeremonyRanksOnServer(double now)
         {
             var rankingStats = new PlayerRankingStats[
                 MultiplayerConstants.MaxPlayers];
@@ -278,6 +295,9 @@ namespace MazeParty.Multiplayer
             }
 
             SetFinalCeremonyRanks(PlayerRankingRules.Calculate(rankingStats));
+            _awardCeremonyAutoReturnEndsAt.Value =
+                AwardCeremonyFlowRules.GetFinalResultsAutoReturnEndsAt(now);
+            _pausedAwardCeremonyAutoReturnRemaining.Value = 0d;
         }
 
         private void SetFinalCeremonyRanks(int[] ranks)
@@ -307,8 +327,7 @@ namespace MazeParty.Multiplayer
 
         private void PauseAwardCeremonyOnServer(double now)
         {
-            if (CeremonyPhase == AwardCeremonyPhase.None ||
-                CeremonyPhase == AwardCeremonyPhase.AwaitingReturn)
+            if (CeremonyPhase == AwardCeremonyPhase.None)
             {
                 return;
             }
@@ -318,14 +337,18 @@ namespace MazeParty.Multiplayer
                     CeremonyPhase,
                     _awardCeremonyPhaseEndsAt.Value,
                     now);
+            _pausedAwardCeremonyAutoReturnRemaining.Value =
+                AwardCeremonyFlowRules.
+                    GetFinalResultsAutoReturnPauseRemaining(
+                        _awardCeremonyAutoReturnEndsAt.Value,
+                        now);
             _awardCeremonyPhaseEndsAt.Value = 0d;
             _awardCeremonyRevision.Value++;
         }
 
         private void ResumeAwardCeremonyOnServer(double now)
         {
-            if (CeremonyPhase == AwardCeremonyPhase.None ||
-                CeremonyPhase == AwardCeremonyPhase.AwaitingReturn)
+            if (CeremonyPhase == AwardCeremonyPhase.None)
             {
                 return;
             }
@@ -335,7 +358,16 @@ namespace MazeParty.Multiplayer
                     CeremonyPhase,
                     now,
                     _pausedAwardCeremonyRemaining.Value);
+            if (_pausedAwardCeremonyAutoReturnRemaining.Value > 0d)
+            {
+                _awardCeremonyAutoReturnEndsAt.Value =
+                    AwardCeremonyFlowRules.
+                        GetResumedFinalResultsAutoReturnEndsAt(
+                            now,
+                            _pausedAwardCeremonyAutoReturnRemaining.Value);
+            }
             _pausedAwardCeremonyRemaining.Value = 0d;
+            _pausedAwardCeremonyAutoReturnRemaining.Value = 0d;
             _awardCeremonyRevision.Value++;
         }
 
@@ -422,7 +454,10 @@ namespace MazeParty.Multiplayer
                     CeremonyPhase,
                     _awardCeremonyReturnReadyMask.Value,
                     _awardCeremonyRemainingMask.Value,
-                    _completedMatchReturnQueued))
+                    _completedMatchReturnQueued,
+                    AwardCeremonyFlowRules.HasFinalResultsAutoReturnEnded(
+                        _awardCeremonyAutoReturnEndsAt.Value,
+                        ServerNow)))
             {
                 return;
             }

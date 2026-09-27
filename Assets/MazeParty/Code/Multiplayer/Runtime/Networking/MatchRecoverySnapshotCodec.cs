@@ -34,7 +34,7 @@ namespace MazeParty.Multiplayer
             try
             {
                 var decoded = JsonUtility.FromJson<MatchRecoverySnapshot>(payload);
-                if (!IsValid(decoded))
+                if (!TryMigrate(decoded) || !IsValid(decoded))
                 {
                     return false;
                 }
@@ -46,6 +46,32 @@ namespace MazeParty.Multiplayer
             {
                 return false;
             }
+        }
+
+        private static bool TryMigrate(MatchRecoverySnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return false;
+            }
+
+            if (snapshot.recoveryVersion ==
+                MatchRecoverySnapshot.CurrentRecoveryVersion)
+            {
+                return true;
+            }
+
+            if (snapshot.recoveryVersion !=
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines ||
+                snapshot.mines != null && snapshot.mines.Length != 0)
+            {
+                return false;
+            }
+
+            snapshot.mines = Array.Empty<MatchRecoveryMineSnapshot>();
+            snapshot.recoveryVersion =
+                MatchRecoverySnapshot.CurrentRecoveryVersion;
+            return true;
         }
 
         public static string EncodeMinigameSeed(ulong seed)
@@ -88,6 +114,7 @@ namespace MazeParty.Multiplayer
                 snapshot.itemShops == null ||
                 snapshot.itemShops.Length != ItemShopRules.ShopCount ||
                 snapshot.tombstones == null ||
+                snapshot.mines == null ||
                 snapshot.nextTombstoneId < 0 ||
                 !TryDecodeMinigameSeed(snapshot.currentMinigameSeed, out _))
             {
@@ -132,7 +159,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
             if (snapshot.checkpoint == MatchRecoveryCheckpoint.MatchComplete &&
-                snapshot.turn != snapshot.scheduleTurnCount)
+                (snapshot.turn != snapshot.scheduleTurnCount ||
+                 snapshot.mines.Length != 0))
             {
                 return false;
             }
@@ -168,6 +196,23 @@ namespace MazeParty.Multiplayer
                     !IsFinite(tombstone.position) ||
                     !tombstoneIds.Add(tombstone.id) ||
                     tombstone.id > snapshot.nextTombstoneId)
+                {
+                    return false;
+                }
+            }
+
+            var mineArmingDelay =
+                PrototypeItemCatalog.Get(PrototypeItemId.Mine).ArmingDelay;
+            for (var index = 0; index < snapshot.mines.Length; index++)
+            {
+                var mine = snapshot.mines[index];
+                if (mine.ownerSlot < 0 ||
+                    mine.ownerSlot >= MultiplayerConstants.MaxPlayers ||
+                    !IsFinite(mine.position) ||
+                    float.IsNaN(mine.armRemaining) ||
+                    float.IsInfinity(mine.armRemaining) ||
+                    mine.armRemaining < 0f ||
+                    mine.armRemaining > mineArmingDelay)
                 {
                     return false;
                 }

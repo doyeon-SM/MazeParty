@@ -8,20 +8,13 @@ namespace MazeParty.Gameplay
     /// </summary>
     public static class BuildFrameRateLimiter
     {
-        public const int TargetFrameRate = 60;
+        public const int DefaultTargetFrameRate = 60;
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void ApplyOnPlayerStartup()
-        {
-#if !UNITY_EDITOR
-            Apply();
-#endif
-        }
-
-        public static void Apply()
+        public static void Apply(int targetFrameRate = DefaultTargetFrameRate)
         {
             QualitySettings.vSyncCount = 0;
-            Application.targetFrameRate = TargetFrameRate;
+            Application.targetFrameRate =
+                targetFrameRate > 0 ? targetFrameRate : -1;
         }
     }
 }

@@ -12,7 +12,11 @@ namespace MazeParty.Multiplayer
     {
         private void RequestSelectedMinigameLoadOnServer()
         {
-            if (!IsServer || NetworkManager == null || NetworkManager.SceneManager == null)
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                !GameplayEnabled ||
+                NetworkManager == null ||
+                NetworkManager.SceneManager == null)
             {
                 return;
             }
@@ -52,6 +56,8 @@ namespace MazeParty.Multiplayer
         {
             var selectedSceneName = GetSelectedMinigameSceneName();
             if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                !GameplayEnabled ||
                 string.IsNullOrEmpty(selectedSceneName) ||
                 sceneName != selectedSceneName)
             {
@@ -85,7 +91,10 @@ namespace MazeParty.Multiplayer
 
         private void TryStartLoadedMinigameOnServer(double now)
         {
-            if (!IsServer || _flow == null || _flow.State != BoardFlowState.MinigameLoading ||
+            if (!IsServer ||
+                !_activeMatchVoidGate.AllowsGameplayMutation ||
+                !GameplayEnabled ||
+                _flow == null || _flow.State != BoardFlowState.MinigameLoading ||
                 _flow.IsPaused || IsSimulationSuspended ||
                 !_selectedMinigameNetworkLoadCompleted ||
                 !HasFourBoardReadyPlayers())
@@ -108,6 +117,11 @@ namespace MazeParty.Multiplayer
 
         private bool TryInitializeMinigameScheduleOnServer()
         {
+            if (!_activeMatchVoidGate.AllowsGameplayMutation)
+            {
+                return false;
+            }
+
             try
             {
                 _minigameScheduleSession ??=
@@ -167,6 +181,11 @@ namespace MazeParty.Multiplayer
 
         private void RevealScheduledMinigameOnServer(int turn)
         {
+            if (!_activeMatchVoidGate.AllowsGameplayMutation)
+            {
+                return;
+            }
+
             if (_minigameSchedule == null &&
                 !TryInitializeMinigameScheduleOnServer())
             {

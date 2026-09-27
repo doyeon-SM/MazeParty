@@ -186,6 +186,22 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void Hide_CancelsAnInFlightRollBeforeItCanSettle()
+        {
+            var model = CreateRollingModel();
+
+            model.Hide();
+
+            Assert.That(model.Phase, Is.EqualTo(WorldDiePhase.Hidden));
+            Assert.That(
+                model.MarkSettled(WorldDieAuthorityModel.MinimumFace),
+                Is.False);
+            Assert.That(
+                Observe(model, 100d, 0f, 0f),
+                Is.EqualTo(WorldDieMotionDecision.None));
+        }
+
+        [Test]
         public void Push_AllowsMatchingSlotWithResolvedChoiceAndLiveAction()
         {
             var model = CreateReadyModel(2);

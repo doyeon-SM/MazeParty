@@ -39,10 +39,26 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var delta = mouse.delta.ReadValue() * lookSensitivity;
+            var delta = ResolveLookDelta(
+                mouse.delta.ReadValue(),
+                lookSensitivity,
+                GameSettings.Applied);
             _localYaw += delta.x;
-            _localPitch = Mathf.Clamp(_localPitch - delta.y, -85f, 85f);
+            _localPitch = Mathf.Clamp(_localPitch + delta.y, -85f, 85f);
             ApplyLocalEyeRotation();
+        }
+
+        internal static Vector2 ResolveLookDelta(
+            Vector2 rawMouseDelta,
+            float authoredSensitivity,
+            GameSettingsData settings)
+        {
+            settings = settings.Sanitized();
+            var delta = rawMouseDelta *
+                        (Mathf.Max(0f, authoredSensitivity) *
+                         settings.MouseSensitivity);
+            delta.y *= settings.InvertY ? 1f : -1f;
+            return delta;
         }
 
         private void HandleLocalActionButtons()

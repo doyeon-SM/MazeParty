@@ -233,6 +233,19 @@ namespace MazeParty.Multiplayer
                 bindings.LanguageDropdown.onValueChanged.AddListener(OnLanguageChanged);
                 bindings.DisplayPreviousButton.onClick.AddListener(OnDisplayPrevious);
                 bindings.DisplayNextButton.onClick.AddListener(OnDisplayNext);
+                bindings.ResolutionPreviousButton.onClick.AddListener(OnResolutionPrevious);
+                bindings.ResolutionNextButton.onClick.AddListener(OnResolutionNext);
+                bindings.QualityPreviousButton.onClick.AddListener(OnQualityPrevious);
+                bindings.QualityNextButton.onClick.AddListener(OnQualityNext);
+                bindings.FrameRatePreviousButton.onClick.AddListener(OnFrameRatePrevious);
+                bindings.FrameRateNextButton.onClick.AddListener(OnFrameRateNext);
+                bindings.MouseSensitivitySlider.onValueChanged.AddListener(
+                    OnMouseSensitivityChanged);
+                bindings.InvertYToggle.onValueChanged.AddListener(OnInvertYChanged);
+                bindings.ReduceScreenShakeToggle.onValueChanged.AddListener(
+                    OnReduceScreenShakeChanged);
+                bindings.ReduceFlashesToggle.onValueChanged.AddListener(
+                    OnReduceFlashesChanged);
                 bindings.PauseButton.onClick.AddListener(OnPauseClicked);
                 bindings.ApplyButton.onClick.AddListener(OnApplyClicked);
                 bindings.ExitButton.onClick.AddListener(OnExitClicked);
@@ -252,6 +265,19 @@ namespace MazeParty.Multiplayer
             bindings.LanguageDropdown.onValueChanged.RemoveListener(OnLanguageChanged);
             bindings.DisplayPreviousButton.onClick.RemoveListener(OnDisplayPrevious);
             bindings.DisplayNextButton.onClick.RemoveListener(OnDisplayNext);
+            bindings.ResolutionPreviousButton.onClick.RemoveListener(OnResolutionPrevious);
+            bindings.ResolutionNextButton.onClick.RemoveListener(OnResolutionNext);
+            bindings.QualityPreviousButton.onClick.RemoveListener(OnQualityPrevious);
+            bindings.QualityNextButton.onClick.RemoveListener(OnQualityNext);
+            bindings.FrameRatePreviousButton.onClick.RemoveListener(OnFrameRatePrevious);
+            bindings.FrameRateNextButton.onClick.RemoveListener(OnFrameRateNext);
+            bindings.MouseSensitivitySlider.onValueChanged.RemoveListener(
+                OnMouseSensitivityChanged);
+            bindings.InvertYToggle.onValueChanged.RemoveListener(OnInvertYChanged);
+            bindings.ReduceScreenShakeToggle.onValueChanged.RemoveListener(
+                OnReduceScreenShakeChanged);
+            bindings.ReduceFlashesToggle.onValueChanged.RemoveListener(
+                OnReduceFlashesChanged);
             bindings.PauseButton.onClick.RemoveListener(OnPauseClicked);
             bindings.ApplyButton.onClick.RemoveListener(OnApplyClicked);
             bindings.ExitButton.onClick.RemoveListener(OnExitClicked);
@@ -316,6 +342,60 @@ namespace MazeParty.Multiplayer
         private void OnDisplayNext()
         {
             _draft.DisplayMode = DisplayModeOptions.Step(_draft.DisplayMode, 1);
+        }
+
+        private void OnResolutionPrevious()
+        {
+            _draft.Resolution = ResolutionOptions.Step(_draft.Resolution, -1);
+        }
+
+        private void OnResolutionNext()
+        {
+            _draft.Resolution = ResolutionOptions.Step(_draft.Resolution, 1);
+        }
+
+        private void OnQualityPrevious()
+        {
+            _draft.QualityPreset =
+                QualityPresetOptions.Step(_draft.QualityPreset, -1);
+        }
+
+        private void OnQualityNext()
+        {
+            _draft.QualityPreset =
+                QualityPresetOptions.Step(_draft.QualityPreset, 1);
+        }
+
+        private void OnFrameRatePrevious()
+        {
+            _draft.FrameRateCap =
+                FrameRateCapOptions.Step(_draft.FrameRateCap, -1);
+        }
+
+        private void OnFrameRateNext()
+        {
+            _draft.FrameRateCap =
+                FrameRateCapOptions.Step(_draft.FrameRateCap, 1);
+        }
+
+        private void OnMouseSensitivityChanged(float value)
+        {
+            _draft.MouseSensitivity = value;
+        }
+
+        private void OnInvertYChanged(bool value)
+        {
+            _draft.InvertY = value;
+        }
+
+        private void OnReduceScreenShakeChanged(bool value)
+        {
+            _draft.ReduceScreenShake = value;
+        }
+
+        private void OnReduceFlashesChanged(bool value)
+        {
+            _draft.ReduceFlashes = value;
         }
 
         private void OnApplyClicked()
@@ -443,6 +523,13 @@ namespace MazeParty.Multiplayer
             bindings.LanguageDropdown.SetValueWithoutNotify(
                 GameLanguages.ToIndex(_draft.Language));
             bindings.LanguageDropdown.RefreshShownValue();
+            bindings.MouseSensitivitySlider.SetValueWithoutNotify(
+                _draft.MouseSensitivity);
+            bindings.InvertYToggle.SetIsOnWithoutNotify(_draft.InvertY);
+            bindings.ReduceScreenShakeToggle.SetIsOnWithoutNotify(
+                _draft.ReduceScreenShake);
+            bindings.ReduceFlashesToggle.SetIsOnWithoutNotify(
+                _draft.ReduceFlashes);
         }
 
         private void RefreshMenu(GameMenuContext context, OnlineSessionController controller)
@@ -452,6 +539,14 @@ namespace MazeParty.Multiplayer
             bindings.BgmValueText.text = FormatPercent(_draft.BgmVolume);
             bindings.DisplayValueText.text =
                 GameText.T(DisplayModeOptions.GetLabelSource(_draft.DisplayMode));
+            bindings.ResolutionValueText.text =
+                ResolutionOptions.GetLabel(_draft.Resolution);
+            bindings.QualityValueText.text = GameText.T(
+                QualityPresetOptions.GetLabelSource(_draft.QualityPreset));
+            bindings.FrameRateValueText.text = GameText.T(
+                FrameRateCapOptions.GetLabelSource(_draft.FrameRateCap));
+            bindings.MouseSensitivityValueText.text =
+                _draft.MouseSensitivity.ToString("0.00") + "x";
             bindings.ApplyButton.interactable = !_draft.Equals(GameSettings.Applied);
 
             var leaving = controller != null && controller.IsVoluntaryLeavePending;

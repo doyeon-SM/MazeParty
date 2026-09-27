@@ -1,4 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -53,6 +57,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.MasterSlider.maxValue, Is.EqualTo(1f));
             Assert.That(bindings.SfxSlider.maxValue, Is.EqualTo(1f));
             Assert.That(bindings.BgmSlider.maxValue, Is.EqualTo(1f));
+            Assert.That(bindings.MouseSensitivitySlider.minValue,
+                Is.EqualTo(GameSettingsData.MinimumMouseSensitivity));
+            Assert.That(bindings.MouseSensitivitySlider.maxValue,
+                Is.EqualTo(GameSettingsData.MaximumMouseSensitivity));
         }
 
         [Test]
@@ -81,6 +89,10 @@ namespace MazeParty.Multiplayer.Tests
                 bindings.SfxValueText,
                 bindings.BgmValueText,
                 bindings.DisplayValueText,
+                bindings.ResolutionValueText,
+                bindings.QualityValueText,
+                bindings.FrameRateValueText,
+                bindings.MouseSensitivityValueText,
                 bindings.PauseButtonText,
                 bindings.ExitButtonText,
                 bindings.NoticeMessageText,
@@ -99,6 +111,13 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(sources, Does.Contain("Master"));
             Assert.That(sources, Does.Contain("SFX"));
             Assert.That(sources, Does.Contain("BGM"));
+            Assert.That(sources, Does.Contain("Resolution"));
+            Assert.That(sources, Does.Contain("Quality"));
+            Assert.That(sources, Does.Contain("Frame Limit"));
+            Assert.That(sources, Does.Contain("Mouse Sensitivity"));
+            Assert.That(sources, Does.Contain("Invert Y"));
+            Assert.That(sources, Does.Contain("Reduce Screen Shake"));
+            Assert.That(sources, Does.Contain("Reduce Flashes"));
             Assert.That(sources, Does.Contain("Apply"));
             Assert.That(sources, Does.Contain("Are you sure you want to leave?"));
             Assert.That(sources, Does.Contain("Release Pause"));
@@ -252,6 +271,236 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void MenuSetup_RepeatedAssetValidationPreservesExistingPrefabFile()
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            Assert.That(projectRoot, Is.Not.Null);
+            var prefabFile = Path.Combine(projectRoot, MenuPrefabPath);
+            var before = File.ReadAllBytes(prefabFile);
+            var setupType = Type.GetType(
+                "MazeParty.Editor.GameMenuProjectSetup, Assembly-CSharp-Editor",
+                throwOnError: false);
+            Assert.That(setupType, Is.Not.Null);
+            var ensureAssets = setupType.GetMethod(
+                "EnsureAssets",
+                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
+            Assert.That(ensureAssets, Is.Not.Null);
+
+            Assert.DoesNotThrow(() => ensureAssets.Invoke(null, null));
+            var afterFirstRun = File.ReadAllBytes(prefabFile);
+            Assert.DoesNotThrow(() => ensureAssets.Invoke(null, null));
+            var afterSecondRun = File.ReadAllBytes(prefabFile);
+
+            CollectionAssert.AreEqual(before, afterFirstRun,
+                "Setup must validate an existing prefab without rewriting its design.");
+            CollectionAssert.AreEqual(afterFirstRun, afterSecondRun,
+                "Repeated setup must be idempotent for the existing prefab file.");
+        }
+
+        [Test]
+        public void Settings_DefaultToRecommended1080p60KeyboardMouseProfile()
+        {
+            var defaults = GameSettingsData.Default;
+            Assert.That(defaults.Resolution,
+                Is.EqualTo(ResolutionOption.FullHd1080));
+            Assert.That(defaults.FrameRateCap,
+                Is.EqualTo(FrameRateCapOption.Fps60));
+            Assert.That(defaults.QualityPreset,
+                Is.EqualTo(QualityPresetOption.High));
+            Assert.That(defaults.MouseSensitivity,
+                Is.EqualTo(GameSettingsData.DefaultMouseSensitivity));
+            Assert.That(defaults.InvertY, Is.False);
+            Assert.That(defaults.ReduceScreenShake, Is.False);
+            Assert.That(defaults.ReduceFlashes, Is.False);
+        }
+
+        [Test]
+        public void Settings_PersistenceRoundTripIncludesGraphicsInputAndAccessibility()
+        {
+            var store = new MemorySettingsStore();
+            var expected = new GameSettingsData(
+                0.8f, 0.7f, 0.6f, GameLanguage.Korean,
+                ResolutionOption.Qhd1440, DisplayModeOption.Windowed,
+                QualityPresetOption.Low, FrameRateCapOption.Fps30,
+                1.35f, true, true, true);
+
+            GameSettings.Save(store, expected);
+            var loaded = GameSettings.Load(store);
+
+            Assert.That(loaded, Is.EqualTo(expected));
+            Assert.That(store.SaveCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void Settings_LoadRejectsRawEnumIntegersBeforeByteConversion()
+        {
+            var store = new MemorySettingsStore();
+            store.SetInt(GameSettings.LanguageKey, 257);
+            store.SetInt(GameSettings.ResolutionKey, 256);
+            store.SetInt(GameSettings.DisplayModeKey, 256);
+            store.SetInt(GameSettings.QualityPresetKey, 256);
+            store.SetInt(GameSettings.FrameRateCapKey, 256);
+
+            var loaded = GameSettings.Load(store);
+            var defaults = GameSettingsData.Default;
+
+            Assert.That(loaded.Language, Is.EqualTo(defaults.Language));
+            Assert.That(loaded.Resolution, Is.EqualTo(defaults.Resolution));
+            Assert.That(loaded.DisplayMode, Is.EqualTo(defaults.DisplayMode));
+            Assert.That(loaded.QualityPreset, Is.EqualTo(defaults.QualityPreset));
+            Assert.That(loaded.FrameRateCap, Is.EqualTo(defaults.FrameRateCap));
+        }
+
+        [Test]
+        public void Settings_PlatformChangesContainOnlyChangedExpensiveFields()
+        {
+            var original = GameSettingsData.Default;
+            var nonPlatform = original;
+            nonPlatform.MasterVolume = 0.5f;
+            nonPlatform.MouseSensitivity = 1.5f;
+            nonPlatform.ReduceFlashes = true;
+            Assert.That(GameSettings.GetPlatformChanges(original, nonPlatform),
+                Is.EqualTo(GameSettingsPlatformChanges.None));
+
+            var display = original;
+            display.Resolution = ResolutionOption.Hd720;
+            Assert.That(GameSettings.GetPlatformChanges(original, display),
+                Is.EqualTo(GameSettingsPlatformChanges.Display));
+
+            var quality = original;
+            quality.QualityPreset = QualityPresetOption.Low;
+            Assert.That(GameSettings.GetPlatformChanges(original, quality),
+                Is.EqualTo(GameSettingsPlatformChanges.Quality));
+
+            var frameRate = original;
+            frameRate.FrameRateCap = FrameRateCapOption.Fps30;
+            Assert.That(GameSettings.GetPlatformChanges(original, frameRate),
+                Is.EqualTo(GameSettingsPlatformChanges.FrameRate));
+
+            var all = original;
+            all.DisplayMode = DisplayModeOption.Windowed;
+            all.QualityPreset = QualityPresetOption.Low;
+            all.FrameRateCap = FrameRateCapOption.Unlimited;
+            Assert.That(GameSettings.GetPlatformChanges(original, all),
+                Is.EqualTo(GameSettingsPlatformChanges.All));
+        }
+
+        [TestCase(ResolutionOption.Uhd2160, 1920, 1080, ResolutionOption.FullHd1080)]
+        [TestCase(ResolutionOption.Qhd1440, 2000, 1200, ResolutionOption.FullHd1080)]
+        [TestCase(ResolutionOption.HdPlus900, 1366, 768, ResolutionOption.Hd720)]
+        [TestCase(ResolutionOption.Qhd1440, 3840, 2160, ResolutionOption.Qhd1440)]
+        [TestCase(ResolutionOption.Uhd2160, 1024, 600, ResolutionOption.Hd720)]
+        public void Settings_NormalizeForDisplayAlignsStoredOptionAndApplicationPlan(
+            ResolutionOption requested,
+            int displayWidth,
+            int displayHeight,
+            ResolutionOption expected)
+        {
+            var data = GameSettingsData.Default;
+            data.Resolution = requested;
+
+            var normalized = GameSettings.NormalizeForDisplay(
+                data,
+                displayWidth,
+                displayHeight);
+            var plan = GameSettings.CreateApplicationPlan(
+                normalized,
+                displayWidth,
+                displayHeight);
+            var expectedSize = ResolutionOptions.GetSize(expected);
+
+            Assert.That(normalized.Resolution, Is.EqualTo(expected));
+            Assert.That(plan.Width, Is.EqualTo(expectedSize.x));
+            Assert.That(plan.Height, Is.EqualTo(expectedSize.y));
+        }
+
+        [Test]
+        public void Settings_ExclusiveFullscreenUsesSupportedPresetsAcrossModeBoundaries()
+        {
+            var without900 = new[]
+            {
+                new Vector2Int(1280, 720),
+                new Vector2Int(1920, 1080)
+            };
+            var with900 = new[]
+            {
+                new Vector2Int(1280, 720),
+                new Vector2Int(1600, 900),
+                new Vector2Int(1920, 1080)
+            };
+            var cases = new[]
+            {
+                (DisplayModeOption.Fullscreen, without900, ResolutionOption.Hd720),
+                (DisplayModeOption.Fullscreen, with900, ResolutionOption.HdPlus900),
+                (DisplayModeOption.Windowed, without900, ResolutionOption.HdPlus900),
+                (DisplayModeOption.BorderlessFullscreen, without900,
+                    ResolutionOption.HdPlus900)
+            };
+
+            foreach (var testCase in cases)
+            {
+                var data = GameSettingsData.Default;
+                data.DisplayMode = testCase.Item1;
+                data.Resolution = ResolutionOption.HdPlus900;
+
+                var normalized = GameSettings.NormalizeForDisplay(
+                    data,
+                    1920,
+                    1080,
+                    testCase.Item2);
+                var plan = GameSettings.CreateApplicationPlan(
+                    normalized,
+                    1920,
+                    1080,
+                    testCase.Item2);
+                var expectedSize = ResolutionOptions.GetSize(testCase.Item3);
+
+                Assert.That(normalized.Resolution, Is.EqualTo(testCase.Item3),
+                    testCase.Item1.ToString());
+                Assert.That(plan.Width, Is.EqualTo(expectedSize.x),
+                    testCase.Item1.ToString());
+                Assert.That(plan.Height, Is.EqualTo(expectedSize.y),
+                    testCase.Item1.ToString());
+            }
+        }
+
+        [Test]
+        public void Settings_ApplicationPlanClampsResolutionAndAppliesEveryPlatformChoice()
+        {
+            var data = new GameSettingsData(
+                1f, 1f, 1f, GameLanguage.English,
+                ResolutionOption.Uhd2160, DisplayModeOption.Fullscreen,
+                QualityPresetOption.Low, FrameRateCapOption.Fps30,
+                1f, false, false, false);
+
+            var plan = GameSettings.CreateApplicationPlan(data, 1920, 1080);
+
+            Assert.That(plan.Width, Is.EqualTo(1920));
+            Assert.That(plan.Height, Is.EqualTo(1080));
+            Assert.That(plan.FullScreenMode,
+                Is.EqualTo(FullScreenMode.ExclusiveFullScreen));
+            Assert.That(plan.QualityLevel, Is.EqualTo(0));
+            Assert.That(plan.TargetFrameRate, Is.EqualTo(30));
+        }
+
+        [Test]
+        public void OnlineLook_AppliesSensitivityAndOptionalYInversion()
+        {
+            var settings = GameSettingsData.Default;
+            settings.MouseSensitivity = 1.5f;
+            var normal = NetworkPlayerAvatar.ResolveLookDelta(
+                new Vector2(2f, 3f), 0.1f, settings);
+            settings.InvertY = true;
+            var inverted = NetworkPlayerAvatar.ResolveLookDelta(
+                new Vector2(2f, 3f), 0.1f, settings);
+
+            Assert.That(normal.x, Is.EqualTo(0.3f).Within(0.0001f));
+            Assert.That(normal.y, Is.EqualTo(-0.45f).Within(0.0001f));
+            Assert.That(inverted.x, Is.EqualTo(0.3f).Within(0.0001f));
+            Assert.That(inverted.y, Is.EqualTo(0.45f).Within(0.0001f));
+        }
+
+        [Test]
         public void LandingEffectMessage_IsFormattedInTheReceiversLanguage()
         {
             var encoded = LandingEffectMessage.Encode(0, true, 3, 4, "ITEM REWARD +1 {0}", "Mine");
@@ -270,6 +519,23 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(LandingEffectMessage.Format(encoded),
                 Is.EqualTo("P1 (3,4): 아이템 보상 +1 지뢰"));
             Assert.That(LandingEffectMessage.Format(string.Empty), Is.Empty);
+        }
+
+        private sealed class MemorySettingsStore : IGameSettingsStore
+        {
+            private readonly Dictionary<string, float> _floats =
+                new Dictionary<string, float>();
+            private readonly Dictionary<string, int> _ints =
+                new Dictionary<string, int>();
+
+            public int SaveCount { get; private set; }
+            public float GetFloat(string key, float defaultValue) =>
+                _floats.TryGetValue(key, out var value) ? value : defaultValue;
+            public int GetInt(string key, int defaultValue) =>
+                _ints.TryGetValue(key, out var value) ? value : defaultValue;
+            public void SetFloat(string key, float value) => _floats[key] = value;
+            public void SetInt(string key, int value) => _ints[key] = value;
+            public void Save() => SaveCount++;
         }
     }
 }

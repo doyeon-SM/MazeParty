@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -70,7 +71,10 @@ namespace MazeParty.Multiplayer
 
             _remaining = Mathf.Max(0f, _remaining - Time.unscaledDeltaTime);
             var duration = Mathf.Max(0.01f, flashDuration);
-            SetOpacity(peakOpacity * (_remaining / duration));
+            SetOpacity(
+                peakOpacity *
+                PresentationAccessibility.FlashIntensityScale *
+                (_remaining / duration));
         }
 
         public void Flash()
@@ -81,7 +85,9 @@ namespace MazeParty.Multiplayer
             }
 
             _remaining = Mathf.Max(0.01f, flashDuration);
-            SetOpacity(peakOpacity);
+            SetOpacity(
+                peakOpacity *
+                PresentationAccessibility.FlashIntensityScale);
         }
 
         private void SetOpacity(float opacity)

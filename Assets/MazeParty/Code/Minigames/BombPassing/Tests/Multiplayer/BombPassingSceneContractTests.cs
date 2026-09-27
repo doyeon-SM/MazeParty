@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -144,6 +145,80 @@ namespace MazeParty.Multiplayer.Tests
             var source = File.ReadAllText(sourcePath);
             StringAssert.DoesNotContain("AddComponent<Light>", source);
             StringAssert.DoesNotContain("EnsureExplosionLight", source);
+        }
+
+        [Test]
+        public void ReducedFlash_DisablesFuseStrobeAndScalesExplosionIntensity()
+        {
+            PresentationAccessibility.Apply(false, true);
+            try
+            {
+                Assert.That(
+                    BombPassingNetworkView.ResolveWarningFrequency(0.05f, true),
+                    Is.Zero);
+                Assert.That(
+                    BombPassingNetworkView.ResolveFlashIntensity(4f, 1f),
+                    Is.EqualTo(1f).Within(0.0001f));
+            }
+            finally
+            {
+                PresentationAccessibility.Apply(false, false);
+            }
+        }
+
+        [Test]
+        public void ExplosionShake_IsDeterministicReducedAndReturnsToExactAuthoredPose()
+        {
+            const uint sequence = 17U;
+            const float elapsed = 0.25f;
+            BombPassingNetworkView.ResolveExplosionCameraPose(
+                sequence, elapsed, 1f,
+                out var fullPosition, out var fullRotation);
+            BombPassingNetworkView.ResolveExplosionCameraPose(
+                sequence, elapsed, 1f,
+                out var repeatedPosition, out var repeatedRotation);
+            PresentationAccessibility.Apply(true, false);
+            Vector3 reducedPosition;
+            Quaternion reducedRotation;
+            try
+            {
+                BombPassingNetworkView.ResolveExplosionCameraPose(
+                    sequence, elapsed,
+                    PresentationAccessibility.ScreenShakeScale,
+                    out reducedPosition, out reducedRotation);
+            }
+            finally
+            {
+                PresentationAccessibility.Apply(false, false);
+            }
+            BombPassingNetworkView.ResolveExplosionCameraPose(
+                sequence, 1f, 1f,
+                out var finishedPosition, out var finishedRotation);
+
+            Assert.That(repeatedPosition, Is.EqualTo(fullPosition));
+            Assert.That(repeatedRotation, Is.EqualTo(fullRotation));
+            Assert.That(fullPosition,
+                Is.Not.EqualTo(BombPassingNetworkView.SharedCameraPosition));
+            var fullOffset =
+                fullPosition - BombPassingNetworkView.SharedCameraPosition;
+            var reducedOffset =
+                reducedPosition - BombPassingNetworkView.SharedCameraPosition;
+            Assert.That(reducedOffset.x,
+                Is.EqualTo(
+                    fullOffset.x *
+                    PresentationAccessibility.ReducedScreenShakeScale)
+                .Within(0.001f));
+            Assert.That(reducedOffset.z,
+                Is.EqualTo(
+                    fullOffset.z *
+                    PresentationAccessibility.ReducedScreenShakeScale)
+                .Within(0.001f));
+            Assert.That(reducedRotation,
+                Is.EqualTo(BombPassingNetworkView.SharedCameraRotation));
+            Assert.That(finishedPosition,
+                Is.EqualTo(BombPassingNetworkView.SharedCameraPosition));
+            Assert.That(finishedRotation,
+                Is.EqualTo(BombPassingNetworkView.SharedCameraRotation));
         }
 
         [Test]

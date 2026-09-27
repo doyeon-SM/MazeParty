@@ -33,6 +33,17 @@ namespace MazeParty.Multiplayer
             BoardTopology topology,
             HostMinigameSchedule schedule)
         {
+            return CreateContentFingerprint(
+                topology,
+                schedule,
+                MatchRecoverySnapshot.CurrentRecoveryVersion);
+        }
+
+        public static string CreateContentFingerprint(
+            BoardTopology topology,
+            HostMinigameSchedule schedule,
+            int recoveryVersion)
+        {
             if (topology == null)
             {
                 throw new ArgumentNullException(nameof(topology));
@@ -41,10 +52,15 @@ namespace MazeParty.Multiplayer
             {
                 throw new ArgumentNullException(nameof(schedule));
             }
+            if (recoveryVersion < 1 ||
+                recoveryVersion > MatchRecoverySnapshot.CurrentRecoveryVersion)
+            {
+                throw new ArgumentOutOfRangeException(nameof(recoveryVersion));
+            }
 
             var text = new StringBuilder(1024);
             text.Append("recovery=")
-                .Append(MatchRecoverySnapshot.CurrentRecoveryVersion.ToString(
+                .Append(recoveryVersion.ToString(
                     CultureInfo.InvariantCulture))
                 .Append("|board=")
                 .Append(BoardRecoveryCompatibilityVersion.ToString(

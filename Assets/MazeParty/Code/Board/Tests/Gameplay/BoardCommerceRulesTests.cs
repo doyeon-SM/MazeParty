@@ -62,6 +62,24 @@ namespace MazeParty.Gameplay.Tests
                 new PlayerRankingStats(0, 500, 20)
             });
             CollectionAssert.AreEqual(new[] { 1, 1, 3, 4 }, tied);
+
+            var middleTied = PlayerRankingRules.Calculate(new[]
+            {
+                new PlayerRankingStats(3, 0, 0),
+                new PlayerRankingStats(2, 10, 1),
+                new PlayerRankingStats(2, 10, 1),
+                new PlayerRankingStats(1, 100, 9)
+            });
+            CollectionAssert.AreEqual(new[] { 1, 2, 2, 4 }, middleTied);
+
+            var allTied = PlayerRankingRules.Calculate(new[]
+            {
+                new PlayerRankingStats(1, 10, 2),
+                new PlayerRankingStats(1, 10, 2),
+                new PlayerRankingStats(1, 10, 2),
+                new PlayerRankingStats(1, 10, 2)
+            });
+            CollectionAssert.AreEqual(new[] { 1, 1, 1, 1 }, allTied);
         }
     }
 }
