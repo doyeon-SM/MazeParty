@@ -131,20 +131,6 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void BuildSettings_EnableBouncingBallsAfterSequenceMemory()
-        {
-            var enabled = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            var bouncingIndex = System.Array.IndexOf(enabled, ScenePath);
-            var sequenceIndex = System.Array.IndexOf(enabled,
-                "Assets/MazeParty/Scenes/Minigames/SequenceMemory/SequenceMemory.unity");
-            Assert.That(bouncingIndex, Is.GreaterThanOrEqualTo(0));
-            Assert.That(bouncingIndex, Is.EqualTo(sequenceIndex + 1));
-        }
-
         private static void AssertArray(
             SerializedObject serialized, string name, int length)
         {

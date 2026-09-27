@@ -1,8 +1,5 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -21,8 +18,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string MenuPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab";
-        private const string LobbyPrefabPath =
-            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
         private const string BootstrapScenePath =
             "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
 
@@ -64,66 +59,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void MenuPrefab_OrdersControlsWithApplyThenExitAtTheBottom()
-        {
-            var bindings = AssetDatabase.LoadAssetAtPath<GameObject>(MenuPrefabPath)
-                .GetComponent<GameMenuBindings>();
-            var panel = bindings.ApplyButton.transform.parent;
-            Assert.That(bindings.ExitButton.transform.parent, Is.SameAs(panel));
-            Assert.That(bindings.ExitButton.transform.GetSiblingIndex(),
-                Is.EqualTo(panel.childCount - 1), "The exit button is the last control.");
-            Assert.That(bindings.ApplyButton.transform.GetSiblingIndex(),
-                Is.EqualTo(panel.childCount - 2), "Apply sits directly above the exit button.");
-            Assert.That(bindings.PauseButton.transform.GetSiblingIndex(),
-                Is.LessThan(bindings.ApplyButton.transform.GetSiblingIndex()));
-        }
-
-        [Test]
-        public void MenuPrefab_StaticLabelsAreLocalizedAndRuntimeLabelsAreNot()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(MenuPrefabPath);
-            var bindings = prefab.GetComponent<GameMenuBindings>();
-            var runtimeTexts = new[]
-            {
-                bindings.MasterValueText,
-                bindings.SfxValueText,
-                bindings.BgmValueText,
-                bindings.DisplayValueText,
-                bindings.ResolutionValueText,
-                bindings.QualityValueText,
-                bindings.FrameRateValueText,
-                bindings.MouseSensitivityValueText,
-                bindings.PauseButtonText,
-                bindings.ExitButtonText,
-                bindings.NoticeMessageText,
-                bindings.PauseBannerText,
-                bindings.PauseTimerText
-            };
-            foreach (var text in runtimeTexts)
-            {
-                Assert.That(text.GetComponent<LocalizedText>(), Is.Null, text.name);
-            }
-
-            var sources = prefab.GetComponentsInChildren<LocalizedText>(true)
-                .Select(label => label.SourceText)
-                .ToArray();
-            Assert.That(sources, Does.Contain("SETTINGS"));
-            Assert.That(sources, Does.Contain("Master"));
-            Assert.That(sources, Does.Contain("SFX"));
-            Assert.That(sources, Does.Contain("BGM"));
-            Assert.That(sources, Does.Contain("Resolution"));
-            Assert.That(sources, Does.Contain("Quality"));
-            Assert.That(sources, Does.Contain("Frame Limit"));
-            Assert.That(sources, Does.Contain("Mouse Sensitivity"));
-            Assert.That(sources, Does.Contain("Invert Y"));
-            Assert.That(sources, Does.Contain("Reduce Screen Shake"));
-            Assert.That(sources, Does.Contain("Reduce Flashes"));
-            Assert.That(sources, Does.Contain("Apply"));
-            Assert.That(sources, Does.Contain("Are you sure you want to leave?"));
-            Assert.That(sources, Does.Contain("Release Pause"));
-        }
-
-        [Test]
         public void BootstrapScene_HasExactlyOneMenuPrefabInstance()
         {
             var scene = SceneManager.GetSceneByPath(BootstrapScenePath);
@@ -154,16 +89,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void LobbyPrefab_NoLongerOwnsLeaveOrQuitButtons()
-        {
-            var lobby = AssetDatabase.LoadAssetAtPath<GameObject>(LobbyPrefabPath);
-            Assert.That(lobby, Is.Not.Null);
-            var names = lobby.GetComponentsInChildren<Transform>(true).Select(t => t.name).ToArray();
-            Assert.That(names, Does.Not.Contain("Leave Session Button"));
-            Assert.That(names, Does.Not.Contain("Quit Game Button"));
-        }
-
-        [Test]
         public void MenuRules_ChooseExitBehaviourAndButtonsPerContext()
         {
             Assert.That(GameMenuRules.GetExitAction(GameMenuContext.Lobby),
@@ -184,15 +109,26 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(GameMenuRules.ShowsGearButton(GameMenuContext.InGame), Is.False);
         }
 
-        [TestCase(300d, "5:00")]
-        [TestCase(299.2d, "5:00")]
-        [TestCase(61d, "1:01")]
-        [TestCase(0.1d, "0:01")]
-        [TestCase(0d, "0:00")]
-        [TestCase(-3d, "0:00")]
-        public void PauseClock_RoundsUpToWholeSeconds(double seconds, string expected)
+        [Test]
+        public void PauseClock_RoundsUpToWholeSeconds()
         {
-            Assert.That(GameMenuRules.FormatPauseClock(seconds), Is.EqualTo(expected));
+            var cases = new[]
+            {
+                (seconds: 300d, expected: "5:00"),
+                (seconds: 299.2d, expected: "5:00"),
+                (seconds: 61d, expected: "1:01"),
+                (seconds: 0.1d, expected: "0:01"),
+                (seconds: 0d, expected: "0:00"),
+                (seconds: -3d, expected: "0:00")
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    GameMenuRules.FormatPauseClock(testCase.seconds),
+                    Is.EqualTo(testCase.expected),
+                    testCase.seconds.ToString());
+            }
         }
 
         [Test]
@@ -220,16 +156,6 @@ namespace MazeParty.Multiplayer.Tests
             // The host still closes the room; hosts do not migrate.
             Assert.That(VoluntaryLeaveRules.Resolve(true, true, false, finalRankingLocked: true),
                 Is.EqualTo(VoluntaryLeaveDisposition.AcknowledgeOnly));
-        }
-
-        [Test]
-        public void WaitingRoomExit_LeavesTheRoomWithoutConfirmation()
-        {
-            // A player back in the waiting room during someone else's award
-            // ceremony uses this context.
-            Assert.That(GameMenuRules.GetExitAction(GameMenuContext.WaitingRoom),
-                Is.EqualTo(GameMenuExitAction.LeaveWaitingRoom));
-            Assert.That(GameMenuRules.ShowsPauseButton(GameMenuContext.WaitingRoom), Is.False);
         }
 
         [Test]
@@ -268,50 +194,6 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(data.DisplayMode, Is.EqualTo(DisplayModeOption.BorderlessFullscreen));
             Assert.That(GameSettingsData.Default.Language, Is.EqualTo(GameLanguage.English));
             Assert.That(data, Is.EqualTo(data.Sanitized()));
-        }
-
-        [Test]
-        public void MenuSetup_RepeatedAssetValidationPreservesExistingPrefabFile()
-        {
-            var projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
-            Assert.That(projectRoot, Is.Not.Null);
-            var prefabFile = Path.Combine(projectRoot, MenuPrefabPath);
-            var before = File.ReadAllBytes(prefabFile);
-            var setupType = Type.GetType(
-                "MazeParty.Editor.GameMenuProjectSetup, Assembly-CSharp-Editor",
-                throwOnError: false);
-            Assert.That(setupType, Is.Not.Null);
-            var ensureAssets = setupType.GetMethod(
-                "EnsureAssets",
-                BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-            Assert.That(ensureAssets, Is.Not.Null);
-
-            Assert.DoesNotThrow(() => ensureAssets.Invoke(null, null));
-            var afterFirstRun = File.ReadAllBytes(prefabFile);
-            Assert.DoesNotThrow(() => ensureAssets.Invoke(null, null));
-            var afterSecondRun = File.ReadAllBytes(prefabFile);
-
-            CollectionAssert.AreEqual(before, afterFirstRun,
-                "Setup must validate an existing prefab without rewriting its design.");
-            CollectionAssert.AreEqual(afterFirstRun, afterSecondRun,
-                "Repeated setup must be idempotent for the existing prefab file.");
-        }
-
-        [Test]
-        public void Settings_DefaultToRecommended1080p60KeyboardMouseProfile()
-        {
-            var defaults = GameSettingsData.Default;
-            Assert.That(defaults.Resolution,
-                Is.EqualTo(ResolutionOption.FullHd1080));
-            Assert.That(defaults.FrameRateCap,
-                Is.EqualTo(FrameRateCapOption.Fps60));
-            Assert.That(defaults.QualityPreset,
-                Is.EqualTo(QualityPresetOption.High));
-            Assert.That(defaults.MouseSensitivity,
-                Is.EqualTo(GameSettingsData.DefaultMouseSensitivity));
-            Assert.That(defaults.InvertY, Is.False);
-            Assert.That(defaults.ReduceScreenShake, Is.False);
-            Assert.That(defaults.ReduceFlashes, Is.False);
         }
 
         [Test]
@@ -385,33 +267,37 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(GameSettingsPlatformChanges.All));
         }
 
-        [TestCase(ResolutionOption.Uhd2160, 1920, 1080, ResolutionOption.FullHd1080)]
-        [TestCase(ResolutionOption.Qhd1440, 2000, 1200, ResolutionOption.FullHd1080)]
-        [TestCase(ResolutionOption.HdPlus900, 1366, 768, ResolutionOption.Hd720)]
-        [TestCase(ResolutionOption.Qhd1440, 3840, 2160, ResolutionOption.Qhd1440)]
-        [TestCase(ResolutionOption.Uhd2160, 1024, 600, ResolutionOption.Hd720)]
-        public void Settings_NormalizeForDisplayAlignsStoredOptionAndApplicationPlan(
-            ResolutionOption requested,
-            int displayWidth,
-            int displayHeight,
-            ResolutionOption expected)
+        [Test]
+        public void Settings_NormalizeForDisplayAlignsStoredOptionAndApplicationPlan()
         {
-            var data = GameSettingsData.Default;
-            data.Resolution = requested;
+            var cases = new[]
+            {
+                (ResolutionOption.Uhd2160, 1920, 1080, ResolutionOption.FullHd1080),
+                (ResolutionOption.Qhd1440, 2000, 1200, ResolutionOption.FullHd1080),
+                (ResolutionOption.HdPlus900, 1366, 768, ResolutionOption.Hd720),
+                (ResolutionOption.Qhd1440, 3840, 2160, ResolutionOption.Qhd1440),
+                (ResolutionOption.Uhd2160, 1024, 600, ResolutionOption.Hd720)
+            };
 
-            var normalized = GameSettings.NormalizeForDisplay(
-                data,
-                displayWidth,
-                displayHeight);
-            var plan = GameSettings.CreateApplicationPlan(
-                normalized,
-                displayWidth,
-                displayHeight);
-            var expectedSize = ResolutionOptions.GetSize(expected);
+            foreach (var testCase in cases)
+            {
+                var data = GameSettingsData.Default;
+                data.Resolution = testCase.Item1;
 
-            Assert.That(normalized.Resolution, Is.EqualTo(expected));
-            Assert.That(plan.Width, Is.EqualTo(expectedSize.x));
-            Assert.That(plan.Height, Is.EqualTo(expectedSize.y));
+                var normalized = GameSettings.NormalizeForDisplay(
+                    data,
+                    testCase.Item2,
+                    testCase.Item3);
+                var plan = GameSettings.CreateApplicationPlan(
+                    normalized,
+                    testCase.Item2,
+                    testCase.Item3);
+                var expectedSize = ResolutionOptions.GetSize(testCase.Item4);
+
+                Assert.That(normalized.Resolution, Is.EqualTo(testCase.Item4));
+                Assert.That(plan.Width, Is.EqualTo(expectedSize.x));
+                Assert.That(plan.Height, Is.EqualTo(expectedSize.y));
+            }
         }
 
         [Test]

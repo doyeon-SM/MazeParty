@@ -16,9 +16,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
-        private const string TestbedScenePath =
-            "Assets/MazeParty/Scenes/Board/Dev/BoardFlowTestbed.unity";
-
         [Test]
         public void FinalResult_HasOneDedicatedAuthoredCanvas()
         {
@@ -59,18 +56,15 @@ namespace MazeParty.Multiplayer.Tests
                 Is.False);
         }
 
-        [TestCase(BoardScenePath, false)]
-        [TestCase(TestbedScenePath, true)]
-        public void Scene_UsesResultPrefabRootAndSerializedPresenterBinding(
-            string path,
-            bool isTestbed)
+        [Test]
+        public void BoardScene_UsesResultPrefabRootAndSerializedPresenterBinding()
         {
-            var scene = SceneManager.GetSceneByPath(path);
+            var scene = SceneManager.GetSceneByPath(BoardScenePath);
             var openedHere = !scene.IsValid() || !scene.isLoaded;
             if (openedHere)
             {
                 scene = EditorSceneManager.OpenScene(
-                    path,
+                    BoardScenePath,
                     OpenSceneMode.Additive);
             }
 
@@ -90,30 +84,12 @@ namespace MazeParty.Multiplayer.Tests
                         result.gameObject),
                     Is.EqualTo(ResultPrefabPath));
 
-                if (isTestbed)
-                {
-                    var simulators = roots.SelectMany(root =>
-                            root.GetComponentsInChildren<MonoBehaviour>(true))
-                        .Where(component => component != null &&
-                            component.GetType().FullName ==
-                            "MazeParty.Gameplay.BoardFlowTestbed." +
-                            "BoardFlowLocalSimulator")
-                        .ToArray();
-                    Assert.That(simulators, Has.Length.EqualTo(1));
-                    var serialized = new SerializedObject(simulators[0]);
-                    Assert.That(serialized.FindProperty("resultUiBindings")
-                            .objectReferenceValue,
-                        Is.SameAs(result));
-                }
-                else
-                {
-                    var boardViews = roots.SelectMany(root =>
-                            root.GetComponentsInChildren<BoardFlowView>(true))
-                        .ToArray();
-                    Assert.That(boardViews, Has.Length.EqualTo(1));
-                    Assert.That(boardViews[0].ResultUiBindings,
-                        Is.SameAs(result));
-                }
+                var boardViews = roots.SelectMany(root =>
+                        root.GetComponentsInChildren<BoardFlowView>(true))
+                    .ToArray();
+                Assert.That(boardViews, Has.Length.EqualTo(1));
+                Assert.That(boardViews[0].ResultUiBindings,
+                    Is.SameAs(result));
             }
             finally
             {

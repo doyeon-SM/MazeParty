@@ -4,17 +4,23 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class AwardCeremonyFlowRulesTests
     {
-        [TestCase(AwardCeremonyPhase.BonusAwardOne, 4d)]
-        [TestCase(AwardCeremonyPhase.BonusAwardTwo, 4d)]
-        [TestCase(AwardCeremonyPhase.FinalPodiumLocked, 5d)]
-        [TestCase(AwardCeremonyPhase.AwaitingReturn, 0d)]
-        public void PhaseDurations_MatchCeremonyContract(
-            AwardCeremonyPhase phase,
-            double expectedSeconds)
+        [Test]
+        public void PhaseDurations_MatchCeremonyContract()
         {
-            Assert.That(
-                AwardCeremonyFlowRules.GetPhaseDuration(phase),
-                Is.EqualTo(expectedSeconds));
+            var cases = new[]
+            {
+                (AwardCeremonyPhase.BonusAwardOne, 4d),
+                (AwardCeremonyPhase.BonusAwardTwo, 4d),
+                (AwardCeremonyPhase.FinalPodiumLocked, 5d),
+                (AwardCeremonyPhase.AwaitingReturn, 0d)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    AwardCeremonyFlowRules.GetPhaseDuration(testCase.Item1),
+                    Is.EqualTo(testCase.Item2));
+            }
         }
 
         [Test]

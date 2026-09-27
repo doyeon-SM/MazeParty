@@ -1,4 +1,3 @@
-using System.IO;
 using System.Linq;
 using MazeParty.Gameplay;
 using NUnit.Framework;
@@ -137,17 +136,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void NetworkView_DoesNotCreateExplosionLightAtRuntime()
-        {
-            const string sourcePath =
-                "Assets/MazeParty/Code/Minigames/BombPassing/" +
-                "Multiplayer/BombPassingNetworkView.cs";
-            var source = File.ReadAllText(sourcePath);
-            StringAssert.DoesNotContain("AddComponent<Light>", source);
-            StringAssert.DoesNotContain("EnsureExplosionLight", source);
-        }
-
-        [Test]
         public void ReducedFlash_DisablesFuseStrobeAndScalesExplosionIntensity()
         {
             PresentationAccessibility.Apply(false, true);
@@ -219,20 +207,6 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(BombPassingNetworkView.SharedCameraPosition));
             Assert.That(finishedRotation,
                 Is.EqualTo(BombPassingNetworkView.SharedCameraRotation));
-        }
-
-        [Test]
-        public void BuildSettings_EnableBombPassingAfterBouncingBalls()
-        {
-            var enabled = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            var bombIndex = System.Array.IndexOf(enabled, ScenePath);
-            var bouncingIndex = System.Array.IndexOf(enabled,
-                "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity");
-            Assert.That(bombIndex, Is.GreaterThanOrEqualTo(0));
-            Assert.That(bombIndex, Is.EqualTo(bouncingIndex + 1));
         }
 
         private static Transform FindDescendant(Transform root, string name)

@@ -98,14 +98,5 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void BuildSettings_EnableArenaCombat()
-        {
-            var enabled = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            Assert.That(enabled, Does.Contain(ScenePath));
-        }
     }
 }

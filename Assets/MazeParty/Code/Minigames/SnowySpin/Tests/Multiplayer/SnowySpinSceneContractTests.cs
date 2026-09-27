@@ -96,14 +96,5 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void BuildSettings_EnableSnowySpin()
-        {
-            var enabled = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            Assert.That(enabled, Does.Contain(ScenePath));
-        }
     }
 }

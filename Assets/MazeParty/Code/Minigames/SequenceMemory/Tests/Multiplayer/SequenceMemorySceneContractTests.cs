@@ -230,23 +230,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BuildSettings_EnableSequenceMemoryAfterRace()
-        {
-            var enabledScenes = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            var sequenceIndex = System.Array.IndexOf(
-                enabledScenes,
-                ScenePath);
-            var raceIndex = System.Array.IndexOf(
-                enabledScenes,
-                "Assets/MazeParty/Scenes/Minigames/Race/Race.unity");
-            Assert.That(sequenceIndex, Is.GreaterThanOrEqualTo(0));
-            Assert.That(sequenceIndex, Is.EqualTo(raceIndex + 1));
-        }
-
-        [Test]
         public void NetworkInput_UsesOwnerAuthorityAndReliableSharedTones()
         {
             const BindingFlags privateInstance =

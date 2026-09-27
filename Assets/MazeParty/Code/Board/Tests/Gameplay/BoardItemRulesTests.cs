@@ -5,47 +5,56 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardItemRulesTests
     {
-        [TestCase(185d, 0.02f, 0.02f)]
-        [TestCase(186.0625d, 0.125f, 0.0625f)]
-        [TestCase(186.125d, 0.125f, 0f)]
-        public void MineSimulationDelta_StopsAtActionLogicalBoundary(
-            double synchronizedNow,
-            float frameDelta,
-            float expectedDelta)
+        [Test]
+        public void MineSimulationDelta_StopsAtActionLogicalBoundary()
         {
-            var flow = new BoardFlowStateMachine();
-            flow.Start(0d);
-            flow.Tick(6d);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+            var cases = new[]
+            {
+                (185d, 0.02f, 0.02f),
+                (186.0625d, 0.125f, 0.0625f),
+                (186.125d, 0.125f, 0f)
+            };
 
-            Assert.That(
-                BoardItemLifecycleRules.GetMineSimulationDelta(
-                    flow,
-                    synchronizedNow,
-                    frameDelta),
-                Is.EqualTo(expectedDelta).Within(0.000001f));
+            foreach (var testCase in cases)
+            {
+                var flow = new BoardFlowStateMachine();
+                flow.Start(0d);
+                flow.Tick(6d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+
+                Assert.That(
+                    BoardItemLifecycleRules.GetMineSimulationDelta(
+                        flow,
+                        testCase.Item1,
+                        testCase.Item2),
+                    Is.EqualTo(testCase.Item3).Within(0.000001f));
+            }
         }
 
-        [TestCase(20.1d, 0.1f, 20.04d, 0.04f)]
-        [TestCase(20.1d, 0.1f, 20d, 0f)]
-        [TestCase(20.1d, 0.1f, 0d, 0.1f)]
-        public void MineSimulationDelta_UsesEarlierArrivalGraceBoundary(
-            double synchronizedNow,
-            float frameDelta,
-            double arrivalGraceDeadline,
-            float expectedDelta)
+        [Test]
+        public void MineSimulationDelta_UsesEarlierArrivalGraceBoundary()
         {
-            var flow = new BoardFlowStateMachine();
-            flow.Start(0d);
-            flow.Tick(6d);
+            var cases = new[]
+            {
+                (20.1d, 0.1f, 20.04d, 0.04f),
+                (20.1d, 0.1f, 20d, 0f),
+                (20.1d, 0.1f, 0d, 0.1f)
+            };
 
-            Assert.That(
-                BoardItemLifecycleRules.GetMineSimulationDelta(
-                    flow,
-                    synchronizedNow,
-                    frameDelta,
-                    arrivalGraceDeadline),
-                Is.EqualTo(expectedDelta).Within(0.000001f));
+            foreach (var testCase in cases)
+            {
+                var flow = new BoardFlowStateMachine();
+                flow.Start(0d);
+                flow.Tick(6d);
+
+                Assert.That(
+                    BoardItemLifecycleRules.GetMineSimulationDelta(
+                        flow,
+                        testCase.Item1,
+                        testCase.Item2,
+                        testCase.Item3),
+                    Is.EqualTo(testCase.Item4).Within(0.000001f));
+            }
         }
 
         [Test]
@@ -152,25 +161,65 @@ namespace MazeParty.Gameplay.Tests
             }
         }
 
-        [TestCase(0, 12, 1, 12, 24)]
-        [TestCase(1, 1, 0, 1, 2)]
-        [TestCase(0, 3, 1, 8, 11)]
-        public void TwoDice_WaitForBoth_RejectDuplicates(int firstIndex, int firstFace, int secondIndex, int secondFace, int sum)
+        [Test]
+        public void TwoDice_WaitForBoth_RejectDuplicates()
         {
-            Assert.That(BoardDiceProgress.TrySettle(true, 0, 0, firstIndex, firstFace, out var a, out var b, out var total), Is.True);
-            Assert.That(total, Is.Zero);
-            Assert.That(BoardDiceProgress.TrySettle(true, a, b, firstIndex, 6, out _, out _, out _), Is.False);
-            Assert.That(BoardDiceProgress.TrySettle(true, a, b, secondIndex, secondFace, out a, out b, out total), Is.True);
-            Assert.That(total, Is.EqualTo(sum));
-            Assert.That(BoardDiceProgress.TrySettle(true, a, b, secondIndex, 6, out _, out _, out _), Is.False);
+            var cases = new[]
+            {
+                (0, 12, 1, 12, 24),
+                (1, 1, 0, 1, 2),
+                (0, 3, 1, 8, 11)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardDiceProgress.TrySettle(
+                        true, 0, 0, testCase.Item1, testCase.Item2,
+                        out var a, out var b, out var total),
+                    Is.True);
+                Assert.That(total, Is.Zero);
+                Assert.That(
+                    BoardDiceProgress.TrySettle(
+                        true, a, b, testCase.Item1, 6,
+                        out _, out _, out _),
+                    Is.False);
+                Assert.That(
+                    BoardDiceProgress.TrySettle(
+                        true, a, b, testCase.Item3, testCase.Item4,
+                        out a, out b, out total),
+                    Is.True);
+                Assert.That(total, Is.EqualTo(testCase.Item5));
+                Assert.That(
+                    BoardDiceProgress.TrySettle(
+                        true, a, b, testCase.Item3, 6,
+                        out _, out _, out _),
+                    Is.False);
+            }
         }
-        [TestCase(true, 0, 0, -1)]
-        [TestCase(true, 5, 0, 1)]
-        [TestCase(true, 0, 5, 0)]
-        [TestCase(true, 5, 5, -1)]
-        [TestCase(false, 0, 0, -1)]
-        public void Timeout_OnlyCompletesOneMissingDie(bool doubled, int a, int b, int missing)
-        { Assert.That(BoardDiceProgress.MissingDieOnTimeout(doubled, a, b), Is.EqualTo(missing)); }
+
+        [Test]
+        public void Timeout_OnlyCompletesOneMissingDie()
+        {
+            var cases = new[]
+            {
+                (true, 0, 0, -1),
+                (true, 5, 0, 1),
+                (true, 0, 5, 0),
+                (true, 5, 5, -1),
+                (false, 0, 0, -1)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardDiceProgress.MissingDieOnTimeout(
+                        testCase.Item1,
+                        testCase.Item2,
+                        testCase.Item3),
+                    Is.EqualTo(testCase.Item4));
+            }
+        }
 
         [Test]
         public void ItemCasts_PassBoardBarriers_StopAtOrdinaryWall_AndOccludeBlast()

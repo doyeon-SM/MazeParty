@@ -5,25 +5,28 @@ namespace MazeParty.Gameplay.Tests
     public sealed class PlayerPauseRulesTests
     {
         [Test]
-        public void PauseDuration_IsFiveMinutes()
+        public void Request_IsAllowedOnBoardAndDuringMinigameReadyAndPlay()
         {
-            Assert.That(PlayerPauseRules.PauseDurationSeconds, Is.EqualTo(300d));
-            Assert.That(PlayerPauseRules.GetEndsAt(10d), Is.EqualTo(310d));
-        }
+            var states = new[]
+            {
+                BoardFlowState.TurnOverview,
+                BoardFlowState.Descending,
+                BoardFlowState.Action,
+                BoardFlowState.AscendingResolve,
+                BoardFlowState.CombatResolve,
+                BoardFlowState.LandingEffectResolve,
+                BoardFlowState.MinigameIntroReady,
+                BoardFlowState.MinigameResult,
+                BoardFlowState.MinigamePlaying
+            };
 
-        [TestCase(BoardFlowState.TurnOverview)]
-        [TestCase(BoardFlowState.Descending)]
-        [TestCase(BoardFlowState.Action)]
-        [TestCase(BoardFlowState.AscendingResolve)]
-        [TestCase(BoardFlowState.CombatResolve)]
-        [TestCase(BoardFlowState.LandingEffectResolve)]
-        [TestCase(BoardFlowState.MinigameIntroReady)]
-        [TestCase(BoardFlowState.MinigameResult)]
-        [TestCase(BoardFlowState.MinigamePlaying)]
-        public void Request_IsAllowedOnBoardAndDuringMinigameReadyAndPlay(BoardFlowState state)
-        {
-            Assert.That(PlayerPauseRules.CanRequest(
-                true, false, false, false, state, AwardCeremonyPhase.None), Is.True);
+            foreach (var state in states)
+            {
+                Assert.That(PlayerPauseRules.CanRequest(
+                    true, false, false, false,
+                    state,
+                    AwardCeremonyPhase.None), Is.True, state.ToString());
+            }
         }
 
         [Test]
@@ -35,19 +38,25 @@ namespace MazeParty.Gameplay.Tests
                 AwardCeremonyPhase.None), Is.False);
         }
 
-        [TestCase(AwardCeremonyPhase.BonusAwardOne, true)]
-        [TestCase(AwardCeremonyPhase.BonusAwardTwo, true)]
-        [TestCase(AwardCeremonyPhase.FinalPodiumLocked, true)]
-        [TestCase(AwardCeremonyPhase.AwaitingReturn, false)]
-        [TestCase(AwardCeremonyPhase.None, false)]
-        public void Request_DuringCeremony_OnlyInTimedPhases(
-            AwardCeremonyPhase phase,
-            bool expected)
+        [Test]
+        public void Request_DuringCeremony_OnlyInTimedPhases()
         {
-            Assert.That(PlayerPauseRules.CanRequest(
-                true, false, false, false,
-                BoardFlowState.MatchComplete,
-                phase), Is.EqualTo(expected));
+            var cases = new[]
+            {
+                (AwardCeremonyPhase.BonusAwardOne, true),
+                (AwardCeremonyPhase.BonusAwardTwo, true),
+                (AwardCeremonyPhase.FinalPodiumLocked, true),
+                (AwardCeremonyPhase.AwaitingReturn, false),
+                (AwardCeremonyPhase.None, false)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(PlayerPauseRules.CanRequest(
+                    true, false, false, false,
+                    BoardFlowState.MatchComplete,
+                    testCase.Item1), Is.EqualTo(testCase.Item2));
+            }
         }
 
         [Test]

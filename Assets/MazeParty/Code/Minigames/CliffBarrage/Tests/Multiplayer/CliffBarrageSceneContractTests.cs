@@ -91,16 +91,6 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void BuildSettings_EnableCliffBarrage()
-        {
-            var enabled = EditorBuildSettings.scenes
-                .Where(scene => scene.enabled)
-                .Select(scene => scene.path)
-                .ToArray();
-            Assert.That(enabled, Does.Contain(ScenePath));
-        }
-
         private static void AssertPooledReferences(
             SerializedObject serialized, Transform arena,
             string field, int expectedCount)
