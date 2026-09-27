@@ -126,6 +126,25 @@ namespace MazeParty.Gameplay
             };
         }
 
+        public static MatchAwardProgress Restore(
+            int peakGoldHeld,
+            int totalGoldEarned,
+            int minigameLastPlaces,
+            int itemUses,
+            int damageTaken,
+            int playerDamageDealt)
+        {
+            return new MatchAwardProgress
+            {
+                PeakGoldHeld = Math.Max(0, peakGoldHeld),
+                TotalGoldEarned = Math.Max(0, totalGoldEarned),
+                MinigameLastPlaces = Math.Max(0, minigameLastPlaces),
+                ItemUses = Math.Max(0, itemUses),
+                DamageTaken = Math.Max(0, damageTaken),
+                PlayerDamageDealt = Math.Max(0, playerDamageDealt)
+            };
+        }
+
         private static int SaturatingAdd(int current, int amount)
         {
             if (amount <= 0)

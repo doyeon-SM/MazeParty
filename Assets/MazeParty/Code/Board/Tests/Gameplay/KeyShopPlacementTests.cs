@@ -120,6 +120,36 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(runtime.Location, Is.EqualTo(first.Coordinate));
         }
 
+        [Test]
+        public void RestoreCheckpoint_RebindsExactActiveTileAndRevision()
+        {
+            var runtime = CreateRuntime();
+            var first = CreateTile(Vector2Int.zero, BoardTileType.Normal);
+            var restored = CreateTile(Vector2Int.right, BoardTileType.Normal);
+
+            Assert.That(
+                runtime.RestoreCheckpoint(
+                    KeyShopLifecycleState.Active,
+                    true,
+                    restored.Coordinate,
+                    9,
+                    new[] { first, restored }),
+                Is.True);
+            Assert.That(runtime.State, Is.EqualTo(KeyShopLifecycleState.Active));
+            Assert.That(runtime.CurrentTile, Is.SameAs(restored));
+            Assert.That(runtime.PlacementRevision, Is.EqualTo(9));
+
+            Assert.That(
+                runtime.RestoreCheckpoint(
+                    KeyShopLifecycleState.Active,
+                    true,
+                    new Vector2Int(99, 99),
+                    10,
+                    new[] { first, restored }),
+                Is.False);
+            Assert.That(runtime.CurrentTile, Is.SameAs(restored));
+        }
+
         private BoardTile CreateTile(Vector2Int coordinate, BoardTileType type)
         {
             var gameObject = CreateObject("Tile " + coordinate);

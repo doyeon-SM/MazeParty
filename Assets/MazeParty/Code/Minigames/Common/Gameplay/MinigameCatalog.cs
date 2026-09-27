@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Security.Cryptography;
+using System.Text;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
 using MazeParty.Gameplay.Minigames.BouncingBalls;
 using MazeParty.Gameplay.Minigames.BombPassing;
@@ -26,7 +28,8 @@ namespace MazeParty.Gameplay.Minigames
             int roundCount,
             float phaseDurationSeconds,
             string sceneName,
-            Color towerColor)
+            Color towerColor,
+            int recoveryCompatibilityVersion = 1)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -47,12 +50,19 @@ namespace MazeParty.Gameplay.Minigames
                 throw new ArgumentOutOfRangeException(nameof(roundCount));
             }
 
+            if (recoveryCompatibilityVersion < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(recoveryCompatibilityVersion));
+            }
+
             Id = id;
             DisplayName = displayName;
             RoundCount = roundCount;
             PhaseDurationSeconds = phaseDurationSeconds;
             SceneName = sceneName;
             TowerColor = towerColor;
+            RecoveryCompatibilityVersion = recoveryCompatibilityVersion;
         }
 
         public ScheduledMinigameId Id { get; }
@@ -61,6 +71,7 @@ namespace MazeParty.Gameplay.Minigames
         public float PhaseDurationSeconds { get; }
         public string SceneName { get; }
         public Color TowerColor { get; }
+        public int RecoveryCompatibilityVersion { get; }
     }
 
     public static class MinigameCatalog
@@ -179,6 +190,8 @@ namespace MazeParty.Gameplay.Minigames
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;
+        public static string CurrentRecoveryFingerprint =>
+            GetRecoveryFingerprint(RegisteredMinigameDefinitions.Length);
 
         public static string GetDisplayName(
             ScheduledMinigameId minigame)
@@ -248,6 +261,66 @@ namespace MazeParty.Gameplay.Minigames
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Stable fingerprint for the append-only schedule catalog prefix.
+        /// Presentation metadata is intentionally excluded; increment a
+        /// definition's recovery compatibility version only when replaying a
+        /// saved match with that minigame would no longer be safe.
+        /// </summary>
+        public static string GetRecoveryFingerprint(int catalogEntryCount)
+        {
+            if (catalogEntryCount < 1 ||
+                catalogEntryCount > RegisteredMinigameDefinitions.Length)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(catalogEntryCount));
+            }
+
+            var fingerprintInput = new byte[catalogEntryCount * 5];
+            for (var index = 0; index < catalogEntryCount; index++)
+            {
+                var definition = RegisteredMinigameDefinitions[index];
+                var offset = index * 5;
+                fingerprintInput[offset] = (byte)definition.Id;
+                var version = definition.RecoveryCompatibilityVersion;
+                fingerprintInput[offset + 1] = (byte)version;
+                fingerprintInput[offset + 2] = (byte)(version >> 8);
+                fingerprintInput[offset + 3] = (byte)(version >> 16);
+                fingerprintInput[offset + 4] = (byte)(version >> 24);
+            }
+
+            byte[] hash;
+            using (var sha256 = SHA256.Create())
+            {
+                hash = sha256.ComputeHash(fingerprintInput);
+            }
+
+            var text = new StringBuilder(hash.Length * 2);
+            for (var index = 0; index < hash.Length; index++)
+            {
+                text.Append(hash[index].ToString("x2"));
+            }
+
+            return text.ToString();
+        }
+
+        public static bool IsRecoveryFingerprintCompatible(
+            int catalogEntryCount,
+            string fingerprint)
+        {
+            if (catalogEntryCount < 1 ||
+                catalogEntryCount > RegisteredMinigameDefinitions.Length ||
+                string.IsNullOrEmpty(fingerprint))
+            {
+                return false;
+            }
+
+            return string.Equals(
+                fingerprint,
+                GetRecoveryFingerprint(catalogEntryCount),
+                StringComparison.Ordinal);
         }
 
         public static int GetRoundCount(ScheduledMinigameId minigame)

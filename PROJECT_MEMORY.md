@@ -1047,7 +1047,7 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
   출시 전 CJK 폰트 추가가 필요하다.
 - 제외: Dev 테스트베드·SoloTest·에디터 도구 문구, 로그·예외 메시지, 플레이어 이름,
   나침반 기호(N/NE…)·숫자·기호.
-- 알려진 한계: 로비 상태줄처럼 이미 표시된 한 줄짜리 상태 문구는 다음에 갱신될 때 새 언어로 바뀐다.
+- 해결(2026-09-27): `LocalizedMessage`가 원문과 포맷 인자를 보존한다. 로비 상태줄은 언어 변경 이벤트에서 즉시 새 언어로 다시 계산된다. 원문 키가 없는 외부 예외 문자열은 그대로 유지한다.
 
 **새 테스트** — `PlayerPauseRulesTests`, `LocalizationRulesTests`(Gameplay), `GameMenuContractTests`,
 `StringTableContractTests`, `SoundChannelContractTests`. `UiPrefabPolicyTests`와
@@ -1163,7 +1163,7 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
 - 검증: 기기 SHA 일치 102/102, 컴파일 오류 0, EditMode 테스트 307개 통과. 4인 실기 테스트는 하지 않았다.
 - 남은 확인:
   - 실제 4인 세션에서 한 명이 먼저 보드 정리 후 방을 나가고 나머지가 복귀하는지.
-  - 복귀 시작 뒤 저장 실패로 `_completedMatchReturnQueued`가 남는 기존 경로. 이번 변경 전부터 있던 문제다.
+  - 2026-09-27 재조사: 일반적인 로비 phase 저장 실패는 host+playing이면 1초 간격으로 자동 재시도하고, 이미 lobby 저장이 끝났으면 씬 정리만 재시도하므로 영구 고착이 재현되지 않았다. 세션 소실·호스트 권한 소실 같은 terminal abort에서 컨트롤러와 MatchState의 중복 bool이 어긋날 잠재성은 남아 있으며, 단순 flag clear 대신 단일 복귀 상태 머신으로 합치는 구조 개선 후보로 둔다.
 
 ## 2026-09-27 사운드 시스템 — 구현 완료 (아래 계획 → 확정 답변 → 구현 결과 순)
 
@@ -1316,3 +1316,151 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
 4. 호출: `GameSound.Play(키)`(2D), `GameSound.PlayAt(키, 위치)`(3D), 루프는 `var h = GameSound.PlayAttached(키, transform); … GameSound.Stop(h);`
    - 네트워크 이벤트는 모든 클라이언트에서 실행되는 연출 RPC나 NetworkVariable 변경 콜백에서 호출한다.
 5. 믹서 조정(이펙트, 스냅샷 값)은 Audio Mixer 창에서 직접 한다. 설치 도구는 기존 믹서를 덮어쓰지 않는다.
+
+## 2026-09-27 최신 HEAD 온라인 4인 검증 및 절차 축약
+
+사용자 요청: 최신 온라인 테스트를 진행하고, 반복 통과해 안정적인 구간은 이후 수동 절차를 줄이며 Notion을 최신화한다.
+
+### 실행 기준
+- 브랜치/커밋: `dev/board` / `098477278aac469417ca1cfb60b7dff1f5127868` (`origin/dev/board`와 일치). 검증 시작과 임시 probe 제거 뒤 게임 코드 작업 트리는 clean이었고, 최종 기록을 위해 이 `PROJECT_MEMORY.md`만 수정했다.
+- Unity 6000.6.0f1.
+- 전체 EditMode: **314/314 통과**, 8.681초, 실패·스킵 0, Unity 콘솔 오류·경고 0(빌드 전 기준).
+- Windows Development 빌드: 성공, 275.13 MB, 오류 0. 빌드 경고 18개 중 15개는 임시 검증 probe obsolete 경고, 나머지는 MCP debug shader strip 2개와 `Dice_d12` pre-baked collision 1개다.
+- 같은 PC에서 새 인증 프로필 4개로 호스트 1 + 클라이언트 3을 실행해 실제 Unity Relay 세션에 연결했다.
+- 개발 빌드 전용 임시 `OnlineValidationProbe`는 빌드 뒤 Assets와 `.meta`에서 제거했고 재컴파일 및 `git status` clean을 확인했다.
+- probe 제거 뒤 최종 전체 EditMode를 다시 실행해 **314/314 통과**(7.102초), 실패·스킵 0, Unity 콘솔 오류·경고 0을 확인했다.
+- 증거: 보조 작업 폴더 `artifacts/online-validation-2026-09-27/REPORT.md`와 4클라이언트 timeline/state/log/PNG.
+
+### 통과한 범위
+- 방 생성 → 초대 코드 참가 → 4/4 READY → Board 진입.
+- 대기방 메뉴에서 호스트=한국어, c1=일본어, c2=중국어 간체, c3=영어를 각각 적용했다. 메뉴를 열었을 때 `게임나가기/ゲームから退出/离开游戏/Leave Game`, `창모드/ウィンドウ/窗口模式/Windowed`가 각 클라이언트 상태에 기록됐다. 이후 모두 영어로 복원했다.
+- 실제 가상 키보드 ESC 입력으로 호스트의 인게임 메뉴가 열렸다.
+- 호스트 수동 일시정지가 네 클라이언트 모두 `pauseSlot=0`으로 동기화됐다. 3초 관측 동안 `ActionRemaining` 변화량은 네 클라이언트 모두 정확히 0이었다.
+- 비요청자 c1의 해제 호출은 거부됐고 계속 정지 상태였다. 요청자 호스트가 해제하자 전원 재개되고 2초 뒤 행동 시간이 약 2초 감소했다.
+- 1턴은 Sequence Memory READY/로드/시간 종료/결과/보상 뒤 2턴 Board로 복귀했다. 네 클라이언트가 동일하게 골드 `[18,14,10,13]`, 승수 `[1,0,0,0]`를 관측했다.
+- c1(비호스트)이 인게임 나가기 확인 뒤 이탈하자 남은 3명은 같은 방 대기방으로 돌아오고 READY가 0으로 초기화됐다. 이탈자는 로비로 돌아갔다.
+- 같은 초대 코드로 c1이 빈 슬롯에 다시 참가해 4명이 복원됐다.
+- 호스트가 대기방에서 나가자 방이 종료되고 네 프로세스 모두 멤버 0·코드 없음·로비 상태로 돌아갔다.
+- 네 프로세스가 probe `quit` 명령으로 정상 종료됐다. Exception, NullReferenceException, MissingReferenceException, Assertion, JobTempAlloc은 없었다.
+
+### 경고와 미검증
+- c1/c2 시작 로그에서 기존과 같은 `Curl error 23: Failure writing output to destination`가 1회씩 재현됐지만 연결·전체 시나리오는 완료됐다.
+- 호스트 종료 뒤 c1/c2/c3에 `[Multiplayer]: NetworkManagerSession.StopAsync: Called after dispose.` 경고가 1회씩 남았다. 치명 오류는 아니지만 종료 경합 추적 대상으로 유지한다.
+- 검증용 RenderTexture 스크린샷에서 URP post-processing shader 누락 경고가 발생했다. probe의 별도 `Camera.Render()` 경로이므로 일반 플레이 품질 판정에는 사용하지 않는다.
+- 15턴 완주, 수상식·개별 보드 정리·최종 복귀, 실제 연결 끊김/60초 재접속, pause↔reconnect 우선순위는 미검증이다.
+- 호스트 퇴장은 대기방에서만 확인했다. 인게임 호스트 퇴장은 남아 있다.
+- Sequence Memory는 온라인 왕복만 확인했고 A/S/D 정답·오답·2회 탈락 분기는 미검증이다. Arena Combat과 나머지 13종도 최신 HEAD 실기가 남아 있다.
+- 사운드는 61개 큐의 클립이 비어 있어 청음하지 않았다.
+- 다른 PC/네트워크, 패킷 손실·고지연, non-Development Release 빌드는 미검증이다.
+
+### 이후 테스트 절차 — 확정 축약 기준
+1. **매 변경 자동 게이트:** 전체 EditMode + Win64 빌드 오류 확인을 유지한다. 한 번의 통과만으로 장기 계약 테스트를 삭제하지 않는다.
+2. **공통 Relay 스모크:** 방 생성 → 3명 참가 → 4/4 READY → Board 진입은 실제 Relay 체크포인트 하나로 묶는다. 좌석별 전체 캡처 대신 호스트 대표 캡처 1장과 4개 상태/로그 자동 비교만 보관한다.
+3. **기본 복제·주사위·보상:** 매 실행에서 네 명의 모든 수치를 수동 기록하지 않는다. 대표 실제 입력 1회와 4클라이언트 상태 일치를 보고, D12·권한·보상 경계는 EditMode 계약으로 대체한다.
+4. **큐·경로·정적 UI 계약:** 관련 코드가 바뀌지 않았다면 15종 ID 목록, 같은 시드 재계산, BFS 경로점, 프리팹 바인딩을 온라인에서 반복 수동 대조하지 않는다. 결정론·저장·씬/프리팹 EditMode 테스트로 대체한다.
+5. **변경 영역 집중 + 미검증 순환:** 기능 변경 시 해당 영역만 깊게 검증하고 아직 미검증인 미니게임을 매 실행에 하나 이상 순환 추가한다.
+6. **아직 축약하지 않는 신규 기능:** ESC 메뉴·수동 일시정지·퇴장은 최신 코드에서 이번 1회만 통과했다. 관련 변경 없이 2회 연속 깨끗한 4인 실행 뒤 짧은 회귀로 전환한다.
+7. **출시 후보 전체 회귀:** 15턴, 15종, 수상식/개별 복귀/퇴장/재접속, 별도 PC, Release 빌드와 실제 사운드 청음은 축약하지 않는다.
+
+## 2026-09-27 발견 문제 수정 및 개발 구조 분석
+
+사용자 요청: 확인 가능한 오류는 수정하고, 현재 적용된 구조·알고리즘·자료구조와 추가 권장안은 분석만 하며 구조 리팩터링은 수행하지 않는다.
+
+### 수정
+- 로비 상태줄 즉시 재번역:
+  - 기존에는 번역이 끝난 문자열을 `_status`에 저장해 언어 변경 시 정적 라벨만 바뀌고 상태줄은 이전 언어로 남았다.
+  - `LocalizedMessage`가 영어 원문과 포맷 인자를 보존하고, `GameText.LanguageChanged`로 `RenderLobby`가 호출될 때 다시 번역한다.
+  - 서비스가 전달한 예외처럼 원문 키가 없는 문자열은 literal 상태로 보존한다.
+  - 문자열 계약 검사가 `SetLocalizedStatus`의 원문도 수집하도록 확장했다.
+- D12 빌드 경고 제거:
+  - 실제 프리팹은 convex `MeshCollider`로 FBX mesh를 사용하므로 `ModelImporter.SetPreBakeCollisionMesh(true, true)`를 적용했다.
+  - 기존 프리팹이 있어도 setup이 임포터 계약을 먼저 확인하도록 순서를 고쳤다.
+  - 실제 `.fbx.meta`와 프리팹/임포터 계약 테스트를 함께 갱신했다.
+- 오래된 `MultiplayerSetup.md`의 “비호스트 정상 Leave 시 전원 종료”, “영어 UI만 사용” 설명을 현재 대기방 복귀·4개 언어 구현에 맞게 바로잡았다.
+
+### 조사 후 제품 코드 미수정
+- `[Multiplayer]: NetworkManagerSession.StopAsync: Called after dispose.`:
+  - 실제 스택에 제품 프레임이 없고 MPS SDK 2.3.1의 remote kick 정리 중 `OnClientStopped` dispose와 후속 Stop이 경합한 경고다.
+  - 제품은 이미 Deleted/Removed 경로에서 중복 `LeaveAsync`를 피한다. 우회 수정은 중복 종료를 되살릴 위험이 있어 하지 않는다. 차기 SDK 확인이 우선이다.
+- `Curl error 23`:
+  - 제품에는 직접 HTTP/curl 호출이 없고 경고 뒤 Relay 전체 시나리오가 성공했다. 단일 프로세스와 4개 동시 실행 반복 비교로 UGS 요청 실패와 상관이 확인될 때만 수정한다.
+- 수상식 복귀 저장 실패:
+  - 일반 저장 실패는 자동 재시도되므로 기존 메모의 “저장 실패 시 영구 고착” 표현을 정정했다.
+  - terminal abort의 중복 상태 가능성은 좁고 단순 clear가 매 프레임 재시도를 만들 수 있어 이번에는 수정하지 않았다.
+
+### 검증
+- 관련 EditMode: **19/19 통과**(로컬라이제이션, 문자열 표, 멀티플레이 부트스트랩/D12 계약).
+- 전체 EditMode: **315/315 통과**, 8.160초, 실패·스킵 0.
+- Windows Development 빌드: 성공, 275.11 MB, 오류 0, 경고 2.
+  - 남은 2개는 MCP 빌드 실행에서 보고된 Unity `Hidden/Core/DebugOccluder`, `DebugOcclusionTest` 디버그 shader strip 경고다.
+  - 이전 `Dice_d12` pre-baked collision 경고는 재발하지 않았다.
+- Unity 콘솔 컴파일 오류·경고 0(빌드 경고 2개 제외).
+
+### 현재 적용된 좋은 구조
+- 서버 권한 + owner RPC 송신자 재검증, 라운드·input epoch로 오래된 입력 거부.
+- 명시적 `BoardFlowStateMachine`, 서버 동기 시각, pause 잔여 시간 보존.
+- 4인 상태의 `byte` 비트마스크, 보드 좌표 인덱스와 정·역방향 인접 리스트.
+- 무가중 방향 그래프 최단 경로의 BFS, 상점 방향 계산의 역방향 BFS. 현재 보드에는 A*/Dijkstra가 필요 없다.
+- 고정 PRNG + 편향 없는 Fisher–Yates 미니게임 일정, SplitMix64 기반 Sequence Memory 결정론.
+- 저장소/코덱 분리, SHA-256 키, 임시 파일 후 교체, 손상 저장 거부와 버전 복원.
+- 사운드 키 해시 조회, 고정 voice pool, 우선순위 voice stealing, 셔플백, BGM crossfade, mixer snapshot. 단, 61개 Cue의 clip은 아직 모두 비어 있다.
+
+### 추가 권장안 — 분석만, 수정하지 않음
+1. `OnlineSessionController`, `NetworkMatchState`, `NetworkPlayerAvatar`를 단계적으로 coordinator/capability 단위로 분해하고 세션 수명주기를 단일 enum 상태 + 실행 Task/CancellationToken으로 관리한다.
+2. 미니게임별 반복 순위·보상 코드를 공통 `PlayerPlacement` 결과와 단일 검증·정산 경로로 합친다.
+3. 거대한 미니게임 adapter를 lifecycle/movement/action/round-epoch capability 인터페이스로 나눈다.
+4. 반복 `byte` 마스크와 길이 4 배열을 `PlayerMask4`, `PlayerSlots<T>` 값 타입으로 감싸 슬롯 범위와 연산을 중앙화한다.
+5. 개발/QA 빌드에만 서버 결정 이벤트를 담는 고정 크기 링 버퍼를 두어 온라인 재현 로그와 안정 구간 판단에 사용한다.
+6. 서버 프로세스 크래시 후 복원이 제품 요구일 때만 revision/checksum을 가진 전체 `MatchSnapshot` 이중 저널을 도입한다.
+7. 저장 포맷 버전과 미니게임 catalog fingerprint를 분리해 게임 추가 때마다 스키마 분기가 늘어나는 구조를 줄인다.
+8. EditMode는 매 변경, 4클라이언트 Relay는 변경 영역/야간, 전체 15턴·15종은 출시 후보로 계층화한다. 상태 머신에는 고정 시드 명령 시퀀스 테스트를 추가한다.
+9. 릴리스 검사에서 필수 SoundCue clip, importer, loop, channel, 음량 범위를 검증한다. 현재 재생 알고리즘은 교체하지 않는다.
+
+## 2026-09-27 권장안 1~7 구현 결과
+
+사용자 승인에 따라 위 개발 구조 권장안 1~7을 구현했다. 작업 브랜치는 `dev/board`, 구현 전 기준 HEAD는 `098477278aac469417ca1cfb60b7dff1f5127868`이며 이번 작업에서는 커밋하지 않았다.
+
+### 1. 대형 네트워크 클래스와 세션 수명주기 분리
+- `OnlineSessionController`는 `Lifecycle`, `Presentation`, `ReconnectTicket`, `MatchRecovery` partial로 책임을 분리했다.
+- `SessionLifecycleState`와 전이 규칙, `SessionOperationCoordinator`를 추가했다. 사용자 작업과 시스템 콜백은 단일 Task 꼬리에서 직렬화되고, 컴포넌트 수명 토큰으로 취소되며, provider dispose는 추적 작업이 끝난 뒤 한 번만 실행된다.
+- 실제 상태 변경 지점에서 `StateChanged(previous,current)`를 발행해 동기 완료나 queued 작업도 진단 trace에서 빠지지 않게 했다.
+- `NetworkMatchState`는 `MinigameRouting`, `MinigameSchedule`, `Commerce`, `MatchRecovery`로, `NetworkPlayerAvatar`는 `BoardTurn`, `InputRouting`, `ReconnectSnapshot`, `MatchRecovery`로 분리했다. 직렬화 필드·NetworkVariable·Unity/NGO lifecycle은 원본 partial에 유지했다.
+
+### 2. 공통 순위·보상 정산
+- `PlayerPlacement`를 추가하고 15종 미니게임의 완료 경로가 단일 `TryCompleteMinigameOnServer` 검증·정산 경로를 사용하도록 통합했다.
+- 동점 순위와 보상 순서를 공통 규칙으로 만들고 결정론 테스트를 추가했다.
+
+### 3. 미니게임 capability 인터페이스
+- 거대한 공통 adapter 계약을 lifecycle, movement, action, ready, round/input epoch 등 13개 capability 인터페이스로 분리했다.
+- 각 미니게임 adapter는 실제로 지원하는 capability만 선언하며 registry/호출자는 capability 존재를 확인해 기능을 사용한다.
+
+### 4. 4인 슬롯 자료구조
+- `PlayerSlotRules`, `PlayerMask4`, `PlayerSlots<T>`를 추가해 슬롯 범위, 비트 연산, 고정 4칸 접근을 중앙화했다.
+- 기존 로컬 byte mask 4곳을 새 값 타입으로 옮기고 범위·집합·열거·슬롯 저장 테스트를 추가했다.
+
+### 5. 서버 결정 이벤트 trace
+- Editor/계측 Development 빌드 전용 512개 고정 링 버퍼 `ServerEventTrace`를 추가했다. 쓰기 시 문자열과 계정 ID를 받지 않아 PII가 들어가지 않는다.
+- 세션/매치/미니게임 전이, 권한 거부, pause/reconnect, 복구 저장 읽기·쓰기·거부를 숫자 코드로 기록한다. 네트워크 실패 시 최근 trace를 출력한다.
+- Release 호출은 conditional로 제거되며 Unity 6 managed-code variant 지시자를 사용해 deprecated 전처리 경고를 없앴다.
+
+### 6. 호스트 크래시 뒤 경기 복구
+- 같은 호스트 PC·인증 프로필이 새 방을 만들면 저장 경기를 감지하고, 기존 authored 로비 버튼을 `Continue Saved Match` / `Discard Saved Match`로 바꾼다. 계속하기는 동일한 4개 계정만 허용하며 roster 불일치는 Playing 전환과 Board 로드 전에 로비에서 거부한다.
+- 복구 유효기간은 72시간이다. 안정 체크포인트는 `TurnOverview`, `MinigameIntroReady`, 마지막 턴의 `MatchComplete`만 저장한다. 크래시가 난 턴이나 미니게임은 직전 안정 체크포인트부터 다시 시작한다.
+- revision과 SHA-256 checksum을 가진 A/B 이중 journal을 임시 파일 flush 후 교체한다. 일시적인 파일 잠금/IO 예외는 손상으로 간주해 자동 삭제하지 않고 host가 재시도하거나 명시적으로 폐기하게 한다.
+- 원시 계정 ID는 저장하지 않고 SHA-256 player key만 저장한다. roster, 체력·골드·열쇠·승수·인벤토리·외형, 위치와 이동 이력, 상점, 무덤, 보드 효과, 보호 상태, 미니게임 일정/시드/남은 슬롯을 복원한다. 입력·주사위·스왑·공격·gesture·cooldown 같은 진행 중 transient 상태는 초기화한다.
+- 콘텐츠 지문은 보드 타일의 좌표/종류/위치/회전/스케일과 게이트 배열 순서, endpoint, 위치/회전/폭/crossing epsilon, 실제 일정에 든 미니게임의 recovery 호환 버전을 포함한다.
+- `MatchComplete`는 첫 보너스 지급 전에 저장하고 복구 시 시상식을 1단계부터 다시 실행해 중복 보상을 막는다.
+- journal은 성공적으로 대기방 복귀를 끝냈거나 host가 명시적으로 discard/leave한 뒤에만 삭제한다. 복귀가 실패하거나 네트워크가 끊기면 보존한다.
+- 범위 제외는 host migration, 기존 방 재접속 복구, 프레임 단위 위치 복원이다.
+
+### 7. 저장 포맷과 catalog 호환성 분리
+- 저장 `formatVersion`과 미니게임 catalog fingerprint를 분리했다. legacy schema 1~14 migration과 손상/미지원 버전 거부 테스트를 유지한다.
+- 기존 catalog prefix가 그대로면 뒤에 새 게임을 추가한 빌드는 이전 일정을 복구할 수 있다. 일정에 쓰인 ID 삭제, prefix 변경, 해당 게임 recovery compatibility version 변경은 안전하게 거부한다.
+
+### 최종 검증
+- Unity 6000.6.0f1 전체 script refresh/domain reload: 컴파일 오류·경고 0.
+- 전체 EditMode: **372/372 통과**, 실패·스킵 0.
+- Win64 Development 빌드: `Builds/Verification/MazeParty.exe`, **275.17 MB**, 오류 0, 경고 2. 두 경고는 기존 MCP build runner의 `Hidden/Core/DebugOccluder`, `DebugOcclusionTest` shader strip 경고이며 새 C# 경고는 없다.
+- `git diff --check`, conflict marker 검사, 신규 asset `.meta` 검사 통과.
+- 아직 실제 4클라이언트에서 프로세스를 강제 종료하고 새 방에서 Continue/Discard를 수행하는 복구 실기는 하지 않았다. 다음 온라인 검증에서 TurnOverview, MinigameIntroReady, MatchComplete 각각의 크래시 복구와 다른 roster 거부를 우선 확인한다.
+- Notion은 이번 구현 턴에서 수정하지 않았다. 최종 커밋 뒤 사용자가 회의록 작성을 요청하면 확정 코드와 커밋 정보를 근거로 기획서/일일 회의록을 갱신한다.

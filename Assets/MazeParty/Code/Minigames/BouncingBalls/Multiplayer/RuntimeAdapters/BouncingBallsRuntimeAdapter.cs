@@ -3,7 +3,10 @@ using MazeParty.Gameplay.Minigames;
 namespace MazeParty.Multiplayer
 {
     internal sealed class BouncingBallsRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkBouncingBallsState>
+        MinigameRuntimeAdapter<NetworkBouncingBallsState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IBouncingShieldInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.BouncingBalls;
@@ -27,7 +30,7 @@ namespace MazeParty.Multiplayer
                 CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -60,7 +63,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -71,7 +74,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void SetBouncingShieldAxisOnServer(
+        public void SetBouncingShieldAxisOnServer(
             NetworkPlayerAvatar avatar,
             float axis,
             byte roundNumber,

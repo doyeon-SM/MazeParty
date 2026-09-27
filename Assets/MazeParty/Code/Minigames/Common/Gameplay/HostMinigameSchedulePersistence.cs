@@ -31,62 +31,29 @@ namespace MazeParty.Gameplay.Minigames
             out HostMinigameSchedule schedule);
     }
 
-    public sealed class HostMinigameScheduleJsonCodec :
+    /// <summary>
+    /// Optional codec capability that reports whether a successfully decoded
+    /// document should be rewritten in the current format. Keeping this
+    /// separate preserves compatibility with custom codecs that implement the
+    /// original persistence contract.
+    /// </summary>
+    public interface IMigratingHostMinigameScheduleCodec :
         IHostMinigameScheduleCodec
     {
-        private const int LegacySchemaVersion = 1;
-        private const int RedLightGreenLightSchemaVersion = 2;
-        private const int StableFootingSchemaVersion = 3;
-        private const int BalloonBlowSchemaVersion = 4;
-        private const int GiftGrabSchemaVersion = 5;
-        private const int TerritoryPaintSchemaVersion = 6;
-        private const int TagChaseSchemaVersion = 7;
-        private const int RaceSchemaVersion = 8;
-        private const int SequenceMemorySchemaVersion = 9;
-        private const int BouncingBallsSchemaVersion = 10;
-        private const int BombPassingSchemaVersion = 11;
-        private const int SnowySpinSchemaVersion = 12;
-        private const int ArenaCombatSchemaVersion = 13;
-        private const int CurrentSchemaVersion = 14;
-        // Schema 1 predates Red Light / Green Light and therefore validates
-        // against only the first two append-only catalog entries.
-        private const int LegacyRegisteredGameCount = 2;
-        // Schema 2 predates Stable Footing and validates against the first
-        // three append-only catalog entries.
-        private const int RedLightGreenLightRegisteredGameCount = 3;
-        // Schema 3 predates Balloon Blow and validates against the first four
-        // append-only catalog entries.
-        private const int StableFootingRegisteredGameCount = 4;
-        // Schema 4 predates Gift Grab and validates against the first five
-        // append-only catalog entries.
-        private const int BalloonBlowRegisteredGameCount = 5;
-        // Schema 5 predates Territory Paint and validates against the first
-        // six append-only catalog entries.
-        private const int GiftGrabRegisteredGameCount = 6;
-        // Schema 6 predates Tag Chase and validates against the first seven
-        // append-only catalog entries.
-        private const int TerritoryPaintRegisteredGameCount = 7;
-        // Schema 7 predates Race and validates against the first eight
-        // append-only catalog entries.
-        private const int TagChaseRegisteredGameCount = 8;
-        // Schema 8 predates Sequence Memory and validates against the first
-        // nine append-only catalog entries.
-        private const int RaceRegisteredGameCount = 9;
-        // Schema 9 predates Bouncing Balls and validates against the first
-        // ten append-only catalog entries.
-        private const int SequenceMemoryRegisteredGameCount = 10;
-        // Schema 10 predates Bomb Passing and validates against the first
-        // eleven append-only catalog entries.
-        private const int BouncingBallsRegisteredGameCount = 11;
-        // Schema 11 predates Snowy Spin and validates against the first
-        // twelve append-only catalog entries.
-        private const int BombPassingRegisteredGameCount = 12;
-        // Schema 12 predates Arena Combat and validates against the first
-        // thirteen append-only catalog entries.
-        private const int SnowySpinRegisteredGameCount = 13;
-        // Schema 13 predates Cliff Barrage and validates against the first
-        // fourteen append-only catalog entries.
-        private const int ArenaCombatRegisteredGameCount = 14;
+        bool TryDecode(
+            string payload,
+            out string matchKey,
+            out HostMinigameSchedule schedule,
+            out bool requiresMigration);
+    }
+
+    public sealed class HostMinigameScheduleJsonCodec :
+        IMigratingHostMinigameScheduleCodec
+    {
+        private const int CurrentFormatVersion = 1;
+        private const int FirstLegacySchemaVersion = 1;
+        private const int LastLegacySchemaVersion = 14;
+        private const int FirstLegacyCatalogEntryCount = 2;
 
         public string Encode(
             string matchKey,
@@ -105,9 +72,13 @@ namespace MazeParty.Gameplay.Minigames
                 serializedEntries[index] = (int)scheduleEntries[index];
             }
 
+            var catalogEntryCount = schedule.RegisteredGameCountAtCreation;
             var document = new ScheduleDocument
             {
-                schemaVersion = GetSchemaVersion(schedule),
+                formatVersion = CurrentFormatVersion,
+                catalogEntryCount = catalogEntryCount,
+                catalogFingerprint =
+                    MinigameCatalog.GetRecoveryFingerprint(catalogEntryCount),
                 matchKey = matchKey,
                 seed = schedule.Seed,
                 turnCount = schedule.TurnCount,
@@ -117,91 +88,27 @@ namespace MazeParty.Gameplay.Minigames
             return JsonUtility.ToJson(document);
         }
 
-        private static int GetSchemaVersion(
-            HostMinigameSchedule schedule)
-        {
-            if (schedule.RegisteredGameCountAtCreation ==
-                LegacyRegisteredGameCount)
-            {
-                return LegacySchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                RedLightGreenLightRegisteredGameCount)
-            {
-                return RedLightGreenLightSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                StableFootingRegisteredGameCount)
-            {
-                return StableFootingSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                BalloonBlowRegisteredGameCount)
-            {
-                return BalloonBlowSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                GiftGrabRegisteredGameCount)
-            {
-                return GiftGrabSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                TerritoryPaintRegisteredGameCount)
-            {
-                return TerritoryPaintSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                TagChaseRegisteredGameCount)
-            {
-                return TagChaseSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                RaceRegisteredGameCount)
-            {
-                return RaceSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                SequenceMemoryRegisteredGameCount)
-            {
-                return SequenceMemorySchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                BouncingBallsRegisteredGameCount)
-            {
-                return BouncingBallsSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                BombPassingRegisteredGameCount)
-            {
-                return BombPassingSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                SnowySpinRegisteredGameCount)
-            {
-                return SnowySpinSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                ArenaCombatRegisteredGameCount)
-            {
-                return ArenaCombatSchemaVersion;
-            }
-            if (schedule.RegisteredGameCountAtCreation ==
-                MinigameScheduleRules.RegisteredGameCount)
-            {
-                return CurrentSchemaVersion;
-            }
-
-            throw new InvalidOperationException(
-                "The schedule uses an unsupported minigame catalog.");
-        }
-
         public bool TryDecode(
             string payload,
             out string matchKey,
             out HostMinigameSchedule schedule)
         {
+            return TryDecode(
+                payload,
+                out matchKey,
+                out schedule,
+                out _);
+        }
+
+        public bool TryDecode(
+            string payload,
+            out string matchKey,
+            out HostMinigameSchedule schedule,
+            out bool requiresMigration)
+        {
             matchKey = null;
             schedule = null;
+            requiresMigration = false;
             if (string.IsNullOrWhiteSpace(payload))
             {
                 return false;
@@ -209,89 +116,34 @@ namespace MazeParty.Gameplay.Minigames
 
             try
             {
-                var document = JsonUtility.FromJson<ScheduleDocument>(payload);
-                if (document == null ||
-                    (document.schemaVersion != LegacySchemaVersion &&
-                     document.schemaVersion !=
-                     RedLightGreenLightSchemaVersion &&
-                     document.schemaVersion !=
-                     StableFootingSchemaVersion &&
-                     document.schemaVersion !=
-                     BalloonBlowSchemaVersion &&
-                     document.schemaVersion !=
-                     GiftGrabSchemaVersion &&
-                     document.schemaVersion !=
-                     TerritoryPaintSchemaVersion &&
-                     document.schemaVersion !=
-                     TagChaseSchemaVersion &&
-                     document.schemaVersion != RaceSchemaVersion &&
-                     document.schemaVersion !=
-                     SequenceMemorySchemaVersion &&
-                     document.schemaVersion !=
-                     BouncingBallsSchemaVersion &&
-                     document.schemaVersion !=
-                     BombPassingSchemaVersion &&
-                     document.schemaVersion !=
-                     SnowySpinSchemaVersion &&
-                     document.schemaVersion !=
-                     ArenaCombatSchemaVersion &&
-                     document.schemaVersion != CurrentSchemaVersion) ||
-                    string.IsNullOrWhiteSpace(document.matchKey) ||
-                    document.entries == null ||
-                    document.turnCount != document.entries.Length)
+                var header = JsonUtility.FromJson<ScheduleHeader>(payload);
+                if (header == null)
                 {
                     return false;
                 }
 
-                MatchKeyValidator.Validate(document.matchKey);
-                var entries =
-                    new ScheduledMinigameId[document.entries.Length];
-                for (var index = 0; index < document.entries.Length; index++)
+                if (header.formatVersion == CurrentFormatVersion)
                 {
-                    var rawEntry = document.entries[index];
-                    if (rawEntry < byte.MinValue || rawEntry > byte.MaxValue)
-                    {
-                        return false;
-                    }
-
-                    entries[index] = (ScheduledMinigameId)rawEntry;
+                    return TryDecodeCurrent(
+                        payload,
+                        out matchKey,
+                        out schedule);
                 }
 
-                var registeredGameCount = document.schemaVersion switch
+                if (header.formatVersion == 0 &&
+                    header.schemaVersion >= FirstLegacySchemaVersion &&
+                    header.schemaVersion <= LastLegacySchemaVersion)
                 {
-                    LegacySchemaVersion => LegacyRegisteredGameCount,
-                    RedLightGreenLightSchemaVersion =>
-                        RedLightGreenLightRegisteredGameCount,
-                    StableFootingSchemaVersion =>
-                        StableFootingRegisteredGameCount,
-                    BalloonBlowSchemaVersion =>
-                        BalloonBlowRegisteredGameCount,
-                    GiftGrabSchemaVersion =>
-                        GiftGrabRegisteredGameCount,
-                    TerritoryPaintSchemaVersion =>
-                        TerritoryPaintRegisteredGameCount,
-                    TagChaseSchemaVersion =>
-                        TagChaseRegisteredGameCount,
-                    RaceSchemaVersion => RaceRegisteredGameCount,
-                    SequenceMemorySchemaVersion =>
-                        SequenceMemoryRegisteredGameCount,
-                    BouncingBallsSchemaVersion =>
-                        BouncingBallsRegisteredGameCount,
-                    BombPassingSchemaVersion =>
-                        BombPassingRegisteredGameCount,
-                    SnowySpinSchemaVersion =>
-                        SnowySpinRegisteredGameCount,
-                    ArenaCombatSchemaVersion =>
-                        ArenaCombatRegisteredGameCount,
-                    _ => MinigameScheduleRules.RegisteredGameCount
-                };
-                var restored = HostMinigameSchedule.Restore(
-                    document.seed,
-                    entries,
-                    registeredGameCount);
-                matchKey = document.matchKey;
-                schedule = restored;
-                return true;
+                    var decoded = TryDecodeLegacy(
+                        payload,
+                        header.schemaVersion,
+                        out matchKey,
+                        out schedule);
+                    requiresMigration = decoded;
+                    return decoded;
+                }
+
+                return false;
             }
             catch (ArgumentException)
             {
@@ -299,8 +151,121 @@ namespace MazeParty.Gameplay.Minigames
             }
         }
 
+        private static bool TryDecodeCurrent(
+            string payload,
+            out string matchKey,
+            out HostMinigameSchedule schedule)
+        {
+            matchKey = null;
+            schedule = null;
+            var document = JsonUtility.FromJson<ScheduleDocument>(payload);
+            if (document == null ||
+                document.formatVersion != CurrentFormatVersion ||
+                !MinigameCatalog.IsRecoveryFingerprintCompatible(
+                    document.catalogEntryCount,
+                    document.catalogFingerprint))
+            {
+                return false;
+            }
+
+            return TryRestore(
+                document.matchKey,
+                document.seed,
+                document.turnCount,
+                document.entries,
+                document.catalogEntryCount,
+                out matchKey,
+                out schedule);
+        }
+
+        private static bool TryDecodeLegacy(
+            string payload,
+            int schemaVersion,
+            out string matchKey,
+            out HostMinigameSchedule schedule)
+        {
+            matchKey = null;
+            schedule = null;
+            var document = JsonUtility.FromJson<LegacyScheduleDocument>(payload);
+            if (document == null || document.schemaVersion != schemaVersion)
+            {
+                return false;
+            }
+
+            var catalogEntryCount =
+                FirstLegacyCatalogEntryCount +
+                schemaVersion - FirstLegacySchemaVersion;
+            return TryRestore(
+                document.matchKey,
+                document.seed,
+                document.turnCount,
+                document.entries,
+                catalogEntryCount,
+                out matchKey,
+                out schedule);
+        }
+
+        private static bool TryRestore(
+            string storedMatchKey,
+            int seed,
+            int turnCount,
+            int[] serializedEntries,
+            int catalogEntryCount,
+            out string matchKey,
+            out HostMinigameSchedule schedule)
+        {
+            matchKey = null;
+            schedule = null;
+            if (string.IsNullOrWhiteSpace(storedMatchKey) ||
+                serializedEntries == null ||
+                turnCount != serializedEntries.Length)
+            {
+                return false;
+            }
+
+            MatchKeyValidator.Validate(storedMatchKey);
+            var entries =
+                new ScheduledMinigameId[serializedEntries.Length];
+            for (var index = 0; index < serializedEntries.Length; index++)
+            {
+                var rawEntry = serializedEntries[index];
+                if (rawEntry < byte.MinValue || rawEntry > byte.MaxValue)
+                {
+                    return false;
+                }
+
+                entries[index] = (ScheduledMinigameId)rawEntry;
+            }
+
+            schedule = HostMinigameSchedule.Restore(
+                seed,
+                entries,
+                catalogEntryCount);
+            matchKey = storedMatchKey;
+            return true;
+        }
+
+        [Serializable]
+        private sealed class ScheduleHeader
+        {
+            public int formatVersion;
+            public int schemaVersion;
+        }
+
         [Serializable]
         private sealed class ScheduleDocument
+        {
+            public int formatVersion;
+            public int catalogEntryCount;
+            public string catalogFingerprint;
+            public string matchKey;
+            public int seed;
+            public int turnCount;
+            public int[] entries;
+        }
+
+        [Serializable]
+        private sealed class LegacyScheduleDocument
         {
             public int schemaVersion;
             public string matchKey;
@@ -512,10 +477,11 @@ namespace MazeParty.Gameplay.Minigames
                 return false;
             }
 
-            if (!_codec.TryDecode(
+            if (!TryDecodePayload(
                     payload,
                     out var storedMatchKey,
-                    out var restored))
+                    out var restored,
+                    out var requiresMigration))
             {
                 throw new InvalidDataException(
                     "The persisted minigame schedule is invalid.");
@@ -528,6 +494,11 @@ namespace MazeParty.Gameplay.Minigames
             {
                 throw new InvalidDataException(
                     "The persisted minigame schedule belongs to another match.");
+            }
+
+            if (requiresMigration)
+            {
+                TryRewriteMigratedPayload(matchKey, restored);
             }
 
             schedule = restored;
@@ -546,10 +517,11 @@ namespace MazeParty.Gameplay.Minigames
 
             if (_payloadStore.TryRead(matchKey, out var existingPayload))
             {
-                if (!_codec.TryDecode(
+                if (!TryDecodePayload(
                         existingPayload,
                         out var storedMatchKey,
-                        out var existingSchedule) ||
+                        out var existingSchedule,
+                        out var requiresMigration) ||
                     !string.Equals(
                         matchKey,
                         storedMatchKey,
@@ -563,6 +535,13 @@ namespace MazeParty.Gameplay.Minigames
                 {
                     throw new InvalidOperationException(
                         "A different schedule is already stored for this match.");
+                }
+
+                if (requiresMigration)
+                {
+                    _payloadStore.Write(
+                        matchKey,
+                        _codec.Encode(matchKey, existingSchedule));
                 }
 
                 return;
@@ -584,7 +563,9 @@ namespace MazeParty.Gameplay.Minigames
             HostMinigameSchedule right)
         {
             if (left.Seed != right.Seed ||
-                left.TurnCount != right.TurnCount)
+                left.TurnCount != right.TurnCount ||
+                left.RegisteredGameCountAtCreation !=
+                right.RegisteredGameCountAtCreation)
             {
                 return false;
             }
@@ -599,6 +580,45 @@ namespace MazeParty.Gameplay.Minigames
             }
 
             return true;
+        }
+
+        private bool TryDecodePayload(
+            string payload,
+            out string matchKey,
+            out HostMinigameSchedule schedule,
+            out bool requiresMigration)
+        {
+            if (_codec is IMigratingHostMinigameScheduleCodec migratingCodec)
+            {
+                return migratingCodec.TryDecode(
+                    payload,
+                    out matchKey,
+                    out schedule,
+                    out requiresMigration);
+            }
+
+            requiresMigration = false;
+            return _codec.TryDecode(payload, out matchKey, out schedule);
+        }
+
+        private void TryRewriteMigratedPayload(
+            string matchKey,
+            HostMinigameSchedule schedule)
+        {
+            try
+            {
+                _payloadStore.Write(matchKey, _codec.Encode(matchKey, schedule));
+            }
+            catch (IOException)
+            {
+                // Migration is opportunistic; a readable legacy schedule must
+                // remain recoverable when the storage device is temporarily
+                // unavailable or read-only.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Preserve the successfully decoded schedule for this session.
+            }
         }
     }
 

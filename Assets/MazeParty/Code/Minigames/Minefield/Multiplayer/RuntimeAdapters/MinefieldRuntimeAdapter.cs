@@ -4,7 +4,9 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class MinefieldRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkMinefieldState>
+        MinigameRuntimeAdapter<NetworkMinefieldState>,
+        IMinigameMovementInputCapability,
+        IMinigameSonarInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.Minefield;
@@ -48,7 +50,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,
@@ -57,7 +59,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ReceiveInputOnServer(avatar, input);
         }
 
-        public override void TrySonarOnServer(
+        public void TrySonarOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input)
         {

@@ -4,7 +4,10 @@ using MazeParty.Gameplay.Minigames.SequenceMemory;
 namespace MazeParty.Multiplayer
 {
     internal sealed class SequenceMemoryRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkSequenceMemoryState>
+        MinigameRuntimeAdapter<NetworkSequenceMemoryState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        ISequenceMemoryInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.SequenceMemory;
@@ -28,7 +31,7 @@ namespace MazeParty.Multiplayer
                    CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -61,7 +64,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -72,7 +75,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void TrySubmitSequenceMemoryInputOnServer(
+        public void TrySubmitSequenceMemoryInputOnServer(
             NetworkPlayerAvatar avatar,
             SequenceMemoryInput input,
             byte roundNumber,

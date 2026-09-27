@@ -31,9 +31,9 @@ namespace MazeParty.Gameplay.Minigames
     {
         public const int DefaultTurnCount = 15;
 
-        // Append only. Persistence schemas restore against a prefix of this
-        // catalog so an in-progress match keeps its original queue after an
-        // application update adds another minigame.
+        // Append only. Persistence stores a count and recovery fingerprint for
+        // this catalog prefix so an in-progress match keeps its original queue
+        // after an application update adds another minigame.
         public static int RegisteredGameCount =>
             MinigameCatalog.RegisteredCount;
 
@@ -82,7 +82,12 @@ namespace MazeParty.Gameplay.Minigames
 
         public int Seed { get; }
         public int TurnCount => _entries.Length;
-        internal int RegisteredGameCountAtCreation { get; }
+        /// <summary>
+        /// Append-only catalog prefix used when this immutable schedule was
+        /// created. Persistence and crash recovery use it to remain compatible
+        /// when newer games are appended to the catalog.
+        /// </summary>
+        public int RegisteredGameCountAtCreation { get; }
 
         public static HostMinigameSchedule Create(
             int seed,

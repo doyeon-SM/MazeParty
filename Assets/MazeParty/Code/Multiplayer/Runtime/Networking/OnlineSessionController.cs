@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using System.Threading.Tasks;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
@@ -10,7 +11,7 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Multiplayer
 {
     [RequireComponent(typeof(NetworkManager))]
-    public sealed class OnlineSessionController : MonoBehaviour
+    public sealed partial class OnlineSessionController : MonoBehaviour
     {
         private const int LobbyDisconnectSettleMilliseconds = 1500;
         private const int LobbyDisconnectForcedCleanupGraceMilliseconds = 5000;
@@ -31,15 +32,20 @@ namespace MazeParty.Multiplayer
         private IOnlineSessionProvider _sessions;
         private NetworkManager _networkManager;
         private NetworkSceneManager _networkSceneManager;
-        private string _status = GameText.N("Create a private session or join with an invite code.");
-        private bool _busy;
-        private bool _networkTerminationQueued;
-        private bool _explicitLeaveQueued;
+        private string _status = string.Empty;
+        private LocalizedMessage _localizedStatus = new LocalizedMessage(
+            GameText.N("Create a private session or join with an invite code."));
+        private bool _statusUsesLocalization = true;
+        private readonly SessionOperationCoordinator _sessionOperations =
+            new SessionOperationCoordinator();
+        private bool _networkTerminationRequested;
         private bool _networkIdentityPublished;
         private Task _networkIdentityPublishTask;
         private string _networkIdentityPublishSessionId = string.Empty;
         private readonly HashSet<string> _pendingLobbyCleanupKeys =
             new HashSet<string>();
+        private readonly Dictionary<string, Task> _pendingLobbyCleanupTasks =
+            new Dictionary<string, Task>();
         private bool _applicationQuitting;
         private bool _destroyed;
         private string _playingReconnectTicketKey;
@@ -74,7 +80,8 @@ namespace MazeParty.Multiplayer
             _sessions != null ? _sessions.Current : SessionSnapshot.Empty;
         public PlayerAppearanceState LocalAppearance => _localProfile.Appearance;
         public bool IsInSession => _sessions != null && _sessions.IsInSession;
-        public bool IsBusy => _busy;
+        public bool IsBusy => _sessionOperations.IsBusy;
+        public SessionLifecycleState LifecycleState => _sessionOperations.State;
         public bool IsVoluntaryLeavePending => _voluntaryLeavePending;
 
         /// <summary>
@@ -212,7 +219,8 @@ namespace MazeParty.Multiplayer
             }
 
             Instance = this;
-            _status = GameText.T(_status);
+            _sessionOperations.BecameIdle += OnSessionOperationsBecameIdle;
+            _sessionOperations.StateChanged += TraceSessionTransition;
             Application.quitting += OnApplicationQuitting;
 
             _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
@@ -253,7 +261,8 @@ namespace MazeParty.Multiplayer
             {
                 RunAsync(
                     () => ReconnectAndPublishAsync(reconnectSessionId, displayName),
-                    GameText.T("Reconnecting to the interrupted online game..."));
+                    GameText.N("Reconnecting to the interrupted online game..."),
+                    SessionLifecycleState.Reconnecting);
             }
         }
 
@@ -285,8 +294,8 @@ namespace MazeParty.Multiplayer
                     : NetworkManager.Singleton;
                 if (!TryPrepareConnectedAvatarsForLobbyOnServer(manager))
                 {
-                    SetStatus(GameText.T(
-                        "Waiting for every connected player avatar before lobby return."));
+                    SetLocalizedStatus(
+                        "Waiting for every connected player avatar before lobby return.");
                     ScheduleCompletedMatchUnloadForNextFrame();
                     return;
                 }
@@ -300,6 +309,7 @@ namespace MazeParty.Multiplayer
         private void OnDestroy()
         {
             _destroyed = true;
+            _sessionOperations.BecameIdle -= OnSessionOperationsBecameIdle;
             ResetCompletedMatchLobbyReturnState();
             Application.quitting -= OnApplicationQuitting;
             SceneManager.sceneLoaded -= OnSceneLoaded;
@@ -323,12 +333,20 @@ namespace MazeParty.Multiplayer
                 _networkManager.OnClientStopped -= OnClientStopped;
             }
 
+            var shutdownTasks = new List<Task>(_pendingLobbyCleanupTasks.Values);
+            if (_networkIdentityPublishTask != null)
+            {
+                shutdownTasks.Add(_networkIdentityPublishTask);
+            }
+
             if (_sessions != null)
             {
                 _sessions.Changed -= OnSessionChanged;
                 _sessions.Ended -= OnSessionEnded;
-                _sessions.Dispose();
             }
+
+            _sessionOperations.BeginShutdown(_sessions, shutdownTasks);
+            _sessionOperations.StateChanged -= TraceSessionTransition;
 
             if (Instance == this)
             {
@@ -349,6 +367,8 @@ namespace MazeParty.Multiplayer
             lobbyView.CopyRequested += OnCopyRequested;
             lobbyView.ReadyRequested += OnReadyRequested;
             lobbyView.StartRequested += OnStartRequested;
+            lobbyView.RecoveryContinueRequested += OnRecoveryContinueRequested;
+            lobbyView.RecoveryDiscardRequested += OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged += OnAppearanceChanged;
             GameText.LanguageChanged += RenderLobby;
         }
@@ -365,6 +385,8 @@ namespace MazeParty.Multiplayer
             lobbyView.CopyRequested -= OnCopyRequested;
             lobbyView.ReadyRequested -= OnReadyRequested;
             lobbyView.StartRequested -= OnStartRequested;
+            lobbyView.RecoveryContinueRequested -= OnRecoveryContinueRequested;
+            lobbyView.RecoveryDiscardRequested -= OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged -= OnAppearanceChanged;
             GameText.LanguageChanged -= RenderLobby;
         }
@@ -374,7 +396,8 @@ namespace MazeParty.Multiplayer
             SaveLocalProfile(displayName, _localProfile.Appearance);
             RunAsync(
                 () => CreateAndPublishAsync(displayName),
-                GameText.T("Creating a private Relay session..."));
+                GameText.N("Creating a private Relay session..."),
+                SessionLifecycleState.Connecting);
         }
 
         private void OnJoinRequested(string code, string displayName)
@@ -382,7 +405,8 @@ namespace MazeParty.Multiplayer
             SaveLocalProfile(displayName, _localProfile.Appearance);
             RunAsync(
                 () => JoinAndPublishAsync(code, displayName),
-                GameText.T("Joining the Relay session..."));
+                GameText.N("Joining the Relay session..."),
+                SessionLifecycleState.Connecting);
         }
 
         private void OnAppearanceChanged(PlayerAppearanceState appearance)
@@ -425,7 +449,7 @@ namespace MazeParty.Multiplayer
             }
 
             GUIUtility.systemCopyBuffer = _sessions.Current.Code;
-            SetStatus(GameText.T("Invite code copied to the clipboard."));
+            SetLocalizedStatus("Invite code copied to the clipboard.");
         }
 
         private void OnReadyRequested()
@@ -438,24 +462,32 @@ namespace MazeParty.Multiplayer
             var ready = !_sessions.Current.LocalReady;
             RunAsync(
                 () => _sessions.SetReadyAsync(ready),
-                GameText.T("Saving ready state..."));
+                GameText.N("Saving ready state..."),
+                SessionLifecycleState.Lobby);
         }
 
         public void RequestCompletedMatchReturn()
         {
             RunAsync(
                 RequestCompletedMatchReturnAsync,
-                GameText.T("Saving the return-to-lobby request..."));
+                GameText.N("Saving the return-to-lobby request..."),
+                SessionLifecycleState.ReturningToLobby);
         }
 
         private void OnStartRequested()
         {
-            RunAsync(StartGameAsync, GameText.T("Synchronizing the Board scene..."));
+            RunAsync(
+                StartGameAsync,
+                GameText.N("Synchronizing the Board scene..."),
+                SessionLifecycleState.StartingMatch);
         }
 
         private void OnLeaveRequested()
         {
-            RunAsync(LeaveSessionAsync, GameText.T("Leaving the session..."));
+            RunAsync(
+                LeaveSessionAsync,
+                GameText.N("Leaving the session..."),
+                SessionLifecycleState.Leaving);
         }
 
         private void OnQuitRequested()
@@ -504,7 +536,7 @@ namespace MazeParty.Multiplayer
             _voluntaryLeaveAcknowledgedAt = -1d;
             _voluntaryLeaveDeadline =
                 Time.realtimeSinceStartupAsDouble + VoluntaryLeaveAckTimeoutSeconds;
-            SetStatus(GameText.T("Leaving the game..."));
+            SetLocalizedStatus("Leaving the game...");
             GetLocalAvatar()?.RequestVoluntaryMatchLeave();
         }
 
@@ -586,11 +618,10 @@ namespace MazeParty.Multiplayer
                     // player's disconnect is deferred to lobby cleanup instead of
                     // opening the 60-second reconnect pause.
                     var returning = BeginMatchLobbyReturnOnServer();
-                    new HostMinigameScheduleSession().CompleteActive();
                     avatar.AnnounceMatchEndedByPlayerOnServer();
                     if (!returning)
                     {
-                        _ = EndSessionAfterVoluntaryLeaveAsync();
+                        QueueEndSessionAfterVoluntaryLeave();
                     }
                     break;
             }
@@ -615,7 +646,7 @@ namespace MazeParty.Multiplayer
             QueueNotice(GameText.F("The game was ended by {0}.", name));
             if (_sessions != null && _sessions.IsInSession && _sessions.Current.LocalReady)
             {
-                _ = ResetLocalReadyAfterEndedMatchAsync();
+                _sessionOperations.TryEnqueue(ResetLocalReadyAfterEndedMatchAsync);
             }
         }
 
@@ -686,8 +717,8 @@ namespace MazeParty.Multiplayer
             }
 
             lobbyView?.SetPresentationVisible(true);
-            SetStatus(GameText.T(
-                "Back in the waiting room. Other players are still at the award ceremony; you can leave the room from the menu."));
+            SetLocalizedStatus(
+                "Back in the waiting room. Other players are still at the award ceremony; you can leave the room from the menu.");
             _ceremonyWaitingRoomStatusShown = true;
         }
 
@@ -705,38 +736,95 @@ namespace MazeParty.Multiplayer
                 _completedMatchLobbyReturnInProgress);
         }
 
-        private async void CompleteVoluntaryMatchLeave()
+        private void CompleteVoluntaryMatchLeave()
+        {
+            _sessionOperations.TryEnqueue(
+                SessionLifecycleState.Leaving,
+                CompleteVoluntaryMatchLeaveAsync);
+        }
+
+        private async Task CompleteVoluntaryMatchLeaveAsync(
+            CancellationToken cancellationToken)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (_sessions != null && _sessions.IsInSession)
                 {
                     await LeaveSessionAsync();
                 }
 
-                SetStatus(GameText.T("You left the game."));
+                cancellationToken.ThrowIfCancellationRequested();
+                SetLocalizedStatus("You left the game.");
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // The component lifetime ended while the provider operation settled.
             }
             catch (Exception exception)
             {
                 SetStatus(exception.Message);
                 Debug.LogException(exception);
             }
+            finally
+            {
+                SynchronizeLifecycleStateFromSession(force: true);
+                if (!_destroyed)
+                {
+                    RenderLobby();
+                }
+            }
         }
 
-        private async Task EndSessionAfterVoluntaryLeaveAsync()
+        private void QueueEndSessionAfterVoluntaryLeave()
+        {
+            if (_networkTerminationRequested)
+            {
+                return;
+            }
+
+            _networkTerminationRequested = true;
+            if (!_sessionOperations.TryEnqueue(
+                    SessionLifecycleState.Terminating,
+                    EndSessionAfterVoluntaryLeaveAsync))
+            {
+                _networkTerminationRequested = false;
+            }
+        }
+
+        private async Task EndSessionAfterVoluntaryLeaveAsync(
+            CancellationToken cancellationToken)
         {
             // Give the match-ended announcement time to reach every client
             // before the host session closes.
-            await Task.Delay(VoluntaryLeaveSessionEndDelayMilliseconds);
-            EndSessionAfterNetworkFailure(
-                GameText.T("A player left, so the match ended."));
+            await Task.Delay(
+                VoluntaryLeaveSessionEndDelayMilliseconds,
+                cancellationToken);
+            await EndSessionAfterNetworkFailureAsync(
+                GameText.T("A player left, so the match ended."),
+                cancellationToken);
+            if (_sessions == null || !_sessions.IsInSession)
+            {
+                // This is an explicit match abandonment, not a transient
+                // network failure. Delete only after the provider confirms
+                // that the session has ended, so a live board cannot write a
+                // new orphan checkpoint after cleanup.
+                new HostMinigameScheduleSession().CompleteActive();
+            }
         }
 
-        private async Task ResetLocalReadyAfterEndedMatchAsync()
+        private async Task ResetLocalReadyAfterEndedMatchAsync(
+            CancellationToken cancellationToken)
         {
             try
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 await _sessions.SetReadyAsync(false);
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // The component lifetime ended while the provider operation settled.
             }
             catch (Exception exception)
             {
@@ -749,14 +837,17 @@ namespace MazeParty.Multiplayer
         private async Task CreateAndPublishAsync(string displayName)
         {
             ClearPlayingReconnectTicket();
+            ResetHostMatchRecoveryChoice();
             _networkIdentityPublished = false;
             await _sessions.CreateAsync("MazeParty Room", displayName);
+            PrepareHostMatchRecoveryChoice();
             await PublishLocalNetworkClientIdWhenReadyAsync();
         }
 
         private async Task JoinAndPublishAsync(string code, string displayName)
         {
             ClearPlayingReconnectTicket();
+            ResetHostMatchRecoveryChoice();
             _networkIdentityPublished = false;
             await _sessions.JoinByCodeAsync(code, displayName);
             await PublishLocalNetworkClientIdWhenReadyAsync();
@@ -787,6 +878,14 @@ namespace MazeParty.Multiplayer
 
         private Task PublishLocalNetworkClientIdWhenReadyAsync()
         {
+            return PublishLocalNetworkClientIdWhenReadyAsync(
+                _sessionOperations.LifetimeToken);
+        }
+
+        private Task PublishLocalNetworkClientIdWhenReadyAsync(
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
             if (_networkIdentityPublished ||
                 _sessions == null ||
                 !_sessions.IsInSession ||
@@ -812,19 +911,25 @@ namespace MazeParty.Multiplayer
 
             _networkIdentityPublishSessionId = expectedSessionId;
             _networkIdentityPublishTask =
-                PublishLocalNetworkClientIdTrackedAsync(expectedSessionId);
+                PublishLocalNetworkClientIdTrackedAsync(
+                    expectedSessionId,
+                    cancellationToken);
             return _networkIdentityPublishTask;
         }
 
         private async Task PublishLocalNetworkClientIdTrackedAsync(
-            string expectedSessionId)
+            string expectedSessionId,
+            CancellationToken cancellationToken)
         {
             // Yield once so the shared task field is assigned before this method can
             // complete synchronously and clear it.
             await Task.Yield();
             try
             {
-                await PublishLocalNetworkClientIdCoreAsync(expectedSessionId);
+                cancellationToken.ThrowIfCancellationRequested();
+                await PublishLocalNetworkClientIdCoreAsync(
+                    expectedSessionId,
+                    cancellationToken);
             }
             finally
             {
@@ -837,10 +942,12 @@ namespace MazeParty.Multiplayer
         }
 
         private async Task PublishLocalNetworkClientIdCoreAsync(
-            string expectedSessionId)
+            string expectedSessionId,
+            CancellationToken cancellationToken)
         {
             for (var readinessAttempt = 0; readinessAttempt < 40; readinessAttempt++)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 if (!IsExpectedSession(expectedSessionId))
                 {
                     return;
@@ -865,6 +972,7 @@ namespace MazeParty.Multiplayer
                         {
                             await _sessions.PublishLocalNetworkClientIdAsync(
                                 _networkManager.LocalClientId);
+                            cancellationToken.ThrowIfCancellationRequested();
                             if (IsExpectedSession(expectedSessionId))
                             {
                                 _networkIdentityPublished = true;
@@ -877,12 +985,13 @@ namespace MazeParty.Multiplayer
                         {
                             await Task.Delay(
                                 NetworkIdentityPublishRetryBaseMilliseconds *
-                                (saveAttempt + 1));
+                                (saveAttempt + 1),
+                                cancellationToken);
                         }
                     }
                 }
 
-                await Task.Delay(50);
+                await Task.Delay(50, cancellationToken);
             }
 
             if (IsExpectedSession(expectedSessionId))
@@ -899,7 +1008,6 @@ namespace MazeParty.Multiplayer
                 _sessions != null &&
                 _sessions.IsInSession &&
                 _sessions.Current.IsHost;
-            _explicitLeaveQueued = true;
             try
             {
                 await _sessions.LeaveAsync();
@@ -910,19 +1018,27 @@ namespace MazeParty.Multiplayer
             }
             finally
             {
-                _explicitLeaveQueued = false;
+                ResetHostMatchRecoveryChoice();
                 ClearPlayingReconnectTicket();
             }
         }
 
         private async Task StartGameAsync()
         {
+            if (_matchRecoveryChoiceVisible)
+            {
+                throw new InvalidOperationException(
+                    GameText.T("Choose whether to continue or discard the saved match first."));
+            }
+
             var snapshot = _sessions.Current;
             if (!snapshot.IsHost || !snapshot.CanStart)
             {
                 throw new InvalidOperationException(
                     GameText.T("All four players must be ready."));
             }
+
+            ValidateSelectedMatchRecoveryBeforeStart();
 
             var manager = _networkManager != null
                 ? _networkManager
@@ -953,7 +1069,8 @@ namespace MazeParty.Multiplayer
                     GameText.F("Could not start Board scene synchronization: {0}", result));
             }
 
-            SetStatus(GameText.T("Waiting for every player to finish loading the Board scene."));
+            SetLocalizedStatus(
+                "Waiting for every player to finish loading the Board scene.");
         }
 
         private async Task RequestCompletedMatchReturnAsync()
@@ -1041,72 +1158,91 @@ namespace MazeParty.Multiplayer
             }
 
             _completedMatchLobbyReturnInProgress = true;
-            _ = BeginCompletedMatchLobbyReturnAsync(manager);
+            if (!_sessionOperations.TryEnqueue(
+                    SessionLifecycleState.ReturningToLobby,
+                    cancellationToken => BeginCompletedMatchLobbyReturnAsync(
+                        manager,
+                        cancellationToken)))
+            {
+                ResetCompletedMatchLobbyReturnState();
+                return false;
+            }
+
             return true;
         }
 
         private async Task BeginCompletedMatchLobbyReturnAsync(
-            NetworkManager manager)
+            NetworkManager manager,
+            CancellationToken cancellationToken)
         {
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                SetStatus(GameText.T("Returning the completed match to the player ready screen..."));
-                await _sessions.SetPlayingAsync(false);
-                QueueCompletedMatchDisconnectedLobbyCleanups();
+                try
+                {
+                    SetLocalizedStatus(
+                        "Returning the completed match to the player ready screen...");
+                    await _sessions.SetPlayingAsync(false);
+                    cancellationToken.ThrowIfCancellationRequested();
+                    QueueCompletedMatchDisconnectedLobbyCleanups();
 
-                if (_destroyed || !_completedMatchLobbyReturnInProgress)
-                {
-                    return;
-                }
+                    if (_destroyed || !_completedMatchLobbyReturnInProgress)
+                    {
+                        return;
+                    }
 
-                if (manager != null &&
-                    manager.IsServer &&
-                    manager.SceneManager != null)
-                {
-                    ObserveNetworkSceneManager(manager.SceneManager);
-                }
-                ScheduleCompletedMatchUnloadForNextFrame();
-            }
-            catch (Exception exception)
-            {
-                if (!_destroyed &&
-                    _completedMatchLobbyReturnInProgress &&
-                    _sessions != null &&
-                    _sessions.IsInSession &&
-                    _sessions.Current.Phase == MultiplayerConstants.LobbyPhase)
-                {
-                    SetStatus(GameText.F(
-                        "The lobby phase was saved; retrying local match cleanup: {0}",
-                        exception.Message));
-                    Debug.LogWarning(exception);
+                    if (manager != null &&
+                        manager.IsServer &&
+                        manager.SceneManager != null)
+                    {
+                        ObserveNetworkSceneManager(manager.SceneManager);
+                    }
                     ScheduleCompletedMatchUnloadForNextFrame();
                     return;
                 }
-
-                if (!_destroyed &&
-                    _completedMatchLobbyReturnInProgress &&
-                    _sessions != null &&
-                    _sessions.IsInSession &&
-                    _sessions.Current.IsHost &&
-                    _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
+                catch (OperationCanceledException) when (
+                    cancellationToken.IsCancellationRequested)
                 {
-                    SetStatus(GameText.F(
-                        "Could not save the lobby phase; retrying: {0}",
-                        exception.Message));
-                    Debug.LogWarning(exception);
-                    await Task.Delay(1000);
-                    if (_completedMatchLobbyReturnInProgress)
-                    {
-                        _ = BeginCompletedMatchLobbyReturnAsync(manager);
-                    }
                     return;
                 }
+                catch (Exception exception)
+                {
+                    if (!_destroyed &&
+                        _completedMatchLobbyReturnInProgress &&
+                        _sessions != null &&
+                        _sessions.IsInSession &&
+                        _sessions.Current.Phase == MultiplayerConstants.LobbyPhase)
+                    {
+                        SetLocalizedStatus(
+                            "The lobby phase was saved; retrying local match cleanup: {0}",
+                            exception.Message);
+                        Debug.LogWarning(exception);
+                        ScheduleCompletedMatchUnloadForNextFrame();
+                        return;
+                    }
 
-                ResetCompletedMatchLobbyReturnState();
-                SetStatus(GameText.F(
-                    "Could not return the completed match to the lobby: {0}",
-                    exception.Message));
-                Debug.LogException(exception);
+                    if (!_destroyed &&
+                        _completedMatchLobbyReturnInProgress &&
+                        _sessions != null &&
+                        _sessions.IsInSession &&
+                        _sessions.Current.IsHost &&
+                        _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
+                    {
+                        SetLocalizedStatus(
+                            "Could not save the lobby phase; retrying: {0}",
+                            exception.Message);
+                        Debug.LogWarning(exception);
+                        await Task.Delay(1000, cancellationToken);
+                        continue;
+                    }
+
+                    ResetCompletedMatchLobbyReturnState();
+                    SynchronizeLifecycleStateFromSession(force: true);
+                    SetLocalizedStatus(
+                        "Could not return the completed match to the lobby: {0}",
+                        exception.Message);
+                    Debug.LogException(exception);
+                    return;
+                }
             }
         }
 
@@ -1215,8 +1351,8 @@ namespace MazeParty.Multiplayer
                 : NetworkManager.Singleton;
             if (manager == null || !manager.IsServer || manager.SceneManager == null)
             {
-                SetStatus(GameText.T(
-                    "Waiting for the server scene manager during lobby return."));
+                SetLocalizedStatus(
+                    "Waiting for the server scene manager during lobby return.");
                 ScheduleCompletedMatchUnloadForNextFrame();
                 return;
             }
@@ -1237,7 +1373,7 @@ namespace MazeParty.Multiplayer
                 {
                     _completedMatchSceneUnloadQueue.Dequeue();
                     _completedMatchSceneBeingUnloaded = sceneName;
-                    SetStatus(GameText.F("Synchronizing scene unload: {0}", sceneName));
+                    SetLocalizedStatus("Synchronizing scene unload: {0}", sceneName);
                     return;
                 }
 
@@ -1253,10 +1389,10 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                SetStatus(GameText.F(
+                SetLocalizedStatus(
                     "Waiting to retry synchronized scene unload for {0}: {1}",
                     sceneName,
-                    result));
+                    result);
                 ScheduleCompletedMatchUnloadForNextFrame();
                 return;
             }
@@ -1266,9 +1402,12 @@ namespace MazeParty.Multiplayer
 
         private void CompleteCompletedMatchLobbyReturn()
         {
+            new HostMinigameScheduleSession().CompleteActive();
+            ResetHostMatchRecoveryChoice();
             ResetCompletedMatchLobbyReturnState();
+            _sessionOperations.TryTransition(SessionLifecycleState.Lobby);
             SetLobbyRendering(true);
-            SetStatus(GameText.T("Returned to the player ready screen."));
+            SetLocalizedStatus("Returned to the player ready screen.");
         }
 
         private void ResetCompletedMatchLobbyReturnState()
@@ -1293,42 +1432,6 @@ namespace MazeParty.Multiplayer
                 Time.frameCount + 1);
         }
 
-        private async void RunAsync(Func<Task> operation, string progress)
-        {
-            if (_busy)
-            {
-                return;
-            }
-
-            _busy = true;
-            SetStatus(progress);
-            try
-            {
-                await operation();
-                if (_sessions.IsInSession)
-                {
-                    _status = _sessions.Current.Phase == MultiplayerConstants.PlayingPhase
-                        ? GameText.T("Connected to the online game.")
-                        : GameText.T("Connected to the online lobby.");
-                }
-                else
-                {
-                    _status = GameText.T("Online session disconnected.");
-                }
-            }
-            catch (Exception exception)
-            {
-                _status = exception.Message;
-                Debug.LogException(exception);
-                GameSound.Play(SoundKeys.UiError);
-            }
-            finally
-            {
-                _busy = false;
-                RenderLobby();
-            }
-        }
-
         private void OnSessionChanged()
         {
             UpdatePlayingReconnectTicket();
@@ -1340,17 +1443,20 @@ namespace MazeParty.Multiplayer
 
             if (!_sessions.IsInSession)
             {
+                ResetHostMatchRecoveryChoice();
                 ResetCompletedMatchLobbyReturnState();
                 _networkIdentityPublished = false;
                 UnloadBoardLocally();
             }
 
+            SynchronizeLifecycleStateFromSession();
             RenderLobby();
         }
 
         private void OnSessionEnded(string reason)
         {
             ClearPlayingReconnectTicket();
+            _sessionOperations.TryTransition(SessionLifecycleState.Terminating);
             SetStatus(reason);
         }
 
@@ -1449,7 +1555,8 @@ namespace MazeParty.Multiplayer
             }
 
             matchState.EnableGameplayOnServer();
-            SetStatus(GameText.T("All four players loaded the Board. Gameplay input is enabled."));
+            SetLocalizedStatus(
+                "All four players loaded the Board. Gameplay input is enabled.");
         }
 
         private void OnNetworkUnloadEventCompleted(
@@ -1487,10 +1594,10 @@ namespace MazeParty.Multiplayer
                 _completedMatchPendingUnloadDeadline =
                     Time.realtimeSinceStartupAsDouble +
                     CompletedMatchUnloadClientGraceSeconds;
-                SetStatus(GameText.F(
+                SetLocalizedStatus(
                     "Waiting for {0} player(s) to finish unloading {1}.",
                     _completedMatchPendingUnloadClients.Count,
-                    sceneName));
+                    sceneName);
                 return;
             }
 
@@ -1557,9 +1664,9 @@ namespace MazeParty.Multiplayer
                 " client(s) that did not finish unloading " +
                 timedOutScene + " within " +
                 CompletedMatchUnloadClientGraceSeconds + " seconds.");
-            SetStatus(GameText.T(
+            SetLocalizedStatus(
                 "Continuing lobby return after disconnecting clients that " +
-                "could not finish the scene unload."));
+                "could not finish the scene unload.");
             ScheduleCompletedMatchUnloadForNextFrame();
         }
 
@@ -1574,14 +1681,19 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _ = PublishLocalNetworkClientIdSafelyAsync();
+            _sessionOperations.TryEnqueue(PublishLocalNetworkClientIdSafelyAsync);
         }
 
-        private async Task PublishLocalNetworkClientIdSafelyAsync()
+        private async Task PublishLocalNetworkClientIdSafelyAsync(
+            CancellationToken cancellationToken)
         {
             try
             {
-                await PublishLocalNetworkClientIdWhenReadyAsync();
+                await PublishLocalNetworkClientIdWhenReadyAsync(cancellationToken);
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // The controller lifetime ended while the shared publish settled.
             }
             catch (Exception exception)
             {
@@ -1595,7 +1707,7 @@ namespace MazeParty.Multiplayer
         {
             ResolveCompletedMatchPendingUnloadClient(clientId);
             if (_applicationQuitting ||
-                _explicitLeaveQueued ||
+                LifecycleState == SessionLifecycleState.Leaving ||
                 _networkManager == null ||
                 _sessions == null ||
                 !_sessions.IsInSession)
@@ -1633,8 +1745,8 @@ namespace MazeParty.Multiplayer
                          RemoteDisconnectDisposition.DeferCleanupUntilLobby)
                 {
                     _completedMatchDisconnectedClients.Add(clientId);
-                    SetStatus(GameText.T(
-                        "A player disconnected while the completed match was returning to the lobby."));
+                    SetLocalizedStatus(
+                        "A player disconnected while the completed match was returning to the lobby.");
                 }
                 else if (disposition ==
                          RemoteDisconnectDisposition.LeaveCompletedMatch)
@@ -1643,21 +1755,21 @@ namespace MazeParty.Multiplayer
                     // room is back in the lobby phase.
                     _completedMatchDisconnectedClients.Add(clientId);
                     NetworkMatchState.Instance?.MarkCeremonyDepartureOnServer();
-                    SetStatus(GameText.T(
-                        "A player left the room after the award ceremony."));
+                    SetLocalizedStatus(
+                        "A player left the room after the award ceremony.");
                 }
                 else if (disposition ==
                          RemoteDisconnectDisposition.PauseForReconnect)
                 {
                     NetworkMatchState.Instance?.PauseForReconnectOnServer(clientId);
-                    SetStatus(GameText.T(
-                        "A player disconnected. Gameplay is paused for the 60-second reconnect window."));
+                    SetLocalizedStatus(
+                        "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
                 }
             }
             else if (localClientLost)
             {
-                SetStatus(GameText.T(
-                    "Relay connection lost. Waiting for the host or session service."));
+                SetLocalizedStatus(
+                    "Relay connection lost. Waiting for the host or session service.");
             }
         }
 
@@ -1702,7 +1814,7 @@ namespace MazeParty.Multiplayer
         private void OnClientStopped(bool _)
         {
             if (_applicationQuitting ||
-                _explicitLeaveQueued ||
+                LifecycleState == SessionLifecycleState.Leaving ||
                 _networkManager == null ||
                 _networkManager.IsServer ||
                 _sessions == null ||
@@ -1711,8 +1823,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SetStatus(GameText.T(
-                "Relay connection stopped. Waiting for the host or session service."));
+            SetLocalizedStatus(
+                "Relay connection stopped. Waiting for the host or session service.");
         }
 
         private void QueueDisconnectedLobbyPlayerCleanup(
@@ -1732,21 +1844,26 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _ = RemoveDisconnectedLobbyPlayerAfterSettleAsync(
-                expectedSessionId,
-                clientId,
-                cleanupKey);
+            _pendingLobbyCleanupTasks[cleanupKey] =
+                RemoveDisconnectedLobbyPlayerAfterSettleAsync(
+                    expectedSessionId,
+                    clientId,
+                    cleanupKey,
+                    _sessionOperations.LifetimeToken);
         }
 
 
         private async Task RemoveDisconnectedLobbyPlayerAfterSettleAsync(
             string expectedSessionId,
             ulong clientId,
-            string cleanupKey)
+            string cleanupKey,
+            CancellationToken cancellationToken)
         {
             try
             {
-                await Task.Delay(LobbyDisconnectSettleMilliseconds);
+                await Task.Delay(
+                    LobbyDisconnectSettleMilliseconds,
+                    cancellationToken);
                 if (!CanRemoveDisconnectedLobbyPlayer(
                         expectedSessionId,
                         clientId))
@@ -1761,6 +1878,12 @@ namespace MazeParty.Multiplayer
                         expectedSessionId,
                         clientId,
                         honorLeaveMarker: true);
+                    cancellationToken.ThrowIfCancellationRequested();
+                }
+                catch (OperationCanceledException) when (
+                    cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception exception)
                 {
@@ -1774,8 +1897,8 @@ namespace MazeParty.Multiplayer
                 {
                     if (IsExpectedLobbySession(expectedSessionId))
                     {
-                        SetStatus(GameText.T(
-                            "A disconnected lobby player was removed and the seat is open."));
+                        SetLocalizedStatus(
+                            "A disconnected lobby player was removed and the seat is open.");
                     }
 
                     return;
@@ -1784,7 +1907,9 @@ namespace MazeParty.Multiplayer
                 // A normal Leave may have published its marker but not completed yet.
                 // Wait outside the provider mutation gate, then perform one bounded
                 // fallback that ignores a stale marker.
-                await Task.Delay(LobbyDisconnectForcedCleanupGraceMilliseconds);
+                await Task.Delay(
+                    LobbyDisconnectForcedCleanupGraceMilliseconds,
+                    cancellationToken);
                 if (!CanRemoveDisconnectedLobbyPlayer(
                         expectedSessionId,
                         clientId))
@@ -1798,26 +1923,37 @@ namespace MazeParty.Multiplayer
                         expectedSessionId,
                         clientId,
                         honorLeaveMarker: false);
+                    cancellationToken.ThrowIfCancellationRequested();
                     if (removed && IsExpectedLobbySession(expectedSessionId))
                     {
-                        SetStatus(GameText.T(
-                            "A stale disconnected lobby player was removed after the grace period."));
+                        SetLocalizedStatus(
+                            "A stale disconnected lobby player was removed after the grace period.");
                     }
+                }
+                catch (OperationCanceledException) when (
+                    cancellationToken.IsCancellationRequested)
+                {
+                    throw;
                 }
                 catch (Exception exception)
                 {
                     if (IsExpectedLobbySession(expectedSessionId))
                     {
-                        SetStatus(GameText.F(
+                        SetLocalizedStatus(
                             "Could not remove the disconnected lobby player: {0}",
-                            exception.Message));
+                            exception.Message);
                         Debug.LogWarning(_status);
                     }
                 }
             }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                // Shutdown cancels the bounded cleanup waits.
+            }
             finally
             {
                 _pendingLobbyCleanupKeys.Remove(cleanupKey);
+                _pendingLobbyCleanupTasks.Remove(cleanupKey);
             }
         }
 
@@ -1826,7 +1962,8 @@ namespace MazeParty.Multiplayer
             return
                 !_destroyed &&
                 !_applicationQuitting &&
-                !_explicitLeaveQueued &&
+                LifecycleState != SessionLifecycleState.Leaving &&
+                !_networkTerminationRequested &&
                 !string.IsNullOrWhiteSpace(expectedSessionId) &&
                 _sessions != null &&
                 _sessions.IsInSession &&
@@ -1876,195 +2013,8 @@ namespace MazeParty.Multiplayer
 
         public void EndActiveMatchForNetworkFailure(string reason)
         {
+            ServerEventTrace.DumpToLog();
             EndSessionAfterNetworkFailure(reason);
-        }
-
-        private async void EndSessionAfterNetworkFailure(string reason)
-        {
-            if (_networkTerminationQueued ||
-                _sessions == null ||
-                !_sessions.IsInSession)
-            {
-                return;
-            }
-
-            _networkTerminationQueued = true;
-            ClearPlayingReconnectTicket();
-            SetStatus(reason);
-            try
-            {
-                // MPS owns NGO lifecycle. Never call NetworkManager.Shutdown directly.
-                await _sessions.LeaveAsync();
-            }
-            catch (Exception exception)
-            {
-                SetStatus(GameText.F("{0} Cleanup needs a retry: {1}", reason, exception.Message));
-                Debug.LogWarning(_status);
-            }
-            finally
-            {
-                _networkTerminationQueued = false;
-            }
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            if (scene.name == MultiplayerConstants.BoardScene)
-            {
-                SetLobbyRendering(false);
-            }
-        }
-
-        private void OnSceneUnloaded(Scene scene)
-        {
-            if (scene.name == MultiplayerConstants.BoardScene)
-            {
-                SetLobbyRendering(true);
-                if (_ceremonyWaitingRoomStatusShown && IsInSession)
-                {
-                    // The "others are still at the ceremony" line is stale now.
-                    SetStatus(GameText.T("Returned to the player ready screen."));
-                }
-            }
-        }
-
-        private void SetLobbyRendering(bool enabled)
-        {
-            lobbyView?.SetPresentationVisible(enabled);
-
-            if (lobbyCamera != null)
-            {
-                lobbyCamera.enabled = enabled;
-
-                var audioListener = lobbyCamera.GetComponent<AudioListener>();
-                if (audioListener != null)
-                {
-                    audioListener.enabled = enabled;
-                }
-            }
-
-            if (lobbyLight != null)
-            {
-                lobbyLight.enabled = enabled;
-            }
-        }
-
-        private void UnloadBoardLocally()
-        {
-            foreach (var definition in MinigameCatalog.RegisteredMinigames)
-            {
-                var minigameScene = SceneManager.GetSceneByName(
-                    definition.SceneName);
-                if (minigameScene.IsValid() && minigameScene.isLoaded)
-                {
-                    SceneManager.UnloadSceneAsync(minigameScene);
-                }
-            }
-
-            var board = SceneManager.GetSceneByName(MultiplayerConstants.BoardScene);
-            if (board.IsValid() && board.isLoaded)
-            {
-                SceneManager.UnloadSceneAsync(board);
-            }
-            else
-            {
-                SetLobbyRendering(true);
-            }
-        }
-
-        private void SetStatus(string status)
-        {
-            _ceremonyWaitingRoomStatusShown = false;
-            _status = status ?? string.Empty;
-            RenderLobby();
-        }
-
-        private void RenderLobby()
-        {
-            if (lobbyView == null)
-            {
-                return;
-            }
-
-            var inSession = _sessions != null && _sessions.IsInSession;
-            var snapshot = inSession ? _sessions.Current : SessionSnapshot.Empty;
-            lobbyView.Render(snapshot, inSession, _busy, _status);
-        }
-
-        private void OnApplicationQuitting()
-        {
-            // MPS owns its Application.quitting LeaveAsync. Suppress controller callbacks
-            // so a second project-side Leave cannot stop the same network session twice.
-            _applicationQuitting = true;
-            // MPS treats graceful application quit as a normal Leave. Keep the
-            // reconnect ticket only for a process/network loss that skips this callback.
-            ClearPlayingReconnectTicket();
-        }
-
-        private void UpdatePlayingReconnectTicket()
-        {
-            if (!_applicationQuitting &&
-                !_explicitLeaveQueued &&
-                !_networkTerminationQueued &&
-                _sessions != null &&
-                _sessions.IsInSession &&
-                !_sessions.Current.IsHost &&
-                _sessions.Current.Phase == MultiplayerConstants.PlayingPhase &&
-                !string.IsNullOrWhiteSpace(_sessions.CurrentSessionId))
-            {
-                PlayerPrefs.SetString(
-                    _playingReconnectTicketKey,
-                    _sessions.CurrentSessionId);
-                PlayerPrefs.Save();
-                return;
-            }
-
-            ClearPlayingReconnectTicket();
-        }
-
-        private bool TryGetPlayingReconnectTicket(out string sessionId)
-        {
-            sessionId = string.IsNullOrWhiteSpace(_playingReconnectTicketKey)
-                ? string.Empty
-                : PlayerPrefs.GetString(_playingReconnectTicketKey, string.Empty).Trim();
-            return sessionId.Length > 0;
-        }
-
-        private void ClearPlayingReconnectTicket()
-        {
-            if (string.IsNullOrWhiteSpace(_playingReconnectTicketKey) ||
-                !PlayerPrefs.HasKey(_playingReconnectTicketKey))
-            {
-                return;
-            }
-
-            PlayerPrefs.DeleteKey(_playingReconnectTicketKey);
-            PlayerPrefs.Save();
-        }
-
-        private static string BuildPlayingReconnectTicketKey()
-        {
-            var profile = "default";
-            var arguments = Environment.GetCommandLineArgs();
-            for (var index = 0; index < arguments.Length - 1; index++)
-            {
-                if (!string.Equals(
-                        arguments[index],
-                        "-auth-profile",
-                        StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
-                }
-
-                var candidate = arguments[index + 1].Trim();
-                if (candidate.Length > 0)
-                {
-                    profile = candidate;
-                }
-                break;
-            }
-
-            return PlayingReconnectTicketPrefix + Hash128.Compute(profile);
         }
 
         // TODO(STEAM-LIFECYCLE): Steam lobby callbacks should forward host departure to

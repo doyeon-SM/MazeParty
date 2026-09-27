@@ -93,6 +93,7 @@ CLOSE,닫기,閉じる,关闭
 COMBAT QUEUE,전투 대기열,バトル待機列,战斗队列
 Connected to the online game.,온라인 게임에 접속했습니다.,オンラインゲームに接続しました。,已连接到在线游戏。
 Connected to the online lobby.,온라인 로비에 접속했습니다.,オンラインロビーに接続しました。,已连接到在线大厅。
+Continue Saved Match,저장된 게임 이어하기,保存した試合を続ける,继续已保存的对局
 Continuing lobby return after disconnecting clients that could not finish the scene unload.,씬 언로드를 끝내지 못한 클라이언트의 연결을 끊고 로비 복귀를 계속합니다.,シーンのアンロードを完了できなかったクライアントを切断し、ロビーへの復帰を続行します。,已断开未能完成场景卸载的客户端，继续返回大厅。
 COOLDOWN {0:0.0}s,쿨다운 {0:0.0}초,クールダウン {0:0.0}秒,冷却 {0:0.0}秒
 Copy Code,코드 복사,コードをコピー,复制代码
@@ -122,6 +123,7 @@ DICE  ROLLING...,주사위  굴리는 중...,サイコロ  ロール中...,骰�
 DICE  TIME EXPIRED,주사위  시간 초과,サイコロ  時間切れ,骰子  时间到
 DICE  WAITING FOR PLAYER,주사위  플레이어 대기 중,サイコロ  プレイヤー待機中,骰子  等待玩家
 DICE  {0},주사위  {0},サイコロ  {0},骰子  {0}
+Discard Saved Match,저장된 게임 폐기,保存した試合を破棄,放弃已保存的对局
 DO NOT USE,사용 안 함,使わない,不使用
 Dodge shells and lasers. Push rivals off the cliff.,포탄과 레이저를 피하세요. 상대를 절벽 밖으로 밀어내세요.,砲弾とレーザーを避けましょう。ライバルを崖から突き落としましょう。,躲避炮弹和激光。把对手推下悬崖。
 Double Dice,더블 주사위,ダブルダイス,双骰子
@@ -618,3 +620,30 @@ You were removed from the session.,방에서 내보내졌습니다.,ルームか
 {0}.  {1}  {2}  GOLD +{3},{0}.  {1}  {2}  골드 +{3},{0}.  {1}  {2}  ゴールド +{3},{0}.  {1}  {2}  金币 +{3}
 {0}: review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.,"{0}: 규칙을 확인하세요. 준비를 누르면 일찍 시작할 수 있으며, 카운트다운이 끝나면 미니게임이 자동으로 시작됩니다.",{0}：ルールを確認してください。準備完了を押すと早めに開始できます。カウントダウンが終わるとミニゲームが自動で始まります。,{0}：请查看规则。按下准备可提前开始；倒计时结束后小游戏将自动开始。
 — HIDDEN —,— 숨김 —,— 非表示 —,— 已隐藏 —
+"A saved match is available. Continue it, or discard it and start a new match.","저장된 게임이 있습니다. 이어서 하거나 폐기하고 새 게임을 시작하세요.","保存した試合があります。続けるか、破棄して新しい試合を始めてください。","有一个已保存的对局。请选择继续，或放弃并开始新对局。"
+A saved player position is no longer valid.,저장된 플레이어 위치가 더 이상 유효하지 않습니다.,保存したプレイヤー位置は無効になりました。,已保存的玩家位置不再有效。
+A saved shop location is no longer available.,저장된 상점 위치를 더 이상 사용할 수 없습니다.,保存したショップの位置は利用できなくなりました。,已保存的商店位置已不可用。
+Choose whether to continue or discard the saved match first.,먼저 저장된 게임을 이어갈지 폐기할지 선택하세요.,先に保存した試合を続けるか破棄するか選んでください。,请先选择继续还是放弃已保存的对局。
+Every player must have a server-assigned seat.,모든 플레이어에게 서버가 지정한 좌석이 있어야 합니다.,全プレイヤーにサーバー指定の席が必要です。,每位玩家都必须拥有服务器分配的座位。
+No recoverable saved match was found.,복구할 수 있는 저장 게임을 찾지 못했습니다.,復旧できる保存試合が見つかりませんでした。,未找到可恢复的已保存对局。
+Saved match selected. The same four accounts must be ready before continuing.,저장된 게임을 선택했습니다. 같은 네 계정이 모두 준비해야 이어갈 수 있습니다.,保存した試合を選択しました。同じ4つのアカウントが準備完了になると続行できます。,已选择保存的对局。相同的四个账号全部准备后才能继续。
+The Board topology is not available for recovery.,복구에 필요한 보드 구조를 사용할 수 없습니다.,復旧に必要なボード構造を利用できません。,无法获取恢复所需的棋盘结构。
+The current four-player roster is not ready for recovery.,현재 4인 명단이 아직 복구 준비가 되지 않았습니다.,現在の4人のメンバーはまだ復旧の準備ができていません。,当前四人名单尚未准备好进行恢复。
+The saved match belongs to a different four-player roster.,저장된 게임은 다른 4인 명단의 게임입니다.,保存した試合は別の4人メンバーのものです。,已保存的对局属于另一组四人名单。
+The saved match checkpoint does not match its schedule.,저장된 게임 체크포인트가 일정과 일치하지 않습니다.,保存した試合のチェックポイントがスケジュールと一致しません。,已保存对局的检查点与其赛程不匹配。
+The saved match checkpoint is invalid.,저장된 게임 체크포인트가 유효하지 않습니다.,保存した試合のチェックポイントが無効です。,已保存对局的检查点无效。
+"The saved match could not be inspected. Continue to retry, or discard it.","저장된 게임을 확인하지 못했습니다. 계속을 눌러 다시 시도하거나 폐기하세요.","保存した試合を確認できませんでした。続けるを押して再試行するか、破棄してください。","无法检查已保存的对局。请选择继续以重试，或将其放弃。"
+The saved match could not be prepared for recovery.,저장된 게임의 복구 준비에 실패했습니다.,保存した試合を復旧用に準備できませんでした。,无法为恢复准备已保存的对局。
+The saved match could not be rebuilt safely.,저장된 게임을 안전하게 복원하지 못했습니다.,保存した試合を安全に再構築できませんでした。,无法安全地重建已保存的对局。
+The saved match expired after 72 hours.,저장된 게임이 72시간 후 만료되었습니다.,保存した試合は72時間後に期限切れになりました。,已保存的对局在 72 小时后过期。
+The saved match expired after 72 hours and was discarded.,저장된 게임이 72시간 후 만료되어 폐기되었습니다.,保存した試合は72時間後に期限切れとなり破棄されました。,已保存的对局在 72 小时后过期并已被放弃。
+The saved match is incompatible with this game version.,저장된 게임은 현재 게임 버전과 호환되지 않습니다.,保存した試合は現在のゲームバージョンと互換性がありません。,已保存的对局与当前游戏版本不兼容。
+The saved match is incomplete or damaged.,저장된 게임이 불완전하거나 손상되었습니다.,保存した試合は不完全か破損しています。,已保存的对局不完整或已损坏。
+The saved match requires the same four accounts.,저장된 게임을 이어가려면 같은 네 계정이 필요합니다.,保存した試合を続けるには同じ4つのアカウントが必要です。,继续已保存的对局需要相同的四个账号。
+The saved match was discarded. This room will start a new match.,저장된 게임을 폐기했습니다. 이 방에서는 새 게임을 시작합니다.,保存した試合を破棄しました。このルームでは新しい試合を始めます。,已放弃保存的对局。此房间将开始新对局。
+The saved match was incomplete or damaged and was discarded.,저장된 게임이 불완전하거나 손상되어 폐기되었습니다.,保存した試合は不完全か破損していたため破棄されました。,已保存的对局不完整或已损坏，因此已被放弃。
+The saved minigame schedule does not match this match.,저장된 미니게임 일정이 현재 게임과 일치하지 않습니다.,保存したミニゲームのスケジュールがこの試合と一致しません。,已保存的小游戏赛程与当前对局不匹配。
+The saved minigame schedule is incompatible.,저장된 미니게임 일정이 호환되지 않습니다.,保存したミニゲームのスケジュールに互換性がありません。,已保存的小游戏赛程不兼容。
+The saved player roster is incomplete.,저장된 플레이어 명단이 완전하지 않습니다.,保存したプレイヤー名簿が不完全です。,已保存的玩家名单不完整。
+The saved player roster is invalid.,저장된 플레이어 명단이 유효하지 않습니다.,保存したプレイヤー名簿が無効です。,已保存的玩家名单无效。
+The saved shop state is no longer valid.,저장된 상점 상태가 더 이상 유효하지 않습니다.,保存したショップの状態は無効になりました。,已保存的商店状态不再有效。

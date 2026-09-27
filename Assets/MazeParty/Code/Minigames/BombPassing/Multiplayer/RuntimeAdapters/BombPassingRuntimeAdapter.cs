@@ -4,7 +4,11 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class BombPassingRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkBombPassingState>
+        MinigameRuntimeAdapter<NetworkBombPassingState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability,
+        IMinigamePrimaryActionCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.BombPassing;
@@ -28,7 +32,7 @@ namespace MazeParty.Multiplayer
                 CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -61,7 +65,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -72,7 +76,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,
@@ -85,7 +89,7 @@ namespace MazeParty.Multiplayer
                 inputEpoch);
         }
 
-        public override void RequestPrimaryActionOnServer(
+        public void RequestPrimaryActionOnServer(
             NetworkPlayerAvatar avatar,
             byte roundNumber,
             uint inputEpoch)

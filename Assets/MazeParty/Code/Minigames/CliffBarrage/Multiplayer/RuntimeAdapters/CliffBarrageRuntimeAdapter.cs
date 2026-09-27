@@ -4,7 +4,11 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class CliffBarrageRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkCliffBarrageState>
+        MinigameRuntimeAdapter<NetworkCliffBarrageState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability,
+        IMinigamePrimaryActionCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.CliffBarrage;
@@ -29,7 +33,7 @@ namespace MazeParty.Multiplayer
                 CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber, out uint inputEpoch)
         {
             var state = CurrentState;
@@ -60,7 +64,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -71,7 +75,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar, Vector2 input,
             byte roundNumber, uint inputEpoch)
         {
@@ -79,7 +83,7 @@ namespace MazeParty.Multiplayer
                 input, roundNumber, inputEpoch);
         }
 
-        public override void RequestPrimaryActionOnServer(
+        public void RequestPrimaryActionOnServer(
             NetworkPlayerAvatar avatar, byte roundNumber,
             uint inputEpoch)
         {

@@ -4,7 +4,10 @@ using MazeParty.Gameplay.Minigames.Race;
 namespace MazeParty.Multiplayer
 {
     internal sealed class RaceRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkRaceState>
+        MinigameRuntimeAdapter<NetworkRaceState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IRaceStepInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.Race;
@@ -28,7 +31,7 @@ namespace MazeParty.Multiplayer
                    CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -60,7 +63,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -71,7 +74,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void TrySubmitRaceStepOnServer(
+        public void TrySubmitRaceStepOnServer(
             NetworkPlayerAvatar avatar,
             RaceStepInput input,
             byte roundNumber,

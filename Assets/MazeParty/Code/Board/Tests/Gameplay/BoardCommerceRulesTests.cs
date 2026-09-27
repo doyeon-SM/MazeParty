@@ -22,6 +22,27 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void ItemShopStock_RestorePreservesExactOffersAndSoldMask()
+        {
+            var offers = new[]
+            {
+                PrototypeItemId.DoubleDice,
+                PrototypeItemId.Pistol,
+                PrototypeItemId.Sniper,
+                PrototypeItemId.Grenade,
+                PrototypeItemId.Cloak
+            };
+
+            var restored = ItemShopStock.Restore(offers, 0b10101);
+
+            for (var index = 0; index < offers.Length; index++)
+            {
+                Assert.That(restored.GetOffer(index), Is.EqualTo(offers[index]));
+                Assert.That(restored.IsSold(index), Is.EqualTo((0b10101 & (1 << index)) != 0));
+            }
+        }
+
+        [Test]
         public void Ranking_UsesKeysGoldWinsAndCompetitionRanksForTies()
         {
             var ordered = PlayerRankingRules.Calculate(new[]

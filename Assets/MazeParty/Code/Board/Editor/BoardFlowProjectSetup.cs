@@ -559,9 +559,9 @@ namespace MazeParty.Editor
 
         private static GameObject EnsureD12RuntimeAssets()
         {
+            ConfigureD12ImportSettings();
             var authored = AssetDatabase.LoadAssetAtPath<GameObject>(D12VisualPrefabPath);
             if (authored != null) return authored;
-            ConfigureD12ImportSettings();
             var material = CreateOrUpdateD12Material();
             var model = AssetDatabase.LoadAssetAtPath<GameObject>(D12ModelPath);
             if (model == null)
@@ -632,6 +632,16 @@ namespace MazeParty.Editor
             if (modelImporter.addCollider)
             {
                 modelImporter.addCollider = false;
+                modelChanged = true;
+            }
+            if (!modelImporter.HasPreBakeCollisionMesh(isConvex: true))
+            {
+                // The authored D12 visual uses this imported mesh in a convex
+                // MeshCollider. Bake that collision data into player builds so
+                // every process does not cook the same mesh at runtime.
+                modelImporter.SetPreBakeCollisionMesh(
+                    isConvex: true,
+                    preBake: true);
                 modelChanged = true;
             }
             if (modelImporter.materialImportMode != ModelImporterMaterialImportMode.None)

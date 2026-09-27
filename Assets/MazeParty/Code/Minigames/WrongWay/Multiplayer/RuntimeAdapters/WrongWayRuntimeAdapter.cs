@@ -4,7 +4,8 @@ using MazeParty.Gameplay.Minigames.WrongWay;
 namespace MazeParty.Multiplayer
 {
     internal sealed class WrongWayRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkWrongWayState>
+        MinigameRuntimeAdapter<NetworkWrongWayState>,
+        IWrongWayDirectionInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.WrongWay;
@@ -48,7 +49,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void TrySubmitDirectionOnServer(
+        public void TrySubmitDirectionOnServer(
             NetworkPlayerAvatar avatar,
             WrongWayDirection direction)
         {

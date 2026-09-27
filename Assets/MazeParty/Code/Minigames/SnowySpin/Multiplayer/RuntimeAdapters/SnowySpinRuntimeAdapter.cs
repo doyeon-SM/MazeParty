@@ -4,7 +4,10 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class SnowySpinRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkSnowySpinState>
+        MinigameRuntimeAdapter<NetworkSnowySpinState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.SnowySpin;
@@ -28,7 +31,7 @@ namespace MazeParty.Multiplayer
                 CurrentState.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -61,7 +64,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -72,7 +75,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,

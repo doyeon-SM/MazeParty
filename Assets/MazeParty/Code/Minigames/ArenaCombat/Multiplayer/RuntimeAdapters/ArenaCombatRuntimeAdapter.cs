@@ -3,7 +3,9 @@ using MazeParty.Gameplay.Minigames;
 namespace MazeParty.Multiplayer
 {
     internal sealed class ArenaCombatRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkArenaCombatState>
+        MinigameRuntimeAdapter<NetworkArenaCombatState>,
+        IMinigameFirstPersonCapability,
+        IMinigameReconnectCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.ArenaCombat;
@@ -29,7 +31,7 @@ namespace MazeParty.Multiplayer
                 state.CanAcceptInputForSlot(slot);
         }
 
-        public override bool UsesFirstPersonControlsForSlot(int slot)
+        public bool UsesFirstPersonControlsForSlot(int slot)
         {
             var state = CurrentState;
             return state != null &&
@@ -51,7 +53,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);

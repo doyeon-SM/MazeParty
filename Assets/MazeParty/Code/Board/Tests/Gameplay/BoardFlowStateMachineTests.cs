@@ -4,6 +4,43 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardFlowStateMachineTests
     {
+        [TestCase(BoardFlowState.TurnOverview, 7)]
+        [TestCase(BoardFlowState.MinigameIntroReady, 7)]
+        [TestCase(BoardFlowState.MatchComplete, 15)]
+        public void RestoreCheckpoint_RebuildsOnlyStableStates(
+            BoardFlowState checkpoint,
+            int turn)
+        {
+            var flow = new BoardFlowStateMachine(totalTurns: 15);
+
+            flow.RestoreCheckpoint(checkpoint, turn, 100d);
+
+            Assert.That(flow.IsStarted, Is.True);
+            Assert.That(flow.IsPaused, Is.False);
+            Assert.That(flow.State, Is.EqualTo(checkpoint));
+            Assert.That(flow.CurrentTurn, Is.EqualTo(turn));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(100d));
+            Assert.That(flow.ArrivedPlayerCount, Is.Zero);
+        }
+
+        [Test]
+        public void RestoreCheckpoint_RejectsTransientState()
+        {
+            var flow = new BoardFlowStateMachine();
+
+            Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+                flow.RestoreCheckpoint(BoardFlowState.Action, 1, 0d));
+        }
+
+        [Test]
+        public void RestoreCheckpoint_RejectsMatchCompleteBeforeFinalTurn()
+        {
+            var flow = new BoardFlowStateMachine(totalTurns: 15);
+
+            Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+                flow.RestoreCheckpoint(BoardFlowState.MatchComplete, 14, 0d));
+        }
+
         [Test]
         public void FullTurn_UsesExactBoundariesAndAdvancesOnlyAfterResult()
         {

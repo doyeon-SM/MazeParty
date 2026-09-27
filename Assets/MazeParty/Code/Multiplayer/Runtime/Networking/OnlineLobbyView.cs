@@ -51,12 +51,20 @@ namespace MazeParty.Multiplayer
         private bool _suppressAppearanceEvents;
         private bool _presentationVisible = true;
         private bool _lastBusy;
+        private bool _recoveryChoiceVisible;
+        private bool _recoveryChoiceCanChoose = true;
+        private bool _recoveryChoicePresented;
+        private bool _hasCapturedActionLabels;
+        private string _readyButtonTextBeforeRecovery = string.Empty;
+        private string _startButtonTextBeforeRecovery = string.Empty;
 
         public event Action<string> CreateRequested;
         public event Action<string, string> JoinRequested;
         public event Action CopyRequested;
         public event Action ReadyRequested;
         public event Action StartRequested;
+        public event Action RecoveryContinueRequested;
+        public event Action RecoveryDiscardRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
 
         public bool HasRequiredReferences =>
@@ -170,6 +178,31 @@ namespace MazeParty.Multiplayer
             ApplyPresentationState();
         }
 
+        public void SetRecoveryChoice(bool visible, bool canChoose = true)
+        {
+            if (visible && !_recoveryChoiceVisible)
+            {
+                CaptureActionLabelsBeforeRecovery();
+            }
+
+            _recoveryChoiceVisible = visible;
+            _recoveryChoiceCanChoose = canChoose;
+            if (!visible)
+            {
+                _recoveryChoicePresented = false;
+                RestoreActionLabelsAfterRecovery();
+                _hasCapturedActionLabels = false;
+                return;
+            }
+
+            if (_recoveryChoicePresented)
+            {
+                var interactable = !_lastBusy && _recoveryChoiceCanChoose;
+                readyButton.interactable = interactable;
+                startButton.interactable = interactable;
+            }
+        }
+
         public void Render(
             SessionSnapshot snapshot,
             bool isInSession,
@@ -191,6 +224,8 @@ namespace MazeParty.Multiplayer
 
             if (!isInSession)
             {
+                _recoveryChoicePresented = false;
+                RestoreActionLabelsAfterRecovery();
                 return;
             }
 
@@ -220,7 +255,29 @@ namespace MazeParty.Multiplayer
             }
 
             var isLobby = snapshot.Phase == MultiplayerConstants.LobbyPhase;
+            var showRecoveryChoice =
+                _recoveryChoiceVisible && isLobby && snapshot.IsHost;
+            _recoveryChoicePresented = showRecoveryChoice;
+            if (showRecoveryChoice)
+            {
+                CaptureActionLabelsBeforeRecovery();
+                readyButton.gameObject.SetActive(true);
+                readyButton.interactable = !busy && _recoveryChoiceCanChoose;
+                readyButtonText.text = GameText.T("Discard Saved Match");
+
+                startButton.gameObject.SetActive(true);
+                startButton.interactable = !busy && _recoveryChoiceCanChoose;
+                startButtonText.text = GameText.T("Continue Saved Match");
+
+                startHint.SetActive(false);
+                runningMessage.SetActive(false);
+                customizationPanel.SetActive(false);
+                return;
+            }
+
+            RestoreActionLabelsAfterRecovery();
             readyButton.gameObject.SetActive(isLobby);
+            readyButton.interactable = !busy;
             readyButtonText.text = snapshot.LocalReady ? GameText.T("Cancel Ready") : GameText.T("Ready");
 
             startButton.gameObject.SetActive(isLobby && snapshot.IsHost);
@@ -417,12 +474,55 @@ namespace MazeParty.Multiplayer
 
         private void OnReadyClicked()
         {
+            if (_recoveryChoicePresented)
+            {
+                RecoveryDiscardRequested?.Invoke();
+                return;
+            }
+
             ReadyRequested?.Invoke();
         }
 
         private void OnStartClicked()
         {
+            if (_recoveryChoicePresented)
+            {
+                RecoveryContinueRequested?.Invoke();
+                return;
+            }
+
             StartRequested?.Invoke();
+        }
+
+        private void CaptureActionLabelsBeforeRecovery()
+        {
+            if (_hasCapturedActionLabels ||
+                readyButtonText == null || startButtonText == null)
+            {
+                return;
+            }
+
+            _readyButtonTextBeforeRecovery = readyButtonText.text;
+            _startButtonTextBeforeRecovery = startButtonText.text;
+            _hasCapturedActionLabels = true;
+        }
+
+        private void RestoreActionLabelsAfterRecovery()
+        {
+            if (!_hasCapturedActionLabels)
+            {
+                return;
+            }
+
+            if (readyButtonText != null)
+            {
+                readyButtonText.text = _readyButtonTextBeforeRecovery;
+            }
+
+            if (startButtonText != null)
+            {
+                startButtonText.text = _startButtonTextBeforeRecovery;
+            }
         }
 
         private string NormalizeDisplayName()

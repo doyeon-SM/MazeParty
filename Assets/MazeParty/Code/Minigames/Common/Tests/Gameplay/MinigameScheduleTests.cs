@@ -136,256 +136,147 @@ namespace MazeParty.Gameplay.Tests
             var decoded = codec.TryDecode(
                 payload,
                 out var matchKey,
-                out var restored);
+                out var restored,
+                out var requiresMigration);
 
             Assert.That(decoded, Is.True);
-            Assert.That(payload, Does.Contain("\"schemaVersion\":14"));
+            Assert.That(requiresMigration, Is.False);
+            Assert.That(payload, Does.Contain("\"formatVersion\":1"));
+            Assert.That(
+                payload,
+                Does.Contain(
+                    "\"catalogEntryCount\":" +
+                    MinigameScheduleRules.RegisteredGameCount));
+            Assert.That(payload, Does.Contain("\"catalogFingerprint\":"));
+            Assert.That(payload, Does.Not.Contain("\"schemaVersion\":"));
             Assert.That(matchKey, Is.EqualTo("session:room-42"));
             AssertSchedulesEqual(original, restored);
         }
 
-        [Test]
-        public void JsonCodec_RestoresLegacyCatalogWithoutRerollingQueue()
+        [TestCase(1, 2)]
+        [TestCase(2, 3)]
+        [TestCase(3, 4)]
+        [TestCase(4, 5)]
+        [TestCase(5, 6)]
+        [TestCase(6, 7)]
+        [TestCase(7, 8)]
+        [TestCase(8, 9)]
+        [TestCase(9, 10)]
+        [TestCase(10, 11)]
+        [TestCase(11, 12)]
+        [TestCase(12, 13)]
+        [TestCase(13, 14)]
+        [TestCase(14, 15)]
+        public void JsonCodec_MigratesLegacyCatalogWithoutRerollingQueue(
+            int schemaVersion,
+            int catalogEntryCount)
         {
-            const string payload =
-                "{\"schemaVersion\":1,\"matchKey\":\"legacy-match\"," +
-                "\"seed\":314,\"turnCount\":5," +
-                "\"entries\":[0,2,0,1,0]}";
+            var serializedEntries = new List<int>(catalogEntryCount);
+            for (var id = 1; id <= catalogEntryCount; id++)
+            {
+                serializedEntries.Add(id);
+            }
+
+            var matchKey = "legacy-match-" + schemaVersion;
+            var payload =
+                "{\"schemaVersion\":" + schemaVersion +
+                ",\"matchKey\":\"" + matchKey +
+                "\",\"seed\":314,\"turnCount\":" + catalogEntryCount +
+                ",\"entries\":[" +
+                string.Join(",", serializedEntries) + "]}";
             var codec = new HostMinigameScheduleJsonCodec();
 
             var decoded = codec.TryDecode(
                 payload,
-                out var matchKey,
-                out var restored);
+                out var restoredMatchKey,
+                out var restored,
+                out var requiresMigration);
 
             Assert.That(decoded, Is.True);
-            Assert.That(matchKey, Is.EqualTo("legacy-match"));
+            Assert.That(requiresMigration, Is.True);
+            Assert.That(restoredMatchKey, Is.EqualTo(matchKey));
             Assert.That(restored.Seed, Is.EqualTo(314));
-            Assert.That(restored.TurnCount, Is.EqualTo(5));
-            Assert.That(
-                restored.GetMinigameForTurn(2),
-                Is.EqualTo(ScheduledMinigameId.WrongWay));
-            Assert.That(
-                restored.GetMinigameForTurn(4),
-                Is.EqualTo(ScheduledMinigameId.Minefield));
+            Assert.That(restored.TurnCount, Is.EqualTo(catalogEntryCount));
+            for (var turn = 1; turn <= catalogEntryCount; turn++)
+            {
+                Assert.That(
+                    restored.GetMinigameForTurn(turn),
+                    Is.EqualTo((ScheduledMinigameId)turn),
+                    "Turn " + turn);
+            }
 
-            var reencoded = codec.Encode(matchKey, restored);
-            StringAssert.Contains("\"schemaVersion\":1", reencoded);
+            var migrated = codec.Encode(restoredMatchKey, restored);
+            Assert.That(migrated, Does.Contain("\"formatVersion\":1"));
             Assert.That(
-                codec.TryDecode(reencoded, out _, out var roundTripped),
+                migrated,
+                Does.Contain(
+                    "\"catalogEntryCount\":" + catalogEntryCount));
+            Assert.That(migrated, Does.Contain("\"catalogFingerprint\":"));
+            Assert.That(migrated, Does.Not.Contain("\"schemaVersion\":"));
+            Assert.That(
+                codec.TryDecode(
+                    migrated,
+                    out _,
+                    out var roundTripped,
+                    out var migratedAgain),
                 Is.True);
+            Assert.That(migratedAgain, Is.False);
             AssertSchedulesEqual(restored, roundTripped);
+        }
 
-            const string threeGamePayload =
-                "{\"schemaVersion\":2,\"matchKey\":\"three-game-match\"," +
-                "\"seed\":2718,\"turnCount\":5," +
-                "\"entries\":[3,0,2,0,1]}";
+        [Test]
+        public void JsonCodec_MigratesLegacyQueueWithSkipTurnsIntact()
+        {
+            const string payload =
+                "{\"schemaVersion\":1,\"matchKey\":\"legacy-with-skips\"," +
+                "\"seed\":314,\"turnCount\":5," +
+                "\"entries\":[0,2,0,1,0]}";
+            var codec = new HostMinigameScheduleJsonCodec();
+
             Assert.That(
                 codec.TryDecode(
-                    threeGamePayload,
-                    out var threeGameMatchKey,
-                    out var threeGameSchedule),
+                    payload,
+                    out var matchKey,
+                    out var restored,
+                    out var requiresMigration),
                 Is.True);
-            Assert.That(threeGameMatchKey, Is.EqualTo("three-game-match"));
-            Assert.That(
-                threeGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.RedLightGreenLight));
-            Assert.That(
-                codec.Encode(threeGameMatchKey, threeGameSchedule),
-                Does.Contain("\"schemaVersion\":2"));
+            Assert.That(requiresMigration, Is.True);
+            Assert.That(matchKey, Is.EqualTo("legacy-with-skips"));
+            var expected = new[]
+            {
+                ScheduledMinigameId.Skip,
+                ScheduledMinigameId.WrongWay,
+                ScheduledMinigameId.Skip,
+                ScheduledMinigameId.Minefield,
+                ScheduledMinigameId.Skip
+            };
+            for (var turn = 1; turn <= expected.Length; turn++)
+            {
+                Assert.That(
+                    restored.GetMinigameForTurn(turn),
+                    Is.EqualTo(expected[turn - 1]),
+                    "Turn " + turn);
+            }
+        }
 
-            const string fourGamePayload =
-                "{\"schemaVersion\":3,\"matchKey\":\"four-game-match\"," +
-                "\"seed\":1618,\"turnCount\":6," +
-                "\"entries\":[4,0,3,2,0,1]}";
+        [Test]
+        public void JsonCodec_RejectsCatalogFingerprintMismatch()
+        {
+            var codec = new HostMinigameScheduleJsonCodec();
+            var payload = codec.Encode(
+                "fingerprint-match",
+                HostMinigameSchedule.Create(2718));
+            var tampered = payload.Replace(
+                "\"catalogFingerprint\":\"",
+                "\"catalogFingerprint\":\"tampered-");
+
             Assert.That(
                 codec.TryDecode(
-                    fourGamePayload,
-                    out var fourGameMatchKey,
-                    out var fourGameSchedule),
-                Is.True);
-            Assert.That(fourGameMatchKey, Is.EqualTo("four-game-match"));
-            Assert.That(
-                fourGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.StableFooting));
-            Assert.That(
-                codec.Encode(fourGameMatchKey, fourGameSchedule),
-                Does.Contain("\"schemaVersion\":3"));
-
-            const string fiveGamePayload =
-                "{\"schemaVersion\":4,\"matchKey\":\"five-game-match\"," +
-                "\"seed\":1414,\"turnCount\":7," +
-                "\"entries\":[5,0,4,3,2,0,1]}";
-            Assert.That(
-                codec.TryDecode(
-                    fiveGamePayload,
-                    out var fiveGameMatchKey,
-                    out var fiveGameSchedule),
-                Is.True);
-            Assert.That(fiveGameMatchKey, Is.EqualTo("five-game-match"));
-            Assert.That(
-                fiveGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.BalloonBlow));
-            Assert.That(
-                codec.Encode(fiveGameMatchKey, fiveGameSchedule),
-                Does.Contain("\"schemaVersion\":4"));
-
-            const string sixGamePayload =
-                "{\"schemaVersion\":5,\"matchKey\":\"six-game-match\"," +
-                "\"seed\":1732,\"turnCount\":7," +
-                "\"entries\":[6,0,5,4,3,2,1]}";
-            Assert.That(
-                codec.TryDecode(
-                    sixGamePayload,
-                    out var sixGameMatchKey,
-                    out var sixGameSchedule),
-                Is.True);
-            Assert.That(sixGameMatchKey, Is.EqualTo("six-game-match"));
-            Assert.That(
-                sixGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.GiftGrab));
-            Assert.That(
-                codec.Encode(sixGameMatchKey, sixGameSchedule),
-                Does.Contain("\"schemaVersion\":5"));
-
-            const string sevenGamePayload =
-                "{\"schemaVersion\":6,\"matchKey\":\"seven-game-match\"," +
-                "\"seed\":2048,\"turnCount\":8," +
-                "\"entries\":[7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    sevenGamePayload,
-                    out var sevenGameMatchKey,
-                    out var sevenGameSchedule),
-                Is.True);
-            Assert.That(
-                sevenGameMatchKey,
-                Is.EqualTo("seven-game-match"));
-            Assert.That(
-                sevenGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.TerritoryPaint));
-            Assert.That(
-                codec.Encode(sevenGameMatchKey, sevenGameSchedule),
-                Does.Contain("\"schemaVersion\":6"));
-
-            const string eightGamePayload =
-                "{\"schemaVersion\":7,\"matchKey\":\"eight-game-match\"," +
-                "\"seed\":4096,\"turnCount\":9," +
-                "\"entries\":[8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    eightGamePayload,
-                    out var eightGameMatchKey,
-                    out var eightGameSchedule),
-                Is.True);
-            Assert.That(
-                eightGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.TagChase));
-            Assert.That(
-                codec.Encode(eightGameMatchKey, eightGameSchedule),
-                Does.Contain("\"schemaVersion\":7"));
-
-            const string nineGamePayload =
-                "{\"schemaVersion\":8,\"matchKey\":\"nine-game-match\"," +
-                "\"seed\":8192,\"turnCount\":10," +
-                "\"entries\":[9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    nineGamePayload,
-                    out var nineGameMatchKey,
-                    out var nineGameSchedule),
-                Is.True);
-            Assert.That(
-                nineGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.Race));
-            Assert.That(
-                codec.Encode(nineGameMatchKey, nineGameSchedule),
-                Does.Contain("\"schemaVersion\":8"));
-
-            const string tenGamePayload =
-                "{\"schemaVersion\":9,\"matchKey\":\"ten-game-match\"," +
-                "\"seed\":8193,\"turnCount\":11," +
-                "\"entries\":[10,9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    tenGamePayload,
-                    out var tenGameMatchKey,
-                    out var tenGameSchedule),
-                Is.True);
-            Assert.That(
-                tenGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.SequenceMemory));
-            Assert.That(
-                codec.Encode(tenGameMatchKey, tenGameSchedule),
-                Does.Contain("\"schemaVersion\":9"));
-
-            const string elevenGamePayload =
-                "{\"schemaVersion\":10,\"matchKey\":\"eleven-game-match\"," +
-                "\"seed\":8194,\"turnCount\":12," +
-                "\"entries\":[11,10,9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    elevenGamePayload,
-                    out var elevenGameMatchKey,
-                    out var elevenGameSchedule),
-                Is.True);
-            Assert.That(
-                elevenGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.BouncingBalls));
-            Assert.That(
-                codec.Encode(elevenGameMatchKey, elevenGameSchedule),
-                Does.Contain("\"schemaVersion\":10"));
-
-            const string twelveGamePayload =
-                "{\"schemaVersion\":11,\"matchKey\":\"twelve-game-match\"," +
-                "\"seed\":8195,\"turnCount\":13," +
-                "\"entries\":[12,11,10,9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    twelveGamePayload,
-                    out var twelveGameMatchKey,
-                    out var twelveGameSchedule),
-                Is.True);
-            Assert.That(
-                twelveGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.BombPassing));
-            Assert.That(
-                codec.Encode(twelveGameMatchKey, twelveGameSchedule),
-                Does.Contain("\"schemaVersion\":11"));
-
-            const string thirteenGamePayload =
-                "{\"schemaVersion\":12,\"matchKey\":\"thirteen-game-match\"," +
-                "\"seed\":8196,\"turnCount\":14," +
-                "\"entries\":[13,12,11,10,9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    thirteenGamePayload,
-                    out var thirteenGameMatchKey,
-                    out var thirteenGameSchedule),
-                Is.True);
-            Assert.That(
-                thirteenGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.SnowySpin));
-            Assert.That(
-                codec.Encode(thirteenGameMatchKey, thirteenGameSchedule),
-                Does.Contain("\"schemaVersion\":12"));
-
-            const string fourteenGamePayload =
-                "{\"schemaVersion\":13,\"matchKey\":\"fourteen-game-match\"," +
-                "\"seed\":8197,\"turnCount\":15," +
-                "\"entries\":[14,13,12,11,10,9,8,7,6,5,4,3,2,1,0]}";
-            Assert.That(
-                codec.TryDecode(
-                    fourteenGamePayload,
-                    out var fourteenGameMatchKey,
-                    out var fourteenGameSchedule),
-                Is.True);
-            Assert.That(
-                fourteenGameSchedule.GetMinigameForTurn(1),
-                Is.EqualTo(ScheduledMinigameId.ArenaCombat));
-            Assert.That(
-                codec.Encode(fourteenGameMatchKey, fourteenGameSchedule),
-                Does.Contain("\"schemaVersion\":13"));
+                    tampered,
+                    out _,
+                    out _,
+                    out _),
+                Is.False);
         }
 
         [Test]
@@ -412,6 +303,45 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(seedFactoryCalls, Is.EqualTo(0));
             AssertSchedulesEqual(original, restored);
+        }
+
+        [Test]
+        public void Repository_LoadMigratesLegacyPayloadInPlace()
+        {
+            const string matchKey = "legacy-repository-match";
+            var payloadStore = new MemoryPayloadStore();
+            payloadStore.Write(
+                matchKey,
+                "{\"schemaVersion\":1,\"matchKey\":\"" + matchKey +
+                "\",\"seed\":111,\"turnCount\":2,\"entries\":[1,2]}");
+            var repository = new HostMinigameScheduleRepository(
+                payloadStore,
+                new HostMinigameScheduleJsonCodec());
+
+            Assert.That(repository.TryLoad(matchKey, out var restored), Is.True);
+            Assert.That(restored.GetMinigameForTurn(1),
+                Is.EqualTo(ScheduledMinigameId.Minefield));
+            Assert.That(payloadStore.TryRead(matchKey, out var migrated), Is.True);
+            Assert.That(migrated, Does.Contain("\"formatVersion\":1"));
+            Assert.That(migrated, Does.Not.Contain("\"schemaVersion\":"));
+        }
+
+        [Test]
+        public void Repository_LegacyLoadSurvivesMigrationWriteFailure()
+        {
+            const string matchKey = "read-only-legacy-match";
+            var payloadStore = new MemoryPayloadStore();
+            payloadStore.Write(
+                matchKey,
+                "{\"schemaVersion\":1,\"matchKey\":\"" + matchKey +
+                "\",\"seed\":222,\"turnCount\":2,\"entries\":[1,2]}");
+            payloadStore.FailWrites = true;
+            var repository = new HostMinigameScheduleRepository(
+                payloadStore,
+                new HostMinigameScheduleJsonCodec());
+
+            Assert.That(repository.TryLoad(matchKey, out var restored), Is.True);
+            Assert.That(restored.Seed, Is.EqualTo(222));
         }
 
         [Test]
@@ -528,6 +458,8 @@ namespace MazeParty.Gameplay.Tests
             private readonly Dictionary<string, string> _payloads =
                 new Dictionary<string, string>(StringComparer.Ordinal);
 
+            public bool FailWrites { get; set; }
+
             public bool TryRead(string matchKey, out string payload)
             {
                 return _payloads.TryGetValue(matchKey, out payload);
@@ -535,6 +467,11 @@ namespace MazeParty.Gameplay.Tests
 
             public void Write(string matchKey, string payload)
             {
+                if (FailWrites)
+                {
+                    throw new IOException("Simulated read-only payload store.");
+                }
+
                 _payloads[matchKey] = payload;
             }
 

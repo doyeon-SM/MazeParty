@@ -4,7 +4,10 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class StableFootingRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkStableFootingState>
+        MinigameRuntimeAdapter<NetworkStableFootingState>,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability,
+        IMinigamePushInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.StableFooting;
@@ -43,7 +46,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -54,7 +57,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,
@@ -63,7 +66,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ReceiveInputOnServer(avatar, input);
         }
 
-        public override void RequestPushOnServer(NetworkPlayerAvatar avatar)
+        public void RequestPushOnServer(NetworkPlayerAvatar avatar)
         {
             CurrentState?.TryPushOnServer(avatar);
         }

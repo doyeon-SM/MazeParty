@@ -1316,15 +1316,12 @@ namespace MazeParty.Multiplayer
 
         private static byte SetMaskBit(byte mask, int slot, bool enabled)
         {
-            var bit = 1 << slot;
-            return enabled
-                ? (byte)(mask | bit)
-                : (byte)(mask & ~bit);
+            return PlayerMask4.FromBits(mask).With(slot, enabled).Bits;
         }
 
         private static bool IsMaskBitSet(byte mask, int slot)
         {
-            return (mask & (1 << slot)) != 0;
+            return PlayerMask4.FromBits(mask).Contains(slot);
         }
 
         private static uint WritePackedByte(

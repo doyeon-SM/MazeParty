@@ -9,7 +9,8 @@ namespace MazeParty.Multiplayer
     /// process restart, a crash or a network failure so the same players can
     /// restart with the same minigame order. It is discarded when a match
     /// starts with different players (see <see cref="MinigameScheduleRoster"/>),
-    /// when the 15-turn match completes, or when the host explicitly leaves.
+    /// after the completed match has returned to the lobby, or when the host
+    /// explicitly discards or leaves it.
     /// </summary>
     internal sealed class HostMinigameScheduleSession
     {
@@ -18,14 +19,20 @@ namespace MazeParty.Multiplayer
         private const string RosterKeySuffix = ".Roster";
 
         private readonly HostMinigameScheduleRepository _repository;
+        private readonly MatchRecoveryJournal _recoveryJournal;
+        private readonly MatchRecoverySnapshotCodec _recoveryCodec;
         private readonly string _preferenceKey;
         private readonly string _rosterPreferenceKey;
 
         public HostMinigameScheduleSession(
-            HostMinigameScheduleRepository repository = null)
+            HostMinigameScheduleRepository repository = null,
+            MatchRecoveryJournal recoveryJournal = null,
+            MatchRecoverySnapshotCodec recoveryCodec = null)
         {
             _repository = repository ??
                           HostMinigameScheduleRepository.CreateDefault();
+            _recoveryJournal = recoveryJournal ?? new MatchRecoveryJournal();
+            _recoveryCodec = recoveryCodec ?? new MatchRecoverySnapshotCodec();
             _preferenceKey =
                 ActiveMatchKeyPrefix + Hash128.Compute(ResolveAuthProfile());
             _rosterPreferenceKey = _preferenceKey + RosterKeySuffix;
@@ -51,7 +58,7 @@ namespace MazeParty.Multiplayer
             {
                 // Saved for other players: a new game gets a new order. The
                 // old file is only orphaned if it cannot be deleted.
-                TryDeleteSavedSchedule(matchKey);
+                TryDeleteSavedMatch(matchKey);
                 matchKey = string.Empty;
             }
 
@@ -79,17 +86,98 @@ namespace MazeParty.Multiplayer
             return schedule;
         }
 
+        public bool TryGetSavedMatch(
+            out string matchKey,
+            out string rosterKey)
+        {
+            matchKey = PlayerPrefs.GetString(
+                _preferenceKey,
+                string.Empty).Trim();
+            rosterKey = PlayerPrefs.GetString(
+                _rosterPreferenceKey,
+                string.Empty).Trim();
+            return matchKey.Length > 0 && rosterKey.Length > 0;
+        }
+
+        public MatchRecoveryLoadStatus TryPeekRecovery(
+            out MatchRecoveryJournalRecord record)
+        {
+            if (!TryGetSavedMatch(out var matchKey, out _))
+            {
+                record = default;
+                return MatchRecoveryLoadStatus.None;
+            }
+
+            return _recoveryJournal.TryPeekLatest(
+                matchKey,
+                DateTime.UtcNow,
+                out record);
+        }
+
+        public MatchRecoveryLoadStatus TryLoadRecovery(
+            string rosterFingerprint,
+            string contentFingerprint,
+            out MatchRecoverySnapshot snapshot)
+        {
+            snapshot = null;
+            var matchKey = ResolveActiveMatchKey();
+            if (matchKey.Length == 0)
+            {
+                return MatchRecoveryLoadStatus.None;
+            }
+
+            var status = _recoveryJournal.TryLoadLatest(
+                matchKey,
+                DateTime.UtcNow,
+                rosterFingerprint,
+                contentFingerprint,
+                out var record);
+            if (status != MatchRecoveryLoadStatus.Loaded)
+            {
+                return status;
+            }
+
+            return _recoveryCodec.TryDecode(record.Payload, out snapshot)
+                ? MatchRecoveryLoadStatus.Loaded
+                : MatchRecoveryLoadStatus.Corrupt;
+        }
+
+        public MatchRecoveryJournalRecord SaveRecovery(
+            string rosterFingerprint,
+            string contentFingerprint,
+            MatchRecoverySnapshot snapshot)
+        {
+            var matchKey = ResolveActiveMatchKey();
+            if (matchKey.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    "An active host match is required before saving recovery state.");
+            }
+
+            return _recoveryJournal.Save(
+                matchKey,
+                rosterFingerprint,
+                contentFingerprint,
+                _recoveryCodec.Encode(snapshot),
+                DateTime.UtcNow);
+        }
+
+        public void DeleteRecovery()
+        {
+            var matchKey = ResolveActiveMatchKey();
+            if (matchKey.Length > 0)
+            {
+                _recoveryJournal.Delete(matchKey);
+            }
+        }
+
         public void CompleteActive()
         {
-            if (string.IsNullOrWhiteSpace(ActiveMatchKey))
-            {
-                ActiveMatchKey =
-                    PlayerPrefs.GetString(_preferenceKey, string.Empty).Trim();
-            }
+            ActiveMatchKey = ResolveActiveMatchKey();
 
             if (!string.IsNullOrWhiteSpace(ActiveMatchKey))
             {
-                _repository.Delete(ActiveMatchKey);
+                TryDeleteSavedMatch(ActiveMatchKey);
             }
 
             ActiveMatchKey = string.Empty;
@@ -102,8 +190,31 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void TryDeleteSavedSchedule(string matchKey)
+        private string ResolveActiveMatchKey()
         {
+            if (string.IsNullOrWhiteSpace(ActiveMatchKey))
+            {
+                ActiveMatchKey = PlayerPrefs.GetString(
+                    _preferenceKey,
+                    string.Empty).Trim();
+            }
+
+            return ActiveMatchKey ?? string.Empty;
+        }
+
+        private void TryDeleteSavedMatch(string matchKey)
+        {
+            try
+            {
+                _recoveryJournal.Delete(matchKey);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Could not delete the previous match recovery journal: " +
+                    exception.Message);
+            }
+
             try
             {
                 _repository.Delete(matchKey);

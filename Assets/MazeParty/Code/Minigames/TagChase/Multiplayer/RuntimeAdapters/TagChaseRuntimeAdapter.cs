@@ -4,7 +4,13 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class TagChaseRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkTagChaseState>
+        MinigameRuntimeAdapter<NetworkTagChaseState>,
+        IMinigameFirstPersonCapability,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability,
+        IMinigameLookInputCapability,
+        IMinigamePrimaryActionCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.TagChase;
@@ -29,7 +35,7 @@ namespace MazeParty.Multiplayer
                    state.CanAcceptInputForSlot(slot);
         }
 
-        public override bool UsesFirstPersonControlsForSlot(int slot)
+        public bool UsesFirstPersonControlsForSlot(int slot)
         {
             var state = CurrentState;
             return state != null &&
@@ -38,7 +44,7 @@ namespace MazeParty.Multiplayer
         }
 
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -71,7 +77,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -82,7 +88,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,
@@ -95,7 +101,7 @@ namespace MazeParty.Multiplayer
                 inputEpoch);
         }
 
-        public override void ReceiveLookInputOnServer(
+        public void ReceiveLookInputOnServer(
             NetworkPlayerAvatar avatar,
             float yaw,
             byte roundNumber,
@@ -108,7 +114,7 @@ namespace MazeParty.Multiplayer
                 inputEpoch);
         }
 
-        public override void RequestPrimaryActionOnServer(
+        public void RequestPrimaryActionOnServer(
             NetworkPlayerAvatar avatar,
             byte roundNumber,
             uint inputEpoch)

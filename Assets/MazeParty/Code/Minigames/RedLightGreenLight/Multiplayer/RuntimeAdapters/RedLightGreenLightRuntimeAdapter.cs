@@ -4,7 +4,9 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class RedLightGreenLightRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkRedLightGreenLightState>
+        MinigameRuntimeAdapter<NetworkRedLightGreenLightState>,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.RedLightGreenLight;
@@ -43,7 +45,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -54,7 +56,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,

@@ -63,7 +63,12 @@ namespace MazeParty.Multiplayer
         {
             ForEach(
                 adapter =>
-                    adapter.RestoreAvatarForReconnectOnServer(avatar));
+                {
+                    if (adapter is IMinigameReconnectCapability reconnect)
+                    {
+                        reconnect.RestoreAvatarForReconnectOnServer(avatar);
+                    }
+                });
         }
 
         internal static void EndAll()

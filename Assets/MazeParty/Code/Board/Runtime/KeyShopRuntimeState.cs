@@ -188,6 +188,74 @@ namespace MazeParty.Gameplay
             StateChanged?.Invoke(lifecycleEvent);
         }
 
+        /// <summary>
+        /// Restores only the stable inactive/active states used by match
+        /// checkpoints. Preparing and appearing animations are normalized to an
+        /// active shop before persistence and are therefore rejected here.
+        /// </summary>
+        public bool RestoreCheckpoint(
+            KeyShopLifecycleState checkpointState,
+            bool checkpointHasLocation,
+            Vector2Int checkpointLocation,
+            int checkpointRevision,
+            IReadOnlyList<BoardTile> tiles)
+        {
+            if (checkpointRevision < 0 ||
+                checkpointState != KeyShopLifecycleState.Inactive &&
+                checkpointState != KeyShopLifecycleState.Active)
+            {
+                return false;
+            }
+
+            BoardTile restoredTile = null;
+            if (checkpointState == KeyShopLifecycleState.Active)
+            {
+                if (!checkpointHasLocation || tiles == null)
+                {
+                    return false;
+                }
+
+                for (var index = 0; index < tiles.Count; index++)
+                {
+                    var candidate = tiles[index];
+                    if (candidate != null &&
+                        candidate.Coordinate == checkpointLocation)
+                    {
+                        restoredTile = candidate;
+                        break;
+                    }
+                }
+
+                if (restoredTile == null)
+                {
+                    return false;
+                }
+            }
+            else if (checkpointHasLocation)
+            {
+                return false;
+            }
+
+            var previousState = state;
+            state = checkpointState;
+            hasLocation = restoredTile != null;
+            location = hasLocation ? checkpointLocation : default;
+            placementRevision = checkpointRevision;
+            _currentTile = restoredTile;
+            _placementReason = KeyShopPlacementReason.None;
+            _hasPreviousLocation = false;
+            _previousLocation = default;
+
+            var lifecycleEvent = CreateEvent(previousState);
+            StateChanged?.Invoke(lifecycleEvent);
+            if (state == KeyShopLifecycleState.Active)
+            {
+                Activated?.Invoke(lifecycleEvent);
+            }
+
+            return true;
+        }
+
         private bool TryBeginPlacement(
             KeyShopPlacementReason reason,
             IReadOnlyList<BoardTile> tiles,

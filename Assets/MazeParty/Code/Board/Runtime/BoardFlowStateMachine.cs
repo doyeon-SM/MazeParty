@@ -136,6 +136,52 @@ namespace MazeParty.Gameplay
             _ascendingResolveDeferred = false;
         }
 
+        /// <summary>
+        /// Restores one of the deliberately persisted safe checkpoints. This
+        /// does not invoke <see cref="Transitioned"/>; the authoritative owner
+        /// restores its replicated snapshot after all domain state is valid.
+        /// </summary>
+        public void RestoreCheckpoint(
+            BoardFlowState checkpoint,
+            int turn,
+            double synchronizedNow)
+        {
+            ValidateTimestamp(synchronizedNow);
+            if (checkpoint != BoardFlowState.TurnOverview &&
+                checkpoint != BoardFlowState.MinigameIntroReady &&
+                checkpoint != BoardFlowState.MatchComplete)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(checkpoint),
+                    checkpoint,
+                    "Only stable match checkpoints can be restored.");
+            }
+            if (turn < 1 || turn > TotalTurns)
+            {
+                throw new ArgumentOutOfRangeException(nameof(turn));
+            }
+            if (checkpoint == BoardFlowState.MatchComplete && turn != TotalTurns)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(turn),
+                    turn,
+                    "A completed match must be restored on the final turn.");
+            }
+
+            ActionClock.Stop();
+            IsStarted = true;
+            IsPaused = false;
+            CurrentTurn = turn;
+            State = checkpoint;
+            LastActionEndReason = BoardActionEndReason.None;
+            _arrivedPlayerMask = 0;
+            _stateStartedAt = synchronizedNow;
+            _totalPausedDuration = 0d;
+            _pauseStartedAt = 0d;
+            _actionTimeoutDeferred = false;
+            _ascendingResolveDeferred = false;
+        }
+
         public void Tick(
             double synchronizedNow,
             bool deferExpiredAction = false,

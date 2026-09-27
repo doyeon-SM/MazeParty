@@ -17,11 +17,11 @@
 
 - `Runtime/Networking/Minigames`에 `MinigameRuntimeAdapter<TState>`를 상속한
   미니게임별 어댑터 클래스를 추가한다.
-  - `Id`, 현재 `NetworkBehaviour` 상태 조회
-  - 시작/중지/복귀/종료 수명주기
-  - 로컬 입력과 라우팅: 이동/푸시/메인액션/예외 입력(소나/방향 등)
-  - 입력 게이트: `CanAcceptInputForSlot`
-  - 필요한 게임만 라운드/입력 에폭 조회를 재정의한다.
+  - 공통 계약: `Id`, 현재 `NetworkBehaviour` 상태 조회, 입력 게이트,
+    최초 카운트다운, 시작/일시정지/재개/종료 수명주기
+  - 선택 계약: 재접속, 1인칭, 라운드/입력 에폭과 실제로 사용하는 입력 종류만
+    `IMinigame*Capability` 인터페이스로 명시한다.
+  - 지원하지 않는 입력을 빈 메서드로 추가하지 않는다.
 - 새 어댑터 인스턴스를 `MinigameRuntimeRegistry`에 등록한다.
 - `CurrentMinigame` 중심 쿼리 메서드(`IsMinefieldPhase` 등)를 운영상 필요하면
   추가하고 기존 UI 분기 없이 동작하도록 유지한다.
@@ -40,6 +40,10 @@
 - 미니게임 내부 라운드 점수는 최종 순위 계산에만 사용한다. 최종 순위 보상은
   `MinigameRewardRules`의 공용 10/6/3/0 골드 규칙을 사용하고, 1위 승수를 한 번만
   반영하는지 확인한다.
+- 게임별 점수와 동률 해소가 끝나면 결과를 네 개의 `PlayerPlacement`로 투영해
+  `NetworkMatchState.TryCompleteMinigameOnServer` 공통 정산 경로에 전달한다.
+  슬롯 0~3과 순위 1~4가 각각 한 번씩만 존재하는지는 `PlayerPlacementSet`이
+  검증하므로 게임별 완료 메서드에서 같은 검증을 복제하지 않는다.
 - 타이밍(카운트다운/플레이/결과 표시)은 기존 공통 상수를 우선 사용한다.
 - 저장/재접속과 시드 판정(라운드 에폭 포함)이 기존 규약(권한 서버·결정론) 안에 있는지
   확인한다.

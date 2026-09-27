@@ -93,6 +93,17 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void LocalizedMessage_ResolvesAgainAfterLanguageChanges()
+        {
+            GameText.UseTableForTests(StringTable.Parse(Csv));
+            var message = new LocalizedMessage("TURN {0}", 3);
+
+            Assert.That(message.Resolve(), Is.EqualTo("TURN 3"));
+            GameText.SetLanguage(GameLanguage.Korean);
+            Assert.That(message.Resolve(), Is.EqualTo("턴 3"));
+        }
+
+        [Test]
         public void Languages_HaveStableIndicesAndColumns()
         {
             Assert.That(GameLanguages.Count, Is.EqualTo(4));

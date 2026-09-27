@@ -5,6 +5,30 @@ using UnityEngine;
 namespace MazeParty.Gameplay
 {
     /// <summary>
+    /// A player-visible message that keeps its English source and formatting
+    /// arguments so it can be resolved again after the local language changes.
+    /// </summary>
+    public readonly struct LocalizedMessage
+    {
+        private readonly object[] _arguments;
+
+        public LocalizedMessage(string source, params object[] arguments)
+        {
+            Source = source ?? string.Empty;
+            _arguments = arguments != null && arguments.Length > 0
+                ? (object[])arguments.Clone()
+                : Array.Empty<object>();
+        }
+
+        public string Source { get; }
+
+        public string Resolve()
+        {
+            return GameText.F(Source, _arguments ?? Array.Empty<object>());
+        }
+    }
+
+    /// <summary>
     /// Runtime text lookup for every player-visible string.
     /// Code passes the English source text; <see cref="T"/> returns the
     /// translation for the current language from

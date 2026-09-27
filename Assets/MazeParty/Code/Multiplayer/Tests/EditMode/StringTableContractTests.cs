@@ -29,7 +29,9 @@ namespace MazeParty.Multiplayer.Tests
         };
 
         private static readonly Regex CallPattern =
-            new Regex(@"GameText\s*\.\s*[TFN]\s*\(\s*", RegexOptions.Compiled);
+            new Regex(
+                @"(?:GameText\s*\.\s*[TFN]|SetLocalizedStatus)\s*\(\s*",
+                RegexOptions.Compiled);
 
         private static readonly Regex LiteralPattern =
             new Regex(@"\G""((?:[^""\\]|\\.)*)""", RegexOptions.Compiled);
@@ -161,8 +163,9 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         /// <summary>
-        /// Returns the first-argument literal of each GameText.T/F/N call,
-        /// joining adjacent literals concatenated with '+'.
+        /// Returns the first-argument literal of each GameText.T/F/N or
+        /// SetLocalizedStatus call, joining adjacent literals concatenated
+        /// with '+'.
         /// </summary>
         private static IEnumerable<string> ExtractSources(string code)
         {

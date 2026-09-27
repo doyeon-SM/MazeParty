@@ -73,6 +73,33 @@ namespace MazeParty.Gameplay
             }
         }
 
+        private ItemShopStock(
+            IReadOnlyList<PrototypeItemId> offers,
+            byte soldMask)
+        {
+            if (offers == null || offers.Count != ItemShopRules.OfferCount)
+            {
+                throw new ArgumentException(
+                    "A restored item shop requires exactly five offers.",
+                    nameof(offers));
+            }
+
+            for (var index = 0; index < _offers.Length; index++)
+            {
+                if (!PrototypeItemCatalog.IsValid(offers[index]))
+                {
+                    throw new ArgumentException(
+                        "A restored item shop contains an unknown offer.",
+                        nameof(offers));
+                }
+
+                _offers[index] = offers[index];
+            }
+
+            Seed = 0;
+            RestoreSoldMask(soldMask);
+        }
+
         public int Seed { get; }
         public byte SoldMask { get; private set; }
         public bool IsSoldOut => SoldMask == (1 << ItemShopRules.OfferCount) - 1;
@@ -107,6 +134,13 @@ namespace MazeParty.Gameplay
         public void RestoreSoldMask(byte soldMask)
         {
             SoldMask = (byte)(soldMask & ((1 << ItemShopRules.OfferCount) - 1));
+        }
+
+        public static ItemShopStock Restore(
+            IReadOnlyList<PrototypeItemId> offers,
+            byte soldMask)
+        {
+            return new ItemShopStock(offers, soldMask);
         }
     }
 

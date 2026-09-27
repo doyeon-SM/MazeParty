@@ -55,6 +55,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
             "Assets/MazeParty/Prefabs/Board/Dice/D12WorldDieVisual.prefab";
+        private const string D12ModelPath =
+            "Assets/MazeParty/Art/Dice/D12/Models/Dice_d12.fbx";
 
         [Test]
         public void SessionRules_AssignLowestSeatAndRequireFourUniqueReadyPlayers()
@@ -229,6 +231,15 @@ namespace MazeParty.Multiplayer.Tests
             var expectedMesh =
                 visualPrefab.GetComponent<MeshFilter>()?.sharedMesh;
             Assert.That(expectedMesh, Is.Not.Null);
+            var meshCollider = visualPrefab.GetComponent<MeshCollider>();
+            Assert.That(meshCollider, Is.Not.Null);
+            Assert.That(meshCollider.convex, Is.True);
+            var modelImporter = AssetImporter.GetAtPath(D12ModelPath) as ModelImporter;
+            Assert.That(modelImporter, Is.Not.Null, D12ModelPath);
+            Assert.That(
+                modelImporter.HasPreBakeCollisionMesh(isConvex: true),
+                Is.True,
+                "The convex D12 collision mesh must be pre-baked for player builds.");
             var expectedFaces = Enumerable.Range(
                     WorldDieAuthorityModel.MinimumFace,
                     WorldDieD12Layout.FaceCount)

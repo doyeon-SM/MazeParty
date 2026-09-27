@@ -4,7 +4,10 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     internal sealed class TerritoryPaintRuntimeAdapter :
-        MinigameRuntimeAdapter<NetworkTerritoryPaintState>
+        MinigameRuntimeAdapter<NetworkTerritoryPaintState>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability,
+        IMinigameMovementInputCapability
     {
         public override ScheduledMinigameId Id =>
             ScheduledMinigameId.TerritoryPaint;
@@ -29,7 +32,7 @@ namespace MazeParty.Multiplayer
                    state.CanAcceptInputForSlot(slot);
         }
 
-        public override bool TryGetRoundAndInputEpoch(
+        public bool TryGetRoundAndInputEpoch(
             out byte roundNumber,
             out uint inputEpoch)
         {
@@ -62,7 +65,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.ResumeOnServer(now);
         }
 
-        public override void RestoreAvatarForReconnectOnServer(
+        public void RestoreAvatarForReconnectOnServer(
             NetworkPlayerAvatar avatar)
         {
             CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
@@ -73,7 +76,7 @@ namespace MazeParty.Multiplayer
             CurrentState?.EndMatchOnServer();
         }
 
-        public override void ReceiveMovementInputOnServer(
+        public void ReceiveMovementInputOnServer(
             NetworkPlayerAvatar avatar,
             Vector2 input,
             byte roundNumber,
