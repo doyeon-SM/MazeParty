@@ -104,7 +104,7 @@ namespace MazeParty.Multiplayer
             var shouldShowWorld = state != null && state.IsSpawned && match != null &&
                                   selected &&
                                   (match.FlowState == BoardFlowState.MinigamePlaying ||
-                                   match.FlowState == BoardFlowState.SkippedResult);
+                                   match.FlowState == BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState == BoardFlowState.MinigamePlaying;
             SetHudActive(shouldShowHud);
@@ -477,15 +477,15 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < scoreRows.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                var displayName = avatar != null ? avatar.DisplayName : "PLAYER " + (slot + 1);
+                var displayName = avatar != null ? avatar.DisplayName : GameText.F("PLAYER {0}", slot + 1);
                 var playerState = state.GetPlayerState(slot);
                 var stateLabel = playerState == MinefieldPlayerState.Crippled
-                    ? "INJURED"
+                    ? GameText.T("INJURED")
                     : playerState == MinefieldPlayerState.Eliminated
-                        ? "OUT"
+                        ? GameText.T("OUT")
                         : playerState == MinefieldPlayerState.Finished
-                            ? "FINISHED"
-                            : "RUNNING";
+                            ? GameText.T("FINISHED")
+                            : GameText.T("RUNNING");
                 var progress = Mathf.Clamp(
                     Mathf.RoundToInt(
                         100f * (state.GetRunnerPosition(slot).z -

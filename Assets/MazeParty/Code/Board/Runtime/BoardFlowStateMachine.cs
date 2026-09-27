@@ -12,7 +12,12 @@ namespace MazeParty.Gameplay
         CombatResolve,
         LandingEffectResolve,
         MinigameIntroReady,
-        SkippedResult,
+        /// <summary>
+        /// Short result hold after the minigame step, before the next turn.
+        /// Used both after a completed minigame (placement rewards are already
+        /// settled) and after an empty schedule slot (no rewards).
+        /// </summary>
+        MinigameResult,
         MinigameLoading,
         MinigamePlaying,
         MatchComplete
@@ -59,7 +64,7 @@ namespace MazeParty.Gameplay
         public const double LandingEffectResolveDurationSeconds = 4d;
         public const double MinigameIntroReadyDurationSeconds = 60d;
         public const double MinigameLoadingDurationSeconds = 60d;
-        public const double SkippedResultDurationSeconds = 3d;
+        public const double MinigameResultDurationSeconds = 3d;
         public const int DefaultTotalTurns =
             MinigameScheduleRules.DefaultTurnCount;
 
@@ -228,9 +233,9 @@ namespace MazeParty.Gameplay
 
                         break;
                     }
-                    case BoardFlowState.SkippedResult:
+                    case BoardFlowState.MinigameResult:
                     {
-                        var boundary = _stateStartedAt + SkippedResultDurationSeconds;
+                        var boundary = _stateStartedAt + MinigameResultDurationSeconds;
                         if (logicalNow >= boundary)
                         {
                             BeginNextTurn(boundary);
@@ -287,10 +292,11 @@ namespace MazeParty.Gameplay
             if (State != BoardFlowState.MinigameIntroReady)
                 return false;
 
-            // Development skip deliberately produces no minigame reward mutation.
-            // TODO(BOARD-FLOW): replace this extension point with authoritative
-            // minigame selection and result settlement.
-            TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
+            // The host minigame schedule chose an empty slot
+            // (ScheduledMinigameId.Skip): the minigame step ends without rewards.
+            // Real minigames are chosen by HostMinigameSchedule and finish through
+            // TryCompleteMinigame after their placement rewards are settled.
+            TransitionTo(BoardFlowState.MinigameResult, ToFlowTime(synchronizedNow));
             return true;
         }
 
@@ -332,7 +338,9 @@ namespace MazeParty.Gameplay
             if (State != BoardFlowState.MinigamePlaying)
                 return false;
 
-            TransitionTo(BoardFlowState.SkippedResult, ToFlowTime(synchronizedNow));
+            // NetworkMatchState.TryComplete*OnServer validates the leaderboard,
+            // calls this, then settles placement gold and statistics for the turn.
+            TransitionTo(BoardFlowState.MinigameResult, ToFlowTime(synchronizedNow));
             return true;
         }
 
@@ -417,8 +425,8 @@ namespace MazeParty.Gameplay
                     return Remaining(_stateStartedAt, MinigameIntroReadyDurationSeconds, logicalNow);
                 case BoardFlowState.MinigameLoading:
                     return Remaining(_stateStartedAt, MinigameLoadingDurationSeconds, logicalNow);
-                case BoardFlowState.SkippedResult:
-                    return Remaining(_stateStartedAt, SkippedResultDurationSeconds, logicalNow);
+                case BoardFlowState.MinigameResult:
+                    return Remaining(_stateStartedAt, MinigameResultDurationSeconds, logicalNow);
                 default:
                     return 0d;
             }
@@ -484,9 +492,9 @@ namespace MazeParty.Gameplay
             CurrentTurn++;
             _arrivedPlayerMask = 0;
             LastActionEndReason = BoardActionEndReason.None;
+            // Rewards are already settled here: minigame placement gold when the
+            // minigame completed, landing effects and shop purchases during the turn.
             TransitionTo(BoardFlowState.TurnOverview, occurredAt);
-
-            // TODO(BOARD-FLOW): settle rewards/currency before starting the next turn.
         }
 
         private void TransitionTo(BoardFlowState next, double occurredAt)

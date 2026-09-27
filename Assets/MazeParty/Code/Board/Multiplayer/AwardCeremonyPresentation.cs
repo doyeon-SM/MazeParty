@@ -31,6 +31,8 @@ namespace MazeParty.Multiplayer
 
         private readonly PlayerAvatarVisual[] _players =
             new PlayerAvatarVisual[MultiplayerConstants.MaxPlayers];
+        private readonly bool[] _appearanceApplied =
+            new bool[MultiplayerConstants.MaxPlayers];
         private GameplayCameraDirector _cameraDirector;
         private int _observedRevision = -1;
         private bool _presentationActive;
@@ -68,6 +70,7 @@ namespace MazeParty.Multiplayer
                 !bindings.HasRequiredReferences)
             {
                 _observedRevision = -1;
+                Array.Clear(_appearanceApplied, 0, _appearanceApplied.Length);
                 return;
             }
 
@@ -169,11 +172,13 @@ namespace MazeParty.Multiplayer
                         appearance.MouthId,
                         appearance.HatId);
                     player.SetDisplayName(avatar.DisplayName);
+                    _appearanceApplied[slot] = true;
                 }
-                else
+                else if (!_appearanceApplied[slot])
                 {
+                    // A player who already left the room keeps the look they had.
                     player.SetBodyColor(FallbackPlayerColors[slot]);
-                    player.SetDisplayName("Player " + (slot + 1));
+                    player.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 }
                 player.SetOwnerFirstPerson(false);
                 player.SetTopViewHighlight(false);
@@ -244,7 +249,7 @@ namespace MazeParty.Multiplayer
                     nameplate.gameObject.SetActive(false);
                 }
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
-                visual.SetDisplayName("Player " + (slot + 1));
+                visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 foreach (var collider in
                          root.GetComponentsInChildren<Collider>(true))
                 {

@@ -182,6 +182,7 @@ namespace MazeParty.Editor
                 scene);
             scheduleTower.transform.localScale =
                 scheduleTowerPrefab.transform.localScale;
+            GameMenuProjectSetup.EnsureSceneInstance(scene);
             CreateEventSystem();
 
             var runtime = new GameObject("Online Network Runtime");
@@ -525,13 +526,6 @@ namespace MazeParty.Editor
                 16,
                 TextAnchor.MiddleLeft,
                 36f);
-            var leaveButton = CreateButton(
-                "Leave Session Button",
-                sessionPanel.transform,
-                "Leave Session",
-                font,
-                out _);
-
             var customizationPanel = CreateLobbyCustomization(
                 sessionPanel.transform,
                 font,
@@ -548,14 +542,6 @@ namespace MazeParty.Editor
                 TextAnchor.UpperLeft,
                 52f);
 
-            var quitButton = CreateButton(
-                "Quit Game Button",
-                window.transform,
-                "Quit Game",
-                font,
-                out _);
-            quitButton.targetGraphic.color = new Color(0.62f, 0.14f, 0.16f, 1f);
-
             sessionPanel.SetActive(false);
             runningText.gameObject.SetActive(false);
 
@@ -571,8 +557,6 @@ namespace MazeParty.Editor
                 copyButton,
                 readyButton,
                 startButton,
-                leaveButton,
-                quitButton,
                 inviteCodeText,
                 sessionSummaryText,
                 readyButtonText,

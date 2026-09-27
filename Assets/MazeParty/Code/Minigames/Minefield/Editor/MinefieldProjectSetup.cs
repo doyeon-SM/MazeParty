@@ -860,7 +860,7 @@ namespace MazeParty.Editor
                     CreateBoardTextAnchor(
                         readyPanel.transform,
                         "MinigameRulePlaceholderText",
-                        "MINEFIELD RULE IMAGE\nARTWORK PLACEHOLDER",
+                        "RULE IMAGE",
                         font,
                         26,
                         new Vector2(0f, 25f),
@@ -882,11 +882,11 @@ namespace MazeParty.Editor
 
                 var resultPanel = FindDescendant(
                     contents.transform,
-                    "SkippedResultPanel");
+                    MinigameResultCanvasProjectSetup.LegacyBoardPanelName);
                 if (resultPanel == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvas.prefab is missing SkippedResultPanel.");
+                        "BoardCanvas.prefab is missing its legacy SkippedResultPanel.");
                 }
                 if (FindDescendant(
                         resultPanel.transform,
@@ -922,7 +922,7 @@ namespace MazeParty.Editor
                        "MinigameReadyPanel") != null &&
                    FindDescendant(
                        prefab.transform,
-                       "SkippedResultPanel") != null &&
+                       MinigameResultCanvasProjectSetup.LegacyBoardPanelName) != null &&
                    FindDescendant(
                        prefab.transform,
                        "MinigameRuleImage") != null &&
@@ -964,7 +964,7 @@ namespace MazeParty.Editor
         private static void ValidateExistingBoardCanvasAnchors(GameObject prefab)
         {
             if (FindDescendant(prefab.transform, "MinigameReadyPanel") == null ||
-                FindDescendant(prefab.transform, "SkippedResultPanel") == null)
+                FindDescendant(prefab.transform, MinigameResultCanvasProjectSetup.LegacyBoardPanelName) == null)
             {
                 throw new InvalidOperationException(
                     "BoardCanvas.prefab is missing its base minigame panels.");

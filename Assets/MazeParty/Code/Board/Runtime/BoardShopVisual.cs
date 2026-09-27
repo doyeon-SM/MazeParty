@@ -8,8 +8,8 @@ namespace MazeParty.Gameplay
         [SerializeField] private TextMesh label;
         [SerializeField] private GameObject topViewHighlight;
         [SerializeField] private Collider[] interactionColliders;
-        [SerializeField, TextArea] private string availableText = "ITEM SHOP {0}\nRMB OPEN";
-        [SerializeField, TextArea] private string soldOutText = "ITEM SHOP {0}\nSOLD OUT";
+        [SerializeField, TextArea] private string availableText = GameText.N("ITEM SHOP {0}\nRMB OPEN");
+        [SerializeField, TextArea] private string soldOutText = GameText.N("ITEM SHOP {0}\nSOLD OUT");
         public TextMesh Label => label;
         public GameObject TopViewHighlight => topViewHighlight;
         private void Awake()
@@ -28,7 +28,7 @@ namespace MazeParty.Gameplay
         }
         public void SetItemState(int index, bool soldOut)
         {
-            label.text = (soldOut ? soldOutText : availableText).Replace("{0}", (index + 1).ToString());
+            label.text = GameText.T(soldOut ? soldOutText : availableText).Replace("{0}", (index + 1).ToString());
             foreach (var target in interactionColliders)
             {
                 var item = target.GetComponent<ItemShopWorldTarget>();

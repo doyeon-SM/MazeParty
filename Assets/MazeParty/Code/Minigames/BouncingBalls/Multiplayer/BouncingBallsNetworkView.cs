@@ -116,7 +116,7 @@ namespace MazeParty.Multiplayer
             var shouldShowWorld = state != null && state.IsSpawned &&
                 selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
-                 match.FlowState == BoardFlowState.SkippedResult);
+                 match.FlowState == BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                 match.FlowState == BoardFlowState.MinigamePlaying;
 
@@ -274,11 +274,11 @@ namespace MazeParty.Multiplayer
                 hud.PlayerNameTexts[slot].text = avatar != null &&
                     !string.IsNullOrWhiteSpace(avatar.DisplayName)
                         ? avatar.DisplayName
-                        : "PLAYER " + (slot + 1);
+                        : GameText.F("PLAYER {0}", slot + 1);
                 hud.PlayerNameTexts[slot].color =
                     GetPlayerColor(match, slot);
                 hud.PlayerScoreTexts[slot].text =
-                    "SCORE " + state.GetScore(slot);
+                    GameText.F("SCORE {0}", state.GetScore(slot));
             }
         }
 

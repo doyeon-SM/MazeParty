@@ -116,6 +116,9 @@ namespace MazeParty.Multiplayer
                 Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = true;
             }
+
+            // The common menu and the pause release button need a free pointer.
+            LocalInputGate.ApplyPointerOverride();
         }
 
         private void LateUpdate()

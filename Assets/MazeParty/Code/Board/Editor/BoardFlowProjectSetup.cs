@@ -877,7 +877,7 @@ namespace MazeParty.Editor
             var firstPerson = CreateCinemachineCamera(
                 root.transform, "CM_FirstPerson", new Vector3(0f, 2f, 0f), Quaternion.identity, 70f, 0);
             var minigame = CreateCinemachineCamera(
-                root.transform, "CM_MinigamePlaceholder", boardPose.Position, boardPose.Rotation, 55f, 0);
+                root.transform, "CM_MinigameFallback", boardPose.Position, boardPose.Rotation, 55f, 0);
 
             var director = root.AddComponent<GameplayCameraDirector>();
             director.Configure(output, firstPerson, boardCamera, minigame);
@@ -1603,10 +1603,10 @@ namespace MazeParty.Editor
             var panel = CreatePanel("MinigameReadyPanel", canvas, new Vector2(0.5f, 0.5f),
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 840f),
                 new Vector2(0.5f, 0.5f), new Color(0.03f, 0.055f, 0.09f, 0.98f));
-            CreateText("Ready Title", panel.transform, "MINIGAME INTRO / READY", font, 28,
+            CreateText("Ready Title", panel.transform, "MINIGAME READY", font, 28,
                 new Vector2(0f, 330f), new Vector2(960f, 44f), TextAnchor.MiddleCenter);
             CreateText("Ready Note", panel.transform,
-                "Minigame selection is TODO. Ready from all four players triggers the development skip.",
+                "Minigame rules appear here. The minigame starts when all four players are ready or the countdown ends.",
                 font, 17, new Vector2(0f, 282f), new Vector2(960f, 62f), TextAnchor.MiddleCenter);
 
             var ruleImageObject = CreateUiObject(
@@ -1626,7 +1626,7 @@ namespace MazeParty.Editor
             CreateText(
                 "MinigameRulePlaceholderText",
                 panel.transform,
-                "MINEFIELD RULE IMAGE\nARTWORK PLACEHOLDER",
+                "RULE IMAGE",
                 font,
                 26,
                 new Vector2(0f, 15f),
@@ -1654,7 +1654,7 @@ namespace MazeParty.Editor
                     TextAnchor.MiddleCenter);
                 playerReadyText.color = new Color(0.68f, 0.74f, 0.82f, 1f);
             }
-            CreateButton("ReadyButton", panel.transform, "READY / SKIP", font,
+            CreateButton("ReadyButton", panel.transform, "READY", font,
                 new Vector2(0f, -380f), new Vector2(320f, 64f));
             panel.SetActive(false);
         }

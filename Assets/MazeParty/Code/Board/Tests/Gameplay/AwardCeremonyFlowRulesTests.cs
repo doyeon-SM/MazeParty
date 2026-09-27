@@ -114,24 +114,73 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void LobbyReturn_RequiresAllFourAndCanRetryUntilAccepted()
+        public void LobbyReturn_RequiresEveryRemainingPlayerAndCanRetryUntilAccepted()
         {
             const byte allPlayers = 0b0000_1111;
             Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                 AwardCeremonyPhase.AwaitingReturn,
                 readyMask: allPlayers,
-                allPlayersMask: allPlayers,
+                remainingMask: allPlayers,
                 returnQueued: false), Is.True);
             Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                 AwardCeremonyPhase.AwaitingReturn,
                 readyMask: 0b0000_0111,
-                allPlayersMask: allPlayers,
+                remainingMask: allPlayers,
                 returnQueued: false), Is.False);
             Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                 AwardCeremonyPhase.AwaitingReturn,
                 readyMask: allPlayers,
-                allPlayersMask: allPlayers,
+                remainingMask: allPlayers,
                 returnQueued: true), Is.False);
+            Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
+                AwardCeremonyPhase.FinalPodiumLocked,
+                readyMask: allPlayers,
+                remainingMask: allPlayers,
+                returnQueued: false), Is.False);
+        }
+
+        [Test]
+        public void LobbyReturn_DoesNotWaitForPlayersWhoLeftTheRoom()
+        {
+            // Seat 3 cleaned up the board and left; seats 0-2 remain.
+            var remaining = AwardCeremonyFlowRules.KeepConnectedPlayers(
+                remainingMask: 0b0000_1111,
+                connectedMask: 0b0000_0111);
+            Assert.That(remaining, Is.EqualTo((byte)0b0000_0111));
+            Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
+                AwardCeremonyPhase.AwaitingReturn,
+                readyMask: 0b0000_1011,
+                remainingMask: remaining,
+                returnQueued: false), Is.False);
+            Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
+                AwardCeremonyPhase.AwaitingReturn,
+                readyMask: 0b0000_1111,
+                remainingMask: remaining,
+                returnQueued: false), Is.True);
+
+            // A departed seat stays out even if the same seat reconnects.
+            Assert.That(AwardCeremonyFlowRules.KeepConnectedPlayers(
+                remaining,
+                connectedMask: 0b0000_1111), Is.EqualTo((byte)0b0000_0111));
+            Assert.That(AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
+                AwardCeremonyPhase.AwaitingReturn,
+                readyMask: 0b0000_1111,
+                remainingMask: 0,
+                returnQueued: false), Is.False);
+        }
+
+        [Test]
+        public void CleanUpBoard_MovesOnlyThatPlayerToTheWaitingRoom()
+        {
+            const byte seatOneReady = 0b0000_0010;
+            Assert.That(AwardCeremonyFlowRules.IsBackInWaitingRoom(
+                AwardCeremonyPhase.AwaitingReturn, seatOneReady, 1), Is.True);
+            Assert.That(AwardCeremonyFlowRules.IsBackInWaitingRoom(
+                AwardCeremonyPhase.AwaitingReturn, seatOneReady, 0), Is.False);
+            Assert.That(AwardCeremonyFlowRules.IsBackInWaitingRoom(
+                AwardCeremonyPhase.FinalPodiumLocked, seatOneReady, 1), Is.False);
+            Assert.That(AwardCeremonyFlowRules.IsBackInWaitingRoom(
+                AwardCeremonyPhase.AwaitingReturn, seatOneReady, -1), Is.False);
         }
     }
 }

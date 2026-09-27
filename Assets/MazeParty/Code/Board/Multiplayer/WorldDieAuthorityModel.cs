@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -148,7 +149,7 @@ namespace MazeParty.Multiplayer
 
     public static class WorldDieHudPresentationPolicy
     {
-        public const string RollCompleteLabel = "DICE  ROLL COMPLETE";
+        public static readonly string RollCompleteLabel = GameText.N("DICE  ROLL COMPLETE");
 
         public static int ResolveVisibleRoll(
             bool isOwner,
@@ -200,32 +201,32 @@ namespace MazeParty.Multiplayer
                 hasSettledPublicFace &&
                 publicFace == visibleRoll)
             {
-                return "DICE  " + visibleRoll;
+                return GameText.F("DICE  {0}", visibleRoll);
             }
 
             if (!isActionPhase)
             {
-                return "DICE  --";
+                return GameText.T("DICE  --");
             }
 
             if (diePhase == WorldDiePhase.Rolling)
             {
-                return "DICE  ROLLING...";
+                return GameText.T("DICE  ROLLING...");
             }
 
             if (hasRolled || hasSettledPublicFace)
             {
-                return RollCompleteLabel;
+                return GameText.T(RollCompleteLabel);
             }
 
             if (!actionWindowOpen)
             {
-                return "DICE  TIME EXPIRED";
+                return GameText.T("DICE  TIME EXPIRED");
             }
 
             return hasResolvedItemChoice
-                ? "RMB  AIM AT YOUR DIE TO ROLL"
-                : "DICE  CHOOSE ITEM FIRST";
+                ? GameText.T("RMB  AIM AT YOUR DIE TO ROLL")
+                : GameText.T("DICE  CHOOSE ITEM FIRST");
         }
     }
 

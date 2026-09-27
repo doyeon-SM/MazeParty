@@ -17,6 +17,17 @@ namespace MazeParty.Editor
     /// </summary>
     public static class MinigameResultCanvasProjectSetup
     {
+        /// <summary>Result panel inside MinigameResultCanvas.prefab.</summary>
+        public const string ResultPanelName = "MinigameResultPanel";
+
+        /// <summary>
+        /// Historical name of the result panel while it still lived in
+        /// BoardCanvas.prefab (before the separate result Canvas and before
+        /// the SkippedResult state was renamed MinigameResult). Used only to
+        /// migrate or reject that legacy child.
+        /// </summary>
+        public const string LegacyBoardPanelName = "SkippedResultPanel";
+
         public const string PrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab";
 
@@ -55,7 +66,7 @@ namespace MazeParty.Editor
 
             var legacyPanel = FindDescendant(
                 boardPrefab.transform,
-                "SkippedResultPanel");
+                LegacyBoardPanelName);
             var resultPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PrefabPath);
             if (resultPrefab == null)
@@ -74,7 +85,7 @@ namespace MazeParty.Editor
                 {
                     var sourcePanel = FindDescendant(
                         sourceContents.transform,
-                        "SkippedResultPanel");
+                        LegacyBoardPanelName);
                     if (sourcePanel == null)
                     {
                         throw new InvalidOperationException(
@@ -116,7 +127,7 @@ namespace MazeParty.Editor
                 {
                     var panel = FindDescendant(
                         contents.transform,
-                        "SkippedResultPanel");
+                        LegacyBoardPanelName);
                     if (panel != null)
                     {
                         UnityEngine.Object.DestroyImmediate(panel);
@@ -271,7 +282,7 @@ namespace MazeParty.Editor
                 legacyPanel,
                 root.transform,
                 false);
-            panel.name = legacyPanel.name;
+            panel.name = ResultPanelName;
             panel.SetActive(false);
             root.GetComponent<MinigameResultCanvasBindings>().Configure(
                 canvas,

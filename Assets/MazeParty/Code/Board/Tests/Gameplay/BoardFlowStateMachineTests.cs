@@ -33,7 +33,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.TrySkipMinigame(122d), Is.False);
             Assert.That(flow.Resume(122d), Is.True);
             Assert.That(flow.TrySkipMinigame(122d), Is.True);
-            Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameResult));
 
             flow.Tick(125d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));

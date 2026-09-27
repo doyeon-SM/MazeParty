@@ -44,9 +44,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
             timerDial.SetTime(remaining, total);
-            roundText.text = "ROUND " +
-                Mathf.Clamp(round, 1, CliffBarrageRules.RoundCount) +
-                " / " + CliffBarrageRules.RoundCount;
+            roundText.text = GameText.F(
+                "ROUND {0} / {1}",
+                Mathf.Clamp(round, 1, CliffBarrageRules.RoundCount),
+                CliffBarrageRules.RoundCount);
         }
 
         private void Awake()

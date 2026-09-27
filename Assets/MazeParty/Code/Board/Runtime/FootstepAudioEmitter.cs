@@ -49,7 +49,8 @@ namespace MazeParty.Gameplay
             if (audible && TryGetNextClip(out var clip))
             {
                 _source.maxDistance = radius;
-                _source.PlayOneShot(clip, volume);
+                // Footsteps are effects; the master volume is on the AudioListener.
+                _source.PlayOneShot(clip, volume * GameAudio.SfxVolume);
             }
 
             FootstepPresented?.Invoke(new FootstepPresentation(

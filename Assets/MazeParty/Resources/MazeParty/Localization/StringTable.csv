@@ -1,0 +1,620 @@
+﻿source,ko,ja,zh-Hans
+#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WIN,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜
+#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WINS,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜
++1 KEY EACH,각자 열쇠 +1,各自 鍵 +1,每人 钥匙 +1
++{0} GOLD\nRMB,+{0} 골드\n우클릭,+{0} ゴールド\n右クリック,+{0} 金币\n右键
+- Waiting for player...,- 플레이어 대기 중...,- プレイヤー待機中...,- 等待玩家...
+1ST,1위,1位,第1名
+2ND,2위,2位,第2名
+3RD,3위,3位,第3名
+4TH,4위,4位,第4名
+5 rounds / 50 damage / 7 tiles. Hold RMB: 2x scope. LMB fires.,5발 / 피해 50 / 7타일. 우클릭 길게 누르기: 2x 스코프. 좌클릭으로 발사합니다.,5発 / 50ダメージ / 7タイル。右クリック長押し: 2xスコープ。左クリックで発射します。,5发 / 50伤害 / 7格。按住右键：2x瞄准镜。左键开火。
+7 rounds / 20 damage / 2 tiles. LMB fires through board barriers.,7발 / 피해 20 / 2타일. 좌클릭으로 보드 장벽을 관통해 발사합니다.,7発 / 20ダメージ / 2タイル。左クリックでボードの障害物を貫通して発射します。,7发 / 20伤害 / 2格。左键开火，可穿透棋盘障碍。
+: NO ROUTE,: 경로 없음,: ルートなし,: 无路线
+: NOT SPAWNED,: 미생성,: 未出現,: 未生成
+: {0} TILES,: {0}타일,: {0}タイル,: {0}格
+A / D: MOVE SHIELD\nCLAIM BALLS · SCORE GOALS,A / D: 보호막 이동\n공 차지하기 · 골 넣기,A / D: シールド移動\nボールを奪う · ゴールを決める,A / D: 移动护盾\n抢占球 · 射门得分
+A completed online match is required before returning to the lobby.,로비로 돌아가려면 온라인 게임이 완료되어야 합니다.,ロビーに戻るには、オンライン試合が完了している必要があります。,需要先完成在线比赛才能返回大厅。
+A disconnected lobby player was removed and the seat is open.,연결이 끊긴 로비 플레이어를 내보내 자리가 비었습니다.,切断されたロビーのプレイヤーを外し、席が空きました。,已移除断线的大厅玩家，该座位现已空出。
+A player,한 플레이어,プレイヤー,一名玩家
+A player did not reconnect within 60 seconds. The fixed four-player match is ending.,플레이어가 60초 안에 재접속하지 않았습니다. 4인 고정 매치를 종료합니다.,プレイヤーが60秒以内に再接続しませんでした。4人固定のマッチを終了します。,有玩家未在 60 秒内重新连接。固定四人对局即将结束。
+A player disconnected while the completed match was returning to the lobby.,완료된 게임이 로비로 돌아가는 중에 플레이어의 연결이 끊겼습니다.,終了した試合がロビーに戻る途中でプレイヤーが切断されました。,已完成的比赛返回大厅时，有玩家断开了连接。
+A player disconnected. Gameplay is paused for the 60-second reconnect window.,플레이어의 연결이 끊겼습니다. 60초의 재접속 대기 시간 동안 게임이 일시정지됩니다.,プレイヤーが切断されました。60秒間の再接続猶予中はゲームを一時停止します。,有玩家断开连接。游戏已暂停，等待60秒重连时间。
+A player left the room after the award ceremony.,시상식이 끝난 뒤 플레이어 한 명이 방을 나갔습니다.,表彰式の後、プレイヤーが1人退室しました。,颁奖典礼结束后，有一名玩家离开了房间。
+"A player left, so the match ended.",플레이어가 나가서 게임이 종료되었습니다.,プレイヤーが退出したため、試合が終了しました。,有玩家离开，比赛已结束。
+A player left. The active four-player session is ending.,플레이어가 나갔습니다. 진행 중인 4인 방이 종료됩니다.,プレイヤーが退出しました。進行中の4人ルームを終了します。,有玩家离开。当前的四人房间即将关闭。
+A stale disconnected lobby player was removed after the grace period.,유예 시간이 지나 연결이 끊긴 채 남아 있던 로비 플레이어를 내보냈습니다.,猶予期間が過ぎたため、切断されたままのロビープレイヤーを外しました。,宽限期已过，已移除长时间断线的大厅玩家。
+A: HIGH\nS: MIDDLE\nD: LOW,A: 고음\nS: 중음\nD: 저음,A: 高音\nS: 中音\nD: 低音,A: 高音\nS: 中音\nD: 低音
+All four players loaded the Board. Gameplay input is enabled.,4명 모두 보드를 불러왔습니다. 게임 입력이 활성화되었습니다.,4人全員がボードを読み込みました。ゲーム操作が有効になりました。,四名玩家均已加载棋盘。游戏输入已启用。
+All four players must be ready.,4명 모두 준비해야 합니다.,4人全員が準備完了である必要があります。,四名玩家必须全部准备。
+All players arrived. Top view opens when the countdown ends.,모든 플레이어가 도착했습니다. 카운트다운이 끝나면 탑뷰가 열립니다.,全プレイヤーが到着しました。カウントダウン終了後にトップビューが開きます。,所有玩家已到达。倒计时结束后将切换为俯视。
+All {0} rounds complete. Final points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 최종 점수로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。最終ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按最终得分排名；按名次奖励金币。
+All {0} rounds complete. Total points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 총점으로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。合計ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按总分排名；按名次奖励金币。
+ALTERNATE A / D\n500 STEPS,A / D 번갈아 누르기\n500걸음,A / D を交互に押す\n500歩,交替按 A / D\n500步
+"Alternate A and D to advance. Pressing the same key twice does not count. The first player to reach 500 steps ends the round. Three rounds, 60 seconds each.\nREADY {0} / 4","A와 D를 번갈아 눌러 전진하세요. 같은 키를 연속으로 누르면 인정되지 않습니다. 가장 먼저 500걸음에 도달한 플레이어가 나오면 라운드가 종료됩니다. 총 3라운드, 라운드당 60초입니다.\n준비 {0} / 4",AとDを交互に押して進みます。同じキーを2回続けて押してもカウントされません。最初に500歩に到達したプレイヤーが出るとラウンド終了です。全3ラウンド、各60秒です。\n準備完了 {0} / 4,交替按A和D前进。连续按同一个键不计数。第一位达到500步的玩家将结束本轮。共三轮，每轮60秒。\n准备 {0} / 4
+Alternate A and D. Repeating the same key does not advance; first to 500 steps ends the round.,"A와 D를 번갈아 누르세요. 같은 키를 반복하면 전진하지 않으며, 가장 먼저 500걸음에 도달하면 라운드가 끝납니다.",AとDを交互に押してください。同じキーを繰り返しても進みません。最初に500歩に到達するとラウンド終了です。,交替按A和D。重复按同一个键不会前进；最先达到500步者将结束本轮。
+AMMO  {0}\nLMB USE / RMB INTERACT,탄약  {0}\n좌클릭 사용 / 우클릭 상호작용,弾薬  {0}\n左クリック 使用 / 右クリック インタラクト,弹药  {0}\n左键 使用 / 右键 互动
+Angry,화남,おこる,生气
+Apply,적용,適用,应用
+Applying final landing effects in player order.,플레이어 순서대로 최종 착지 효과를 적용하고 있습니다.,プレイヤー順に最終着地効果を適用しています。,正在按玩家顺序结算最终落地效果。
+Are you sure you want to leave?,정말 나가시겠습니까?,本当に退出しますか？,确定要离开吗？
+ARENA COMBAT,아레나 대결,アリーナバトル,竞技场对决
+ARENA COMBAT RESULTS,아레나 대결 결과,アリーナバトル結果,竞技场对决结果
+ARRIVAL COMPLETE,도착 완료,到着完了,到达完成
+ARRIVED,도착,到着,已到达
+ARROW: NEXT AVAILABLE TILE\nRADIUS 2 TILES  /  M FULL MAP,화살표: 이동 가능한 다음 타일\n반경 2타일  /  M 전체 지도,矢印: 次に移動できるタイル\n半径2タイル  /  M 全体マップ,箭头：下一个可前往的格子\n半径2格  /  M 完整地图
+ARROW: NEXT AVAILABLE TILE  /  M CLOSE,화살표: 이동 가능한 다음 타일  /  M 닫기,矢印: 次に移動できるタイル  /  M 閉じる,箭头：下一个可前往的格子  /  M 关闭
+AUTO SKIP,자동 건너뛰기,自動スキップ,自动跳过
+Back in the waiting room. Other players are still at the award ceremony; you can leave the room from the menu.,"대기방으로 돌아왔습니다. 다른 플레이어는 아직 시상식 중이며, 메뉴에서 방을 나갈 수 있습니다.",待機ルームに戻りました。ほかのプレイヤーはまだ表彰式中です。メニューから退室できます。,已返回等待房间。其他玩家仍在颁奖典礼中，可通过菜单离开房间。
+BALLOON BLOW,풍선 불기,風船ふくらまし,吹气球
+BALLOON BLOW  ROUND {0} / {1}  -  COUNTDOWN,풍선 불기  라운드 {0} / {1}  -  카운트다운,風船ふくらまし  ラウンド {0} / {1}  -  カウントダウン,吹气球  第{0} / {1}轮  -  倒计时
+BALLOON BLOW  ROUND {0} / {1}  -  INFLATE,풍선 불기  라운드 {0} / {1}  -  불기,風船ふくらまし  ラウンド {0} / {1}  -  ふくらませ,吹气球  第{0} / {1}轮  -  充气
+BALLOON BLOW  ROUND {0} / {1}  -  RESULT,풍선 불기  라운드 {0} / {1}  -  결과,風船ふくらまし  ラウンド {0} / {1}  -  結果,吹气球  第{0} / {1}轮  -  结果
+BALLOON BLOW COMPLETE,풍선 불기 종료,風船ふくらまし終了,吹气球结束
+BALLOON BLOW RESULTS,풍선 불기 결과,風船ふくらまし結果,吹气球结果
+BGM,BGM,BGM,背景音乐
+Black,검정,黒,黑
+Blue,파랑,青,蓝
+BOARD  /  {0} ^,보드  /  {0} ^,ボード  /  {0} ^,棋盘  /  {0} ^
+BOARD OVERVIEW,보드 전체 보기,ボード全体表示,棋盘总览
+Board overview: inspect every player and tile.,보드 전체 보기: 모든 플레이어와 타일을 확인하세요.,ボード全体表示：すべてのプレイヤーとタイルを確認できます。,棋盘总览：查看所有玩家和格子。
+BOMB PASSING,폭탄 돌리기,爆弾まわし,传炸弹
+BOMB PASSING RESULTS,폭탄 돌리기 결과,爆弾まわし結果,传炸弹结果
+BONUS KEY AWARD {0} / 2,보너스 열쇠 시상 {0} / 2,ボーナス鍵 表彰 {0} / 2,额外钥匙奖项 {0} / 2
+Borderless Fullscreen,전체화면 창모드,ボーダーレスフルスクリーン,无边框全屏
+BOUNCING BALLS,튕기는 공,バウンドボール,弹跳球
+BOUNCING BALLS  ROUND {0} / {1}  -  COUNTDOWN,튕기는 공  라운드 {0} / {1}  -  카운트다운,バウンドボール  ラウンド {0} / {1}  -  カウントダウン,弹跳球  第{0} / {1}轮  -  倒计时
+BOUNCING BALLS  ROUND {0} / {1}  -  PLAY,튕기는 공  라운드 {0} / {1}  -  플레이,バウンドボール  ラウンド {0} / {1}  -  プレイ,弹跳球  第{0} / {1}轮  -  进行中
+BOUNCING BALLS  ROUND {0} / {1}  -  RESULT,튕기는 공  라운드 {0} / {1}  -  결과,バウンドボール  ラウンド {0} / {1}  -  結果,弹跳球  第{0} / {1}轮  -  结果
+BOUNCING BALLS COMPLETE,튕기는 공 종료,バウンドボール終了,弹跳球结束
+BOUNCING BALLS RESULTS,튕기는 공 결과,バウンドボール結果,弹跳球结果
+Camera descending to your first-person view.,카메라가 1인칭 시점으로 내려가고 있습니다.,カメラが一人称視点へ降下しています。,镜头正在下降至第一人称视角。
+Cancel,취소,キャンセル,取消
+CANCEL / ESC,취소 / ESC,キャンセル / ESC,取消 / ESC
+Cancel Ready,준비 취소,準備解除,取消准备
+CARRYING,운반 중,運搬中,搬运中
+CARRYING GIFT,선물 운반 중,プレゼント運搬中,搬运礼物中
+CEREMONY COMPLETE,시상식 종료,表彰式終了,颁奖典礼结束
+CEREMONY PAUSED,시상식 일시정지,表彰式 一時停止中,颁奖典礼已暂停
+CEREMONY PAUSED  -  WAITING FOR PLAYER,시상식 일시정지  -  플레이어 대기 중,表彰式 一時停止中  -  プレイヤー待ち,颁奖典礼已暂停  -  等待玩家
+Character - Unique Body Color / Test Hat,캐릭터 - 고유 몸 색상 / 테스트 모자,キャラクター - 固有ボディカラー / テスト帽子,角色 - 专属身体颜色 / 测试帽子
+CHARGE  --,잔량  --,残量  --,剩余  --
+CHOICE  {0},선택  {0},選択  {0},选择  {0}
+Choice timed out. DO NOT USE selected automatically.,선택 시간이 초과되었습니다. '사용 안 함'이 자동으로 선택되었습니다.,選択時間切れです。「使わない」が自動で選択されました。,选择超时。已自动选择“不使用”。
+CHOOSE  {0},선택 중  {0},選択中  {0},请选择  {0}
+CHOOSE AN ITEM,아이템 선택,アイテムを選択,选择道具
+Choose an item or DO NOT USE. Your personal limit is 30 seconds.,아이템 또는 '사용 안 함'을 선택하세요. 개인 제한 시간은 30초입니다.,アイテムか「使わない」を選んでください。個人の制限時間は30秒です。,请选择一个道具或“不使用”。你的个人限时为30秒。
+CIRCLE,원,丸,圆形
+CLEAN UP BOARD,보드 정리하기,ボードを片付ける,整理棋盘
+CLIFF BARRAGE,절벽 탄막,崖っぷち弾幕,悬崖弹幕
+CLIFF BARRAGE RESULTS,절벽 탄막 결과,崖っぷち弾幕結果,悬崖弹幕结果
+CLOAK ACTIVE / ENDS BEFORE COMBAT,망토 활성 / 전투 전 해제,マント発動中 / バトル前に解除,斗篷生效中 / 战斗前结束
+CLOSE,닫기,閉じる,关闭
+COMBAT QUEUE,전투 대기열,バトル待機列,战斗队列
+Connected to the online game.,온라인 게임에 접속했습니다.,オンラインゲームに接続しました。,已连接到在线游戏。
+Connected to the online lobby.,온라인 로비에 접속했습니다.,オンラインロビーに接続しました。,已连接到在线大厅。
+Continuing lobby return after disconnecting clients that could not finish the scene unload.,씬 언로드를 끝내지 못한 클라이언트의 연결을 끊고 로비 복귀를 계속합니다.,シーンのアンロードを完了できなかったクライアントを切断し、ロビーへの復帰を続行します。,已断开未能完成场景卸载的客户端，继续返回大厅。
+COOLDOWN {0:0.0}s,쿨다운 {0:0.0}초,クールダウン {0:0.0}秒,冷却 {0:0.0}秒
+Copy Code,코드 복사,コードをコピー,复制代码
+CORRECT · TORSO LOST,정답 · 몸통 잃음,正解 · 胴体喪失,正确 · 失去躯干
+CORRECT · WAITING,정답 · 대기 중,正解 · 待機中,正确 · 等待中
+Could not remove the disconnected lobby player: {0},연결이 끊긴 로비 플레이어를 내보내지 못했습니다: {0},切断されたロビープレイヤーを外せませんでした: {0},无法移除断线的大厅玩家：{0}
+Could not return the completed match to the lobby: {0},완료된 게임을 로비로 되돌리지 못했습니다: {0},終了した試合をロビーに戻せませんでした: {0},无法将已完成的比赛返回大厅：{0}
+Could not save the lobby phase; retrying: {0},로비 단계를 저장하지 못해 다시 시도하는 중: {0},ロビーフェーズの保存に失敗、再試行中: {0},无法保存大厅阶段，正在重试：{0}
+Could not start Board scene synchronization: {0},보드 씬 동기화를 시작하지 못했습니다: {0},ボードシーンの同期を開始できませんでした: {0},无法开始同步棋盘场景：{0}
+Could not synchronize the {0} minigame scene: {1},{0} 미니게임 씬을 동기화할 수 없습니다: {1},{0}ミニゲームのシーンを同期できませんでした: {1},无法同步 {0} 小游戏场景: {1}
+Create a private session or join with an invite code.,비공개 방을 만들거나 초대 코드로 참가하세요.,プライベートルームを作成するか、招待コードで参加してください。,创建私人房间，或使用邀请码加入。
+Create Private Room,비공개 방 만들기,プライベートルーム作成,创建私人房间
+Creating a private Relay session...,비공개 Relay 방을 만드는 중...,プライベートRelayルームを作成中...,正在创建私人 Relay 房间...
+CROSS,엑스,バツ,叉形
+"CURRENT ({0}, {1})  {2}\n{3}","현재 ({0}, {1})  {2}\n{3}","現在地 ({0}, {1})  {2}\n{3}","当前 ({0}, {1})  {2}\n{3}"
+Current owned area decides the final score.,현재 차지한 영역이 최종 점수가 됩니다.,現在の所有面積が最終スコアになります。,当前占领面积决定最终得分。
+CURRENT TILE  --,현재 타일  --,現在のタイル  --,当前格子  --
+CYAN  YOU / ROUTE    GOLD  KEY SHOP    1-4  PLAYERS,청록  나 / 경로    금색  열쇠 상점    1-4  플레이어,シアン  自分 / ルート    金色  鍵ショップ    1-4  プレイヤー,青色  你 / 路线    金色  钥匙商店    1-4  玩家
+D12 {0} + {1} / RMB EACH DIE,D12 {0} + {1} / 주사위마다 우클릭,D12 {0} + {1} / サイコロごとに右クリック,D12 {0} + {1} / 每个骰子右键
+D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2}
+DESCENDING,하강 중,降下中,下降中
+DICE,주사위,サイコロ,骰子
+DICE  --,주사위  --,サイコロ  --,骰子  --
+DICE  CHOOSE ITEM FIRST,주사위  먼저 아이템 선택,サイコロ  先にアイテムを選択,骰子  请先选择道具
+DICE  ROLL COMPLETE,주사위  굴리기 완료,サイコロ  ロール完了,骰子  投掷完成
+DICE  ROLLING...,주사위  굴리는 중...,サイコロ  ロール中...,骰子  投掷中...
+DICE  TIME EXPIRED,주사위  시간 초과,サイコロ  時間切れ,骰子  时间到
+DICE  WAITING FOR PLAYER,주사위  플레이어 대기 중,サイコロ  プレイヤー待機中,骰子  等待玩家
+DICE  {0},주사위  {0},サイコロ  {0},骰子  {0}
+DO NOT USE,사용 안 함,使わない,不使用
+Dodge shells and lasers. Push rivals off the cliff.,포탄과 레이저를 피하세요. 상대를 절벽 밖으로 밀어내세요.,砲弾とレーザーを避けましょう。ライバルを崖から突き落としましょう。,躲避炮弹和激光。把对手推下悬崖。
+Double Dice,더블 주사위,ダブルダイス,双骰子
+DRAG TO SELECT,드래그하여 선택,ドラッグで選択,拖动以选择
+DROP,낙하,落下,掉落
+DROPPING,낙하 중,落下中,掉落中
+Each offer has one shared copy. The action clock continues.,각 상품은 모두가 공유하는 1개뿐입니다. 행동 시간은 계속 흐릅니다.,各商品は全員共通で1個のみです。行動時間は進み続けます。,每件商品仅有一份，所有人共享。行动计时继续进行。
+Each round assigns one player as the tagger. Runners move with WASD using a shared camera. The tagger moves with WASD in first person and presses LMB to catch. Every player tags once across four 60-second rounds.\nREADY {0} / 4,매 라운드 한 명이 술래가 됩니다. 도망자는 공용 카메라로 보며 WASD로 이동합니다. 술래는 1인칭으로 WASD로 이동하고 좌클릭으로 잡습니다. 60초 라운드 4번 동안 모든 플레이어가 한 번씩 술래를 맡습니다.\n준비 {0} / 4,各ラウンドで1人が鬼になります。逃げる側は共有カメラでWASDで移動します。鬼は一人称視点でWASDで移動し、左クリックで捕まえます。60秒のラウンドを4回行い、全員が1回ずつ鬼を担当します。\n準備完了 {0} / 4,每轮指定一名玩家为追捕者。逃跑者使用共享镜头，用WASD移动。追捕者以第一人称用WASD移动，按左键抓人。共四轮，每轮60秒，每位玩家各当一次追捕者。\n准备 {0} / 4
+EMPTY,비어 있음,空き,空
+Enter an invite code.,초대 코드를 입력하세요.,招待コードを入力してください。,请输入邀请码。
+Enter display name,표시 이름 입력,表示名を入力,输入显示名称
+Enter invite code,초대 코드 입력,招待コードを入力,输入邀请码
+Exactly four ready players are required.,준비된 플레이어가 정확히 4명 필요합니다.,準備完了のプレイヤーがちょうど4人必要です。,需要恰好四名已准备的玩家。
+FIGHT,전투,バトル,战斗
+FIGHT  SPECTATING,전투  관전 중,バトル  観戦中,战斗  观战中
+Fight in first person. Eliminated players spectate.,1인칭으로 싸우세요. 탈락한 플레이어는 관전합니다.,一人称視点で戦います。脱落したプレイヤーは観戦します。,以第一人称战斗。被淘汰的玩家将观战。
+"Fight with WASD movement, mouse look and LMB punches. Health is hidden. Defeated players spectate. Last survivor wins, or remaining health decides survivors after 60 seconds.\nREADY {0} / 4","WASD로 이동하고 마우스로 시점을 돌리며 좌클릭 펀치로 싸우세요. 체력은 표시되지 않습니다. 패배한 플레이어는 관전합니다. 마지막 생존자가 승리하며, 60초가 지나면 남은 체력으로 생존자의 순위를 가립니다.\n준비 {0} / 4",WASDで移動、マウスで視点操作、左クリックでパンチして戦います。体力は表示されません。倒されたプレイヤーは観戦します。最後の生存者が勝利し、60秒経過後は残り体力で生存者の順位が決まります。\n準備完了 {0} / 4,用WASD移动、鼠标控制视角、左键出拳战斗。生命值不显示。被击败的玩家将观战。最后的幸存者获胜；60秒后按剩余生命值决定幸存者名次。\n准备 {0} / 4
+FIGHT {0}  /  {1},전투 {0}  /  {1},バトル {0}  /  {1},战斗 {0}  /  {1}
+FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage.,전투: 방 안에서 WASD로 이동합니다. 좌클릭 펀치로 임시 HP 피해 5를 줍니다.,バトル：部屋の中をWASDで移動します。左クリックのパンチで一時HPに5ダメージを与えます。,战斗：在房间内用WASD移动。左键出拳造成5点临时HP伤害。
+Final placement awards {0} gold.,최종 순위에 따라 {0} 골드를 지급합니다.,最終順位に応じて {0} ゴールドを獲得します。,按最终名次奖励 {0} 金币。
+FINAL RANKING,최종 순위,最終順位,最终排名
+FINAL RESULTS,최종 결과,最終結果,最终结果
+Final standings are synchronizing...,최종 순위를 동기화하는 중...,最終順位を同期中...,正在同步最终排名...
+FINAL {0},최종 {0},最終 {0},最终 {0}
+FINISH!,골인!,ゴール！,到达终点！
+FINISHED,완주,ゴール,已完成
+"Finishers rank first, then survivors by forward progress, with eliminated players placed last.","완주자가 가장 높은 순위를 받고, 이어서 생존자는 전진 거리순으로, 탈락자는 마지막 순위가 됩니다.",ゴールしたプレイヤーが上位となり、次に生存者が前進距離順、脱落者は最下位となります。,完成者排名最前，其次是按前进距离排列的幸存者，淘汰者排在最后。
+FIRST-PERSON ACTION,1인칭 행동,一人称アクション,第一人称行动
+Follow the synchronized signal.,동기화된 신호를 따르세요.,同期された信号に従ってください。,请遵循同步信号。
+Four connected players with server-assigned seats are required.,서버에서 자리를 배정받은 접속 플레이어 4명이 필요합니다.,サーバーから席を割り当てられた接続中のプレイヤーが4人必要です。,需要四名已连接且已由服务器分配座位的玩家。
+Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。
+FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^
+Fullscreen,전체화면,フルスクリーン,全屏
+GAME PAUSED,일시정지,一時停止中,游戏已暂停
+GET READY,준비하세요,準備して,准备
+Get ready at the shared start line.,공용 출발선에서 준비하세요.,共通のスタートラインで準備してください。,在共同起跑线上准备。
+Get ready at your corner.,자신의 모서리에서 준비하세요.,自分のコーナーで準備してください。,在你的角落准备。
+Get ready on the shared 6 x 8 platform arena.,공용 6 x 8 발판 아레나에서 준비하세요.,共通の6 x 8足場アリーナで準備してください。,在共享的6 x 8平台竞技场上准备。
+Get ready to alternate A and D.,A와 D를 번갈아 누를 준비를 하세요.,AとDを交互に押す準備をしてください。,准备交替按A和D。
+Get ready. Every player receives the same direction sequence.,준비하세요. 모든 플레이어에게 같은 방향 순서가 주어집니다.,準備してください。全プレイヤーに同じ方向の順番が与えられます。,准备。所有玩家将获得相同的方向序列。
+Get ready. Every player respawns and the mine layout changes each round.,준비하세요. 매 라운드 모든 플레이어가 부활하고 지뢰 배치가 바뀝니다.,準備してください。ラウンドごとに全プレイヤーがリスポーンし、地雷の配置が変わります。,准备。每轮所有玩家都会复活，地雷布局也会改变。
+Get ready. Hold LMB after the countdown to inflate.,준비하세요. 카운트다운이 끝나면 좌클릭을 길게 눌러 풍선을 부세요.,準備してください。カウントダウン後、左クリック長押しでふくらませます。,准备。倒计时结束后按住左键充气。
+Get ready. Ten gifts begin in the shared arena.,준비하세요. 공용 아레나에 선물 10개가 놓인 채로 시작합니다.,準備してください。共有アリーナにプレゼント10個が置かれた状態で始まります。,准备。共享竞技场中初始有十个礼物。
+Get ready. The NPC will play one shared A/S/D sequence.,준비하세요. NPC가 모두에게 같은 A/S/D 순서를 연주합니다.,準備してください。NPCが全員共通のA/S/Dの順番を演奏します。,准备。NPC将演奏一段所有人共用的A/S/D序列。
+GIFT GRAB,선물 쟁탈전,プレゼント争奪戦,抢礼物
+GIFT GRAB  ROUND {0} / {1}  -  COUNTDOWN,선물 쟁탈전  라운드 {0} / {1}  -  카운트다운,プレゼント争奪戦  ラウンド {0} / {1}  -  カウントダウン,抢礼物  第{0} / {1}轮  -  倒计时
+GIFT GRAB  ROUND {0} / {1}  -  RESULT,선물 쟁탈전  라운드 {0} / {1}  -  결과,プレゼント争奪戦  ラウンド {0} / {1}  -  結果,抢礼物  第{0} / {1}轮  -  结果
+GIFT GRAB  ROUND {0} / {1}  -  STEAL,선물 쟁탈전  라운드 {0} / {1}  -  뺏기,プレゼント争奪戦  ラウンド {0} / {1}  -  奪い合い,抢礼物  第{0} / {1}轮  -  抢夺
+GIFT GRAB COMPLETE,선물 쟁탈전 종료,プレゼント争奪戦終了,抢礼物结束
+GIFT GRAB RESULTS,선물 쟁탈전 결과,プレゼント争奪戦結果,抢礼物结果
+GOLD GAIN {0} GOLD,골드 획득 {0},ゴールド獲得 {0},获得金币 {0}
+GOLD LOSS {0} GOLD,골드 손실 {0},ゴールド減少 {0},损失金币 {0}
+GREEN,초록불,青信号,绿灯
+Green,초록,緑,绿
+GREEN  {0:0.0}s: move toward the finish.,초록불  {0:0.0}초: 결승선을 향해 이동하세요.,青信号  {0:0.0}秒：ゴールに向かって進んでください。,绿灯  {0:0.0}秒：向终点前进。
+GREEN LIGHT  ·  MOVE,초록불  ·  이동,青信号  ·  移動,绿灯  ·  移动
+GREEN: MOVE\nRED: FREEZE,초록불: 이동\n빨간불: 정지,青信号: 移動\n赤信号: ストップ,绿灯: 移动\n红灯: 静止
+Grenade,수류탄,手榴弾,手雷
+HAND EMOTES,손 이모트,ハンドエモート,手势表情
+HANDS FREE,빈손,手ぶら,空手
+Happy,기쁨,うれしい,开心
+HEALING +{0} HP,회복 +{0} HP,回復 +{0} HP,恢复 +{0} HP
+HEART,하트,ハート,爱心
+High Dice (7-12),하이 주사위 (7-12),ハイダイス (7-12),高点骰子 (7-12)
+Hit! Position swap cancelled; item consumed.,피격! 위치 교환이 취소되고 아이템이 소모되었습니다.,被弾！位置交換がキャンセルされ、アイテムは消費されました。,被击中！位置交换已取消，道具已消耗。
+Hold A or D to slide your shield. A touched ball takes your color; a goal scores for its color owner.,"A 또는 D를 누르고 있으면 보호막이 움직입니다. 공에 닿으면 내 색이 되고, 골이 들어가면 그 색의 주인이 득점합니다.",AまたはDを押し続けてシールドをスライドさせます。触れたボールは自分の色になり、ゴールするとその色の持ち主に得点が入ります。,按住A或D滑动护盾。被你碰到的球会变成你的颜色；进球时由该颜色的所有者得分。
+HOLD LMB\nPOP FIRST,좌클릭 길게 누르기\n먼저 터뜨리기,左クリック長押し\n先に割ろう,按住左键\n抢先吹爆
+"Hold LMB to inflate at 10% per second. Release before two seconds for a 1-second cooldown; reaching two seconds forces a stop and a 1.5-second cooldown, then requires a fresh click. Progress decays 3% per second while not inflating. First to pop ranks first. Three 30-second rounds.\nREADY {0} / 4","좌클릭을 누르고 있으면 초당 10%씩 부풉니다. 2초 전에 떼면 1초의 쿨다운이 있고, 2초에 도달하면 강제로 멈추며 1.5초의 쿨다운 후 다시 클릭해야 합니다. 불지 않는 동안에는 진행도가 초당 3%씩 줄어듭니다. 가장 먼저 터뜨린 플레이어가 1위입니다. 30초 라운드 3회입니다.\n준비 {0} / 4",左クリック長押しで毎秒10%ずつふくらみます。2秒未満で離すと1秒のクールダウン、2秒に達すると強制停止して1.5秒のクールダウンとなり、再度クリックが必要です。ふくらませていない間は毎秒3%ずつ減少します。最初に割ったプレイヤーが1位です。30秒のラウンドを3回行います。\n準備完了 {0} / 4,按住左键以每秒10%的速度充气。两秒内松开会有1秒冷却；达到两秒会强制停止并冷却1.5秒，之后需要重新点击。未充气时进度每秒衰减3%。最先吹爆者排名第一。共三轮，每轮30秒。\n准备 {0} / 4
+Hold LMB to inflate. Release before two seconds; idle and cooldown time slowly deflate your balloon.,좌클릭을 길게 눌러 풍선을 부세요. 2초가 되기 전에 떼세요. 쉬는 동안과 쿨다운 중에는 풍선이 천천히 줄어듭니다.,左クリック長押しでふくらませます。2秒以内に離してください。何もしていない間やクールダウン中は風船が少しずつしぼみます。,按住左键充气。请在两秒内松开；闲置和冷却期间气球会慢慢漏气。
+HOLD T + DRAG  /  RELEASE TO USE\nCENTER / ESC / RMB: CANCEL,T 길게 누르기 + 드래그  /  놓으면 사용\n중앙 / ESC / 우클릭: 취소,Tを長押し + ドラッグ  /  離して使用\n中央 / ESC / 右クリック: キャンセル,按住T + 拖动  /  松开以使用\n中心 / ESC / 右键：取消
+HOST,호스트,ホスト,房主
+Indigo,남색,藍,靛
+INFLATING,부는 중,ふくらまし中,吹气中
+INJURED,부상,負傷,受伤
+INPUT  LOCKED,입력  잠김,入力  ロック中,输入  已锁定
+Input closed. Camera rising while pending effects settle.,입력이 마감되었습니다. 남은 효과를 처리하는 동안 카메라가 올라갑니다.,入力を締め切りました。保留中の効果を処理する間、カメラが上昇します。,输入已关闭。正在结算待处理效果，镜头上升中。
+INPUTTING,입력 중,入力中,输入中
+INVENTORY FULL - Browse only; purchases are disabled.,인벤토리 가득 참 - 둘러보기만 가능하며 구매할 수 없습니다.,インベントリ満杯 - 閲覧のみ可能で、購入はできません。,背包已满 - 仅可浏览，无法购买。
+INVENTORY FULL - No gold was spent.,인벤토리 가득 참 - 골드가 소모되지 않았습니다.,インベントリ満杯 - ゴールドは消費されていません。,背包已满 - 未消耗金币。
+Invisibility Cloak,투명 망토,透明マント,隐身斗篷
+Invite Code,초대 코드,招待コード,邀请码
+Invite code copied to the clipboard.,초대 코드를 클립보드에 복사했습니다.,招待コードをクリップボードにコピーしました。,邀请码已复制到剪贴板。
+Invite Code: {0},초대 코드: {0},招待コード: {0},邀请码：{0}
+ITEM,아이템,アイテム,道具
+ITEM ACTIVE,아이템 사용 중,アイテム使用中,道具生效中
+ITEM REWARD +0 (INVENTORY FULL),아이템 보상 +0 (인벤토리 가득 참),アイテム報酬 +0 (所持品がいっぱい),道具奖励 +0 (背包已满)
+ITEM REWARD +1 {0},아이템 보상 +1 {0},アイテム報酬 +1 {0},道具奖励 +1 {0}
+ITEM SHOP {0},아이템 상점 {0},アイテムショップ {0},道具商店 {0}
+ITEM SHOP {0}\nRMB OPEN,아이템 상점 {0}\n우클릭 열기,アイテムショップ {0}\n右クリックで開く,道具商店 {0}\n右键打开
+ITEM SHOP {0}\nSOLD OUT,아이템 상점 {0}\n품절,アイテムショップ {0}\n売り切れ,道具商店 {0}\n已售罄
+ITEM SLOTS,아이템 슬롯,アイテムスロット,道具栏
+Join by Code,코드로 참가,コードで参加,通过邀请码加入
+Joining the Relay session...,Relay 방에 참가하는 중...,Relayルームに参加中...,正在加入 Relay 房间...
+Keep the bomb away. Its light flashes faster as detonation approaches.,폭탄을 멀리하세요. 폭발이 가까워질수록 불빛이 빠르게 깜빡입니다.,爆弾を遠ざけましょう。爆発が近づくほどライトの点滅が速くなります。,远离炸弹。越接近爆炸，指示灯闪烁越快。
+KEY  --    GOLD  --,열쇠  --    골드  --,鍵  --    ゴールド  --,钥匙  --    金币  --
+KEY  {0}    GOLD  {1},열쇠  {0}    골드  {1},鍵  {0}    ゴールド  {1},钥匙  {0}    金币  {1}
+Key purchased. The new shop location is shown; play resumes when the countdown ends.,"열쇠를 구매했습니다. 새 상점 위치가 표시되며, 카운트다운이 끝나면 게임이 재개됩니다.",鍵を購入しました。新しいショップの位置が表示されます。カウントダウン終了後にプレイが再開します。,已购买钥匙。已显示新的商店位置；倒计时结束后继续游戏。
+KEY SHOP,열쇠 상점,鍵ショップ,钥匙商店
+KEY SHOP\nRMB BUY  20 GOLD,열쇠 상점\n우클릭 구매  20 골드,鍵ショップ\n右クリックで購入  20ゴールド,钥匙商店\n右键购买  20金币
+KEY SHOP MOVING,열쇠 상점 이동 중,鍵ショップ移動中,钥匙商店移动中
+KNOCKED OUT: respawning at the nearest marked room. Input is locked.,녹아웃: 가장 가까운 표시된 방에서 부활합니다. 입력이 잠겨 있습니다.,ノックアウト：最寄りのマーク付きの部屋でリスポーンします。入力はロックされています。,被击倒：将在最近的标记房间复活。输入已锁定。
+LANDING EFFECTS,착지 효과,着地効果,落地效果
+Landing: Gold +3,도착 효과: 골드 +3,到着効果: ゴールド +3,停留效果: 金币 +3
+Landing: Gold -3,도착 효과: 골드 -3,到着効果: ゴールド -3,停留效果: 金币 -3
+Landing: HP +50,도착 효과: HP +50,到着効果: HP +50,停留效果: HP +50
+Landing: Item,도착 효과: 아이템,到着効果: アイテム,停留效果: 道具
+Language,언어,言語,语言
+LCTRL QUIET 6m,왼쪽 Ctrl 조용히 걷기 6m,左Ctrl 忍び足 6m,左Ctrl 静步 6m
+Leave,나가기,退出,离开
+Leave Game,게임나가기,ゲームから退出,离开游戏
+Leaving the game...,게임에서 나가는 중...,ゲームから退出中...,正在离开游戏...
+Leaving the session...,방에서 나가는 중...,ルームから退出中...,正在离开房间...
+LMB  PUNCH,좌클릭  펀치,左クリック  パンチ,左键  出拳
+LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.,좌클릭: 행동이 끝날 때까지 상대와 미니맵에서 숨겨집니다. 전투 전이나 사망 시 해제됩니다.,左クリック: 行動終了まで相手とミニマップから姿を隠します。戦闘前または死亡時に解除されます。,左键：在行动结束前对对手和小地图隐身。战斗开始前或死亡时失效。
+LMB: select a player. Channel for 2s; damage interrupts. Swap positions without spending moves.,좌클릭: 플레이어를 선택합니다. 2초간 시전하며 피해를 받으면 중단됩니다. 이동을 소모하지 않고 위치를 교환합니다.,左クリック: プレイヤーを選択します。2秒間詠唱し、ダメージを受けると中断されます。移動を消費せずに位置を交換します。,左键：选择一名玩家。引导2秒，受到伤害会被打断。交换位置，不消耗移动步数。
+LOADING  {0},로딩  {0},ロード中  {0},加载中  {0}
+LOADING MINIGAME,미니게임 로딩 중,ミニゲームをロード中,正在加载小游戏
+Loading the synchronized {0} scene. Board movement is locked; the match ends if loading reaches zero.,"동기화된 {0} 씬을 불러오는 중입니다. 보드 이동이 잠겨 있으며, 로딩 시간이 0이 되면 매치가 종료됩니다.",同期された{0}シーンをロード中です。ボード移動はロックされています。ロード時間が0になるとマッチが終了します。,正在加载同步的{0}场景。棋盘移动已锁定；加载倒计时归零时比赛将结束。
+LOADING {0},{0} 로딩 중,{0} ロード中,正在加载 {0}
+Lobby,로비,ロビー,大厅
+LOCAL,로컬,ローカル,本地
+Local Player,로컬 플레이어,ローカルプレイヤー,本地玩家
+Low Dice (1-6),로우 주사위 (1-6),ローダイス (1-6),低点骰子 (1-6)
+Master,전체,マスター,总音量
+MATCH COMPLETE,매치 종료,マッチ終了,比赛结束
+MATCH COMPLETE: all 15 turns have finished.,매치 종료: 15턴이 모두 끝났습니다.,マッチ終了：全15ターンが終了しました。,比赛结束：全部15回合已完成。
+MazeParty Online (4 Players),MazeParty 온라인 (4인),MazeParty オンライン (4人),MazeParty 在线 (4人)
+Mine,지뢰,地雷,地雷
+MINEFIELD,지뢰밭,地雷原,雷区
+MINEFIELD  ROUND {0} / {1}  -  COUNTDOWN,지뢰밭  라운드 {0} / {1}  -  카운트다운,地雷原  ラウンド {0} / {1}  -  カウントダウン,雷区  第{0} / {1}轮  -  倒计时
+MINEFIELD  ROUND {0} / {1}  -  RESULT,지뢰밭  라운드 {0} / {1}  -  결과,地雷原  ラウンド {0} / {1}  -  結果,雷区  第{0} / {1}轮  -  结果
+MINEFIELD  ROUND {0} / {1}  -  RUN,지뢰밭  라운드 {0} / {1}  -  질주,地雷原  ラウンド {0} / {1}  -  ダッシュ,雷区  第{0} / {1}轮  -  奔跑
+MINEFIELD / TOP-DOWN,지뢰밭 / 탑다운,地雷原 / 見下ろし,雷区 / 俯视
+MINEFIELD COMPLETE,지뢰밭 종료,地雷原終了,雷区结束
+MINEFIELD RESULTS,지뢰밭 결과,地雷原結果,雷区结果
+MINIGAME,미니게임,ミニゲーム,小游戏
+MINIGAME READY,미니게임 준비,ミニゲーム準備完了,小游戏准备
+MINIGAME RESULTS,미니게임 결과,ミニゲーム結果,小游戏结果
+More steps rank higher; server input order breaks equal-progress ties.,"걸음 수가 많을수록 순위가 높으며, 진행도가 같으면 서버 입력 순서로 순위를 가립니다.",歩数が多いほど上位になります。進行度が同じ場合はサーバーの入力順で決まります。,步数越多排名越高；进度相同时按服务器输入顺序决定。
+MOST DAMAGE TAKEN,받은 피해 최다,被ダメージ最多,承受伤害最多
+MOST GOLD EARNED,골드 획득 최다,ゴールド獲得最多,获得金币最多
+MOST GOLD HELD,골드 보유 최다,ゴールド所持最多,持有金币最多
+MOST ITEMS USED,아이템 사용 최다,アイテム使用最多,使用道具最多
+MOST MINIGAME LAST PLACES,미니게임 꼴찌 최다,ミニゲーム最下位最多,小游戏垫底最多
+MOST MINIGAME WINS,미니게임 1위 최다,ミニゲーム1位最多,小游戏获胜最多
+MOST PLAYER DAMAGE DEALT,플레이어에게 준 피해 최다,プレイヤーへの与ダメージ最多,对玩家造成伤害最多
+MOVE,이동,移動,移动
+"Move with WASD and click to push the nearest rival in your last movement direction. Falling eliminates you immediately. A shell or laser hit first removes your torso; a second hit eliminates you, with one second of safety after a hit. Survive three 60-second rounds.\nREADY {0} / 4","WASD로 이동하고 클릭하면 마지막으로 이동한 방향에 있는 가장 가까운 상대를 밉니다. 떨어지면 즉시 탈락합니다. 포탄이나 레이저에 처음 맞으면 몸통이 사라지고, 두 번째로 맞으면 탈락합니다. 피격 후 1초간은 안전합니다. 60초 라운드 3번을 버티세요.\n준비 {0} / 4",WASDで移動し、クリックで最後に移動した方向にいる最も近いライバルを押します。落下すると即脱落です。砲弾やレーザーに1回当たると胴体が外れ、2回目で脱落します。被弾後1秒間は安全です。60秒のラウンドを3回生き残りましょう。\n準備完了 {0} / 4,用WASD移动，点击可推开你最后移动方向上最近的对手。坠落会立即淘汰。第一次被炮弹或激光击中会失去躯干；第二次被击中则淘汰，被击中后有1秒安全时间。撑过三轮，每轮60秒。\n准备 {0} / 4
+"Move with WASD and press LMB to push the nearest player in front of you. Reach the announced X, circle or square before unsafe platforms drop. Two dropped platforms are removed each cycle. Last survivor wins each of three 60-second rounds.\nREADY {0} / 4","WASD로 이동하고 좌클릭으로 앞에 있는 가장 가까운 플레이어를 밉니다. 안전하지 않은 발판이 떨어지기 전에 발표된 엑스, 원 또는 사각형으로 이동하세요. 매 사이클마다 떨어진 발판 2개가 제거됩니다. 60초 라운드 3번 각각에서 마지막 생존자가 승리합니다.\n준비 {0} / 4",WASDで移動し、左クリックで目の前の最も近いプレイヤーを押します。安全でない足場が落ちる前に、指定されたバツ・丸・四角へ移動してください。サイクルごとに落ちた足場が2つ取り除かれます。60秒のラウンドを3回行い、各ラウンドで最後まで残ったプレイヤーが勝利します。\n準備完了 {0} / 4,用WASD移动，按左键推开你前方最近的玩家。在不安全的平台掉落前抵达指定的叉形、圆形或方形。每个周期会移除两块掉落的平台。共三轮，每轮60秒，每轮最后的幸存者获胜。\n准备 {0} / 4
+"Move with WASD during GREEN and freeze when RED begins. The first violation injures you and slows you to walking speed; the second eliminates you. First finisher ends the round. Three rounds, 60 seconds each.\nREADY {0} / 4","초록불일 때 WASD로 이동하고 빨간불이 켜지면 멈추세요. 첫 번째 위반 시 부상을 입어 걷는 속도로 느려지고, 두 번째 위반 시 탈락합니다. 가장 먼저 결승선에 도착한 플레이어가 나오면 라운드가 끝납니다. 총 3라운드, 라운드당 60초입니다.\n준비 {0} / 4",青信号の間はWASDで移動し、赤信号になったら止まってください。1回目の違反で負傷して歩く速さまで遅くなり、2回目で脱落します。最初にゴールしたプレイヤーが出るとラウンド終了です。全3ラウンド、各60秒です。\n準備完了 {0} / 4,绿灯时用WASD移动，红灯亮起时立即静止。第一次违规会受伤并减速至步行速度；第二次违规则被淘汰。第一位到达终点的玩家将结束本轮。共三轮，每轮60秒。\n准备 {0} / 4
+"Move with WASD. Touch the center bomb to pick it up. Click a nearby player in front of you to pass it; the receiver is stunned for 0.5 seconds. Empty-hand click stuns a nearby player for 0.5 seconds. The fuse starts at spawn and lasts 20–25 seconds. At half time, an unheld bomb chases the nearest survivor. Only the carrier is eliminated when it explodes. Last survivor wins.\nREADY {0} / 4","WASD로 이동합니다. 중앙의 폭탄에 닿으면 폭탄을 집습니다. 앞에 있는 가까운 플레이어를 클릭하면 폭탄을 넘기며, 받은 플레이어는 0.5초간 기절합니다. 빈손으로 클릭하면 가까운 플레이어를 0.5초간 기절시킵니다. 도화선은 폭탄이 생성될 때부터 타기 시작해 20–25초간 지속됩니다. 절반이 지나면 아무도 들고 있지 않은 폭탄이 가장 가까운 생존자를 쫓아갑니다. 폭발하면 폭탄을 든 플레이어만 탈락합니다. 마지막 생존자가 승리합니다.\n준비 {0} / 4",WASDで移動します。中央の爆弾に触れると拾います。目の前の近くのプレイヤーをクリックすると爆弾を渡せ、受け取ったプレイヤーは0.5秒間スタンします。手ぶらでクリックすると近くのプレイヤーを0.5秒間スタンさせます。導火線は出現時に点火され、20–25秒続きます。半分の時間が過ぎると、誰も持っていない爆弾は最も近い生存者を追いかけます。爆発時に脱落するのは爆弾を持っているプレイヤーだけです。最後の生存者が勝利します。\n準備完了 {0} / 4,用WASD移动。触碰中央的炸弹即可拾取。点击前方附近的玩家即可传递炸弹，接收者会被眩晕0.5秒。空手点击可使附近玩家眩晕0.5秒。引信在炸弹生成时开始燃烧，持续20–25秒。过半时，无人持有的炸弹会追向最近的幸存者。爆炸时只有持弹者被淘汰。最后的幸存者获胜。\n准备 {0} / 4
+Move with WASD. Your circular trail paints the arena and can overwrite rival colors. The full arena is worth 1000 points. One 60-second round; highest current area wins.\nREADY {0} / 4,"WASD로 이동합니다. 원형 궤적이 아레나를 칠하며 상대의 색을 덮어쓸 수 있습니다. 아레나 전체는 1000점입니다. 60초 라운드 1회이며, 현재 영역이 가장 넓은 플레이어가 승리합니다.\n준비 {0} / 4",WASDで移動します。円形の軌跡がアリーナを塗り、ライバルの色を上書きできます。アリーナ全体で1000ポイントです。60秒のラウンドを1回行い、現在の面積が最も大きいプレイヤーが勝利します。\n準備完了 {0} / 4,用WASD移动。你的圆形轨迹会为竞技场涂色，并可覆盖对手的颜色。整个竞技场价值1000分。共一轮，60秒；当前面积最大者获胜。\n准备 {0} / 4
+"Move your goal shield with A and D. Three neutral balls launch from the center. Touching one claims your color; when it passes a shield into any goal, its color owner scores. A scored ball relaunches from the conceding player's shield in their color. Two 60-second rounds; highest combined score wins.\nREADY {0} / 4","A와 D로 골대 보호막을 움직입니다. 중앙에서 중립 공 3개가 발사됩니다. 공에 닿으면 내 색이 되며, 공이 보호막을 지나 어느 골대에든 들어가면 그 색의 주인이 득점합니다. 득점된 공은 실점한 플레이어의 보호막에서 그 플레이어의 색으로 다시 발사됩니다. 60초 라운드 2회이며, 합산 점수가 가장 높은 플레이어가 승리합니다.\n준비 {0} / 4",AとDでゴールのシールドを動かします。中央から中立のボールが3つ発射されます。ボールに触れると自分の色になり、そのボールがシールドを抜けてどこかのゴールに入ると、その色の持ち主が得点します。得点されたボールは、失点したプレイヤーのシールドからそのプレイヤーの色で再発射されます。60秒のラウンドを2回行い、合計得点が最も高いプレイヤーが勝利します。\n準備完了 {0} / 4,用A和D移动你的球门护盾。三个中立球从中央发射。触碰球即可将其染成你的颜色；当球越过护盾进入任意球门时，该颜色的所有者得分。进球后的球会从失分玩家的护盾处以其颜色重新发射。共两轮，每轮60秒；总分最高者获胜。\n准备 {0} / 4
+MOVES  --,이동  --,移動  --,移动  --
+MOVES  0 / FREE IN ROOM,이동  0 / 방 안에서 자유 이동,移動  0 / 部屋の中は自由移動,移动  0 / 房间内自由移动
+MOVES  {0},이동  {0},移動  {0},移动  {0}
+MPS has not unregistered the session yet. Try cleanup again.,MPS에서 아직 방 등록이 해제되지 않았습니다. 정리를 다시 시도하세요.,MPSがまだルームの登録を解除していません。クリーンアップを再試行してください。,MPS 尚未注销该房间。请再次尝试清理。
+Neutral,무표정,ふつう,平静
+NO EFFECT (0 change),효과 없음 (변화 0),効果なし (変化 0),无效果 (变化 0)
+No landing effect,도착 효과 없음,到着効果なし,无停留效果
+NO MINIGAME / SKIP,미니게임 없음 / 건너뛰기,ミニゲームなし / スキップ,无小游戏 / 跳过
+No minigame is available for this queue slot. It will advance automatically.,이 대기열 칸에는 진행할 미니게임이 없습니다. 자동으로 넘어갑니다.,このキュー枠にはプレイできるミニゲームがありません。自動的に進行します。,该队列槽位没有可用的小游戏。将自动继续。
+No minigame was scheduled for this turn.,이번 턴에는 예정된 미니게임이 없었습니다.,このターンに予定されたミニゲームはありませんでした。,本回合没有安排小游戏。
+No rewards are awarded for an empty queue slot.,빈 대기열 칸에는 보상이 지급되지 않습니다.,空のキュー枠では報酬はもらえません。,空队列槽位不发放奖励。
+NO WINNER,수상자 없음,受賞者なし,无获奖者
+NORMAL,일반,ノーマル,普通
+NORTH ^  /  BOARD ROUTE,북쪽 ^  /  보드 경로,北 ^  /  ボードルート,北 ^  /  棋盘路线
+NOT ENOUGH GOLD - No gold was spent.,골드 부족 - 골드가 소모되지 않았습니다.,ゴールド不足 - ゴールドは消費されていません。,金币不足 - 未消耗金币。
+NPC SEQUENCE,NPC 순서,NPCの順番,NPC顺序
+OK,확인,OK,确定
+"One D12 rolls only 1-6, each equally likely. Applied automatically.","D12 하나가 1-6만 나오며, 각 눈의 확률은 같습니다. 자동으로 적용됩니다.",D12を1個、1-6のみ等確率で出します。自動で適用されます。,一个D12只会掷出1-6，每个点数概率相同。自动生效。
+"One D12 rolls only 7-12, each equally likely. Applied automatically.","D12 하나가 7-12만 나오며, 각 눈의 확률은 같습니다. 자동으로 적용됩니다.",D12を1個、7-12のみ等確率で出します。自動で適用されます。,一个D12只会掷出7-12，每个点数概率相同。自动生效。
+One local player connects from each game process.,게임 프로세스마다 로컬 플레이어 1명이 접속합니다.,ゲームプロセスごとにローカルプレイヤー1人が接続します。,每个游戏进程连接一名本地玩家。
+ONLINE,온라인,オンライン,在线
+ONLINE PLAYERS,온라인 플레이어,オンラインプレイヤー,在线玩家
+Online session disconnected.,온라인 방 연결이 끊겼습니다.,オンラインルームから切断されました。,在线房间已断开连接。
+Opening the top block in the minigame tower...,미니게임 타워의 맨 위 블록을 여는 중...,ミニゲームタワーの一番上のブロックを開いています...,正在打开小游戏塔顶部的方块...
+Orange,주황,オレンジ,橙
+OUT,탈락,脱落,淘汰
+OUT · 2 MISSES,탈락 · 실수 2회,脱落 · ミス2回,淘汰 · 失误 2 次
+PAUSED,일시정지,一時停止中,已暂停
+Paused by {0}.,{0}에 의해 일시정지되었습니다,{0}によって一時停止されました,{0} 暂停了游戏
+PEACE,브이,ピース,比耶
+PENDING,선택 대기 중,選択待ち,等待选择
+Personal 30-second limit. The shared 3:00 action clock continues.,개인 제한 시간 30초. 공용 3:00 행동 시간은 계속 흐릅니다.,個人制限時間30秒。共通の3:00行動時間は進み続けます。,个人限时30秒。共享的3:00行动计时继续进行。
+Pistol,권총,ピストル,手枪
+Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.,4m 이내의 지면에 설치합니다. 1초 후 작동; 2m 감지 / 4m 폭발 / 피해 50.,4m以内の地面に設置します。1秒後に起動、2m感知 / 4m爆発 / 50ダメージ。,放置在4m内的地面上。1秒后激活；2m触发 / 4m爆炸 / 50伤害。
+Platforms are returning; two remain permanently removed.,발판이 복구되고 있습니다. 2개는 영구적으로 제거된 상태로 남습니다.,足場が復元されています。2枚は永久に取り除かれたままです。,平台正在恢复；其中两块将被永久移除。
+PLAYER,플레이어,プレイヤー,玩家
+Player,플레이어,プレイヤー,玩家
+PLAYER DISCONNECTED\nMATCH PAUSED\n{0} remaining,플레이어 연결 끊김\n게임 일시정지\n남은 시간 {0},プレイヤーの接続が切断されました\n試合を一時停止中\n残り {0},玩家已断开连接\n比赛已暂停\n剩余 {0}
+Player Name,플레이어 이름,プレイヤー名,玩家名称
+PLAYER {0},플레이어 {0},プレイヤー{0},玩家 {0}
+Player {0},플레이어 {0},プレイヤー{0},玩家 {0}
+Players: {0}/{1}   Phase: {2},플레이어: {0}/{1}   단계: {2},プレイヤー: {0}/{1}   フェーズ: {2},玩家：{0}/{1}   阶段：{2}
+Playing,게임 중,プレイ中,游戏中
+POP!,펑!,パン！,砰！
+POPPED,터짐,破裂,已爆
+"Popped balloons rank by pop order; remaining balloons rank by progress, then server player order.","터진 풍선은 터진 순서대로, 남은 풍선은 진행도 순, 그다음 서버 플레이어 순서로 순위가 정해집니다.",割れた風船は割れた順に、残った風船は進行度、次にサーバーのプレイヤー順で順位が決まります。,已爆的气球按爆破顺序排名；剩余气球按进度排名，其次按服务器玩家顺序。
+Position exchanged with P{0}.,P{0} 플레이어와 위치를 교환했습니다.,P{0}と位置を交換しました。,已与 P{0} 交换位置。
+POSITION SWAP  {0:0.0}s / ACTION LOCKED,위치 교환  {0:0.0}초 / 행동 불가,位置交換  {0:0.0}秒 / 行動不可,位置交换  {0:0.0}秒 / 无法行动
+Position swap cancelled; item consumed.,위치 교환이 취소되고 아이템이 소모되었습니다.,位置交換がキャンセルされ、アイテムは消費されました。,位置交换已取消，道具已消耗。
+Position Swapper,위치 교환기,位置交換機,位置交换器
+Preparing Balloon Blow...,풍선 불기 준비 중...,風船ふくらましを準備中...,正在准备吹气球...
+Preparing Bouncing Balls...,튕기는 공 준비 중...,バウンドボールを準備中...,正在准备弹跳球...
+Preparing Gift Grab...,선물 쟁탈전 준비 중...,プレゼント争奪戦を準備中...,正在准备抢礼物...
+Preparing Minefield...,지뢰밭 준비 중...,地雷原を準備中...,正在准备雷区...
+Preparing Race...,달리기 준비 중...,かけっこを準備中...,正在准备赛跑...
+Preparing Red Light / Green Light...,빨간불 / 초록불 준비 중...,赤信号 / 青信号を準備中...,正在准备红灯 / 绿灯...
+Preparing Sequence Memory...,순서 기억 준비 중...,順番記憶を準備中...,正在准备顺序记忆...
+Preparing Stable Footing...,안전한 발판 준비 중...,安全な足場を準備中...,正在准备稳固立足点...
+Preparing Tag Chase...,술래잡기 준비 중...,鬼ごっこを準備中...,正在准备捉人游戏...
+Preparing Territory Paint...,영역 칠하기 준비 중...,陣取りペイントを準備中...,正在准备领地涂色...
+Preparing WrongWay...,역방향 계단 준비 중...,逆方向階段を準備中...,正在准备逆向楼梯...
+"Press the shown WASD direction to climb. A wrong key knocks you down for 0.5 seconds. First to step 50 ends the round. Two rounds, 60 seconds each.\nREADY {0} / 4","표시된 WASD 방향키를 눌러 올라가세요. 잘못된 키를 누르면 0.5초 동안 넘어집니다. 가장 먼저 50번째 계단에 도달하면 라운드가 끝납니다. 2라운드, 각 60초.\n준비 {0} / 4",表示されたWASDの方向キーを押して登りましょう。間違ったキーを押すと0.5秒間転倒します。誰かが最初に50段目に到達するとラウンド終了です。全2ラウンド、各60秒。\n準備完了 {0} / 4,按下显示的WASD方向键向上攀爬。按错键会被击倒0.5秒。最先到达第50级台阶时本轮结束。共2轮，每轮60秒。\n准备 {0} / 4
+Press the shown WASD direction. Wrong input locks you for 0.5 seconds.,표시된 WASD 방향키를 누르세요. 잘못 입력하면 0.5초 동안 움직일 수 없습니다.,表示されたWASDの方向キーを押してください。入力を間違えると0.5秒間操作できません。,按下显示的WASD方向键。输入错误会被锁定0.5秒。
+PROBLEM {0} / {1},문제 {0} / {1},問題 {0} / {1},第 {0} / {1} 题
+Purchase requested. Server stock decides the winner.,구매를 요청했습니다. 서버 재고에 따라 구매자가 결정됩니다.,購入をリクエストしました。サーバーの在庫状況で購入者が決まります。,已请求购买。由服务器库存决定谁能购得。
+Purple,보라,紫,紫
+P{0}  READY,P{0}  준비,P{0}  準備完了,P{0}  准备
+P{0}  WAITING,P{0}  대기 중,P{0}  待機中,P{0}  等待中
+P{0}  {1},P{0}  {1},P{0}  {1},P{0}  {1}
+"P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}"
+P{0} exchanged positions with you!,P{0} 플레이어가 당신과 위치를 교환했습니다!,P{0}があなたと位置を交換しました！,P{0} 与你交换了位置！
+P{0}: {1},P{0}: {1},P{0}: {1},P{0}: {1}
+QUIET WALK  6m,조용히 걷기  6m,忍び足  6m,静步  6m
+QUIET WALK 6m,조용히 걷기 6m,忍び足 6m,静步 6m
+Quit Game,게임종료,ゲーム終了,退出游戏
+RACE,달리기,かけっこ,赛跑
+RACE  ROUND {0} / {1}  -  COUNTDOWN,달리기  라운드 {0} / {1}  -  카운트다운,かけっこ  ラウンド {0} / {1}  -  カウントダウン,赛跑  第{0} / {1}轮  -  倒计时
+RACE  ROUND {0} / {1}  -  RESULT,달리기  라운드 {0} / {1}  -  결과,かけっこ  ラウンド {0} / {1}  -  結果,赛跑  第{0} / {1}轮  -  结果
+RACE  ROUND {0} / {1}  -  RUN,달리기  라운드 {0} / {1}  -  질주,かけっこ  ラウンド {0} / {1}  -  走行,赛跑  第{0} / {1}轮  -  奔跑
+RACE COMPLETE,달리기 종료,かけっこ終了,赛跑结束
+RACE RESULTS,달리기 결과,かけっこ結果,赛跑结果
+RANK --,순위 --,順位 --,排名 --
+RANK {0},순위 {0},順位 {0},排名 {0}
+READY,준비,準備完了,准备
+Ready,준비,準備完了,准备
+READY {0} / 4  AUTO START {1},준비 {0} / 4  자동 시작 {1},準備完了 {0} / 4  自動開始 {1},准备 {0} / 4  自动开始 {1}
+RECONNECT,재접속,再接続,重新连接
+RECONNECTING,재접속 중,再接続中,重新连接中
+Reconnecting to the interrupted online game...,중단된 온라인 게임에 재접속하는 중...,中断されたオンラインゲームに再接続中...,正在重新连接中断的在线游戏...
+RED,빨간불,赤信号,红灯
+Red,빨강,赤,红
+RED  {0:0.0}s: freeze; voluntary movement is a violation.,빨간불  {0:0.0}초: 멈추세요. 스스로 움직이면 위반입니다.,赤信号  {0:0.0}秒：止まってください。自分から動くと違反になります。,红灯  {0:0.0}秒：保持不动；主动移动即为违规。
+RED LIGHT  ·  FREEZE,빨간불  ·  정지,赤信号  ·  停止,红灯  ·  静止
+RED LIGHT / GREEN LIGHT,빨간불 / 초록불,赤信号 / 青信号,红灯 / 绿灯
+RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  COUNTDOWN,빨간불 / 초록불  라운드 {0} / {1}  -  카운트다운,赤信号 / 青信号  ラウンド {0} / {1}  -  カウントダウン,红灯 / 绿灯  第{0} / {1}轮  -  倒计时
+RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  RESULT,빨간불 / 초록불  라운드 {0} / {1}  -  결과,赤信号 / 青信号  ラウンド {0} / {1}  -  結果,红灯 / 绿灯  第{0} / {1}轮  -  结果
+RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  {2},빨간불 / 초록불  라운드 {0} / {1}  -  {2},赤信号 / 青信号  ラウンド {0} / {1}  -  {2},红灯 / 绿灯  第{0} / {1}轮  -  {2}
+RED LIGHT / GREEN LIGHT COMPLETE,빨간불 / 초록불 종료,赤信号 / 青信号終了,红灯 / 绿灯结束
+RED LIGHT / GREEN LIGHT RESULTS,빨간불 / 초록불 결과,赤信号 / 青信号結果,红灯 / 绿灯结果
+Relay connection lost. Waiting for the host or session service.,Relay 연결이 끊겼습니다. 호스트 또는 세션 서비스를 기다리는 중입니다.,Relay接続が切断されました。ホストまたはセッションサービスを待っています。,Relay 连接已断开。正在等待房主或会话服务。
+Relay connection stopped. Waiting for the host or session service.,Relay 연결이 중지되었습니다. 호스트 또는 세션 서비스를 기다리는 중입니다.,Relay接続が停止しました。ホストまたはセッションサービスを待っています。,Relay 连接已停止。正在等待房主或会话服务。
+RELEASE,떼기,離す,松开
+Release Pause,일시정지 해제,一時停止を解除,解除暂停
+RELEASE T: {0},T 떼기: {0},Tを離す: {0},松开T: {0}
+RELEASE TO REARM,떼면 다시 준비,離して再準備,松开以重新准备
+"Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.","숨겨진 순서를 A, S, D로 따라 입력하세요. 잘못된 키를 누르면 이 문제는 즉시 잠깁니다.",隠された順番をA、S、Dで再現してください。間違ったキーを押すと、この問題はすぐにロックされます。,用A、S、D重复隐藏的序列。按错键会立即锁定本题。
+Request Pause,일시정지 요청,一時停止をリクエスト,请求暂停
+RESOLVING / ASCENDING,정산 / 상승,処理 / 上昇,结算 / 上升
+RESPAWN,부활 지점,リスポーン,复活点
+RESTING,휴식 중,休憩中,休息中
+RESTORE,복구,復元,恢复
+Returned to the player ready screen.,플레이어 준비 화면으로 돌아왔습니다.,プレイヤー準備画面に戻りました。,已返回玩家准备界面。
+Returning the completed match to the player ready screen...,완료된 게임을 플레이어 준비 화면으로 되돌리는 중...,終了した試合をプレイヤー準備画面に戻しています...,正在将已完成的比赛返回玩家准备界面...
+REVEALING...,공개 중...,公開中...,揭晓中...
+RMB  AIM AT YOUR DIE TO ROLL,우클릭  내 주사위를 조준해 굴리기,右クリック  自分のサイコロを狙って振る,右键  瞄准自己的骰子投掷
+RMB  ROLL EACH DIE,우클릭  주사위 각각 굴리기,右クリック  サイコロを1個ずつ振る,右键  逐个掷骰子
+Roll and push opponents off the ice.,굴러가서 상대를 얼음 밖으로 밀어내세요.,転がって相手を氷の外へ押し出しましょう。,滚动并把对手推下冰面。
+Roll two D12s with RMB. Move after both settle.,우클릭으로 D12 두 개를 굴립니다. 둘 다 멈춘 뒤 이동합니다.,右クリックでD12を2個振ります。両方止まってから移動します。,右键投掷两个D12。两个都停下后移动。
+"Roll your colored ball with WASD. Holding a direction accelerates; colliding with other balls pushes them toward the edge. A fall eliminates you for that round. Three rounds, up to 60 seconds each. If time runs out, surviving balls nearer the center rank higher. Round placement points are combined; final placement awards gold once.\nREADY {0} / 4","WASD로 내 색깔의 공을 굴리세요. 방향키를 계속 누르면 가속하고, 다른 공과 부딪히면 가장자리 쪽으로 밀어냅니다. 떨어지면 해당 라운드에서 탈락합니다. 3라운드, 각 최대 60초. 시간이 다 되면 살아남은 공 중 중앙에 가까울수록 순위가 높습니다. 라운드 순위 점수를 합산하며, 최종 순위에 따른 골드는 한 번만 지급됩니다.\n준비 {0} / 4",WASDで自分の色のボールを転がします。方向キーを押し続けると加速し、他のボールにぶつかると端の方へ押し出します。落下するとそのラウンドは脱落です。全3ラウンド、各最大60秒。時間切れになると、生き残ったボールのうち中央に近いほど上位になります。ラウンドごとの順位ポイントを合計し、最終順位に応じたゴールドは1回だけ与えられます。\n準備完了 {0} / 4,用WASD滚动你颜色的球。按住方向键可加速；撞击其他球会把它们推向边缘。掉落即在本轮被淘汰。共3轮，每轮最长60秒。若时间耗尽，存活的球越靠近中心排名越高。各轮排名分累计；最终排名的金币奖励只发放一次。\n准备 {0} / 4
+ROOM,방,部屋,房间
+ROUND COMPLETE,라운드 종료,ラウンド終了,本轮结束
+Round over. Combined goals across both rounds determine final placement.,라운드 종료. 두 라운드의 골 합계로 최종 순위가 결정됩니다.,ラウンド終了。2ラウンドの合計ゴール数で最終順位が決まります。,本轮结束。两轮的总进球数决定最终排名。
+Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.,"라운드 점수: 3 / 2 / 1 / 0. 완주자가 먼저 순위를 받고, 나머지는 탈락 순서에 따라 순위가 정해집니다.",ラウンドポイント：3 / 2 / 1 / 0。ゴールした人が上位になり、それ以外は脱落した順で順位が決まります。,每轮得分：3 / 2 / 1 / 0。完成者排名靠前；其余按淘汰先后排名。
+Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.,라운드 점수: 3 / 2 / 1 / 0. 더 많은 계단을 오르고 더 일찍 도착할수록 순위가 높습니다.,ラウンドポイント：3 / 2 / 1 / 0。多くの段を登り、早く到着したほど上位になります。,每轮得分：3 / 2 / 1 / 0。登上的台阶越多、到达越早，排名越高。
+ROUND RESULTS,라운드 결과,ラウンド結果,本轮结果
+ROUND {0}\n+{1} POINTS,라운드 {0}\n+{1}점,ラウンド {0}\n+{1}ポイント,第{0}轮\n+{1}分
+ROUND {0}\n+{1} POINTS · {2} GIFTS,라운드 {0}\n+{1}점 · 선물 {2}개,ラウンド {0}\n+{1}ポイント · プレゼント {2}個,第{0}轮\n+{1}分 · {2} 个礼物
+ROUND {0}  ·  +{1} POINTS,라운드 {0}  ·  +{1}점,ラウンド {0}  ·  +{1}ポイント,第{0}轮  ·  +{1}分
+ROUND {0} / {1},라운드 {0} / {1},ラウンド {0} / {1},第 {0} / {1} 轮
+ROUNDCOMPLETE,라운드 종료,ラウンド終了,本轮结束
+RULE IMAGE,규칙 이미지,ルール画像,规则图片
+RULE IMAGE PLACEHOLDER,규칙 이미지 (임시),ルール画像（仮）,规则图片（占位）
+RULES REVEALING...,규칙 공개 중...,ルール公開中...,规则揭晓中...
+Runners escape with WASD on the shared camera. The tagger uses WASD and LMB in first person.,도망자는 공용 카메라 시점에서 WASD로 도망칩니다. 술래는 1인칭 시점에서 WASD와 좌클릭을 사용합니다.,逃げる人は共有カメラでWASDを使って逃げます。鬼は一人称視点でWASDと左クリックを使います。,逃跑者在共享镜头下用WASD逃跑。抓人者以第一人称使用WASD和左键。
+RUNNERS: WASD\nTAGGER: WASD + LMB,도망자: WASD\n술래: WASD + 좌클릭,逃げる人: WASD\n鬼: WASD + 左クリック,逃跑者: WASD\n抓人者: WASD + 左键
+RUNNING,달리는 중,走行中,奔跑中
+SAFE: {0},안전: {0},安全: {0},安全: {0}
+Saving ready state...,준비 상태를 저장하는 중...,準備状態を保存中...,正在保存准备状态...
+Saving the return-to-lobby request...,로비 복귀 요청을 저장하는 중...,ロビー復帰リクエストを保存中...,正在保存返回大厅请求...
+SCORE {0},점수 {0},スコア {0},得分 {0}
+Screen Mode,화면 모드,画面モード,显示模式
+Select an available item to buy it immediately.,구매 가능한 아이템을 선택하면 즉시 구매합니다.,購入可能なアイテムを選ぶとすぐに購入します。,选择可购买的道具即可立即购买。
+SELECT POSITION SWAP TARGET,위치 교환 대상 선택,位置交換の対象を選択,选择位置交换目标
+SEQUENCE MEMORY,순서 기억,順番記憶,顺序记忆
+SEQUENCE MEMORY  -  COUNTDOWN,순서 기억  -  카운트다운,順番記憶  -  カウントダウン,顺序记忆  -  倒计时
+SEQUENCE MEMORY  PROBLEM {0} / {1}  -  ANSWER,순서 기억  문제 {0} / {1}  -  정답,順番記憶  問題 {0} / {1}  -  正解,顺序记忆  第{0} / {1}题  -  答案
+SEQUENCE MEMORY  PROBLEM {0} / {1}  -  INPUT,순서 기억  문제 {0} / {1}  -  입력,順番記憶  問題 {0} / {1}  -  入力,顺序记忆  第{0} / {1}题  -  输入
+SEQUENCE MEMORY  PROBLEM {0} / {1}  -  WATCH,순서 기억  문제 {0} / {1}  -  관찰,順番記憶  問題 {0} / {1}  -  観察,顺序记忆  第{0} / {1}题  -  观察
+SEQUENCE MEMORY COMPLETE,순서 기억 종료,順番記憶終了,顺序记忆结束
+SEQUENCE MEMORY RESULTS,순서 기억 결과,順番記憶結果,顺序记忆结果
+SETTINGS,설정,設定,设置
+SFX,효과음,効果音,音效
+SHIELD  OFF,보호막  없음,シールド  なし,护盾  无
+SHIELD  {0:0.0}s,보호막  {0:0.0}초,シールド  {0:0.0}秒,护盾  {0:0.0}秒
+SHUFFLEREVEAL,섞기 공개,シャッフル公開,洗牌揭示
+SKIP,건너뛰기,スキップ,跳过
+SKIPPED: moving to the next block in the minigame tower.,건너뜀: 미니게임 타워의 다음 블록으로 이동합니다.,スキップ：ミニゲームタワーの次のブロックへ進みます。,已跳过：前往小游戏塔的下一个方块。
+SKIPPING...,건너뛰는 중...,スキップ中...,跳过中...
+Sniper,저격총,スナイパーライフル,狙击枪
+SNOWY SPIN,눈밭 회전,スノースピン,雪地旋转
+SNOWY SPIN RESULTS,눈밭 회전 결과,スノースピン結果,雪地旋转结果
+SOLD\n{0},판매 완료\n{0},売り切れ\n{0},已售出\n{0}
+SOLD OUT - This shop moves and restocks next overview.,품절 - 이 상점은 다음 보드 개요 때 이동하고 재입고됩니다.,売り切れ - このショップは次のボード全体表示で移動し、再入荷します。,已售罄 - 该商店将在下次棋盘总览时移动并补货。
+SOUND,사운드,サウンド,声音
+SPECTATING,관전 중,観戦中,观战中
+SPECTATING: the camera follows the current fight room. Input is locked.,관전 중: 카메라가 현재 전투 중인 방을 따라갑니다. 입력이 잠겨 있습니다.,観戦中：カメラが現在バトル中の部屋を追います。操作はロックされています。,观战中：镜头跟随当前战斗房间。输入已锁定。
+SQUARE,사각형,四角,方形
+STABLE FOOTING,안전한 발판,安全な足場,稳固立足点
+STABLE FOOTING  ROUND {0} / {1}  -  COUNTDOWN,안전한 발판  라운드 {0} / {1}  -  카운트다운,安全な足場  ラウンド {0} / {1}  -  カウントダウン,稳固立足点  第{0} / {1}轮  -  倒计时
+STABLE FOOTING  ROUND {0} / {1}  -  RESULT,안전한 발판  라운드 {0} / {1}  -  결과,安全な足場  ラウンド {0} / {1}  -  結果,稳固立足点  第{0} / {1}轮  -  结果
+STABLE FOOTING  ROUND {0} / {1}  -  {2},안전한 발판  라운드 {0} / {1}  -  {2},安全な足場  ラウンド {0} / {1}  -  {2},稳固立足点  第{0} / {1}轮  -  {2}
+STABLE FOOTING COMPLETE,안전한 발판 종료,安全な足場終了,稳固立足点结束
+STABLE FOOTING RESULTS,안전한 발판 결과,安全な足場結果,稳固立足点结果
+START,시작,スタート,起点
+Stay on the announced safe symbol.,안내된 안전 기호 위에 머무르세요.,発表された安全なマークの上にいてください。,停留在公布的安全符号上。
+Stop and RMB to scan. First mine cripples; second eliminates. Reach the finish before the crusher.\nREADY {0} / 4,"멈춘 상태에서 우클릭으로 탐지하세요. 첫 번째 지뢰는 부상을 입히고, 두 번째 지뢰는 탈락시킵니다. 압착기보다 먼저 결승점에 도착하세요.\n준비 {0} / 4",止まって右クリックで探知します。1回目の地雷で負傷し、2回目で脱落します。クラッシャーより先にゴールしてください。\n準備完了 {0} / 4,停下并按右键探测。第一次踩雷会受伤；第二次将被淘汰。在碾压机追上前抵达终点。\n准备 {0} / 4
+Stored gifts decide the round; gift ownership time breaks ties.,"보관한 선물 수로 라운드 승부가 결정되며, 동점이면 선물 보유 시간으로 가립니다.",保管したプレゼントの数でラウンドの勝敗が決まり、同数の場合はプレゼントの所持時間で決着します。,按存放的礼物数决定本轮胜负；平局时按礼物持有时间决胜。
+STUN {0:0.0}s,기절 {0:0.0}초,スタン {0:0.0}秒,眩晕 {0:0.0}秒
+Surprised,놀람,おどろく,惊讶
+SURVIVED,생존,生存,存活
+Symbols are shuffling. Watch the shared safe-symbol display.,기호를 섞는 중입니다. 공용 안전 기호 표시판을 확인하세요.,マークをシャッフル中です。共有の安全マーク表示を見てください。,符号正在洗牌。请留意共享的安全符号显示。
+Synchronizing scene unload: {0},씬 언로드 동기화 중: {0},シーンのアンロードを同期中: {0},正在同步场景卸载：{0}
+Synchronizing the Balloon Blow arena...,풍선 불기 경기장 동기화 중...,風船ふくらましのアリーナを同期中...,正在同步吹气球竞技场...
+Synchronizing the Board scene...,보드 씬을 동기화하는 중...,ボードシーンを同期中...,正在同步棋盘场景...
+Synchronizing the Bouncing Balls arena...,튕기는 공 경기장 동기화 중...,バウンドボールのアリーナを同期中...,正在同步弹跳球竞技场...
+Synchronizing the Gift Grab arena...,선물 쟁탈전 경기장 동기화 중...,プレゼント争奪戦のアリーナを同期中...,正在同步抢礼物竞技场...
+Synchronizing the Minefield simulation...,지뢰밭 시뮬레이션 동기화 중...,地雷原のシミュレーションを同期中...,正在同步雷区模拟...
+Synchronizing the Race arena...,달리기 경기장 동기화 중...,かけっこのアリーナを同期中...,正在同步赛跑竞技场...
+Synchronizing the Red Light / Green Light race...,빨간불 / 초록불 레이스 동기화 중...,赤信号 / 青信号のレースを同期中...,正在同步红灯 / 绿灯比赛...
+Synchronizing the Sequence Memory game...,순서 기억 게임 동기화 중...,順番記憶のゲームを同期中...,正在同步顺序记忆游戏...
+Synchronizing the Stable Footing arena...,안전한 발판 경기장 동기화 중...,安全な足場のアリーナを同期中...,正在同步稳固立足点竞技场...
+Synchronizing the Tag Chase arena...,술래잡기 경기장 동기화 중...,鬼ごっこのアリーナを同期中...,正在同步捉人游戏竞技场...
+Synchronizing the Territory Paint arena...,영역 칠하기 경기장 동기화 중...,陣取りペイントのアリーナを同期中...,正在同步领地涂色竞技场...
+Synchronizing the WrongWay race...,역방향 계단 레이스 동기화 중...,逆方向階段のレースを同期中...,正在同步逆向楼梯比赛...
+SYNCING SEAT,자리 동기화 중,席を同期中,正在同步座位
+TAG CHASE,술래잡기,鬼ごっこ,捉人游戏
+TAG CHASE  ROUND {0} / {1}  -  CHASE,술래잡기  라운드 {0} / {1}  -  추격,鬼ごっこ  ラウンド {0} / {1}  -  追跡,捉人游戏  第{0} / {1}轮  -  追逐
+TAG CHASE  ROUND {0} / {1}  -  COUNTDOWN,술래잡기  라운드 {0} / {1}  -  카운트다운,鬼ごっこ  ラウンド {0} / {1}  -  カウントダウン,捉人游戏  第{0} / {1}轮  -  倒计时
+TAG CHASE  ROUND {0} / {1}  -  RESULT,술래잡기  라운드 {0} / {1}  -  결과,鬼ごっこ  ラウンド {0} / {1}  -  結果,捉人游戏  第{0} / {1}轮  -  结果
+TAG CHASE COMPLETE,술래잡기 종료,鬼ごっこ終了,捉人游戏结束
+TAG CHASE RESULTS,술래잡기 결과,鬼ごっこ結果,捉人游戏结果
+"Ten gifts start; three more drop at 15, 30 and 45 seconds. Move with WASD. Touch a gift to carry one, then return it to your base or press LMB to throw it. Without a gift, LMB pushes and makes opponents drop theirs. Steal stored gifts from rival bases. Two 60-second rounds; most stored gifts wins.\nREADY {0} / 4","시작 시 선물 10개가 있고, 15초, 30초, 45초에 3개씩 더 떨어집니다. WASD로 이동하세요. 선물에 닿으면 하나를 들 수 있으며, 내 기지로 가져가거나 좌클릭으로 던질 수 있습니다. 선물이 없을 때 좌클릭하면 상대를 밀쳐 들고 있던 선물을 떨어뜨리게 합니다. 상대 기지에 보관된 선물을 훔치세요. 60초 라운드 2회, 보관한 선물이 가장 많은 플레이어가 승리합니다.\n준비 {0} / 4",開始時にプレゼントが10個あり、15秒・30秒・45秒にさらに3個ずつ落ちてきます。WASDで移動します。プレゼントに触れると1個持ち運べるので、自分の基地に持ち帰るか、左クリックで投げましょう。プレゼントを持っていないときは、左クリックで相手を押して、持っているプレゼントを落とさせます。ライバルの基地に保管されたプレゼントを奪いましょう。60秒のラウンドを2回行い、保管したプレゼントが最も多い人の勝ちです。\n準備完了 {0} / 4,开局有10个礼物；第15、30、45秒时各再掉落3个。用WASD移动。碰到礼物即可携带一个，然后将其送回你的基地或按左键投掷。没有礼物时，按左键可推开对手并使其掉落礼物。从对手基地偷取已存放的礼物。共2轮，每轮60秒；存放礼物最多者获胜。\n准备 {0} / 4
+TERRITORY PAINT,영역 칠하기,陣取りペイント,领地涂色
+TERRITORY PAINT  -  COUNTDOWN,영역 칠하기  -  카운트다운,陣取りペイント  -  カウントダウン,领地涂色  -  倒计时
+TERRITORY PAINT  -  RESULT,영역 칠하기  -  결과,陣取りペイント  -  結果,领地涂色  -  结果
+TERRITORY PAINT COMPLETE,영역 칠하기 종료,陣取りペイント終了,领地涂色结束
+Territory Paint complete.,영역 칠하기 종료.,陣取りペイント終了。,领地涂色结束。
+TERRITORY PAINT RESULTS,영역 칠하기 결과,陣取りペイント結果,领地涂色结果
+Test Hat,테스트 모자,テスト帽子,测试帽子
+That item is already sold.,이미 판매된 아이템입니다.,そのアイテムはすでに売り切れです。,该道具已售出。
+That player is unavailable.,해당 플레이어는 선택할 수 없습니다.,そのプレイヤーは選択できません。,无法选择该玩家。
+The active session ID is not available for network identity publishing.,네트워크 ID 게시에 사용할 현재 방 ID를 사용할 수 없습니다.,ネットワークID公開に使う現在のルームIDを取得できません。,无法获取当前房间 ID，无法发布网络身份。
+The answer is visible. One mistake loses the torso; the second eliminates.,"정답이 공개됩니다. 첫 실수 시 몸통을 잃고, 두 번째 실수 시 탈락합니다.",正解が表示されています。1回目のミスで胴体を失い、2回目で脱落します。,答案已显示。第一次失误会失去躯干，第二次失误将被淘汰。
+The award ceremony is not accepting return requests yet.,시상식에서 아직 복귀 요청을 받을 수 없습니다.,表彰式はまだ復帰リクエストを受け付けていません。,颁奖典礼尚未接受返回请求。
+The board game is running.,보드 게임이 진행 중입니다.,ボードゲームが進行中です。,棋盘游戏正在进行中。
+The Board network state was not created. The session is ending.,보드 네트워크 상태가 생성되지 않았습니다. 방이 종료됩니다.,ボードのネットワーク状態が作成されませんでした。ルームを終了します。,棋盘网络状态未创建。房间即将关闭。
+The first-place podium is in the spotlight.,1위 시상대에 스포트라이트가 비칩니다.,1位の表彰台にスポットライトが当たっています。,聚光灯照向第1名领奖台。
+The game is paused.,게임이 일시정지되었습니다.,ゲームは一時停止中です。,游戏已暂停。
+The game was ended by {0}.,{0}에 의해 게임이 종료되었습니다.,{0}によってゲームが終了しました。,{0} 结束了游戏。
+The host disconnected. The session is closing.,호스트의 연결이 끊겼습니다. 방이 닫힙니다.,ホストの接続が切れました。ルームを閉じています。,房主已断开连接。房间正在关闭。
+The host disconnected. Waiting for the session to close.,호스트의 연결이 끊겼습니다. 방이 닫히기를 기다리는 중입니다.,ホストの接続が切れました。ルームが閉じるのを待っています。,房主已断开连接。正在等待房间关闭。
+The host ended the session.,호스트가 방을 종료했습니다.,ホストがルームを終了しました。,房主已关闭房间。
+The host NetworkManager is not ready.,호스트 NetworkManager가 준비되지 않았습니다.,ホストのNetworkManagerの準備ができていません。,房主的 NetworkManager 尚未就绪。
+The host uses a different game build and automatic cleanup failed. Use Leave Session to retry cleanup.,호스트가 다른 게임 빌드를 사용 중이며 자동 정리에 실패했습니다. '방 나가기'로 정리를 다시 시도하세요.,ホストが異なるゲームビルドを使用しており、自動クリーンアップに失敗しました。「ルーム退出」でクリーンアップを再試行してください。,房主使用的游戏版本不同，且自动清理失败。请使用“离开房间”重试清理。
+The host uses a different game build.,호스트가 다른 게임 빌드를 사용 중입니다.,ホストが異なるゲームビルドを使用しています。,房主使用的游戏版本不同。
+The last survivor ranks first; later falls rank above earlier falls.,"마지막 생존자가 1위이며, 늦게 떨어질수록 순위가 높습니다.",最後まで生き残った人が1位で、落下が遅いほど上位になります。,最后的幸存者排名第一；越晚掉落排名越高。
+The loaded minigame scene is not synchronized: {0},불러온 미니게임 씬이 동기화되지 않았습니다: {0},読み込まれたミニゲームシーンが同期されていません: {0},已加载的小游戏场景未同步：{0}
+The lobby phase was saved; retrying local match cleanup: {0},로비 단계를 저장했으며 로컬 게임 정리를 다시 시도하는 중: {0},ロビーフェーズは保存済み、ローカル試合のクリーンアップを再試行中: {0},大厅阶段已保存，正在重试本地比赛清理：{0}
+The local network player ID was not ready in time.,로컬 네트워크 플레이어 ID가 제시간에 준비되지 않았습니다.,ローカルネットワークプレイヤーIDの準備が間に合いませんでした。,本地网络玩家 ID 未能及时就绪。
+The local network player is not ready to return to the lobby.,로컬 네트워크 플레이어가 로비로 돌아갈 준비가 되지 않았습니다.,ローカルネットワークプレイヤーはロビーに戻る準備ができていません。,本地网络玩家尚未准备好返回大厅。
+The persisted minigame schedule could not be restored.,저장된 미니게임 순서를 복원할 수 없습니다.,保存されたミニゲームの順番を復元できませんでした。,无法恢复已保存的小游戏顺序。
+The reconnect target uses a different game build and automatic cleanup failed.,재접속 대상이 다른 게임 빌드를 사용 중이며 자동 정리에 실패했습니다.,再接続先が異なるゲームビルドを使用しており、自動クリーンアップに失敗しました。,重连目标使用的游戏版本不同，且自动清理失败。
+The reconnect target uses a different game build.,재접속 대상이 다른 게임 빌드를 사용 중입니다.,再接続先が異なるゲームビルドを使用しています。,重连目标使用的游戏版本不同。
+The replacement host did not close the session. Leaving locally.,새 호스트가 방을 닫지 않았습니다. 로컬에서 나갑니다.,代わりのホストがルームを閉じませんでした。ローカルで退出します。,新房主未关闭房间。正在本地离开。
+The saved reconnect session is no longer joined by this authenticated player.,인증된 이 플레이어는 저장된 재접속 방에 더 이상 참가해 있지 않습니다.,この認証済みプレイヤーは、保存された再接続先のルームにもう参加していません。,此已验证玩家已不在保存的重连房间中。
+The saved reconnect target is no longer an active client game.,저장된 재접속 대상은 더 이상 진행 중인 클라이언트 게임이 아닙니다.,保存された再接続先は、もう進行中のクライアントゲームではありません。,保存的重连目标已不再是进行中的客户端游戏。
+The selected player,선택된 플레이어,選ばれたプレイヤー,被选中的玩家
+The session changed before the game could start.,게임이 시작되기 전에 방 정보가 변경되었습니다.,ゲーム開始前にルームが変更されました。,游戏开始前房间发生了变化。
+The session changed before the game state was saved.,게임 상태가 저장되기 전에 방 정보가 변경되었습니다.,ゲーム状態の保存前にルームが変更されました。,游戏状态保存前房间发生了变化。
+The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.,단판 경기가 끝났습니다. 순위에 따라 10 / 6 / 3 / 0 골드가 지급됩니다.,1回きりの試合が終了しました。順位に応じて10 / 6 / 3 / 0ゴールドが与えられます。,单局比赛已结束。按排名奖励 10 / 6 / 3 / 0 金币。
+The synchronized Board scene is required for lobby return.,로비로 돌아가려면 동기화된 보드 씬이 필요합니다.,ロビーに戻るには同期済みのボードシーンが必要です。,返回大厅需要已同步的棋盘场景。
+The tagger earns 3 points only after catching every runner; surviving and caught runners score separately.,술래는 모든 도망자를 잡아야만 3점을 얻습니다. 살아남은 도망자와 잡힌 도망자는 따로 점수를 받습니다.,鬼は逃げる人を全員捕まえた場合のみ3ポイントを獲得します。生き残った逃げる人と捕まった逃げる人は別々に得点します。,抓人者只有抓到所有逃跑者才能获得3分；存活和被抓的逃跑者分别计分。
+This queue slot has no available minigame. The next turn starts automatically.,이 대기열 칸에는 진행할 미니게임이 없습니다. 다음 턴이 자동으로 시작됩니다.,このキュー枠にはプレイできるミニゲームがありません。次のターンが自動的に始まります。,该队列槽位没有可用的小游戏。下一回合将自动开始。
+This slot is empty.,빈 슬롯입니다.,このスロットは空です。,该栏位为空。
+Three neutral balls will launch from the center.,중앙에서 중립 공 3개가 발사됩니다.,中央から中立のボールが3個発射されます。,三个中立球将从中心发射。
+"Throw up to 2 tiles. 80 damage within 4m, including yourself.",최대 2타일까지 던집니다. 자신을 포함해 4m 이내에 피해 80을 줍니다.,最大2タイル先まで投げます。自分を含む4m以内に80ダメージを与えます。,最多可投掷2格远。对4m内造成80伤害，包括自己。
+THUMBS UP,엄지척,グッド,点赞
+TIMEOUT / NO ITEM,시간 초과 / 아이템 없음,時間切れ / アイテムなし,超时 / 无道具
+TOP VIEW  {0:0.0}s,탑뷰  {0:0.0}초,トップビュー  {0:0.0}秒,俯视  {0:0.0}秒
+TURN --,턴 --,ターン --,回合 --
+TURN SKIPPED,턴 건너뜀,ターンスキップ,本回合已跳过
+TURN {0},턴 {0},ターン {0},回合 {0}
+TURN {0}  ·  {1} BLOCKS LEFT,{0}턴  ·  남은 블록 {1}개,ターン {0}  ·  残りブロック {1},第{0}回合  ·  剩余 {1} 块
+TURNING,돌아보는 중,振り向き中,转身中
+TURNING  {0:0.0}s: movement remains legal until RED begins.,돌아보는 중  {0:0.0}초: 빨간불이 켜지기 전까지는 움직여도 됩니다.,振り向き中  {0:0.0}秒：赤信号になるまでは移動しても大丈夫です。,转身中  {0:0.0}秒：红灯亮起前仍可移动。
+TURNING  ·  STOP!,돌아보는 중  ·  멈추세요!,振り向き中  ·  止まって！,转身中  ·  停！
+Two rounds complete. Final placement awards {0} gold.,2라운드가 모두 끝났습니다. 최종 순위에 따라 {0} 골드가 지급됩니다.,2ラウンドが終了しました。最終順位に応じて{0}ゴールドが与えられます。,两轮已结束。按最终排名奖励 {0} 金币。
+UNAVAILABLE,구매 불가,購入不可,不可购买
+UNKNOWN,알 수 없음,不明,未知
+Unknown,알 수 없음,不明,未知
+Unsafe platforms are dropping. Falling eliminates immediately.,안전하지 않은 발판이 떨어지고 있습니다. 떨어지면 즉시 탈락합니다.,安全でない足場が落下しています。落ちると即脱落です。,不安全的平台正在掉落。掉落即被淘汰。
+W  A  S  D\n50 STEPS,W  A  S  D\n50계단,W  A  S  D\n50段,W  A  S  D\n50级台阶
+WAIT...,대기 중...,待機中...,请稍候...
+WAITING,대기 중,待機中,等待中
+WAITING FOR 4 PLAYERS,플레이어 4명 대기 중,プレイヤー4人を待機中,等待4名玩家
+Waiting for every connected player avatar before lobby return.,로비 복귀 전에 접속한 모든 플레이어의 아바타를 기다리는 중입니다.,ロビー復帰の前に、接続中の全プレイヤーのアバターを待っています。,返回大厅前，正在等待所有已连接玩家的角色。
+Waiting for every player to finish loading the Board scene.,모든 플레이어가 보드 씬 로딩을 마치기를 기다리는 중입니다.,全プレイヤーがボードシーンの読み込みを終えるのを待っています。,正在等待所有玩家完成棋盘场景加载。
+WAITING FOR LOCAL PLAYER,로컬 플레이어 대기 중,ローカルプレイヤー待機中,等待本地玩家
+Waiting for players  {0} / {1},플레이어 대기 중  {0} / {1},プレイヤー待機中  {0} / {1},等待玩家  {0} / {1}
+Waiting for the disconnected player to return.,연결이 끊긴 플레이어의 복귀를 기다리는 중입니다.,切断されたプレイヤーの復帰を待っています。,正在等待断线玩家返回。
+Waiting for the server scene manager during lobby return.,로비 복귀 중 서버 씬 매니저를 기다리는 중입니다.,ロビー復帰中、サーバーのシーンマネージャーを待っています。,返回大厅过程中，正在等待服务器场景管理器。
+Waiting for {0} player(s) to finish unloading {1}.,플레이어 {0}명이 {1} 언로드를 마치기를 기다리는 중입니다.,{0}人のプレイヤーが{1}のアンロードを終えるのを待っています。,正在等待{0}名玩家完成{1}的卸载。
+Waiting to retry synchronized scene unload for {0}: {1},{0}의 동기화된 씬 언로드 재시도 대기 중: {1},{0}の同期シーンアンロードの再試行待ち: {1},正在等待重试{0}的同步场景卸载：{1}
+WAITING...,대기 중...,待機中...,等待中...
+WARNED · WALK SPEED,경고 · 걷기 속도,警告 · 歩行速度,警告 · 步行速度
+WASD  MOVE / LCTRL QUIET 6m,WASD  이동 / 왼쪽 Ctrl 조용히 걷기 6m,WASD  移動 / 左Ctrl 忍び足 6m,WASD  移动 / 左Ctrl 静步 6m
+WASD moves and continuously paints a circular trail.,WASD로 이동하면 원형 자국이 계속 칠해집니다.,WASDで移動すると、円形の軌跡が塗られ続けます。,用WASD移动，并持续涂出圆形轨迹。
+WASD moves in top view. Stop moving and press RMB to scan nearby mines.,탑뷰에서 WASD로 이동합니다. 멈춘 뒤 우클릭하면 주변 지뢰를 탐지합니다.,トップビューでWASDを使って移動します。止まって右クリックすると、近くの地雷を探知します。,在俯视视角下用WASD移动。停下并按右键可探测附近的地雷。
+"WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item.","방 안에서 WASD로 이동합니다. 내 주사위를 조준하세요: 우클릭은 굴리기, 좌클릭은 살짝 밀기. 다른 곳을 좌클릭하면 활성화된 아이템을 사용합니다.",部屋の中をWASDで移動します。自分のサイコロを狙います：右クリックで振り、左クリックで軽く押します。それ以外の場所で左クリックすると、使用中のアイテムを使います。,在房间内用WASD移动。瞄准你的骰子：右键掷骰，左键轻推。在其他位置按左键会使用当前道具。
+"WASD moves. Carry gifts home, throw while carrying, or push while empty-handed. Three gifts drop every 15 seconds.","WASD로 이동합니다. 선물을 기지로 옮기고, 들고 있을 때는 던지고, 빈손일 때는 밀치세요. 15초마다 선물 3개가 떨어집니다.",WASDで移動します。プレゼントを基地へ運び、持っているときは投げ、手ぶらのときは押しましょう。15秒ごとにプレゼントが3個落ちてきます。,用WASD移动。把礼物带回基地，携带时可投掷，空手时可推人。每15秒掉落3个礼物。
+WASD moves. LMB pushes the nearest player in front of you.,WASD로 이동합니다. 좌클릭하면 앞에 있는 가장 가까운 플레이어를 밉니다.,WASDで移動します。左クリックで目の前の一番近いプレイヤーを押します。,用WASD移动。按左键推开你前方最近的玩家。
+WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS,WASD: 회피\n좌클릭: 밀치기\n포탄 / 레이저 피하기,WASD: 回避\n左クリック: 押す\n砲弾 / レーザーを避ける,WASD: 闪避\n左键: 推人\n躲避炮弹 / 激光
+WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB,WASD: 이동\n좌클릭: 넘기기 / 기절시키기\n폭탄에서 살아남기,WASD: 移動\n左クリック: パス / スタン\n爆弾から生き残る,WASD: 移动\n左键: 传递 / 眩晕\n躲过炸弹
+WASD: MOVE\nLMB: PUSH\nX  O  □,WASD: 이동\n좌클릭: 밀치기\nX  O  □,WASD: 移動\n左クリック: 押す\nX  O  □,WASD: 移动\n左键: 推人\nX  O  □
+WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS,WASD: 이동\n좌클릭: 던지기 / 밀치기\n선물 훔치기,WASD: 移動\n左クリック: 投げる / 押す\nプレゼントを奪う,WASD: 移动\n左键: 投掷 / 推人\n偷取礼物
+WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH,WASD: 이동\n마우스: 시점\n좌클릭: 펀치,WASD: 移動\nマウス: 視点\n左クリック: パンチ,WASD: 移动\n鼠标: 视角\n左键: 出拳
+WASD: MOVE\nPAINT THE ARENA,WASD: 이동\n경기장 칠하기,WASD: 移動\nアリーナを塗る,WASD: 移动\n涂满竞技场
+WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF,WASD: 구르기\n속도 올리기 · 공 밀어내기,WASD: 転がる\n加速 · ボールを押し出す,WASD: 滚动\n加速 · 把球推出去
+"Watch and listen to the shared A/S/D sequence, then repeat it after it is hidden. A is high, S is middle and D is low. A wrong key locks the current problem. Your first mistake removes your torso; your second eliminates you. Ten problems, one final placement, no per-problem score.\nREADY {0} / 4","모두에게 똑같이 제시되는 A/S/D 순서를 보고 들은 뒤, 순서가 가려지면 그대로 입력하세요. A는 높은 음, S는 중간 음, D는 낮은 음입니다. 틀린 키를 누르면 현재 문제가 잠깁니다. 첫 번째 실수에는 몸통을 잃고, 두 번째 실수에는 탈락합니다. 총 10문제이며, 문제별 점수 없이 최종 순위 하나만 정해집니다.\n준비 {0} / 4",全員共通のA/S/Dの順番を見て聞き、隠された後に同じ順番で入力してください。Aは高音、Sは中音、Dは低音です。間違ったキーを押すと、その問題はロックされます。1回目のミスで胴体を失い、2回目のミスで脱落します。全10問で、問題ごとのスコアはなく、最終順位だけが決まります。\n準備完了 {0} / 4,观看并聆听所有人共享的 A/S/D 序列，序列隐藏后按原顺序重复输入。A 为高音，S 为中音，D 为低音。按错键会锁定当前题目。第一次失误会失去躯干；第二次失误将被淘汰。共十道题，只决定一个最终名次，不按题计分。\n准备 {0} / 4
+"Watch and listen: A is high, S is middle and D is low.","보고 들으세요: A는 높은 음, S는 중간 음, D는 낮은 음입니다.",見て聞いてください：Aは高音、Sは中音、Dは低音です。,观看并聆听：A 为高音，S 为中音，D 为低音。
+WATCHING,관찰 중,観察中,观察中
+Windowed,창모드,ウィンドウ,窗口模式
+WINNER REVEAL  -  CONTROLS UNLOCK IN {0},우승자 발표  -  {0}초 후 조작 가능,優勝者発表  -  {0}秒後に操作可能,冠军揭晓  -  {0}秒后解锁操作
+Working...,처리 중...,処理中...,处理中...
+WRONG WAY,역방향 계단,逆方向階段,逆向楼梯
+WRONG WAY  ROUND {0} / {1}  -  CLIMB,역방향 계단  라운드 {0} / {1}  -  오르기,逆方向階段  ラウンド {0} / {1}  -  登り,逆向楼梯  第 {0} / {1} 轮  -  攀爬
+WRONG WAY  ROUND {0} / {1}  -  COUNTDOWN,역방향 계단  라운드 {0} / {1}  -  카운트다운,逆方向階段  ラウンド {0} / {1}  -  カウントダウン,逆向楼梯  第 {0} / {1} 轮  -  倒计时
+WRONG WAY  ROUND {0} / {1}  -  RESULT,역방향 계단  라운드 {0} / {1}  -  결과,逆方向階段  ラウンド {0} / {1}  -  結果,逆向楼梯  第 {0} / {1} 轮  -  结果
+WRONG WAY / STAIR RACE,역방향 계단 / 계단 레이스,逆方向階段 / 階段レース,逆向楼梯 / 楼梯赛跑
+WRONG WAY COMPLETE,역방향 계단 종료,逆方向階段 終了,逆向楼梯 结束
+WRONG WAY RESULTS,역방향 계단 결과,逆方向階段 結果,逆向楼梯 结果
+WRONG · LOCKED,오답 · 잠김,不正解 · ロック,错误 · 已锁定
+WRONG · TORSO LOST,오답 · 몸통 잃음,不正解 · 胴体喪失,错误 · 失去躯干
+WRONG!  GET UP...,실수!  일어나는 중...,ミス！  起き上がり中...,错误！  正在起身...
+Yellow,노랑,黄,黄
+YOU,나,自分,你
+YOU  ·  {0} STORED  ·  {1},나  ·  보관 {0}  ·  {1},あなた  ·  保管 {0}  ·  {1},你  ·  已存放 {0}  ·  {1}
+YOU  ·  {0}%  ·  {1},나  ·  {0}%  ·  {1},あなた  ·  {0}%  ·  {1},你  ·  {0}%  ·  {1}
+You are already connected to an online session.,이미 온라인 방에 접속되어 있습니다.,すでにオンラインルームに接続しています。,你已连接到在线房间。
+You are not connected to an online session.,온라인 방에 접속되어 있지 않습니다.,オンラインルームに接続していません。,你未连接到在线房间。
+You left the game.,게임에서 나갔습니다.,ゲームから退出しました。,你已离开游戏。
+You paused the game.,게임을 일시정지했습니다.,ゲームを一時停止しました。,你暂停了游戏。
+You were removed from the session.,방에서 내보내졌습니다.,ルームから外されました。,你已被移出房间。
+{0}   STEP {1} / {2},{0}   계단 {1} / {2},{0}   ステップ {1} / {2},{0}   台阶 {1} / {2}
+{0}  ·  {1} STORED,{0}  ·  보관 {1},{0}  ·  保管 {1},{0}  ·  已存放 {1}
+{0} BASE,{0} 기지,{0}の拠点,{0} 的基地
+{0} Cleanup needs a retry: {1},{0} 정리를 다시 시도해야 합니다: {1},{0} クリーンアップの再試行が必要です: {1},{0} 需要重试清理：{1}
+{0} COMPLETE: final standings and {1} gold rewards are shown.,{0} 종료: 최종 순위와 {1} 골드 보상이 표시됩니다.,{0} 終了：最終順位と {1} ゴールドの報酬が表示されます。,{0} 结束：显示最终排名和 {1} 金币奖励。
+{0} DAMAGE,피해 {0},{0} ダメージ,{0} 伤害
+{0} GIFTS,선물 {0}개,プレゼント {0}個,{0} 个礼物
+{0} GOLD,{0} 골드,{0} ゴールド,{0} 金币
+{0} is the tagger. Get ready for the chase.,술래는 {0}입니다. 추격에 대비하세요.,{0}が鬼です。追いかけっこに備えてください。,{0} 是抓人者。准备开始追逐。
+{0} ITEM USE,아이템 {0}회 사용,アイテム使用 {0}回,使用道具 {0}次
+{0} ITEM USES,아이템 {0}회 사용,アイテム使用 {0}回,使用道具 {0}次
+{0} LAST PLACE,꼴찌 {0}회,最下位 {0}回,垫底 {0}次
+{0} LAST PLACES,꼴찌 {0}회,最下位 {0}回,垫底 {0}次
+{0} minigame did not finish loading within 60 seconds.,{0} 미니게임이 60초 안에 로딩을 완료하지 못했습니다.,{0}ミニゲームの読み込みが60秒以内に完了しませんでした。,{0} 小游戏未能在 60 秒内完成加载。
+{0} READY,{0} 준비,{0} 準備,{0} 准备
+{0} rounds complete. Final points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 최종 점수로 순위가 결정되며, 순위에 따라 골드가 지급됩니다.",全{0}ラウンドが終了しました。最終ポイントで順位が決まり、順位に応じてゴールドが贈られます。,{0} 轮全部结束。最终分数决定排名，按名次发放金币。
+"{0} rounds complete. Points, total stored gifts, final-round rank, then server player order determine placement.","{0}라운드가 모두 종료되었습니다. 점수, 보관한 선물 총합, 마지막 라운드 순위, 서버 플레이어 순서 순으로 순위가 결정됩니다.",全{0}ラウンドが終了しました。ポイント、保管したプレゼントの合計、最終ラウンドの順位、サーバーのプレイヤー順の順に順位が決まります。,{0} 轮全部结束。依次按分数、存放礼物总数、最后一轮排名、服务器玩家顺序决定名次。
+{0} scene synchronization completed without a loaded scene.,{0} 씬 동기화가 완료되었지만 로드된 씬이 없습니다.,{0}のシーン同期は完了しましたが、読み込まれたシーンがありません。,{0} 场景同步已完成，但没有已加载的场景。
+{0} scene synchronization timed out for a player.,한 플레이어의 {0} 씬 동기화 시간이 초과되었습니다.,あるプレイヤーの{0}シーン同期がタイムアウトしました。,某位玩家的 {0} 场景同步超时。
+{0} WIN,{0}승,{0}勝,{0}胜
+{0} WINS,{0}승,{0}勝,{0}胜
+{0}.  {1}  GOALS {2}  CONCEDED {3}  GOLD +{4},{0}.  {1}  득점 {2}  실점 {3}  골드 +{4},{0}.  {1}  得点 {2}  失点 {3}  ゴールド +{4},{0}.  {1}  进球 {2}  失球 {3}  金币 +{4}
+{0}.  {1}  GOLD +{2},{0}.  {1}  골드 +{2},{0}.  {1}  ゴールド +{2},{0}.  {1}  金币 +{2}
+{0}.  {1}  OUT  GOLD +{2},{0}.  {1}  탈락  골드 +{2},{0}.  {1}  脱落  ゴールド +{2},{0}.  {1}  淘汰  金币 +{2}
+{0}.  {1}  SCORE {2}  GIFTS {3}  GOLD +{4},{0}.  {1}  점수 {2}  선물 {3}  골드 +{4},{0}.  {1}  スコア {2}  プレゼント {3}  ゴールド +{4},{0}.  {1}  得分 {2}  礼物 {3}  金币 +{4}
+{0}.  {1}  SCORE {2}  GOLD +{3},{0}.  {1}  점수 {2}  골드 +{3},{0}.  {1}  スコア {2}  ゴールド +{3},{0}.  {1}  得分 {2}  金币 +{3}
+{0}.  {1}  SURVIVED  GOLD +{2},{0}.  {1}  생존  골드 +{2},{0}.  {1}  生存  ゴールド +{2},{0}.  {1}  存活  金币 +{2}
+{0}.  {1}  {2}  GOLD +{3},{0}.  {1}  {2}  골드 +{3},{0}.  {1}  {2}  ゴールド +{3},{0}.  {1}  {2}  金币 +{3}
+{0}: review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.,"{0}: 규칙을 확인하세요. 준비를 누르면 일찍 시작할 수 있으며, 카운트다운이 끝나면 미니게임이 자동으로 시작됩니다.",{0}：ルールを確認してください。準備完了を押すと早めに開始できます。カウントダウンが終わるとミニゲームが自動で始まります。,{0}：请查看规则。按下准备可提前开始；倒计时结束后小游戏将自动开始。
+— HIDDEN —,— 숨김 —,— 非表示 —,— 已隐藏 —

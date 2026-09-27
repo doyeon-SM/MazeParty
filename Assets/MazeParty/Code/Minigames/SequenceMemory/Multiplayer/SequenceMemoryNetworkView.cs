@@ -90,7 +90,7 @@ namespace MazeParty.Multiplayer
             var shouldShowWorld =
                 state != null && state.IsSpawned && selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
-                 match.FlowState == BoardFlowState.SkippedResult);
+                 match.FlowState == BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState ==
                                 BoardFlowState.MinigamePlaying;
@@ -177,7 +177,7 @@ namespace MazeParty.Multiplayer
                 visual.SetOwnerFirstPerson(false);
                 visual.SetTopViewHighlight(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
-                visual.SetDisplayName("PLAYER " + (slot + 1));
+                visual.SetDisplayName(GameText.F("PLAYER {0}", slot + 1));
                 visual.SetEliminated(false);
 
                 var presentation = playerObject.AddComponent<
@@ -249,7 +249,7 @@ namespace MazeParty.Multiplayer
                         appearance.HatId);
                     player.Visual.SetDisplayName(
                         string.IsNullOrWhiteSpace(avatar.DisplayName)
-                            ? "PLAYER " + (slot + 1)
+                            ? GameText.F("PLAYER {0}", slot + 1)
                             : avatar.DisplayName);
                 }
 
@@ -285,7 +285,7 @@ namespace MazeParty.Multiplayer
                 var name = avatar != null &&
                            !string.IsNullOrWhiteSpace(avatar.DisplayName)
                     ? avatar.DisplayName
-                    : "PLAYER " + (slot + 1);
+                    : GameText.F("PLAYER {0}", slot + 1);
                 hud.PlayerNameTexts[slot].text = name;
                 var input = state.GetPlayerInput(slot);
                 hud.PlayerInputTexts[slot].text =
@@ -303,7 +303,7 @@ namespace MazeParty.Multiplayer
             if (state.Phase ==
                 NetworkSequenceMemoryPhase.AcceptingInput)
             {
-                return "— HIDDEN —";
+                return GameText.T("— HIDDEN —");
             }
 
             var visible = state.VisibleProblem;
@@ -314,35 +314,35 @@ namespace MazeParty.Multiplayer
         {
             if (state.IsPlayerEliminated(slot))
             {
-                return "OUT · 2 MISSES";
+                return GameText.T("OUT · 2 MISSES");
             }
             if (state.GetMistakeCount(slot) > 0)
             {
                 var turnStatus = state.GetPlayerTurnStatus(slot);
                 if (turnStatus == SequenceMemoryPlayerTurnStatus.Correct)
                 {
-                    return "CORRECT · TORSO LOST";
+                    return GameText.T("CORRECT · TORSO LOST");
                 }
                 if (turnStatus == SequenceMemoryPlayerTurnStatus.Failed)
                 {
-                    return "WRONG · TORSO LOST";
+                    return GameText.T("WRONG · TORSO LOST");
                 }
             }
 
             switch (state.GetPlayerTurnStatus(slot))
             {
                 case SequenceMemoryPlayerTurnStatus.Entering:
-                    return "INPUTTING";
+                    return GameText.T("INPUTTING");
                 case SequenceMemoryPlayerTurnStatus.Correct:
-                    return "CORRECT · WAITING";
+                    return GameText.T("CORRECT · WAITING");
                 case SequenceMemoryPlayerTurnStatus.Failed:
-                    return "WRONG · LOCKED";
+                    return GameText.T("WRONG · LOCKED");
                 case SequenceMemoryPlayerTurnStatus.LockedForMatchEnd:
-                    return "SURVIVED";
+                    return GameText.T("SURVIVED");
                 case SequenceMemoryPlayerTurnStatus.Eliminated:
-                    return "OUT";
+                    return GameText.T("OUT");
                 default:
-                    return "WATCHING";
+                    return GameText.T("WATCHING");
             }
         }
 

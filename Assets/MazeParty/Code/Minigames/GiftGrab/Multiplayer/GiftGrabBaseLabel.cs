@@ -45,7 +45,7 @@ namespace MazeParty.Multiplayer
             Color ownerColor)
         {
             titleText.text = string.IsNullOrWhiteSpace(title)
-                ? "PLAYER"
+                ? GameText.T("PLAYER")
                 : title.Trim();
             detailText.text = detail ?? string.Empty;
             titleText.color = isLocalPlayer

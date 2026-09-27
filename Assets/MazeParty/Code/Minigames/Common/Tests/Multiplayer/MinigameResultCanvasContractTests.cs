@@ -43,6 +43,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(resultPrefab.GetComponent<CanvasScaler>(),
                 Is.Not.Null);
             Assert.That(result.ResultPanel.activeSelf, Is.False);
+            Assert.That(result.ResultPanel.name, Is.EqualTo("MinigameResultPanel"));
             Assert.That(board, Is.Not.Null);
             Assert.That(board.HasRequiredReferences, Is.True);
             Assert.That(result.RootCanvas.sortingOrder,
@@ -50,8 +51,11 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(boardPrefab.GetComponentsInChildren<
                     MinigameResultCanvasBindings>(true),
                 Is.Empty);
+            // Neither the legacy (SkippedResultPanel) nor the current result
+            // panel may remain inside BoardCanvas after the migration.
             Assert.That(boardPrefab.GetComponentsInChildren<Transform>(true)
-                    .Any(child => child.name == "SkippedResultPanel"),
+                    .Any(child => child.name == "SkippedResultPanel" ||
+                                  child.name == "MinigameResultPanel"),
                 Is.False);
         }
 

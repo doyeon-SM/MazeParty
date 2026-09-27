@@ -191,6 +191,7 @@ GameObject:
   - component: {fileID: 6861339240839036447}
   - component: {fileID: 7784876075810952425}
   - component: {fileID: 7097384414063557523}
+  - component: {fileID: 4238666810631866259}
   m_Layer: 0
   m_Name: World Label
   m_TagString: Untagged
@@ -286,6 +287,21 @@ TextMesh:
   m_Color:
     serializedVersion: 2
     rgba: 4294967295
+--- !u!114 &4238666810631866259
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3711882402670121529}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3c2168a7644aee49b2c08c466160373, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.LocalizedTextMesh
+  sourceText: 'KEY SHOP
+
+    RMB BUY  20 GOLD'
 --- !u!1 &4613776624415457831
 GameObject:
   m_ObjectHideFlags: 0

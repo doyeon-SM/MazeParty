@@ -644,14 +644,14 @@ namespace MazeParty.Multiplayer
         {
             return IsLocalItemOccupied(slotIndex)
                 ? PrototypeItemCatalog.Get(GetLocalItemId(slotIndex)).DisplayName
-                : "EMPTY";
+                : GameText.N("EMPTY");
         }
 
         public string GetLocalItemDescription(int slotIndex)
         {
             return IsLocalItemOccupied(slotIndex)
                 ? PrototypeItemCatalog.Get(GetLocalItemId(slotIndex)).Description
-                : "This slot is empty.";
+                : GameText.N("This slot is empty.");
         }
 
         public PrototypeItemId GetLocalItemId(int slotIndex)
@@ -1844,7 +1844,7 @@ namespace MazeParty.Multiplayer
                    !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
                   match.CanAvatarUseCombatInput(this)) &&
                  Cursor.lockState == CursorLockMode.Locked);
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (!canLook || mouse == null)
             {
                 return;
@@ -1904,7 +1904,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (mouse == null)
             {
                 return;
@@ -2070,7 +2070,7 @@ namespace MazeParty.Multiplayer
         {
             var input = Vector2.zero;
             var quietWalkHeld = false;
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             var match = NetworkMatchState.Instance;
             var lobbyInput = CanUseLobbyInput();
             var canMove = lobbyInput || (match != null &&
@@ -2131,7 +2131,7 @@ namespace MazeParty.Multiplayer
             }
 
             var input = Vector2.zero;
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard != null &&
                 match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
@@ -2163,7 +2163,7 @@ namespace MazeParty.Multiplayer
             }
 
             var input = Vector2.zero;
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard != null &&
                 match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
@@ -2198,7 +2198,7 @@ namespace MazeParty.Multiplayer
 
             var input = Vector2.zero;
             var canAccept = match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2216,7 +2216,7 @@ namespace MazeParty.Multiplayer
                 SubmitStableFootingInputRpc(input);
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (canAccept && mouse != null &&
                 mouse.leftButton.wasPressedThisFrame)
             {
@@ -2244,7 +2244,7 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             var isHeld = mouse != null &&
                          mouse.leftButton.isPressed &&
                          !IsPointerOverUi();
@@ -2287,7 +2287,7 @@ namespace MazeParty.Multiplayer
 
             var input = Vector2.zero;
             var canAccept = match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2312,7 +2312,7 @@ namespace MazeParty.Multiplayer
                     inputEpoch);
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (canAccept && mouse != null &&
                 mouse.leftButton.wasPressedThisFrame)
             {
@@ -2343,7 +2343,7 @@ namespace MazeParty.Multiplayer
             }
 
             var input = Vector2.zero;
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard != null &&
                 match.CanCurrentMinigameAcceptInputForSlot(
                     AssignedSlot))
@@ -2394,7 +2394,7 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard == null)
             {
                 return true;
@@ -2445,7 +2445,7 @@ namespace MazeParty.Multiplayer
             var input = Vector2.zero;
             var canAccept = match.CanCurrentMinigameAcceptInputForSlot(
                 AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2468,7 +2468,7 @@ namespace MazeParty.Multiplayer
                     input, roundNumber, inputEpoch);
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (canAccept && mouse != null &&
                 mouse.leftButton.wasPressedThisFrame)
             {
@@ -2499,7 +2499,7 @@ namespace MazeParty.Multiplayer
             var input = Vector2.zero;
             var canAccept = match.CanCurrentMinigameAcceptInputForSlot(
                 AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2546,7 +2546,7 @@ namespace MazeParty.Multiplayer
             var input = Vector2.zero;
             var canAccept = match.CanCurrentMinigameAcceptInputForSlot(
                 AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2569,7 +2569,7 @@ namespace MazeParty.Multiplayer
                     input, roundNumber, inputEpoch);
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (canAccept && mouse != null &&
                 mouse.leftButton.wasPressedThisFrame)
             {
@@ -2599,7 +2599,7 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             var axis = keyboard == null
                 ? 0f
                 : (keyboard.dKey.isPressed ? 1f : 0f) -
@@ -2640,7 +2640,7 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard == null)
             {
                 return true;
@@ -2683,7 +2683,7 @@ namespace MazeParty.Multiplayer
             var canAccept =
                 match.CanCurrentMinigameAcceptInputForSlot(
                     AssignedSlot);
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (canAccept && keyboard != null)
             {
                 input.x =
@@ -2717,7 +2717,7 @@ namespace MazeParty.Multiplayer
                     inputEpoch);
             }
 
-            var mouse = Mouse.current;
+            var mouse = LocalMouse;
             if (canAccept &&
                 match.CurrentMinigameUsesFirstPersonForSlot(
                     AssignedSlot) &&
@@ -2742,7 +2742,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var keyboard = Keyboard.current;
+            var keyboard = LocalKeyboard;
             if (keyboard == null ||
                 !match.CanCurrentMinigameAcceptInputForSlot(AssignedSlot))
             {
@@ -3535,15 +3535,6 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TryResolveItemChoiceOnServer(this, slotIndex, chooseNoItem);
-            }
-        }
-
-        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-        private void RequestRollRpc(RpcParams rpcParams = default)
-        {
-            if (rpcParams.Receive.SenderClientId == OwnerClientId)
-            {
-                NetworkMatchState.Instance?.TryRollForAvatarOnServer(this);
             }
         }
 

@@ -193,6 +193,14 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(
                         MinigameScheduleTowerView.MaximumVisibleBlocks));
 
+                var menus = roots
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<GameMenuView>(true))
+                    .ToArray();
+                Assert.That(menus, Has.Length.EqualTo(1));
+                Assert.That(menus[0].Bindings, Is.Not.Null);
+                Assert.That(menus[0].Bindings.HasRequiredReferences, Is.True);
+
                 var eventSystems = roots
                     .SelectMany(root =>
                         root.GetComponentsInChildren<EventSystem>(true))

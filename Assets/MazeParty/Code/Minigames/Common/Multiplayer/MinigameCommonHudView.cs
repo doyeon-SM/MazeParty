@@ -62,7 +62,7 @@ namespace MazeParty.Multiplayer
             {
                 ShowClock(match.ReconnectRemaining,
                     NetworkMatchState.ReconnectGraceSeconds,
-                    "RECONNECT", true);
+                    GameText.T("RECONNECT"), true);
                 return;
             }
 
@@ -78,8 +78,8 @@ namespace MazeParty.Multiplayer
             var hasRounds = definition.RoundCount > 1;
             var label = match.CurrentMinigame ==
                     ScheduledMinigameId.SequenceMemory
-                ? "PROBLEM " + round + " / " + definition.RoundCount
-                : "ROUND " + round + " / " + definition.RoundCount;
+                ? GameText.F("PROBLEM {0} / {1}", round, definition.RoundCount)
+                : GameText.F("ROUND {0} / {1}", round, definition.RoundCount);
             ShowClock(remaining, total, label, hasRounds);
         }
 

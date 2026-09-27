@@ -17,7 +17,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Text selectionText;
         [SerializeField] private float deadZone = 32, radius = 130;
         [SerializeField] private Color idleColor = new Color(.07f, .12f, .18f, .96f), selectedColor = new Color(.15f, .6f, .72f, 1f);
-        [SerializeField] private string neutralText = "DRAG TO SELECT", releaseText = "RELEASE T: {0}";
+        [SerializeField] private string neutralText = GameText.N("DRAG TO SELECT"), releaseText = GameText.N("RELEASE T: {0}");
         private NetworkPlayerAvatar _local;
         private Vector2 _offset;
         private bool _cursorWasVisible;
@@ -37,7 +37,8 @@ namespace MazeParty.Multiplayer
             if (_local == null || !_local.IsSpawned)
                 foreach (var p in FindObjectsByType<NetworkPlayerAvatar>()) if (p.IsOwner && p.IsSpawned) { _local = p; break; }
             if (keyboard == null || mouse == null || _local == null || !_local.CanUseHandGestures ||
-                _local.IsInLobbyForExpressions != lobbyWheel || BoardFlowView.IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen)
+                _local.IsInLobbyForExpressions != lobbyWheel || BoardFlowView.IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen ||
+                LocalInputGate.IsMenuOpen)
             { Close(false); return; }
             if (keyboard.tKey.wasPressedThisFrame && _open == null && !Typing())
             { _cursorWasVisible = Cursor.visible; Cursor.visible = false; _open = this; _offset = Vector2.zero; _selected = -1; panel.SetActive(true); }
@@ -49,8 +50,8 @@ namespace MazeParty.Multiplayer
             pointer.anchoredPosition = _offset;
             var catalog = PlayerExpressionCatalog.Instance;
             for (int i = 0; i < sectors.Length; i++)
-            { sectors[i].color = i == _selected ? selectedColor : idleColor; labels[i].text = catalog.Gestures[i].Name; }
-            selectionText.text = _selected < 0 ? neutralText : string.Format(releaseText, catalog.Gestures[_selected].Name);
+            { sectors[i].color = i == _selected ? selectedColor : idleColor; labels[i].text = GameText.T(catalog.Gestures[i].Name); }
+            selectionText.text = _selected < 0 ? GameText.T(neutralText) : GameText.F(releaseText, GameText.T(catalog.Gestures[_selected].Name));
             if (!keyboard.tKey.isPressed) Close(true);
         }
         private static bool Typing()

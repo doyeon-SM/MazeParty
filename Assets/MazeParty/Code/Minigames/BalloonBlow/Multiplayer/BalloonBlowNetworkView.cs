@@ -127,7 +127,7 @@ namespace MazeParty.Multiplayer
             var shouldShowWorld =
                 state != null && state.IsSpawned && selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
-                 match.FlowState == BoardFlowState.SkippedResult);
+                 match.FlowState == BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState ==
                                 BoardFlowState.MinigamePlaying;
@@ -248,7 +248,7 @@ namespace MazeParty.Multiplayer
                 visual.EnsureBuilt();
                 visual.SetOwnerFirstPerson(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
-                visual.SetDisplayName("Player " + (slot + 1));
+                visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 DisableBuiltInNameplate(playerObject.transform);
                 DisableGeneratedHitColliders(playerObject);
 
@@ -369,7 +369,7 @@ namespace MazeParty.Multiplayer
                 var avatar = match.GetAvatarForSlot(slot);
                 var playerName = avatar != null
                     ? avatar.DisplayName
-                    : "Player " + (slot + 1);
+                    : GameText.F("Player {0}", slot + 1);
                 var color = avatar != null
                     ? avatar.Appearance.BodyColor
                     : FallbackPlayerColors[slot];
@@ -420,9 +420,10 @@ namespace MazeParty.Multiplayer
                     state.GetPlayerProgress(_localSlot),
                     0f,
                     BalloonBlowRules.MaxProgressPercent);
-                hud.LocalProgressText.text =
-                    "YOU  ·  " + Mathf.RoundToInt(progress) +
-                    "%  ·  " + GetPlayerStateLabel(_localSlot);
+                hud.LocalProgressText.text = GameText.F(
+                    "YOU  ·  {0}%  ·  {1}",
+                    Mathf.RoundToInt(progress),
+                    GetPlayerStateLabel(_localSlot));
                 hud.LocalProgressFill.fillAmount =
                     progress / BalloonBlowRules.MaxProgressPercent;
             }
@@ -432,23 +433,23 @@ namespace MazeParty.Multiplayer
         {
             if (_localSlot < 0)
             {
-                return "SPECTATING";
+                return GameText.T("SPECTATING");
             }
 
             switch (state.GetPlayerPhase(_localSlot))
             {
                 case BalloonBlowPlayerPhase.Inflating:
-                    return "INFLATING";
+                    return GameText.T("INFLATING");
                 case BalloonBlowPlayerPhase.Cooldown:
-                    return "COOLDOWN " +
-                           state.GetPlayerCooldownRemainingSeconds(_localSlot)
-                               .ToString("0.0") + "s";
+                    return GameText.F(
+                        "COOLDOWN {0:0.0}s",
+                        state.GetPlayerCooldownRemainingSeconds(_localSlot));
                 case BalloonBlowPlayerPhase.AwaitingRelease:
-                    return "RELEASE TO REARM";
+                    return GameText.T("RELEASE TO REARM");
                 case BalloonBlowPlayerPhase.Popped:
-                    return "POPPED";
+                    return GameText.T("POPPED");
                 default:
-                    return "READY";
+                    return GameText.T("READY");
             }
         }
 
@@ -461,17 +462,17 @@ namespace MazeParty.Multiplayer
             }
             if (state.IsPlayerInflating(slot))
             {
-                return "INFLATING";
+                return GameText.T("INFLATING");
             }
 
             switch (state.GetPlayerPhase(slot))
             {
                 case BalloonBlowPlayerPhase.Cooldown:
-                    return "RESTING";
+                    return GameText.T("RESTING");
                 case BalloonBlowPlayerPhase.AwaitingRelease:
-                    return "RELEASE";
+                    return GameText.T("RELEASE");
                 default:
-                    return "READY";
+                    return GameText.T("READY");
             }
         }
 
@@ -479,12 +480,13 @@ namespace MazeParty.Multiplayer
         {
             if (_localSlot < 0)
             {
-                return "ROUND COMPLETE";
+                return GameText.T("ROUND COMPLETE");
             }
-            return "ROUND " +
-                   MinigameDisplayFormatter.ToOrdinal(
-                       state.GetRoundRank(_localSlot)) +
-                   "\n+" + state.GetRoundPoints(_localSlot) + " POINTS";
+            return GameText.F(
+                "ROUND {0}\n+{1} POINTS",
+                MinigameDisplayFormatter.ToOrdinal(
+                    state.GetRoundRank(_localSlot)),
+                state.GetRoundPoints(_localSlot));
         }
 
         private void SetWorldPresentationActive(bool active)

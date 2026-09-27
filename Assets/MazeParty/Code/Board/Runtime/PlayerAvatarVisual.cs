@@ -212,7 +212,7 @@ namespace MazeParty.Gameplay
         public void SetDisplayName(string value)
         {
             EnsureBuilt();
-            _nameText.text = string.IsNullOrWhiteSpace(value) ? "Player" : value.Trim();
+            _nameText.text = string.IsNullOrWhiteSpace(value) ? GameText.T("Player") : value.Trim();
         }
 
         public void SetCrouching(bool crouching)
@@ -503,7 +503,7 @@ namespace MazeParty.Gameplay
             var textObject = new GameObject("PlayerName");
             textObject.transform.SetParent(_nameplate, false);
             _nameText = textObject.AddComponent<TextMesh>();
-            _nameText.text = "Player";
+            _nameText.text = GameText.T("Player");
             _nameText.anchor = TextAnchor.MiddleCenter;
             _nameText.alignment = TextAlignment.Center;
             _nameText.fontSize = 64;

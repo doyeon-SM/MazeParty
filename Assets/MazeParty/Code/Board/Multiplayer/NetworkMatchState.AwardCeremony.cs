@@ -39,6 +39,10 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _awardCeremonyReturnReadyMask =
             new NetworkVariable<byte>();
+        // Seats still in the room after the final ranking. A player who left
+        // the room is removed and is never waited for again.
+        private readonly NetworkVariable<byte> _awardCeremonyRemainingMask =
+            new NetworkVariable<byte>();
         private readonly NetworkVariable<int> _awardCeremonyRevision =
             new NetworkVariable<int>();
 
@@ -52,16 +56,26 @@ namespace MazeParty.Multiplayer
             CeremonyPhase != AwardCeremonyPhase.None;
         public int CeremonyRevision => _awardCeremonyRevision.Value;
         public double CeremonyPhaseRemaining =>
-            _reconnectPaused.Value
+            IsSimulationSuspended
                 ? Math.Max(0d, _pausedAwardCeremonyRemaining.Value)
                 : Math.Max(0d, _awardCeremonyPhaseEndsAt.Value - ServerNow);
         public int CeremonyReturnReadyCount =>
-            CountSetSlots(_awardCeremonyReturnReadyMask.Value);
+            CountSetSlots((byte)(_awardCeremonyReturnReadyMask.Value &
+                                 _awardCeremonyRemainingMask.Value));
+        public int CeremonyReturnRequiredCount =>
+            CountSetSlots(_awardCeremonyRemainingMask.Value);
+        /// <summary>
+        /// The final ranking is on screen: the match is over, and a player who
+        /// leaves the room no longer ends anything for the others.
+        /// </summary>
+        public bool IsFinalRankingLocked =>
+            IsAwardCeremonyActive &&
+            AwardCeremonyFlowRules.IsFinalRankingLocked(CeremonyPhase);
         public bool CanSubmitCeremonyReturn =>
             IsAwardCeremonyActive &&
             AwardCeremonyFlowRules.CanSubmitReturn(
                 CeremonyPhase,
-                IsReconnectPaused,
+                IsSimulationSuspended,
                 _completedMatchReturnQueued);
 
         public MatchAwardCategory GetCeremonyAwardCategory(int awardIndex)
@@ -122,6 +136,20 @@ namespace MazeParty.Multiplayer
                    (_awardCeremonyReturnReadyMask.Value & (1 << slot)) != 0;
         }
 
+        /// <summary>
+        /// True once this seat pressed "clean up board": that player is shown
+        /// the waiting room while the others may still be at the ceremony.
+        /// </summary>
+        public bool IsBackInWaitingRoomDuringCeremony(int slot)
+        {
+            return IsAwardCeremonyActive &&
+                   slot < MultiplayerConstants.MaxPlayers &&
+                   AwardCeremonyFlowRules.IsBackInWaitingRoom(
+                       CeremonyPhase,
+                       _awardCeremonyReturnReadyMask.Value,
+                       slot);
+        }
+
         private void BeginAwardCeremonyOnServer(double now)
         {
             if (!IsServer || CeremonyPhase != AwardCeremonyPhase.None)
@@ -170,6 +198,7 @@ namespace MazeParty.Multiplayer
             _awardCeremonyWinningValue0.Value = firstWinningValue;
             _awardCeremonyWinningValue1.Value = secondWinningValue;
             _awardCeremonyReturnReadyMask.Value = 0;
+            _awardCeremonyRemainingMask.Value = (byte)AllPlayersMask;
             _completedMatchReturnQueued = false;
             SetFinalCeremonyRanks(null);
 
@@ -181,7 +210,7 @@ namespace MazeParty.Multiplayer
 
         private void AdvanceAwardCeremonyOnServer(double now)
         {
-            if (!IsServer || !IsAwardCeremonyActive || IsReconnectPaused)
+            if (!IsServer || !IsAwardCeremonyActive || IsSimulationSuspended)
             {
                 return;
             }
@@ -334,21 +363,65 @@ namespace MazeParty.Multiplayer
             _awardCeremonyReturnReadyMask.Value = (byte)(
                 _awardCeremonyReturnReadyMask.Value | bit);
             _awardCeremonyRevision.Value++;
-            if ((_awardCeremonyReturnReadyMask.Value & AllPlayersMask) !=
-                AllPlayersMask)
+            TryBeginCompletedMatchReturnOnServer();
+        }
+
+        /// <summary>
+        /// Server-only. A player left the room after the final ranking (from
+        /// the waiting room, from the ceremony menu, or by losing the
+        /// connection). The remaining players keep their ceremony and are not
+        /// paused; the departed seat is no longer waited for. NGO has already
+        /// removed the client when the disconnect callback runs, so the
+        /// connected-seat mask excludes it.
+        /// </summary>
+        public void MarkCeremonyDepartureOnServer()
+        {
+            if (!IsServer || !IsFinalRankingLocked)
             {
                 return;
+            }
+
+            DropDepartedCeremonyPlayersOnServer();
+
+            // A pause requested by the player who just left could otherwise
+            // hold the final reveal for its full duration.
+            var connected = GetConnectedSeatMaskOnServer();
+            if (_playerPauseActive.Value &&
+                !_reconnectPaused.Value &&
+                (_playerPauseSlot.Value < 0 ||
+                 (connected & (1 << _playerPauseSlot.Value)) == 0))
+            {
+                EnsureFlowModel();
+                EndPlayerPauseOnServer(ServerNow);
             }
 
             TryBeginCompletedMatchReturnOnServer();
         }
 
+        private void DropDepartedCeremonyPlayersOnServer()
+        {
+            if (!IsFinalRankingLocked || _completedMatchReturnQueued)
+            {
+                return;
+            }
+
+            var remaining = AwardCeremonyFlowRules.KeepConnectedPlayers(
+                _awardCeremonyRemainingMask.Value,
+                GetConnectedSeatMaskOnServer());
+            if (remaining != _awardCeremonyRemainingMask.Value)
+            {
+                _awardCeremonyRemainingMask.Value = remaining;
+                _awardCeremonyRevision.Value++;
+            }
+        }
+
         private void TryBeginCompletedMatchReturnOnServer()
         {
+            DropDepartedCeremonyPlayersOnServer();
             if (!AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                     CeremonyPhase,
                     _awardCeremonyReturnReadyMask.Value,
-                    AllPlayersMask,
+                    _awardCeremonyRemainingMask.Value,
                     _completedMatchReturnQueued))
             {
                 return;
@@ -361,6 +434,35 @@ namespace MazeParty.Multiplayer
                 _completedMatchReturnQueued = true;
                 _awardCeremonyRevision.Value++;
             }
+        }
+
+        /// <summary>Seats whose owner is still connected to the server.</summary>
+        private byte GetConnectedSeatMaskOnServer()
+        {
+            if (NetworkManager == null || NetworkManager.SpawnManager == null)
+            {
+                return 0;
+            }
+
+            var mask = 0;
+            foreach (var clientId in NetworkManager.ConnectedClientsIds)
+            {
+                var playerObject =
+                    NetworkManager.SpawnManager.GetPlayerNetworkObject(clientId);
+                var avatar = playerObject != null
+                    ? playerObject.GetComponent<NetworkPlayerAvatar>()
+                    : null;
+                if (avatar == null || !avatar.IsSpawned ||
+                    avatar.AssignedSlot < 0 ||
+                    avatar.AssignedSlot >= MultiplayerConstants.MaxPlayers)
+                {
+                    continue;
+                }
+
+                mask |= 1 << avatar.AssignedSlot;
+            }
+
+            return (byte)mask;
         }
 
         private static int CountSetSlots(byte mask)

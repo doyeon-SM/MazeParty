@@ -6,17 +6,12 @@ namespace MazeParty.Multiplayer
         public const string SessionType = "mazeparty.online";
         public const string LobbyPhase = "lobby";
         public const string PlayingPhase = "playing";
-        public const string OnlineBootstrapScene = "OnlineBootstrap";
+
+        /// <summary>
+        /// The only scene that networking code loads by name. Minigame scene
+        /// names come from <c>MinigameCatalog</c>.
+        /// </summary>
         public const string BoardScene = "Board";
-        public const string MinefieldScene = "Minefield";
-        public const string WrongWayScene = "WrongWay";
-        public const string RedLightGreenLightScene = "RedLightGreenLight";
-        public const string StableFootingScene = "StableFooting";
-        public const string BalloonBlowScene = "BalloonBlow";
-        public const string GiftGrabScene = "GiftGrab";
-        public const string TagChaseScene = "TagChase";
-        public const string TerritoryPaintScene = "TerritoryPaint";
-        public const string RaceScene = "Race";
 
         public const string DisplayNameProperty = "displayName";
         public const string NetworkClientIdProperty = "ngoClientId";

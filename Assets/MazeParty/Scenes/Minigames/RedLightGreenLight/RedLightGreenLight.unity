@@ -1404,6 +1404,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1726233986}
   - component: {fileID: 1726233987}
+  - component: {fileID: 1726233988}
   m_Layer: 0
   m_Name: Signal Audio Anchor
   m_TagString: Untagged
@@ -1523,6 +1524,21 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1726233988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1726233985}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d871aee9eaa244947968127db93e8dd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.AudioChannelSource
+  source: {fileID: 1726233987}
+  channel: 0
+  baseVolume: 1
 --- !u!1 &1768637143
 GameObject:
   m_ObjectHideFlags: 0

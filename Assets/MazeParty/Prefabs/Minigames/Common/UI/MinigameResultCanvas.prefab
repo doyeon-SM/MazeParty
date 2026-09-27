@@ -279,7 +279,7 @@ GameObject:
   - component: {fileID: 3384716450713680307}
   - component: {fileID: 4119113420999368610}
   m_Layer: 5
-  m_Name: SkippedResultPanel
+  m_Name: MinigameResultPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

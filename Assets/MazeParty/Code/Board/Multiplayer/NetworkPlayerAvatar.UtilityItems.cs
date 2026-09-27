@@ -76,9 +76,9 @@ namespace MazeParty.Multiplayer
                     var slot = _swapChannel.TargetSlot;
                     var target = match != null ? match.GetAvatarForSlot(slot) : null;
                     bool available = match != null && match.IsActionPhase && match.ActionRemaining > 0;
-                    // Reconnect pauses keep the stable seat target; revalidate after reconnect completes.
+                    // Reconnect and player pauses keep the stable seat target; revalidate after the pause ends.
                     bool paused = match != null && match.IsGlobalSimulationPaused;
-                    bool targetAvailable = paused && match.IsReconnectPaused ||
+                    bool targetAvailable = paused && match.IsSimulationSuspended ||
                         IsValidSwapTarget(target) && !target.IsBoardDeathInProgressOnServer;
                     var result = _swapChannel.Tick(Time.unscaledDeltaTime, paused, available, targetAvailable);
                     _swapSeconds.Value = (float)_swapChannel.Remaining;

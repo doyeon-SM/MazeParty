@@ -35,9 +35,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Text heading;
         [SerializeField] private BoardMapIcon shopDistanceIcon;
         [SerializeField] private Text shopDistanceText;
-        [SerializeField] private string shopDistanceFormat = ": {0} TILES";
-        [SerializeField] private string shopUnavailableText = ": NOT SPAWNED";
-        [SerializeField] private string shopUnreachableText = ": NO ROUTE";
+        [SerializeField] private string shopDistanceFormat = GameText.N(": {0} TILES");
+        [SerializeField] private string shopUnavailableText = GameText.N(": NOT SPAWNED");
+        [SerializeField] private string shopUnreachableText = GameText.N(": NO ROUTE");
         [SerializeField] private string shopUnknownText = ": --";
         [SerializeField] private Color[] typeIconColors = { Color.gray, Color.white, new Color(1f, .8f, .2f), new Color(.4f, .85f, 1f) };
         [SerializeField] private Color[] effectIconColors = { Color.white, new Color(1f, .8f, .2f), new Color(1f, .3f, .3f), new Color(.85f, .5f, 1f), new Color(.35f, 1f, .5f) };
@@ -49,18 +49,18 @@ namespace MazeParty.Multiplayer
         private Vector2Int? _distanceSource, _distanceShop;
         private bool _hasDistance;
         private int _shopDistance;
-        [SerializeField] private string headingFormat = "BOARD  /  {0} ^";
+        [SerializeField] private string headingFormat = GameText.N("BOARD  /  {0} ^");
         [SerializeField] private string[] compassPoints = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
         [SerializeField] private Color floorColor = new Color(0.12f, 0.2f, 0.28f);
         [SerializeField] private Color localFloorColor = new Color(0.13f, 0.43f, 0.4f);
         [SerializeField] private Color shopColor = new Color(0.6f, 0.39f, 0.08f);
         [SerializeField] private Color exitColor = new Color(0.35f, 0.8f, 1f);
         [SerializeField] private Color blockedExitColor = new Color(1f, 0.46f, 0.27f);
-        [SerializeField] private string unknownTileText = "CURRENT TILE  --";
-        [SerializeField] private string tileFormat = "CURRENT ({0}, {1})  {2}\n{3}";
-        [SerializeField] private string[] tileNames = { "ROOM", "START", "KEY SHOP", "RESPAWN" };
+        [SerializeField] private string unknownTileText = GameText.N("CURRENT TILE  --");
+        [SerializeField] private string tileFormat = GameText.N("CURRENT ({0}, {1})  {2}\n{3}");
+        [SerializeField] private string[] tileNames = { GameText.N("ROOM"), GameText.N("START"), GameText.N("KEY SHOP"), GameText.N("RESPAWN") };
         [SerializeField] private string[] effectNames =
-            { "No landing effect", "Landing: Gold +3", "Landing: Gold -3", "Landing: Item", "Landing: HP +50" };
+            { GameText.N("No landing effect"), GameText.N("Landing: Gold +3"), GameText.N("Landing: Gold -3"), GameText.N("Landing: Item"), GameText.N("Landing: HP +50") };
 
         public bool HasRequiredReferences
         {
@@ -137,7 +137,7 @@ namespace MazeParty.Multiplayer
                 room.EffectIcon.rectTransform.localRotation = upright;
             }
             foreach (var dot in players) dot.rectTransform.localRotation = upright;
-            heading.text = string.Format(headingFormat,
+            heading.text = GameText.F(headingFormat,
                 compassPoints[Mathf.RoundToInt(Mathf.Repeat(yaw, 360f) / 45f) % 8]);
         }
 
@@ -170,7 +170,7 @@ namespace MazeParty.Multiplayer
             _mineBounds = bounds;
             projection.miniMapBounds.bottomLeft.position = bounds.min;
             projection.miniMapBounds.topRight.position = bounds.max;
-            currentTile.text = unknownTileText;
+            currentTile.text = GameText.T(unknownTileText);
             RefreshShopDistance(topology, localCoordinate, keyShop);
             shopRouteGraphic.Present(_shopRoute, bounds);
 
@@ -223,8 +223,8 @@ namespace MazeParty.Multiplayer
                 if (isLocal)
                 {
                     var type = isShop ? BoardTileType.KeyShop : tile.TileType;
-                    currentTile.text = string.Format(tileFormat, coordinate.x, coordinate.y,
-                        tileNames[(int)type], effectNames[(int)tile.LandingEffect]);
+                    currentTile.text = GameText.F(tileFormat, coordinate.x, coordinate.y,
+                        GameText.T(tileNames[(int)type]), GameText.T(effectNames[(int)tile.LandingEffect]));
                 }
             }
         }
@@ -259,8 +259,8 @@ namespace MazeParty.Multiplayer
                 _distanceTopology = topology; _distanceSource = source; _distanceShop = shop;
                 _shopDistance = GetMinimumShopDistance(topology, source, shop);
             }
-            shopDistanceText.text = !shop.HasValue ? shopUnavailableText : !source.HasValue ? shopUnknownText :
-                _shopDistance < 0 ? shopUnreachableText : string.Format(shopDistanceFormat, _shopDistance);
+            shopDistanceText.text = !shop.HasValue ? GameText.T(shopUnavailableText) : !source.HasValue ? shopUnknownText :
+                _shopDistance < 0 ? GameText.T(shopUnreachableText) : GameText.F(shopDistanceFormat, _shopDistance);
         }
 
         public int GetMinimumShopDistance(BoardTopology topology, Vector2Int? source, Vector2Int? shop)

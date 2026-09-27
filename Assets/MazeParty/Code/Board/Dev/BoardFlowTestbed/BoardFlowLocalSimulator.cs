@@ -537,10 +537,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLocalLandingEffects();
-                    SetStatus("Minigame TODO: click READY / SKIP ALL in the editor panel.");
+                    SetStatus("Minigame intro: READY readies every player and skips the minigame in the local testbed.");
                     break;
-                case BoardFlowState.SkippedResult:
-                    SetStatus("Result placeholder: no minigame reward. Next turn in three seconds.");
+                case BoardFlowState.MinigameResult:
+                    SetStatus("Minigame skipped in the local testbed: no rewards. Next turn in three seconds.");
                     break;
             }
 
@@ -638,7 +638,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                         _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
                         _itemSlots[_selectedSlot] = PrototypeItemId.None;
                         _selectedSlot = -1;
-                        SetStatus("Prototype item consumed. Concrete combat/effect is TODO.");
+                        SetStatus("Item consumed. The local testbed does not simulate item effects.");
                     }
                 }
                 else if (repeatPrimary)
@@ -2878,7 +2878,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             SetActive(_readyPanel,
                 _flow.State == BoardFlowState.MinigameIntroReady && !globallyPaused);
             SetActive(_resultPanel,
-                _flow.State == BoardFlowState.SkippedResult && !globallyPaused);
+                _flow.State == BoardFlowState.MinigameResult && !globallyPaused);
             SetActive(_reticle,
                 ((_flow.State == BoardFlowState.Action &&
                   !_flow.ActionClock.IsChoicePending) ||
@@ -3324,7 +3324,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
                 case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
                 case BoardFlowState.MinigameIntroReady: return "MINIGAME READY";
-                case BoardFlowState.SkippedResult: return "RESULT";
+                case BoardFlowState.MinigameResult: return "RESULT";
                 default: return state.ToString().ToUpperInvariant();
             }
         }

@@ -60,10 +60,10 @@ namespace MazeParty.Multiplayer
             CaptureDefaults();
             var clamped = Mathf.Clamp(progressPercent, 0f, 100f);
             displayNameText.text = string.IsNullOrWhiteSpace(playerName)
-                ? "PLAYER"
+                ? GameText.T("PLAYER")
                 : playerName.Trim();
             progressText.text = popped
-                ? "POP!"
+                ? GameText.T("POP!")
                 : Mathf.RoundToInt(clamped) + "%";
 
             var normalized = clamped * 0.01f;

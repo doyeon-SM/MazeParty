@@ -282,6 +282,7 @@ namespace MazeParty.Gameplay
             }
 
             ApplyPriorities(activeMode);
+            LocalInputGate.Changed += ApplyCursorPolicy;
             ApplyCursorPolicy();
         }
 
@@ -309,6 +310,7 @@ namespace MazeParty.Gameplay
 
         private void OnDisable()
         {
+            LocalInputGate.Changed -= ApplyCursorPolicy;
             CancelTransition();
             _completedMode = activeMode;
             _hasCompletedMode = true;
@@ -678,6 +680,12 @@ namespace MazeParty.Gameplay
 
         private void ApplyCursorPolicy()
         {
+            // The common menu and the pause release button keep the pointer free.
+            if (Application.isPlaying && LocalInputGate.ApplyPointerOverride())
+            {
+                return;
+            }
+
             var pointerVisible =
                 _uiPointerVisible
                 || activeMode != GameplayMode.FirstPerson;

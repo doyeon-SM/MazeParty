@@ -12,6 +12,14 @@ namespace MazeParty.Multiplayer
         string CurrentSessionId { get; }
         SessionSnapshot Current { get; }
 
+        /// <summary>
+        /// Host only. Asked when a player leaves while the room is in the
+        /// playing phase. True keeps the room open because the match is
+        /// already over (final ranking locked or returning to the lobby);
+        /// null or false ends the fixed four-player session.
+        /// </summary>
+        Func<bool> KeepRoomOnPlayingDeparture { get; set; }
+
         Task CreateAsync(string roomName, string displayName);
         Task JoinByCodeAsync(string code, string displayName);
         Task ReconnectToSessionAsync(string sessionId, string displayName);

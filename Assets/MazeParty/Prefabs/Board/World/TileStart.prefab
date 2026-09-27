@@ -141,6 +141,7 @@ GameObject:
   - component: {fileID: 6447807841847928193}
   - component: {fileID: 1800786764787128424}
   - component: {fileID: 513397358416848802}
+  - component: {fileID: 8863342304176509607}
   m_Layer: 0
   m_Name: Room Label
   m_TagString: Untagged
@@ -234,3 +235,16 @@ TextMesh:
   m_Color:
     serializedVersion: 2
     rgba: 4294967295
+--- !u!114 &8863342304176509607
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4367289548894749561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d3c2168a7644aee49b2c08c466160373, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.LocalizedTextMesh
+  sourceText: START

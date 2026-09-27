@@ -21,9 +21,14 @@ namespace MazeParty.Multiplayer
         public IReadOnlyList<Vector3> LocalMinePositions => IsOwner ? _localMines : Array.Empty<Vector3>();
         public int LocalItemCharges => IsOwner ? _itemCharges.Value : 0;
         public bool UsesDoubleDice => (IsOwner || IsServer) && _doubleDice.Value;
-        public string LocalDiceSummary => "D12 " + (_firstDieResult.Value > 0 ? _firstDieResult.Value.ToString() : "?") +
-            " + " + (_secondDieResult.Value > 0 ? _secondDieResult.Value.ToString() : "?") +
-            (HasRolled ? " = " + _privateRoll.Value : " / RMB EACH DIE");
+        public string LocalDiceSummary => HasRolled
+            ? GameText.F("D12 {0} + {1} = {2}",
+                _firstDieResult.Value > 0 ? _firstDieResult.Value.ToString() : "?",
+                _secondDieResult.Value > 0 ? _secondDieResult.Value.ToString() : "?",
+                _privateRoll.Value)
+            : GameText.F("D12 {0} + {1} / RMB EACH DIE",
+                _firstDieResult.Value > 0 ? _firstDieResult.Value.ToString() : "?",
+                _secondDieResult.Value > 0 ? _secondDieResult.Value.ToString() : "?");
 
         private void InitializeSelectedItem()
         {
@@ -83,7 +88,7 @@ namespace MazeParty.Multiplayer
             bool scope = match != null && match.CanAcceptActionInput && CurrentHealth > 0 &&
                 HasResolvedItemChoice && !BoardFlowView.IsItemShopOpen && Cursor.lockState == CursorLockMode.Locked &&
                 (PrototypeItemId)_equippedItem.Value == PrototypeItemId.Sniper &&
-                Mouse.current != null && Mouse.current.rightButton.isPressed &&
+                LocalMouse != null && LocalMouse.rightButton.isPressed &&
                 !HasAimedPriorityInteraction();
             if (_itemCamera != null) _itemCamera.SetItemMagnification(scope
                 ? PrototypeItemCatalog.Get(PrototypeItemId.Sniper).AimMagnification : 1f);

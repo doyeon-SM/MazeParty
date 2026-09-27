@@ -435,6 +435,46 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(seedFactoryCalls, Is.EqualTo(0));
         }
 
+        [Test]
+        public void Roster_SamePlayersInAnySeatOrderReuseTheSavedSchedule()
+        {
+            var saved = MinigameScheduleRoster.CreateKey(
+                new[] { "player-a", "player-b", "player-c", "player-d" });
+            var restartedInNewRoom = MinigameScheduleRoster.CreateKey(
+                new[] { "player-c", "player-a", "player-d", "player-b" });
+
+            Assert.That(saved, Is.Not.Empty);
+            Assert.That(restartedInNewRoom, Is.EqualTo(saved));
+            Assert.That(
+                MinigameScheduleRoster.CanReuse(saved, restartedInNewRoom),
+                Is.True);
+        }
+
+        [Test]
+        public void Roster_DifferentPlayersResetTheSavedSchedule()
+        {
+            var saved = MinigameScheduleRoster.CreateKey(
+                new[] { "player-a", "player-b", "player-c", "player-d" });
+            var oneReplaced = MinigameScheduleRoster.CreateKey(
+                new[] { "player-a", "player-b", "player-c", "player-e" });
+
+            Assert.That(oneReplaced, Is.Not.EqualTo(saved));
+            Assert.That(
+                MinigameScheduleRoster.CanReuse(saved, oneReplaced),
+                Is.False);
+            // Schedules saved before rosters were recorded have no roster.
+            Assert.That(
+                MinigameScheduleRoster.CanReuse(string.Empty, saved),
+                Is.False);
+            // An unknown current roster never reuses anything.
+            Assert.That(
+                MinigameScheduleRoster.CanReuse(string.Empty, string.Empty),
+                Is.False);
+            Assert.That(
+                MinigameScheduleRoster.CreateKey(new[] { " ", null }),
+                Is.Empty);
+        }
+
         private static Dictionary<ScheduledMinigameId, int> CountEntries(
             HostMinigameSchedule schedule)
         {

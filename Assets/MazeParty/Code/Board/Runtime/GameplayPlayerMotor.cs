@@ -40,7 +40,7 @@ namespace MazeParty.Gameplay
                 _avatarVisual = gameObject.AddComponent<PlayerAvatarVisual>();
             _avatarVisual.EnsureBuilt();
             _avatarVisual.ConfigureEyePivot(lookPivot);
-            _avatarVisual.SetDisplayName("Local Player");
+            _avatarVisual.SetDisplayName(GameText.T("Local Player"));
         }
 
         public void Configure(Transform pivot)

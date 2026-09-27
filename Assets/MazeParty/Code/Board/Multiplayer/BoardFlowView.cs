@@ -251,8 +251,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _tooltipText.text = _localAvatar.GetLocalItemName(slotIndex) + "\n" +
-                                _localAvatar.GetLocalItemDescription(slotIndex);
+            _tooltipText.text = GameText.T(_localAvatar.GetLocalItemName(slotIndex)) + "\n" +
+                                GameText.T(_localAvatar.GetLocalItemDescription(slotIndex));
             _tooltipText.gameObject.SetActive(true);
         }
 
@@ -277,8 +277,8 @@ namespace MazeParty.Multiplayer
             SetActive(_itemShopPanel, true);
             HideShopItemTooltip();
             SetText(_itemShopStatus, _localAvatar.HasFreeItemSlot
-                ? "Select an available item to buy it immediately."
-                : "INVENTORY FULL - Browse only; purchases are disabled.");
+                ? GameText.T("Select an available item to buy it immediately.")
+                : GameText.T("INVENTORY FULL - Browse only; purchases are disabled."));
         }
 
         public void CloseItemShop()
@@ -300,19 +300,19 @@ namespace MazeParty.Multiplayer
             var itemId = snapshot.GetOffer(offerIndex);
             if (snapshot.IsSold(offerIndex) || !PrototypeItemCatalog.IsValid(itemId))
             {
-                SetText(_itemShopStatus, "That item is already sold.");
+                SetText(_itemShopStatus, GameText.T("That item is already sold."));
                 return;
             }
 
             var definition = PrototypeItemCatalog.Get(itemId);
             if (!_localAvatar.HasFreeItemSlot)
             {
-                SetText(_itemShopStatus, "INVENTORY FULL - No gold was spent.");
+                SetText(_itemShopStatus, GameText.T("INVENTORY FULL - No gold was spent."));
                 return;
             }
             if (_localAvatar.Gold < definition.Price)
             {
-                SetText(_itemShopStatus, "NOT ENOUGH GOLD - No gold was spent.");
+                SetText(_itemShopStatus, GameText.T("NOT ENOUGH GOLD - No gold was spent."));
                 return;
             }
 
@@ -320,7 +320,7 @@ namespace MazeParty.Multiplayer
                 _openItemShopIndex,
                 offerIndex,
                 snapshot.Revision);
-            SetText(_itemShopStatus, "Purchase requested. Server stock decides the winner.");
+            SetText(_itemShopStatus, GameText.T("Purchase requested. Server stock decides the winner."));
         }
 
         public void ShowShopItemTooltip(int offerIndex)
@@ -339,9 +339,9 @@ namespace MazeParty.Multiplayer
             }
 
             var definition = PrototypeItemCatalog.Get(itemId);
-            _itemShopTooltip.text = definition.DisplayName + "  /  " +
-                                    definition.Price + " GOLD\n" +
-                                    definition.Description;
+            _itemShopTooltip.text = GameText.T(definition.DisplayName) + "  /  " +
+                                    GameText.F("{0} GOLD", definition.Price) + "\n" +
+                                    GameText.T(definition.Description);
             _itemShopTooltip.gameObject.SetActive(true);
         }
 
@@ -511,7 +511,7 @@ namespace MazeParty.Multiplayer
             SetActive(_selectionPanel, choicePending);
             SetActive(_readyPanel, showMinefieldReady);
             SetActive(_resultPanel,
-                match.FlowState == BoardFlowState.SkippedResult &&
+                match.FlowState == BoardFlowState.MinigameResult &&
                 !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
             SetActive(_reticle,
@@ -526,9 +526,10 @@ namespace MazeParty.Multiplayer
 
             if (_reconnectText != null)
             {
-                _reconnectText.text = "PLAYER DISCONNECTED\nMATCH PAUSED\n" +
-                                      MinigameDisplayFormatter.FormatClock(
-                                          match.ReconnectRemaining) + " remaining";
+                _reconnectText.text = GameText.F(
+                    "PLAYER DISCONNECTED\nMATCH PAUSED\n{0} remaining",
+                    MinigameDisplayFormatter.FormatClock(
+                        match.ReconnectRemaining));
             }
         }
 
@@ -548,14 +549,14 @@ namespace MazeParty.Multiplayer
             var sequenceMemory = NetworkSequenceMemoryState.Instance;
             var bouncingBalls = NetworkBouncingBallsState.Instance;
             var revealPending = IsMinigameRevealPending(match);
-            SetText(_turnText, "TURN " + match.Turn);
+            SetText(_turnText, GameText.F("TURN {0}", match.Turn));
             SetText(_phaseText, match.IsArrivalGraceActive
-                ? "ARRIVAL COMPLETE"
+                ? GameText.T("ARRIVAL COMPLETE")
                 : match.IsKeyShopRevealActive
-                ? "KEY SHOP MOVING"
+                ? GameText.T("KEY SHOP MOVING")
                 : match.IsCombatPhase && match.IsCombatActive
-                    ? "FIGHT " + match.CombatSequenceIndex +
-                      "  /  " + (match.CombatSequenceIndex + match.CombatQueueCount)
+                    ? GameText.F("FIGHT {0}  /  {1}", match.CombatSequenceIndex,
+                      match.CombatSequenceIndex + match.CombatQueueCount)
                     : match.FlowState == BoardFlowState.MinigamePlaying
                         ? match.CurrentMinigame == ScheduledMinigameId.WrongWay
                             ? WrongWayPhaseLabel(wrongWay)
@@ -590,24 +591,24 @@ namespace MazeParty.Multiplayer
                                 ? BouncingBallsPhaseLabel(bouncingBalls)
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.BombPassing
-                                ? "BOMB PASSING"
+                                ? GameText.T("BOMB PASSING")
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.SnowySpin
-                                ? "SNOWY SPIN"
+                                ? GameText.T("SNOWY SPIN")
                             : MinefieldPhaseLabel(minefield)
                         : match.FlowState == BoardFlowState.MinigameIntroReady
                             ? revealPending
                                 ? "???"
-                                : MinigameName(match.CurrentMinigame) + " READY"
+                                : GameText.F("{0} READY", MinigameName(match.CurrentMinigame))
                         : match.FlowState == BoardFlowState.MinigameLoading
-                            ? "LOADING " + MinigameName(match.CurrentMinigame)
+                            ? GameText.F("LOADING {0}", MinigameName(match.CurrentMinigame))
                         : PhaseLabel(match.FlowState));
 
             string timerLabel;
             if (match.IsArrivalGraceActive)
             {
-                timerLabel = "TOP VIEW  " +
-                             match.ArrivalGraceRemaining.ToString("0.0") + "s";
+                timerLabel = GameText.F("TOP VIEW  {0:0.0}s",
+                             match.ArrivalGraceRemaining);
             }
             else if (match.IsKeyShopRevealActive)
             {
@@ -714,10 +715,10 @@ namespace MazeParty.Multiplayer
             SetText(_choiceTimerText,
                 match.FlowState == BoardFlowState.Action && _localAvatar != null &&
                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending
-                    ? "CHOOSE  " +
+                    ? GameText.F("CHOOSE  {0}",
                       MinigameDisplayFormatter.FormatClock(
-                          match.ChoiceRemaining)
-                    : "CHOICE  " + ChoiceLabel(_localAvatar));
+                          match.ChoiceRemaining))
+                    : GameText.F("CHOICE  {0}", ChoiceLabel(_localAvatar)));
 
             if (_shieldText != null)
             {
@@ -727,8 +728,8 @@ namespace MazeParty.Multiplayer
                         ? _localAvatar.PersonalItemProtectionRemaining
                         : 0d);
                 _shieldText.text = shieldRemaining > 0d
-                    ? "SHIELD  " + shieldRemaining.ToString("0.0") + "s"
-                    : "SHIELD  OFF";
+                    ? GameText.F("SHIELD  {0:0.0}s", shieldRemaining)
+                    : GameText.T("SHIELD  OFF");
                 _shieldText.color = shieldRemaining > 0d
                     ? uiBindings.ShieldActiveColor
                     : uiBindings.ShieldInactiveColor;
@@ -739,8 +740,8 @@ namespace MazeParty.Multiplayer
         {
             if (_localAvatar == null)
             {
-                SetText(_diceText, "DICE  WAITING FOR PLAYER");
-                SetText(_movesText, "MOVES  --");
+                SetText(_diceText, GameText.T("DICE  WAITING FOR PLAYER"));
+                SetText(_movesText, GameText.T("MOVES  --"));
                 return;
             }
 
@@ -749,12 +750,12 @@ namespace MazeParty.Multiplayer
                 var isFighting = match.IsCombatActive &&
                                  match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
                                  match.IsCombatAlive(_localAvatar.AssignedSlot);
-                SetText(_diceText, isFighting ? "LMB  PUNCH" : "FIGHT  SPECTATING");
+                SetText(_diceText, isFighting ? GameText.T("LMB  PUNCH") : GameText.T("FIGHT  SPECTATING"));
                 SetText(_movesText, isFighting
                     ? _localAvatar.IsQuietWalking
-                        ? "QUIET WALK  6m"
-                        : "WASD  MOVE / LCTRL QUIET 6m"
-                    : "INPUT  LOCKED");
+                        ? GameText.T("QUIET WALK  6m")
+                        : GameText.T("WASD  MOVE / LCTRL QUIET 6m")
+                    : GameText.T("INPUT  LOCKED"));
                 return;
             }
 
@@ -776,18 +777,18 @@ namespace MazeParty.Multiplayer
                 SetText(_diceText, _localAvatar.LocalDiceSummary);
             if (!isActionPhase)
             {
-                SetText(_movesText, "MOVES  --");
+                SetText(_movesText, GameText.T("MOVES  --"));
                 return;
             }
 
             var movementLabel = _localAvatar.HasRolled &&
                                 _localAvatar.LocalRemainingMoves == 0
-                ? "MOVES  0 / FREE IN ROOM"
-                : "MOVES  " + _localAvatar.LocalRemainingMoves;
-            SetText(_movesText, movementLabel +
+                ? GameText.T("MOVES  0 / FREE IN ROOM")
+                : GameText.F("MOVES  {0}", _localAvatar.LocalRemainingMoves);
+            SetText(_movesText, movementLabel + "  /  " +
                 (_localAvatar.IsQuietWalking
-                    ? "  /  QUIET WALK 6m"
-                    : "  /  LCTRL QUIET 6m"));
+                    ? GameText.T("QUIET WALK 6m")
+                    : GameText.T("LCTRL QUIET 6m")));
         }
 
         private void RefreshInventory()
@@ -796,7 +797,7 @@ namespace MazeParty.Multiplayer
             {
                 var occupied = _localAvatar != null && _localAvatar.IsLocalItemOccupied(i);
                 var selected = _localAvatar != null && _localAvatar.LocalSelectedItemSlot == i;
-                var label = occupied ? _localAvatar.GetLocalItemName(i) : "EMPTY";
+                var label = occupied ? GameText.T(_localAvatar.GetLocalItemName(i)) : GameText.T("EMPTY");
                 SetText(_slotLabels[i], label);
                 SetText(_choiceLabels[i], label);
 
@@ -817,9 +818,9 @@ namespace MazeParty.Multiplayer
 
             SetText(_ammoText,
                 _localAvatar != null && _localAvatar.LocalSelectedItemSlot >= 0
-                    ? _localAvatar.UsesDoubleDice ? "RMB  ROLL EACH DIE" :
-                        "AMMO  " + _localAvatar.LocalItemCharges + "\nLMB USE / RMB INTERACT"
-                    : "CHARGE  --");
+                    ? _localAvatar.UsesDoubleDice ? GameText.T("RMB  ROLL EACH DIE") :
+                        GameText.F("AMMO  {0}\nLMB USE / RMB INTERACT", _localAvatar.LocalItemCharges)
+                    : GameText.T("CHARGE  --"));
         }
 
         private void RefreshPlayerRows(NetworkMatchState match)
@@ -843,8 +844,8 @@ namespace MazeParty.Multiplayer
                 var avatar = match.GetAvatarForSlot(slot);
                 var isLocal = _localAvatar != null && _localAvatar.AssignedSlot == slot;
                 var connectionLabel = !isPresent
-                    ? "RECONNECTING"
-                    : isLocal ? "LOCAL" : "ONLINE";
+                    ? GameText.T("RECONNECTING")
+                    : isLocal ? GameText.T("LOCAL") : GameText.T("ONLINE");
                 SetText(_playerRows[slot], "P" + (slot + 1) + "  " + connectionLabel);
                 if (_playerRows[slot] != null)
                 {
@@ -891,18 +892,18 @@ namespace MazeParty.Multiplayer
                         : null,
                     !match.IsArenaCombatPhase);
                 SetText(_playerCurrencyTexts[slot], avatar != null
-                    ? "KEY  " + avatar.KeyCount + "    GOLD  " + avatar.Gold
-                    : "KEY  --    GOLD  --");
+                    ? GameText.F("KEY  {0}    GOLD  {1}", avatar.KeyCount, avatar.Gold)
+                    : GameText.T("KEY  --    GOLD  --"));
                 SetText(_playerRankTexts[slot], avatar != null
-                    ? "RANK " + ranks[slot]
-                    : "RANK --");
+                    ? GameText.F("RANK {0}", ranks[slot])
+                    : GameText.T("RANK --"));
 
                 var actionState = avatar != null && isPresent && !match.IsGlobalSimulationPaused
                     ? avatar.ActionState
                     : PlayerBoardActionState.Hidden;
                 var isCombatOut = showCombatHealth && !match.IsCombatAlive(slot);
                 SetText(_playerActionIcons[slot], isCombatOut
-                    ? "OUT"
+                    ? GameText.T("OUT")
                     : ActionIconLabel(actionState));
                 if (_playerActionIcons[slot] != null)
                 {
@@ -1011,7 +1012,7 @@ namespace MazeParty.Multiplayer
 
             var snapshot = match.GetItemShopSnapshot(_openItemShopIndex);
             SetActive(_itemShopPanel, true);
-            SetText(_itemShopTitle, "ITEM SHOP " + (_openItemShopIndex + 1));
+            SetText(_itemShopTitle, GameText.F("ITEM SHOP {0}", _openItemShopIndex + 1));
             for (var offerIndex = 0; offerIndex < ItemShopRules.OfferCount; offerIndex++)
             {
                 var itemId = snapshot.GetOffer(offerIndex);
@@ -1019,10 +1020,10 @@ namespace MazeParty.Multiplayer
                 var valid = PrototypeItemCatalog.IsValid(itemId);
                 var definition = valid ? PrototypeItemCatalog.Get(itemId) : default;
                 SetText(_shopOfferLabels[offerIndex], sold
-                    ? "SOLD\n" + (valid ? definition.DisplayName : "ITEM")
+                    ? GameText.F("SOLD\n{0}", valid ? GameText.T(definition.DisplayName) : GameText.T("ITEM"))
                     : valid
-                        ? definition.DisplayName + "\n" + definition.Price + " GOLD"
-                        : "UNAVAILABLE");
+                        ? GameText.T(definition.DisplayName) + "\n" + GameText.F("{0} GOLD", definition.Price)
+                        : GameText.T("UNAVAILABLE"));
                 if (_shopOfferButtons[offerIndex] != null)
                 {
                     _shopOfferButtons[offerIndex].interactable =
@@ -1034,11 +1035,11 @@ namespace MazeParty.Multiplayer
             if (snapshot.IsSoldOut)
             {
                 SetText(_itemShopStatus,
-                    "SOLD OUT - This shop moves and restocks next overview.");
+                    GameText.T("SOLD OUT - This shop moves and restocks next overview."));
             }
             else if (!_localAvatar.HasFreeItemSlot)
             {
-                SetText(_itemShopStatus, "INVENTORY FULL - Browse only; purchases are disabled.");
+                SetText(_itemShopStatus, GameText.T("INVENTORY FULL - Browse only; purchases are disabled."));
             }
         }
 
@@ -1211,7 +1212,7 @@ namespace MazeParty.Multiplayer
             if (match.IsKeyShopRevealActive)
             {
                 SetText(_statusText,
-                    "Key purchased. The new shop location is shown; play resumes when the countdown ends.");
+                    GameText.T("Key purchased. The new shop location is shown; play resumes when the countdown ends."));
                 return;
             }
             if (_localAvatar != null && _localAvatar.CurrentHealth <= 0 &&
@@ -1219,62 +1220,61 @@ namespace MazeParty.Multiplayer
                  match.FlowState == BoardFlowState.AscendingResolve))
             {
                 SetText(_statusText,
-                    "KNOCKED OUT: respawning at the nearest marked room. Input is locked.");
+                    GameText.T("KNOCKED OUT: respawning at the nearest marked room. Input is locked."));
                 return;
             }
             if (choice == ItemChoiceResolution.TimedOut)
             {
-                SetText(_statusText, "Choice timed out. DO NOT USE selected automatically.");
+                SetText(_statusText, GameText.T("Choice timed out. DO NOT USE selected automatically."));
                 return;
             }
 
             switch (match.FlowState)
             {
                 case BoardFlowState.TurnOverview:
-                    SetText(_statusText, "Board overview: inspect every player and tile.");
+                    SetText(_statusText, GameText.T("Board overview: inspect every player and tile."));
                     break;
                 case BoardFlowState.Descending:
-                    SetText(_statusText, "Camera descending to your first-person view.");
+                    SetText(_statusText, GameText.T("Camera descending to your first-person view."));
                     break;
                 case BoardFlowState.Action:
                     SetText(_statusText, match.IsArrivalGraceActive
-                        ? "All players arrived. Top view opens when the countdown ends."
+                        ? GameText.T("All players arrived. Top view opens when the countdown ends.")
                         : choice == ItemChoiceResolution.Pending
-                        ? "Choose an item or DO NOT USE. Your personal limit is 30 seconds."
-                        : "WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item.");
+                        ? GameText.T("Choose an item or DO NOT USE. Your personal limit is 30 seconds.")
+                        : GameText.T("WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item."));
                     break;
                 case BoardFlowState.AscendingResolve:
-                    SetText(_statusText, "Input closed. Camera rising while pending effects settle.");
+                    SetText(_statusText, GameText.T("Input closed. Camera rising while pending effects settle."));
                     break;
                 case BoardFlowState.CombatResolve:
                     var isFighting = match.IsCombatActive && _localAvatar != null &&
                                      match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
                                      match.IsCombatAlive(_localAvatar.AssignedSlot);
                     SetText(_statusText, isFighting
-                        ? "FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage."
-                        : "SPECTATING: the camera follows the current fight room. Input is locked.");
+                        ? GameText.T("FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage.")
+                        : GameText.T("SPECTATING: the camera follows the current fight room. Input is locked."));
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     SetText(_statusText,
                         string.IsNullOrEmpty(match.LastLandingEffectMessage)
-                            ? "Applying final landing effects in player order."
+                            ? GameText.T("Applying final landing effects in player order.")
                             : match.LastLandingEffectMessage);
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     SetText(
                         _statusText,
                         revealPending
-                            ? "Opening the top block in the minigame tower..."
+                            ? GameText.T("Opening the top block in the minigame tower...")
                             : match.CurrentMinigame == ScheduledMinigameId.Skip
-                            ? "No minigame is available for this queue slot. It will advance automatically."
-                            : MinigameName(match.CurrentMinigame) +
-                              ": review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.");
+                            ? GameText.T("No minigame is available for this queue slot. It will advance automatically.")
+                            : GameText.F("{0}: review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.",
+                              MinigameName(match.CurrentMinigame)));
                     break;
                 case BoardFlowState.MinigameLoading:
                     SetText(_statusText,
-                        "Loading the synchronized " +
-                        MinigameName(match.CurrentMinigame) +
-                        " scene. Board movement is locked; the match ends if loading reaches zero.");
+                        GameText.F("Loading the synchronized {0} scene. Board movement is locked; the match ends if loading reaches zero.",
+                        MinigameName(match.CurrentMinigame)));
                     break;
                 case BoardFlowState.MinigamePlaying:
                     SetText(
@@ -1312,33 +1312,32 @@ namespace MazeParty.Multiplayer
                                 ? BouncingBallsStatus(bouncingBalls)
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.BombPassing
-                                ? "Keep the bomb away. Its light flashes " +
-                                  "faster as detonation approaches."
+                                ? GameText.T("Keep the bomb away. Its light flashes " +
+                                  "faster as detonation approaches.")
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.SnowySpin
-                                ? "Roll and push opponents off the ice."
+                                ? GameText.T("Roll and push opponents off the ice.")
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.ArenaCombat
-                                ? "Fight in first person. Eliminated players spectate."
+                                ? GameText.T("Fight in first person. Eliminated players spectate.")
                             : match.CurrentMinigame ==
                               ScheduledMinigameId.CliffBarrage
-                                ? "Dodge shells and lasers. Push rivals off the cliff."
+                                ? GameText.T("Dodge shells and lasers. Push rivals off the cliff.")
                             : MinefieldStatus(minefield));
                     break;
-                case BoardFlowState.SkippedResult:
+                case BoardFlowState.MinigameResult:
                     SetText(
                         _statusText,
                         match.CurrentMinigame == ScheduledMinigameId.Skip
-                            ? "SKIPPED: moving to the next block in the minigame tower."
-                            : MinigameName(match.CurrentMinigame) +
-                              " COMPLETE: final standings and " +
-                              MinigameRewardRules.FinalPlacementGoldSchedule +
-                              " gold rewards are shown.");
+                            ? GameText.T("SKIPPED: moving to the next block in the minigame tower.")
+                            : GameText.F("{0} COMPLETE: final standings and {1} gold rewards are shown.",
+                              MinigameName(match.CurrentMinigame),
+                              MinigameRewardRules.FinalPlacementGoldSchedule));
                     break;
                 case BoardFlowState.MatchComplete:
                     SetText(
                         _statusText,
-                        "MATCH COMPLETE: all 15 turns have finished.");
+                        GameText.T("MATCH COMPLETE: all 15 turns have finished."));
                     break;
             }
         }
@@ -1394,159 +1393,159 @@ namespace MazeParty.Multiplayer
                 revealPending
                     ? "???"
                     : isWrongWay
-                    ? "WRONG WAY / STAIR RACE"
+                    ? GameText.T("WRONG WAY / STAIR RACE")
                     : isRedLightGreenLight
-                        ? "RED LIGHT / GREEN LIGHT"
+                        ? GameText.T("RED LIGHT / GREEN LIGHT")
                     : isStableFooting
-                        ? "STABLE FOOTING"
+                        ? GameText.T("STABLE FOOTING")
                     : isBalloonBlow
-                        ? "BALLOON BLOW"
+                        ? GameText.T("BALLOON BLOW")
                     : isGiftGrab
-                        ? "GIFT GRAB"
+                        ? GameText.T("GIFT GRAB")
                     : isTerritoryPaint
-                        ? "TERRITORY PAINT"
+                        ? GameText.T("TERRITORY PAINT")
                     : isTagChase
-                        ? "TAG CHASE"
+                        ? GameText.T("TAG CHASE")
                     : isRace
-                        ? "RACE"
+                        ? GameText.T("RACE")
                     : isSequenceMemory
-                        ? "SEQUENCE MEMORY"
+                        ? GameText.T("SEQUENCE MEMORY")
                     : isBouncingBalls
-                        ? "BOUNCING BALLS"
+                        ? GameText.T("BOUNCING BALLS")
                     : isBombPassing
-                        ? "BOMB PASSING"
+                        ? GameText.T("BOMB PASSING")
                     : isSnowySpin
-                        ? "SNOWY SPIN"
+                        ? GameText.T("SNOWY SPIN")
                     : isArenaCombat
-                        ? "ARENA COMBAT"
+                        ? GameText.T("ARENA COMBAT")
                     : isCliffBarrage
-                        ? "CLIFF BARRAGE"
+                        ? GameText.T("CLIFF BARRAGE")
                     : isSkip
-                        ? "NO MINIGAME / SKIP"
-                        : "MINEFIELD / TOP-DOWN");
+                        ? GameText.T("NO MINIGAME / SKIP")
+                        : GameText.T("MINEFIELD / TOP-DOWN"));
             SetText(
                 _minigameReadyNote,
                 revealPending
-                    ? "Opening the top block in the minigame tower..."
+                    ? GameText.T("Opening the top block in the minigame tower...")
                     : isWrongWay
-                    ? "Press the shown WASD direction to climb. A wrong key knocks " +
+                    ? GameText.F("Press the shown WASD direction to climb. A wrong key knocks " +
                       "you down for 0.5 seconds. First to step 50 ends the round. " +
-                      "Two rounds, 60 seconds each.\nREADY " +
-                      readyCount + " / 4"
+                      "Two rounds, 60 seconds each.\nREADY {0} / 4",
+                      readyCount)
                     : isRedLightGreenLight
-                        ? "Move with WASD during GREEN and freeze when RED begins. " +
+                        ? GameText.F("Move with WASD during GREEN and freeze when RED begins. " +
                           "The first violation injures you and slows you to walking " +
                           "speed; the second eliminates you. First finisher ends the " +
                           "round. Three rounds, 60 seconds each.\n" +
-                          "READY " + readyCount + " / 4"
+                          "READY {0} / 4", readyCount)
                     : isStableFooting
-                        ? "Move with WASD and press LMB to push the nearest player " +
+                        ? GameText.F("Move with WASD and press LMB to push the nearest player " +
                           "in front of you. Reach the announced X, circle or square " +
                           "before unsafe platforms drop. Two dropped platforms are " +
                           "removed each cycle. Last survivor wins each of three " +
-                          "60-second rounds.\nREADY " +
-                           readyCount + " / 4"
+                          "60-second rounds.\nREADY {0} / 4",
+                           readyCount)
                     : isBalloonBlow
-                        ? "Hold LMB to inflate at 10% per second. Release before " +
+                        ? GameText.F("Hold LMB to inflate at 10% per second. Release before " +
                           "two seconds for a 1-second cooldown; reaching two " +
                           "seconds forces a stop and a 1.5-second cooldown, then " +
                           "requires a fresh click. Progress decays 3% per second " +
                           "while not inflating. First to pop ranks first. Three " +
-                          "30-second rounds.\nREADY " +
-                          readyCount + " / 4"
+                          "30-second rounds.\nREADY {0} / 4",
+                          readyCount)
                     : isGiftGrab
-                        ? "Ten gifts start; three more drop at 15, 30 and 45 " +
+                        ? GameText.F("Ten gifts start; three more drop at 15, 30 and 45 " +
                           "seconds. Move with WASD. Touch a gift to carry one, " +
                           "then return it to your base or press LMB to throw it. " +
                           "Without a gift, LMB pushes and makes opponents drop " +
                           "theirs. Steal stored gifts from rival bases. Two " +
                           "60-second rounds; most stored gifts wins.\n" +
-                          "READY " +
-                          readyCount + " / 4"
+                          "READY {0} / 4",
+                          readyCount)
                     : isTerritoryPaint
-                        ? "Move with WASD. Your circular trail paints the " +
+                        ? GameText.F("Move with WASD. Your circular trail paints the " +
                           "arena and can overwrite rival colors. The full " +
                           "arena is worth 1000 points. One 60-second round; " +
-                          "highest current area wins.\nREADY " +
-                          readyCount + " / 4"
+                          "highest current area wins.\nREADY {0} / 4",
+                          readyCount)
                     : isTagChase
-                        ? "Each round assigns one player as the tagger. Runners " +
+                        ? GameText.F("Each round assigns one player as the tagger. Runners " +
                           "move with WASD using a shared camera. The tagger moves " +
                           "with WASD in first person and presses LMB to catch. " +
                           "Every player tags once across four 60-second rounds.\n" +
-                          "READY " + readyCount + " / 4"
+                          "READY {0} / 4", readyCount)
                     : isRace
-                        ? "Alternate A and D to advance. Pressing the same key " +
+                        ? GameText.F("Alternate A and D to advance. Pressing the same key " +
                           "twice does not count. The first player to reach 500 " +
                           "steps ends the round. Three rounds, 60 seconds each.\n" +
-                          "READY " + readyCount + " / 4"
+                          "READY {0} / 4", readyCount)
                     : isSequenceMemory
-                        ? "Watch and listen to the shared A/S/D sequence, then " +
+                        ? GameText.F("Watch and listen to the shared A/S/D sequence, then " +
                           "repeat it after it is hidden. A is high, S is middle " +
                           "and D is low. A wrong key locks the current problem. " +
                           "Your first mistake removes your torso; your second " +
                           "eliminates you. Ten problems, one final placement, " +
-                          "no per-problem score.\nREADY " +
-                          readyCount + " / 4"
+                          "no per-problem score.\nREADY {0} / 4",
+                          readyCount)
                     : isBouncingBalls
-                        ? "Move your goal shield with A and D. Three neutral balls " +
+                        ? GameText.F("Move your goal shield with A and D. Three neutral balls " +
                           "launch from the center. Touching one claims your color; " +
                           "when it passes a shield into any goal, its color owner " +
                           "scores. A scored ball relaunches from the conceding " +
                           "player's shield in their color. Two 60-second rounds; " +
-                          "highest combined score wins.\nREADY " +
-                          readyCount + " / 4"
+                          "highest combined score wins.\nREADY {0} / 4",
+                          readyCount)
                     : isBombPassing
-                        ? "Move with WASD. Touch the center bomb to pick it up. " +
+                        ? GameText.F("Move with WASD. Touch the center bomb to pick it up. " +
                           "Click a nearby player in front of you to pass it; " +
                           "the receiver is stunned for 0.5 seconds. Empty-hand " +
                           "click stuns a nearby player for 0.5 seconds. The " +
                           "fuse starts at spawn and lasts 20–25 seconds. " +
                           "At half time, an unheld bomb chases the nearest " +
                           "survivor. Only the carrier is eliminated when it " +
-                          "explodes. Last survivor wins.\nREADY " +
-                          readyCount + " / 4"
+                          "explodes. Last survivor wins.\nREADY {0} / 4",
+                          readyCount)
                     : isSnowySpin
-                        ? "Roll your colored ball with WASD. Holding a direction " +
+                        ? GameText.F("Roll your colored ball with WASD. Holding a direction " +
                           "accelerates; colliding with other balls pushes them " +
                           "toward the edge. A fall eliminates you for that round. " +
                           "Three rounds, up to 60 seconds each. If time runs " +
                           "out, surviving balls nearer the center rank higher. " +
                           "Round placement points are combined; final placement " +
-                          "awards gold once.\nREADY " +
-                          readyCount + " / 4"
+                          "awards gold once.\nREADY {0} / 4",
+                          readyCount)
                     : isArenaCombat
-                        ? "Fight with WASD movement, mouse look and LMB punches. " +
+                        ? GameText.F("Fight with WASD movement, mouse look and LMB punches. " +
                           "Health is hidden. Defeated players spectate. " +
                           "Last survivor wins, or remaining health decides " +
-                          "survivors after 60 seconds.\nREADY " +
-                          readyCount + " / 4"
+                          "survivors after 60 seconds.\nREADY {0} / 4",
+                          readyCount)
                     : isCliffBarrage
-                        ? "Move with WASD and click to push the nearest rival " +
+                        ? GameText.F("Move with WASD and click to push the nearest rival " +
                           "in your last movement direction. Falling eliminates " +
                           "you immediately. A shell or laser hit first removes " +
                           "your torso; a second hit eliminates you, with one " +
                           "second of safety after a hit. Survive three 60-second " +
-                          "rounds.\nREADY " +
-                          readyCount + " / 4"
+                          "rounds.\nREADY {0} / 4",
+                          readyCount)
                     : isSkip
-                        ? "This queue slot has no available minigame. " +
-                          "The next turn starts automatically."
-                        : (hasRuleImage ? string.Empty : "RULE IMAGE PLACEHOLDER\n") +
-                          "Stop and RMB to scan. First mine cripples; second eliminates. " +
+                        ? GameText.T("This queue slot has no available minigame. " +
+                          "The next turn starts automatically.")
+                        : (hasRuleImage ? string.Empty : GameText.T("RULE IMAGE PLACEHOLDER") + "\n") +
+                          GameText.F("Stop and RMB to scan. First mine cripples; second eliminates. " +
                           "Reach the finish before the crusher.\n" +
-                          "READY " + readyCount + " / 4");
+                          "READY {0} / 4", readyCount));
             SetText(
                 _minigameReadyStatus,
                 revealPending
-                    ? "REVEALING..."
+                    ? GameText.T("REVEALING...")
                     : isSkip
-                        ? "AUTO SKIP"
+                        ? GameText.T("AUTO SKIP")
                         : match.FlowState == BoardFlowState.MinigameLoading
-                            ? "LOADING  " +
-                              MinigameDisplayFormatter.FormatClock(match.StateRemaining)
-                            : "READY " + readyCount + " / 4  AUTO START " +
-                              MinigameDisplayFormatter.FormatClock(match.StateRemaining));
+                            ? GameText.F("LOADING  {0}",
+                              MinigameDisplayFormatter.FormatClock(match.StateRemaining))
+                            : GameText.F("READY {0} / 4  AUTO START {1}", readyCount,
+                              MinigameDisplayFormatter.FormatClock(match.StateRemaining)));
 
             for (var slot = 0; slot < _minigameReadyPlayerStates.Length; slot++)
             {
@@ -1565,7 +1564,9 @@ namespace MazeParty.Multiplayer
                 var isReady = match.IsMinigameReady(slot);
                 SetText(
                     playerState,
-                    "P" + (slot + 1) + (isReady ? "  READY" : "  WAITING"));
+                    isReady
+                        ? GameText.F("P{0}  READY", slot + 1)
+                        : GameText.F("P{0}  WAITING", slot + 1));
                 playerState.color = isReady
                     ? uiBindings.ReadyPlayerCompleteColor
                     : uiBindings.ReadyPlayerWaitingColor;
@@ -1587,44 +1588,44 @@ namespace MazeParty.Multiplayer
             SetText(
                 _readyButtonLabel,
                 revealPending
-                    ? "WAIT..."
+                    ? GameText.T("WAIT...")
                     : isSkip
-                        ? "SKIPPING..."
-                        : "READY");
+                        ? GameText.T("SKIPPING...")
+                        : GameText.T("READY"));
 
             SetText(
                 _minefieldResultTitle,
                 isWrongWay
-                    ? "WRONG WAY RESULTS"
+                    ? GameText.T("WRONG WAY RESULTS")
                     : isRedLightGreenLight
-                        ? "RED LIGHT / GREEN LIGHT RESULTS"
+                        ? GameText.T("RED LIGHT / GREEN LIGHT RESULTS")
                     : isStableFooting
-                        ? "STABLE FOOTING RESULTS"
+                        ? GameText.T("STABLE FOOTING RESULTS")
                     : isBalloonBlow
-                        ? "BALLOON BLOW RESULTS"
+                        ? GameText.T("BALLOON BLOW RESULTS")
                     : isGiftGrab
-                        ? "GIFT GRAB RESULTS"
+                        ? GameText.T("GIFT GRAB RESULTS")
                     : isTerritoryPaint
-                        ? "TERRITORY PAINT RESULTS"
+                        ? GameText.T("TERRITORY PAINT RESULTS")
                     : isTagChase
-                        ? "TAG CHASE RESULTS"
+                        ? GameText.T("TAG CHASE RESULTS")
                     : isRace
-                        ? "RACE RESULTS"
+                        ? GameText.T("RACE RESULTS")
                     : isSequenceMemory
-                        ? "SEQUENCE MEMORY RESULTS"
+                        ? GameText.T("SEQUENCE MEMORY RESULTS")
                     : isBouncingBalls
-                        ? "BOUNCING BALLS RESULTS"
+                        ? GameText.T("BOUNCING BALLS RESULTS")
                     : isBombPassing
-                        ? "BOMB PASSING RESULTS"
+                        ? GameText.T("BOMB PASSING RESULTS")
                     : isSnowySpin
-                        ? "SNOWY SPIN RESULTS"
+                        ? GameText.T("SNOWY SPIN RESULTS")
                     : isArenaCombat
-                        ? "ARENA COMBAT RESULTS"
+                        ? GameText.T("ARENA COMBAT RESULTS")
                     : isCliffBarrage
-                        ? "CLIFF BARRAGE RESULTS"
+                        ? GameText.T("CLIFF BARRAGE RESULTS")
                     : isSkip
-                        ? "TURN SKIPPED"
-                        : "MINEFIELD RESULTS");
+                        ? GameText.T("TURN SKIPPED")
+                        : GameText.T("MINEFIELD RESULTS"));
             var resultSummary = isWrongWay
                 ? BuildWrongWayResultSummary(NetworkWrongWayState.Instance)
                 : isRedLightGreenLight
@@ -1666,17 +1667,16 @@ namespace MazeParty.Multiplayer
                     ? BuildCliffBarrageResultSummary(
                         NetworkCliffBarrageState.Instance)
                 : isSkip
-                    ? "No minigame was scheduled for this turn."
+                    ? GameText.T("No minigame was scheduled for this turn.")
                     : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
             if (_minefieldResultSummary != null)
             {
                 SetText(
                     _minefieldResultNote,
                     isSkip
-                        ? "No rewards are awarded for an empty queue slot."
-                        : "Final placement awards " +
-                          MinigameRewardRules.FinalPlacementGoldSchedule +
-                          " gold.");
+                        ? GameText.T("No rewards are awarded for an empty queue slot.")
+                        : GameText.F("Final placement awards {0} gold.",
+                          MinigameRewardRules.FinalPlacementGoldSchedule));
                 SetText(_minefieldResultSummary, resultSummary);
             }
             else
@@ -1698,36 +1698,36 @@ namespace MazeParty.Multiplayer
             SetText(
                 _minigameRulePlaceholder,
                 revealPending
-                    ? "RULES REVEALING..."
+                    ? GameText.T("RULES REVEALING...")
                     : isWrongWay
-                    ? "W  A  S  D\n50 STEPS"
+                    ? GameText.T("W  A  S  D\n50 STEPS")
                     : isRedLightGreenLight
-                        ? "GREEN: MOVE\nRED: FREEZE"
+                        ? GameText.T("GREEN: MOVE\nRED: FREEZE")
                     : isStableFooting
-                        ? "WASD: MOVE\nLMB: PUSH\nX  O  □"
+                        ? GameText.T("WASD: MOVE\nLMB: PUSH\nX  O  □")
                     : isBalloonBlow
-                        ? "HOLD LMB\nPOP FIRST"
+                        ? GameText.T("HOLD LMB\nPOP FIRST")
                     : isGiftGrab
-                        ? "WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS"
+                        ? GameText.T("WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS")
                     : isTerritoryPaint
-                        ? "WASD: MOVE\nPAINT THE ARENA"
+                        ? GameText.T("WASD: MOVE\nPAINT THE ARENA")
                     : isTagChase
-                        ? "RUNNERS: WASD\nTAGGER: WASD + LMB"
+                        ? GameText.T("RUNNERS: WASD\nTAGGER: WASD + LMB")
                     : isRace
-                        ? "ALTERNATE A / D\n500 STEPS"
+                        ? GameText.T("ALTERNATE A / D\n500 STEPS")
                     : isSequenceMemory
-                        ? "A: HIGH\nS: MIDDLE\nD: LOW"
+                        ? GameText.T("A: HIGH\nS: MIDDLE\nD: LOW")
                     : isBouncingBalls
-                        ? "A / D: MOVE SHIELD\nCLAIM BALLS · SCORE GOALS"
+                        ? GameText.T("A / D: MOVE SHIELD\nCLAIM BALLS · SCORE GOALS")
                     : isBombPassing
-                        ? "WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB"
+                        ? GameText.T("WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB")
                     : isSnowySpin
-                        ? "WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF"
+                        ? GameText.T("WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF")
                     : isArenaCombat
-                        ? "WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH"
+                        ? GameText.T("WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH")
                     : isCliffBarrage
-                        ? "WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS"
-                        : "RULE IMAGE");
+                        ? GameText.T("WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS")
+                        : GameText.T("RULE IMAGE"));
             SetActive(
                 _minigameRulePlaceholder != null
                     ? _minigameRulePlaceholder.gameObject
@@ -1754,7 +1754,7 @@ namespace MazeParty.Multiplayer
         {
             if (minefield == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -1772,7 +1772,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -1782,14 +1782,12 @@ namespace MazeParty.Multiplayer
 
                 var match = NetworkMatchState.Instance;
                 var avatar = match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null ? avatar.DisplayName : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(minefield.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null ? avatar.DisplayName : "P" + (rankedSlot + 1),
+                    minefield.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -1800,7 +1798,7 @@ namespace MazeParty.Multiplayer
         {
             if (wrongWay == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -1818,7 +1816,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -1829,17 +1827,14 @@ namespace MazeParty.Multiplayer
                 var match = NetworkMatchState.Instance;
                 var avatar =
                     match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(wrongWay.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    wrongWay.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -1850,7 +1845,7 @@ namespace MazeParty.Multiplayer
         {
             if (redLightGreenLight == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -1872,7 +1867,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -1883,17 +1878,14 @@ namespace MazeParty.Multiplayer
                 var match = NetworkMatchState.Instance;
                 var avatar =
                     match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(redLightGreenLight.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    redLightGreenLight.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -1904,7 +1896,7 @@ namespace MazeParty.Multiplayer
         {
             if (stableFooting == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -1926,7 +1918,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -1937,17 +1929,14 @@ namespace MazeParty.Multiplayer
                 var match = NetworkMatchState.Instance;
                 var avatar =
                     match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(stableFooting.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    stableFooting.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -1958,7 +1947,7 @@ namespace MazeParty.Multiplayer
         {
             if (balloonBlow == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -1980,7 +1969,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -1991,17 +1980,14 @@ namespace MazeParty.Multiplayer
                 var match = NetworkMatchState.Instance;
                 var avatar =
                     match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(balloonBlow.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    balloonBlow.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2012,7 +1998,7 @@ namespace MazeParty.Multiplayer
         {
             if (giftGrab == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2030,7 +2016,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
 
                 if (builder.Length > 0)
@@ -2042,19 +2028,15 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(giftGrab.GetScore(rankedSlot))
-                    .Append("  GIFTS ")
-                    .Append(giftGrab.GetTotalStoredGiftCount(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GIFTS {3}  GOLD +{4}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    giftGrab.GetScore(rankedSlot),
+                    giftGrab.GetTotalStoredGiftCount(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2065,7 +2047,7 @@ namespace MazeParty.Multiplayer
         {
             if (territoryPaint == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2087,7 +2069,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2098,17 +2080,14 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  ")
-                    .Append(territoryPaint.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    territoryPaint.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2119,7 +2098,7 @@ namespace MazeParty.Multiplayer
         {
             if (tagChase == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2137,7 +2116,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2148,17 +2127,14 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(tagChase.GetTotalScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    tagChase.GetTotalScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2169,7 +2145,7 @@ namespace MazeParty.Multiplayer
         {
             if (race == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2187,7 +2163,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2198,17 +2174,14 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(race.GetTotalScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    race.GetTotalScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2219,7 +2192,7 @@ namespace MazeParty.Multiplayer
         {
             if (snowySpin == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2241,7 +2214,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2252,16 +2225,14 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
                         ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(snowySpin.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                        : "P" + (rankedSlot + 1),
+                    snowySpin.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2272,7 +2243,7 @@ namespace MazeParty.Multiplayer
         {
             if (arenaCombat == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2294,7 +2265,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2305,14 +2276,13 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null
+                builder.Append(GameText.F(
+                    "{0}.  {1}  GOLD +{2}",
+                    rank,
+                    avatar != null
                         ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                        : "P" + (rankedSlot + 1),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2323,7 +2293,7 @@ namespace MazeParty.Multiplayer
         {
             if (cliffBarrage == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2345,7 +2315,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2356,16 +2326,14 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    avatar != null
                         ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1))
-                    .Append("  SCORE ")
-                    .Append(cliffBarrage.GetScore(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                        : "P" + (rankedSlot + 1),
+                    cliffBarrage.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2376,7 +2344,7 @@ namespace MazeParty.Multiplayer
         {
             if (bombPassing == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2398,7 +2366,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2409,17 +2377,15 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null
+                builder.Append(GameText.F(
+                    bombPassing.IsEliminated(rankedSlot)
+                        ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
+                        : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
+                    rank,
+                    avatar != null
                         ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1))
-                    .Append(bombPassing.IsEliminated(rankedSlot)
-                        ? "  OUT"
-                        : "  SURVIVED")
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                        : "P" + (rankedSlot + 1),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2430,7 +2396,7 @@ namespace MazeParty.Multiplayer
         {
             if (bouncingBalls == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2452,7 +2418,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2463,18 +2429,15 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(avatar != null
+                builder.Append(GameText.F(
+                    "{0}.  {1}  GOALS {2}  CONCEDED {3}  GOLD +{4}",
+                    rank,
+                    avatar != null
                         ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1))
-                    .Append("  GOALS ")
-                    .Append(bouncingBalls.GetScore(rankedSlot))
-                    .Append("  CONCEDED ")
-                    .Append(bouncingBalls.GetConceded(rankedSlot))
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                        : "P" + (rankedSlot + 1),
+                    bouncingBalls.GetScore(rankedSlot),
+                    bouncingBalls.GetConceded(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2485,7 +2448,7 @@ namespace MazeParty.Multiplayer
         {
             if (sequenceMemory == null)
             {
-                return "Final standings are synchronizing...";
+                return GameText.T("Final standings are synchronizing...");
             }
 
             var builder = new StringBuilder();
@@ -2507,7 +2470,7 @@ namespace MazeParty.Multiplayer
 
                 if (rankedSlot < 0)
                 {
-                    return "Final standings are synchronizing...";
+                    return GameText.T("Final standings are synchronizing...");
                 }
                 if (builder.Length > 0)
                 {
@@ -2518,18 +2481,15 @@ namespace MazeParty.Multiplayer
                 var avatar = match != null
                     ? match.GetAvatarForSlot(rankedSlot)
                     : null;
-                builder.Append(rank)
-                    .Append(".  ")
-                    .Append(
-                        avatar != null
-                            ? avatar.DisplayName
-                            : "P" + (rankedSlot + 1))
-                    .Append(sequenceMemory.IsPlayerEliminated(rankedSlot)
-                        ? "  OUT"
-                        : "  SURVIVED")
-                    .Append("  GOLD +")
-                    .Append(
-                        MinigameRewardRules.GetFinalPlacementGold(rank));
+                builder.Append(GameText.F(
+                    sequenceMemory.IsPlayerEliminated(rankedSlot)
+                        ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
+                        : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
+                    rank,
+                    avatar != null
+                        ? avatar.DisplayName
+                        : "P" + (rankedSlot + 1),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
             return builder.ToString();
@@ -2540,7 +2500,7 @@ namespace MazeParty.Multiplayer
         {
             if (minefield == null)
             {
-                return "MINEFIELD";
+                return GameText.T("MINEFIELD");
             }
 
             var totalRounds =
@@ -2552,18 +2512,18 @@ namespace MazeParty.Multiplayer
             switch (minefield.Phase)
             {
                 case NetworkMinefieldPhase.Countdown:
-                    return "MINEFIELD  ROUND " + round + " / " +
-                           totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("MINEFIELD  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkMinefieldPhase.Running:
-                    return "MINEFIELD  ROUND " + round + " / " +
-                           totalRounds + "  -  RUN";
+                    return GameText.F("MINEFIELD  ROUND {0} / {1}  -  RUN",
+                           round, totalRounds);
                 case NetworkMinefieldPhase.RoundResult:
-                    return "MINEFIELD  ROUND " + round + " / " +
-                           totalRounds + "  -  RESULT";
+                    return GameText.F("MINEFIELD  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkMinefieldPhase.Complete:
-                    return "MINEFIELD COMPLETE";
+                    return GameText.T("MINEFIELD COMPLETE");
                 default:
-                    return "MINEFIELD";
+                    return GameText.T("MINEFIELD");
             }
         }
 
@@ -2571,7 +2531,7 @@ namespace MazeParty.Multiplayer
         {
             if (minefield == null)
             {
-                return "Synchronizing the Minefield simulation...";
+                return GameText.T("Synchronizing the Minefield simulation...");
             }
 
             var totalRounds =
@@ -2579,16 +2539,16 @@ namespace MazeParty.Multiplayer
             switch (minefield.Phase)
             {
                 case NetworkMinefieldPhase.Countdown:
-                    return "Get ready. Every player respawns and the mine layout changes each round.";
+                    return GameText.T("Get ready. Every player respawns and the mine layout changes each round.");
                 case NetworkMinefieldPhase.Running:
-                    return "WASD moves in top view. Stop moving and press RMB to scan nearby mines.";
+                    return GameText.T("WASD moves in top view. Stop moving and press RMB to scan nearby mines.");
                 case NetworkMinefieldPhase.RoundResult:
-                    return "Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.";
+                    return GameText.T("Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.");
                 case NetworkMinefieldPhase.Complete:
-                    return "All " + totalRounds +
-                           " rounds complete. Final points determine rank; placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
+                           totalRounds);
                 default:
-                    return "Preparing Minefield...";
+                    return GameText.T("Preparing Minefield...");
             }
         }
 
@@ -2597,7 +2557,7 @@ namespace MazeParty.Multiplayer
         {
             if (wrongWay == null)
             {
-                return "WRONG WAY";
+                return GameText.T("WRONG WAY");
             }
 
             var totalRounds =
@@ -2609,18 +2569,18 @@ namespace MazeParty.Multiplayer
             switch (wrongWay.Phase)
             {
                 case NetworkWrongWayPhase.Countdown:
-                    return "WRONG WAY  ROUND " + round + " / " +
-                           totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("WRONG WAY  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkWrongWayPhase.Running:
-                    return "WRONG WAY  ROUND " + round + " / " +
-                           totalRounds + "  -  CLIMB";
+                    return GameText.F("WRONG WAY  ROUND {0} / {1}  -  CLIMB",
+                           round, totalRounds);
                 case NetworkWrongWayPhase.RoundResult:
-                    return "WRONG WAY  ROUND " + round + " / " +
-                           totalRounds + "  -  RESULT";
+                    return GameText.F("WRONG WAY  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkWrongWayPhase.Complete:
-                    return "WRONG WAY COMPLETE";
+                    return GameText.T("WRONG WAY COMPLETE");
                 default:
-                    return "WRONG WAY";
+                    return GameText.T("WRONG WAY");
             }
         }
 
@@ -2629,7 +2589,7 @@ namespace MazeParty.Multiplayer
         {
             if (wrongWay == null)
             {
-                return "Synchronizing the WrongWay race...";
+                return GameText.T("Synchronizing the WrongWay race...");
             }
 
             var totalRounds =
@@ -2637,16 +2597,16 @@ namespace MazeParty.Multiplayer
             switch (wrongWay.Phase)
             {
                 case NetworkWrongWayPhase.Countdown:
-                    return "Get ready. Every player receives the same direction sequence.";
+                    return GameText.T("Get ready. Every player receives the same direction sequence.");
                 case NetworkWrongWayPhase.Running:
-                    return "Press the shown WASD direction. Wrong input locks you for 0.5 seconds.";
+                    return GameText.T("Press the shown WASD direction. Wrong input locks you for 0.5 seconds.");
                 case NetworkWrongWayPhase.RoundResult:
-                    return "Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.";
+                    return GameText.T("Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.");
                 case NetworkWrongWayPhase.Complete:
-                    return totalRounds +
-                           " rounds complete. Final points determine rank; placement awards gold.";
+                    return GameText.F("{0} rounds complete. Final points determine rank; placement awards gold.",
+                           totalRounds);
                 default:
-                    return "Preparing WrongWay...";
+                    return GameText.T("Preparing WrongWay...");
             }
         }
 
@@ -2655,7 +2615,7 @@ namespace MazeParty.Multiplayer
         {
             if (redLightGreenLight == null)
             {
-                return "RED LIGHT / GREEN LIGHT";
+                return GameText.T("RED LIGHT / GREEN LIGHT");
             }
 
             var totalRounds =
@@ -2668,20 +2628,20 @@ namespace MazeParty.Multiplayer
             switch (redLightGreenLight.Phase)
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
-                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / " + totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkRedLightGreenLightPhase.Running:
-                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / " + totalRounds + "  -  " +
+                    return GameText.F("RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  {2}",
+                           round, totalRounds,
                            RedLightGreenLightSignalLabel(
-                               redLightGreenLight.SignalPhase);
+                               redLightGreenLight.SignalPhase));
                 case NetworkRedLightGreenLightPhase.RoundResult:
-                    return "RED LIGHT / GREEN LIGHT  ROUND " + round +
-                           " / " + totalRounds + "  -  RESULT";
+                    return GameText.F("RED LIGHT / GREEN LIGHT  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkRedLightGreenLightPhase.Complete:
-                    return "RED LIGHT / GREEN LIGHT COMPLETE";
+                    return GameText.T("RED LIGHT / GREEN LIGHT COMPLETE");
                 default:
-                    return "RED LIGHT / GREEN LIGHT";
+                    return GameText.T("RED LIGHT / GREEN LIGHT");
             }
         }
 
@@ -2690,7 +2650,7 @@ namespace MazeParty.Multiplayer
         {
             if (redLightGreenLight == null)
             {
-                return "Synchronizing the Red Light / Green Light race...";
+                return GameText.T("Synchronizing the Red Light / Green Light race...");
             }
 
             var totalRounds =
@@ -2699,34 +2659,32 @@ namespace MazeParty.Multiplayer
             switch (redLightGreenLight.Phase)
             {
                 case NetworkRedLightGreenLightPhase.Countdown:
-                    return "Get ready at the shared start line.";
+                    return GameText.T("Get ready at the shared start line.");
                 case NetworkRedLightGreenLightPhase.Running:
                     var remaining =
-                        redLightGreenLight.SignalRemaining.ToString("0.0") +
-                        "s";
+                        redLightGreenLight.SignalRemaining;
                     switch (redLightGreenLight.SignalPhase)
                     {
                         case RedLightGreenLightSignalPhase.Green:
-                            return "GREEN  " + remaining +
-                                   ": move toward the finish.";
+                            return GameText.F("GREEN  {0:0.0}s: move toward the finish.",
+                                   remaining);
                         case RedLightGreenLightSignalPhase.TurnWarning:
-                            return "TURNING  " + remaining +
-                                   ": movement remains legal until RED begins.";
+                            return GameText.F("TURNING  {0:0.0}s: movement remains legal until RED begins.",
+                                   remaining);
                         case RedLightGreenLightSignalPhase.Red:
-                            return "RED  " + remaining +
-                                   ": freeze; voluntary movement is a violation.";
+                            return GameText.F("RED  {0:0.0}s: freeze; voluntary movement is a violation.",
+                                   remaining);
                         default:
-                            return "Follow the synchronized signal.";
+                            return GameText.T("Follow the synchronized signal.");
                     }
                 case NetworkRedLightGreenLightPhase.RoundResult:
-                    return "Finishers rank first, then survivors by forward " +
-                           "progress, with eliminated players placed last.";
+                    return GameText.T("Finishers rank first, then survivors by forward " +
+                           "progress, with eliminated players placed last.");
                 case NetworkRedLightGreenLightPhase.Complete:
-                    return "All " + totalRounds +
-                           " rounds complete. Final points determine " +
-                           "rank; placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Final points determine " +
+                           "rank; placement awards gold.", totalRounds);
                 default:
-                    return "Preparing Red Light / Green Light...";
+                    return GameText.T("Preparing Red Light / Green Light...");
             }
         }
 
@@ -2736,11 +2694,11 @@ namespace MazeParty.Multiplayer
             switch (signal)
             {
                 case RedLightGreenLightSignalPhase.Green:
-                    return "GREEN";
+                    return GameText.T("GREEN");
                 case RedLightGreenLightSignalPhase.TurnWarning:
-                    return "TURNING";
+                    return GameText.T("TURNING");
                 case RedLightGreenLightSignalPhase.Red:
-                    return "RED";
+                    return GameText.T("RED");
                 default:
                     return signal.ToString().ToUpperInvariant();
             }
@@ -2751,7 +2709,7 @@ namespace MazeParty.Multiplayer
         {
             if (stableFooting == null)
             {
-                return "STABLE FOOTING";
+                return GameText.T("STABLE FOOTING");
             }
 
             var totalRounds =
@@ -2764,19 +2722,19 @@ namespace MazeParty.Multiplayer
             switch (stableFooting.Phase)
             {
                 case NetworkStableFootingPhase.Countdown:
-                    return "STABLE FOOTING  ROUND " + round +
-                           " / " + totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("STABLE FOOTING  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkStableFootingPhase.Running:
-                    return "STABLE FOOTING  ROUND " + round +
-                           " / " + totalRounds + "  -  " +
-                           stableFooting.CyclePhase.ToString().ToUpperInvariant();
+                    return GameText.F("STABLE FOOTING  ROUND {0} / {1}  -  {2}",
+                           round, totalRounds,
+                           GameText.T(stableFooting.CyclePhase.ToString().ToUpperInvariant()));
                 case NetworkStableFootingPhase.RoundResult:
-                    return "STABLE FOOTING  ROUND " + round +
-                           " / " + totalRounds + "  -  RESULT";
+                    return GameText.F("STABLE FOOTING  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkStableFootingPhase.Complete:
-                    return "STABLE FOOTING COMPLETE";
+                    return GameText.T("STABLE FOOTING COMPLETE");
                 default:
-                    return "STABLE FOOTING";
+                    return GameText.T("STABLE FOOTING");
             }
         }
 
@@ -2785,7 +2743,7 @@ namespace MazeParty.Multiplayer
         {
             if (stableFooting == null)
             {
-                return "Synchronizing the Stable Footing arena...";
+                return GameText.T("Synchronizing the Stable Footing arena...");
             }
 
             var totalRounds =
@@ -2794,28 +2752,28 @@ namespace MazeParty.Multiplayer
             switch (stableFooting.Phase)
             {
                 case NetworkStableFootingPhase.Countdown:
-                    return "Get ready on the shared 6 x 8 platform arena.";
+                    return GameText.T("Get ready on the shared 6 x 8 platform arena.");
                 case NetworkStableFootingPhase.Running:
                     switch (stableFooting.CyclePhase)
                     {
                         case StableFootingCyclePhase.ShuffleReveal:
-                            return "Symbols are shuffling. Watch the shared safe-symbol display.";
+                            return GameText.T("Symbols are shuffling. Watch the shared safe-symbol display.");
                         case StableFootingCyclePhase.Move:
-                            return "WASD moves. LMB pushes the nearest player in front of you.";
+                            return GameText.T("WASD moves. LMB pushes the nearest player in front of you.");
                         case StableFootingCyclePhase.Drop:
-                            return "Unsafe platforms are dropping. Falling eliminates immediately.";
+                            return GameText.T("Unsafe platforms are dropping. Falling eliminates immediately.");
                         case StableFootingCyclePhase.Restore:
-                            return "Platforms are returning; two remain permanently removed.";
+                            return GameText.T("Platforms are returning; two remain permanently removed.");
                         default:
-                            return "Stay on the announced safe symbol.";
+                            return GameText.T("Stay on the announced safe symbol.");
                     }
                 case NetworkStableFootingPhase.RoundResult:
-                    return "The last survivor ranks first; later falls rank above earlier falls.";
+                    return GameText.T("The last survivor ranks first; later falls rank above earlier falls.");
                 case NetworkStableFootingPhase.Complete:
-                    return "All " + totalRounds +
-                           " rounds complete. Final points determine rank; placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
+                           totalRounds);
                 default:
-                    return "Preparing Stable Footing...";
+                    return GameText.T("Preparing Stable Footing...");
             }
         }
 
@@ -2824,7 +2782,7 @@ namespace MazeParty.Multiplayer
         {
             if (balloonBlow == null)
             {
-                return "BALLOON BLOW";
+                return GameText.T("BALLOON BLOW");
             }
 
             var totalRounds =
@@ -2837,18 +2795,18 @@ namespace MazeParty.Multiplayer
             switch (balloonBlow.Phase)
             {
                 case NetworkBalloonBlowPhase.Countdown:
-                    return "BALLOON BLOW  ROUND " + round +
-                           " / " + totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("BALLOON BLOW  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkBalloonBlowPhase.Running:
-                    return "BALLOON BLOW  ROUND " + round +
-                           " / " + totalRounds + "  -  INFLATE";
+                    return GameText.F("BALLOON BLOW  ROUND {0} / {1}  -  INFLATE",
+                           round, totalRounds);
                 case NetworkBalloonBlowPhase.RoundResult:
-                    return "BALLOON BLOW  ROUND " + round +
-                           " / " + totalRounds + "  -  RESULT";
+                    return GameText.F("BALLOON BLOW  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkBalloonBlowPhase.Complete:
-                    return "BALLOON BLOW COMPLETE";
+                    return GameText.T("BALLOON BLOW COMPLETE");
                 default:
-                    return "BALLOON BLOW";
+                    return GameText.T("BALLOON BLOW");
             }
         }
 
@@ -2857,7 +2815,7 @@ namespace MazeParty.Multiplayer
         {
             if (balloonBlow == null)
             {
-                return "Synchronizing the Balloon Blow arena...";
+                return GameText.T("Synchronizing the Balloon Blow arena...");
             }
 
             var totalRounds =
@@ -2866,18 +2824,18 @@ namespace MazeParty.Multiplayer
             switch (balloonBlow.Phase)
             {
                 case NetworkBalloonBlowPhase.Countdown:
-                    return "Get ready. Hold LMB after the countdown to inflate.";
+                    return GameText.T("Get ready. Hold LMB after the countdown to inflate.");
                 case NetworkBalloonBlowPhase.Running:
-                    return "Hold LMB to inflate. Release before two seconds; " +
-                           "idle and cooldown time slowly deflate your balloon.";
+                    return GameText.T("Hold LMB to inflate. Release before two seconds; " +
+                           "idle and cooldown time slowly deflate your balloon.");
                 case NetworkBalloonBlowPhase.RoundResult:
-                    return "Popped balloons rank by pop order; remaining balloons " +
-                           "rank by progress, then server player order.";
+                    return GameText.T("Popped balloons rank by pop order; remaining balloons " +
+                           "rank by progress, then server player order.");
                 case NetworkBalloonBlowPhase.Complete:
-                    return "All " + totalRounds +
-                           " rounds complete. Final points determine rank; placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
+                           totalRounds);
                 default:
-                    return "Preparing Balloon Blow...";
+                    return GameText.T("Preparing Balloon Blow...");
             }
         }
 
@@ -2886,7 +2844,7 @@ namespace MazeParty.Multiplayer
         {
             if (giftGrab == null)
             {
-                return "GIFT GRAB";
+                return GameText.T("GIFT GRAB");
             }
 
             var totalRounds =
@@ -2898,18 +2856,18 @@ namespace MazeParty.Multiplayer
             switch (giftGrab.Phase)
             {
                 case NetworkGiftGrabPhase.Countdown:
-                    return "GIFT GRAB  ROUND " + round +
-                           " / " + totalRounds + "  -  COUNTDOWN";
+                    return GameText.F("GIFT GRAB  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, totalRounds);
                 case NetworkGiftGrabPhase.Running:
-                    return "GIFT GRAB  ROUND " + round +
-                           " / " + totalRounds + "  -  STEAL";
+                    return GameText.F("GIFT GRAB  ROUND {0} / {1}  -  STEAL",
+                           round, totalRounds);
                 case NetworkGiftGrabPhase.RoundResult:
-                    return "GIFT GRAB  ROUND " + round +
-                           " / " + totalRounds + "  -  RESULT";
+                    return GameText.F("GIFT GRAB  ROUND {0} / {1}  -  RESULT",
+                           round, totalRounds);
                 case NetworkGiftGrabPhase.Complete:
-                    return "GIFT GRAB COMPLETE";
+                    return GameText.T("GIFT GRAB COMPLETE");
                 default:
-                    return "GIFT GRAB";
+                    return GameText.T("GIFT GRAB");
             }
         }
 
@@ -2918,21 +2876,21 @@ namespace MazeParty.Multiplayer
         {
             if (territoryPaint == null)
             {
-                return "TERRITORY PAINT";
+                return GameText.T("TERRITORY PAINT");
             }
 
             switch (territoryPaint.Phase)
             {
                 case NetworkTerritoryPaintPhase.Countdown:
-                    return "TERRITORY PAINT  -  COUNTDOWN";
+                    return GameText.T("TERRITORY PAINT  -  COUNTDOWN");
                 case NetworkTerritoryPaintPhase.Running:
-                    return "TERRITORY PAINT";
+                    return GameText.T("TERRITORY PAINT");
                 case NetworkTerritoryPaintPhase.RoundResult:
-                    return "TERRITORY PAINT  -  RESULT";
+                    return GameText.T("TERRITORY PAINT  -  RESULT");
                 case NetworkTerritoryPaintPhase.Complete:
-                    return "TERRITORY PAINT COMPLETE";
+                    return GameText.T("TERRITORY PAINT COMPLETE");
                 default:
-                    return "TERRITORY PAINT";
+                    return GameText.T("TERRITORY PAINT");
             }
         }
 
@@ -2941,7 +2899,7 @@ namespace MazeParty.Multiplayer
         {
             if (tagChase == null)
             {
-                return "TAG CHASE";
+                return GameText.T("TAG CHASE");
             }
 
             var round = Mathf.Clamp(
@@ -2951,18 +2909,18 @@ namespace MazeParty.Multiplayer
             switch (tagChase.Phase)
             {
                 case NetworkTagChasePhase.Countdown:
-                    return "TAG CHASE  ROUND " + round + " / " +
-                           TagChaseRules.RoundCount + "  -  COUNTDOWN";
+                    return GameText.F("TAG CHASE  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, TagChaseRules.RoundCount);
                 case NetworkTagChasePhase.Running:
-                    return "TAG CHASE  ROUND " + round + " / " +
-                           TagChaseRules.RoundCount + "  -  CHASE";
+                    return GameText.F("TAG CHASE  ROUND {0} / {1}  -  CHASE",
+                           round, TagChaseRules.RoundCount);
                 case NetworkTagChasePhase.RoundResult:
-                    return "TAG CHASE  ROUND " + round + " / " +
-                           TagChaseRules.RoundCount + "  -  RESULT";
+                    return GameText.F("TAG CHASE  ROUND {0} / {1}  -  RESULT",
+                           round, TagChaseRules.RoundCount);
                 case NetworkTagChasePhase.Complete:
-                    return "TAG CHASE COMPLETE";
+                    return GameText.T("TAG CHASE COMPLETE");
                 default:
-                    return "TAG CHASE";
+                    return GameText.T("TAG CHASE");
             }
         }
 
@@ -2971,29 +2929,28 @@ namespace MazeParty.Multiplayer
         {
             if (tagChase == null)
             {
-                return "Synchronizing the Tag Chase arena...";
+                return GameText.T("Synchronizing the Tag Chase arena...");
             }
 
             var taggerLabel = tagChase.TaggerSlot >= 0
                 ? "P" + (tagChase.TaggerSlot + 1)
-                : "The selected player";
+                : GameText.T("The selected player");
             switch (tagChase.Phase)
             {
                 case NetworkTagChasePhase.Countdown:
-                    return taggerLabel +
-                           " is the tagger. Get ready for the chase.";
+                    return GameText.F("{0} is the tagger. Get ready for the chase.",
+                           taggerLabel);
                 case NetworkTagChasePhase.Running:
-                    return "Runners escape with WASD on the shared camera. " +
-                           "The tagger uses WASD and LMB in first person.";
+                    return GameText.T("Runners escape with WASD on the shared camera. " +
+                           "The tagger uses WASD and LMB in first person.");
                 case NetworkTagChasePhase.RoundResult:
-                    return "The tagger earns 3 points only after catching every " +
-                           "runner; surviving and caught runners score separately.";
+                    return GameText.T("The tagger earns 3 points only after catching every " +
+                           "runner; surviving and caught runners score separately.");
                 case NetworkTagChasePhase.Complete:
-                    return "All " + TagChaseRules.RoundCount +
-                           " rounds complete. Total points determine rank; " +
-                           "placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Total points determine rank; " +
+                           "placement awards gold.", TagChaseRules.RoundCount);
                 default:
-                    return "Preparing Tag Chase...";
+                    return GameText.T("Preparing Tag Chase...");
             }
         }
 
@@ -3001,7 +2958,7 @@ namespace MazeParty.Multiplayer
         {
             if (race == null)
             {
-                return "RACE";
+                return GameText.T("RACE");
             }
 
             var round = Mathf.Clamp(
@@ -3011,18 +2968,18 @@ namespace MazeParty.Multiplayer
             switch (race.Phase)
             {
                 case NetworkRacePhase.Countdown:
-                    return "RACE  ROUND " + round + " / " +
-                           RaceRules.RoundCount + "  -  COUNTDOWN";
+                    return GameText.F("RACE  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, RaceRules.RoundCount);
                 case NetworkRacePhase.Running:
-                    return "RACE  ROUND " + round + " / " +
-                           RaceRules.RoundCount + "  -  RUN";
+                    return GameText.F("RACE  ROUND {0} / {1}  -  RUN",
+                           round, RaceRules.RoundCount);
                 case NetworkRacePhase.RoundResult:
-                    return "RACE  ROUND " + round + " / " +
-                           RaceRules.RoundCount + "  -  RESULT";
+                    return GameText.F("RACE  ROUND {0} / {1}  -  RESULT",
+                           round, RaceRules.RoundCount);
                 case NetworkRacePhase.Complete:
-                    return "RACE COMPLETE";
+                    return GameText.T("RACE COMPLETE");
                 default:
-                    return "RACE";
+                    return GameText.T("RACE");
             }
         }
 
@@ -3030,25 +2987,24 @@ namespace MazeParty.Multiplayer
         {
             if (race == null)
             {
-                return "Synchronizing the Race arena...";
+                return GameText.T("Synchronizing the Race arena...");
             }
 
             switch (race.Phase)
             {
                 case NetworkRacePhase.Countdown:
-                    return "Get ready to alternate A and D.";
+                    return GameText.T("Get ready to alternate A and D.");
                 case NetworkRacePhase.Running:
-                    return "Alternate A and D. Repeating the same key does not " +
-                           "advance; first to 500 steps ends the round.";
+                    return GameText.T("Alternate A and D. Repeating the same key does not " +
+                           "advance; first to 500 steps ends the round.");
                 case NetworkRacePhase.RoundResult:
-                    return "More steps rank higher; server input order breaks " +
-                           "equal-progress ties.";
+                    return GameText.T("More steps rank higher; server input order breaks " +
+                           "equal-progress ties.");
                 case NetworkRacePhase.Complete:
-                    return "All " + RaceRules.RoundCount +
-                           " rounds complete. Total points determine rank; " +
-                           "placement awards gold.";
+                    return GameText.F("All {0} rounds complete. Total points determine rank; " +
+                           "placement awards gold.", RaceRules.RoundCount);
                 default:
-                    return "Preparing Race...";
+                    return GameText.T("Preparing Race...");
             }
         }
 
@@ -3057,7 +3013,7 @@ namespace MazeParty.Multiplayer
         {
             if (bouncingBalls == null)
             {
-                return "BOUNCING BALLS";
+                return GameText.T("BOUNCING BALLS");
             }
 
             var round = Mathf.Clamp(
@@ -3067,18 +3023,18 @@ namespace MazeParty.Multiplayer
             switch (bouncingBalls.Phase)
             {
                 case NetworkBouncingBallsPhase.Countdown:
-                    return "BOUNCING BALLS  ROUND " + round + " / " +
-                           BouncingBallsRules.RoundCount + "  -  COUNTDOWN";
+                    return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  COUNTDOWN",
+                           round, BouncingBallsRules.RoundCount);
                 case NetworkBouncingBallsPhase.Playing:
-                    return "BOUNCING BALLS  ROUND " + round + " / " +
-                           BouncingBallsRules.RoundCount + "  -  PLAY";
+                    return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  PLAY",
+                           round, BouncingBallsRules.RoundCount);
                 case NetworkBouncingBallsPhase.RoundBreak:
-                    return "BOUNCING BALLS  ROUND " + round + " / " +
-                           BouncingBallsRules.RoundCount + "  -  RESULT";
+                    return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  RESULT",
+                           round, BouncingBallsRules.RoundCount);
                 case NetworkBouncingBallsPhase.Complete:
-                    return "BOUNCING BALLS COMPLETE";
+                    return GameText.T("BOUNCING BALLS COMPLETE");
                 default:
-                    return "BOUNCING BALLS";
+                    return GameText.T("BOUNCING BALLS");
             }
         }
 
@@ -3087,25 +3043,24 @@ namespace MazeParty.Multiplayer
         {
             if (bouncingBalls == null)
             {
-                return "Synchronizing the Bouncing Balls arena...";
+                return GameText.T("Synchronizing the Bouncing Balls arena...");
             }
 
             switch (bouncingBalls.Phase)
             {
                 case NetworkBouncingBallsPhase.Countdown:
-                    return "Three neutral balls will launch from the center.";
+                    return GameText.T("Three neutral balls will launch from the center.");
                 case NetworkBouncingBallsPhase.Playing:
-                    return "Hold A or D to slide your shield. A touched ball " +
-                           "takes your color; a goal scores for its color owner.";
+                    return GameText.T("Hold A or D to slide your shield. A touched ball " +
+                           "takes your color; a goal scores for its color owner.");
                 case NetworkBouncingBallsPhase.RoundBreak:
-                    return "Round over. Combined goals across both rounds " +
-                           "determine final placement.";
+                    return GameText.T("Round over. Combined goals across both rounds " +
+                           "determine final placement.");
                 case NetworkBouncingBallsPhase.Complete:
-                    return "Two rounds complete. Final placement awards " +
-                           MinigameRewardRules.FinalPlacementGoldSchedule +
-                           " gold.";
+                    return GameText.F("Two rounds complete. Final placement awards {0} gold.",
+                           MinigameRewardRules.FinalPlacementGoldSchedule);
                 default:
-                    return "Preparing Bouncing Balls...";
+                    return GameText.T("Preparing Bouncing Balls...");
             }
         }
 
@@ -3114,7 +3069,7 @@ namespace MazeParty.Multiplayer
         {
             if (sequenceMemory == null)
             {
-                return "SEQUENCE MEMORY";
+                return GameText.T("SEQUENCE MEMORY");
             }
 
             var round = Mathf.Clamp(
@@ -3124,23 +3079,20 @@ namespace MazeParty.Multiplayer
             switch (sequenceMemory.Phase)
             {
                 case NetworkSequenceMemoryPhase.Countdown:
-                    return "SEQUENCE MEMORY  -  COUNTDOWN";
+                    return GameText.T("SEQUENCE MEMORY  -  COUNTDOWN");
                 case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "SEQUENCE MEMORY  PROBLEM " + round +
-                           " / " + SequenceMemoryRules.RoundCount +
-                           "  -  WATCH";
+                    return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  WATCH",
+                           round, SequenceMemoryRules.RoundCount);
                 case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "SEQUENCE MEMORY  PROBLEM " + round +
-                           " / " + SequenceMemoryRules.RoundCount +
-                           "  -  INPUT";
+                    return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  INPUT",
+                           round, SequenceMemoryRules.RoundCount);
                 case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "SEQUENCE MEMORY  PROBLEM " + round +
-                           " / " + SequenceMemoryRules.RoundCount +
-                           "  -  ANSWER";
+                    return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  ANSWER",
+                           round, SequenceMemoryRules.RoundCount);
                 case NetworkSequenceMemoryPhase.Complete:
-                    return "SEQUENCE MEMORY COMPLETE";
+                    return GameText.T("SEQUENCE MEMORY COMPLETE");
                 default:
-                    return "SEQUENCE MEMORY";
+                    return GameText.T("SEQUENCE MEMORY");
             }
         }
 
@@ -3149,23 +3101,23 @@ namespace MazeParty.Multiplayer
         {
             if (sequenceMemory == null)
             {
-                return "Synchronizing the Sequence Memory game...";
+                return GameText.T("Synchronizing the Sequence Memory game...");
             }
 
             switch (sequenceMemory.Phase)
             {
                 case NetworkSequenceMemoryPhase.Countdown:
-                    return "Get ready. The NPC will play one shared A/S/D sequence.";
+                    return GameText.T("Get ready. The NPC will play one shared A/S/D sequence.");
                 case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return "Watch and listen: A is high, S is middle and D is low.";
+                    return GameText.T("Watch and listen: A is high, S is middle and D is low.");
                 case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return "Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.";
+                    return GameText.T("Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.");
                 case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return "The answer is visible. One mistake loses the torso; the second eliminates.";
+                    return GameText.T("The answer is visible. One mistake loses the torso; the second eliminates.");
                 case NetworkSequenceMemoryPhase.Complete:
-                    return "The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.";
+                    return GameText.T("The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.");
                 default:
-                    return "Preparing Sequence Memory...";
+                    return GameText.T("Preparing Sequence Memory...");
             }
         }
 
@@ -3174,21 +3126,21 @@ namespace MazeParty.Multiplayer
         {
             if (territoryPaint == null)
             {
-                return "Synchronizing the Territory Paint arena...";
+                return GameText.T("Synchronizing the Territory Paint arena...");
             }
 
             switch (territoryPaint.Phase)
             {
                 case NetworkTerritoryPaintPhase.Countdown:
-                    return "Get ready at your corner.";
+                    return GameText.T("Get ready at your corner.");
                 case NetworkTerritoryPaintPhase.Running:
-                    return "WASD moves and continuously paints a circular trail.";
+                    return GameText.T("WASD moves and continuously paints a circular trail.");
                 case NetworkTerritoryPaintPhase.RoundResult:
-                    return "Current owned area decides the final score.";
+                    return GameText.T("Current owned area decides the final score.");
                 case NetworkTerritoryPaintPhase.Complete:
-                    return "Territory Paint complete.";
+                    return GameText.T("Territory Paint complete.");
                 default:
-                    return "Preparing Territory Paint...";
+                    return GameText.T("Preparing Territory Paint...");
             }
         }
 
@@ -3196,7 +3148,7 @@ namespace MazeParty.Multiplayer
         {
             if (giftGrab == null)
             {
-                return "Synchronizing the Gift Grab arena...";
+                return GameText.T("Synchronizing the Gift Grab arena...");
             }
 
             var totalRounds =
@@ -3204,19 +3156,18 @@ namespace MazeParty.Multiplayer
             switch (giftGrab.Phase)
             {
                 case NetworkGiftGrabPhase.Countdown:
-                    return "Get ready. Ten gifts begin in the shared arena.";
+                    return GameText.T("Get ready. Ten gifts begin in the shared arena.");
                 case NetworkGiftGrabPhase.Running:
-                    return "WASD moves. Carry gifts home, throw while carrying, " +
-                           "or push while empty-handed. Three gifts drop every 15 seconds.";
+                    return GameText.T("WASD moves. Carry gifts home, throw while carrying, " +
+                           "or push while empty-handed. Three gifts drop every 15 seconds.");
                 case NetworkGiftGrabPhase.RoundResult:
-                    return "Stored gifts decide the round; gift ownership time breaks ties.";
+                    return GameText.T("Stored gifts decide the round; gift ownership time breaks ties.");
                 case NetworkGiftGrabPhase.Complete:
-                    return totalRounds +
-                           " rounds complete. Points, total stored gifts, " +
+                    return GameText.F("{0} rounds complete. Points, total stored gifts, " +
                            "final-round rank, then server player order " +
-                           "determine placement.";
+                           "determine placement.", totalRounds);
                 default:
-                    return "Preparing Gift Grab...";
+                    return GameText.T("Preparing Gift Grab...");
             }
         }
 
@@ -3233,8 +3184,8 @@ namespace MazeParty.Multiplayer
             SetActive(_reconnectOverlay, false);
             SetActive(_reticle, false);
             CloseItemShop();
-            SetText(_turnText, "TURN --");
-            SetText(_phaseText, "WAITING FOR 4 PLAYERS");
+            SetText(_turnText, GameText.T("TURN --"));
+            SetText(_phaseText, GameText.T("WAITING FOR 4 PLAYERS"));
             SetText(_phaseTimerText, "--:--");
             cameraDirector?.SetUiPointerVisible(true);
         }
@@ -3267,24 +3218,24 @@ namespace MazeParty.Multiplayer
         {
             switch (state)
             {
-                case BoardFlowState.TurnOverview: return "BOARD OVERVIEW";
-                case BoardFlowState.Descending: return "DESCENDING";
-                case BoardFlowState.Action: return "FIRST-PERSON ACTION";
-                case BoardFlowState.AscendingResolve: return "RESOLVING / ASCENDING";
-                case BoardFlowState.CombatResolve: return "COMBAT QUEUE";
-                case BoardFlowState.LandingEffectResolve: return "LANDING EFFECTS";
-                case BoardFlowState.MinigameIntroReady: return "MINIGAME READY";
-                case BoardFlowState.MinigameLoading: return "LOADING MINIGAME";
-                case BoardFlowState.MinigamePlaying: return "MINIGAME";
-                case BoardFlowState.SkippedResult: return "MINIGAME RESULTS";
-                case BoardFlowState.MatchComplete: return "MATCH COMPLETE";
+                case BoardFlowState.TurnOverview: return GameText.T("BOARD OVERVIEW");
+                case BoardFlowState.Descending: return GameText.T("DESCENDING");
+                case BoardFlowState.Action: return GameText.T("FIRST-PERSON ACTION");
+                case BoardFlowState.AscendingResolve: return GameText.T("RESOLVING / ASCENDING");
+                case BoardFlowState.CombatResolve: return GameText.T("COMBAT QUEUE");
+                case BoardFlowState.LandingEffectResolve: return GameText.T("LANDING EFFECTS");
+                case BoardFlowState.MinigameIntroReady: return GameText.T("MINIGAME READY");
+                case BoardFlowState.MinigameLoading: return GameText.T("LOADING MINIGAME");
+                case BoardFlowState.MinigamePlaying: return GameText.T("MINIGAME");
+                case BoardFlowState.MinigameResult: return GameText.T("MINIGAME RESULTS");
+                case BoardFlowState.MatchComplete: return GameText.T("MATCH COMPLETE");
                 default: return state.ToString().ToUpperInvariant();
             }
         }
 
         private static string MinigameName(ScheduledMinigameId minigame)
         {
-            return MinigameCatalog.GetDisplayName(minigame);
+            return GameText.T(MinigameCatalog.GetDisplayName(minigame));
         }
 
         private bool IsMinigameRevealPending(NetworkMatchState match)
@@ -3304,10 +3255,10 @@ namespace MazeParty.Multiplayer
 
             switch (avatar.LocalChoiceResolution)
             {
-                case ItemChoiceResolution.ItemSelected: return "ITEM ACTIVE";
-                case ItemChoiceResolution.DoNotUse: return "DO NOT USE";
-                case ItemChoiceResolution.TimedOut: return "TIMEOUT / NO ITEM";
-                case ItemChoiceResolution.Pending: return "PENDING";
+                case ItemChoiceResolution.ItemSelected: return GameText.T("ITEM ACTIVE");
+                case ItemChoiceResolution.DoNotUse: return GameText.T("DO NOT USE");
+                case ItemChoiceResolution.TimedOut: return GameText.T("TIMEOUT / NO ITEM");
+                case ItemChoiceResolution.Pending: return GameText.T("PENDING");
                 default: return "--";
             }
         }
@@ -3316,10 +3267,10 @@ namespace MazeParty.Multiplayer
         {
             switch (state)
             {
-                case PlayerBoardActionState.Dice: return "DICE";
-                case PlayerBoardActionState.Moving: return "MOVE";
-                case PlayerBoardActionState.Arrived: return "ARRIVED";
-                case PlayerBoardActionState.Fighting: return "FIGHT";
+                case PlayerBoardActionState.Dice: return GameText.T("DICE");
+                case PlayerBoardActionState.Moving: return GameText.T("MOVE");
+                case PlayerBoardActionState.Arrived: return GameText.T("ARRIVED");
+                case PlayerBoardActionState.Fighting: return GameText.T("FIGHT");
                 default: return string.Empty;
             }
         }

@@ -72,84 +72,84 @@ namespace MazeParty.Gameplay.Minigames
         {
             new MinigameDefinition(
                 ScheduledMinigameId.Minefield,
-                "MINEFIELD",
+                GameText.N("MINEFIELD"),
                 MinefieldRules.RoundCount,
                 40f,
                 "Minefield",
                 new Color(0.12f, 0.58f, 0.42f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.WrongWay,
-                "WRONG WAY",
+                GameText.N("WRONG WAY"),
                 WrongWayRules.RoundCount,
                 60f,
                 "WrongWay",
                 new Color(0.95f, 0.42f, 0.12f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.RedLightGreenLight,
-                "RED LIGHT / GREEN LIGHT",
+                GameText.N("RED LIGHT / GREEN LIGHT"),
                 RedLightGreenLightRules.RoundCount,
                 60f,
                 "RedLightGreenLight",
                 new Color(0.84f, 0.16f, 0.2f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.StableFooting,
-                "STABLE FOOTING",
+                GameText.N("STABLE FOOTING"),
                 StableFootingRules.RoundCount,
                 60f,
                 "StableFooting",
                 new Color(0.2f, 0.7f, 0.86f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BalloonBlow,
-                "BALLOON BLOW",
+                GameText.N("BALLOON BLOW"),
                 BalloonBlowRules.RoundCount,
                 30f,
                 "BalloonBlow",
                 new Color(0.94f, 0.28f, 0.62f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.GiftGrab,
-                "GIFT GRAB",
+                GameText.N("GIFT GRAB"),
                 GiftGrabRules.RoundCount,
                 60f,
                 "GiftGrab",
                 new Color(0.72f, 0.36f, 0.92f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.TerritoryPaint,
-                "TERRITORY PAINT",
+                GameText.N("TERRITORY PAINT"),
                 TerritoryPaintRules.RoundCount,
                 (float)TerritoryPaintRules.RoundSeconds,
                 "TerritoryPaint",
                 new Color(0.16f, 0.72f, 0.68f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.TagChase,
-                "TAG CHASE",
+                GameText.N("TAG CHASE"),
                 TagChaseRules.RoundCount,
                 (float)TagChaseRules.RoundSeconds,
                 "TagChase",
                 new Color(0.94f, 0.18f, 0.28f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.Race,
-                "RACE",
+                GameText.N("RACE"),
                 RaceRules.RoundCount,
                 (float)RaceRules.RoundSeconds,
                 "Race",
                 new Color(0.98f, 0.64f, 0.12f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.SequenceMemory,
-                "SEQUENCE MEMORY",
+                GameText.N("SEQUENCE MEMORY"),
                 SequenceMemoryRules.RoundCount,
                 (float)SequenceMemoryRules.InputWindowSeconds,
                 "SequenceMemory",
                 new Color(0.48f, 0.36f, 0.94f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BouncingBalls,
-                "BOUNCING BALLS",
+                GameText.N("BOUNCING BALLS"),
                 BouncingBallsRules.RoundCount,
                 (float)BouncingBallsRules.RoundSeconds,
                 "BouncingBalls",
                 new Color(0.26f, 0.66f, 0.92f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BombPassing,
-                "BOMB PASSING",
+                GameText.N("BOMB PASSING"),
                 BombPassingRules.RoundCount,
                 // Metadata only: one bomb's maximum fuse, not a match limit.
                 (float)BombPassingRules.MaximumFuseSeconds,
@@ -157,21 +157,21 @@ namespace MazeParty.Gameplay.Minigames
                 new Color(0.95f, 0.55f, 0.11f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.SnowySpin,
-                "SNOWY SPIN",
+                GameText.N("SNOWY SPIN"),
                 SnowySpinRules.RoundCount,
                 (float)SnowySpinRules.RoundDurationSeconds,
                 "SnowySpin",
                 new Color(0.62f, 0.83f, 0.98f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.ArenaCombat,
-                "ARENA COMBAT",
+                GameText.N("ARENA COMBAT"),
                 1,
                 60f,
                 "ArenaCombat",
                 new Color(0.87f, 0.22f, 0.2f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.CliffBarrage,
-                "CLIFF BARRAGE",
+                GameText.N("CLIFF BARRAGE"),
                 CliffBarrageRules.RoundCount,
                 (float)CliffBarrageRules.RoundDurationSeconds,
                 "CliffBarrage",
@@ -186,8 +186,8 @@ namespace MazeParty.Gameplay.Minigames
             return TryGetDefinition(minigame, out var definition)
                 ? definition.DisplayName
                 : minigame == ScheduledMinigameId.Skip
-                    ? "SKIP"
-                    : "UNKNOWN";
+                    ? GameText.N("SKIP")
+                    : GameText.N("UNKNOWN");
         }
 
         public static bool IsRegistered(ScheduledMinigameId minigame)

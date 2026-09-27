@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -14,7 +15,7 @@ namespace MazeParty.Multiplayer
             Id = id;
             if (goldLabel != null)
             {
-                goldLabel.text = "+" + gold + " GOLD\nRMB";
+                goldLabel.text = GameText.F("+{0} GOLD\nRMB", gold);
             }
         }
 

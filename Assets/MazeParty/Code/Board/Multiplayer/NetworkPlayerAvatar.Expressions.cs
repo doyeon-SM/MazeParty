@@ -40,8 +40,8 @@ namespace MazeParty.Multiplayer
         private void TickHandGestures()
         {
             if (IsServer && (!CanUseHandGestures || GestureNow >= _handGestureEndsAt.Value)) CancelHandGestureOnServer();
-            if (IsOwner && ActiveHandGesture != 0 && !HandEmoteWheelView.BlocksPointerInput && Mouse.current != null &&
-                (Mouse.current.leftButton.wasPressedThisFrame || Mouse.current.rightButton.wasPressedThisFrame)) CancelHandGestureRpc();
+            if (IsOwner && ActiveHandGesture != 0 && !HandEmoteWheelView.BlocksPointerInput && LocalMouse != null &&
+                (LocalMouse.leftButton.wasPressedThisFrame || LocalMouse.rightButton.wasPressedThisFrame)) CancelHandGestureRpc();
             _avatarVisual?.SetHandGesture(ActiveHandGesture);
         }
     }

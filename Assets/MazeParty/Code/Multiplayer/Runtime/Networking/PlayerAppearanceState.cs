@@ -21,14 +21,14 @@ namespace MazeParty.Multiplayer
 
         private static readonly string[] DisplayNames =
         {
-            "Red",
-            "Orange",
-            "Yellow",
-            "Green",
-            "Blue",
-            "Indigo",
-            "Purple",
-            "Black"
+            GameText.N("Red"),
+            GameText.N("Orange"),
+            GameText.N("Yellow"),
+            GameText.N("Green"),
+            GameText.N("Blue"),
+            GameText.N("Indigo"),
+            GameText.N("Purple"),
+            GameText.N("Black")
         };
 
         public static int Count => Colors.Length;

@@ -28,11 +28,11 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(flow.TryBeginMinigame(21d), Is.True);
                 Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
                 Assert.That(flow.TryCompleteMinigame(22d), Is.True);
-                Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameResult));
                 Assert.That(flow.GetStateRemaining(22d), Is.EqualTo(3d));
 
                 flow.Tick(24.999d);
-                Assert.That(flow.State, Is.EqualTo(BoardFlowState.SkippedResult));
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameResult));
 
                 flow.Tick(25d);
                 Assert.That(flow.State, Is.EqualTo(testCase.ExpectedState));
@@ -80,7 +80,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(playingFlow.IsPaused, Is.False);
             Assert.That(
                 playingFlow.State,
-                Is.EqualTo(BoardFlowState.SkippedResult));
+                Is.EqualTo(BoardFlowState.MinigameResult));
         }
 
         private static BoardFlowStateMachine AdvanceNormallyToMinigameIntro(

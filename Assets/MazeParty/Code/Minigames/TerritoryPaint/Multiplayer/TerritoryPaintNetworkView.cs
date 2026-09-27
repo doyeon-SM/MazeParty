@@ -138,7 +138,7 @@ namespace MazeParty.Multiplayer
                 state != null && state.IsSpawned &&
                 match != null && selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
-                 match.FlowState == BoardFlowState.SkippedResult);
+                 match.FlowState == BoardFlowState.MinigameResult);
             var shouldShowHud =
                 shouldShowWorld &&
                 match.FlowState == BoardFlowState.MinigamePlaying;
@@ -269,7 +269,7 @@ namespace MazeParty.Multiplayer
             visual.EnsureBuilt();
             visual.SetOwnerFirstPerson(false);
             visual.SetBodyColor(FallbackPlayerColors[slot]);
-            visual.SetDisplayName("PLAYER " + (slot + 1));
+            visual.SetDisplayName(GameText.F("PLAYER {0}", slot + 1));
             visual.SetEliminated(false);
             DisableGeneratedHitColliders(runnerObject);
             return new RunnerView(runnerObject.transform, visual);
@@ -360,7 +360,7 @@ namespace MazeParty.Multiplayer
                         appearance.HatId);
                     runner.Visual.SetDisplayName(
                         string.IsNullOrWhiteSpace(avatar.DisplayName)
-                            ? "PLAYER " + (slot + 1)
+                            ? GameText.F("PLAYER {0}", slot + 1)
                             : avatar.DisplayName);
                 }
             }
@@ -411,7 +411,7 @@ namespace MazeParty.Multiplayer
                     avatar != null &&
                     !string.IsNullOrWhiteSpace(avatar.DisplayName)
                         ? avatar.DisplayName
-                        : "PLAYER " + (slot + 1);
+                        : GameText.F("PLAYER {0}", slot + 1);
                 hud.PlayerRows[slot].text =
                     (slot == _localSlot ? "> " : string.Empty) +
                     displayName + "   " +

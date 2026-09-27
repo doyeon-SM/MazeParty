@@ -13,10 +13,10 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button cancelButton;
         [SerializeField] private Text statusText;
         [SerializeField] private Text noticeText;
-        [SerializeField] private string playerFormat = "P{0}  {1}";
-        [SerializeField] private string castingFormat = "POSITION SWAP  {0:0.0}s / ACTION LOCKED";
-        [SerializeField] private string cloakText = "CLOAK ACTIVE / ENDS BEFORE COMBAT";
-        [SerializeField] private string[] noticeFormats = { "", "Position exchanged with P{0}.", "P{0} exchanged positions with you!", "Hit! Position swap cancelled; item consumed.", "Position swap cancelled; item consumed.", "That player is unavailable." };
+        [SerializeField] private string playerFormat = GameText.N("P{0}  {1}");
+        [SerializeField] private string castingFormat = GameText.N("POSITION SWAP  {0:0.0}s / ACTION LOCKED");
+        [SerializeField] private string cloakText = GameText.N("CLOAK ACTIVE / ENDS BEFORE COMBAT");
+        [SerializeField] private string[] noticeFormats = { "", GameText.N("Position exchanged with P{0}."), GameText.N("P{0} exchanged positions with you!"), GameText.N("Hit! Position swap cancelled; item consumed."), GameText.N("Position swap cancelled; item consumed."), GameText.N("That player is unavailable.") };
         public static BoardUtilityItemView Instance { get; private set; }
         public static bool IsTargetPickerOpen => Instance != null && Instance.targetPanel != null && Instance.targetPanel.activeSelf;
         private NetworkPlayerAvatar _local;
@@ -56,10 +56,10 @@ namespace MazeParty.Multiplayer
                 Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Close();
             if (Mouse.current == null || !Mouse.current.leftButton.isPressed) _awaitOpeningRelease = false;
             if (targetPanel.activeSelf) RefreshTargets(match);
-            statusText.text = _local.IsSwapping ? string.Format(castingFormat, _local.LocalSwapRemaining) : _local.IsCloaked ? cloakText : "";
+            statusText.text = _local.IsSwapping ? GameText.F(castingFormat, _local.LocalSwapRemaining) : _local.IsCloaked ? GameText.T(cloakText) : "";
             int notice = (int)_local.LocalUtilityNotice;
             noticeText.text = Time.unscaledTime < _local.LocalUtilityNoticeUntil && notice > 0 && notice < noticeFormats.Length
-                ? string.Format(noticeFormats[notice], _local.LocalUtilityNoticeSlot + 1) : "";
+                ? GameText.F(noticeFormats[notice], _local.LocalUtilityNoticeSlot + 1) : "";
         }
         private void RefreshTargets(NetworkMatchState match)
         {
@@ -68,7 +68,7 @@ namespace MazeParty.Multiplayer
                 var target = match.GetAvatarForSlot(slot);
                 targetButtons[slot].gameObject.SetActive(slot != _local.AssignedSlot);
                 targetButtons[slot].interactable = !_awaitOpeningRelease && NetworkPlayerAvatar.IsValidSwapTarget(target);
-                targetLabels[slot].text = string.Format(playerFormat, slot + 1, target != null ? target.DisplayName : "--");
+                targetLabels[slot].text = GameText.F(playerFormat, slot + 1, target != null ? target.DisplayName : "--");
             }
         }
     }

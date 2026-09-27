@@ -18,6 +18,8 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private AwardCeremonyCanvasBindings bindings;
 
+        private readonly FinalRankRow[] _finalRows =
+            new FinalRankRow[MultiplayerConstants.MaxPlayers];
         private NetworkPlayerAvatar _localAvatar;
         private AwardCeremonyPhase _observedPhase = AwardCeremonyPhase.None;
         private int _observedRevision = -1;
@@ -57,12 +59,23 @@ namespace MazeParty.Multiplayer
             var active = match != null &&
                          match.IsSpawned &&
                          match.IsAwardCeremonyActive;
+            if (active)
+            {
+                // After "clean up board" this player is in the waiting room;
+                // the others may still be looking at the ranking.
+                ResolveLocalAvatar();
+                active = _localAvatar == null ||
+                         !match.IsBackInWaitingRoomDuringCeremony(
+                             _localAvatar.AssignedSlot);
+            }
+
             SetCanvasVisible(active);
             if (!active || bindings == null ||
                 !bindings.HasRequiredReferences)
             {
                 _observedPhase = AwardCeremonyPhase.None;
                 _observedRevision = -1;
+                Array.Clear(_finalRows, 0, _finalRows.Length);
                 return;
             }
 
@@ -133,9 +146,9 @@ namespace MazeParty.Multiplayer
         {
             var category = match.GetCeremonyAwardCategory(awardIndex);
             bindings.AwardStepText.text =
-                "BONUS KEY AWARD " + (awardIndex + 1) + " / 2";
+                GameText.F("BONUS KEY AWARD {0} / 2", awardIndex + 1);
             bindings.AwardCategoryText.text =
-                MatchAwardRules.GetDisplayName(category);
+                GameText.T(MatchAwardRules.GetDisplayName(category));
             bindings.AwardValueText.text =
                 FormatWinningValue(
                     category,
@@ -143,12 +156,12 @@ namespace MazeParty.Multiplayer
             bindings.AwardWinnerText.text = BuildWinnerNames(
                 match,
                 match.GetCeremonyAwardWinnerMask(awardIndex));
-            bindings.AwardRewardText.text = "+1 KEY EACH";
+            bindings.AwardRewardText.text = GameText.T("+1 KEY EACH");
         }
 
         private void RefreshFinalRanks(NetworkMatchState match)
         {
-            bindings.FinalTitleText.text = "FINAL RANKING";
+            bindings.FinalTitleText.text = GameText.T("FINAL RANKING");
             var slots = new List<int>(MultiplayerConstants.MaxPlayers);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
@@ -165,37 +178,54 @@ namespace MazeParty.Multiplayer
             {
                 var slot = slots[row];
                 var avatar = match.GetAvatarForSlot(slot);
-                var name = avatar != null &&
-                           !string.IsNullOrWhiteSpace(avatar.DisplayName)
-                    ? avatar.DisplayName
-                    : "Player " + (slot + 1);
+                if (avatar != null)
+                {
+                    _finalRows[slot] = new FinalRankRow(
+                        avatar.DisplayName,
+                        avatar.KeyCount,
+                        avatar.Gold,
+                        avatar.MinigameWins);
+                }
+
+                // A player who already left the room keeps the row they had.
+                var cached = _finalRows[slot];
+                var name = cached.Known &&
+                           !string.IsNullOrWhiteSpace(cached.DisplayName)
+                    ? cached.DisplayName
+                    : GameText.F("Player {0}", slot + 1);
                 var rank = match.GetFinalCeremonyRank(slot);
-                var keys = avatar != null ? avatar.KeyCount : 0;
-                var gold = avatar != null ? avatar.Gold : 0;
-                var wins = avatar != null ? avatar.MinigameWins : 0;
-                bindings.FinalRankTexts[row].text =
-                    "#" + rank + "  " + name + "     " +
-                    keys + " KEY  /  " + gold + " GOLD  /  " +
-                    wins + " WIN" + (wins == 1 ? string.Empty : "S");
+                var keys = cached.Keys;
+                var gold = cached.Gold;
+                var wins = cached.Wins;
+                bindings.FinalRankTexts[row].text = wins == 1
+                    ? GameText.F(
+                        "#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WIN",
+                        rank, name, keys, gold, wins)
+                    : GameText.F(
+                        "#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WINS",
+                        rank, name, keys, gold, wins);
             }
         }
 
         private void RefreshCountdownAndInteraction(NetworkMatchState match)
         {
-            if (match.IsReconnectPaused)
+            if (match.IsSimulationSuspended)
             {
+                var reconnect = match.IsReconnectPaused;
                 bindings.LeaveRoomButton.interactable = false;
                 if (match.CeremonyPhase == AwardCeremonyPhase.BonusAwardOne ||
                     match.CeremonyPhase == AwardCeremonyPhase.BonusAwardTwo)
                 {
-                    bindings.AwardRewardText.text =
-                        "CEREMONY PAUSED  -  WAITING FOR PLAYER";
+                    bindings.AwardRewardText.text = reconnect
+                        ? GameText.T("CEREMONY PAUSED  -  WAITING FOR PLAYER")
+                        : GameText.T("CEREMONY PAUSED");
                 }
                 else
                 {
-                    bindings.InputLockText.text = "CEREMONY PAUSED";
-                    bindings.ReturnStatusText.text =
-                        "Waiting for the disconnected player to return.";
+                    bindings.InputLockText.text = GameText.T("CEREMONY PAUSED");
+                    bindings.ReturnStatusText.text = reconnect
+                        ? GameText.T("Waiting for the disconnected player to return.")
+                        : GameText.T("The game is paused.");
                 }
                 return;
             }
@@ -206,11 +236,11 @@ namespace MazeParty.Multiplayer
                     0,
                     (int)Math.Ceiling(match.CeremonyPhaseRemaining));
                 bindings.InputLockText.text =
-                    "WINNER REVEAL  -  CONTROLS UNLOCK IN " + seconds;
+                    GameText.F("WINNER REVEAL  -  CONTROLS UNLOCK IN {0}", seconds);
                 bindings.LeaveRoomButton.interactable = false;
-                bindings.LeaveRoomButtonText.text = "LEAVE ROOM";
+                bindings.LeaveRoomButtonText.text = GameText.T("CLEAN UP BOARD");
                 bindings.ReturnStatusText.text =
-                    "The first-place podium is in the spotlight.";
+                    GameText.T("The first-place podium is in the spotlight.");
                 return;
             }
 
@@ -226,16 +256,17 @@ namespace MazeParty.Multiplayer
             var localReady = _localAvatar != null &&
                              match.IsCeremonyReturnReady(
                                  _localAvatar.AssignedSlot);
-            bindings.InputLockText.text = "CEREMONY COMPLETE";
+            bindings.InputLockText.text = GameText.T("CEREMONY COMPLETE");
             bindings.LeaveRoomButton.interactable =
                 match.CanSubmitCeremonyReturn && !localReady;
             bindings.LeaveRoomButtonText.text = localReady
-                ? "WAITING..."
-                : "LEAVE ROOM";
+                ? GameText.T("WAITING...")
+                : GameText.T("CLEAN UP BOARD");
             bindings.ReturnStatusText.text =
-                "Waiting for players  " +
-                match.CeremonyReturnReadyCount + " / " +
-                MultiplayerConstants.MaxPlayers;
+                GameText.F(
+                    "Waiting for players  {0} / {1}",
+                    match.CeremonyReturnReadyCount,
+                    match.CeremonyReturnRequiredCount);
         }
 
         private void RequestReturnToLobby()
@@ -273,11 +304,11 @@ namespace MazeParty.Multiplayer
                 names.Add(avatar != null &&
                           !string.IsNullOrWhiteSpace(avatar.DisplayName)
                     ? avatar.DisplayName
-                    : "Player " + (slot + 1));
+                    : GameText.F("Player {0}", slot + 1));
             }
             return names.Count > 0
                 ? string.Join("  +  ", names)
-                : "NO WINNER";
+                : GameText.T("NO WINNER");
         }
 
         private static string FormatWinningValue(
@@ -288,15 +319,21 @@ namespace MazeParty.Multiplayer
             {
                 case MatchAwardCategory.PeakGoldHeld:
                 case MatchAwardCategory.TotalGoldEarned:
-                    return value + " GOLD";
+                    return GameText.F("{0} GOLD", value);
                 case MatchAwardCategory.MinigameWins:
-                    return value + " WIN" + (value == 1 ? string.Empty : "S");
+                    return value == 1
+                        ? GameText.F("{0} WIN", value)
+                        : GameText.F("{0} WINS", value);
                 case MatchAwardCategory.MinigameLastPlaces:
-                    return value + " LAST PLACE" + (value == 1 ? string.Empty : "S");
+                    return value == 1
+                        ? GameText.F("{0} LAST PLACE", value)
+                        : GameText.F("{0} LAST PLACES", value);
                 case MatchAwardCategory.ItemUses:
-                    return value + " ITEM USE" + (value == 1 ? string.Empty : "S");
+                    return value == 1
+                        ? GameText.F("{0} ITEM USE", value)
+                        : GameText.F("{0} ITEM USES", value);
                 default:
-                    return value + " DAMAGE";
+                    return GameText.F("{0} DAMAGE", value);
             }
         }
 
@@ -334,6 +371,25 @@ namespace MazeParty.Multiplayer
             {
                 bindings.RootRaycaster.enabled = visible;
             }
+        }
+
+        /// <summary>Last seen final-ranking values of one seat.</summary>
+        private readonly struct FinalRankRow
+        {
+            public FinalRankRow(string displayName, int keys, int gold, int wins)
+            {
+                Known = true;
+                DisplayName = displayName;
+                Keys = keys;
+                Gold = gold;
+                Wins = wins;
+            }
+
+            public bool Known { get; }
+            public string DisplayName { get; }
+            public int Keys { get; }
+            public int Gold { get; }
+            public int Wins { get; }
         }
     }
 }

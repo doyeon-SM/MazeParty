@@ -5,7 +5,14 @@ namespace MazeParty.Multiplayer
         Ignore,
         PauseForReconnect,
         QueueLobbyCleanup,
-        DeferCleanupUntilLobby
+        DeferCleanupUntilLobby,
+
+        /// <summary>
+        /// The final ranking is locked: the player left the room for good. The
+        /// remaining players keep their ceremony and are not paused; the seat
+        /// is cleaned up once the room is back in the lobby phase.
+        /// </summary>
+        LeaveCompletedMatch
     }
 
     /// <summary>
@@ -17,7 +24,8 @@ namespace MazeParty.Multiplayer
         public static RemoteDisconnectDisposition GetRemoteDisconnectDisposition(
             bool remoteClientLost,
             bool lobbyPhase,
-            bool completedMatchReturnInProgress)
+            bool completedMatchReturnInProgress,
+            bool finalRankingLocked = false)
         {
             if (!remoteClientLost)
             {
@@ -27,9 +35,27 @@ namespace MazeParty.Multiplayer
             {
                 return RemoteDisconnectDisposition.QueueLobbyCleanup;
             }
-            return completedMatchReturnInProgress
-                ? RemoteDisconnectDisposition.DeferCleanupUntilLobby
+            if (completedMatchReturnInProgress)
+            {
+                return RemoteDisconnectDisposition.DeferCleanupUntilLobby;
+            }
+            return finalRankingLocked
+                ? RemoteDisconnectDisposition.LeaveCompletedMatch
                 : RemoteDisconnectDisposition.PauseForReconnect;
+        }
+
+        /// <summary>
+        /// Host decision when a player leaves the session service while the
+        /// room is still in the playing phase. The fixed four-player session
+        /// normally ends; once the final ranking is locked, or the room is
+        /// already returning to the lobby, the match is over and the room
+        /// stays open for the others.
+        /// </summary>
+        public static bool KeepsRoomOnPlayingDeparture(
+            bool finalRankingLocked,
+            bool completedMatchReturnInProgress)
+        {
+            return finalRankingLocked || completedMatchReturnInProgress;
         }
     }
 }

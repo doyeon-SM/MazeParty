@@ -162,6 +162,14 @@ namespace MazeParty.Editor
             ConfigureToneSource(npcToneSource);
             var playerToneSource = root.AddComponent<AudioSource>();
             ConfigureToneSource(playerToneSource);
+            root.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
+                npcToneSource,
+                MazeParty.Gameplay.AudioChannel.Sfx,
+                npcToneSource.volume);
+            root.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
+                playerToneSource,
+                MazeParty.Gameplay.AudioChannel.Sfx,
+                playerToneSource.volume);
 
             var hudObject = PrefabUtility.InstantiatePrefab(
                 hudPrefab,

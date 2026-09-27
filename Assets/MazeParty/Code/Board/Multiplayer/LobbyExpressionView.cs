@@ -27,7 +27,7 @@ namespace MazeParty.Multiplayer
             var catalog = PlayerExpressionCatalog.Instance;
             if (catalog == null || catalog.Faces.Length == 0) return;
             var face = catalog.Faces[PlayerExpressionCatalog.SanitizeFace(lobby.SelectedExpression)];
-            preview.sprite = face.Sprite; title.text = face.Name;
+            preview.sprite = face.Sprite; title.text = GameText.T(face.Name);
         }
     }
 }

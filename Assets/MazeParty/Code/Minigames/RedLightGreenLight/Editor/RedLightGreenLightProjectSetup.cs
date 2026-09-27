@@ -156,6 +156,10 @@ namespace MazeParty.Editor
             cueAudioSource.playOnAwake = false;
             cueAudioSource.loop = false;
             cueAudioSource.spatialBlend = 0f;
+            cueAnchor.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
+                cueAudioSource,
+                MazeParty.Gameplay.AudioChannel.Sfx,
+                cueAudioSource.volume);
 
             // Save and register the scene before adding the NetworkObject so NGO
             // can assign a stable in-scene GlobalObjectIdHash.

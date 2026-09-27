@@ -162,7 +162,7 @@ namespace MazeParty.Multiplayer
 
             var showWorld = state != null && state.IsSpawned && selected &&
                             (match.FlowState == BoardFlowState.MinigamePlaying ||
-                             match.FlowState == BoardFlowState.SkippedResult);
+                             match.FlowState == BoardFlowState.MinigameResult);
             SetHudActive(showWorld &&
                          match.FlowState == BoardFlowState.MinigamePlaying);
             if (!showWorld)
@@ -248,7 +248,7 @@ namespace MazeParty.Multiplayer
                 visual.EnsureBuilt();
                 visual.SetOwnerFirstPerson(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
-                visual.SetDisplayName("Player " + (slot + 1));
+                visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 DisableBuiltInNameplate(root.transform);
                 DisableGeneratedHitColliders(root);
                 _players[slot] = new PlayerView(root.transform, visual);
@@ -421,7 +421,7 @@ namespace MazeParty.Multiplayer
                 var avatar = match.GetAvatarForSlot(slot);
                 var playerName = avatar != null
                     ? avatar.DisplayName
-                    : "Player " + (slot + 1);
+                    : GameText.F("Player {0}", slot + 1);
                 var color = avatar != null
                     ? avatar.Appearance.BodyColor
                     : FallbackPlayerColors[slot];
@@ -436,8 +436,8 @@ namespace MazeParty.Multiplayer
                     var stun = state.GetPlayerStunRemaining(slot);
                     label.SetContent(
                         playerName,
-                        stun > 0d ? "STUN " + stun.ToString("0.0") + "s" :
-                        carried >= 0 ? "CARRYING GIFT" : "",
+                        stun > 0d ? GameText.F("STUN {0:0.0}s", stun) :
+                        carried >= 0 ? GameText.T("CARRYING GIFT") : "",
                         slot == _localSlot,
                         color);
                     label.FaceCamera(outputCamera);
@@ -448,8 +448,8 @@ namespace MazeParty.Multiplayer
                 {
                     var label = baseLabels[slot];
                     label.SetContent(
-                        playerName + " BASE",
-                        state.GetStoredGiftCount(slot) + " GIFTS",
+                        GameText.F("{0} BASE", playerName),
+                        GameText.F("{0} GIFTS", state.GetStoredGiftCount(slot)),
                         slot == _localSlot,
                         color);
                     label.FaceCamera(outputCamera);
@@ -574,10 +574,11 @@ namespace MazeParty.Multiplayer
                 var avatar = match.GetAvatarForSlot(slot);
                 var playerName = avatar != null
                     ? avatar.DisplayName
-                    : "PLAYER " + (slot + 1);
-                hud.PlayerRows[slot].text =
-                    playerName.ToUpperInvariant() + "  ·  " +
-                    state.GetStoredGiftCount(slot) + " STORED";
+                    : GameText.F("PLAYER {0}", slot + 1);
+                hud.PlayerRows[slot].text = GameText.F(
+                    "{0}  ·  {1} STORED",
+                    playerName.ToUpperInvariant(),
+                    state.GetStoredGiftCount(slot));
                 hud.PlayerRows[slot].color = slot == _localSlot
                     ? hud.LocalPlayerRowColor
                     : hud.GetDefaultPlayerRowColor(slot);
@@ -588,25 +589,29 @@ namespace MazeParty.Multiplayer
         {
             if (_localSlot < 0)
             {
-                return "SPECTATING";
+                return GameText.T("SPECTATING");
             }
             var carried = state.GetCarriedGiftId(_localSlot);
-            return "YOU  ·  " + state.GetStoredGiftCount(_localSlot) +
-                   " STORED  ·  " +
-                   (carried >= 0 ? "CARRYING" : "HANDS FREE");
+            return GameText.F(
+                "YOU  ·  {0} STORED  ·  {1}",
+                state.GetStoredGiftCount(_localSlot),
+                carried >= 0
+                    ? GameText.T("CARRYING")
+                    : GameText.T("HANDS FREE"));
         }
 
         private string GetResultLabel()
         {
             if (_localSlot < 0)
             {
-                return "ROUND COMPLETE";
+                return GameText.T("ROUND COMPLETE");
             }
-            return "ROUND " +
-                   MinigameDisplayFormatter.ToOrdinal(
-                       state.GetRoundRank(_localSlot)) +
-                   "\n+" + state.GetRoundPoints(_localSlot) + " POINTS · " +
-                   state.GetStoredGiftCount(_localSlot) + " GIFTS";
+            return GameText.F(
+                "ROUND {0}\n+{1} POINTS · {2} GIFTS",
+                MinigameDisplayFormatter.ToOrdinal(
+                    state.GetRoundRank(_localSlot)),
+                state.GetRoundPoints(_localSlot),
+                state.GetStoredGiftCount(_localSlot));
         }
 
         private void SetWorldPresentationActive(bool active)

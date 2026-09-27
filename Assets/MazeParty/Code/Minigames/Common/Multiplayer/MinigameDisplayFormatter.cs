@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -18,10 +19,10 @@ namespace MazeParty.Multiplayer
         {
             return rank switch
             {
-                1 => "1ST",
-                2 => "2ND",
-                3 => "3RD",
-                4 => "4TH",
+                1 => GameText.T("1ST"),
+                2 => GameText.T("2ND"),
+                3 => GameText.T("3RD"),
+                4 => GameText.T("4TH"),
                 _ => "--"
             };
         }

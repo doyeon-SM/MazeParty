@@ -157,6 +157,9 @@
   복제한다. 준비 화면의 블록 탑은 미래 항목을 `???`로 숨기고 최상단만 공개한다.
 - 같은 경기를 재시작하거나 호스트 프로세스를 다시 실행해도 저장된 큐를 재사용한다.
   호스트가 명시적으로 방을 나가거나 15턴을 마치면 활성 큐를 정리한다.
+  (2026-09-27 변경) 저장된 큐는 참가자 4명의 계정 ID 구성(좌석 순서 무관)에 묶이며,
+  같은 4명일 때만 방이 달라도 재사용하고 한 명이라도 다르면 새로 만든다.
+  아래 "2026-09-27 미사용 씬 상수·시상식 개별 복귀·미니게임 순서 초기화" 절을 참고.
 - `MazeParty > Developer > Minigame Solo Tester`는 카탈로그의 미니게임을 1인 로컬로
   실행한다. 새 게임은 제작 씬과 런타임 컴포넌트를 재사용하도록 등록한다.
 - 솔로 테스터는 원래 열린 씬과 Play Mode 시작 씬을 종료 후 복구하며 제작 씬 에셋과
@@ -928,3 +931,236 @@
 - 검증 근거: 보조 폴더 `artifacts/expression-validation-2026-09-23/REPORT.md`,
   summary.json, 타임라인, UI 캡처 및 ExpressionPreview.png.
   검증 프로세스와 임시 Assets 코드를 모두 정리했다. 커밋·Notion 수정 없음.
+
+## 2026-09-26 공통 메뉴 UI·플레이어 일시정지·게임 나가기 — 구현 완료 (4인 실기 테스트 대기)
+
+### 사용자 요청
+
+- 로비·대기방·인게임에서 공통으로 쓰는 메뉴 UI를 제작한다. 임시 디자인은 위에서부터
+  사운드(전체/효과음/BGM) 슬라이더, 언어(영어/한국어/일본어/중국어) 드롭다운,
+  창모드/전체화면/전체화면 창모드 좌우 전환 선택기, 적용 버튼, 맨 아래 나가기 버튼이다.
+- 나가기 버튼은 로비(접속 화면)에서 `게임종료`, 대기방·인게임에서 `게임나가기`로 표시한다.
+- 인게임 메뉴에는 일시정지 요청 버튼을 추가한다. 요청하면 다른 플레이어에게
+  `[플레이어 이름]에 의해 일시정지되었습니다`를 표시하고 5분 타이머를 시작한다.
+  5분이 지나거나 요청자가 일시정지 해제 버튼을 누르면 해제한다.
+- 플레이어 연결 끊김 때 쓰는 기존 전역 일시정지를 공통으로 사용한다.
+- 인게임 `게임나가기`는 `정말 나가시겠습니까?` 확인 팝업을 띄운다. 이 팝업으로 나가면
+  다른 플레이어에게 `[플레이어]에 의해 게임이 종료되었습니다.`를 표시한다.
+
+### 확정 — 사용자 답변 1-B / 2-C / 3-A / 4-A / 5-C / 6-A / 7-A / 8-A / 9-추천안
+
+1. 문자열 테이블(영어/한국어/일본어/중국어 간체) 시스템을 만들고 기존 UI 문구까지 전부 이관한다.
+   중국어는 간체로 한다(추천안 적용).
+2. CJK 폰트는 보류한다. 폰트가 추가되기 전까지 영어만 정상 표시를 보장한다.
+3. 사운드 슬라이더는 즉시 반영(미리듣기)하고, 언어·화면 모드는 적용 버튼을 눌러야 반영한다.
+   적용하지 않고 메뉴를 닫으면 모든 항목을 마지막 적용값으로 되돌린다.
+4. 모든 화면에서 ESC로 메뉴를 열고 닫는다. 로비·대기방 HUD에는 톱니바퀴 버튼을 추가한다.
+   이모트 휠·아이템 창 등이 열려 있으면 ESC는 그 창을 먼저 닫는다.
+5. 일시정지 요청 횟수는 제한하지 않는다. 동시에 하나의 일시정지만 존재한다.
+6. 연결 끊김이 우선한다. 수동 일시정지 중 끊김이 생기면 기존 60초 재접속 규칙으로 전환하고,
+   복귀하면 남아 있던 수동 일시정지 시간이 이어서 흐른다. 재접속 대기 중에는 요청할 수 없다.
+7. 보드 전 구간, 미니게임 READY·플레이, 수상식 연출 중 요청할 수 있다. 미니게임 씬 로딩 중과
+   수상식 순위 공개 뒤 복귀 대기 단계에서는 요청할 수 없다.
+8. 인게임에서 나가면 남은 3명은 같은 방 대기방으로 함께 돌아간다(방 유지, 준비 초기화,
+   빈자리는 새 인원이 참가 가능). 호스트가 나가면 방이 사라지므로 모두 로비로 이동한다.
+   종료 알림은 확인 버튼이 있는 팝업으로 표시한다(추천안 적용). 스스로 나간 경우 60초
+   재접속 대기 없이 바로 처리한다.
+9. 대기방의 기존 `Leave Session`·`Quit Game` 버튼은 제거하고 메뉴로 통합한다. 수상식의
+   `LEAVE ROOM` 버튼 문구는 실제 동작에 맞게 `대기방으로`로 바꾼다.
+
+### 추가 기준 (질문 없이 적용)
+
+- 설정은 PC별로 저장해 다음 실행에도 유지한다.
+- 화면 모드를 바꿀 때 해상도는 현재 모니터 기준으로 한다.
+- 인게임에서 메뉴를 열어도 게임은 계속 진행되고, 로컬 이동·시점 입력만 막는다.
+- 일시정지 중 요청자 화면에는 남은 시간과 해제 버튼, 다른 플레이어 화면에는 요청 문구와
+  남은 시간을 표시한다.
+
+### 현재 구조 (관련 부분)
+
+- 재접속 전역 정지는 `NetworkMatchState`의 `_reconnectPaused`/`_reconnectGraceEndsAt`(60초)와
+  `PauseForReconnectOnServer`/`ResumeAfterReconnectOnServer`가 보드 흐름·격투·보호 시간·
+  미니게임 런타임·수상식·열쇠 상점 연출을 함께 정지하고 재개한다.
+- Board 로드 시 LobbyCanvas 표시를 끄므로 인게임에는 나가기 수단이 없다.
+- 오디오 믹서·오디오 에셋이 없고, 로컬라이제이션 패키지·TextMeshPro·CJK 폰트가 없다(uGUI Text 사용).
+
+### 구현 결과 (2026-09-27)
+
+EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 하지 않았다.
+
+**공통 메뉴** — `Prefabs/Multiplayer/UI/GameMenuCanvas.prefab`
+(`GameMenuBindings` + `GameMenuView`, sortingOrder 1000). `OnlineBootstrap.unity`에 한 개만
+배치하며, Board·미니게임은 additive로 로드되므로 모든 화면에서 같은 인스턴스를 쓴다.
+- 생성·설치: `MazeParty/UI/Install Game Menu` (`GameMenuProjectSetup`). 프리팹이 없을 때만
+  기본 디자인을 만들고, 있으면 검증만 한다. `Rebuild Online Prototype`도 이 설치를 호출한다.
+- 같은 메뉴가 LobbyCanvas의 `Leave Session Button`·`Quit Game Button`을 제거했다.
+- 톱니바퀴 아이콘: `Art/UI/GearIcon.png`.
+- 메뉴 위치 판정: `OnlineSessionController.MenuContext`
+  (세션 없음 = Lobby / `NetworkMatchState` 스폰 또는 Playing 단계 = InGame / 그 외 WaitingRoom).
+- ESC 우선순위: 알림 팝업 → 확인 팝업 → 드롭다운 목록 → 메뉴 닫기. 메뉴가 닫혀 있으면
+  아이템 상점을 먼저 닫고, 직전 프레임에 이모트 휠·위치교환 대상 선택창이 열려 있었으면 그 ESC는 소비한다.
+- 입력 차단: `LocalInputGate`(Gameplay). 메뉴·팝업이 열리면 `NetworkPlayerAvatar`의
+  `LocalKeyboard`/`LocalMouse`가 null이 되어 중립 입력만 보내고, 닫힌 프레임까지 막는다.
+  커서는 `GameplayCameraDirector`·ArenaCombat·TagChase 뷰와 메뉴 LateUpdate가 강제로 풀어 준다.
+
+**설정 저장** — `GameSettings`(PlayerPrefs `MazeParty.Settings.*`). 시작 시 음량·언어를
+적용하고, 화면 모드는 창이 복원한 모드를 유지하다가 적용 버튼에서만 바꾼다(에디터에서는 생략).
+- 음량: 전체 = `AudioListener.volume`, 효과음/BGM = `AudioChannelSource`가 AudioSource마다
+  `기본 음량 × 채널 음량`으로 반영한다. 오디오 믹서는 쓰지 않는다.
+- 씬 AudioSource 6개(미니게임 큐 사운드)에 채널을 붙였다: `MazeParty/Audio/Assign Sound Channels`.
+  미니게임 ProjectSetup도 재생성 시 채널을 붙인다. 발소리는 효과음 음량을 곱한다.
+  BGM 음원은 아직 없어 BGM 슬라이더는 이후 추가될 BGM용이다.
+
+**플레이어 일시정지** — 재접속 정지와 같은 `SuspendSimulationOnServer`/`ResumeSimulationOnServer`를 쓴다.
+- 상태: `_playerPauseActive/Slot/EndsAt/HeldRemaining`. 규칙은 `PlayerPauseRules`(5분, 요청 가능 구간,
+  요청자만 해제, 재접속 중 타이머 보류 후 재개).
+- 표시 판정: 연출 쪽 "정지 중" 판정은 `IsSimulationSuspended`(재접속 또는 플레이어 정지),
+  재접속 전용 문구·시계는 `IsReconnectPaused`를 그대로 쓴다.
+- 배너: 요청자에게 "게임을 일시정지했습니다" + 남은 시간 + 해제 버튼, 다른 사람에게
+  "[이름]에 의해 일시정지되었습니다" + 남은 시간.
+
+**인게임 나가기** — 확인 팝업 → `RequestVoluntaryMatchLeave` → 서버 `HandleVoluntaryMatchLeaveOnServer`
+(`VoluntaryLeaveRules`).
+- 일반 플레이어가 나가면 서버가 먼저 대기방 복귀(`BeginMatchLobbyReturnOnServer()`)를 시작하고
+  알림 RPC를 보낸다. 나간 사람의 끊김은 60초 재접속 대기 없이 로비 정리로 처리된다.
+- 나간 본인은 알림 수신(최대 3초) 뒤 세션을 떠난다. 남은 사람은 알림 팝업을 보고 준비 상태가 해제된다.
+- 호스트가 나가면 알림 후 세션이 끝나 모두 로비로 이동한다.
+- 수상식 버튼 문구는 `BACK TO ROOM`(대기방으로)이다. (2026-09-27 변경: `CLEAN UP BOARD`(보드 정리하기).
+  최종 순위 공개 뒤의 퇴장은 남은 사람에게 종료 알림을 보내지 않는다. 아래 2026-09-27 절 참고)
+
+**다국어** — gettext 방식. 영어 원문이 키이고, 표는
+`Resources/MazeParty/Localization/StringTable.csv`(UTF-8 BOM, 열: `source,ko,ja,zh-Hans`,
+셀 안 줄바꿈은 `\n`)이다. 현재 618행이다.
+- 코드: `GameText.T("…")`는 고정 문구, `GameText.F("TURN {0}", n)`은 값이 들어가는 문구
+  (InvariantCulture), `GameText.N("…")`은 번역하지 않고 표 추출용으로만 표시한다(데이터·필드 초기값).
+  표에 없으면 영어로 표시한다.
+- 정적 프리팹 라벨: `LocalizedText`(uGUI)·`LocalizedTextMesh`(월드 TextMesh).
+  `MazeParty/Localization/Add Localized Labels To Prefabs`는 직렬화 참조가 없는 라벨에만 붙인다.
+  런타임 코드가 같은 라벨을 쓰면 그 코드가 소유권을 가진다.
+- 서버가 만들어 복제하는 착지 효과 문구는 `LandingEffectMessage`가 "원문 포맷 + 인자"로 보내고
+  각 클라이언트가 자기 언어로 포맷한다.
+- 계약 테스트 `StringTableContractTests`: 모든 `GameText.T/F/N` 리터럴·`LocalizedText` 원문·아이템·
+  미니게임 이름이 표에 있고, 세 언어의 자리표시자·줄바꿈 수가 원문과 같아야 한다.
+  새 문구를 추가하면 CSV에 행을 추가해야 테스트가 통과한다.
+- 폰트: 전용 CJK 폰트 없이 LegacyRuntime(Arial)을 쓴다. Windows에서는 OS 폰트 대체로
+  한국어가 표시되는 것을 에디터 미리보기로 확인했다. 다른 OS나 빌드의 표시는 보장하지 않으며,
+  출시 전 CJK 폰트 추가가 필요하다.
+- 제외: Dev 테스트베드·SoloTest·에디터 도구 문구, 로그·예외 메시지, 플레이어 이름,
+  나침반 기호(N/NE…)·숫자·기호.
+- 알려진 한계: 로비 상태줄처럼 이미 표시된 한 줄짜리 상태 문구는 다음에 갱신될 때 새 언어로 바뀐다.
+
+**새 테스트** — `PlayerPauseRulesTests`, `LocalizationRulesTests`(Gameplay), `GameMenuContractTests`,
+`StringTableContractTests`, `SoundChannelContractTests`. `UiPrefabPolicyTests`와
+`MultiplayerBootstrapTests`에 메뉴 프리팹을 등록했다.
+
+## 2026-09-27 보드 흐름 옛 TODO·상태 이름 정리 — 완료
+
+사용자 요청: 오래된 TODO(미니게임 선택·결과 정산, 턴 종료 전 보상 정산)와 상태 이름 불일치를 정리한다.
+확정 답변: 상태 이름만 변경(분리하지 않음), 결과 패널 오브젝트 이름도 변경, 에디터 문구·기본 미니게임 카메라 이름까지 정리.
+
+- `BoardFlowState.SkippedResult` → `MinigameResult`, `SkippedResultDurationSeconds` →
+  `MinigameResultDurationSeconds`. enum 숫자값(7)을 유지해 네트워크·직렬화 값은 그대로다.
+  이 상태는 스케줄 빈 칸(Skip, 보상 없음)과 실제 미니게임 결과(보상 정산 완료) 모두에서 3초간 유지된다.
+- `BoardFlowStateMachine`의 `TODO(BOARD-FLOW)` 2개를 실제 구조 설명으로 교체했다.
+  - 미니게임 선택: `HostMinigameSchedule`.
+  - 결과 정산: 각 `NetworkMatchState.TryComplete*OnServer`가 순위를 검증하고 `TryCompleteMinigame`을 부른 뒤
+    `SettleMinigamePlacementOnServer`로 골드·통계를 정산한다.
+  - 다음 턴 시작(`BeginNextTurn`)에서는 따로 정산하지 않는다.
+- 결과 패널 오브젝트: `MinigameResultCanvas.prefab`의 `SkippedResultPanel` → `MinigameResultPanel`.
+  - 옛 이름은 BoardCanvas에서 패널을 옮기던 마이그레이션 도구의 `LegacyBoardPanelName` 상수에만 남겼다
+    (`MinigameResultCanvasProjectSetup`, `MinefieldProjectSetup`).
+  - 계약 테스트는 BoardCanvas에 옛 이름과 새 이름 패널이 모두 없는지 확인한다.
+- 기본 미니게임 카메라 `CM_MinigamePlaceholder` → `CM_MinigameFallback`.
+  - 반영 위치: `BoardFlowProjectSetup`, Board.unity, BoardFlowTestbed.unity.
+  - 미니게임 씬이 자기 카메라를 등록하기 전까지 쓰는 기본 카메라다.
+- 에디터 셋업의 "Minigame selection is TODO..." 준비 안내 기본 문구와 Dev 시뮬레이터의 "Minigame TODO" 상태 문구를
+  현재 동작에 맞게 바꿨다.
+- 검증: 컴파일 오류 0, EditMode 테스트 293개 통과.
+
+## 2026-09-27 주사위 레거시 경로·구형 안내 문구 정리 — 완료
+
+사용자 요청: 주사위 관련 레거시 경로와 에디터 셋업의 구형 안내 문구를 정리한다.
+확정 답변: 죽은 코드 삭제와 주석 수정만 한다(내부 `Push` 명칭은 유지). 보드 HUD 셋업 기본 문구와 Dev 테스트베드 안내 문구를 정리하고,
+메뉴 이름의 `Prototype` 표기는 유지한다.
+
+- 삭제한 주사위 레거시 경로(호출하는 곳 없음):
+  - `NetworkPlayerAvatar.RequestRollRpc`
+  - 항상 거절하던 `NetworkMatchState.TryRollForAvatarOnServer`
+  - 호환용 `NetworkWorldDie.RequestPushFromLocalRay`
+- 굴림 경로 주석: 굴림은 소유자가 자기 월드 주사위를 조준하고 우클릭하는
+  `NetworkWorldDie.RequestRollFromLocalRay`(내부 RPC 이름 `RequestPushRpc`)뿐이다. 좌클릭은
+  `RequestNudgeFromLocalRay`로 살짝 미는 동작이다. 결과는 주사위 정지 이벤트만 `ApplyWorldDieResultOnServer`에
+  전달하고, 행동 시간 초과 때는 반쯤 굴린 더블 주사위만 마저 계산한다. 이 구조대로 주석을 바꿨다.
+- `BoardFlowProjectSetup` 기본 문구(프리팹을 새로 만들 때만 사용): `READY / SKIP` → `READY`,
+  `MINIGAME INTRO / READY` → `MINIGAME READY`, Minefield 전용 `MINEFIELD RULE IMAGE / ARTWORK PLACEHOLDER` →
+  `RULE IMAGE`(`MinefieldProjectSetup`도 같음). 이미 만들어진 BoardCanvas 프리팹 문구는 런타임에서 덮어쓰므로 그대로 두었다.
+- Dev 테스트베드(`BoardFlowLocalSimulator`) 안내: 없는 `SKIP ALL` 버튼 안내, `Result placeholder`,
+  `Concrete combat/effect is TODO` 문구를 실제 동작 설명으로 교체했다.
+- 검증: 컴파일 오류 0, EditMode 테스트 293개 통과.
+
+## 2026-09-27 미사용 씬 상수·시상식 개별 복귀·미니게임 순서 초기화 — 완료
+
+사용자 요청:
+- A5. 미사용 씬 상수 정리.
+- A6. 수상식 버튼 라벨을 "보드 정리하기"로 바꾼다. 복귀해 대기방으로 돌아온 플레이어는, 다른 플레이어가 시상식에 있어도 자유롭게 방을 나갈 수 있다.
+- A7. 미니게임 순서는 같은 플레이어가 다시 시작할 때만 쓰도록 저장한다. 다른 방에서 다른 플레이어와 새 게임을 시작하면 초기화한다.
+
+"질문이 있을까?"에는 질문 없이 아래 해석으로 진행했다.
+
+**A5 미사용 씬 상수**
+- `MultiplayerConstants`에서 쓰이지 않던 미니게임 씬 상수 9개와 `OnlineBootstrapScene`을 삭제했다.
+- 네트워크 코드가 이름으로 여는 씬은 `BoardScene`뿐이다. 미니게임 씬 이름은 `MinigameCatalog`가 관리한다.
+
+**A6 수상식 개별 복귀 — 버튼과 대기방 화면**
+- 버튼 라벨은 `CLEAN UP BOARD`(ko 보드 정리하기 / ja ボードを片付ける / zh 整理棋盘)이다.
+- 반영 위치: `AwardCeremonyView`, `AwardCeremonyProjectSetup` 기본값, `AwardCeremonyCanvas.prefab` 라벨.
+- 오브젝트·필드 이름(`Leave Room Button`, `leaveRoomButton`)은 유지했다.
+- 버튼을 누른 플레이어는 혼자 먼저 대기방 화면으로 넘어간다.
+  - 판정: `NetworkMatchState.IsBackInWaitingRoomDuringCeremony(slot)`. 복귀 대기 단계에서 준비 비트가 켜졌는지로 판단한다.
+  - 그 플레이어의 수상식 Canvas만 숨기고, `OnlineLobbyView` 패널과 안내 문구를 띄운다.
+  - 메뉴 컨텍스트는 `WaitingRoom`이 된다. 그래서 나가기는 확인창 없이 바로 방을 나가고, 일시정지 버튼은 없다.
+- NGO는 씬 언로드를 모든 클라이언트에 한꺼번에 동기화한다. 그래서 먼저 돌아간 사람도 Board 씬은 뒤에 로드된 상태다.
+  - 대기방 3D 공간과 READY는 방 전체 복귀 뒤에 쓸 수 있다.
+  - 대기방 공간이 보드 좌표와 겹치므로 로비 카메라는 켜지 않는다. 배경은 시상대 화면이다.
+
+**A6 최종 순위 공개 뒤의 퇴장 (`FinalPodiumLocked`·`AwaitingReturn`, `IsFinalRankingLocked`)**
+- 게스트가 나가는 경로는 세 가지다: 대기방 메뉴, 수상식 메뉴의 게임나가기, 연결 끊김.
+- 어느 경우든 남은 사람에게 "…에 의해 게임이 종료되었습니다" 알림이 가지 않는다. 60초 재접속 대기도, 방 전체 복귀도 없다.
+- 규칙:
+  - `VoluntaryLeaveRules` → `LeaveCompletedMatch`: 나간 본인에게만 `SendTo.Owner` RPC로 확인을 보낸다.
+  - `CompletedMatchReturnRules` → `LeaveCompletedMatch`.
+- 세션 서비스: 호스트는 원래 playing 단계에서 누가 나가면 방을 삭제했다.
+  - 이제 `IOnlineSessionProvider.KeepRoomOnPlayingDeparture`가 방을 유지할지 판단한다.
+  - 판단 규칙은 `CompletedMatchReturnRules.KeepsRoomOnPlayingDeparture`이며, 최종 순위 확정이나 로비 복귀 진행 중이면 방을 유지한다.
+  - 빈자리는 로비 복귀 뒤 다음 참가 때 다시 배정된다.
+- 서버의 `_awardCeremonyRemainingMask`(복제)는 접속한 좌석만 남기고, 한 번 빠진 좌석은 다시 넣지 않는다.
+  - `ShouldBeginLobbyReturn`은 남은 인원 전원이 버튼을 누르면 방 전체 복귀를 시작한다.
+  - 수상식 상태 줄 `Waiting for players {0} / {1}`의 분모도 남은 인원이다.
+  - 완료 경기 복귀는 더 이상 4명 전원 접속을 요구하지 않는다. `requireAllPlayers` 인자와 해당 문구를 삭제했다.
+- 나간 사람의 순위 줄과 시상대 모습은 마지막으로 본 값(이름·열쇠·골드·승수·외형)을 유지한다.
+- 나간 사람이 건 일시정지는 바로 해제한다.
+- 호스트가 나가면 여전히 방이 닫힌다(호스트 이전 없음).
+- 자동 복귀 타임아웃은 요청 범위가 아니라서 넣지 않았다.
+
+**A7 미니게임 순서 저장 범위**
+- `MinigameScheduleRoster.CreateKey`는 계정 ID를 정렬한 뒤 Hash128로 만든다(좌석 순서 무관, ID 원문은 저장하지 않음).
+- `HostMinigameScheduleSession`은 활성 매치 키 옆에 로스터 키(`…ActiveMinigameSchedule.<프로필>.Roster`)를 PlayerPrefs에 저장한다.
+- 같은 4명이면 방이 달라도 재사용한다. 다르면 옛 파일을 지우고 새로 만든다.
+  - 지우기에 실패해도 경고만 남긴다.
+  - 로스터 키가 없던 이전 저장분은 재사용하지 않는다.
+- 네트워크 실패나 크래시로 끝나도 순서를 지우지 않는다(재시작용).
+- 그대로 지우는 경우: 15턴 완료, 호스트의 명시적 퇴장, 인게임 게임나가기.
+- 저장 순서를 읽지 못하면 이번 경기는 그대로 종료하되, 저장분을 지워 같은 4명의 다음 시작을 막지 않는다.
+
+**다국어·테스트·검증**
+- 다국어: 3행을 추가했다(`CLEAN UP BOARD`, 대기방 안내, 수상식 뒤 퇴장 상태). 쓰지 않게 된 2행은 삭제했다(`BACK TO ROOM`, 4명 전원 복귀 요구 문구).
+- 테스트 추가:
+  - `AwardCeremonyFlowRulesTests`: 남은 인원 복귀, 떠난 좌석 미복귀, 개별 대기방.
+  - `CompletedMatchReturnRulesTests`: 최종 순위 뒤 끊김, 방 유지 판단.
+  - `GameMenuContractTests`: 최종 순위 뒤 퇴장, 대기방 나가기.
+  - `MinigameScheduleTests`: 로스터 재사용과 초기화.
+- 별도 리뷰 에이전트가 찾은 문제는 모두 반영했다: 세션 서비스가 playing 중 퇴장 시 방을 삭제하던 문제, 저장 순서 손상 시 영구 차단, 떠난 좌석 표시, 상태 문구.
+- 검증: 기기 SHA 일치 102/102, 컴파일 오류 0, EditMode 테스트 307개 통과. 4인 실기 테스트는 하지 않았다.
+- 남은 확인:
+  - 실제 4인 세션에서 한 명이 먼저 보드 정리 후 방을 나가고 나머지가 복귀하는지.
+  - 복귀 시작 뒤 저장 실패로 `_completedMatchReturnQueued`가 남는 기존 경로. 이번 변경 전부터 있던 문제다.

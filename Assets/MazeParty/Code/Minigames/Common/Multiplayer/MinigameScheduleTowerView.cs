@@ -122,9 +122,10 @@ namespace MazeParty.Multiplayer
 
         private void Refresh(NetworkMatchState match, bool revealed)
         {
-            subtitle.text =
-                "TURN " + match.Turn + "  ·  " +
-                match.RemainingMinigameSlots + " BLOCKS LEFT";
+            subtitle.text = GameText.F(
+                "TURN {0}  ·  {1} BLOCKS LEFT",
+                match.Turn,
+                match.RemainingMinigameSlots);
 
             var visibleCount = Mathf.Clamp(
                 match.RemainingMinigameSlots,
@@ -202,7 +203,7 @@ namespace MazeParty.Multiplayer
 
         private static string DisplayName(ScheduledMinigameId minigame)
         {
-            return MinigameCatalog.GetDisplayName(minigame);
+            return GameText.T(MinigameCatalog.GetDisplayName(minigame));
         }
 
         private Color CurrentColor(

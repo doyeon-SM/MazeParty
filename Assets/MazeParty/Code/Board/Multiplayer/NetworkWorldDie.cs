@@ -383,9 +383,11 @@ namespace MazeParty.Multiplayer
         }
 
         /// <summary>
-        /// Entry point for a future local input raycaster. This RPC is callable on a
-        /// server-owned die, so the server resolves the sender back to its owned avatar
-        /// and rejects attempts against another slot.
+        /// Roll request from the owner's input: <see cref="NetworkPlayerAvatar"/> calls
+        /// this when the local player presses RMB while aiming at their own world die.
+        /// The RPC targets this server-owned die, so the server resolves the sender back
+        /// to its avatar, validates the ray against that avatar's eye and rejects other
+        /// slots. The settled face is the only source of the board roll result.
         /// </summary>
         public void RequestRollFromLocalRay(Ray worldRay)
         {
@@ -397,6 +399,9 @@ namespace MazeParty.Multiplayer
             RequestPushRpc(worldRay.origin, worldRay.direction);
         }
 
+        /// <summary>
+        /// LMB while aiming at the owner's die: a light reposition, never a roll.
+        /// </summary>
         public void RequestNudgeFromLocalRay(Ray worldRay)
         {
             if (!IsSpawned || !IsClient)
@@ -405,13 +410,6 @@ namespace MazeParty.Multiplayer
             }
 
             RequestNudgeRpc(worldRay.origin, worldRay.direction);
-        }
-
-        // Compatibility seam for existing prototype callers. A push is the
-        // authoritative roll action; a light reposition uses RequestNudgeFromLocalRay.
-        public void RequestPushFromLocalRay(Ray worldRay)
-        {
-            RequestRollFromLocalRay(worldRay);
         }
 
         public bool TryApplyPushOnServer(
@@ -461,7 +459,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput,
                 requester.HasResolvedItemChoice && !requester.IsSwapping,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
-                match.IsReconnectPaused,
+                match.IsSimulationSuspended,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
             var now = ServerNow;
             if (!_authority.TryBeginRoll(context, now, out rejectReason))
@@ -615,7 +613,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput,
                 requester.HasResolvedItemChoice && !requester.IsSwapping,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
-                match.IsReconnectPaused,
+                match.IsSimulationSuspended,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
             return true;
         }
@@ -1410,6 +1408,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        // "Push" is the authoritative roll action (the die is pushed from the eye ray).
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Everyone)]
         private void RequestPushRpc(
             Vector3 rayOrigin,

@@ -155,7 +155,7 @@ namespace MazeParty.Multiplayer
             if ((match.FlowState == BoardFlowState.MatchComplete &&
                  match.IsAwardCeremonyActive) ||
                 match.FlowState == BoardFlowState.MinigamePlaying ||
-                (match.FlowState == BoardFlowState.SkippedResult &&
+                (match.FlowState == BoardFlowState.MinigameResult &&
                  match.CurrentMinigame !=
                  MazeParty.Gameplay.Minigames.ScheduledMinigameId.Skip))
             {

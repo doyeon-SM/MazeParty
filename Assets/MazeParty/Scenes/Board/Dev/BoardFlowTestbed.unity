@@ -337,7 +337,7 @@ GameObject:
   - component: {fileID: 70126816}
   - component: {fileID: 70126817}
   m_Layer: 0
-  m_Name: CM_MinigamePlaceholder
+  m_Name: CM_MinigameFallback
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

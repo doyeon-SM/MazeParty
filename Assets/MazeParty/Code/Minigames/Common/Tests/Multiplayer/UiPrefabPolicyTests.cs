@@ -49,7 +49,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/Dev/BoardFlowTestTools.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"
+            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"
         };
 
         private static readonly string[] RequiredBindingTypeNames =
@@ -81,7 +82,8 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Gameplay.BoardFlowTestbed.BoardFlowTestToolsBindings",
             "MazeParty.Multiplayer.LobbyExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
-            "MazeParty.Multiplayer.HandEmoteWheelView"
+            "MazeParty.Multiplayer.HandEmoteWheelView",
+            "MazeParty.Multiplayer.GameMenuBindings"
         };
 
         private static readonly SceneUiContract[] SceneContracts =
@@ -89,7 +91,8 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity",
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
-                "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab"),
+                "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
+                "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",

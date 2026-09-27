@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 8979202317431292887}
   - component: {fileID: 4603213119343830014}
   - component: {fileID: 7722273255845017045}
+  - component: {fileID: 854119077109442273}
   m_Layer: 0
   m_Name: ResultMessage
   m_TagString: Untagged
@@ -260,6 +261,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: ROUND RESULTS
+--- !u!114 &854119077109442273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4980225878641487079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: ROUND RESULTS
 --- !u!1 &8110827294024717509
 GameObject:
   m_ObjectHideFlags: 0

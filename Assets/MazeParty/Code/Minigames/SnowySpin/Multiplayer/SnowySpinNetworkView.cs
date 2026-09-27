@@ -119,7 +119,7 @@ namespace MazeParty.Multiplayer
             var shouldShowWorld = state != null && state.IsSpawned &&
                 selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
-                 match.FlowState == BoardFlowState.SkippedResult);
+                 match.FlowState == BoardFlowState.MinigameResult);
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);

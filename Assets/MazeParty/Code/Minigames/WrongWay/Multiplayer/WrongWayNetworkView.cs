@@ -234,7 +234,7 @@ namespace MazeParty.Multiplayer
             var visual = runnerObject.AddComponent<PlayerAvatarVisual>();
             visual.EnsureBuilt();
             visual.SetBodyColor(FallbackPlayerColors[slot]);
-            visual.SetDisplayName("Player " + (slot + 1));
+            visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
             visual.SetOwnerFirstPerson(false);
 
             var colliders = runnerObject.GetComponentsInChildren<Collider>(true);
@@ -320,7 +320,8 @@ namespace MazeParty.Multiplayer
                 else
                 {
                     runner.Visual.SetBodyColor(FallbackPlayerColors[slot]);
-                    runner.Visual.SetDisplayName("Player " + (slot + 1));
+                    runner.Visual.SetDisplayName(
+                        GameText.F("Player {0}", slot + 1));
                 }
             }
         }
@@ -446,15 +447,15 @@ namespace MazeParty.Multiplayer
                                   !string.IsNullOrWhiteSpace(
                                       avatar.DisplayName)
                     ? avatar.DisplayName
-                    : "Player " + (slot + 1);
+                    : GameText.F("Player {0}", slot + 1);
                 var prefix = slot == _localSlot ? ">  " : "   ";
                 progressRows[slot].text =
                     prefix +
-                    displayName +
-                    "   STEP " +
-                    state.GetProgress(slot) +
-                    " / " +
-                    WrongWayRules.StepCount;
+                    GameText.F(
+                        "{0}   STEP {1} / {2}",
+                        displayName,
+                        state.GetProgress(slot),
+                        WrongWayRules.StepCount);
 
                 progressRows[slot].color = avatar != null
                     ? avatar.Appearance.BodyColor
@@ -467,12 +468,12 @@ namespace MazeParty.Multiplayer
             if (_localSlot < 0 ||
                 _localSlot >= WrongWayRules.PlayerCount)
             {
-                return "WAITING FOR LOCAL PLAYER";
+                return GameText.T("WAITING FOR LOCAL PLAYER");
             }
 
             if (state.IsPaused)
             {
-                return "PAUSED";
+                return GameText.T("PAUSED");
             }
 
             switch (state.Phase)
@@ -484,30 +485,30 @@ namespace MazeParty.Multiplayer
                 case NetworkWrongWayPhase.Running:
                     if (state.IsRecovering(_localSlot))
                     {
-                        return "WRONG!  GET UP...";
+                        return GameText.T("WRONG!  GET UP...");
                     }
 
                     if (state.GetProgress(_localSlot) >=
                         WrongWayRules.StepCount)
                     {
-                        return "FINISH!";
+                        return GameText.T("FINISH!");
                     }
 
                     return DirectionLabel(
                         state.GetCurrentDirection(_localSlot));
                 case NetworkWrongWayPhase.RoundResult:
-                    return "ROUND " +
-                           MinigameDisplayFormatter.ToOrdinal(
-                               state.GetRoundRank(_localSlot)) +
-                           "  ·  +" +
-                           state.GetRoundPoints(_localSlot) +
-                           " POINTS";
+                    return GameText.F(
+                        "ROUND {0}  ·  +{1} POINTS",
+                        MinigameDisplayFormatter.ToOrdinal(
+                            state.GetRoundRank(_localSlot)),
+                        state.GetRoundPoints(_localSlot));
                 case NetworkWrongWayPhase.Complete:
-                    return "FINAL " +
-                           MinigameDisplayFormatter.ToOrdinal(
-                               state.GetFinalRank(_localSlot));
+                    return GameText.F(
+                        "FINAL {0}",
+                        MinigameDisplayFormatter.ToOrdinal(
+                            state.GetFinalRank(_localSlot)));
                 default:
-                    return "GET READY";
+                    return GameText.T("GET READY");
             }
         }
 

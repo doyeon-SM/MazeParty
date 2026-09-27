@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
@@ -64,6 +65,14 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<byte>((byte)BoardActionEndReason.None);
         private readonly NetworkVariable<bool> _reconnectPaused = new NetworkVariable<bool>();
         private readonly NetworkVariable<double> _reconnectGraceEndsAt = new NetworkVariable<double>();
+        // Player-requested pause. It shares the reconnect suspension; while a
+        // disconnect pause takes precedence, the end time is zero and the
+        // remaining time is held in _playerPauseHeldRemaining.
+        private readonly NetworkVariable<bool> _playerPauseActive = new NetworkVariable<bool>();
+        private readonly NetworkVariable<int> _playerPauseSlot = new NetworkVariable<int>(-1);
+        private readonly NetworkVariable<double> _playerPauseEndsAt = new NetworkVariable<double>();
+        private readonly NetworkVariable<double> _playerPauseHeldRemaining =
+            new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedStateRemaining = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedActionRemaining = new NetworkVariable<double>();
         private readonly NetworkVariable<double> _pausedChoiceRemaining = new NetworkVariable<double>();
@@ -381,7 +390,27 @@ namespace MazeParty.Multiplayer
                 : 0d;
         public bool IsReconnectPaused => _reconnectPaused.Value;
         public bool IsKeyShopRevealActive => _keyShopRevealActive.Value;
-        public bool IsGlobalSimulationPaused => IsReconnectPaused || IsKeyShopRevealActive;
+        /// <summary>True while a player pause exists, including while a disconnect pause holds it.</summary>
+        public bool IsPlayerPauseActive => _playerPauseActive.Value;
+        /// <summary>True while players should see the player pause (a disconnect pause takes precedence).</summary>
+        public bool IsPlayerPaused => _playerPauseActive.Value && !_reconnectPaused.Value;
+        public int PlayerPauseSlot => _playerPauseActive.Value ? _playerPauseSlot.Value : -1;
+        public double PlayerPauseRemaining => _playerPauseActive.Value
+            ? PlayerPauseRules.GetRemaining(
+                _playerPauseEndsAt.Value,
+                _playerPauseHeldRemaining.Value,
+                ServerNow)
+            : 0d;
+        /// <summary>Disconnect or player pause: every match timer and input is stopped.</summary>
+        public bool IsSimulationSuspended => _reconnectPaused.Value || _playerPauseActive.Value;
+        public bool IsGlobalSimulationPaused => IsSimulationSuspended || IsKeyShopRevealActive;
+        public bool CanRequestPlayerPause => PlayerPauseRules.CanRequest(
+            GameplayEnabled,
+            _reconnectPaused.Value,
+            _playerPauseActive.Value,
+            _completedMatchReturnQueued,
+            FlowState,
+            CeremonyPhase);
         public BoardActionEndReason LastActionEndReason =>
             (BoardActionEndReason)_lastActionEndReason.Value;
         public bool IsActionPhase => GameplayEnabled && FlowState == BoardFlowState.Action;
@@ -403,8 +432,9 @@ namespace MazeParty.Multiplayer
         public int KeyShopRevealRevision => _keyShopRevealRevision.Value;
         public int BoardEffectSeed => _boardEffectSeed.Value;
         public int BoardEffectRevision => _boardEffectRevision.Value;
+        /// <summary>The last landing-effect line, formatted in the local language.</summary>
         public string LastLandingEffectMessage =>
-            _lastLandingEffectMessage.Value.ToString();
+            LandingEffectMessage.Format(_lastLandingEffectMessage.Value.ToString());
         public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
         public bool IsCombatActive => _combatActive.Value;
         public Vector2Int CombatTile => _combatTile.Value;
@@ -419,7 +449,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.Minefield &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsMinefieldPlaying =>
             IsMinefieldPhase && FlowState == BoardFlowState.MinigamePlaying;
         public bool IsWrongWayPhase =>
@@ -427,7 +457,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.WrongWay &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsWrongWayPlaying =>
             IsWrongWayPhase && FlowState == BoardFlowState.MinigamePlaying;
         public bool IsRedLightGreenLightPhase =>
@@ -435,7 +465,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.RedLightGreenLight &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsRedLightGreenLightPlaying =>
             IsRedLightGreenLightPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -444,7 +474,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.StableFooting &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsStableFootingPlaying =>
             IsStableFootingPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -453,7 +483,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.BalloonBlow &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsBalloonBlowPlaying =>
             IsBalloonBlowPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -462,7 +492,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.GiftGrab &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsGiftGrabPlaying =>
             IsGiftGrabPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -471,14 +501,14 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.TerritoryPaint &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
 
         public bool IsTagChasePhase =>
             GameplayEnabled &&
             CurrentMinigame == ScheduledMinigameId.TagChase &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsTagChasePlaying =>
             IsTagChasePhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -487,7 +517,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.Race &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsRacePlaying =>
             IsRacePhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -496,7 +526,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.SequenceMemory &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsSequenceMemoryPlaying =>
             IsSequenceMemoryPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -505,7 +535,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.BouncingBalls &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsBouncingBallsPlaying =>
             IsBouncingBallsPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -514,7 +544,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.BombPassing &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsBombPassingPlaying =>
             IsBombPassingPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -523,7 +553,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.SnowySpin &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsSnowySpinPlaying =>
             IsSnowySpinPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -532,7 +562,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.ArenaCombat &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsArenaCombatPlaying =>
             IsArenaCombatPhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -541,7 +571,7 @@ namespace MazeParty.Multiplayer
             CurrentMinigame == ScheduledMinigameId.CliffBarrage &&
             (FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying ||
-             FlowState == BoardFlowState.SkippedResult);
+             FlowState == BoardFlowState.MinigameResult);
         public bool IsCliffBarragePlaying =>
             IsCliffBarragePhase &&
             FlowState == BoardFlowState.MinigamePlaying;
@@ -564,7 +594,7 @@ namespace MazeParty.Multiplayer
             ? Math.Max(0d, _reconnectGraceEndsAt.Value - ServerNow)
             : 0d;
         public double KeyShopRevealRemaining => _keyShopRevealActive.Value
-            ? _reconnectPaused.Value
+            ? IsSimulationSuspended
                 ? Math.Max(0d, _keyShopRevealRemainingDuringReconnect)
                 : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
             : 0d;
@@ -674,7 +704,18 @@ namespace MazeParty.Multiplayer
                 {
                     _endingForReconnectTimeout = true;
                     OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                        "A player did not reconnect within 60 seconds. The fixed four-player match is ending.");
+                        GameText.T("A player did not reconnect within 60 seconds. The fixed four-player match is ending."));
+                }
+
+                return;
+            }
+
+            if (_playerPauseActive.Value)
+            {
+                StopAllAvatarInputOnServer();
+                if (PlayerPauseRules.HasExpired(_playerPauseEndsAt.Value, now))
+                {
+                    EndPlayerPauseOnServer(now);
                 }
 
                 return;
@@ -740,8 +781,9 @@ namespace MazeParty.Multiplayer
             {
                 _endingForMinigameLoadingTimeout = true;
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    CurrentMinigame +
-                    " minigame did not finish loading within 60 seconds.");
+                    GameText.F(
+                        "{0} minigame did not finish loading within 60 seconds.",
+                        CurrentMinigame));
             }
             AdvanceCombatOnServer(now);
             AdvanceLandingEffectResolutionOnServer(now);
@@ -820,14 +862,12 @@ namespace MazeParty.Multiplayer
                 : avatar.ResolveItemChoiceOnServer(slotIndex);
         }
 
-        public bool TryRollForAvatarOnServer(NetworkPlayerAvatar avatar)
-        {
-            // Direct/HUD rolling is intentionally disabled. The owner must aim at
-            // their visible world die; its server-authoritative settle event supplies
-            // the result to ApplyWorldDieResultOnServer.
-            return false;
-        }
-
+        /// <summary>
+        /// Applies a settled world-die face. There is no direct or HUD roll: the
+        /// owner aims at their world die (RMB) and the die's server-authoritative
+        /// settle event supplies the face. An action timeout only completes a
+        /// partially rolled double dice (SettleTimedOutPlayersOnServer).
+        /// </summary>
         public bool ApplyWorldDieResultOnServer(int slot, int face)
         {
             return ApplyWorldDieResultOnServer(
@@ -1951,6 +1991,35 @@ namespace MazeParty.Multiplayer
 
             EnsureFlowModel();
             var now = ServerNow;
+            if (_playerPauseActive.Value)
+            {
+                // A player pause already suspended the simulation. The disconnect
+                // pause takes precedence: hold the player pause timer so the
+                // reconnect window cannot consume it.
+                _playerPauseHeldRemaining.Value = PlayerPauseRules.HoldRemaining(
+                    _playerPauseEndsAt.Value,
+                    now);
+                _playerPauseEndsAt.Value = 0d;
+            }
+            else
+            {
+                SuspendSimulationOnServer(now);
+            }
+
+            RefreshPresentMask();
+            _snapshotRestoredMask.Value = (byte)(_presentMask.Value & AllPlayersMask);
+            _reconnectPaused.Value = true;
+            _reconnectGraceEndsAt.Value = now + ReconnectGraceSeconds;
+            StopAllAvatarInputOnServer();
+        }
+
+        /// <summary>
+        /// Freezes every match clock: board flow, combat, protection, arrival
+        /// grace, scheduled skip, award ceremony, minigame runtimes and a nested
+        /// key-shop reveal. Shared by the disconnect pause and the player pause.
+        /// </summary>
+        private void SuspendSimulationOnServer(double now)
+        {
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
                 CurrentMinigame == ScheduledMinigameId.Skip &&
                 _scheduledSkipAt > 0d)
@@ -1970,7 +2039,7 @@ namespace MazeParty.Multiplayer
                 _keyShopRevealEndsAt.Value = 0d;
                 // The flow was already paused for the reveal. Preserve the
                 // original action, choice, and shield remainders so nesting a
-                // reconnect pause cannot consume any of those clocks.
+                // suspension cannot consume any of those clocks.
             }
             else
             {
@@ -1989,11 +2058,77 @@ namespace MazeParty.Multiplayer
                         : 0d;
                 _arrivalGraceEndsAt.Value = 0d;
             }
-            RefreshPresentMask();
-            _snapshotRestoredMask.Value = (byte)(_presentMask.Value & AllPlayersMask);
-            _reconnectPaused.Value = true;
-            _reconnectGraceEndsAt.Value = now + ReconnectGraceSeconds;
+        }
+
+        /// <summary>
+        /// A player asks for a match pause. Only one pause exists at a time;
+        /// requests are rejected during a disconnect pause, minigame loading and
+        /// the award ceremony return wait.
+        /// </summary>
+        public bool TryBeginPlayerPauseOnServer(NetworkPlayerAvatar avatar)
+        {
+            if (!IsServer || !IsSeatedBoardAvatarOnServer(avatar) || !CanRequestPlayerPause)
+            {
+                return false;
+            }
+
+            EnsureFlowModel();
+            var now = ServerNow;
+            SuspendSimulationOnServer(now);
+            _playerPauseSlot.Value = avatar.AssignedSlot;
+            _playerPauseHeldRemaining.Value = 0d;
+            _playerPauseEndsAt.Value = PlayerPauseRules.GetEndsAt(now);
+            _playerPauseActive.Value = true;
             StopAllAvatarInputOnServer();
+            return true;
+        }
+
+        /// <summary>Only the requesting player may end the pause early.</summary>
+        public bool TryEndPlayerPauseOnServer(NetworkPlayerAvatar avatar)
+        {
+            if (!IsServer || !IsSeatedBoardAvatarOnServer(avatar) ||
+                !PlayerPauseRules.CanRelease(
+                    _playerPauseActive.Value,
+                    _playerPauseSlot.Value,
+                    avatar.AssignedSlot))
+            {
+                return false;
+            }
+
+            EnsureFlowModel();
+            EndPlayerPauseOnServer(ServerNow);
+            return true;
+        }
+
+        private void EndPlayerPauseOnServer(double now)
+        {
+            if (!_playerPauseActive.Value)
+            {
+                return;
+            }
+
+            ClearPlayerPauseStateOnServer();
+            if (!_reconnectPaused.Value)
+            {
+                ResumeSimulationOnServer(now);
+            }
+        }
+
+        private void ClearPlayerPauseStateOnServer()
+        {
+            _playerPauseActive.Value = false;
+            _playerPauseSlot.Value = -1;
+            _playerPauseEndsAt.Value = 0d;
+            _playerPauseHeldRemaining.Value = 0d;
+        }
+
+        private bool IsSeatedBoardAvatarOnServer(NetworkPlayerAvatar avatar)
+        {
+            return IsServer && _gameplayEnabled.Value &&
+                   avatar != null && avatar.IsSpawned && avatar.IsBoardReady &&
+                   avatar.AssignedSlot >= 0 &&
+                   avatar.AssignedSlot < MultiplayerConstants.MaxPlayers &&
+                   GetAvatarForSlot(avatar.AssignedSlot) == avatar;
         }
 
         public void CaptureDisconnectedAvatarOnServer(NetworkPlayerAvatar avatar)
@@ -2190,7 +2325,7 @@ namespace MazeParty.Multiplayer
                 case BoardFlowState.MinigamePlaying:
                     StopAllAvatarInputOnServer();
                     break;
-                case BoardFlowState.SkippedResult:
+                case BoardFlowState.MinigameResult:
                     StopAllAvatarInputOnServer();
                     break;
                 case BoardFlowState.MatchComplete:
@@ -2260,6 +2395,30 @@ namespace MazeParty.Multiplayer
             _reconnectPaused.Value = false;
             _reconnectGraceEndsAt.Value = 0d;
             _endingForReconnectTimeout = false;
+            if (_playerPauseActive.Value)
+            {
+                // Everyone is back. A held player pause continues with its
+                // remaining time; the simulation stays suspended.
+                if (PlayerPauseRules.TryResumeHeld(
+                        _playerPauseHeldRemaining.Value,
+                        now,
+                        out var playerPauseEndsAt))
+                {
+                    _playerPauseEndsAt.Value = playerPauseEndsAt;
+                    _playerPauseHeldRemaining.Value = 0d;
+                    StopAllAvatarInputOnServer();
+                    return;
+                }
+
+                ClearPlayerPauseStateOnServer();
+            }
+
+            ResumeSimulationOnServer(now);
+        }
+
+        /// <summary>Restores every clock frozen by <see cref="SuspendSimulationOnServer"/>.</summary>
+        private void ResumeSimulationOnServer(double now)
+        {
             if (_keyShopRevealActive.Value)
             {
                 _keyShopRevealEndsAt.Value = now +
@@ -2319,8 +2478,10 @@ namespace MazeParty.Multiplayer
             if (status != SceneEventProgressStatus.Started)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    "Could not synchronize the " + CurrentMinigame +
-                    " minigame scene: " + status);
+                    GameText.F(
+                        "Could not synchronize the {0} minigame scene: {1}",
+                        CurrentMinigame,
+                        status));
             }
         }
 
@@ -2344,8 +2505,9 @@ namespace MazeParty.Multiplayer
             if (!_selectedMinigameNetworkLoadCompleted)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    CurrentMinigame +
-                    " scene synchronization completed without a loaded scene.");
+                    GameText.F(
+                        "{0} scene synchronization completed without a loaded scene.",
+                        CurrentMinigame));
                 return;
             }
 
@@ -2356,15 +2518,16 @@ namespace MazeParty.Multiplayer
                 clientsTimedOut.Count > 0)
             {
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    CurrentMinigame +
-                    " scene synchronization timed out for a player.");
+                    GameText.F(
+                        "{0} scene synchronization timed out for a player.",
+                        CurrentMinigame));
             }
         }
 
         private void TryStartLoadedMinigameOnServer(double now)
         {
             if (!IsServer || _flow == null || _flow.State != BoardFlowState.MinigameLoading ||
-                _flow.IsPaused || _reconnectPaused.Value ||
+                _flow.IsPaused || IsSimulationSuspended ||
                 !_selectedMinigameNetworkLoadCompleted ||
                 !HasFourBoardReadyPlayers())
             {
@@ -2390,16 +2553,35 @@ namespace MazeParty.Multiplayer
             {
                 _minigameScheduleSession ??=
                     new HostMinigameScheduleSession();
+                // The saved order is reused only when exactly the same players
+                // restart; any other group gets a new schedule.
+                var controller = OnlineSessionController.Instance;
                 _minigameSchedule =
                     _minigameScheduleSession.LoadOrCreateActive(
-                        MinigameScheduleRules.DefaultTurnCount);
+                        MinigameScheduleRules.DefaultTurnCount,
+                        controller != null
+                            ? controller.GetMatchRosterKey()
+                            : string.Empty);
                 return true;
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
+                // Never silently reroll this match, but do not let an unreadable
+                // or outdated saved order block every restart of these players.
+                try
+                {
+                    _minigameScheduleSession?.CompleteActive();
+                }
+                catch (Exception cleanupException)
+                {
+                    Debug.LogWarning(
+                        "Could not discard the unreadable minigame schedule: " +
+                        cleanupException.Message);
+                }
+
                 OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
-                    "The persisted minigame schedule could not be restored.");
+                    GameText.T("The persisted minigame schedule could not be restored."));
                 return false;
             }
         }
@@ -3348,7 +3530,7 @@ namespace MazeParty.Multiplayer
             var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
             if (tile == null || !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
             {
-                PublishLandingEffectOnServer(slot, tile, "NO EFFECT (0 change)");
+                PublishLandingEffectOnServer(slot, tile, GameText.N("NO EFFECT (0 change)"));
                 return;
             }
 
@@ -3361,15 +3543,19 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
-                        (effect == BoardLandingEffectType.GoldGain
-                            ? "GOLD GAIN "
-                            : "GOLD LOSS ") +
-                        (goldDelta > 0 ? "+" : string.Empty) + goldDelta + " GOLD");
+                        effect == BoardLandingEffectType.GoldGain
+                            ? GameText.N("GOLD GAIN {0} GOLD")
+                            : GameText.N("GOLD LOSS {0} GOLD"),
+                        (goldDelta > 0 ? "+" : string.Empty) +
+                        goldDelta.ToString(CultureInfo.InvariantCulture));
                     break;
                 case BoardLandingEffectType.Healing:
                     var healed = avatar.HealOnServer(BoardLandingEffectLayout.HealingAmount);
                     PublishLandingEffectOnServer(
-                        slot, tile, "HEALING +" + healed + " HP");
+                        slot,
+                        tile,
+                        GameText.N("HEALING +{0} HP"),
+                        healed.ToString(CultureInfo.InvariantCulture));
                     break;
                 case BoardLandingEffectType.ItemReward:
                     var random = new System.Random(unchecked(
@@ -3377,27 +3563,47 @@ namespace MazeParty.Multiplayer
                         (slot * 16777619)));
                     var reward = PrototypeItemCatalog.GetRandomId(random);
                     var received = avatar.TryAddItemOnServer(reward);
-                    PublishLandingEffectOnServer(
-                        slot,
-                        tile,
-                        received
-                            ? "ITEM REWARD +1 " +
-                              PrototypeItemCatalog.Get(reward).DisplayName
-                            : "ITEM REWARD +0 (INVENTORY FULL)");
+                    if (received)
+                    {
+                        // The item name is English data; clients translate it.
+                        PublishLandingEffectOnServer(
+                            slot,
+                            tile,
+                            GameText.N("ITEM REWARD +1 {0}"),
+                            PrototypeItemCatalog.Get(reward).DisplayName);
+                    }
+                    else
+                    {
+                        PublishLandingEffectOnServer(
+                            slot,
+                            tile,
+                            GameText.N("ITEM REWARD +0 (INVENTORY FULL)"));
+                    }
                     break;
                 default:
-                    PublishLandingEffectOnServer(slot, tile, "NO EFFECT (0 change)");
+                    PublishLandingEffectOnServer(slot, tile, GameText.N("NO EFFECT (0 change)"));
                     break;
             }
         }
 
-        private void PublishLandingEffectOnServer(int slot, BoardTile tile, string detail)
+        /// <summary>
+        /// Replicates the English source format and arguments so every client
+        /// formats the landing-effect line in its own language.
+        /// </summary>
+        private void PublishLandingEffectOnServer(
+            int slot,
+            BoardTile tile,
+            string detailFormat,
+            params string[] args)
         {
-            var location = tile != null
-                ? " (" + tile.Coordinate.x + "," + tile.Coordinate.y + ")"
-                : string.Empty;
             _lastLandingEffectMessage.Value = new FixedString128Bytes(
-                "P" + (slot + 1) + location + ": " + detail);
+                LandingEffectMessage.Encode(
+                    slot,
+                    tile != null,
+                    tile != null ? tile.Coordinate.x : 0,
+                    tile != null ? tile.Coordinate.y : 0,
+                    detailFormat,
+                    args));
             _lastLandingEffectRevision.Value++;
         }
 
@@ -3666,7 +3872,7 @@ namespace MazeParty.Multiplayer
 
         private void CompleteKeyShopRevealOnServer(double now)
         {
-            if (!IsServer || !_keyShopRevealActive.Value || _reconnectPaused.Value)
+            if (!IsServer || !_keyShopRevealActive.Value || IsSimulationSuspended)
             {
                 return;
             }

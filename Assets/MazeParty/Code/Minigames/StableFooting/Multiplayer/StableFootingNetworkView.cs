@@ -145,7 +145,7 @@ namespace MazeParty.Multiplayer
                                   (match.FlowState ==
                                        BoardFlowState.MinigamePlaying ||
                                    match.FlowState ==
-                                       BoardFlowState.SkippedResult);
+                                       BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState ==
                                 BoardFlowState.MinigamePlaying;
@@ -274,7 +274,7 @@ namespace MazeParty.Multiplayer
             visual.EnsureBuilt();
             visual.SetOwnerFirstPerson(false);
             visual.SetBodyColor(FallbackPlayerColors[slot]);
-            visual.SetDisplayName("Player " + (slot + 1));
+            visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
             DisableGeneratedHitColliders(runnerObject);
 
             return new RunnerView(runnerObject.transform, visual);
@@ -445,12 +445,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var reconnectPaused = match.IsReconnectPaused;
+            var reconnectPaused = match.IsSimulationSuspended;
             hud.ResultPanel.SetActive(
                 state.Phase == NetworkStableFootingPhase.RoundResult);
 
             hud.InstructionText.text = reconnectPaused
-                ? "PAUSED"
+                ? GameText.T("PAUSED")
                 : BuildInstructionLabel();
         }
 
@@ -464,11 +464,15 @@ namespace MazeParty.Multiplayer
             switch (state.CyclePhase)
             {
                 case StableFootingCyclePhase.ShuffleReveal:
-                    return "SAFE: " + SymbolLabel(state.SafeSymbol);
+                    return GameText.F(
+                        "SAFE: {0}",
+                        GameText.T(SymbolLabel(state.SafeSymbol)));
                 case StableFootingCyclePhase.Move:
-                    return "SAFE: " + SymbolLabel(state.SafeSymbol);
+                    return GameText.F(
+                        "SAFE: {0}",
+                        GameText.T(SymbolLabel(state.SafeSymbol)));
                 case StableFootingCyclePhase.Drop:
-                    return "DROPPING";
+                    return GameText.T("DROPPING");
                 default:
                     return string.Empty;
             }
@@ -588,9 +592,9 @@ namespace MazeParty.Multiplayer
         {
             switch (symbol)
             {
-                case StableFootingSymbol.Circle: return "CIRCLE";
-                case StableFootingSymbol.Square: return "SQUARE";
-                default: return "CROSS";
+                case StableFootingSymbol.Circle: return GameText.N("CIRCLE");
+                case StableFootingSymbol.Square: return GameText.N("SQUARE");
+                default: return GameText.N("CROSS");
             }
         }
 

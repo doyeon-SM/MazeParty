@@ -114,7 +114,7 @@ namespace MazeParty.Multiplayer
                                   (match.FlowState ==
                                        BoardFlowState.MinigamePlaying ||
                                    match.FlowState ==
-                                       BoardFlowState.SkippedResult);
+                                       BoardFlowState.MinigameResult);
             var shouldShowHud = shouldShowWorld &&
                                 match.FlowState ==
                                 BoardFlowState.MinigamePlaying;
@@ -236,7 +236,7 @@ namespace MazeParty.Multiplayer
             visual.EnsureBuilt();
             visual.SetOwnerFirstPerson(false);
             visual.SetBodyColor(FallbackPlayerColors[slot]);
-            visual.SetDisplayName("Player " + (slot + 1));
+            visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
 
             var presentation = runnerObject.AddComponent<
                 RedLightGreenLightPlayerPresentation>();
@@ -462,10 +462,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (match.IsReconnectPaused)
+            if (match.IsSimulationSuspended)
             {
                 hud.SetSignal(
-                    "PAUSED",
+                    GameText.T("PAUSED"),
                     RedLightGreenLightHudSignalStyle.Neutral);
             }
             else
@@ -481,7 +481,7 @@ namespace MazeParty.Multiplayer
         {
             if (state.Phase == NetworkRedLightGreenLightPhase.Countdown)
             {
-                label = "GET READY";
+                label = GameText.T("GET READY");
                 style = RedLightGreenLightHudSignalStyle.Neutral;
                 return;
             }
@@ -489,8 +489,8 @@ namespace MazeParty.Multiplayer
             {
                 label = state.Phase ==
                         NetworkRedLightGreenLightPhase.Complete
-                    ? "FINAL RESULTS"
-                    : "ROUND RESULTS";
+                    ? GameText.T("FINAL RESULTS")
+                    : GameText.T("ROUND RESULTS");
                 style = RedLightGreenLightHudSignalStyle.Neutral;
                 return;
             }
@@ -498,15 +498,15 @@ namespace MazeParty.Multiplayer
             switch (state.SignalPhase)
             {
                 case RedLightGreenLightSignalPhase.Green:
-                    label = "GREEN LIGHT  ·  MOVE";
+                    label = GameText.T("GREEN LIGHT  ·  MOVE");
                     style = RedLightGreenLightHudSignalStyle.Green;
                     break;
                 case RedLightGreenLightSignalPhase.TurnWarning:
-                    label = "TURNING  ·  STOP!";
+                    label = GameText.T("TURNING  ·  STOP!");
                     style = RedLightGreenLightHudSignalStyle.TurnWarning;
                     break;
                 default:
-                    label = "RED LIGHT  ·  FREEZE";
+                    label = GameText.T("RED LIGHT  ·  FREEZE");
                     style = RedLightGreenLightHudSignalStyle.Red;
                     break;
             }
@@ -588,13 +588,13 @@ namespace MazeParty.Multiplayer
             switch (playerState)
             {
                 case RedLightGreenLightPlayerState.Warned:
-                    return "WARNED · WALK SPEED";
+                    return GameText.T("WARNED · WALK SPEED");
                 case RedLightGreenLightPlayerState.Eliminated:
-                    return "OUT";
+                    return GameText.T("OUT");
                 case RedLightGreenLightPlayerState.Finished:
-                    return "FINISHED";
+                    return GameText.T("FINISHED");
                 default:
-                    return "RUNNING";
+                    return GameText.T("RUNNING");
             }
         }
 

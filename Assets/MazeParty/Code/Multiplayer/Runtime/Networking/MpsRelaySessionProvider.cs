@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using MazeParty.Gameplay;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
@@ -33,6 +34,7 @@ namespace MazeParty.Multiplayer
         public bool IsInSession => _session != null;
         public string CurrentSessionId => _session?.Id ?? string.Empty;
         public SessionSnapshot Current { get; private set; } = SessionSnapshot.Empty;
+        public Func<bool> KeepRoomOnPlayingDeparture { get; set; }
 
         public async Task CreateAsync(string roomName, string displayName)
         {
@@ -80,7 +82,7 @@ namespace MazeParty.Multiplayer
                 : code.Trim().ToUpperInvariant();
             if (normalizedCode.Length == 0)
             {
-                throw new ArgumentException("Enter an invite code.", nameof(code));
+                throw new ArgumentException(GameText.T("Enter an invite code."), nameof(code));
             }
 
             await _identity.SignInAsync(displayName);
@@ -113,13 +115,14 @@ namespace MazeParty.Multiplayer
                 catch (Exception cleanupException)
                 {
                     throw new InvalidOperationException(
-                        "The host uses a different game build and automatic cleanup failed. " +
-                        "Use Leave Session to retry cleanup.",
+                        GameText.T(
+                            "The host uses a different game build and automatic cleanup failed. " +
+                            "Use Leave Session to retry cleanup."),
                         cleanupException);
                 }
 
                 throw new InvalidOperationException(
-                    "The host uses a different game build.");
+                    GameText.T("The host uses a different game build."));
             }
 
             AttachSession(joinedSession);
@@ -144,7 +147,7 @@ namespace MazeParty.Multiplayer
                 !joinedSessionIds.Contains(normalizedSessionId, StringComparer.Ordinal))
             {
                 throw new InvalidOperationException(
-                    "The saved reconnect session is no longer joined by this authenticated player.");
+                    GameText.T("The saved reconnect session is no longer joined by this authenticated player."));
             }
 
             // Reconnect is intentionally distinct from JoinByCode. Playing sessions are
@@ -167,12 +170,12 @@ namespace MazeParty.Multiplayer
                 catch (Exception cleanupException)
                 {
                     throw new InvalidOperationException(
-                        "The reconnect target uses a different game build and automatic cleanup failed.",
+                        GameText.T("The reconnect target uses a different game build and automatic cleanup failed."),
                         cleanupException);
                 }
 
                 throw new InvalidOperationException(
-                    "The reconnect target uses a different game build.");
+                    GameText.T("The reconnect target uses a different game build."));
             }
 
             AttachSession(reconnectedSession);
@@ -344,14 +347,14 @@ namespace MazeParty.Multiplayer
                     if (!ReferenceEquals(session, _session) || _ending)
                     {
                         throw new InvalidOperationException(
-                            "The session changed before the game could start.");
+                            GameText.T("The session changed before the game could start."));
                     }
 
                     RebuildSnapshot();
                     if (!Current.CanStart)
                     {
                         throw new InvalidOperationException(
-                            "Exactly four ready players are required.");
+                            GameText.T("Exactly four ready players are required."));
                     }
                 }
 
@@ -367,7 +370,7 @@ namespace MazeParty.Multiplayer
                 if (_ending || !ReferenceEquals(session, _session))
                 {
                     throw new InvalidOperationException(
-                        "The session changed before the game state was saved.");
+                        GameText.T("The session changed before the game state was saved."));
                 }
 
                 RebuildSnapshot();
@@ -510,9 +513,17 @@ namespace MazeParty.Multiplayer
 
             if (Current.Phase == MultiplayerConstants.PlayingPhase)
             {
+                var keepRoom = KeepRoomOnPlayingDeparture;
+                if (keepRoom != null && keepRoom())
+                {
+                    // The match is already over for everyone. The room stays open;
+                    // the next join after the lobby return reassigns the free seat.
+                    return;
+                }
+
                 // A normal Leave reaches this event after the departing client has
                 // completed its backend removal, so deleting here cannot race that leave.
-                EndFromRemote("A player left. The active four-player session is ending.");
+                EndFromRemote(GameText.T("A player left. The active four-player session is ending."));
                 return;
             }
 
@@ -535,7 +546,7 @@ namespace MazeParty.Multiplayer
                 string.Equals(newHostId, currentPlayerId, StringComparison.Ordinal))
             {
                 CancelHostMigrationFallback();
-                EndFromRemote("The host disconnected. The session is closing.");
+                EndFromRemote(GameText.T("The host disconnected. The session is closing."));
                 return;
             }
 
@@ -546,7 +557,7 @@ namespace MazeParty.Multiplayer
 
             _waitingForHostDeletion = true;
             _hostMigrationFallbackSource = new CancellationTokenSource();
-            Ended?.Invoke("The host disconnected. Waiting for the session to close.");
+            Ended?.Invoke(GameText.T("The host disconnected. Waiting for the session to close."));
             _ = WaitForHostDeletionOrLeaveAsync(
                 session,
                 _hostMigrationFallbackSource);
@@ -578,8 +589,8 @@ namespace MazeParty.Multiplayer
             _hostMigrationFallbackSource = null;
             _waitingForHostDeletion = false;
             fallbackSource.Dispose();
-            EndFromRemote(
-                "The replacement host did not close the session. Leaving locally.");
+            EndFromRemote(GameText.T(
+                "The replacement host did not close the session. Leaving locally."));
         }
 
         private void CancelHostMigrationFallback()
@@ -603,7 +614,7 @@ namespace MazeParty.Multiplayer
         {
             if (!_ending)
             {
-                ObserveCompletedRemoteEnd("The host ended the session.");
+                ObserveCompletedRemoteEnd(GameText.T("The host ended the session."));
             }
         }
 
@@ -611,7 +622,7 @@ namespace MazeParty.Multiplayer
         {
             if (!_ending)
             {
-                ObserveCompletedRemoteEnd("You were removed from the session.");
+                ObserveCompletedRemoteEnd(GameText.T("You were removed from the session."));
             }
         }
 
@@ -936,7 +947,7 @@ namespace MazeParty.Multiplayer
         private ISession RequireSession()
         {
             return _session ?? throw new InvalidOperationException(
-                "You are not connected to an online session.");
+                GameText.T("You are not connected to an online session."));
         }
 
         private void ThrowIfAlreadyInSession()
@@ -944,7 +955,7 @@ namespace MazeParty.Multiplayer
             if (_session != null)
             {
                 throw new InvalidOperationException(
-                    "You are already connected to an online session.");
+                    GameText.T("You are already connected to an online session."));
             }
         }
 
@@ -1024,7 +1035,7 @@ namespace MazeParty.Multiplayer
             }
 
             throw new InvalidOperationException(
-                "MPS has not unregistered the session yet. Try cleanup again.");
+                GameText.T("MPS has not unregistered the session yet. Try cleanup again."));
         }
     }
 }

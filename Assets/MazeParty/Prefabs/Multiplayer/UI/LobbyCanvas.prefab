@@ -1,84 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &192065480602356359
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6993257619266806130}
-  - component: {fileID: 7755016654840453705}
-  - component: {fileID: 4779026067947651434}
-  m_Layer: 5
-  m_Name: Label
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &6993257619266806130
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 192065480602356359}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5130373170952125018}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -16, y: -8}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &7755016654840453705
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 192065480602356359}
-  m_CullTransparentMesh: 1
---- !u!114 &4779026067947651434
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 192065480602356359}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.92, g: 0.95, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 18
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: Quit Game
 --- !u!1 &223141828443751029
 GameObject:
   m_ObjectHideFlags: 0
@@ -90,6 +11,7 @@ GameObject:
   - component: {fileID: 2580207001906396447}
   - component: {fileID: 5067831169278019404}
   - component: {fileID: 4901143374908482996}
+  - component: {fileID: 5315356193099841273}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -158,6 +80,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Copy Code
+--- !u!114 &5315356193099841273
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 223141828443751029}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Copy Code
 --- !u!1 &250564232333505758
 GameObject:
   m_ObjectHideFlags: 0
@@ -493,6 +428,7 @@ GameObject:
   - component: {fileID: 2486925792068593670}
   - component: {fileID: 7100245516003390818}
   - component: {fileID: 3415135537152783135}
+  - component: {fileID: 1289181219960596238}
   m_Layer: 5
   m_Name: Running Message
   m_TagString: Untagged
@@ -583,6 +519,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &1289181219960596238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 449060930091006712}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: The board game is running.
 --- !u!1 &504375557064607534
 GameObject:
   m_ObjectHideFlags: 0
@@ -748,6 +697,7 @@ GameObject:
   - component: {fileID: 3207595229763573076}
   - component: {fileID: 3260502633812864937}
   - component: {fileID: 7836443134082972283}
+  - component: {fileID: 3346257878538474732}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -816,6 +766,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: HAND EMOTES
+--- !u!114 &3346257878538474732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 853834269916291120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: HAND EMOTES
 --- !u!1 &968556799069568550
 GameObject:
   m_ObjectHideFlags: 0
@@ -827,6 +790,7 @@ GameObject:
   - component: {fileID: 1792941990908542456}
   - component: {fileID: 4828544140284480664}
   - component: {fileID: 143536280822157126}
+  - component: {fileID: 1300941346029153995}
   m_Layer: 5
   m_Name: Help
   m_TagString: Untagged
@@ -895,6 +859,21 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 'HOLD T + DRAG  /  RELEASE TO USE
+
+    CENTER / ESC / RMB: CANCEL'
+--- !u!114 &1300941346029153995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 968556799069568550}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: 'HOLD T + DRAG  /  RELEASE TO USE
 
     CENTER / ESC / RMB: CANCEL'
 --- !u!1 &1150900302353045929
@@ -1373,6 +1352,7 @@ GameObject:
   - component: {fileID: 8402313426047589172}
   - component: {fileID: 6074115096470537706}
   - component: {fileID: 2692316969551442400}
+  - component: {fileID: 5678750535588350091}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -1441,85 +1421,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Indigo
---- !u!1 &1646092559822809430
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7307593005016546861}
-  - component: {fileID: 4462592891264623141}
-  - component: {fileID: 1623826539549207496}
-  m_Layer: 5
-  m_Name: Label
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &7307593005016546861
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646092559822809430}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 8838268801433376741}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: -16, y: -8}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &4462592891264623141
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646092559822809430}
-  m_CullTransparentMesh: 1
---- !u!114 &1623826539549207496
+--- !u!114 &5678750535588350091
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1646092559822809430}
+  m_GameObject: {fileID: 1597989348054468788}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.92, g: 0.95, b: 1, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 18
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 10
-    m_MaxSize: 40
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 0
-    m_LineSpacing: 1
-  m_Text: Leave Session
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Indigo
 --- !u!1 &1705591984134670233
 GameObject:
   m_ObjectHideFlags: 0
@@ -1531,6 +1445,7 @@ GameObject:
   - component: {fileID: 133700957309608428}
   - component: {fileID: 4476649375634910641}
   - component: {fileID: 5994816467329128603}
+  - component: {fileID: 4959697549367384024}
   m_Layer: 5
   m_Name: Placeholder
   m_TagString: Untagged
@@ -1599,6 +1514,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Enter invite code
+--- !u!114 &4959697549367384024
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1705591984134670233}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Enter invite code
 --- !u!1 &1891818272982422168
 GameObject:
   m_ObjectHideFlags: 0
@@ -2420,6 +2348,7 @@ GameObject:
   - component: {fileID: 7772631090461453957}
   - component: {fileID: 8075326045965453048}
   - component: {fileID: 8904747185186600211}
+  - component: {fileID: 6701694315952078291}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -2510,6 +2439,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &6701694315952078291
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3001226676170433263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: MazeParty Online (4 Players)
 --- !u!1 &3281758406191544764
 GameObject:
   m_ObjectHideFlags: 0
@@ -2754,6 +2696,7 @@ GameObject:
   - component: {fileID: 3042477126336746442}
   - component: {fileID: 251725910252119949}
   - component: {fileID: 6299192688263884932}
+  - component: {fileID: 9208619293004250890}
   m_Layer: 5
   m_Name: Customization Label
   m_TagString: Untagged
@@ -2844,6 +2787,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &9208619293004250890
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3520140931705431146}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Character - Unique Body Color / Test Hat
 --- !u!1 &3609758888704335040
 GameObject:
   m_ObjectHideFlags: 0
@@ -3036,6 +2992,7 @@ GameObject:
   - component: {fileID: 3649709960262770166}
   - component: {fileID: 5577024712567290758}
   - component: {fileID: 71236234774330494}
+  - component: {fileID: 5263934021603221608}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -3104,6 +3061,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Test Hat
+--- !u!114 &5263934021603221608
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3871197062542441898}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Test Hat
 --- !u!1 &3956570315389635088
 GameObject:
   m_ObjectHideFlags: 0
@@ -3339,6 +3309,7 @@ GameObject:
   - component: {fileID: 5489117033199786278}
   - component: {fileID: 1038495512232680476}
   - component: {fileID: 3272687783453143761}
+  - component: {fileID: 601977941630105643}
   m_Layer: 5
   m_Name: Invite Code Label
   m_TagString: Untagged
@@ -3429,6 +3400,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &601977941630105643
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4288507412434945678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Invite Code
 --- !u!1 &4771271988637783839
 GameObject:
   m_ObjectHideFlags: 0
@@ -3440,6 +3424,7 @@ GameObject:
   - component: {fileID: 7907207672612394139}
   - component: {fileID: 2177980097663381419}
   - component: {fileID: 896949837927525625}
+  - component: {fileID: 4756187274532425275}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -3508,6 +3493,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Black
+--- !u!114 &4756187274532425275
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4771271988637783839}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Black
 --- !u!1 &4900796106971196100
 GameObject:
   m_ObjectHideFlags: 0
@@ -3914,6 +3912,7 @@ GameObject:
   - component: {fileID: 6811923402599932192}
   - component: {fileID: 4701018658486617556}
   - component: {fileID: 974235988566713417}
+  - component: {fileID: 7713096691422182440}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -3982,6 +3981,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Green
+--- !u!114 &7713096691422182440
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5969886240500604764}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Green
 --- !u!1 &6079129117720056898
 GameObject:
   m_ObjectHideFlags: 0
@@ -4131,6 +4143,7 @@ GameObject:
   - component: {fileID: 4134790247788579826}
   - component: {fileID: 6047488774087384371}
   - component: {fileID: 8520673729034086706}
+  - component: {fileID: 1912899285040752224}
   m_Layer: 5
   m_Name: Start Hint
   m_TagString: Untagged
@@ -4221,6 +4234,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &1912899285040752224
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6080611441975800085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Exactly four ready players are required.
 --- !u!1 &6191710774212443857
 GameObject:
   m_ObjectHideFlags: 0
@@ -4358,150 +4384,6 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &6331961594783580502
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5130373170952125018}
-  - component: {fileID: 4112584893727229742}
-  - component: {fileID: 3541543969725964909}
-  - component: {fileID: 5799880091427601312}
-  - component: {fileID: 5546922546159178066}
-  m_Layer: 5
-  m_Name: Quit Game Button
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &5130373170952125018
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6331961594783580502}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6993257619266806130}
-  m_Father: {fileID: 6705779657728398285}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 0}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &4112584893727229742
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6331961594783580502}
-  m_CullTransparentMesh: 1
---- !u!114 &3541543969725964909
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6331961594783580502}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.62, g: 0.14, b: 0.16, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &5799880091427601312
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6331961594783580502}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
-  m_Navigation:
-    m_Mode: 3
-    m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
-  m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9, g: 0.95, b: 1, a: 1}
-    m_PressedColor: {r: 0.72, g: 0.82, b: 0.95, a: 1}
-    m_SelectedColor: {r: 0.9, g: 0.95, b: 1, a: 1}
-    m_DisabledColor: {r: 0.45, g: 0.48, b: 0.54, a: 0.65}
-    m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
-  m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
-    m_SelectedSprite: {fileID: 0}
-    m_DisabledSprite: {fileID: 0}
-  m_AnimationTriggers:
-    m_NormalTrigger: Normal
-    m_HighlightedTrigger: Highlighted
-    m_PressedTrigger: Pressed
-    m_SelectedTrigger: Selected
-    m_DisabledTrigger: Disabled
-  m_Interactable: 1
-  m_TargetGraphic: {fileID: 3541543969725964909}
-  m_OnClick:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &5546922546159178066
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6331961594783580502}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
-  m_IgnoreLayout: 0
-  m_MinWidth: -1
-  m_MinHeight: -1
-  m_PreferredWidth: -1
-  m_PreferredHeight: 44
-  m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
-  m_LayoutPriority: 1
-  m_MaxWidth: -1
-  m_MaxHeight: -1
 --- !u!1 &6389356741620259427
 GameObject:
   m_ObjectHideFlags: 0
@@ -4513,6 +4395,7 @@ GameObject:
   - component: {fileID: 1050769888878619867}
   - component: {fileID: 799099171922603445}
   - component: {fileID: 3233436602641741697}
+  - component: {fileID: 5692002479508196120}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -4581,6 +4464,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Purple
+--- !u!114 &5692002479508196120
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6389356741620259427}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Purple
 --- !u!1 &6539836197961475165
 GameObject:
   m_ObjectHideFlags: 0
@@ -4888,7 +4784,6 @@ RectTransform:
   - {fileID: 3821972624238585861}
   - {fileID: 550272810028508141}
   - {fileID: 4805206575131491852}
-  - {fileID: 5130373170952125018}
   m_Father: {fileID: 5161544054440158454}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
@@ -5197,6 +5092,7 @@ GameObject:
   - component: {fileID: 2058636330227252475}
   - component: {fileID: 2491964321148303408}
   - component: {fileID: 5443605843617636418}
+  - component: {fileID: 6208266529177894194}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -5265,6 +5161,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Blue
+--- !u!114 &6208266529177894194
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6981227770832683114}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Blue
 --- !u!1 &7009908390795473249
 GameObject:
   m_ObjectHideFlags: 0
@@ -5397,6 +5306,7 @@ GameObject:
   - component: {fileID: 1544852091575569127}
   - component: {fileID: 4717582845513048288}
   - component: {fileID: 9185145563708275331}
+  - component: {fileID: 2694312283259081381}
   m_Layer: 5
   m_Name: Placeholder
   m_TagString: Untagged
@@ -5465,6 +5375,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Enter display name
+--- !u!114 &2694312283259081381
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7020703101377765469}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Enter display name
 --- !u!1 &7062122760286150666
 GameObject:
   m_ObjectHideFlags: 0
@@ -5797,6 +5720,7 @@ GameObject:
   - component: {fileID: 2098748881717519003}
   - component: {fileID: 569452617851232956}
   - component: {fileID: 1497715770053745974}
+  - component: {fileID: 7084506179038838356}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -5865,6 +5789,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Join by Code
+--- !u!114 &7084506179038838356
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7400493037233075088}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Join by Code
 --- !u!1 &7400628882621547587
 GameObject:
   m_ObjectHideFlags: 0
@@ -6034,6 +5971,7 @@ GameObject:
   - component: {fileID: 3643984363335002426}
   - component: {fileID: 9045089641507685611}
   - component: {fileID: 95306971673821382}
+  - component: {fileID: 1364533366629947058}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -6102,6 +6040,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Yellow
+--- !u!114 &1364533366629947058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7501398209277728559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Yellow
 --- !u!1 &7513866424714090228
 GameObject:
   m_ObjectHideFlags: 0
@@ -6193,6 +6144,7 @@ GameObject:
   - component: {fileID: 1683985010041817819}
   - component: {fileID: 1866812571476399700}
   - component: {fileID: 8868255313341346899}
+  - component: {fileID: 4558104091400237336}
   m_Layer: 5
   m_Name: Player Name Label
   m_TagString: Untagged
@@ -6283,6 +6235,19 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &4558104091400237336
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7635099186538837213}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Player Name
 --- !u!1 &7650072558394482960
 GameObject:
   m_ObjectHideFlags: 0
@@ -6424,8 +6389,6 @@ MonoBehaviour:
   copyButton: {fileID: 6317144275942072867}
   readyButton: {fileID: 1506488717927880472}
   startButton: {fileID: 5074723017408546583}
-  leaveButton: {fileID: 2967248910826673239}
-  quitButton: {fileID: 5799880091427601312}
   inviteCodeText: {fileID: 3714125346345144655}
   sessionSummaryText: {fileID: 8132934453423296235}
   readyButtonText: {fileID: 8307514906252819916}
@@ -6885,150 +6848,6 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
---- !u!1 &7814347887784416969
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8838268801433376741}
-  - component: {fileID: 3419916134855565347}
-  - component: {fileID: 3415858332387528376}
-  - component: {fileID: 2967248910826673239}
-  - component: {fileID: 6485468820260251633}
-  m_Layer: 5
-  m_Name: Leave Session Button
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &8838268801433376741
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7814347887784416969}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7307593005016546861}
-  m_Father: {fileID: 550272810028508141}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!222 &3419916134855565347
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7814347887784416969}
-  m_CullTransparentMesh: 1
---- !u!114 &3415858332387528376
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7814347887784416969}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.12, g: 0.34, b: 0.62, a: 1}
-  m_RaycastTarget: 1
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_Sprite: {fileID: 0}
-  m_Type: 0
-  m_PreserveAspect: 0
-  m_FillCenter: 1
-  m_FillMethod: 4
-  m_FillAmount: 1
-  m_FillClockwise: 1
-  m_FillOrigin: 0
-  m_UseSpriteMesh: 0
-  m_PixelsPerUnitMultiplier: 1
---- !u!114 &2967248910826673239
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7814347887784416969}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Button
-  m_Navigation:
-    m_Mode: 3
-    m_WrapAround: 0
-    m_SelectOnUp: {fileID: 0}
-    m_SelectOnDown: {fileID: 0}
-    m_SelectOnLeft: {fileID: 0}
-    m_SelectOnRight: {fileID: 0}
-  m_Transition: 1
-  m_Colors:
-    m_NormalColor: {r: 1, g: 1, b: 1, a: 1}
-    m_HighlightedColor: {r: 0.9, g: 0.95, b: 1, a: 1}
-    m_PressedColor: {r: 0.72, g: 0.82, b: 0.95, a: 1}
-    m_SelectedColor: {r: 0.9, g: 0.95, b: 1, a: 1}
-    m_DisabledColor: {r: 0.45, g: 0.48, b: 0.54, a: 0.65}
-    m_ColorMultiplier: 1
-    m_FadeDuration: 0.1
-  m_SpriteState:
-    m_HighlightedSprite: {fileID: 0}
-    m_PressedSprite: {fileID: 0}
-    m_SelectedSprite: {fileID: 0}
-    m_DisabledSprite: {fileID: 0}
-  m_AnimationTriggers:
-    m_NormalTrigger: Normal
-    m_HighlightedTrigger: Highlighted
-    m_PressedTrigger: Pressed
-    m_SelectedTrigger: Selected
-    m_DisabledTrigger: Disabled
-  m_Interactable: 1
-  m_TargetGraphic: {fileID: 3415858332387528376}
-  m_OnClick:
-    m_PersistentCalls:
-      m_Calls: []
---- !u!114 &6485468820260251633
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7814347887784416969}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 306cc8c2b49d7114eaa3623786fc2126, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
-  m_IgnoreLayout: 0
-  m_MinWidth: -1
-  m_MinHeight: -1
-  m_PreferredWidth: -1
-  m_PreferredHeight: 44
-  m_FlexibleWidth: -1
-  m_FlexibleHeight: -1
-  m_LayoutPriority: 1
-  m_MaxWidth: -1
-  m_MaxHeight: -1
 --- !u!1 &7858907248732191888
 GameObject:
   m_ObjectHideFlags: 0
@@ -7300,7 +7119,6 @@ RectTransform:
   - {fileID: 828911793662338563}
   - {fileID: 4700295855798564993}
   - {fileID: 7979805236727472009}
-  - {fileID: 8838268801433376741}
   - {fileID: 6198766206663618790}
   m_Father: {fileID: 6705779657728398285}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -7368,6 +7186,7 @@ GameObject:
   - component: {fileID: 2201588649173188662}
   - component: {fileID: 5788667746592548854}
   - component: {fileID: 2629719690242461993}
+  - component: {fileID: 1638495949128842732}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -7436,6 +7255,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Red
+--- !u!114 &1638495949128842732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8359638738822239333}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Red
 --- !u!1 &8399648269357936320
 GameObject:
   m_ObjectHideFlags: 0
@@ -7447,6 +7279,7 @@ GameObject:
   - component: {fileID: 3515847374669782500}
   - component: {fileID: 4871509737135069462}
   - component: {fileID: 5729377057365566397}
+  - component: {fileID: 6261961784949193513}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -7515,6 +7348,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Orange
+--- !u!114 &6261961784949193513
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8399648269357936320}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Orange
 --- !u!1 &8566282037382318568
 GameObject:
   m_ObjectHideFlags: 0
@@ -8106,6 +7952,7 @@ GameObject:
   - component: {fileID: 3211869462169508998}
   - component: {fileID: 7067185889696487858}
   - component: {fileID: 4573831597315265823}
+  - component: {fileID: 3444909701166190927}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -8174,6 +8021,19 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Create Private Room
+--- !u!114 &3444909701166190927
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9058250744933034541}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: Create Private Room
 --- !u!1 &9152705352799164888
 GameObject:
   m_ObjectHideFlags: 0
@@ -8186,6 +8046,7 @@ GameObject:
   - component: {fileID: 5929180752432384562}
   - component: {fileID: 9145825337501481217}
   - component: {fileID: 299135834715354520}
+  - component: {fileID: 4975890342235599689}
   m_Layer: 5
   m_Name: Connection Help
   m_TagString: Untagged
@@ -8276,3 +8137,16 @@ MonoBehaviour:
   m_LayoutPriority: 1
   m_MaxWidth: -1
   m_MaxHeight: -1
+--- !u!114 &4975890342235599689
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9152705352799164888}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ebcd0f382dc93c4095450a649cf9420, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
+  sourceText: One local player connects from each game process.

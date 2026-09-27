@@ -1060,6 +1060,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1219863384}
   - component: {fileID: 1219863385}
+  - component: {fileID: 1219863386}
   m_Layer: 0
   m_Name: Audio Replacement Anchor
   m_TagString: Untagged
@@ -1179,6 +1180,21 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+--- !u!114 &1219863386
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1219863383}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d871aee9eaa244947968127db93e8dd8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.AudioChannelSource
+  source: {fileID: 1219863385}
+  channel: 0
+  baseVolume: 1
 --- !u!1 &1338297972
 GameObject:
   m_ObjectHideFlags: 0

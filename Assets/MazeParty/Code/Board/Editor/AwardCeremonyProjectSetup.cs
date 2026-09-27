@@ -352,7 +352,7 @@ namespace MazeParty.Editor
             var leaveButton = CreateButton(
                 finalPanel.transform,
                 "Leave Room Button",
-                "LEAVE ROOM",
+                "CLEAN UP BOARD",
                 new Vector2(0.70f, 0.05f),
                 new Vector2(0.92f, 0.14f),
                 out var leaveButtonText);

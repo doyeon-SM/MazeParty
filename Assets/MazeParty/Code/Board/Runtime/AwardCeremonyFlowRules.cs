@@ -109,15 +109,59 @@ namespace MazeParty.Gameplay
                    !returnQueued;
         }
 
+        /// <summary>
+        /// The final ranking is calculated and on screen, so the match is over.
+        /// From here a player who leaves the room does not end the ceremony
+        /// for the others and is not waited for.
+        /// </summary>
+        public static bool IsFinalRankingLocked(AwardCeremonyPhase phase)
+        {
+            return phase == AwardCeremonyPhase.FinalPodiumLocked ||
+                   phase == AwardCeremonyPhase.AwaitingReturn;
+        }
+
+        /// <summary>
+        /// The whole room returns once every player still in the room has
+        /// pressed "clean up board". Players who already left the room are no
+        /// longer in <paramref name="remainingMask"/> and are not waited for.
+        /// </summary>
         public static bool ShouldBeginLobbyReturn(
             AwardCeremonyPhase phase,
             byte readyMask,
-            byte allPlayersMask,
+            byte remainingMask,
             bool returnQueued)
         {
             return phase == AwardCeremonyPhase.AwaitingReturn &&
                    !returnQueued &&
-                   (readyMask & allPlayersMask) == allPlayersMask;
+                   remainingMask != 0 &&
+                   (readyMask & remainingMask) == remainingMask;
+        }
+
+        /// <summary>
+        /// True once this player pressed "clean up board" after the final
+        /// ranking: that player sees the waiting room and may leave the room
+        /// while the others are still at the ceremony.
+        /// </summary>
+        public static bool IsBackInWaitingRoom(
+            AwardCeremonyPhase phase,
+            byte readyMask,
+            int slot)
+        {
+            return phase == AwardCeremonyPhase.AwaitingReturn &&
+                   slot >= 0 &&
+                   slot < 8 &&
+                   (readyMask & (1 << slot)) != 0;
+        }
+
+        /// <summary>
+        /// Players who left the room after the final ranking drop out of the
+        /// remaining set for good; a later reconnect does not add them back.
+        /// </summary>
+        public static byte KeepConnectedPlayers(
+            byte remainingMask,
+            byte connectedMask)
+        {
+            return (byte)(remainingMask & connectedMask);
         }
     }
 }

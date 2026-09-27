@@ -150,19 +150,19 @@ namespace MazeParty.Gameplay
             switch (category)
             {
                 case MatchAwardCategory.PeakGoldHeld:
-                    return "MOST GOLD HELD";
+                    return GameText.N("MOST GOLD HELD");
                 case MatchAwardCategory.TotalGoldEarned:
-                    return "MOST GOLD EARNED";
+                    return GameText.N("MOST GOLD EARNED");
                 case MatchAwardCategory.MinigameWins:
-                    return "MOST MINIGAME WINS";
+                    return GameText.N("MOST MINIGAME WINS");
                 case MatchAwardCategory.MinigameLastPlaces:
-                    return "MOST MINIGAME LAST PLACES";
+                    return GameText.N("MOST MINIGAME LAST PLACES");
                 case MatchAwardCategory.ItemUses:
-                    return "MOST ITEMS USED";
+                    return GameText.N("MOST ITEMS USED");
                 case MatchAwardCategory.DamageTaken:
-                    return "MOST DAMAGE TAKEN";
+                    return GameText.N("MOST DAMAGE TAKEN");
                 case MatchAwardCategory.PlayerDamageDealt:
-                    return "MOST PLAYER DAMAGE DEALT";
+                    return GameText.N("MOST PLAYER DAMAGE DEALT");
                 default:
                     throw new ArgumentOutOfRangeException(nameof(category));
             }

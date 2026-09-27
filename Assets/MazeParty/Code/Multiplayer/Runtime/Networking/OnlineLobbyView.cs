@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -23,8 +24,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button copyButton;
         [SerializeField] private Button readyButton;
         [SerializeField] private Button startButton;
-        [SerializeField] private Button leaveButton;
-        [SerializeField] private Button quitButton;
         [SerializeField] private Text inviteCodeText;
         [SerializeField] private Text sessionSummaryText;
         [SerializeField] private Text readyButtonText;
@@ -58,8 +57,6 @@ namespace MazeParty.Multiplayer
         public event Action CopyRequested;
         public event Action ReadyRequested;
         public event Action StartRequested;
-        public event Action LeaveRequested;
-        public event Action QuitRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
 
         public bool HasRequiredReferences =>
@@ -73,8 +70,6 @@ namespace MazeParty.Multiplayer
             copyButton != null &&
             readyButton != null &&
             startButton != null &&
-            leaveButton != null &&
-            quitButton != null &&
             inviteCodeText != null &&
             sessionSummaryText != null &&
             readyButtonText != null &&
@@ -108,8 +103,6 @@ namespace MazeParty.Multiplayer
             Button configuredCopyButton,
             Button configuredReadyButton,
             Button configuredStartButton,
-            Button configuredLeaveButton,
-            Button configuredQuitButton,
             Text configuredInviteCodeText,
             Text configuredSessionSummaryText,
             Text configuredReadyButtonText,
@@ -133,8 +126,6 @@ namespace MazeParty.Multiplayer
             copyButton = configuredCopyButton;
             readyButton = configuredReadyButton;
             startButton = configuredStartButton;
-            leaveButton = configuredLeaveButton;
-            quitButton = configuredQuitButton;
             inviteCodeText = configuredInviteCodeText;
             sessionSummaryText = configuredSessionSummaryText;
             readyButtonText = configuredReadyButtonText;
@@ -196,40 +187,41 @@ namespace MazeParty.Multiplayer
 
             connectionPanel.SetActive(!isInSession);
             sessionPanel.SetActive(isInSession);
-            quitButton.gameObject.SetActive(
-                !isInSession || snapshot.Phase == MultiplayerConstants.LobbyPhase);
-            statusText.text = busy ? "Working..." : status ?? string.Empty;
+            statusText.text = busy ? GameText.T("Working...") : status ?? string.Empty;
 
             if (!isInSession)
             {
                 return;
             }
 
-            inviteCodeText.text = "Invite Code: " +
-                (string.IsNullOrWhiteSpace(snapshot.Code) ? "-" : snapshot.Code);
-            sessionSummaryText.text =
-                "Players: " + snapshot.Players.Count + "/" + MultiplayerConstants.MaxPlayers +
-                "   Phase: " + FormatPhase(snapshot.Phase);
+            inviteCodeText.text = GameText.F(
+                "Invite Code: {0}",
+                string.IsNullOrWhiteSpace(snapshot.Code) ? "-" : snapshot.Code);
+            sessionSummaryText.text = GameText.F(
+                "Players: {0}/{1}   Phase: {2}",
+                snapshot.Players.Count,
+                MultiplayerConstants.MaxPlayers,
+                FormatPhase(snapshot.Phase));
 
             for (var index = 0; index < playerRows.Length; index++)
             {
                 if (index >= snapshot.Players.Count)
                 {
-                    playerRows[index].text = "- Waiting for player...";
+                    playerRows[index].text = GameText.T("- Waiting for player...");
                     continue;
                 }
 
                 var player = snapshot.Players[index];
-                var readiness = player.IsReady ? "READY" : "WAITING";
-                var host = player.IsHost ? " | HOST" : string.Empty;
-                var assignment = player.Slot >= 0 ? string.Empty : " | SYNCING SEAT";
+                var readiness = player.IsReady ? GameText.T("READY") : GameText.T("WAITING");
+                var host = player.IsHost ? " | " + GameText.T("HOST") : string.Empty;
+                var assignment = player.Slot >= 0 ? string.Empty : " | " + GameText.T("SYNCING SEAT");
                 playerRows[index].text =
                     "- " + player.DisplayName + " [" + readiness + "]" + host + assignment;
             }
 
             var isLobby = snapshot.Phase == MultiplayerConstants.LobbyPhase;
             readyButton.gameObject.SetActive(isLobby);
-            readyButtonText.text = snapshot.LocalReady ? "Cancel Ready" : "Ready";
+            readyButtonText.text = snapshot.LocalReady ? GameText.T("Cancel Ready") : GameText.T("Ready");
 
             startButton.gameObject.SetActive(isLobby && snapshot.IsHost);
             startButton.interactable = !busy && snapshot.CanStart;
@@ -296,8 +288,6 @@ namespace MazeParty.Multiplayer
             copyButton.onClick.AddListener(OnCopyClicked);
             readyButton.onClick.AddListener(OnReadyClicked);
             startButton.onClick.AddListener(OnStartClicked);
-            leaveButton.onClick.AddListener(OnLeaveClicked);
-            quitButton.onClick.AddListener(OnQuitClicked);
             _paletteButtonActions = new UnityAction[paletteButtons.Length];
             for (var index = 0; index < paletteButtons.Length; index++)
             {
@@ -323,8 +313,6 @@ namespace MazeParty.Multiplayer
             copyButton.onClick.RemoveListener(OnCopyClicked);
             readyButton.onClick.RemoveListener(OnReadyClicked);
             startButton.onClick.RemoveListener(OnStartClicked);
-            leaveButton.onClick.RemoveListener(OnLeaveClicked);
-            quitButton.onClick.RemoveListener(OnQuitClicked);
             for (var index = 0; index < paletteButtons.Length; index++)
             {
                 if (index < _paletteButtonActions.Length &&
@@ -437,16 +425,6 @@ namespace MazeParty.Multiplayer
             StartRequested?.Invoke();
         }
 
-        private void OnLeaveClicked()
-        {
-            LeaveRequested?.Invoke();
-        }
-
-        private void OnQuitClicked()
-        {
-            QuitRequested?.Invoke();
-        }
-
         private string NormalizeDisplayName()
         {
             var displayName = displayNameInput.text.Trim();
@@ -458,7 +436,18 @@ namespace MazeParty.Multiplayer
         {
             if (string.IsNullOrWhiteSpace(phase))
             {
-                return "Unknown";
+                return GameText.T("Unknown");
+            }
+
+            // Known session phases get a translated label; the phase string itself is unchanged.
+            if (phase == MultiplayerConstants.LobbyPhase)
+            {
+                return GameText.T("Lobby");
+            }
+
+            if (phase == MultiplayerConstants.PlayingPhase)
+            {
+                return GameText.T("Playing");
             }
 
             return char.ToUpperInvariant(phase[0]) + phase.Substring(1);

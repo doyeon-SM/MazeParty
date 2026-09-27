@@ -151,6 +151,10 @@ namespace MazeParty.Editor
             audioSource.playOnAwake = false;
             audioSource.loop = false;
             audioSource.spatialBlend = 0f;
+            audioAnchor.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
+                audioSource,
+                MazeParty.Gameplay.AudioChannel.Sfx,
+                audioSource.volume);
 
             CreateReplacementAnchors(root.transform);
 
