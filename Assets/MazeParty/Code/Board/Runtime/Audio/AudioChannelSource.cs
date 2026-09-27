@@ -3,12 +3,14 @@ using UnityEngine;
 namespace MazeParty.Gameplay
 {
     /// <summary>
-    /// Scales one AudioSource by its settings channel (effects or music).
-    /// Every AudioSource that plays game sound gets exactly one of these.
-    /// <see cref="baseVolume"/> is the designer volume; the effective volume is
-    /// baseVolume × channel volume, and the master volume is applied by the
-    /// AudioListener. A GameObject with several AudioSources carries one
-    /// component per source with <see cref="source"/> assigned.
+    /// Routes one scene-authored AudioSource to its channel (effects, music or
+    /// UI). Every AudioSource that plays game sound gets exactly one of these.
+    /// With the sound system's AudioMixer the source outputs to the channel's
+    /// mixer group and keeps <see cref="baseVolume"/>; the mixer applies the
+    /// settings sliders. Without a mixer the source is scaled by the channel
+    /// volume instead. A GameObject with several AudioSources carries one
+    /// component per source with <see cref="source"/> assigned. Sounds played
+    /// through <c>GameSound</c> do not need this component.
     /// </summary>
     [RequireComponent(typeof(AudioSource))]
     public sealed class AudioChannelSource : MonoBehaviour
@@ -44,21 +46,33 @@ namespace MazeParty.Gameplay
         private void OnEnable()
         {
             GameAudio.VolumesChanged += Apply;
+            GameAudio.RoutingChanged += Apply;
             Apply();
         }
 
         private void OnDisable()
         {
             GameAudio.VolumesChanged -= Apply;
+            GameAudio.RoutingChanged -= Apply;
         }
 
         private void Apply()
         {
             var target = Source;
-            if (target != null)
+            if (target == null)
             {
-                target.volume = baseVolume * GameAudio.GetChannelVolume(channel);
+                return;
             }
+
+            var group = GameAudio.GetOutputGroup(channel);
+            if (group != null)
+            {
+                target.outputAudioMixerGroup = group;
+                target.volume = baseVolume;
+                return;
+            }
+
+            target.volume = baseVolume * GameAudio.GetChannelVolume(channel);
         }
     }
 }

@@ -204,6 +204,7 @@ namespace MazeParty.Multiplayer
         [Rpc(SendTo.ClientsAndHost)]
         private void PresentBoardExplosionRpc(Vector3 position, byte itemId)
         {
+            GameSound.PlayAt(SoundKeys.ItemExplosion, position);
             var item = PrototypeItemCatalog.Get((PrototypeItemId)itemId);
             if (item.ExplosionPrefab == null) return;
             var view = Instantiate(item.ExplosionPrefab, position, Quaternion.identity);
@@ -214,6 +215,7 @@ namespace MazeParty.Multiplayer
         [Rpc(SendTo.ClientsAndHost)]
         private void PresentBoardShotRpc(Vector3 origin, Vector3 end)
         {
+            GameSound.PlayAt(SoundKeys.ItemBulletImpact, end);
             var prefab = Resources.Load<GameObject>("MazeParty/ItemViews/Shot");
             if (prefab == null) return;
             var view = Instantiate(prefab, (origin + end) * .5f, Quaternion.LookRotation(end - origin));

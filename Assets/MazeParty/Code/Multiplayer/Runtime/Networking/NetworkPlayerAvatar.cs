@@ -130,6 +130,7 @@ namespace MazeParty.Multiplayer
 
         private CharacterController _characterController;
         private FootstepAudioEmitter _footstepEmitter;
+        private bool _knockOutSoundPresented;
         private BoardTopology _topology;
         private PlayerBoardBoundaryWalls _boundaryWalls;
         private PlayerAvatarVisual _avatarVisual;
@@ -714,6 +715,21 @@ namespace MazeParty.Multiplayer
 
         public bool HasFreeItemSlot =>
             IsOwner && (_occupiedItemMask.Value & 0b0000_0111) != 0b0000_0111;
+
+        /// <summary>Items the owner holds (owner and server only; 0 elsewhere).</summary>
+        public int OccupiedItemCount
+        {
+            get
+            {
+                if (!IsOwner && !IsServer)
+                {
+                    return 0;
+                }
+
+                var mask = _occupiedItemMask.Value & 0b0000_0111;
+                return (mask & 1) + ((mask >> 1) & 1) + ((mask >> 2) & 1);
+            }
+        }
         public bool HasFreeItemSlotOnServer =>
             IsServer && (_occupiedItemMask.Value & 0b0000_0111) != 0b0000_0111;
 
@@ -808,9 +824,38 @@ namespace MazeParty.Multiplayer
             return DamageResult.Applied;
         }
 
-        private void OnBoardHealthChanged(int _, int __)
+        private void OnBoardHealthChanged(int previous, int current)
         {
             ApplyBoardDeathPresentation();
+            PresentKnockOutSound(previous > 0 && current <= 0, previous <= 0 && current > 0);
+        }
+
+        /// <summary>
+        /// Knock-out and respawn sounds during live board play. A respawn only
+        /// sounds after a knock-out this client presented, so health resets at
+        /// match start or lobby return stay silent.
+        /// </summary>
+        private void PresentKnockOutSound(bool knockedOut, bool revived)
+        {
+            var match = NetworkMatchState.Instance;
+            var live = match != null &&
+                       match.IsSpawned &&
+                       match.GameplayEnabled &&
+                       match.FlowState != BoardFlowState.MatchComplete;
+            if (knockedOut && live)
+            {
+                _knockOutSoundPresented = true;
+                GameSound.PlayAt(SoundKeys.CombatKnockOut, transform.position);
+            }
+            else if (revived)
+            {
+                if (_knockOutSoundPresented && live)
+                {
+                    GameSound.PlayAt(SoundKeys.CombatRespawn, transform.position);
+                }
+
+                _knockOutSoundPresented = false;
+            }
         }
 
         private void ApplyBoardDeathPresentation()
@@ -3172,9 +3217,14 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void OnCombatStateChanged(byte _, byte current)
+        private void OnCombatStateChanged(byte previous, byte current)
         {
             ApplyCombatColliderState((NetworkCombatState)current);
+            if ((NetworkCombatState)current == NetworkCombatState.Eliminated &&
+                (NetworkCombatState)previous != NetworkCombatState.Eliminated)
+            {
+                GameSound.PlayAt(SoundKeys.CombatKnockOut, transform.position);
+            }
         }
 
         private void ApplyCombatColliderState(NetworkCombatState state)
@@ -3583,12 +3633,16 @@ namespace MazeParty.Multiplayer
         private void PresentPunchRpc(bool useRightHand)
         {
             _avatarVisual?.TriggerPunch(useRightHand);
+            GameSound.PlayAt(SoundKeys.CombatPunchSwing, transform.position);
         }
 
         [Rpc(SendTo.ClientsAndHost)]
         private void PresentHitRpc(byte region)
         {
             _avatarVisual?.TriggerHit((PlayerHitRegion)region);
+            GameSound.PlayAt(
+                SoundKeys.CombatHit((PlayerHitRegion)region),
+                transform.position);
             if (IsOwner && NetworkMatchState.Instance != null &&
                 NetworkMatchState.Instance.IsArenaCombatPhase)
             {
@@ -3600,6 +3654,9 @@ namespace MazeParty.Multiplayer
         private void PresentItemUseRpc(byte itemId)
         {
             _avatarVisual?.TriggerItemUse((PrototypeItemId)itemId);
+            GameSound.PlayAt(
+                SoundKeys.ItemUse((PrototypeItemId)itemId),
+                transform.position);
         }
 
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

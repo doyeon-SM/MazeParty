@@ -111,6 +111,7 @@ namespace MazeParty.Multiplayer
                     OverlayVisibleState,
                     0,
                     0f);
+                GameSound.Play(SoundKeys.CeremonyAward);
             }
             else if (phase == AwardCeremonyPhase.FinalPodiumLocked)
             {
@@ -118,6 +119,8 @@ namespace MazeParty.Multiplayer
                     OverlaySlideUpState,
                     0,
                     0f);
+                GameSound.Play(SoundKeys.CeremonyFanfare);
+                GameSound.Play(SoundKeys.CeremonyApplause);
             }
             else if (phase == AwardCeremonyPhase.AwaitingReturn)
             {

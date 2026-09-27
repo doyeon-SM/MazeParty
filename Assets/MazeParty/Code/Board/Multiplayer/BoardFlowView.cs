@@ -79,6 +79,7 @@ namespace MazeParty.Multiplayer
         private Button _readyButton;
         private Button _itemShopCloseButton;
         private NetworkPlayerAvatar _localAvatar;
+        private readonly BoardSoundFeedback _soundFeedback = new BoardSoundFeedback();
         private KeyShopWorldMarker _keyShopMarker;
         private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
@@ -207,10 +208,12 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             if (match == null || !match.IsSpawned || !match.GameplayEnabled)
             {
+                _soundFeedback.Reset();
                 SetWaitingState();
                 return;
             }
 
+            _soundFeedback.Observe(match, _localAvatar);
             SetBoardUiVisible(
                 match.FlowState != BoardFlowState.MinigamePlaying &&
                 match.FlowState != BoardFlowState.MatchComplete);
@@ -301,6 +304,7 @@ namespace MazeParty.Multiplayer
             if (snapshot.IsSold(offerIndex) || !PrototypeItemCatalog.IsValid(itemId))
             {
                 SetText(_itemShopStatus, GameText.T("That item is already sold."));
+                GameSound.Play(SoundKeys.BoardShopFail);
                 return;
             }
 
@@ -308,11 +312,13 @@ namespace MazeParty.Multiplayer
             if (!_localAvatar.HasFreeItemSlot)
             {
                 SetText(_itemShopStatus, GameText.T("INVENTORY FULL - No gold was spent."));
+                GameSound.Play(SoundKeys.BoardShopFail);
                 return;
             }
             if (_localAvatar.Gold < definition.Price)
             {
                 SetText(_itemShopStatus, GameText.T("NOT ENOUGH GOLD - No gold was spent."));
+                GameSound.Play(SoundKeys.BoardShopFail);
                 return;
             }
 

@@ -143,6 +143,7 @@ namespace MazeParty.Multiplayer
             _draft = GameSettings.Applied;
             _menuOpen = true;
             bindings.MenuRoot.SetActive(true);
+            GameSound.Play(SoundKeys.UiPopupOpen);
             PushDraftToControls();
             ClearSelection();
             var controller = OnlineSessionController.Instance;
@@ -401,6 +402,7 @@ namespace MazeParty.Multiplayer
             bindings.ConfirmRoot.SetActive(open);
             if (open)
             {
+                GameSound.Play(SoundKeys.UiPopupOpen);
                 bindings.ConfirmRoot.transform.SetAsLastSibling();
                 bindings.NoticeRoot.transform.SetAsLastSibling();
                 ClearSelection();
@@ -412,6 +414,7 @@ namespace MazeParty.Multiplayer
             _noticeOpen = true;
             bindings.NoticeMessageText.text = message;
             bindings.NoticeRoot.SetActive(true);
+            GameSound.Play(SoundKeys.UiNotice);
             bindings.NoticeRoot.transform.SetAsLastSibling();
             ClearSelection();
         }

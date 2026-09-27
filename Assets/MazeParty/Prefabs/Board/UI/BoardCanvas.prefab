@@ -609,6 +609,7 @@ GameObject:
   - component: {fileID: 2785230646570360293}
   - component: {fileID: 8963572969828712592}
   - component: {fileID: 2257327101203030451}
+  - component: {fileID: 2773155231867145627}
   m_Layer: 5
   m_Name: ItemShopOffer2
   m_TagString: Untagged
@@ -733,6 +734,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 2
   shopOffer: 1
+--- !u!114 &2773155231867145627
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48262003317243779}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &58074231192593229
 GameObject:
   m_ObjectHideFlags: 0
@@ -3239,6 +3254,7 @@ GameObject:
   - component: {fileID: 8176936809883356371}
   - component: {fileID: 3810707032772649674}
   - component: {fileID: 1487080001163358834}
+  - component: {fileID: 1791720496958053022}
   m_Layer: 5
   m_Name: ReadyButton
   m_TagString: Untagged
@@ -3348,6 +3364,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1791720496958053022
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 205915841266734887}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.confirm
 --- !u!1 &212571345133331177
 GameObject:
   m_ObjectHideFlags: 0
@@ -12575,6 +12605,7 @@ GameObject:
   - component: {fileID: 8817036735819885686}
   - component: {fileID: 4381177500433214832}
   - component: {fileID: 8810594286744660336}
+  - component: {fileID: 4179803107018978472}
   m_Layer: 5
   m_Name: ItemChoiceButton1
   m_TagString: Untagged
@@ -12699,6 +12730,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 1
   shopOffer: 0
+--- !u!114 &4179803107018978472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 852122709264381788}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &852699692539412572
 GameObject:
   m_ObjectHideFlags: 0
@@ -16639,6 +16684,7 @@ GameObject:
   - component: {fileID: 3212113121914309835}
   - component: {fileID: 2421457764295839561}
   - component: {fileID: 7416134621527772071}
+  - component: {fileID: 9003914148296428347}
   m_Layer: 5
   m_Name: ItemShopCloseButton
   m_TagString: Untagged
@@ -16748,6 +16794,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &9003914148296428347
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1134827265919062525}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.back
 --- !u!1 &1135031258547771078
 GameObject:
   m_ObjectHideFlags: 0
@@ -54382,6 +54442,7 @@ GameObject:
   - component: {fileID: 7104050150452220465}
   - component: {fileID: 9014772651959903160}
   - component: {fileID: 2668166663708321722}
+  - component: {fileID: 916782076987986940}
   m_Layer: 5
   m_Name: ItemChoiceButton2
   m_TagString: Untagged
@@ -54506,6 +54567,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 2
   shopOffer: 0
+--- !u!114 &916782076987986940
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3309400447343542459}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &3313570811499615634
 GameObject:
   m_ObjectHideFlags: 0
@@ -60311,6 +60386,7 @@ GameObject:
   - component: {fileID: 4399050452742086898}
   - component: {fileID: 2442532573976766582}
   - component: {fileID: 137665821505591210}
+  - component: {fileID: 8007207335597998344}
   m_Layer: 5
   m_Name: ItemShopOffer4
   m_TagString: Untagged
@@ -60435,6 +60511,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 4
   shopOffer: 1
+--- !u!114 &8007207335597998344
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3767561502642949961}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &3770508916949474078
 GameObject:
   m_ObjectHideFlags: 0
@@ -74393,6 +74483,7 @@ GameObject:
   - component: {fileID: 6936426931915688472}
   - component: {fileID: 2850469874479424147}
   - component: {fileID: 7956264645885958677}
+  - component: {fileID: 6049243543243946213}
   m_Layer: 5
   m_Name: Target P1
   m_TagString: Untagged
@@ -74502,6 +74593,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6049243543243946213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4659415412857823331}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &4660017106664858736
 GameObject:
   m_ObjectHideFlags: 0
@@ -86992,6 +87097,7 @@ GameObject:
   - component: {fileID: 1711072014719090706}
   - component: {fileID: 4793281896575605710}
   - component: {fileID: 5871205814676606393}
+  - component: {fileID: 2957023333753374320}
   m_Layer: 5
   m_Name: Target P4
   m_TagString: Untagged
@@ -87101,6 +87207,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2957023333753374320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5449483512995317285}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &5454553554517514323
 GameObject:
   m_ObjectHideFlags: 0
@@ -92586,6 +92706,7 @@ GameObject:
   - component: {fileID: 8800134242689702470}
   - component: {fileID: 2421198183598146502}
   - component: {fileID: 8697378130169014638}
+  - component: {fileID: 1930577485218694318}
   m_Layer: 5
   m_Name: ItemChoiceButton0
   m_TagString: Untagged
@@ -92710,6 +92831,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 0
   shopOffer: 0
+--- !u!114 &1930577485218694318
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5775248477693736497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &5776126403622676068
 GameObject:
   m_ObjectHideFlags: 0
@@ -93166,6 +93301,7 @@ GameObject:
   - component: {fileID: 7347988180538599859}
   - component: {fileID: 708620777015657541}
   - component: {fileID: 3552926825959733172}
+  - component: {fileID: 1701014336735802930}
   m_Layer: 5
   m_Name: Cancel
   m_TagString: Untagged
@@ -93275,6 +93411,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &1701014336735802930
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5798025081081391695}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.back
 --- !u!1 &5803208646603834677
 GameObject:
   m_ObjectHideFlags: 0
@@ -93635,6 +93785,7 @@ GameObject:
   - component: {fileID: 8751979373371968837}
   - component: {fileID: 6378615660011438486}
   - component: {fileID: 7973943413270892604}
+  - component: {fileID: 2612345951696736025}
   m_Layer: 5
   m_Name: NoItemButton
   m_TagString: Untagged
@@ -93744,6 +93895,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2612345951696736025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5829447773709229683}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &5830708863621988576
 GameObject:
   m_ObjectHideFlags: 0
@@ -95121,6 +95286,7 @@ GameObject:
   - component: {fileID: 4080939185780814744}
   - component: {fileID: 4108182120485667925}
   - component: {fileID: 8603504360225183718}
+  - component: {fileID: 2977044517337380740}
   m_Layer: 5
   m_Name: ItemShopOffer3
   m_TagString: Untagged
@@ -95245,6 +95411,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 3
   shopOffer: 1
+--- !u!114 &2977044517337380740
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5894638579816216620}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &5895485640790960638
 GameObject:
   m_ObjectHideFlags: 0
@@ -119291,6 +119471,7 @@ GameObject:
   - component: {fileID: 912770927397024987}
   - component: {fileID: 9150191295209578793}
   - component: {fileID: 802998638831392210}
+  - component: {fileID: 4147084004013127464}
   m_Layer: 5
   m_Name: Target P2
   m_TagString: Untagged
@@ -119400,6 +119581,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4147084004013127464
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7576914739114231306}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &7582608168508070526
 GameObject:
   m_ObjectHideFlags: 0
@@ -119562,6 +119757,7 @@ GameObject:
   - component: {fileID: 7622504402143248898}
   - component: {fileID: 5374733156194226726}
   - component: {fileID: 1479331547687857460}
+  - component: {fileID: 4217250947180646017}
   m_Layer: 5
   m_Name: Target P3
   m_TagString: Untagged
@@ -119671,6 +119867,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &4217250947180646017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7610437241831925989}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &7610885711792942854
 GameObject:
   m_ObjectHideFlags: 0
@@ -123099,6 +123309,7 @@ GameObject:
   - component: {fileID: 2911242583111779238}
   - component: {fileID: 796454137488198473}
   - component: {fileID: 7375401443867401367}
+  - component: {fileID: 1712805959280014999}
   m_Layer: 5
   m_Name: ItemShopOffer1
   m_TagString: Untagged
@@ -123223,6 +123434,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 1
   shopOffer: 1
+--- !u!114 &1712805959280014999
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7882202741767670770}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &7883637006280802945
 GameObject:
   m_ObjectHideFlags: 0
@@ -138233,6 +138458,7 @@ GameObject:
   - component: {fileID: 3438868093180039517}
   - component: {fileID: 714966255228757913}
   - component: {fileID: 5409974314328113}
+  - component: {fileID: 2715355952658286880}
   m_Layer: 5
   m_Name: ItemShopOffer0
   m_TagString: Untagged
@@ -138357,6 +138583,20 @@ MonoBehaviour:
   view: {fileID: 8800340177372016627}
   slotIndex: 0
   shopOffer: 1
+--- !u!114 &2715355952658286880
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8975491129173972592}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &8975654535525228880
 GameObject:
   m_ObjectHideFlags: 0

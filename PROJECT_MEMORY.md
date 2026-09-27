@@ -1164,3 +1164,155 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
 - 남은 확인:
   - 실제 4인 세션에서 한 명이 먼저 보드 정리 후 방을 나가고 나머지가 복귀하는지.
   - 복귀 시작 뒤 저장 실패로 `_completedMatchReturnQueued`가 남는 기존 경로. 이번 변경 전부터 있던 문제다.
+
+## 2026-09-27 사운드 시스템 — 구현 완료 (아래 계획 → 확정 답변 → 구현 결과 순)
+
+사용자 요청: BGM, 피격·타격 같은 효과음, UI 사운드를 한곳에서 관리하는 시스템을 만든다. 사운드를 쉽게 늘릴 수 있어야 하고,
+여러 개의 피격·타격음을 무작위로 쓰기 쉬워야 한다. 먼저 질문과 제작 계획을 공유한다.
+
+현황(2026-09-27 조사):
+- 오디오 파일 0개, AudioMixer 없음.
+- 볼륨: 마스터 = `AudioListener.volume`, 효과음·BGM = `GameAudio` + `AudioChannelSource`(소스별 채널 볼륨)이며, 설정 메뉴와 연결되어 있다.
+- 재생 코드는 제각각이다.
+  - 발소리: `FootstepAudioEmitter`, 클립 배열을 순서대로 재생하고 비어 있다.
+  - 신호 AudioSource·클립 슬롯: RLGL·SequenceMemory·BalloonBlow·GiftGrab·StableFooting.
+- 이미 모든 클라이언트로 가는 연출 RPC가 있어 사운드를 붙일 수 있다.
+  - `PresentPunchRpc`, `PresentHitRpc(region: Body/Head/Hand)`, `PresentItemUseRpc`
+  - `PresentBoardExplosionRpc`, `PresentBoardShotRpc`, `PresentFootstepRpc`
+
+### 구조안
+- `SoundCue`(ScriptableObject) — 사운드 하나의 정의.
+  - 필드: 키, 채널(BGM/효과음/UI), 클립 변형 목록, 선택 방식(무작위 / 연속 반복 없는 무작위 / 셔플 / 순서).
+  - 필드: 볼륨·피치 무작위 범위, 2D·3D와 거리, 동시 재생 수 제한, 최소 재생 간격, 우선순위, 루프, BGM 페이드 시간.
+  - 타격음 변형은 클립을 목록에 더 넣기만 하면 되고, 코드는 바꾸지 않는다.
+- `SoundLibrary`(ScriptableObject) — 키 → 큐 등록부. 공용 1개에 미니게임별 라이브러리를 선택적으로 합친다.
+- `SoundKeys` — 코드에서 쓰는 키 상수(예: `combat.punch.hit`, `ui.click`, `bgm.board`).
+- 순수 규칙 클래스(EditMode 테스트 대상):
+  - `SoundVariationPicker`: 선택 방식별 다음 클립, 시드 고정 가능.
+  - `SoundVoiceRules`: 최소 간격, 큐별·전체 동시 재생 제한, 우선순위와 가장 오래된 소리 빼앗기.
+- `GameSound`(정적 진입점) — 호출: `Play(key)` / `PlayAt(key, 위치)` / `PlayAttached(key, transform)` / `PlayLoop(key)` → 정지 핸들 / `PlayBgm` / `StopBgm`.
+  - 시스템이 없거나, 키가 없거나, 클립이 비어 있으면 조용히 무시하고 경고는 1회만 남긴다.
+- `SoundSystem` 프리팹(`Prefabs/Multiplayer/Audio/SoundSystem.prefab`, OnlineBootstrap에 1개 설치):
+  - 미리 만든 AudioSource 풀(효과음 3D/2D, UI 2D)과 BGM 소스 2개(크로스페이드).
+  - `GameAudio` 채널 볼륨 적용, BGM 덕킹.
+  - 런타임 `AddComponent`로 소스를 만들지 않는다.
+- `BgmDirector` — 게임 상태를 보고 BGM을 자동으로 바꾼다.
+  - 순서: 로비·대기방 → 보드 → 미니게임(게임별 키가 있으면 우선, 없으면 공용) → 시상식 → 대기방.
+  - 플레이어 일시정지·재접속 대기 중에는 BGM을 낮춘다.
+- UI 사운드 — 버튼·토글·슬라이더·드롭다운에 호버·클릭 사운드 컴포넌트를 붙이고, 기본음과 개별 변경·무음을 지원한다.
+- 에디터 도구:
+  - `MazeParty/Audio/Install Sound System`: 라이브러리, 키별 빈 큐, 프리팹, 씬 설치. 없을 때만 만든다.
+  - 선택한 클립들로 큐 만들기.
+  - 큐 인스펙터 미리듣기.
+- 폴더:
+  - 클립: `Assets/MazeParty/Audio/{Bgm,Sfx,Ui}/…`
+  - 큐: `Assets/MazeParty/Audio/Cues/…`
+- 기존 이관: 발소리와 미니게임 신호음 슬롯을 큐 키로 옮긴다. `AudioChannelSource`는 씬에 직접 둔 루프 소스용으로 유지한다.
+- 테스트(AGENTS 기준, 회귀에 필요한 것만):
+  - 라이브러리 계약: 키 누락, 중복, 채널.
+  - 변형 선택 규칙: 연속 반복 없음, 셔플 소진.
+  - 동시 재생·간격 규칙.
+  - 부트스트랩에 시스템 1개.
+  - UI 버튼 사운드 부착 계약.
+
+### 초기 키 초안(약 45개)
+- BGM: `bgm.lobby`, `bgm.waiting_room`, `bgm.board`, `bgm.minigame`(공용), `bgm.minigame.<게임>`(선택), `bgm.ceremony`
+- UI: `ui.hover`, `ui.click`, `ui.back`, `ui.confirm`, `ui.error`, `ui.toggle`, `ui.popup_open`, `ui.notice`
+- 전투: `combat.punch.swing`, `combat.punch.hit`, `combat.hit.head`, `combat.hit.body`, `combat.hit.hand`, `combat.ko`, `combat.respawn`
+- 보드·아이템:
+  - 주사위: `board.dice.roll`, `board.dice.bounce`, `board.dice.result`
+  - 골드·상점: `board.gold.gain`, `board.gold.loss`, `board.key.buy`, `board.shop.buy`, `board.shop.fail`, `board.turn_start`
+  - 아이템: `item.pistol.shot`, `item.sniper.shot`, `item.grenade.throw`, `item.explosion`, `item.mine.place`, `item.swap`, `item.cloak`
+  - 발소리: `footstep`
+- 미니게임 공용: `minigame.reveal`, `minigame.countdown.tick`, `minigame.countdown.go`, `minigame.finish`, `minigame.result`
+- 시상식: `ceremony.award`, `ceremony.fanfare`, `ceremony.applause`
+- 타격음 기본값(추천):
+  - 선택 방식: 연속 반복 없는 무작위.
+  - 무작위 범위: 피치 ±8%, 볼륨 ±10%.
+  - 제한: 같은 큐 동시 4개, 최소 간격 0.05초.
+
+### 단계
+1. 코어: 큐, 라이브러리, 키, 선택·제한 규칙, SoundSystem, GameSound, 볼륨 연동, 설치 도구, 테스트.
+2. BGM 디렉터.
+3. UI 사운드.
+4. 게임 이벤트 연결(질문 3의 범위).
+5. 기존 슬롯 이관과 임시 사운드(질문 1), 문서·TODO 갱신.
+
+### 질문 (추천안 표시)
+1. 사운드 에셋: a 테스트용 임시음 합성(추천) / b 빈 큐만 / c 보유 에셋 경로로 연결
+2. 호출 방식: a 문자열 키 상수 + 라이브러리(추천) / b enum / c 뷰마다 큐 에셋 직접 참조
+3. 이번 연결 범위: a 시스템 + BGM 자동 전환 + UI 전체 + 대표 효과음(추천) / b 시스템만 / c a + 미니게임 15종 개별 효과음
+4. UI 사운드 적용: a 에디터 도구로 모든 UI 프리팹 버튼류에 일괄 부착(추천) / b 필요한 버튼에만 수동 부착
+5. UI 볼륨: a 효과음 슬라이더를 따름(추천) / b UI 슬라이더 추가
+6. BGM 구성: a 상황별 5곡 + 미니게임별 곡이 있으면 우선(추천) / b 15종 전부 개별 곡 / c 로비·인게임 2곡
+7. 거리감: a 월드 사건은 3D 거리 감쇠, UI·안내음은 2D(추천) / b 전부 2D
+8. 믹서: a 코드 볼륨 채널 유지 + 코드 덕킹(추천) / b AudioMixer 도입
+
+### 확정 답변 (2026-09-27)
+1. b 빈 큐만(임시음 없음)  2. a 문자열 키 상수 + 라이브러리  3. a 시스템 + BGM 자동 전환 + UI 전체 + 대표 효과음
+4. a UI 프리팹 일괄 부착  5. a UI는 효과음 슬라이더를 따름  6. a 상황별 5곡 + 미니게임별 곡 우선(15종 개별 곡 준비 중)
+7. a 월드 사건 3D / UI·안내 2D  8. b AudioMixer 도입
+
+### 구현 결과
+- 코드 (`Code/Board/Runtime/Audio`, MazeParty.Gameplay):
+  - `SoundCue`: 키, 채널, 클립 변형, 선택 방식, 볼륨·피치 무작위, 3D, 루프, 동시 재생·간격, 우선순위, 덕킹, 페이드
+  - `SoundLibrary`: 다른 라이브러리 include 가능
+  - `SoundKeys`: 61개 키. 고정 37개 + 미니게임 BGM 15개(`bgm.minigame.<게임>`) + 아이템 사용음 9개(`item.use.<아이템>`)
+  - `SoundVariationPicker`, `SoundVoiceRules`, `BgmTrackRules`, `BoardFeedbackSoundRules`: 순수 규칙
+  - `SoundSystem`:
+    - 보이스 24개와 BGM 소스 2개(크로스페이드)를 둔다.
+    - 믹서 노출 파라미터에 설정 볼륨을 dB로 적용한다.
+    - 스냅샷 Default·Paused·Ducked를 전환한다.
+    - `logPlays` 켜면 재생 키가 로그로 남는다.
+  - `GameSound`: 정적 진입점. `Play`, `PlayAt`, `PlayAttached`, `Stop`, `PlayOn`, `PlayBgm`, `StopBgm`, `HasClips`, `SetSimulationPaused`
+  - `GameAudio`: 채널 Ui 추가, 믹서 라우팅 등록. 라우팅이 있으면 `AudioListener.volume`은 1로 두고 마스터 볼륨은 믹서가 담당한다.
+  - `AudioChannelSource`: 씬에 둔 AudioSource를 믹서 그룹으로 보낸다(믹서가 없으면 예전처럼 볼륨 배율).
+- 코드 (`Code/Multiplayer/Runtime/Audio`):
+  - `BgmDirector`: 로비 → 대기방 → 보드 → 미니게임(게임별 곡 → 공용 → 보드) → 시상식. 보드를 정리한 사람은 대기방 곡을 듣는다. 게임 일시정지·재접속 대기 중에는 Paused 스냅샷.
+  - `UiSoundEmitter`: 호버·클릭·서브밋. 상호작용 가능할 때만 소리를 낸다.
+- 에셋 (설치 도구가 생성, 이미 있으면 유지):
+  - 믹서 `Assets/MazeParty/Audio/Mixer/MazeParty.mixer`
+    - 그룹: Master[MasterVolume] > BGM[BgmVolume] > Music(Lowpass Simple), Master > SFX[SfxVolume] > Effects, UI
+    - Paused 스냅샷: Music -8 dB + 저역 통과 1400 Hz, Effects -4 dB
+    - Ducked 스냅샷: Music -10 dB
+  - 큐 61개 `Assets/MazeParty/Audio/Cues/<분류>/<키>.asset` (클립 비어 있음)
+  - 라이브러리 `Assets/MazeParty/Audio/SoundLibrary.asset`
+  - 프리팹 `Assets/MazeParty/Resources/MazeParty/Audio/SoundSystem.prefab`: 첫 씬 로드 전에 자동 생성, DontDestroyOnLoad
+- 믹서 생성: 공개 API가 없어 Unity 내부 `AudioMixerController`를 리플렉션으로 호출한다(`AudioMixerAuthoring`, 6000.6 검증). 믹서가 없을 때만 실행한다.
+- 메뉴:
+  - `MazeParty/Audio/Install Sound System`: 믹서·큐·라이브러리·프리팹 생성과 UI 사운드 부착
+  - `Refresh Sound Library`, `Add UI Sounds To Prefabs`
+  - Project 우클릭 `Create/MazeParty/Audio/Sound Cue From Selected Clips`
+  - 큐 인스펙터: 다음 변형 미리듣기, 정지
+- UI: Dev 제외 UI 프리팹의 컨트롤 52개에 `UiSoundEmitter`를 붙였다.
+  - 기본: 호버 `ui.hover`, 클릭 `ui.click`
+  - 이름에 close·cancel·back이 들어가면 `ui.back`
+  - apply·confirm·ready·start·create·join·OK·leave는 `ui.confirm`
+  - 스크롤바는 무음, 입력칸은 클릭만
+- 연결한 효과음:
+  - 전투: 펀치 휘두름, 부위별 피격(몸·머리·손), KO·부활(보드 사망/아레나 탈락)
+  - 아이템: 사용음, 폭발, 탄착
+  - 주사위: 굴림, 결과, 튕김(서버 물리 충돌 → Unreliable RPC, 다이별 0.08초 제한)
+  - 발소리(기존 반경 규칙 유지)
+  - 보드: 턴 시작; 내 골드 획득·손실, 열쇠 구매, 상점 구매; 상점 실패(매진·가방 가득·골드 부족)
+  - 미니게임: 타워 공개, 카운트다운 틱·GO, 미니게임 종료
+  - 시상식: 보너스 상, 최종 팡파르(덕킹)·박수
+  - 메뉴: 열기, 확인창, 알림 팝업
+  - 온라인 작업 실패 시 `ui.error`
+- 이번에 이관하지 않은 것(3-c 범위): 미니게임 전용 신호음 슬롯(RLGL·SequenceMemory·BalloonBlow·GiftGrab·StableFooting)은 그대로 두었다. 해당 AudioSource는 `AudioChannelSource`를 통해 믹서 볼륨을 따른다. 나중에 `GameSound.PlayOn(키, 소스)`로 옮기면 된다.
+- 검증:
+  - EditMode 314개 통과(+7). `SoundRulesTests` 5개, `SoundSystemContractTests` 2개(프리팹·믹서·키 커버리지, UI 컨트롤 부착).
+  - 플레이 모드 스모크: 시스템 1개 생성과 라우팅, 볼륨→dB(0.5 → -6.02, 0 → -80), 동시 4개 제한 교체, 3D·그룹·피치 변형, BGM 크로스페이드, 없는 키 경고 1회를 확인했다.
+  - 같은 프레임에 연속 재생하면 한 보이스만 반복 교체되던 문제를 재생 순번으로 고쳤다.
+  - 4인 실기 청음은 클립이 없어 하지 않았다.
+
+### 사운드 추가·교체 방법
+1. 클립을 `Assets/MazeParty/Audio/Clips/…`(권장)에 넣는다.
+2. `Assets/MazeParty/Audio/Cues/` 아래 해당 키의 큐를 열어 Clips 목록에 끌어 넣는다.
+   - 타격음처럼 여러 개를 넣으면 무작위 변형이 된다(기본: 연속 반복 없음).
+   - 미니게임 개별 곡은 `Cues/Bgm/bgm.minigame.<게임>.asset`에 넣으면 바로 우선 사용된다.
+3. 새 소리가 필요하면 `SoundKeys`에 상수를 추가하고 `Install Sound System`을 실행해 빈 큐를 만든다.
+   - 코드 없이 쓸 커스텀 큐는 클립 선택 → `Sound Cue From Selected Clips`로 만들고, 키를 바꾼 뒤 `Refresh Sound Library`를 실행한다.
+4. 호출: `GameSound.Play(키)`(2D), `GameSound.PlayAt(키, 위치)`(3D), 루프는 `var h = GameSound.PlayAttached(키, transform); … GameSound.Stop(h);`
+   - 네트워크 이벤트는 모든 클라이언트에서 실행되는 연출 RPC나 NetworkVariable 변경 콜백에서 호출한다.
+5. 믹서 조정(이펙트, 스냅샷 값)은 Audio Mixer 창에서 직접 한다. 설치 도구는 기존 믹서를 덮어쓰지 않는다.

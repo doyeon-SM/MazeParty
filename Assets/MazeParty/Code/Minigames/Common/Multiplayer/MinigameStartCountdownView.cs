@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -76,6 +77,15 @@ namespace MazeParty.Multiplayer
             if (show && _displayedNumeral != numeral)
             {
                 numeralText.text = numeral.ToString();
+                if (Application.isPlaying)
+                {
+                    GameSound.Play(SoundKeys.MinigameCountdownTick);
+                }
+            }
+            else if (!show && _visible && _displayedNumeral == 1 && Application.isPlaying)
+            {
+                // The countdown ran out after "1": the minigame starts.
+                GameSound.Play(SoundKeys.MinigameCountdownGo);
             }
 
             if (_visible != show || contentRoot.activeSelf != show)

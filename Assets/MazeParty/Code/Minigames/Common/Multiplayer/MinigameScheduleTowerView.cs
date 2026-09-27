@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer
         private Vector3[] _blockBaseScales = Array.Empty<Vector3>();
         private int _observedRevision = -1;
         private float _revisionObservedAt;
+        private int _revealSoundRevision = -1;
 
         public bool HasRequiredReferences =>
             canvas != null &&
@@ -117,6 +118,12 @@ namespace MazeParty.Multiplayer
 
             var revealed =
                 Time.unscaledTime - _revisionObservedAt >= RevealDelaySeconds;
+            if (revealed && _revealSoundRevision != _observedRevision)
+            {
+                _revealSoundRevision = _observedRevision;
+                GameSound.Play(SoundKeys.MinigameReveal);
+            }
+
             Refresh(match, revealed);
         }
 

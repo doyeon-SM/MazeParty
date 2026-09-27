@@ -392,6 +392,7 @@ GameObject:
   - component: {fileID: 7533318869568876280}
   - component: {fileID: 8847579084220295824}
   - component: {fileID: 4670869277064099216}
+  - component: {fileID: 8041011102539090928}
   m_Layer: 5
   m_Name: Leave Room Button
   m_TagString: Untagged
@@ -501,6 +502,20 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &8041011102539090928
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2884942763302483967}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.confirm
 --- !u!1 &2948917315517978236
 GameObject:
   m_ObjectHideFlags: 0

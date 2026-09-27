@@ -114,9 +114,13 @@ namespace MazeParty.Multiplayer
         private readonly List<int> _faceValues =
             new List<int>(WorldDieAuthorityModel.MaximumFace);
 
+        private const float BounceSoundMinSpeed = 1.2f;
+        private const float BounceSoundMinInterval = 0.08f;
+
         private Rigidbody _body;
         private Collider _dieCollider;
         private NetworkTransform _networkTransform;
+        private float _nextBounceSoundAt;
         private BoardTile _assignedTile;
         private WorldDieTileFrame _tileFrame;
         private bool _hasTileFrame;
@@ -1324,10 +1328,50 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void OnPhaseChanged(byte _, byte current)
+        private void OnPhaseChanged(byte previous, byte current)
         {
             ApplyVisibility((WorldDiePhase)current);
             RefreshWorldResultText();
+            var before = (WorldDiePhase)previous;
+            var now = (WorldDiePhase)current;
+            if (now == WorldDiePhase.Rolling && before != WorldDiePhase.Rolling)
+            {
+                GameSound.PlayAt(SoundKeys.BoardDiceRoll, transform.position);
+            }
+            else if (now == WorldDiePhase.Settled && before == WorldDiePhase.Rolling)
+            {
+                GameSound.PlayAt(SoundKeys.BoardDiceResult, transform.position);
+            }
+        }
+
+        /// <summary>
+        /// Server physics only: a hard enough hit while rolling becomes an
+        /// unreliable bounce sound on every client, rate-limited per die.
+        /// </summary>
+        private void OnCollisionEnter(Collision collision)
+        {
+            if (!IsServer || !IsSpawned || Phase != WorldDiePhase.Rolling)
+            {
+                return;
+            }
+
+            var speed = collision.relativeVelocity.magnitude;
+            if (speed < BounceSoundMinSpeed || Time.time < _nextBounceSoundAt)
+            {
+                return;
+            }
+
+            _nextBounceSoundAt = Time.time + BounceSoundMinInterval;
+            PresentBounceRpc((byte)Mathf.Clamp(Mathf.RoundToInt(speed * 16f), 0, 255));
+        }
+
+        [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Unreliable)]
+        private void PresentBounceRpc(byte intensity)
+        {
+            GameSound.PlayAt(
+                SoundKeys.BoardDiceBounce,
+                transform.position,
+                Mathf.Clamp01(0.35f + intensity / 255f));
         }
 
         private void OnPublicFaceChanged(int _, int __)

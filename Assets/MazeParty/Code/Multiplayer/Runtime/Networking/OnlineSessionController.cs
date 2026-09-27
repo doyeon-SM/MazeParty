@@ -1320,6 +1320,7 @@ namespace MazeParty.Multiplayer
             {
                 _status = exception.Message;
                 Debug.LogException(exception);
+                GameSound.Play(SoundKeys.UiError);
             }
             finally
             {
