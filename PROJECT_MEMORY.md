@@ -103,24 +103,32 @@
 
 ## 최신 통합·검증 기준
 
-- 최신 성공 커밋은 `3e7ab65f27fb01c233223f422a269d6e4c0a4323`
-  (`26.09.27`, 본문 `mvp 안정화`)이며 `origin/dev/board`와 일치한다.
-- 해당 커밋은 공동 순위, 경기 무효화, 수상식 자동 복귀, 지뢰 복구, 옵션 저장·적용,
-  Windows 빌드 메뉴를 포함한다.
-- 커밋 기준 전체 EditMode는 435/435, Mono x64 Development 빌드는
-  `Builds/Windows-Development/MazeParty.exe` 288,967,464 bytes, 오류·경고 0이었다.
-- 같은 PC 4프로세스 Relay에서 방 생성, 3인 참가, 4/4 READY, Board TurnOverview와
-  네 클라이언트 공통 상태 일치를 확인했다. c1/c2/c3의 `GetLobbyAsync` HTTP 429 각 1회는
-  자동 회복했으며 후속 온라인 회귀에서 빈도와 영향을 계속 관찰한다.
-- 현재 미커밋 유지보수 작업은 이 MD 압축과 EditMode 간소화뿐이다. 핵심 계약을 유지한
-  전체 EditMode 363/363 통과(2.680초), 실패·스킵·컴파일·콘솔 오류/경고 0을 확인했다.
+- 최신 성공 커밋은 `6d78904ea0bcb397bf4243322499bedd8a9b9820`
+  (`26.09.28`, 본문 `md 및 코덱스 테스트 editmode 간소화`)이며
+  `origin/dev/board`와 일치한다.
+- 현재 작업 트리에는 정확한 60초 경계, SceneManager·씬 언로드 사전검증, 무효 게이트가
+  닫힌 뒤에도 로비 복귀 요청이 소실되지 않도록 pending을 보존하고 coordinator가 비면
+  `TryStart`로 재시도하는 방어, Windows 빌드 출력 정리 재시도가 미커밋 상태로 남아 있다.
+- 검증 중 새 로비 복귀 상태 문구가 번역표에 없어 StringTable 계약 테스트가 실패했으나,
+  기존 키 `Waiting for the server scene manager during lobby return.`를 재사용해 해결했고
+  최종 전체 363/363을 재확인했다.
+- Unity 6000.6.0f1 종료·복귀 핵심 EditMode 24/24와 전체 363/363 통과(2.854초),
+  실패·스킵·컴파일·콘솔 오류/경고 0을 확인했다.
+- Mono x64 Development 빌드 `Builds/Windows-Development/MazeParty.exe`는
+  288,968,856 bytes(451 files)이며 `MonoBleedingEdge`·`MazeParty_Data/Managed`
+  존재, `GameAssembly.dll` 부재와 빌드 오류·경고 0을 확인했다.
+- 최종 재빌드 바이너리를 같은 PC 4프로세스 Relay에서 초대 코드 `RBQ7JW`로
+  4/4 READY와 Board 진입 뒤
+  게스트 프로세스를 강제 종료했다. 재접속 전역 정지와 60초 유예 만료 뒤 최종
+  순위·보상 없이 생존 3명이 같은 코드의 로비로 복귀하고 모두 `WAITING`으로
+  초기화됐으며 네 로그에서 예외·assert·JobTempAlloc 오류가 없었다.
 
 ## 실제 남은 TODO
 
 ### MVP 필수 실기
 
-1. 최신 4클라이언트에서 게스트 명시 이탈과 실제 60초 재접속 실패를 각각 재현해
-   경기 무효, 순위·보상 없음, 같은 방 복귀와 READY 초기화, 수동 pause 우선순위를 확인한다.
+1. 실제 4클라이언트에서 수동 pause 중 연결 끊김과 재접속 뒤 남은 pause 시간 복원을
+   확인한다.
 2. `TurnOverview`, `MinigameIntroReady`, `MatchComplete`에서 호스트를 강제 종료해
    복구·잘못된 roster 거부·Continue/Discard/Leave를 확인한다.
 3. 공동 순위 `1/1/3`, 수상식 조기 READY, 활성 시간 60초 자동 복귀와 정지 시간 제외를
@@ -145,9 +153,13 @@
 
 ## Notion 반영 체크포인트
 
+- 2026-09-28 완료: 최신 커밋 `6d78904`, 미커밋 안정화 수정, 전체 363/363,
+  경고·오류 없는 Mono 빌드와 실제 4인 60초 만료 복귀 결과를 기획서와 같은 날짜의
+  단일 회의록에 반영했다.
 - 2026-09-27 완료: 기획서 v0.37, 세부 룰, TODO, 구현 이력과 같은 날짜의 단일
   회의록에 커밋 `3e7ab65`, 최종 확정안, 검증 결과, MD·테스트 간소화와 남은
   릴리즈 후보 순서를 동기화했다.
 - 기획서: https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0
 - 회의록 DB: https://app.notion.com/p/f8a0bc24176e4f34804f7a605234ff8f
+- 2026-09-28 회의록: https://app.notion.com/p/3e8c227fda0381c59956eaecf273f797
 - 2026-09-27 회의록: https://app.notion.com/p/3e8c227fda0381d6a30ede3fddd25a79

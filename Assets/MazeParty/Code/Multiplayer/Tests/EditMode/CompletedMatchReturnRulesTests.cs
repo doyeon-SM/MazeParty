@@ -13,12 +13,16 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(gate.AllowsResultMutation, Is.True);
             Assert.That(gate.AllowsRecoveryWrite, Is.True);
 
-            Assert.That(gate.TryVoid(), Is.True);
+            Assert.That(gate.TryVoid(lobbyReturnPrepared: false), Is.False);
+            Assert.That(gate.IsVoided, Is.False);
+            Assert.That(gate.AllowsGameplayMutation, Is.True);
+
+            Assert.That(gate.TryVoid(lobbyReturnPrepared: true), Is.True);
             Assert.That(gate.IsVoided, Is.True);
             Assert.That(gate.AllowsGameplayMutation, Is.False);
             Assert.That(gate.AllowsResultMutation, Is.False);
             Assert.That(gate.AllowsRecoveryWrite, Is.False);
-            Assert.That(gate.TryVoid(), Is.False);
+            Assert.That(gate.TryVoid(lobbyReturnPrepared: true), Is.False);
         }
 
         [Test]
@@ -32,6 +36,23 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(CompletedMatchReturnRules.HasReconnectGraceExpired(
                 endsAt,
                 85d), Is.True);
+
+            Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
+                allPlayersReady: true,
+                endsAt,
+                84.999d), Is.True);
+            Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
+                allPlayersReady: true,
+                endsAt,
+                85d), Is.False);
+            Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
+                allPlayersReady: false,
+                endsAt,
+                84.999d), Is.False);
+            Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
+                allPlayersReady: true,
+                endsAt: 0d,
+                now: 0d), Is.False);
         }
 
         [Test]

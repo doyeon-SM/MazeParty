@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -14,6 +15,9 @@ namespace MazeParty.Multiplayer.Editor
     /// </summary>
     public static class WindowsBuildUtility
     {
+        private const int OutputCleanupAttemptCount = 5;
+        private const int OutputCleanupRetryDelayMilliseconds = 250;
+
         public const string DevelopmentOutput =
             "Builds/Windows-Development/MazeParty.exe";
         public const string ReleaseOutput =
@@ -55,9 +59,13 @@ namespace MazeParty.Multiplayer.Editor
             var namedTarget = NamedBuildTarget.Standalone;
             var previousBackend =
                 PlayerSettings.GetScriptingBackend(namedTarget);
+            var backendChanged = previousBackend != backend;
             try
             {
-                PlayerSettings.SetScriptingBackend(namedTarget, backend);
+                if (backendChanged)
+                {
+                    PlayerSettings.SetScriptingBackend(namedTarget, backend);
+                }
                 var absoluteOutput = Path.GetFullPath(outputPath);
                 var outputDirectory = Path.GetDirectoryName(absoluteOutput);
                 if (string.IsNullOrEmpty(outputDirectory))
@@ -68,11 +76,7 @@ namespace MazeParty.Multiplayer.Editor
 
                 // Never validate against stale files from another backend.
                 // These two menu commands own their dedicated output folders.
-                if (Directory.Exists(outputDirectory))
-                {
-                    Directory.Delete(outputDirectory, true);
-                }
-                Directory.CreateDirectory(outputDirectory);
+                ResetOutputDirectory(outputDirectory);
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = scenes,
@@ -91,7 +95,68 @@ namespace MazeParty.Multiplayer.Editor
             }
             finally
             {
-                PlayerSettings.SetScriptingBackend(namedTarget, previousBackend);
+                if (backendChanged)
+                {
+                    PlayerSettings.SetScriptingBackend(
+                        namedTarget,
+                        previousBackend);
+                }
+            }
+        }
+
+        private static void ResetOutputDirectory(string outputDirectory)
+        {
+            Exception lastException = null;
+            for (var attempt = 0;
+                 attempt < OutputCleanupAttemptCount &&
+                 Directory.Exists(outputDirectory);
+                 attempt++)
+            {
+                try
+                {
+                    ClearReadOnlyFileAttributes(outputDirectory);
+                    Directory.Delete(outputDirectory, true);
+                    lastException = null;
+                }
+                catch (Exception exception) when (
+                    exception is IOException ||
+                    exception is UnauthorizedAccessException)
+                {
+                    lastException = exception;
+                    if (attempt + 1 < OutputCleanupAttemptCount)
+                    {
+                        Thread.Sleep(
+                            OutputCleanupRetryDelayMilliseconds *
+                            (attempt + 1));
+                    }
+                }
+            }
+
+            if (Directory.Exists(outputDirectory))
+            {
+                throw new IOException(
+                    $"Could not clean the Windows build output after " +
+                    $"{OutputCleanupAttemptCount} attempts: {outputDirectory}",
+                    lastException);
+            }
+
+            Directory.CreateDirectory(outputDirectory);
+        }
+
+        private static void ClearReadOnlyFileAttributes(string directory)
+        {
+            foreach (var file in Directory.EnumerateFiles(
+                         directory,
+                         "*",
+                         SearchOption.AllDirectories))
+            {
+                var attributes = File.GetAttributes(file);
+                if ((attributes & FileAttributes.ReadOnly) != 0)
+                {
+                    File.SetAttributes(
+                        file,
+                        attributes & ~FileAttributes.ReadOnly);
+                }
             }
         }
 

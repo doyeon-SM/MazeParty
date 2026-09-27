@@ -13,9 +13,9 @@ namespace MazeParty.Multiplayer
         public bool AllowsResultMutation => !IsVoided;
         public bool AllowsRecoveryWrite => !IsVoided;
 
-        public bool TryVoid()
+        public bool TryVoid(bool lobbyReturnPrepared)
         {
-            if (IsVoided)
+            if (!lobbyReturnPrepared || IsVoided)
             {
                 return false;
             }
@@ -56,6 +56,15 @@ namespace MazeParty.Multiplayer
         public static bool HasReconnectGraceExpired(double endsAt, double now)
         {
             return endsAt > 0d && now >= endsAt;
+        }
+
+        public static bool ShouldResumeReconnect(
+            bool allPlayersReady,
+            double endsAt,
+            double now)
+        {
+            return allPlayersReady && endsAt > 0d &&
+                   !HasReconnectGraceExpired(endsAt, now);
         }
 
         public static RemoteDisconnectDisposition GetRemoteDisconnectDisposition(

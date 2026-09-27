@@ -486,7 +486,10 @@ namespace MazeParty.Multiplayer
             if (_reconnectPaused.Value)
             {
                 StopAllAvatarInputOnServer();
-                if (HasFourBoardReadyPlayers())
+                if (CompletedMatchReturnRules.ShouldResumeReconnect(
+                        HasFourBoardReadyPlayers(),
+                        _reconnectGraceEndsAt.Value,
+                        now))
                 {
                     ResumeAfterReconnectOnServer(now);
                 }
@@ -661,16 +664,16 @@ namespace MazeParty.Multiplayer
         /// fixed-four match. The latch is set first so callbacks raised while
         /// runtimes are ending cannot settle rewards or write recovery state.
         /// </summary>
-        public bool VoidActiveMatchOnServer()
+        public bool VoidActiveMatchOnServer(bool lobbyReturnPrepared)
         {
-            if (!IsServer)
+            if (!IsServer || !lobbyReturnPrepared)
             {
                 return false;
             }
 
-            if (!_activeMatchVoidGate.TryVoid())
+            if (!_activeMatchVoidGate.TryVoid(lobbyReturnPrepared))
             {
-                return true;
+                return _activeMatchVoidGate.IsVoided;
             }
 
             _gameplayEnabled.Value = false;
@@ -1062,9 +1065,14 @@ namespace MazeParty.Multiplayer
 
             RefreshPresentMask();
             RestoreAllMinigameRuntimes(avatar);
-            if (_reconnectPaused.Value && HasFourBoardReadyPlayers())
+            var now = ServerNow;
+            if (_reconnectPaused.Value &&
+                CompletedMatchReturnRules.ShouldResumeReconnect(
+                    HasFourBoardReadyPlayers(),
+                    _reconnectGraceEndsAt.Value,
+                    now))
             {
-                ResumeAfterReconnectOnServer(ServerNow);
+                ResumeAfterReconnectOnServer(now);
             }
         }
 

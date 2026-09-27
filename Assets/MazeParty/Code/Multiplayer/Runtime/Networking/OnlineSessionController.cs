@@ -64,6 +64,8 @@ namespace MazeParty.Multiplayer
         private readonly Dictionary<int, ulong> _reconnectGraceClientBySlot =
             new Dictionary<int, ulong>();
         private bool _completedMatchLobbyReturnInProgress;
+        private bool _voidedMatchLobbyReturnPending;
+        private string _voidedMatchLobbyReturnReason = string.Empty;
         private bool _completedMatchAvatarsPrepared;
         private bool _completedMatchUnloadNextFrame;
         private int _completedMatchUnloadEarliestFrame;
@@ -294,6 +296,7 @@ namespace MazeParty.Multiplayer
             ResolveReconnectedGraceClients();
             AdvanceLocalReadyReset();
             AdvancePendingBoardLoadReconnect();
+            TryAdvanceVoidedMatchLobbyReturn();
             if (_completedMatchLobbyReturnInProgress &&
                 _completedMatchPendingUnloadClients.Count > 0 &&
                 _completedMatchPendingUnloadDeadline > 0d &&
@@ -625,7 +628,7 @@ namespace MazeParty.Multiplayer
             var disposition = VoluntaryLeaveRules.Resolve(
                 matchInProgress,
                 avatar.OwnerClientId == NetworkManager.ServerClientId,
-                _completedMatchLobbyReturnInProgress,
+                IsMatchLobbyReturnOwned,
                 IsFinalRankingLocked());
             switch (disposition)
             {
@@ -749,12 +752,16 @@ namespace MazeParty.Multiplayer
             return match != null && match.IsSpawned && match.IsFinalRankingLocked;
         }
 
+        private bool IsMatchLobbyReturnOwned =>
+            _completedMatchLobbyReturnInProgress ||
+            _voidedMatchLobbyReturnPending;
+
         /// <summary>Host decision for the session service; see <see cref="IOnlineSessionProvider.KeepRoomOnPlayingDeparture"/>.</summary>
         private bool ShouldKeepRoomOnPlayingDeparture()
         {
             return CompletedMatchReturnRules.KeepsRoomOnPlayingDeparture(
                 IsFinalRankingLocked(),
-                _completedMatchLobbyReturnInProgress);
+                IsMatchLobbyReturnOwned);
         }
 
         private void CompleteVoluntaryMatchLeave()
@@ -1260,19 +1267,70 @@ namespace MazeParty.Multiplayer
                 _sessions == null ||
                 !_sessions.IsInSession ||
                 !_sessions.Current.IsHost ||
-                (!_completedMatchLobbyReturnInProgress &&
+                (!IsMatchLobbyReturnOwned &&
                  _sessions.Current.Phase != MultiplayerConstants.PlayingPhase))
             {
                 return false;
             }
 
-            var match = NetworkMatchState.Instance;
-            if (match != null &&
-                match.IsSpawned &&
-                !match.VoidActiveMatchOnServer())
+            if (_completedMatchLobbyReturnInProgress)
             {
+                return BeginMatchLobbyReturnOnServer(
+                    includeReconnectGraceDisconnects: true);
+            }
+
+            if (_voidedMatchLobbyReturnPending)
+            {
+                TryAdvanceVoidedMatchLobbyReturn();
+                return true;
+            }
+
+            if (manager.SceneManager == null)
+            {
+                SetLocalizedStatus(
+                    "Waiting for the server scene manager during lobby return.");
                 return false;
             }
+
+            ObserveNetworkSceneManager(manager.SceneManager);
+            if (!TryQueueCompletedMatchSceneUnloads(
+                    manager.SceneManager,
+                    out var sceneValidationError))
+            {
+                SetStatus(sceneValidationError);
+                return false;
+            }
+
+            var match = NetworkMatchState.Instance;
+            if (match != null && match.IsSpawned)
+            {
+                try
+                {
+                    if (!match.VoidActiveMatchOnServer(lobbyReturnPrepared: true))
+                    {
+                        _completedMatchSceneUnloadQueue.Clear();
+                        return false;
+                    }
+                }
+                catch (Exception exception)
+                {
+                    if (!match.IsMatchVoided)
+                    {
+                        _completedMatchSceneUnloadQueue.Clear();
+                        Debug.LogException(exception);
+                        return false;
+                    }
+
+                    // The irreversible gate was already closed. Keep going so
+                    // the Board is unloaded even if best-effort teardown failed.
+                    Debug.LogWarning(
+                        "The match was voided, but part of Board teardown failed: " +
+                        exception.Message);
+                }
+            }
+
+            _voidedMatchLobbyReturnPending = true;
+            _voidedMatchLobbyReturnReason = reason ?? string.Empty;
 
             // The persistent session is invalidated before starting any async
             // phase or scene work. A crash during lobby return must never offer
@@ -1289,16 +1347,40 @@ namespace MazeParty.Multiplayer
             }
             ResetHostMatchRecoveryChoice();
 
-            var returning = BeginMatchLobbyReturnOnServer(
-                includeReconnectGraceDisconnects: true);
-            if (returning && !string.IsNullOrWhiteSpace(reason))
+            TryAdvanceVoidedMatchLobbyReturn(sceneUnloadPlanPrepared: true);
+            // Once the irreversible gate closes, the request is owned by this
+            // controller and remains accepted while an exclusive operation is
+            // busy. Update retries without reopening gameplay.
+            return true;
+        }
+
+        private bool TryAdvanceVoidedMatchLobbyReturn(
+            bool sceneUnloadPlanPrepared = true)
+        {
+            if (!_voidedMatchLobbyReturnPending)
             {
-                // TryEnqueue may synchronously publish its generic return status
-                // before its first await. Keep the concrete void reason visible.
+                return false;
+            }
+
+            if (!BeginMatchLobbyReturnOnServer(
+                    includeReconnectGraceDisconnects: true,
+                    sceneUnloadPlanPrepared: sceneUnloadPlanPrepared,
+                    requireImmediateOperationStart: true))
+            {
+                return false;
+            }
+
+            var reason = _voidedMatchLobbyReturnReason;
+            _voidedMatchLobbyReturnPending = false;
+            _voidedMatchLobbyReturnReason = string.Empty;
+            if (!string.IsNullOrWhiteSpace(reason))
+            {
+                // Starting the operation can synchronously publish its generic
+                // status. Keep the concrete invalidation reason visible.
                 SetStatus(reason);
             }
 
-            return returning;
+            return true;
         }
 
         /// <summary>
@@ -1307,7 +1389,9 @@ namespace MazeParty.Multiplayer
         /// after a player left an in-progress match through the menu.
         /// </summary>
         private bool BeginMatchLobbyReturnOnServer(
-            bool includeReconnectGraceDisconnects = false)
+            bool includeReconnectGraceDisconnects = false,
+            bool sceneUnloadPlanPrepared = false,
+            bool requireImmediateOperationStart = false)
         {
             if (_destroyed)
             {
@@ -1343,7 +1427,8 @@ namespace MazeParty.Multiplayer
             }
 
             ObserveNetworkSceneManager(manager.SceneManager);
-            if (!TryQueueCompletedMatchSceneUnloads(
+            if (!sceneUnloadPlanPrepared &&
+                !TryQueueCompletedMatchSceneUnloads(
                     manager.SceneManager,
                     out var sceneValidationError))
             {
@@ -1357,13 +1442,28 @@ namespace MazeParty.Multiplayer
             }
 
             _completedMatchLobbyReturnInProgress = true;
-            if (!_sessionOperations.TryEnqueue(
+            Func<CancellationToken, Task> operation = cancellationToken =>
+                BeginCompletedMatchLobbyReturnAsync(manager, cancellationToken);
+            var accepted = requireImmediateOperationStart
+                ? _sessionOperations.TryStart(
                     SessionLifecycleState.ReturningToLobby,
-                    cancellationToken => BeginCompletedMatchLobbyReturnAsync(
-                        manager,
-                        cancellationToken)))
+                    operation)
+                : _sessionOperations.TryEnqueue(
+                    SessionLifecycleState.ReturningToLobby,
+                    operation);
+            if (!accepted)
             {
-                ResetCompletedMatchLobbyReturnState();
+                if (requireImmediateOperationStart)
+                {
+                    // The active match has already been irreversibly voided.
+                    // Preserve its unload plan and retry when the coordinator is idle.
+                    _completedMatchLobbyReturnInProgress = false;
+                }
+                else
+                {
+                    ResetCompletedMatchLobbyReturnState();
+                }
+
                 return false;
             }
 
@@ -1626,6 +1726,8 @@ namespace MazeParty.Multiplayer
             _completedMatchUnloadNextFrame = false;
             _completedMatchUnloadEarliestFrame = 0;
             _completedMatchLobbyReturnInProgress = false;
+            _voidedMatchLobbyReturnPending = false;
+            _voidedMatchLobbyReturnReason = string.Empty;
         }
 
         private void ScheduleCompletedMatchUnloadForNextFrame()
@@ -1732,10 +1834,14 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
+            var now = Time.realtimeSinceStartupAsDouble;
             if (!_pendingBoardLoadVoidRequested &&
                 match != null &&
                 match.IsSpawned &&
-                HasExactlyFourBoardReadyNetworkPlayers(manager))
+                CompletedMatchReturnRules.ShouldResumeReconnect(
+                    HasExactlyFourBoardReadyNetworkPlayers(manager),
+                    _pendingBoardLoadReconnectEndsAt,
+                    now))
             {
                 ResetPendingBoardLoadReconnect();
                 match.EnableGameplayOnServer();
@@ -1747,7 +1853,7 @@ namespace MazeParty.Multiplayer
             if (!_pendingBoardLoadVoidRequested &&
                 !CompletedMatchReturnRules.HasReconnectGraceExpired(
                     _pendingBoardLoadReconnectEndsAt,
-                    Time.realtimeSinceStartupAsDouble))
+                    now))
             {
                 return;
             }
@@ -1968,7 +2074,7 @@ namespace MazeParty.Multiplayer
             // NGO is still completing the original Board load. The queued
             // return owns cleanup now; never turn that late callback into a
             // second, room-closing network failure.
-            if (_completedMatchLobbyReturnInProgress)
+            if (IsMatchLobbyReturnOwned)
             {
                 ScheduleCompletedMatchUnloadForNextFrame();
                 return;
@@ -2182,7 +2288,7 @@ namespace MazeParty.Multiplayer
                         remoteClientLost,
                         _sessions.Current.Phase ==
                         MultiplayerConstants.LobbyPhase,
-                        _completedMatchLobbyReturnInProgress,
+                        IsMatchLobbyReturnOwned,
                         IsFinalRankingLocked());
                 if (disposition ==
                     RemoteDisconnectDisposition.QueueLobbyCleanup)
