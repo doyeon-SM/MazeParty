@@ -958,8 +958,18 @@ namespace MazeParty.Multiplayer
                 return 0;
             }
 
+            return ApplyKeyDeltaOnServer(amount);
+        }
+
+        public int ApplyKeyDeltaOnServer(int delta)
+        {
+            if (!IsServer || delta == 0)
+            {
+                return 0;
+            }
+
             var previous = _keyCount.Value;
-            _keyCount.Value = PlayerStatRules.AddKeys(previous, amount);
+            _keyCount.Value = PlayerStatRules.ApplyKeyDelta(previous, delta);
             return _keyCount.Value - previous;
         }
 

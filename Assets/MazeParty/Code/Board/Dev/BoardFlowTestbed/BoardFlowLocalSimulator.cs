@@ -153,6 +153,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Vector3 _worldDieSuspendedAngularVelocity;
         private BoardLandingEffectLayout _boardEffectLayout;
         private int _nextLandingEffectSlot;
+        private byte _appliedLandingEffectMask;
+        private double _landingEffectSlotStartsAt;
+        private int _lastLandingEffectPreviewKey = -1;
         private bool _stageTwoPlayerFightAtFinish;
         private bool _localCombatActive;
         private byte _localCombatParticipantMask;
@@ -315,7 +318,16 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _paused || _keyShopRevealActive;
             var unscaledDeltaTime = Time.unscaledDeltaTime;
             _simulationNow += Time.unscaledDeltaTime * _simulationSpeed;
-            _flow.Tick(_simulationNow);
+            if (_flow.State == BoardFlowState.LandingEffectResolve)
+            {
+                AdvanceLocalLandingEffects();
+            }
+            _flow.Tick(
+                _simulationNow,
+                false,
+                false,
+                _flow.State == BoardFlowState.LandingEffectResolve &&
+                _nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount);
             RefreshLocalCrouch();
             AdvanceLocalKeyShopReveal();
             AdvanceLocalCombat();
@@ -1944,7 +1956,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _localCombatEndsAt = 0d;
             _combatQueue.Clear();
             _boundaryWalls?.Hide();
-            _flow.TryCompleteCombat(_simulationNow);
+            _flow.TryCompleteCombat(
+                _simulationNow,
+                GetLocalLandingEffectDuration());
         }
 
         private void AdvanceLocalCombat()
@@ -2338,7 +2352,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private void BeginLocalLandingEffects()
         {
             _nextLandingEffectSlot = 0;
-            ResolveNextLocalLandingEffect();
+            _appliedLandingEffectMask = 0;
+            _landingEffectSlotStartsAt = 0d;
+            _lastLandingEffectPreviewKey = -1;
+            AdvanceLocalLandingEffects();
         }
 
         private void AdvanceLocalLandingEffects()
@@ -2349,13 +2366,53 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             var elapsed = Math.Max(0d, _flow.ToFlowTime(_simulationNow) - _flow.StateStartedAt);
-            var targetResolvedCount = Mathf.Clamp(
-                Mathf.FloorToInt((float)elapsed) + 1,
-                1,
-                BoardFlowStateMachine.RequiredPlayerCount);
-            while (_nextLandingEffectSlot < targetResolvedCount)
+            while (_nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount)
             {
-                ResolveNextLocalLandingEffect();
+                var slot = _nextLandingEffectSlot;
+                var stageElapsed = elapsed - _landingEffectSlotStartsAt;
+                if (stageElapsed < 0d)
+                {
+                    return;
+                }
+
+                var effect = GetLocalLandingEffect(slot, out var tile);
+                var duration = BoardLandingEffectLayout.GetDurationSeconds(effect);
+                var wasApplied =
+                    (_appliedLandingEffectMask & (1 << slot)) != 0;
+                if (effect == BoardLandingEffectType.SpecialEvent)
+                {
+                    AdvanceLocalSpecialEventRoulette(slot, tile, stageElapsed);
+                }
+                else
+                {
+                    ApplyLocalLandingEffect(slot, tile, effect);
+                }
+
+                var appliedThisFrame = !wasApplied &&
+                    (_appliedLandingEffectMask & (1 << slot)) != 0;
+                if (appliedThisFrame)
+                {
+                    var expectedApplyOffset =
+                        effect == BoardLandingEffectType.SpecialEvent
+                            ? duration -
+                              BoardLandingEffectLayout.SpecialEventResultDurationSeconds
+                            : 0d;
+                    if (stageElapsed > expectedApplyOffset)
+                    {
+                        _landingEffectSlotStartsAt =
+                            elapsed - expectedApplyOffset;
+                        return;
+                    }
+                }
+
+                if (stageElapsed < duration)
+                {
+                    return;
+                }
+
+                _landingEffectSlotStartsAt += duration;
+                _nextLandingEffectSlot++;
+                _lastLandingEffectPreviewKey = -1;
             }
         }
 
@@ -2368,22 +2425,82 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             while (_nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount)
             {
-                ResolveNextLocalLandingEffect();
+                var slot = _nextLandingEffectSlot++;
+                var effect = GetLocalLandingEffect(slot, out var tile);
+                ApplyLocalLandingEffect(slot, tile, effect);
             }
         }
 
-        private void ResolveNextLocalLandingEffect()
+        private double GetLocalLandingEffectDuration()
         {
-            if (_boardEffectLayout == null || topology == null ||
-                _nextLandingEffectSlot >= BoardFlowStateMachine.RequiredPlayerCount)
+            return BoardLandingEffectLayout.GetTotalDurationSeconds(
+                BoardFlowStateMachine.RequiredPlayerCount,
+                slot => GetLocalLandingEffect(slot, out _));
+        }
+
+        private BoardLandingEffectType GetLocalLandingEffect(
+            int slot,
+            out BoardTile tile)
+        {
+            tile = GetLocalSimulationTile(slot);
+            return tile != null && _boardEffectLayout != null &&
+                   _boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect)
+                ? effect
+                : BoardLandingEffectType.None;
+        }
+
+        private void AdvanceLocalSpecialEventRoulette(
+            int slot,
+            BoardTile tile,
+            double stageElapsed)
+        {
+            if (tile == null)
             {
                 return;
             }
 
-            var slot = _nextLandingEffectSlot++;
-            var tile = GetLocalSimulationTile(slot);
-            if (tile == null ||
-                !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
+            if (stageElapsed >= 3d)
+            {
+                ApplyLocalLandingEffect(
+                    slot,
+                    tile,
+                    BoardLandingEffectType.SpecialEvent);
+                return;
+            }
+
+            var phase = stageElapsed < 1d ? 0 : stageElapsed < 2d ? 1 : 2;
+            var previewTick = Math.Max(
+                0,
+                (int)Math.Floor((stageElapsed - phase) / 0.2d));
+            var previewKey = phase * 10000 + previewTick;
+            if (_lastLandingEffectPreviewKey == previewKey)
+            {
+                return;
+            }
+
+            _lastLandingEffectPreviewKey = previewKey;
+            SetStatus(phase == 0
+                ? "SPECIAL EVENT: TARGET ROULETTE"
+                : phase == 1
+                    ? "SPECIAL EVENT: TARGET LOCKED / RESOURCE ROULETTE"
+                    : "SPECIAL EVENT: TARGET + RESOURCE LOCKED / ACTION ROULETTE");
+        }
+
+        private void ApplyLocalLandingEffect(
+            int slot,
+            BoardTile tile,
+            BoardLandingEffectType effect)
+        {
+            if (slot < 0 ||
+                slot >= BoardFlowStateMachine.RequiredPlayerCount ||
+                (_appliedLandingEffectMask & (1 << slot)) != 0)
+            {
+                return;
+            }
+
+            _appliedLandingEffectMask = (byte)(
+                _appliedLandingEffectMask | (1 << slot));
+            if (tile == null)
             {
                 return;
             }
@@ -2397,13 +2514,23 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     SetStatus("P" + (slot + 1) + " landing effect: " +
                               (goldDelta >= 0 ? "+" : string.Empty) + goldDelta + " gold.");
                     break;
-                case BoardLandingEffectType.Healing:
+                case BoardLandingEffectType.Healing20:
+                case BoardLandingEffectType.Healing10:
+                case BoardLandingEffectType.Damage40:
+                case BoardLandingEffectType.Damage20:
                     var before = _currentHealth[slot];
                     _currentHealth[slot] = PlayerStatRules.ClampHealth(
-                        before + BoardLandingEffectLayout.HealingAmount,
+                        before + BoardLandingEffectLayout.GetHealthDelta(effect),
                         _maxHealth[slot]);
-                    SetStatus("P" + (slot + 1) + " landing effect: healed " +
-                              (_currentHealth[slot] - before) + " HP.");
+                    var healthDelta = _currentHealth[slot] - before;
+                    if (healthDelta < 0 && _currentHealth[slot] == 0)
+                    {
+                        ResolveLocalLandingDeath(slot);
+                        break;
+                    }
+                    SetStatus("P" + (slot + 1) + " landing effect: " +
+                              (healthDelta >= 0 ? "+" : string.Empty) +
+                              healthDelta + " HP.");
                     break;
                 case BoardLandingEffectType.ItemReward:
                     if (slot != 0)
@@ -2423,6 +2550,112 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                           PrototypeItemCatalog.Get(reward).DisplayName + "."
                         : "P1 landing effect: inventory full; item reward was not received.");
                     break;
+                case BoardLandingEffectType.SpecialEvent:
+                    ApplyLocalSpecialEvent(slot, tile);
+                    break;
+            }
+        }
+
+        private void ResolveLocalLandingDeath(int slot)
+        {
+            var droppedGold = BoardDeathRules.DroppedGold(_gold[slot]);
+            _gold[slot] = PlayerStatRules.ApplyGoldDelta(
+                _gold[slot],
+                -droppedGold);
+            var marker = slot == 0 ? null : GetRemoteMarker(slot);
+            var deathPosition = slot == 0 && player != null
+                ? player.transform.position
+                : marker != null
+                    ? marker.position
+                    : Vector3.zero;
+            var respawn = BoardDeathRules.NearestRespawn(
+                topology != null ? topology.Tiles : null,
+                deathPosition);
+            if (respawn != null)
+            {
+                if (slot == 0)
+                {
+                    _traversal.Relocate(respawn);
+                    Teleport(respawn.GetRecoveryCenter(1f));
+                    _personalProtectionEndsAtFlowTime = Math.Max(
+                        _personalProtectionEndsAtFlowTime,
+                        _flow.ToFlowTime(_simulationNow) +
+                        BoardDeathRules.RespawnProtectionSeconds);
+                    RefreshBoundaryWalls();
+                }
+                else if (marker != null)
+                {
+                    marker.position = respawn.GetRecoveryCenter(1f);
+                }
+            }
+
+            _currentHealth[slot] = _maxHealth[slot];
+            SetStatus(
+                "P" + (slot + 1) + " was knocked out by a landing effect, " +
+                "dropped " + droppedGold + " gold, and respawned.");
+        }
+
+        private void ApplyLocalSpecialEvent(int actorSlot, BoardTile tile)
+        {
+            var resolution = BoardSpecialEventRules.Resolve(
+                _boardEffectLayout.Seed,
+                _flow.CurrentTurn,
+                actorSlot,
+                tile.Coordinate,
+                BoardFlowStateMachine.RequiredPlayerCount);
+            if (resolution.Family == BoardSpecialEventFamily.Direct)
+            {
+                var mask = BoardSpecialEventRules.GetTargetMask(
+                    resolution,
+                    actorSlot,
+                    BoardFlowStateMachine.RequiredPlayerCount);
+                var delta = resolution.Operation == BoardSpecialEventOperation.Gain
+                    ? resolution.Amount
+                    : -resolution.Amount;
+                for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
+                {
+                    if ((mask & (1 << slot)) != 0)
+                    {
+                        ApplyLocalSpecialEventResource(slot, resolution.Resource, delta);
+                    }
+                }
+            }
+            else
+            {
+                var opponentGives = resolution.Operation ==
+                                    BoardSpecialEventOperation.OpponentGivesToActor;
+                var source = opponentGives ? resolution.OpponentSlot : actorSlot;
+                var destination = opponentGives ? actorSlot : resolution.OpponentSlot;
+                var sourceBalance = resolution.Resource == BoardSpecialEventResource.Gold
+                    ? _gold[source]
+                    : _keys[source];
+                var destinationBalance = resolution.Resource == BoardSpecialEventResource.Gold
+                    ? _gold[destination]
+                    : _keys[destination];
+                var transferred = BoardSpecialEventRules.GetTransferAmount(
+                    resolution.Amount,
+                    sourceBalance,
+                    destinationBalance);
+                ApplyLocalSpecialEventResource(source, resolution.Resource, -transferred);
+                ApplyLocalSpecialEventResource(destination, resolution.Resource, transferred);
+            }
+
+            SetStatus("P" + (actorSlot + 1) +
+                      " landing effect: special event resolved.");
+        }
+
+        private void ApplyLocalSpecialEventResource(
+            int slot,
+            BoardSpecialEventResource resource,
+            int delta)
+        {
+            if (resource == BoardSpecialEventResource.Gold)
+            {
+                _gold[slot] = PlayerStatRules.ApplyGoldDelta(_gold[slot], delta);
+            }
+            else
+            {
+                _keys[slot] = PlayerStatRules.ApplyKeyDelta(_keys[slot], delta);
             }
         }
 

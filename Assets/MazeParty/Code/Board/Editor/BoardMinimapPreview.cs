@@ -12,6 +12,18 @@ namespace MazeParty.Editor
 {
     public static class BoardMinimapPreview
     {
+        private static readonly BoardLandingEffectType[] PreviewEffects =
+        {
+            BoardLandingEffectType.GoldGain,
+            BoardLandingEffectType.GoldLoss,
+            BoardLandingEffectType.ItemReward,
+            BoardLandingEffectType.Healing20,
+            BoardLandingEffectType.Healing10,
+            BoardLandingEffectType.Damage40,
+            BoardLandingEffectType.Damage20,
+            BoardLandingEffectType.SpecialEvent
+        };
+
         [MenuItem("MazeParty/Board/Capture Minimap Preview")]
         public static void Capture()
         {
@@ -38,7 +50,8 @@ namespace MazeParty.Editor
                 {
                     var tile = topology.Tiles[i];
                     effects.Add(tile, tile.LandingEffect);
-                    tile.ApplyLandingEffectPresentation((BoardLandingEffectType)(1 + i % 4));
+                    tile.ApplyLandingEffectPresentation(
+                        PreviewEffects[i % PreviewEffects.Length]);
                 }
                 var ui = (GameObject)PrefabUtility.InstantiatePrefab(
                     AssetDatabase.LoadAssetAtPath<GameObject>("Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"), preview);

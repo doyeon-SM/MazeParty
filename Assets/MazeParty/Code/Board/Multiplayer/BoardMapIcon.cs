@@ -3,7 +3,20 @@ using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
 {
-    public enum BoardMapIconKind { Room, Start, Respawn, Key, GoldGain, GoldLoss, Item, Healing, Arrow }
+    public enum BoardMapIconKind
+    {
+        Room = 0,
+        Start = 1,
+        Respawn = 2,
+        Key = 3,
+        GoldGain = 4,
+        GoldLoss = 5,
+        Item = 6,
+        Healing = 7,
+        Arrow = 8,
+        Damage = 9,
+        SpecialEvent = 10
+    }
 
     /// <summary>Small vector icons authored on the board UI prefab, including stencil clipping.</summary>
     [RequireComponent(typeof(CanvasRenderer))]
@@ -49,6 +62,13 @@ namespace MazeParty.Multiplayer
                 case BoardMapIconKind.Arrow:
                     Box(mesh, -.23f, -.8f, .46f, 1f);
                     Triangle(mesh, new Vector2(-.75f, .1f), new Vector2(.75f, .1f), new Vector2(0f, .95f)); break;
+                case BoardMapIconKind.Damage:
+                    Line(mesh, new Vector2(.28f, .85f), new Vector2(-.24f, .08f), .3f);
+                    Line(mesh, new Vector2(.24f, -.08f), new Vector2(-.28f, -.85f), .3f); break;
+                case BoardMapIconKind.SpecialEvent:
+                    Ring(mesh, Vector2.zero, .75f, .15f, 0f, 360f);
+                    Line(mesh, new Vector2(-.5f, -.5f), new Vector2(.5f, .5f), .14f);
+                    Line(mesh, new Vector2(-.5f, .5f), new Vector2(.5f, -.5f), .14f); break;
             }
         }
 

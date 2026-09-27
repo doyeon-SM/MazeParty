@@ -10,6 +10,8 @@ namespace MazeParty.Multiplayer
     /// <summary>Heading-up board projection using UnitySimpleMiniMap and authored UI only.</summary>
     public sealed class BoardMinimapView : MonoBehaviour
     {
+        private const int LandingEffectCount = 9;
+
         [Serializable]
         public sealed class Room
         {
@@ -40,7 +42,18 @@ namespace MazeParty.Multiplayer
         [SerializeField] private string shopUnreachableText = GameText.N(": NO ROUTE");
         [SerializeField] private string shopUnknownText = ": --";
         [SerializeField] private Color[] typeIconColors = { Color.gray, Color.white, new Color(1f, .8f, .2f), new Color(.4f, .85f, 1f) };
-        [SerializeField] private Color[] effectIconColors = { Color.white, new Color(1f, .8f, .2f), new Color(1f, .3f, .3f), new Color(.85f, .5f, 1f), new Color(.35f, 1f, .5f) };
+        [SerializeField] private Color[] effectIconColors =
+        {
+            Color.white,
+            new Color(1f, .8f, .2f),
+            new Color(1f, .3f, .3f),
+            new Color(.85f, .5f, 1f),
+            new Color(.35f, 1f, .5f),
+            new Color(.35f, .85f, .95f),
+            new Color(1f, .2f, .18f),
+            new Color(1f, .5f, .2f),
+            new Color(1f, .25f, .85f)
+        };
         [SerializeField] private BoardMapRouteGraphic shopRouteGraphic;
         [SerializeField] private BoardMapMineGraphic mineGraphic;
         private Bounds _mineBounds;
@@ -60,7 +73,17 @@ namespace MazeParty.Multiplayer
         [SerializeField] private string tileFormat = GameText.N("CURRENT ({0}, {1})  {2}\n{3}");
         [SerializeField] private string[] tileNames = { GameText.N("ROOM"), GameText.N("START"), GameText.N("KEY SHOP"), GameText.N("RESPAWN") };
         [SerializeField] private string[] effectNames =
-            { GameText.N("No landing effect"), GameText.N("Landing: Gold +3"), GameText.N("Landing: Gold -3"), GameText.N("Landing: Item"), GameText.N("Landing: HP +50") };
+        {
+            GameText.N("No landing effect"),
+            GameText.N("Landing: Gold +3"),
+            GameText.N("Landing: Gold -3"),
+            GameText.N("Landing: Item"),
+            GameText.N("Landing: HP +20"),
+            GameText.N("Landing: HP +10"),
+            GameText.N("Landing: HP -40"),
+            GameText.N("Landing: HP -20"),
+            GameText.N("Landing: Special Event")
+        };
 
         public bool HasRequiredReferences
         {
@@ -72,11 +95,12 @@ namespace MazeParty.Multiplayer
                     rooms == null || players == null || localHighlights == null || tileNames == null ||
                     effectNames == null || compassPoints == null ||
                     shopDistanceIcon == null || shopDistanceText == null || typeIconColors == null ||
-                    effectIconColors == null || typeIconColors.Length != 4 || effectIconColors.Length != 5 ||
+                    effectIconColors == null || typeIconColors.Length != 4 || effectIconColors.Length != LandingEffectCount ||
                     (radiusInTiles > 0f && (circularMask == null || !circularMask.enabled ||
                         circularMask.GetComponent<BoardMapCircleGraphic>() == null)) ||
                     rooms.Length != BoardMapView.CellCount || players.Length != MultiplayerConstants.MaxPlayers ||
-                    localHighlights.Length != players.Length || tileNames.Length != 4 || effectNames.Length != 5 || compassPoints.Length != 8)
+                    localHighlights.Length != players.Length || tileNames.Length != 4 ||
+                    effectNames.Length != LandingEffectCount || compassPoints.Length != 8)
                     return false;
                 foreach (var room in rooms)
                 {
@@ -196,9 +220,7 @@ namespace MazeParty.Multiplayer
                 room.TypeIcon.color = typeIconColors[(int)displayedType];
                 var effect = tile.LandingEffect;
                 room.EffectIcon.enabled = effect != BoardLandingEffectType.None;
-                room.EffectIcon.SetIcon(effect == BoardLandingEffectType.GoldGain ? BoardMapIconKind.GoldGain :
-                    effect == BoardLandingEffectType.GoldLoss ? BoardMapIconKind.GoldLoss :
-                    effect == BoardLandingEffectType.ItemReward ? BoardMapIconKind.Item : BoardMapIconKind.Healing);
+                room.EffectIcon.SetIcon(GetEffectIcon(effect));
                 room.EffectIcon.color = effectIconColors[(int)effect];
                 byte connected = 0, outgoing = 0;
                 foreach (var gate in topology.GetOutgoingGates(tile))
@@ -270,6 +292,29 @@ namespace MazeParty.Multiplayer
                 !topology.TryGetTile(source.Value, out var from) || !topology.TryGetTile(shop.Value, out var to) ||
                 !BoardMapRoute.TryFind(topology, from, to, _shopRoute)) return -1;
             return _shopRoute.Count - 1;
+        }
+
+        private static BoardMapIconKind GetEffectIcon(BoardLandingEffectType effect)
+        {
+            switch (effect)
+            {
+                case BoardLandingEffectType.GoldGain:
+                    return BoardMapIconKind.GoldGain;
+                case BoardLandingEffectType.GoldLoss:
+                    return BoardMapIconKind.GoldLoss;
+                case BoardLandingEffectType.ItemReward:
+                    return BoardMapIconKind.Item;
+                case BoardLandingEffectType.Healing20:
+                case BoardLandingEffectType.Healing10:
+                    return BoardMapIconKind.Healing;
+                case BoardLandingEffectType.Damage40:
+                case BoardLandingEffectType.Damage20:
+                    return BoardMapIconKind.Damage;
+                case BoardLandingEffectType.SpecialEvent:
+                    return BoardMapIconKind.SpecialEvent;
+                default:
+                    return BoardMapIconKind.Healing;
+            }
         }
     }
 }

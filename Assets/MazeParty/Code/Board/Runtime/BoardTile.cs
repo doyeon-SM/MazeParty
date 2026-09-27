@@ -79,8 +79,16 @@ namespace MazeParty.Gameplay
                     return new Color(0.78f, 0.08f, 0.12f, 1f);
                 case BoardLandingEffectType.ItemReward:
                     return new Color(0.62f, 0.16f, 0.82f, 1f);
-                case BoardLandingEffectType.Healing:
+                case BoardLandingEffectType.Healing20:
                     return new Color(0.08f, 0.68f, 0.3f, 1f);
+                case BoardLandingEffectType.Healing10:
+                    return new Color(0.12f, 0.78f, 0.58f, 1f);
+                case BoardLandingEffectType.Damage40:
+                    return new Color(0.82f, 0.04f, 0.08f, 1f);
+                case BoardLandingEffectType.Damage20:
+                    return new Color(1f, 0.38f, 0.08f, 1f);
+                case BoardLandingEffectType.SpecialEvent:
+                    return new Color(0.95f, 0.22f, 0.78f, 1f);
                 default:
                     return Color.white;
             }

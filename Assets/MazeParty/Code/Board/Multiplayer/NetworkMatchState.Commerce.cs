@@ -339,7 +339,9 @@ namespace MazeParty.Multiplayer
                 !_flow.Pause(
                     now,
                     ShouldDeferActionTimeoutForWorldDie(),
-                    HasBoardDeathInProgressOnServer()))
+                    HasBoardDeathInProgressOnServer(),
+                    ShouldDeferLandingEffectResolutionOnServer(
+                        HasBoardDeathInProgressOnServer())))
             {
                 return;
             }

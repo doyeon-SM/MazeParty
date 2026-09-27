@@ -14,6 +14,27 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Board/Board.unity";
 
         [Test]
+        public void BoardMapIconKinds_KeepSerializedIdsWhenNewKindsAreAppended()
+        {
+            Assert.That(
+                new[]
+                {
+                    (int)BoardMapIconKind.Room,
+                    (int)BoardMapIconKind.Start,
+                    (int)BoardMapIconKind.Respawn,
+                    (int)BoardMapIconKind.Key,
+                    (int)BoardMapIconKind.GoldGain,
+                    (int)BoardMapIconKind.GoldLoss,
+                    (int)BoardMapIconKind.Item,
+                    (int)BoardMapIconKind.Healing,
+                    (int)BoardMapIconKind.Arrow,
+                    (int)BoardMapIconKind.Damage,
+                    (int)BoardMapIconKind.SpecialEvent
+                },
+                Is.EqualTo(new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }));
+        }
+
+        [Test]
         public void BoardMapAndStatusBadges_AreBoundOnPrefabAndBoardSceneInstance()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

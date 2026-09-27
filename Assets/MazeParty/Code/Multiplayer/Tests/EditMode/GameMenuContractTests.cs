@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -396,6 +397,33 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(LandingEffectMessage.Format(
                     LandingEffectMessage.Encode(3, false, 0, 0, "NO EFFECT (0 change)")),
                 Is.EqualTo("P4: NO EFFECT (0 change)"));
+
+            var roulette = LandingEffectMessage.Encode(
+                3,
+                true,
+                -12,
+                34,
+                "SPECIAL EVENT  {0}  {1}  ACTION > {2}",
+                "EVERYONE ELSE",
+                "30 GOLD",
+                "RECEIVE");
+            Assert.That(
+                Encoding.UTF8.GetByteCount(roulette),
+                Is.LessThan(125),
+                "The longest roulette line must fit FixedString128Bytes.");
+            var transferResult = LandingEffectMessage.Encode(
+                3,
+                true,
+                -12,
+                34,
+                "EVENT RESULT: P{0} STEALS {2} GOLD FROM P{1}",
+                "4",
+                "1",
+                "30");
+            Assert.That(
+                Encoding.UTF8.GetByteCount(transferResult),
+                Is.LessThan(125),
+                "The longest event result must fit FixedString128Bytes.");
 
             GameText.UseTableForTests(StringTable.Parse(
                 "source,ko,ja,zh-Hans\n" +

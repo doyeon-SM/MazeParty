@@ -4,8 +4,12 @@
 +1 KEY EACH,각자 열쇠 +1,各自 鍵 +1,每人 钥匙 +1
 +{0} GOLD\nRMB,+{0} 골드\n우클릭,+{0} ゴールド\n右クリック,+{0} 金币\n右键
 - Waiting for player...,- 플레이어 대기 중...,- プレイヤー待機中...,- 等待玩家...
+1 KEY,열쇠 1개,鍵1個,1把钥匙
+10 GOLD,10 골드,10ゴールド,10金币
 1ST,1위,1位,第1名
+20 GOLD,20 골드,20ゴールド,20金币
 2ND,2위,2位,第2名
+30 GOLD,30 골드,30ゴールド,30金币
 3RD,3위,3位,第3名
 4TH,4위,4位,第4名
 5 rounds / 50 damage / 7 tiles. Hold RMB: 2x scope. LMB fires.,5발 / 피해 50 / 7타일. 우클릭 길게 누르기: 2x 스코프. 좌클릭으로 발사합니다.,5発 / 50ダメージ / 7タイル。右クリック長押し: 2xスコープ。左クリックで発射します。,5发 / 50伤害 / 7格。按住右键：2x瞄准镜。左键开火。
@@ -28,6 +32,7 @@ A stale disconnected lobby player was removed after the grace period.,유예 시
 A: HIGH\nS: MIDDLE\nD: LOW,A: 고음\nS: 중음\nD: 저음,A: 高音\nS: 中音\nD: 低音,A: 高音\nS: 中音\nD: 低音
 All four players loaded the Board. Gameplay input is enabled.,4명 모두 보드를 불러왔습니다. 게임 입력이 활성화되었습니다.,4人全員がボードを読み込みました。ゲーム操作が有効になりました。,四名玩家均已加载棋盘。游戏输入已启用。
 All four players must be ready.,4명 모두 준비해야 합니다.,4人全員が準備完了である必要があります。,四名玩家必须全部准备。
+ALL PLAYERS,모든 플레이어,全プレイヤー,所有玩家
 All players arrived. Top view opens when the countdown ends.,모든 플레이어가 도착했습니다. 카운트다운이 끝나면 탑뷰가 열립니다.,全プレイヤーが到着しました。カウントダウン終了後にトップビューが開きます。,所有玩家已到达。倒计时结束后将切换为俯视。
 All {0} rounds complete. Final points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 최종 점수로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。最終ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按最终得分排名；按名次奖励金币。
 All {0} rounds complete. Total points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 총점으로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。合計ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按总分排名；按名次奖励金币。
@@ -115,6 +120,7 @@ CURRENT TILE  --,현재 타일  --,現在のタイル  --,当前格子  --
 CYAN  YOU / ROUTE    GOLD  KEY SHOP    1-4  PLAYERS,청록  나 / 경로    금색  열쇠 상점    1-4  플레이어,シアン  自分 / ルート    金色  鍵ショップ    1-4  プレイヤー,青色  你 / 路线    金色  钥匙商店    1-4  玩家
 D12 {0} + {1} / RMB EACH DIE,D12 {0} + {1} / 주사위마다 우클릭,D12 {0} + {1} / サイコロごとに右クリック,D12 {0} + {1} / 每个骰子右键
 D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2}
+DAMAGE -{0} HP,피해 -{0} HP,ダメージ -{0} HP,伤害 -{0} HP
 DESCENDING,하강 중,降下中,下降中
 DICE,주사위,サイコロ,骰子
 DICE  --,주사위  --,サイコロ  --,骰子  --
@@ -132,6 +138,13 @@ DRAG TO SELECT,드래그하여 선택,ドラッグで選択,拖动以选择
 DROP,낙하,落下,掉落
 DROPPING,낙하 중,落下中,掉落中
 Each offer has one shared copy. The action clock continues.,각 상품은 모두가 공유하는 1개뿐입니다. 행동 시간은 계속 흐릅니다.,各商品は全員共通で1個のみです。行動時間は進み続けます。,每件商品仅有一份，所有人共享。行动计时继续进行。
+EVENT RESULT: {0} LOSES UP TO {1},이벤트 결과: {0}에게서 최대 {1} 차감,イベント結果: {0}から最大{1}を差し引く,事件结果：{0}最多失去{1}
+EVENT RESULT: {0} RECEIVES UP TO {1},이벤트 결과: {0}에게 최대 {1} 지급,イベント結果: {0}に最大{1}を付与,事件结果：{0}最多获得{1}
+EVENT RESULT: P{0} GIVES P{1} {2} GOLD,이벤트 결과: P{0}이 P{1}에게 골드 {2} 지급,イベント結果: P{0}がP{1}に{2}ゴールドを渡す,事件结果：P{0}向P{1}支付{2}金币
+EVENT RESULT: P{0} GIVES P{1} {2} KEY,이벤트 결과: P{0}이 P{1}에게 열쇠 {2}개 지급,イベント結果: P{0}がP{1}に鍵{2}個を渡す,事件结果：P{0}向P{1}交付{2}把钥匙
+EVENT RESULT: P{0} STEALS {2} GOLD FROM P{1},이벤트 결과: P{0}이 P{1}에게서 골드 {2} 강탈,イベント結果: P{0}がP{1}から{2}ゴールドを奪う,事件结果：P{0}从P{1}夺取{2}金币
+EVENT RESULT: P{0} STEALS {2} KEY FROM P{1},이벤트 결과: P{0}이 P{1}에게서 열쇠 {2}개 강탈,イベント結果: P{0}がP{1}から鍵{2}個を奪う,事件结果：P{0}从P{1}夺取{2}把钥匙
+EVERYONE ELSE,나를 제외한 전원,自分以外全員,除自己以外的所有人
 Each round assigns one player as the tagger. Runners move with WASD using a shared camera. The tagger moves with WASD in first person and presses LMB to catch. Every player tags once across four 60-second rounds.\nREADY {0} / 4,매 라운드 한 명이 술래가 됩니다. 도망자는 공용 카메라로 보며 WASD로 이동합니다. 술래는 1인칭으로 WASD로 이동하고 좌클릭으로 잡습니다. 60초 라운드 4번 동안 모든 플레이어가 한 번씩 술래를 맡습니다.\n준비 {0} / 4,各ラウンドで1人が鬼になります。逃げる側は共有カメラでWASDで移動します。鬼は一人称視点でWASDで移動し、左クリックで捕まえます。60秒のラウンドを4回行い、全員が1回ずつ鬼を担当します。\n準備完了 {0} / 4,每轮指定一名玩家为追捕者。逃跑者使用共享镜头，用WASD移动。追捕者以第一人称用WASD移动，按左键抓人。共四轮，每轮60秒，每位玩家各当一次追捕者。\n准备 {0} / 4
 EMPTY,비어 있음,空き,空
 Enter an invite code.,초대 코드를 입력하세요.,招待コードを入力してください。,请输入邀请码。
@@ -169,6 +182,7 @@ Get ready. Every player respawns and the mine layout changes each round.,준비�
 Get ready. Hold LMB after the countdown to inflate.,준비하세요. 카운트다운이 끝나면 좌클릭을 길게 눌러 풍선을 부세요.,準備してください。カウントダウン後、左クリック長押しでふくらませます。,准备。倒计时结束后按住左键充气。
 Get ready. Ten gifts begin in the shared arena.,준비하세요. 공용 아레나에 선물 10개가 놓인 채로 시작합니다.,準備してください。共有アリーナにプレゼント10個が置かれた状態で始まります。,准备。共享竞技场中初始有十个礼物。
 Get ready. The NPC will play one shared A/S/D sequence.,준비하세요. NPC가 모두에게 같은 A/S/D 순서를 연주합니다.,準備してください。NPCが全員共通のA/S/Dの順番を演奏します。,准备。NPC将演奏一段所有人共用的A/S/D序列。
+GIVE,주기,渡す,给予
 GIFT GRAB,선물 쟁탈전,プレゼント争奪戦,抢礼物
 GIFT GRAB  ROUND {0} / {1}  -  COUNTDOWN,선물 쟁탈전  라운드 {0} / {1}  -  카운트다운,プレゼント争奪戦  ラウンド {0} / {1}  -  カウントダウン,抢礼物  第{0} / {1}轮  -  倒计时
 GIFT GRAB  ROUND {0} / {1}  -  RESULT,선물 쟁탈전  라운드 {0} / {1}  -  결과,プレゼント争奪戦  ラウンド {0} / {1}  -  結果,抢礼物  第{0} / {1}轮  -  结果
@@ -229,8 +243,12 @@ KNOCKED OUT: respawning at the nearest marked room. Input is locked.,녹아웃: 
 LANDING EFFECTS,착지 효과,着地効果,落地效果
 Landing: Gold +3,도착 효과: 골드 +3,到着効果: ゴールド +3,停留效果: 金币 +3
 Landing: Gold -3,도착 효과: 골드 -3,到着効果: ゴールド -3,停留效果: 金币 -3
-Landing: HP +50,도착 효과: HP +50,到着効果: HP +50,停留效果: HP +50
+Landing: HP +10,도착 효과: HP +10,到着効果: HP +10,停留效果: HP +10
+Landing: HP +20,도착 효과: HP +20,到着効果: HP +20,停留效果: HP +20
+Landing: HP -20,도착 효과: HP -20,到着効果: HP -20,停留效果: HP -20
+Landing: HP -40,도착 효과: HP -40,到着効果: HP -40,停留效果: HP -40
 Landing: Item,도착 효과: 아이템,到着効果: アイテム,停留效果: 道具
+Landing: Special Event,도착 효과: 특별 이벤트,到着効果: スペシャルイベント,停留效果: 特殊事件
 Language,언어,言語,语言
 LCTRL QUIET 6m,왼쪽 Ctrl 조용히 걷기 6m,左Ctrl 忍び足 6m,左Ctrl 静步 6m
 Leave,나가기,退出,离开
@@ -247,6 +265,7 @@ LOADING {0},{0} 로딩 중,{0} ロード中,正在加载 {0}
 Lobby,로비,ロビー,大厅
 LOCAL,로컬,ローカル,本地
 Local Player,로컬 플레이어,ローカルプレイヤー,本地玩家
+LOSE,잃기,失う,失去
 Low Dice (1-6),로우 주사위 (1-6),ローダイス (1-6),低点骰子 (1-6)
 Master,전체,マスター,总音量
 MATCH COMPLETE,매치 종료,マッチ終了,比赛结束
@@ -364,6 +383,7 @@ RANK {0},순위 {0},順位 {0},排名 {0}
 READY,준비,準備完了,准备
 Ready,준비,準備完了,准备
 READY {0} / 4  AUTO START {1},준비 {0} / 4  자동 시작 {1},準備完了 {0} / 4  自動開始 {1},准备 {0} / 4  自动开始 {1}
+RECEIVE,받기,受け取る,获得
 RECONNECT,재접속,再接続,重新连接
 RECONNECTING,재접속 중,再接続中,重新连接中
 Reconnecting to the interrupted online game...,중단된 온라인 게임에 재접속하는 중...,中断されたオンラインゲームに再接続中...,正在重新连接中断的在线游戏...
@@ -422,6 +442,7 @@ SCORE {0},점수 {0},スコア {0},得分 {0}
 Screen Mode,화면 모드,画面モード,显示模式
 Select an available item to buy it immediately.,구매 가능한 아이템을 선택하면 즉시 구매합니다.,購入可能なアイテムを選ぶとすぐに購入します。,选择可购买的道具即可立即购买。
 SELECT POSITION SWAP TARGET,위치 교환 대상 선택,位置交換の対象を選択,选择位置交换目标
+SELF,나,自分,自己
 SEQUENCE MEMORY,순서 기억,順番記憶,顺序记忆
 SEQUENCE MEMORY  -  COUNTDOWN,순서 기억  -  카운트다운,順番記憶  -  カウントダウン,顺序记忆  -  倒计时
 SEQUENCE MEMORY  PROBLEM {0} / {1}  -  ANSWER,순서 기억  문제 {0} / {1}  -  정답,順番記憶  問題 {0} / {1}  -  正解,顺序记忆  第{0} / {1}题  -  答案
@@ -443,6 +464,9 @@ SNOWY SPIN RESULTS,눈밭 회전 결과,スノースピン結果,雪地旋转结
 SOLD\n{0},판매 완료\n{0},売り切れ\n{0},已售出\n{0}
 SOLD OUT - This shop moves and restocks next overview.,품절 - 이 상점은 다음 보드 개요 때 이동하고 재입고됩니다.,売り切れ - このショップは次のボード全体表示で移動し、再入荷します。,已售罄 - 该商店将在下次棋盘总览时移动并补货。
 SOUND,사운드,サウンド,声音
+SPECIAL EVENT  TARGET > {0},특별 이벤트  대상 > {0},スペシャルイベント  対象 > {0},特殊事件  目标 > {0}
+SPECIAL EVENT  {0}  RESOURCE > {1},특별 이벤트  {0}  자원 > {1},スペシャルイベント  {0}  リソース > {1},特殊事件  {0}  资源 > {1}
+SPECIAL EVENT  {0}  {1}  ACTION > {2},특별 이벤트  {0}  {1}  행동 > {2},スペシャルイベント  {0}  {1}  アクション > {2},特殊事件  {0}  {1}  行动 > {2}
 SPECTATING,관전 중,観戦中,观战中
 SPECTATING: the camera follows the current fight room. Input is locked.,관전 중: 카메라가 현재 전투 중인 방을 따라갑니다. 입력이 잠겨 있습니다.,観戦中：カメラが現在バトル中の部屋を追います。操作はロックされています。,观战中：镜头跟随当前战斗房间。输入已锁定。
 SQUARE,사각형,四角,方形
@@ -453,6 +477,7 @@ STABLE FOOTING  ROUND {0} / {1}  -  {2},안전한 발판  라운드 {0} / {1}  -
 STABLE FOOTING COMPLETE,안전한 발판 종료,安全な足場終了,稳固立足点结束
 STABLE FOOTING RESULTS,안전한 발판 결과,安全な足場結果,稳固立足点结果
 START,시작,スタート,起点
+STEAL,빼앗기,奪う,夺取
 Stay on the announced safe symbol.,안내된 안전 기호 위에 머무르세요.,発表された安全なマークの上にいてください。,停留在公布的安全符号上。
 Stop and RMB to scan. First mine cripples; second eliminates. Reach the finish before the crusher.\nREADY {0} / 4,"멈춘 상태에서 우클릭으로 탐지하세요. 첫 번째 지뢰는 부상을 입히고, 두 번째 지뢰는 탈락시킵니다. 압착기보다 먼저 결승점에 도착하세요.\n준비 {0} / 4",止まって右クリックで探知します。1回目の地雷で負傷し、2回目で脱落します。クラッシャーより先にゴールしてください。\n準備完了 {0} / 4,停下并按右键探测。第一次踩雷会受伤；第二次将被淘汰。在碾压机追上前抵达终点。\n准备 {0} / 4
 Stored gifts decide the round; gift ownership time breaks ties.,"보관한 선물 수로 라운드 승부가 결정되며, 동점이면 선물 보유 시간으로 가립니다.",保管したプレゼントの数でラウンドの勝敗が決まり、同数の場合はプレゼントの所持時間で決着します。,按存放的礼物数决定本轮胜负；平局时按礼物持有时间决胜。

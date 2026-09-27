@@ -97,6 +97,68 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void LandingEffectResolve_UsesRequestedDurationAndExactBoundary()
+        {
+            var flow = StartInCombat();
+
+            Assert.That(flow.TryCompleteCombat(15d, 2.5d), Is.True);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            Assert.That(flow.GetStateRemaining(15d), Is.EqualTo(2.5d));
+
+            flow.Tick(17.499d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            Assert.That(
+                flow.GetStateRemaining(17.499d),
+                Is.EqualTo(0.001d).Within(0.0000001d));
+
+            flow.Tick(17.5d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(17.5d));
+        }
+
+        [Test]
+        public void LandingEffectResolve_DefersExactBoundaryAndPauseUntilPresentationFinishes()
+        {
+            var flow = StartInCombat();
+            Assert.That(flow.TryCompleteCombat(15d, 2d), Is.True);
+
+            flow.Tick(17d, false, false, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            Assert.That(flow.GetStateRemaining(17d), Is.Zero);
+
+            Assert.That(flow.Pause(17.25d, false, false, true), Is.True);
+            Assert.That(flow.GetStateRemaining(27.25d), Is.Zero);
+            Assert.That(flow.Resume(27.25d), Is.True);
+            flow.Tick(27.5d, false, false, true);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+
+            flow.Tick(28d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(18d));
+            Assert.That(flow.GetStateRemaining(28d), Is.EqualTo(60d));
+        }
+
+        [Test]
+        public void LandingEffectDuration_RejectsInvalidValuesWithoutLeavingCombat()
+        {
+            var flow = StartInCombat();
+            var invalidDurations = new[]
+            {
+                -0.001d,
+                0d,
+                double.NaN,
+                double.PositiveInfinity
+            };
+
+            foreach (var duration in invalidDurations)
+            {
+                Assert.Throws<System.ArgumentOutOfRangeException>(() =>
+                    flow.TryCompleteCombat(15d, duration));
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
+            }
+        }
+
+        [Test]
         public void MinigameReadyAndLoadingDeadlines_PreserveOneMinuteAcrossReconnectPause()
         {
             var flow = new BoardFlowStateMachine();
@@ -208,6 +270,15 @@ namespace MazeParty.Gameplay.Tests
             flow.Start(0d);
             flow.Tick(6d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
+            return flow;
+        }
+
+        private static BoardFlowStateMachine StartInCombat()
+        {
+            var flow = StartInAction();
+            ReportAllPlayersArrived(flow, 10d);
+            flow.Tick(15d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
             return flow;
         }
 

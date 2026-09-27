@@ -538,7 +538,19 @@ namespace MazeParty.Multiplayer
             var deferActionTimeout =
                 ShouldDeferActionTimeoutForWorldDie();
             ForEachAvatar(avatar => avatar.AdvanceBoardDeathOnServer(now));
-            _flow.Tick(now, deferActionTimeout, HasBoardDeathInProgressOnServer());
+            if (_flow.State == BoardFlowState.LandingEffectResolve)
+            {
+                // Settle every due landing step before the flow checks its exact
+                // boundary. Damage can begin a board death on this same frame.
+                AdvanceLandingEffectResolutionOnServer(now);
+            }
+            var boardDeathInProgress = HasBoardDeathInProgressOnServer();
+            _flow.Tick(
+                now,
+                deferActionTimeout,
+                boardDeathInProgress,
+                ShouldDeferLandingEffectResolutionOnServer(
+                    boardDeathInProgress));
             if (_flow.State == BoardFlowState.MatchComplete)
             {
                 StopAllAvatarInputOnServer();
@@ -630,6 +642,7 @@ namespace MazeParty.Multiplayer
             _itemShop0.Value = default;
             _itemShop1.Value = default;
             ResetCombatRuntimeOnServer();
+            ResetLandingEffectRuntimeOnServer(true);
             _tombstones.Clear();
             _nextTombstoneId = 0;
             SyncKeyShopSnapshot();
@@ -682,6 +695,7 @@ namespace MazeParty.Multiplayer
             _diceCoordinator?.HideAllDiceOnServer();
             EndAllMinigameRuntimes();
             ResetCombatRuntimeOnServer();
+            ResetLandingEffectRuntimeOnServer(true);
             ClearBoardItemWorld();
 
             _stateEndsAt.Value = 0d;
@@ -913,7 +927,9 @@ namespace MazeParty.Multiplayer
                 _flow.Pause(
                     now,
                     ShouldDeferActionTimeoutForWorldDie(),
-                    HasBoardDeathInProgressOnServer());
+                    HasBoardDeathInProgressOnServer(),
+                    ShouldDeferLandingEffectResolutionOnServer(
+                        HasBoardDeathInProgressOnServer()));
                 _pausedStateRemaining.Value = _flow.GetStateRemaining(now);
                 _pausedActionRemaining.Value = _flow.GetActionRemaining(now);
                 _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
@@ -1833,7 +1849,9 @@ namespace MazeParty.Multiplayer
             ResetCurrentCombatOnServer();
             _combatQueue.Clear();
             _combatQueueCount.Value = 0;
-            _flow.TryCompleteCombat(now);
+            _flow.TryCompleteCombat(
+                now,
+                PrepareLandingEffectPlanOnServer());
         }
 
         public bool TryCombatPunchOnServer(
@@ -2210,118 +2228,6 @@ namespace MazeParty.Multiplayer
             return !float.IsNaN(value.x) && !float.IsInfinity(value.x) &&
                    !float.IsNaN(value.y) && !float.IsInfinity(value.y) &&
                    !float.IsNaN(value.z) && !float.IsInfinity(value.z);
-        }
-
-        private void BeginLandingEffectsOnServer()
-        {
-            _nextLandingEffectSlot = 0;
-            _lastLandingEffectMessage.Value = default;
-            ResolveNextLandingEffectOnServer();
-        }
-
-        private void AdvanceLandingEffectResolutionOnServer(double now)
-        {
-            if (!IsServer || _flow == null ||
-                _flow.State != BoardFlowState.LandingEffectResolve)
-            {
-                return;
-            }
-
-            var elapsed = Math.Max(0d, _flow.ToFlowTime(now) - _flow.StateStartedAt);
-            var targetResolvedCount = Mathf.Clamp(
-                Mathf.FloorToInt((float)elapsed) + 1,
-                1,
-                MultiplayerConstants.MaxPlayers);
-            while (_nextLandingEffectSlot < targetResolvedCount)
-            {
-                ResolveNextLandingEffectOnServer();
-            }
-        }
-
-        private void ResolveAllRemainingLandingEffectsOnServer()
-        {
-            if (!IsServer || !EnsureBoardLandingEffectLayout())
-            {
-                return;
-            }
-
-            while (_nextLandingEffectSlot < MultiplayerConstants.MaxPlayers)
-            {
-                ResolveNextLandingEffectOnServer();
-            }
-        }
-
-        private void ResolveNextLandingEffectOnServer()
-        {
-            if (!IsServer || _nextLandingEffectSlot >= MultiplayerConstants.MaxPlayers)
-            {
-                return;
-            }
-
-            if (!EnsureBoardLandingEffectLayout())
-            {
-                return;
-            }
-
-            var slot = _nextLandingEffectSlot++;
-            var avatar = GetAvatarForSlot(slot);
-            var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
-            if (tile == null || !_boardEffectLayout.TryGetEffect(tile.Coordinate, out var effect))
-            {
-                PublishLandingEffectOnServer(slot, tile, GameText.N("NO EFFECT (0 change)"));
-                return;
-            }
-
-            switch (effect)
-            {
-                case BoardLandingEffectType.GoldGain:
-                case BoardLandingEffectType.GoldLoss:
-                    var goldDelta = avatar.ApplyGoldDeltaOnServer(
-                        BoardLandingEffectLayout.GetGoldDelta(effect));
-                    PublishLandingEffectOnServer(
-                        slot,
-                        tile,
-                        effect == BoardLandingEffectType.GoldGain
-                            ? GameText.N("GOLD GAIN {0} GOLD")
-                            : GameText.N("GOLD LOSS {0} GOLD"),
-                        (goldDelta > 0 ? "+" : string.Empty) +
-                        goldDelta.ToString(CultureInfo.InvariantCulture));
-                    break;
-                case BoardLandingEffectType.Healing:
-                    var healed = avatar.HealOnServer(BoardLandingEffectLayout.HealingAmount);
-                    PublishLandingEffectOnServer(
-                        slot,
-                        tile,
-                        GameText.N("HEALING +{0} HP"),
-                        healed.ToString(CultureInfo.InvariantCulture));
-                    break;
-                case BoardLandingEffectType.ItemReward:
-                    var random = new System.Random(unchecked(
-                        _boardEffectSeed.Value ^ (_turn.Value * 486187739) ^
-                        (slot * 16777619)));
-                    var reward = PrototypeItemCatalog.GetRandomId(random);
-                    var received = avatar.TryAddItemOnServer(reward);
-                    if (received)
-                    {
-                        // The item name is English data; clients translate it.
-                        PublishLandingEffectOnServer(
-                            slot,
-                            tile,
-                            GameText.N("ITEM REWARD +1 {0}"),
-                            PrototypeItemCatalog.Get(reward).DisplayName);
-                    }
-                    else
-                    {
-                        PublishLandingEffectOnServer(
-                            slot,
-                            tile,
-                            GameText.N("ITEM REWARD +0 (INVENTORY FULL)"));
-                    }
-                    break;
-                default:
-                    PublishLandingEffectOnServer(slot, tile, GameText.N("NO EFFECT (0 change)"));
-                    break;
-            }
         }
 
         /// <summary>

@@ -657,9 +657,7 @@ namespace MazeParty.Multiplayer
             _scheduledSkipAt = 0d;
             _scheduledSkipPaused = false;
             _pausedScheduledSkipRemaining = 0d;
-            _nextLandingEffectSlot = 0;
-            _lastLandingEffectMessage.Value = default;
-            _lastLandingEffectRevision.Value++;
+            ResetLandingEffectRuntimeOnServer(true);
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
             ResetAwardCeremonyForRecovery();
         }

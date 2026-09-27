@@ -44335,6 +44335,10 @@ MonoBehaviour:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
   - {r: 0.85, g: 0.5, b: 1, a: 1}
   - {r: 0.35, g: 1, b: 0.5, a: 1}
+  - {r: 0.35, g: 0.85, b: 0.95, a: 1}
+  - {r: 1, g: 0.2, b: 0.18, a: 1}
+  - {r: 1, g: 0.5, b: 0.2, a: 1}
+  - {r: 1, g: 0.25, b: 0.85, a: 1}
   shopRouteGraphic: {fileID: 2758113974257314688}
   mineGraphic: {fileID: 7412489015897261065}
   headingFormat: BOARD  /  {0} ^
@@ -44366,7 +44370,11 @@ MonoBehaviour:
   - 'Landing: Gold +3'
   - 'Landing: Gold -3'
   - 'Landing: Item'
-  - 'Landing: HP +50'
+  - 'Landing: HP +20'
+  - 'Landing: HP +10'
+  - 'Landing: HP -40'
+  - 'Landing: HP -20'
+  - 'Landing: Special Event'
 --- !u!114 &3721651464840080945
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -82864,6 +82872,10 @@ MonoBehaviour:
   - {r: 1, g: 0.3, b: 0.3, a: 1}
   - {r: 0.85, g: 0.5, b: 1, a: 1}
   - {r: 0.35, g: 1, b: 0.5, a: 1}
+  - {r: 0.35, g: 0.85, b: 0.95, a: 1}
+  - {r: 1, g: 0.2, b: 0.18, a: 1}
+  - {r: 1, g: 0.5, b: 0.2, a: 1}
+  - {r: 1, g: 0.25, b: 0.85, a: 1}
   shopRouteGraphic: {fileID: 2485808251414372600}
   mineGraphic: {fileID: 7493384192198973301}
   headingFormat: FULL MAP / NORTH ^
@@ -82895,7 +82907,11 @@ MonoBehaviour:
   - 'Landing: Gold +3'
   - 'Landing: Gold -3'
   - 'Landing: Item'
-  - 'Landing: HP +50'
+  - 'Landing: HP +20'
+  - 'Landing: HP +10'
+  - 'Landing: HP -40'
+  - 'Landing: HP -20'
+  - 'Landing: Special Event'
 --- !u!1 &5222188856038729054
 GameObject:
   m_ObjectHideFlags: 0

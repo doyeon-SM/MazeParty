@@ -75,8 +75,11 @@ namespace MazeParty.Gameplay
         private double _stateStartedAt;
         private double _totalPausedDuration;
         private double _pauseStartedAt;
+        private double _landingEffectResolveDurationSeconds =
+            LandingEffectResolveDurationSeconds;
         private bool _actionTimeoutDeferred;
         private bool _ascendingResolveDeferred;
+        private bool _landingEffectResolveDeferred;
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
@@ -132,8 +135,11 @@ namespace MazeParty.Gameplay
             _stateStartedAt = synchronizedNow;
             _totalPausedDuration = 0d;
             _pauseStartedAt = 0d;
+            _landingEffectResolveDurationSeconds =
+                LandingEffectResolveDurationSeconds;
             _actionTimeoutDeferred = false;
             _ascendingResolveDeferred = false;
+            _landingEffectResolveDeferred = false;
         }
 
         /// <summary>
@@ -178,14 +184,18 @@ namespace MazeParty.Gameplay
             _stateStartedAt = synchronizedNow;
             _totalPausedDuration = 0d;
             _pauseStartedAt = 0d;
+            _landingEffectResolveDurationSeconds =
+                LandingEffectResolveDurationSeconds;
             _actionTimeoutDeferred = false;
             _ascendingResolveDeferred = false;
+            _landingEffectResolveDeferred = false;
         }
 
         public void Tick(
             double synchronizedNow,
             bool deferExpiredAction = false,
-            bool deferAscendingResolve = false)
+            bool deferAscendingResolve = false,
+            bool deferLandingEffectResolve = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
@@ -270,11 +280,24 @@ namespace MazeParty.Gameplay
                     }
                     case BoardFlowState.LandingEffectResolve:
                     {
-                        var boundary = _stateStartedAt + LandingEffectResolveDurationSeconds;
+                        var boundary =
+                            _stateStartedAt + _landingEffectResolveDurationSeconds;
                         if (logicalNow >= boundary)
                         {
-                            TransitionTo(BoardFlowState.MinigameIntroReady, boundary);
-                            keepAdvancing = true;
+                            if (deferLandingEffectResolve)
+                            {
+                                _landingEffectResolveDeferred = true;
+                            }
+                            else
+                            {
+                                TransitionTo(
+                                    BoardFlowState.MinigameIntroReady,
+                                    _landingEffectResolveDeferred
+                                        ? logicalNow
+                                        : boundary);
+                                _landingEffectResolveDeferred = false;
+                                keepAdvancing = true;
+                            }
                         }
 
                         break;
@@ -391,9 +414,15 @@ namespace MazeParty.Gameplay
         }
 
 
-        public bool TryCompleteCombat(double synchronizedNow)
+        public bool TryCompleteCombat(
+            double synchronizedNow,
+            double landingEffectDurationSeconds =
+                LandingEffectResolveDurationSeconds)
         {
             ValidateTimestamp(synchronizedNow);
+            ValidateDuration(
+                landingEffectDurationSeconds,
+                nameof(landingEffectDurationSeconds));
             if (!IsStarted || IsPaused)
             {
                 return false;
@@ -405,6 +434,8 @@ namespace MazeParty.Gameplay
                 return false;
             }
 
+            _landingEffectResolveDurationSeconds = landingEffectDurationSeconds;
+            _landingEffectResolveDeferred = false;
             TransitionTo(BoardFlowState.LandingEffectResolve, ToFlowTime(synchronizedNow));
             return true;
         }
@@ -412,13 +443,18 @@ namespace MazeParty.Gameplay
         public bool Pause(
             double synchronizedNow,
             bool deferExpiredAction = false,
-            bool deferAscendingResolve = false)
+            bool deferAscendingResolve = false,
+            bool deferLandingEffectResolve = false)
         {
             ValidateTimestamp(synchronizedNow);
             if (!IsStarted || IsPaused)
                 return false;
 
-            Tick(synchronizedNow, deferExpiredAction, deferAscendingResolve);
+            Tick(
+                synchronizedNow,
+                deferExpiredAction,
+                deferAscendingResolve,
+                deferLandingEffectResolve);
             IsPaused = true;
             _pauseStartedAt = synchronizedNow;
             return true;
@@ -466,7 +502,10 @@ namespace MazeParty.Gameplay
                 case BoardFlowState.AscendingResolve:
                     return Remaining(_stateStartedAt, AscendingResolveDurationSeconds, logicalNow);
                 case BoardFlowState.LandingEffectResolve:
-                    return Remaining(_stateStartedAt, LandingEffectResolveDurationSeconds, logicalNow);
+                    return Remaining(
+                        _stateStartedAt,
+                        _landingEffectResolveDurationSeconds,
+                        logicalNow);
                 case BoardFlowState.MinigameIntroReady:
                     return Remaining(_stateStartedAt, MinigameIntroReadyDurationSeconds, logicalNow);
                 case BoardFlowState.MinigameLoading:
@@ -560,6 +599,12 @@ namespace MazeParty.Gameplay
         {
             if (double.IsNaN(timestamp) || double.IsInfinity(timestamp))
                 throw new ArgumentOutOfRangeException(nameof(timestamp));
+        }
+
+        private static void ValidateDuration(double duration, string parameterName)
+        {
+            if (duration <= 0d || double.IsNaN(duration) || double.IsInfinity(duration))
+                throw new ArgumentOutOfRangeException(parameterName);
         }
     }
 }
