@@ -30,6 +30,8 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/WrongWay";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/WrongWayEnvironment.prefab";
         private const string WrongWayHudPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab";
         private const string ArtFolder =
@@ -195,27 +197,14 @@ namespace MazeParty.Editor
                 (WrongWayRules.PlayerCount - 1) +
                 NetworkWrongWayState.StepWidth +
                 4f;
-            var groundDepth =
-                WrongWayNetworkView.StartPlatformDepth +
-                WrongWayNetworkView.CourseLength +
-                WrongWayNetworkView.FinishPlatformDepth +
-                5f;
-            var groundCenterZ =
-                (WrongWayNetworkView.CourseLength -
-                 WrongWayNetworkView.StartPlatformDepth +
-                 WrongWayNetworkView.FinishPlatformDepth) * 0.5f;
-
-            var ground = CreateCube(
-                "Backdrop Floor",
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 stairArena.transform,
-                new Vector3(
-                    NetworkWrongWayState.ArenaCenterX,
-                    -0.35f,
-                    groundCenterZ),
-                new Vector3(outerWidth, 0.5f, groundDepth),
-                Quaternion.identity,
-                materials.Ground);
-            RemoveCollider(ground);
+                () => CreateEnvironmentTemplate(
+                    outerWidth,
+                    materials.Ground,
+                    materials.Rail),
+                "Wrong Way Environment");
 
             for (var slot = 0;
                  slot < WrongWayRules.PlayerCount;
@@ -228,13 +217,42 @@ namespace MazeParty.Editor
                     materials.Finish);
             }
 
-            CreateLaneRails(
-                stairArena.transform,
-                materials.Rail);
             CreateFinishArch(
                 stairArena.transform,
                 outerWidth - 2f,
                 materials.Finish);
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            float outerWidth,
+            Material groundMaterial,
+            Material railMaterial)
+        {
+            var environment = new GameObject("Wrong Way Environment");
+            var groundDepth =
+                WrongWayNetworkView.StartPlatformDepth +
+                WrongWayNetworkView.CourseLength +
+                WrongWayNetworkView.FinishPlatformDepth +
+                5f;
+            var groundCenterZ =
+                (WrongWayNetworkView.CourseLength -
+                 WrongWayNetworkView.StartPlatformDepth +
+                 WrongWayNetworkView.FinishPlatformDepth) * 0.5f;
+
+            var ground = CreateCube(
+                "Backdrop Floor",
+                environment.transform,
+                new Vector3(
+                    NetworkWrongWayState.ArenaCenterX,
+                    -0.35f,
+                    groundCenterZ),
+                new Vector3(outerWidth, 0.5f, groundDepth),
+                Quaternion.identity,
+                groundMaterial);
+            RemoveCollider(ground);
+            CreateLaneRails(environment.transform, railMaterial);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLane(

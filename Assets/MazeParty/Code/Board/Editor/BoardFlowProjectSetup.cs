@@ -37,6 +37,8 @@ namespace MazeParty.Editor
             D12MaterialFolder + "/D12Tintable.mat";
         private const string D12VisualPrefabPath =
             "Assets/MazeParty/Prefabs/Board/Dice/D12WorldDieVisual.prefab";
+        internal const string NetworkWorldDiePrefabPath =
+            "Assets/MazeParty/Prefabs/Board/Dice/NetworkWorldDie.prefab";
         private const float D12VisualScale = 0.3f;
 
         private static readonly Color[] D12PlayerColors =
@@ -49,6 +51,8 @@ namespace MazeParty.Editor
 
         private const string UiFolder = "Assets/MazeParty/Prefabs/Board";
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Board/UI";
+        private const string BoardCanvasModuleFolder =
+            "Assets/MazeParty/Prefabs/Board/UI/Modules";
         internal const string BoardCanvasPrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
         internal const string BoardFlowTestToolsPrefabPath =
@@ -56,6 +60,16 @@ namespace MazeParty.Editor
         private const string TestbedPath =
             "Assets/MazeParty/Scenes/Board/Dev/BoardFlowTestbed.unity";
         private const float RoomSize = BoardTile.RoomSize;
+
+        private static readonly BoardCanvasModuleSpec[] BoardCanvasModules =
+        {
+            new BoardCanvasModuleSpec(
+                "ReconnectOverlay",
+                BoardCanvasModuleFolder + "/ReconnectOverlay.prefab"),
+            new BoardCanvasModuleSpec(
+                "MinigameReadyPanel",
+                BoardCanvasModuleFolder + "/MinigameReadyPanel.prefab")
+        };
 
         private static readonly Vector2Int[] MainLoop =
         {
@@ -217,6 +231,7 @@ namespace MazeParty.Editor
             var diceCoordinator = matchState.AddComponent<NetworkWorldDiceCoordinator>();
             diceCoordinator.ConfigureSceneDice(dice, topology);
             EditorSceneManager.SaveScene(scene, BoardPath);
+            MinigameStartCountdownProjectSetup.EnsureBoardSceneInstance();
         }
 
         internal static void BuildLocalTestbedFromBoard()
@@ -234,6 +249,25 @@ namespace MazeParty.Editor
             if (canvas == null || rig == null || topology == null || director == null)
             {
                 throw new InvalidOperationException("Board scene is missing testbed prerequisites.");
+            }
+
+            // The local flow testbed stops before the network-owned award
+            // ceremony. Keep only the UI it can actually drive so its scene
+            // remains a focused, prefab-only development surface.
+            AwardCeremonyCanvasBindings awardCanvas = null;
+            var testbedRoots = scene.GetRootGameObjects();
+            for (var rootIndex = 0;
+                 rootIndex < testbedRoots.Length && awardCanvas == null;
+                 rootIndex++)
+            {
+                awardCanvas = testbedRoots[rootIndex]
+                    .GetComponentInChildren<AwardCeremonyCanvasBindings>(true);
+            }
+            if (awardCanvas != null)
+            {
+                var awardRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(
+                    awardCanvas.gameObject) ?? awardCanvas.gameObject;
+                UnityEngine.Object.DestroyImmediate(awardRoot);
             }
 
             var networkView = canvas.GetComponent<BoardFlowView>();
@@ -454,103 +488,30 @@ namespace MazeParty.Editor
 
             BoardItemProjectSetup.EnsureAssets();
             var d12VisualPrefab = EnsureD12RuntimeAssets();
+            var networkWorldDiePrefab =
+                LoadOrCreateNetworkWorldDiePrefab(d12VisualPrefab);
             var dice = new NetworkWorldDie[MultiplayerConstants.MaxPlayers * 2];
-            var playerMaterials =
-                CreateOrUpdateD12PlayerMaterials(D12PlayerColors);
 
             for (var index = 0; index < dice.Length; index++)
             {
                 var slot = index / 2;
-                var dieObject = PrefabUtility.InstantiatePrefab(d12VisualPrefab) as GameObject;
+                var dieObject = PrefabUtility.InstantiatePrefab(
+                    networkWorldDiePrefab) as GameObject;
                 if (dieObject == null)
                 {
                     throw new InvalidOperationException(
-                        "Failed to instantiate the generated D12 visual prefab.");
+                        "Failed to instantiate NetworkWorldDie.prefab.");
                 }
 
                 dieObject.name = "World Die P" + (slot + 1) + " Die " + (index % 2 + 1);
                 dieObject.transform.position = new Vector3(slot * 1.5f, -20f, 0f);
-
-                var dieRenderer = dieObject.GetComponent<MeshRenderer>();
-                if (dieRenderer == null)
+                var die = dieObject.GetComponent<NetworkWorldDie>();
+                if (die == null || !die.HasRequiredPresentation)
                 {
                     throw new InvalidOperationException(
-                        "The generated D12 visual prefab has no MeshRenderer.");
+                        "NetworkWorldDie.prefab is missing its authored contract.");
                 }
-
-                // Renderer property blocks are not serialized into the generated
-                // scene reliably. A tiny per-slot material asset preserves the tint
-                // after closing/reopening Board while sharing the same 512px maps.
-                dieRenderer.sharedMaterial = playerMaterials[slot];
-
-                dieObject.AddComponent<NetworkObject>();
-                var networkTransform = dieObject.AddComponent<NetworkTransform>();
-                networkTransform.Interpolate = true;
-                var body = dieObject.AddComponent<Rigidbody>();
-                body.mass = 0.8f;
-                body.linearDamping = 1.1f;
-                body.angularDamping = 1.4f;
-                body.maxAngularVelocity = 24f;
-                dieObject.AddComponent<NetworkRigidbody>();
-
-                if (WorldDieD12Layout.FaceCount !=
-                    WorldDieAuthorityModel.MaximumFace)
-                {
-                    throw new InvalidOperationException(
-                        "The D12 face mapping must contain exactly one normal per roll value.");
-                }
-
-                var markers =
-                    new WorldDieFaceMarker[WorldDieD12Layout.FaceCount];
-                for (var faceIndex = 0; faceIndex < markers.Length; faceIndex++)
-                {
-                    var faceValue =
-                        faceIndex + WorldDieAuthorityModel.MinimumFace;
-                    if (!WorldDieD12Layout.TryGetLocalNormal(
-                            faceValue,
-                            out var normal) ||
-                        !WorldDieD12Layout.TryGetLocalMarkerPosition(
-                            faceValue,
-                            out var markerPosition))
-                    {
-                        throw new InvalidOperationException(
-                            "The shared D12 layout is missing face " +
-                            faceValue + ".");
-                    }
-
-                    var markerObject = new GameObject("Face " + faceValue);
-                    markerObject.transform.SetParent(dieObject.transform, false);
-                    markerObject.transform.localPosition =
-                        markerPosition;
-                    markerObject.transform.localRotation =
-                        Quaternion.FromToRotation(Vector3.up, normal);
-                    var marker = markerObject.AddComponent<WorldDieFaceMarker>();
-                    marker.Configure(faceValue);
-                    markers[faceIndex] = marker;
-                }
-
-                var resultObject = new GameObject("Public World Result");
-                resultObject.transform.SetParent(dieObject.transform, false);
-                resultObject.transform.localScale =
-                    Vector3.one / D12VisualScale;
-                var resultText = resultObject.AddComponent<TextMesh>();
-                resultText.text = "?";
-                resultText.anchor = TextAnchor.MiddleCenter;
-                resultText.alignment = TextAlignment.Center;
-                resultText.fontSize = 64;
-                resultText.characterSize = 0.045f;
-                resultText.color = Color.white;
-
-                var die = dieObject.AddComponent<NetworkWorldDie>();
-                var renderers = dieObject.GetComponentsInChildren<Renderer>(true);
-                die.ConfigureSceneDie(slot, renderers, markers, resultText);
-                for (var i = 0; i < renderers.Length; i++)
-                {
-                    renderers[i].enabled = false;
-                }
-                var dieData = new SerializedObject(die);
-                dieData.FindProperty("dieIndex").intValue = index % 2;
-                dieData.ApplyModifiedPropertiesWithoutUndo();
+                die.ConfigureSceneIdentity(slot, index % 2);
                 dice[index] = die;
             }
 
@@ -606,6 +567,155 @@ namespace MazeParty.Editor
             finally
             {
                 UnityEngine.Object.DestroyImmediate(temporary);
+            }
+        }
+
+        private static GameObject LoadOrCreateNetworkWorldDiePrefab(
+            GameObject visualPrefab)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                NetworkWorldDiePrefabPath);
+            if (prefab == null)
+            {
+                var temporary = PrefabUtility.InstantiatePrefab(
+                    visualPrefab) as GameObject;
+                if (temporary == null)
+                {
+                    throw new InvalidOperationException(
+                        "Could not instantiate D12WorldDieVisual.prefab while " +
+                        "seeding NetworkWorldDie.prefab.");
+                }
+
+                try
+                {
+                    temporary.name = "Network World Die";
+                    temporary.AddComponent<NetworkObject>();
+                    var networkTransform =
+                        temporary.AddComponent<NetworkTransform>();
+                    networkTransform.Interpolate = true;
+                    var body = temporary.AddComponent<Rigidbody>();
+                    body.mass = 0.8f;
+                    body.linearDamping = 1.1f;
+                    body.angularDamping = 1.4f;
+                    body.maxAngularVelocity = 24f;
+                    temporary.AddComponent<NetworkRigidbody>();
+
+                    if (WorldDieD12Layout.FaceCount !=
+                        WorldDieAuthorityModel.MaximumFace)
+                    {
+                        throw new InvalidOperationException(
+                            "The D12 face mapping must contain exactly one " +
+                            "normal per roll value.");
+                    }
+
+                    var markers = new WorldDieFaceMarker[
+                        WorldDieD12Layout.FaceCount];
+                    for (var faceIndex = 0;
+                         faceIndex < markers.Length;
+                         faceIndex++)
+                    {
+                        var faceValue = faceIndex +
+                            WorldDieAuthorityModel.MinimumFace;
+                        if (!WorldDieD12Layout.TryGetLocalNormal(
+                                faceValue,
+                                out var normal) ||
+                            !WorldDieD12Layout.TryGetLocalMarkerPosition(
+                                faceValue,
+                                out var markerPosition))
+                        {
+                            throw new InvalidOperationException(
+                                "The shared D12 layout is missing face " +
+                                faceValue + ".");
+                        }
+
+                        var markerObject = new GameObject(
+                            "Face " + faceValue);
+                        markerObject.transform.SetParent(
+                            temporary.transform,
+                            false);
+                        markerObject.transform.localPosition = markerPosition;
+                        markerObject.transform.localRotation =
+                            Quaternion.FromToRotation(Vector3.up, normal);
+                        var marker = markerObject.AddComponent<
+                            WorldDieFaceMarker>();
+                        marker.Configure(faceValue);
+                        markers[faceIndex] = marker;
+                    }
+
+                    var resultObject = new GameObject("Public World Result");
+                    resultObject.transform.SetParent(temporary.transform, false);
+                    resultObject.transform.localScale =
+                        Vector3.one / D12VisualScale;
+                    var resultText = resultObject.AddComponent<TextMesh>();
+                    resultText.text = "?";
+                    resultText.anchor = TextAnchor.MiddleCenter;
+                    resultText.alignment = TextAlignment.Center;
+                    resultText.fontSize = 64;
+                    resultText.characterSize = 0.045f;
+                    resultText.color = Color.white;
+
+                    var die = temporary.AddComponent<NetworkWorldDie>();
+                    var tintRenderer = temporary.GetComponent<MeshRenderer>();
+                    var renderers = temporary.GetComponentsInChildren<
+                        Renderer>(true);
+                    die.ConfigurePrefabPresentation(
+                        tintRenderer,
+                        renderers,
+                        markers,
+                        resultText,
+                        D12PlayerColors);
+                    for (var index = 0; index < renderers.Length; index++)
+                    {
+                        renderers[index].enabled = false;
+                    }
+                    temporary.GetComponent<Collider>().enabled = false;
+
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        temporary,
+                        NetworkWorldDiePrefabPath);
+                    if (prefab == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Failed to save NetworkWorldDie.prefab.");
+                    }
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(temporary);
+                }
+            }
+
+            ValidateNetworkWorldDiePrefab(prefab);
+            return prefab;
+        }
+
+        private static void ValidateNetworkWorldDiePrefab(GameObject prefab)
+        {
+            var die = prefab != null
+                ? prefab.GetComponent<NetworkWorldDie>()
+                : null;
+            var collider = prefab != null
+                ? prefab.GetComponent<MeshCollider>()
+                : null;
+            var original = prefab != null
+                ? PrefabUtility.GetCorrespondingObjectFromOriginalSource(prefab)
+                : null;
+            if (prefab == null ||
+                PrefabUtility.GetPrefabAssetType(prefab) !=
+                PrefabAssetType.Variant ||
+                AssetDatabase.GetAssetPath(original) != D12VisualPrefabPath ||
+                prefab.GetComponent<NetworkObject>() == null ||
+                prefab.GetComponent<NetworkTransform>() == null ||
+                prefab.GetComponent<NetworkRigidbody>() == null ||
+                prefab.GetComponent<Rigidbody>() == null ||
+                collider == null || !collider.convex ||
+                prefab.GetComponentsInChildren<NetworkObject>(true).Length != 1 ||
+                die == null || !die.HasRequiredPresentation)
+            {
+                throw new InvalidOperationException(
+                    "NetworkWorldDie.prefab must remain a complete variant of " +
+                    "D12WorldDieVisual.prefab. Repair the prefab directly; " +
+                    "setup will not overwrite authored design.");
             }
         }
 
@@ -1018,6 +1128,7 @@ namespace MazeParty.Editor
             }
 
             prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
+            prefab = MigrateBoardCanvasModulesIfMissing(prefab);
             MinigameResultCanvasProjectSetup.EnsurePrefabMigrated();
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 BoardCanvasPrefabPath);
@@ -1085,6 +1196,213 @@ namespace MazeParty.Editor
                 BoardCanvasPrefabPath);
         }
 
+        private static GameObject MigrateBoardCanvasModulesIfMissing(
+            GameObject prefab)
+        {
+            var requiresMigration = false;
+            for (var index = 0; index < BoardCanvasModules.Length; index++)
+            {
+                var spec = BoardCanvasModules[index];
+                var module = prefab != null
+                    ? FindDescendant(prefab.transform, spec.ObjectName)
+                    : null;
+                if (AssetDatabase.LoadAssetAtPath<GameObject>(
+                        spec.PrefabPath) == null ||
+                    module == null ||
+                    !IsNestedPrefabAssetReference(
+                        module,
+                        spec.PrefabPath))
+                {
+                    requiresMigration = true;
+                    break;
+                }
+            }
+
+            if (!requiresMigration)
+            {
+                ValidateBoardCanvasModules(prefab);
+                return prefab;
+            }
+
+            EnsureFolder(BoardCanvasModuleFolder);
+            var contents = PrefabUtility.LoadPrefabContents(
+                BoardCanvasPrefabPath);
+            try
+            {
+                for (var index = 0;
+                     index < BoardCanvasModules.Length;
+                     index++)
+                {
+                    var spec = BoardCanvasModules[index];
+                    var module = FindDescendant(
+                        contents.transform,
+                        spec.ObjectName);
+                    if (module == null)
+                    {
+                        throw new InvalidOperationException(
+                            "BoardCanvas.prefab is missing module root '" +
+                            spec.ObjectName + "'.");
+                    }
+
+                    var modulePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                        spec.PrefabPath);
+                    if (modulePrefab == null)
+                    {
+                        modulePrefab = PrefabUtility.SaveAsPrefabAsset(
+                            module.gameObject,
+                            spec.PrefabPath);
+                        if (modulePrefab == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not create Board Canvas module prefab: " +
+                                spec.PrefabPath);
+                        }
+                    }
+
+                    if (!IsNestedPrefabAssetReference(
+                            module,
+                            spec.PrefabPath))
+                    {
+                        ReplaceBoardCanvasModuleWithPrefab(
+                            module.transform,
+                            modulePrefab,
+                            spec.PrefabPath);
+                    }
+                }
+
+                var bindings = contents.GetComponent<BoardCanvasBindings>();
+                if (bindings == null)
+                {
+                    throw new InvalidOperationException(
+                        "BoardCanvas.prefab requires BoardCanvasBindings before " +
+                        "module extraction.");
+                }
+                ConfigureBoardCanvasBindings(contents, bindings);
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    BoardCanvasPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+            ValidateBoardCanvasModules(prefab);
+            return prefab;
+        }
+
+        private static Transform ReplaceBoardCanvasModuleWithPrefab(
+            Transform module,
+            GameObject modulePrefab,
+            string prefabPath)
+        {
+            var parent = module.parent;
+            var siblingIndex = module.GetSiblingIndex();
+            var localPosition = module.localPosition;
+            var localRotation = module.localRotation;
+            var localScale = module.localScale;
+            var rect = module as RectTransform;
+            var anchorMin = rect != null ? rect.anchorMin : default;
+            var anchorMax = rect != null ? rect.anchorMax : default;
+            var anchoredPosition = rect != null
+                ? rect.anchoredPosition
+                : default;
+            var sizeDelta = rect != null ? rect.sizeDelta : default;
+            var pivot = rect != null ? rect.pivot : default;
+
+            var instance = PrefabUtility.InstantiatePrefab(
+                modulePrefab,
+                parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not connect Board Canvas module prefab: " +
+                    prefabPath);
+            }
+
+            instance.name = module.name;
+            instance.transform.SetSiblingIndex(siblingIndex);
+            RestoreBoardCanvasModuleTransform(
+                instance.transform,
+                localPosition,
+                localRotation,
+                localScale,
+                anchorMin,
+                anchorMax,
+                anchoredPosition,
+                sizeDelta,
+                pivot);
+            UnityEngine.Object.DestroyImmediate(module.gameObject);
+            return instance.transform;
+        }
+
+        private static void RestoreBoardCanvasModuleTransform(
+            Transform module,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Vector2 anchorMin,
+            Vector2 anchorMax,
+            Vector2 anchoredPosition,
+            Vector2 sizeDelta,
+            Vector2 pivot)
+        {
+            module.SetLocalPositionAndRotation(localPosition, localRotation);
+            module.localScale = localScale;
+            if (module is RectTransform rect)
+            {
+                rect.anchorMin = anchorMin;
+                rect.anchorMax = anchorMax;
+                rect.anchoredPosition = anchoredPosition;
+                rect.sizeDelta = sizeDelta;
+                rect.pivot = pivot;
+            }
+        }
+
+        private static void ValidateBoardCanvasModules(GameObject prefab)
+        {
+            for (var index = 0; index < BoardCanvasModules.Length; index++)
+            {
+                var spec = BoardCanvasModules[index];
+                var module = prefab != null
+                    ? FindDescendant(prefab.transform, spec.ObjectName)
+                    : null;
+                if (module == null ||
+                    !IsNestedPrefabAssetReference(
+                        module,
+                        spec.PrefabPath))
+                {
+                    throw new InvalidOperationException(
+                        "BoardCanvas module '" + spec.ObjectName +
+                        "' must remain a connected nested instance of " +
+                        spec.PrefabPath + ".");
+                }
+            }
+        }
+
+        private static bool IsNestedPrefabAssetReference(
+            GameObject module,
+            string expectedPrefabPath)
+        {
+            if (module == null)
+            {
+                return false;
+            }
+
+            // Objects inspected through a prefab asset report NotAPrefab even
+            // when they are valid nested prefab references. The source asset
+            // path is the stable authoring-time contract; scene instances are
+            // separately required to report Connected by EditMode tests.
+            var source = PrefabUtility.GetCorrespondingObjectFromSource(
+                module);
+            return source != null &&
+                AssetDatabase.GetAssetPath(source) == expectedPrefabPath &&
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    module) == expectedPrefabPath;
+        }
+
         private static void ValidateBoardCanvasPrefab(GameObject prefab)
         {
             if (prefab == null ||
@@ -1117,6 +1435,8 @@ namespace MazeParty.Editor
                     "Repair BoardCanvasBindings directly; setup will not " +
                     "overwrite its design or remap an existing contract.");
             }
+
+            ValidateBoardCanvasModules(prefab);
 
         }
 
@@ -1899,6 +2219,7 @@ namespace MazeParty.Editor
 
             EnsureFolder(UiFolder);
             EnsureFolder(UiPrefabFolder);
+            EnsureFolder(BoardCanvasModuleFolder);
             EnsureFolder(UiPrefabFolder + "/Dev");
             EnsureFolder(MaterialFolder);
             EnsureFolder(DiceArtFolder);
@@ -2155,6 +2476,18 @@ namespace MazeParty.Editor
             }
 
             return null;
+        }
+
+        private sealed class BoardCanvasModuleSpec
+        {
+            public BoardCanvasModuleSpec(string objectName, string prefabPath)
+            {
+                ObjectName = objectName;
+                PrefabPath = prefabPath;
+            }
+
+            public string ObjectName { get; }
+            public string PrefabPath { get; }
         }
 
         private readonly struct DirectedEdge

@@ -166,6 +166,22 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             if (avatarVisual != null)
             {
                 avatarVisual.EnsureBuilt();
+                var authored = avatarVisual.Bindings;
+                if (authored != null)
+                {
+                    visualPoseRoot ??= authored.WorldModel;
+                    head ??= authored.HeadAnchor;
+                    leftHand ??= authored.LeftHandAnchor;
+                    rightHand ??= authored.RightHandAnchor;
+                    if (hideOnCripple == null || hideOnCripple.Length == 0)
+                    {
+                        hideOnCripple = new[]
+                        {
+                            authored.BodyAnchor.gameObject,
+                            authored.OutfitAnchor.gameObject
+                        };
+                    }
+                }
             }
 
             if (visualPoseRoot == null)

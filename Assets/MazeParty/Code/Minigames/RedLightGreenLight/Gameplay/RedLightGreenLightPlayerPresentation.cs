@@ -81,6 +81,23 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             if (avatarVisual != null)
             {
                 avatarVisual.EnsureBuilt();
+                var authored = avatarVisual.Bindings;
+                if (authored != null)
+                {
+                    visualPoseRoot ??= authored.WorldModel;
+                    head ??= authored.HeadAnchor;
+                    leftHand ??= authored.LeftHandAnchor;
+                    rightHand ??= authored.RightHandAnchor;
+                    if (hideAfterWarning == null ||
+                        hideAfterWarning.Length == 0)
+                    {
+                        hideAfterWarning = new[]
+                        {
+                            authored.BodyAnchor.gameObject,
+                            authored.OutfitAnchor.gameObject
+                        };
+                    }
+                }
             }
 
             visualPoseRoot ??= FindDescendant(transform, "WorldModel");

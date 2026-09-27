@@ -10,28 +10,6 @@ namespace MazeParty.Gameplay
         Hand
     }
 
-    /// <summary>
-    /// Marks a player root whose child trigger colliders provide firearm hit regions.
-    /// The root movement collider is deliberately ignored by firearm raycasts.
-    /// </summary>
-    [DisallowMultipleComponent]
-    public sealed class PlayerHitZoneOwner : MonoBehaviour
-    {
-    }
-
-    [DisallowMultipleComponent]
-    public sealed class PlayerHitZone : MonoBehaviour
-    {
-        [SerializeField] private PlayerHitRegion region = PlayerHitRegion.Body;
-
-        public PlayerHitRegion Region => region;
-
-        public void Configure(PlayerHitRegion value)
-        {
-            region = value;
-        }
-    }
-
     public static class FirearmDamageRules
     {
         public const int PulseBlasterBaseDamage = 20;

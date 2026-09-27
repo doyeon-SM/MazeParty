@@ -22,6 +22,8 @@ namespace MazeParty.Editor
         private const string SceneFolder = "Assets/MazeParty/Scenes/Minigames/BombPassing";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/BombPassing";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/BombPassingEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/BombPassing/Materials";
         public const string ScenePath = "Assets/MazeParty/Scenes/Minigames/BombPassing/BombPassing.unity";
@@ -121,7 +123,7 @@ namespace MazeParty.Editor
             var view = root.AddComponent<BombPassingNetworkView>();
             view.Configure(state, sharedCamera, references.PlayerRoot,
                 arena, references.Bomb, references.BombRenderer,
-                references.BombLight);
+                references.BombLight, references.ExplosionFlashLight);
 
             ValidateScene(root, view, references);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -142,36 +144,11 @@ namespace MazeParty.Editor
         private static ArenaReferences CreateArena(
             Transform parent, Materials materials)
         {
-            CreatePrimitive("Arena Floor", PrimitiveType.Cube, parent,
-                new Vector3(0f, -0.45f, 0f), Quaternion.identity,
-                new Vector3(18.2f, 0.8f, 18.2f), materials.Floor);
-            CreatePrimitive("Inner Floor", PrimitiveType.Cube, parent,
-                new Vector3(0f, -0.035f, 0f), Quaternion.identity,
-                new Vector3(16.2f, 0.025f, 16.2f), materials.InnerFloor);
-
-            var walls = new GameObject("Boundary Walls").transform;
-            walls.SetParent(parent, false);
-            CreatePrimitive("North Wall", PrimitiveType.Cube, walls,
-                new Vector3(0f, 0.38f, WallBoundary), Quaternion.identity,
-                new Vector3(18.5f, 0.75f, 0.36f), materials.Wall);
-            CreatePrimitive("South Wall", PrimitiveType.Cube, walls,
-                new Vector3(0f, 0.38f, -WallBoundary), Quaternion.identity,
-                new Vector3(18.5f, 0.75f, 0.36f), materials.Wall);
-            CreatePrimitive("West Wall", PrimitiveType.Cube, walls,
-                new Vector3(-WallBoundary, 0.38f, 0f), Quaternion.identity,
-                new Vector3(0.36f, 0.75f, 18.2f), materials.Wall);
-            CreatePrimitive("East Wall", PrimitiveType.Cube, walls,
-                new Vector3(WallBoundary, 0.38f, 0f), Quaternion.identity,
-                new Vector3(0.36f, 0.75f, 18.2f), materials.Wall);
-
-            var center = new GameObject("Center Spawn Platform").transform;
-            center.SetParent(parent, false);
-            CreatePrimitive("Outer Ring", PrimitiveType.Cylinder, center,
-                new Vector3(0f, 0.02f, 0f), Quaternion.identity,
-                new Vector3(2.6f, 0.035f, 2.6f), materials.Ring);
-            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, center,
-                new Vector3(0f, 0.055f, 0f), Quaternion.identity,
-                new Vector3(1.85f, 0.025f, 1.85f), materials.Center);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
+                parent,
+                () => CreateEnvironmentTemplate(materials),
+                "Bomb Passing Environment");
 
             var spawnRoot = new GameObject("Player Spawn Markers").transform;
             spawnRoot.SetParent(parent, false);
@@ -216,13 +193,65 @@ namespace MazeParty.Editor
                     "Bomb.prefab must contain a body Renderer and warning Light.");
             }
 
+            var explosionLightObject =
+                new GameObject("Bomb Explosion Flash");
+            explosionLightObject.transform.SetParent(parent, false);
+            explosionLightObject.transform.localPosition = Vector3.up;
+            var explosionFlashLight =
+                explosionLightObject.AddComponent<Light>();
+            explosionFlashLight.type = LightType.Point;
+            explosionFlashLight.color = new Color(1f, 0.32f, 0.08f);
+            explosionFlashLight.range = 7f;
+            explosionFlashLight.intensity = 4f;
+            explosionFlashLight.shadows = LightShadows.None;
+            explosionFlashLight.enabled = false;
+
             return new ArenaReferences
             {
                 PlayerRoot = playerRoot,
                 Bomb = bomb.transform,
                 BombRenderer = bomb.GetComponent<Renderer>(),
-                BombLight = bombLight
+                BombLight = bombLight,
+                ExplosionFlashLight = explosionFlashLight
             };
+        }
+
+        private static GameObject CreateEnvironmentTemplate(Materials materials)
+        {
+            var environment = new GameObject("Bomb Passing Environment");
+            var parent = environment.transform;
+            CreatePrimitive("Arena Floor", PrimitiveType.Cube, parent,
+                new Vector3(0f, -0.45f, 0f), Quaternion.identity,
+                new Vector3(18.2f, 0.8f, 18.2f), materials.Floor);
+            CreatePrimitive("Inner Floor", PrimitiveType.Cube, parent,
+                new Vector3(0f, -0.035f, 0f), Quaternion.identity,
+                new Vector3(16.2f, 0.025f, 16.2f), materials.InnerFloor);
+
+            var walls = new GameObject("Boundary Walls").transform;
+            walls.SetParent(parent, false);
+            CreatePrimitive("North Wall", PrimitiveType.Cube, walls,
+                new Vector3(0f, 0.38f, WallBoundary), Quaternion.identity,
+                new Vector3(18.5f, 0.75f, 0.36f), materials.Wall);
+            CreatePrimitive("South Wall", PrimitiveType.Cube, walls,
+                new Vector3(0f, 0.38f, -WallBoundary), Quaternion.identity,
+                new Vector3(18.5f, 0.75f, 0.36f), materials.Wall);
+            CreatePrimitive("West Wall", PrimitiveType.Cube, walls,
+                new Vector3(-WallBoundary, 0.38f, 0f), Quaternion.identity,
+                new Vector3(0.36f, 0.75f, 18.2f), materials.Wall);
+            CreatePrimitive("East Wall", PrimitiveType.Cube, walls,
+                new Vector3(WallBoundary, 0.38f, 0f), Quaternion.identity,
+                new Vector3(0.36f, 0.75f, 18.2f), materials.Wall);
+
+            var center = new GameObject("Center Spawn Platform").transform;
+            center.SetParent(parent, false);
+            CreatePrimitive("Outer Ring", PrimitiveType.Cylinder, center,
+                new Vector3(0f, 0.02f, 0f), Quaternion.identity,
+                new Vector3(2.6f, 0.035f, 2.6f), materials.Ring);
+            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, center,
+                new Vector3(0f, 0.055f, 0f), Quaternion.identity,
+                new Vector3(1.85f, 0.025f, 1.85f), materials.Center);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLighting(Transform parent)
@@ -354,6 +383,8 @@ namespace MazeParty.Editor
                 references.Bomb == null ||
                 references.BombRenderer == null ||
                 references.BombLight == null ||
+                references.ExplosionFlashLight == null ||
+                references.ExplosionFlashLight == references.BombLight ||
                 FindDescendant(root.transform, "Boundary Walls")?.childCount != 4 ||
                 FindDescendant(root.transform, "Player Spawn Markers")?.childCount != 4 ||
                 root.GetComponentsInChildren<CinemachineCamera>(true).Length != 1 ||
@@ -416,6 +447,7 @@ namespace MazeParty.Editor
             public Transform Bomb;
             public Renderer BombRenderer;
             public Light BombLight;
+            public Light ExplosionFlashLight;
         }
 
         private sealed class Materials

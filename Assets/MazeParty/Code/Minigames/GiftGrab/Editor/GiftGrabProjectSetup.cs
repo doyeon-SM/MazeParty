@@ -25,6 +25,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/GiftGrab";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/GiftGrabEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/GiftGrab/Materials";
         private const string BalloonBlowScenePath =
@@ -218,51 +220,12 @@ namespace MazeParty.Editor
             GameObject labelPrefab)
         {
             var centerX = NetworkGiftGrabState.ArenaCenterX;
-            CreatePrimitive(
-                "Arena Floor",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(centerX, -0.45f, 0f),
-                Quaternion.identity,
-                new Vector3(18f, 0.8f, 18f),
-                materials.Floor,
-                true);
-            CreatePrimitive(
-                "North Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX, 0.15f, 8.7f),
-                Quaternion.identity,
-                new Vector3(18.6f, 0.55f, 0.35f),
-                materials.Trim,
-                false);
-            CreatePrimitive(
-                "South Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX, 0.15f, -8.7f),
-                Quaternion.identity,
-                new Vector3(18.6f, 0.55f, 0.35f),
-                materials.Trim,
-                false);
-            CreatePrimitive(
-                "West Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX - 8.7f, 0.15f, 0f),
-                Quaternion.identity,
-                new Vector3(0.35f, 0.55f, 18.6f),
-                materials.Trim,
-                false);
-            CreatePrimitive(
-                "East Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX + 8.7f, 0.15f, 0f),
-                Quaternion.identity,
-                new Vector3(0.35f, 0.55f, 18.6f),
-                materials.Trim,
-                false);
+                () => CreateEnvironmentTemplate(materials),
+                "Gift Grab Environment");
 
             var playerRoot = new GameObject("Player Anchors").transform;
             playerRoot.SetParent(parent, false);
@@ -391,6 +354,73 @@ namespace MazeParty.Editor
                 DropVfx = effects.Drop,
                 StunVfx = effects.Stun
             };
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Floor",
+                colliderRoot,
+                new Vector3(NetworkGiftGrabState.ArenaCenterX, -0.45f, 0f),
+                Quaternion.identity,
+                new Vector3(18f, 0.8f, 18f));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            GiftGrabMaterials materials)
+        {
+            var environment = new GameObject("Gift Grab Environment");
+            var parent = environment.transform;
+            var centerX = NetworkGiftGrabState.ArenaCenterX;
+            CreatePrimitive(
+                "Arena Floor Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, -0.45f, 0f),
+                Quaternion.identity,
+                new Vector3(18f, 0.8f, 18f),
+                materials.Floor,
+                false);
+            CreatePrimitive(
+                "North Boundary",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, 0.15f, 8.7f),
+                Quaternion.identity,
+                new Vector3(18.6f, 0.55f, 0.35f),
+                materials.Trim,
+                false);
+            CreatePrimitive(
+                "South Boundary",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, 0.15f, -8.7f),
+                Quaternion.identity,
+                new Vector3(18.6f, 0.55f, 0.35f),
+                materials.Trim,
+                false);
+            CreatePrimitive(
+                "West Boundary",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX - 8.7f, 0.15f, 0f),
+                Quaternion.identity,
+                new Vector3(0.35f, 0.55f, 18.6f),
+                materials.Trim,
+                false);
+            CreatePrimitive(
+                "East Boundary",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX + 8.7f, 0.15f, 0f),
+                Quaternion.identity,
+                new Vector3(0.35f, 0.55f, 18.6f),
+                materials.Trim,
+                false);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateGiftVisual(

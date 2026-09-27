@@ -26,6 +26,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/BalloonBlow";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/BalloonBlowEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/BalloonBlow/Materials";
         private const string StableFootingScenePath =
@@ -222,33 +224,12 @@ namespace MazeParty.Editor
             BalloonBlowMaterials materials,
             GameObject stationLabelPrefab)
         {
-            CreatePrimitive(
-                "Stage Floor",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(0f, -0.45f, 0f),
-                Quaternion.identity,
-                new Vector3(15.5f, 0.8f, 9f),
-                materials.Stage,
-                true);
-            CreatePrimitive(
-                "Backdrop",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(0f, 2.6f, 4.25f),
-                Quaternion.identity,
-                new Vector3(15.5f, 6f, 0.35f),
-                materials.Backdrop,
-                false);
-            CreatePrimitive(
-                "Front Trim",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(0f, 0.05f, -4.1f),
-                Quaternion.identity,
-                new Vector3(15.5f, 0.45f, 0.35f),
-                materials.Trim,
-                false);
+                () => CreateEnvironmentTemplate(materials),
+                "Balloon Blow Environment");
 
             var playerRoot = new GameObject("Player Anchors").transform;
             playerRoot.SetParent(parent, false);
@@ -343,6 +324,58 @@ namespace MazeParty.Editor
                 }
             }
 
+            return new ArenaReferences
+            {
+                PlayerAnchors = playerAnchors,
+                BalloonAnchors = balloonAnchors,
+                StationLabels = stationLabels
+            };
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Stage Floor",
+                colliderRoot,
+                new Vector3(0f, -0.45f, 0f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.8f, 9f));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            BalloonBlowMaterials materials)
+        {
+            var environment = new GameObject("Balloon Blow Environment");
+            var parent = environment.transform;
+            CreatePrimitive(
+                "Stage Floor Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(0f, -0.45f, 0f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.8f, 9f),
+                materials.Stage,
+                false);
+            CreatePrimitive(
+                "Backdrop",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(0f, 2.6f, 4.25f),
+                Quaternion.identity,
+                new Vector3(15.5f, 6f, 0.35f),
+                materials.Backdrop,
+                false);
+            CreatePrimitive(
+                "Front Trim",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(0f, 0.05f, -4.1f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.45f, 0.35f),
+                materials.Trim,
+                false);
             CreatePrimitive(
                 "Rules Plaque",
                 PrimitiveType.Cube,
@@ -352,13 +385,8 @@ namespace MazeParty.Editor
                 new Vector3(8.6f, 2.8f, 0.18f),
                 materials.Plaque,
                 false);
-
-            return new ArenaReferences
-            {
-                PlayerAnchors = playerAnchors,
-                BalloonAnchors = balloonAnchors,
-                StationLabels = stationLabels
-            };
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLighting(Transform parent)

@@ -242,12 +242,7 @@ namespace MazeParty.Multiplayer
                 root.transform.SetParent(bindings.RuntimePlayerRoot, false);
                 var visual = root.AddComponent<PlayerAvatarVisual>();
                 visual.EnsureBuilt();
-                var nameplate = root.transform.Find(
-                    "VisualRoot/NameplateAnchor");
-                if (nameplate != null)
-                {
-                    nameplate.gameObject.SetActive(false);
-                }
+                visual.SetNameplateVisible(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
                 visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 foreach (var collider in

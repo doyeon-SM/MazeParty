@@ -31,6 +31,8 @@ namespace MazeParty.Editor
             "/Art/Minigames/TagChase/Materials";
         private const string SightBlockerPrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/TagChase";
+        public const string EnvironmentPrefabPath =
+            SightBlockerPrefabFolder + "/TagChaseEnvironment.prefab";
 
         public const string TagChaseScenePath =
             "Assets/MazeParty/Scenes/Minigames/TagChase/TagChase.unity";
@@ -226,86 +228,14 @@ namespace MazeParty.Editor
             Material wallMaterial,
             Material obstacleMaterial)
         {
-            var width =
-                NetworkTagChaseState.ArenaHalfWidth * 2f;
-            var depth =
-                NetworkTagChaseState.ArenaHalfDepth * 2f;
-            CreatePrimitive(
-                "Arena Floor",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    -0.3f,
-                    0f),
-                new Vector3(width, 0.6f, depth),
-                floorMaterial,
-                true);
-
-            const float wallThickness = 0.45f;
-            const float wallHeight = 2.4f;
-            CreatePrimitive(
-                "North Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    wallHeight * 0.5f,
-                    NetworkTagChaseState.ArenaHalfDepth +
-                    wallThickness * 0.5f),
-                new Vector3(
-                    width + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                wallMaterial,
-                true);
-            CreatePrimitive(
-                "South Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    wallHeight * 0.5f,
-                    -NetworkTagChaseState.ArenaHalfDepth -
-                    wallThickness * 0.5f),
-                new Vector3(
-                    width + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                wallMaterial,
-                true);
-            CreatePrimitive(
-                "West Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX -
-                    NetworkTagChaseState.ArenaHalfWidth -
-                    wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    0f),
-                new Vector3(
-                    wallThickness,
-                    wallHeight,
-                    depth),
-                wallMaterial,
-                true);
-            CreatePrimitive(
-                "East Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX +
-                    NetworkTagChaseState.ArenaHalfWidth +
-                    wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    0f),
-                new Vector3(
-                    wallThickness,
-                    wallHeight,
-                    depth),
-                wallMaterial,
-                true);
+                () => CreateEnvironmentTemplate(
+                    floorMaterial,
+                    wallMaterial),
+                "Tag Chase Environment");
 
             for (var index = 0; index < NetworkTagChaseState.ObstacleCount; index++)
             {
@@ -355,6 +285,155 @@ namespace MazeParty.Editor
                             runner + 1),
                     new Color(0.2f, 0.68f, 0.95f));
             }
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            var width = NetworkTagChaseState.ArenaHalfWidth * 2f;
+            var depth = NetworkTagChaseState.ArenaHalfDepth * 2f;
+            const float wallThickness = 0.45f;
+            const float wallHeight = 2.4f;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Floor", colliderRoot,
+                new Vector3(NetworkTagChaseState.ArenaCenterX, -0.3f, 0f),
+                Quaternion.identity,
+                new Vector3(width, 0.6f, depth));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "North Boundary", colliderRoot,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkTagChaseState.ArenaHalfDepth +
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "South Boundary", colliderRoot,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    -NetworkTagChaseState.ArenaHalfDepth -
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "West Boundary", colliderRoot,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX -
+                    NetworkTagChaseState.ArenaHalfWidth -
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, depth));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "East Boundary", colliderRoot,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX +
+                    NetworkTagChaseState.ArenaHalfWidth +
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, depth));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            Material floorMaterial,
+            Material wallMaterial)
+        {
+            var environment = new GameObject("Tag Chase Environment");
+            var parent = environment.transform;
+            var width =
+                NetworkTagChaseState.ArenaHalfWidth * 2f;
+            var depth =
+                NetworkTagChaseState.ArenaHalfDepth * 2f;
+            CreatePrimitive(
+                "Arena Floor Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    -0.3f,
+                    0f),
+                new Vector3(width, 0.6f, depth),
+                floorMaterial,
+                false);
+
+            const float wallThickness = 0.45f;
+            const float wallHeight = 2.4f;
+            CreatePrimitive(
+                "North Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkTagChaseState.ArenaHalfDepth +
+                    wallThickness * 0.5f),
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                wallMaterial,
+                false);
+            CreatePrimitive(
+                "South Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    -NetworkTagChaseState.ArenaHalfDepth -
+                    wallThickness * 0.5f),
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                wallMaterial,
+                false);
+            CreatePrimitive(
+                "West Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX -
+                    NetworkTagChaseState.ArenaHalfWidth -
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    0f),
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    depth),
+                wallMaterial,
+                false);
+            CreatePrimitive(
+                "East Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX +
+                    NetworkTagChaseState.ArenaHalfWidth +
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    0f),
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    depth),
+                wallMaterial,
+                false);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateSpawnMarker(

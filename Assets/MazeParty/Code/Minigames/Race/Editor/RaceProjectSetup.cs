@@ -29,6 +29,8 @@ namespace MazeParty.Editor
             ProjectRoot + "/Prefabs/Minigames/Race/RaceTrack.prefab";
         private const string FinishLinePrefabPath =
             ProjectRoot + "/Prefabs/Minigames/Race/FinishLine.prefab";
+        public const string EnvironmentPrefabPath =
+            ProjectRoot + "/Prefabs/Minigames/Race/RaceEnvironment.prefab";
 
         public const string RaceScenePath = "Assets/MazeParty/Scenes/Minigames/Race/Race.unity";
         public const string HudPrefabPath = "Assets/MazeParty/Prefabs/Minigames/Race/UI/RaceHud.prefab";
@@ -176,6 +178,96 @@ namespace MazeParty.Editor
             MinigameCorePrefabUtility.Connect(
                 raceTrack,
                 RaceTrackPrefabPath);
+            CreateAuthorityColliders(parent, trackWidth);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
+                parent,
+                () => CreateEnvironmentTemplate(
+                    laneMaterial,
+                    boundaryMaterial),
+                "Race Environment");
+
+            var finishLine = CreatePrimitive(
+                "Finish Line",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRaceState.TrackCenterX,
+                    0.04f,
+                    NetworkRaceState.TrackStartZ +
+                    NetworkRaceState.TrackLength),
+                new Vector3(trackWidth, 0.08f, 0.55f),
+                finishMaterial,
+                false);
+            MinigameCorePrefabUtility.Connect(
+                finishLine,
+                FinishLinePrefabPath);
+
+            for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
+            {
+                CreatePrimitive(
+                    "Start Marker " + (slot + 1),
+                    PrimitiveType.Cylinder,
+                    parent,
+                    new Vector3(
+                        NetworkRaceState.GetLaneX(slot),
+                        0.02f,
+                        NetworkRaceState.TrackStartZ + 0.7f),
+                    new Vector3(0.55f, 0.025f, 0.55f),
+                    boundaryMaterial,
+                    false);
+            }
+        }
+
+        private static void CreateAuthorityColliders(
+            Transform parent,
+            float trackWidth)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            const float wallThickness = 0.4f;
+            const float wallHeight = 1.5f;
+            var sideOffset = trackWidth * 0.5f + wallThickness * 0.5f;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "West Boundary", colliderRoot,
+                new Vector3(
+                    NetworkRaceState.TrackCenterX - sideOffset,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    NetworkRaceState.TrackLength + wallThickness * 2f));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "East Boundary", colliderRoot,
+                new Vector3(
+                    NetworkRaceState.TrackCenterX + sideOffset,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    NetworkRaceState.TrackLength + wallThickness * 2f));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "South Boundary", colliderRoot,
+                new Vector3(
+                    NetworkRaceState.TrackCenterX,
+                    wallHeight * 0.5f,
+                    NetworkRaceState.TrackStartZ - wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(trackWidth, wallHeight, wallThickness));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            Material laneMaterial,
+            Material boundaryMaterial)
+        {
+            var environment = new GameObject("Race Environment");
+            var parent = environment.transform;
+            var trackWidth = RaceRules.PlayerCount *
+                             NetworkRaceState.LaneWidth + 1.2f;
 
             for (var divider = 1;
                  divider < RaceRules.PlayerCount;
@@ -204,27 +296,12 @@ namespace MazeParty.Editor
                 new Vector3(trackWidth, 0.06f, 0.32f),
                 laneMaterial,
                 false);
-            var finishLine = CreatePrimitive(
-                "Finish Line",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkRaceState.TrackCenterX,
-                    0.04f,
-                    NetworkRaceState.TrackStartZ +
-                    NetworkRaceState.TrackLength),
-                new Vector3(trackWidth, 0.08f, 0.55f),
-                finishMaterial,
-                false);
-            MinigameCorePrefabUtility.Connect(
-                finishLine,
-                FinishLinePrefabPath);
 
             const float wallThickness = 0.4f;
             const float wallHeight = 1.5f;
             var sideOffset = trackWidth * 0.5f + wallThickness * 0.5f;
             CreatePrimitive(
-                "West Boundary",
+                "West Boundary Visual",
                 PrimitiveType.Cube,
                 parent,
                 new Vector3(
@@ -236,9 +313,9 @@ namespace MazeParty.Editor
                     wallHeight,
                     NetworkRaceState.TrackLength + wallThickness * 2f),
                 boundaryMaterial,
-                true);
+                false);
             CreatePrimitive(
-                "East Boundary",
+                "East Boundary Visual",
                 PrimitiveType.Cube,
                 parent,
                 new Vector3(
@@ -250,9 +327,9 @@ namespace MazeParty.Editor
                     wallHeight,
                     NetworkRaceState.TrackLength + wallThickness * 2f),
                 boundaryMaterial,
-                true);
+                false);
             CreatePrimitive(
-                "South Boundary",
+                "South Boundary Visual",
                 PrimitiveType.Cube,
                 parent,
                 new Vector3(
@@ -261,22 +338,10 @@ namespace MazeParty.Editor
                     NetworkRaceState.TrackStartZ - wallThickness * 0.5f),
                 new Vector3(trackWidth, wallHeight, wallThickness),
                 boundaryMaterial,
-                true);
+                false);
 
-            for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
-            {
-                CreatePrimitive(
-                    "Start Marker " + (slot + 1),
-                    PrimitiveType.Cylinder,
-                    parent,
-                    new Vector3(
-                        NetworkRaceState.GetLaneX(slot),
-                        0.02f,
-                        NetworkRaceState.TrackStartZ + 0.7f),
-                    new Vector3(0.55f, 0.025f, 0.55f),
-                    boundaryMaterial,
-                    false);
-            }
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static CinemachineCamera CreateCamera(Transform parent)

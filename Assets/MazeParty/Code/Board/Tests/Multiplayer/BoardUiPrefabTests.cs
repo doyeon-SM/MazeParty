@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 using UnityEditor;
@@ -15,6 +16,53 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
+
+        private static readonly string[,] NestedModules =
+        {
+            {
+                "ReconnectOverlay",
+                "Assets/MazeParty/Prefabs/Board/UI/Modules/ReconnectOverlay.prefab"
+            },
+            {
+                "MinigameReadyPanel",
+                "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab"
+            }
+        };
+
+        [Test]
+        public void BoardCanvas_ComposesConnectedAuthoredModules()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            Assert.That(prefab, Is.Not.Null, PrefabPath);
+
+            for (var index = 0; index < NestedModules.GetLength(0); index++)
+            {
+                var objectName = NestedModules[index, 0];
+                var modulePath = NestedModules[index, 1];
+                Assert.That(
+                    AssetDatabase.LoadAssetAtPath<GameObject>(modulePath),
+                    Is.Not.Null,
+                    modulePath);
+                var module = prefab.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(candidate => candidate.name == objectName);
+                Assert.That(module, Is.Not.Null, objectName);
+                var source = PrefabUtility.GetCorrespondingObjectFromSource(
+                    module.gameObject);
+                Assert.That(
+                    source,
+                    Is.Not.Null,
+                    objectName);
+                Assert.That(
+                    AssetDatabase.GetAssetPath(source),
+                    Is.EqualTo(modulePath),
+                    objectName);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        module.gameObject),
+                    Is.EqualTo(modulePath),
+                    objectName);
+            }
+        }
 
         [Test]
         public void ReadyPlayerStates_AreBoundOnBoardCanvasPrefabAndSceneInstance()

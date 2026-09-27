@@ -10,6 +10,106 @@ namespace MazeParty.Editor
     /// </summary>
     public static class MinigameCorePrefabUtility
     {
+        public static BoxCollider CreateSceneOwnedBoxCollider(
+            string name,
+            Transform parent,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale)
+        {
+            if (parent == null)
+            {
+                throw new ArgumentNullException(nameof(parent));
+            }
+
+            var colliderObject = new GameObject(name);
+            colliderObject.transform.SetParent(parent, false);
+            colliderObject.transform.SetLocalPositionAndRotation(
+                localPosition, localRotation);
+            colliderObject.transform.localScale = localScale;
+            return colliderObject.AddComponent<BoxCollider>();
+        }
+
+        public static void StripColliders(GameObject root)
+        {
+            if (root == null)
+            {
+                throw new ArgumentNullException(nameof(root));
+            }
+
+            var colliders = root.GetComponentsInChildren<Collider>(true);
+            for (var index = 0; index < colliders.Length; index++)
+            {
+                UnityEngine.Object.DestroyImmediate(colliders[index]);
+            }
+        }
+
+        public static GameObject InstantiateOrSeed(
+            string prefabPath,
+            Transform parent,
+            Func<GameObject> createMissingTemplate,
+            string instanceName = null)
+        {
+            ValidatePrefabPath(prefabPath);
+            if (createMissingTemplate == null)
+            {
+                throw new ArgumentNullException(nameof(createMissingTemplate));
+            }
+
+            EnsureFolders(prefabPath);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
+            {
+                GameObject template = null;
+                try
+                {
+                    template = createMissingTemplate();
+                    if (template == null)
+                    {
+                        throw new InvalidOperationException(
+                            "The missing-prefab template factory returned null: " +
+                            prefabPath);
+                    }
+
+                    if (template.transform.parent != null)
+                    {
+                        throw new InvalidOperationException(
+                            "The missing-prefab template must be unparented: " +
+                            prefabPath);
+                    }
+
+                    prefab = PrefabUtility.SaveAsPrefabAsset(template, prefabPath);
+                    if (prefab == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Could not create core prefab: " + prefabPath);
+                    }
+                }
+                finally
+                {
+                    if (template != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(template);
+                    }
+                }
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not instantiate core prefab: " + prefabPath);
+            }
+
+            instance.transform.SetLocalPositionAndRotation(
+                Vector3.zero, Quaternion.identity);
+            if (!string.IsNullOrWhiteSpace(instanceName))
+            {
+                instance.name = instanceName;
+            }
+            return instance;
+        }
+
         public static GameObject Connect(GameObject authored, string prefabPath)
         {
             if (authored == null)
@@ -17,15 +117,7 @@ namespace MazeParty.Editor
                 throw new ArgumentNullException(nameof(authored));
             }
 
-            if (string.IsNullOrWhiteSpace(prefabPath) ||
-                !prefabPath.StartsWith("Assets/MazeParty/Prefabs/Minigames/",
-                    StringComparison.Ordinal) ||
-                !prefabPath.EndsWith(".prefab", StringComparison.Ordinal))
-            {
-                throw new ArgumentException(
-                    "Core prefab must live under the minigame prefab tree.",
-                    nameof(prefabPath));
-            }
+            ValidatePrefabPath(prefabPath);
 
             if (PrefabUtility.IsPartOfPrefabInstance(authored))
             {
@@ -67,6 +159,19 @@ namespace MazeParty.Editor
             // while designers can change geometry and scale on the source asset.
             UnityEngine.Object.DestroyImmediate(authored);
             return instance;
+        }
+
+        private static void ValidatePrefabPath(string prefabPath)
+        {
+            if (string.IsNullOrWhiteSpace(prefabPath) ||
+                !prefabPath.StartsWith("Assets/MazeParty/Prefabs/Minigames/",
+                    StringComparison.Ordinal) ||
+                !prefabPath.EndsWith(".prefab", StringComparison.Ordinal))
+            {
+                throw new ArgumentException(
+                    "Core prefab must live under the minigame prefab tree.",
+                    nameof(prefabPath));
+            }
         }
 
         private static void EnsureFolders(string prefabPath)

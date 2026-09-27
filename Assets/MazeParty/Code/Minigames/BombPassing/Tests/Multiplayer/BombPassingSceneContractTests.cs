@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -43,7 +44,8 @@ namespace MazeParty.Multiplayer.Tests
                          {
                              "state", "sharedCamera", "playerRoot",
                              "arenaPresentation", "bombTransform",
-                             "bombRenderer", "bombLight"
+                             "bombRenderer", "bombLight",
+                             "explosionFlashLight"
                          })
                 {
                     var property = serialized.FindProperty(field);
@@ -93,6 +95,19 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(warningLight.color.r,
                     Is.GreaterThan(warningLight.color.b));
 
+                var explosionFlash = FindDescendant(
+                    arena, "Bomb Explosion Flash")?.GetComponent<Light>();
+                Assert.That(explosionFlash, Is.Not.Null);
+                Assert.That(explosionFlash, Is.Not.SameAs(warningLight));
+                Assert.That(explosionFlash.type, Is.EqualTo(LightType.Point));
+                Assert.That(explosionFlash.enabled, Is.False);
+                Assert.That(explosionFlash.range,
+                    Is.GreaterThan(warningLight.range));
+                Assert.That(explosionFlash.intensity,
+                    Is.GreaterThan(warningLight.intensity));
+                Assert.That(view.ExplosionFlashLight,
+                    Is.SameAs(explosionFlash));
+
                 var cameras = roots.SelectMany(root =>
                     root.GetComponentsInChildren<Component>(true))
                     .Where(component => component != null &&
@@ -118,6 +133,17 @@ namespace MazeParty.Multiplayer.Tests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        [Test]
+        public void NetworkView_DoesNotCreateExplosionLightAtRuntime()
+        {
+            const string sourcePath =
+                "Assets/MazeParty/Code/Minigames/BombPassing/" +
+                "Multiplayer/BombPassingNetworkView.cs";
+            var source = File.ReadAllText(sourcePath);
+            StringAssert.DoesNotContain("AddComponent<Light>", source);
+            StringAssert.DoesNotContain("EnsureExplosionLight", source);
         }
 
         [Test]

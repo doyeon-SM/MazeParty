@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace MazeParty.Gameplay
 {
@@ -14,15 +13,18 @@ namespace MazeParty.Gameplay
         {
             var catalog = PlayerExpressionCatalog.Instance;
             if (catalog == null) return;
-            var face = new GameObject("Face Sprite");
-            face.transform.SetParent(_head, false);
-            face.transform.localPosition = new Vector3(0, 0, .51f);
-            face.transform.localScale = Vector3.one * .8f;
-            _faceSprite = face.AddComponent<SpriteRenderer>();
-            _faceSprite.shadowCastingMode = ShadowCastingMode.Off;
-            _faceSprite.receiveShadows = false;
-            _worldGestureRoot = CreateAnchor(_worldModel, "Gesture Hands");
+            if (bindings == null)
+            {
+                return;
+            }
+            _faceSprite = bindings.FaceSprite;
+            _worldGestureRoot = bindings.WorldGestureRoot;
+            _firstGestureRoot = bindings.FirstPersonGestureRoot;
             _worldGestures = InstantiateGestures(_worldGestureRoot);
+            if (_firstGestureRoot != null)
+            {
+                _firstGestures = InstantiateGestures(_firstGestureRoot);
+            }
             SetFaceExpression(0);
         }
         private GameObject[] InstantiateGestures(Transform root)
@@ -37,19 +39,11 @@ namespace MazeParty.Gameplay
             }
             return result;
         }
-        private void BuildFirstPersonGestures(Transform eye)
-        {
-            if (PlayerExpressionCatalog.Instance == null) return;
-            _firstGestureRoot = CreateAnchor(eye, "First Person Gesture Hands");
-            _firstGestureRoot.localPosition = new Vector3(0, -.22f, .65f);
-            _firstGestureRoot.localScale = Vector3.one * .55f;
-            _firstGestureRoot.localRotation = Quaternion.Euler(0, 180, 0);
-            _firstGestures = InstantiateGestures(_firstGestureRoot);
-        }
         public void SetFaceExpression(byte id)
         {
             if (_faceSprite == null) return;
             var catalog = PlayerExpressionCatalog.Instance;
+            if (catalog == null) return;
             if (catalog.Faces.Length == 0) return;
             _faceSprite.sprite = catalog.Faces[PlayerExpressionCatalog.SanitizeFace(id)].Sprite;
             _leftEye.gameObject.SetActive(false); _rightEye.gameObject.SetActive(false); _mouth.gameObject.SetActive(false);

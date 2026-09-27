@@ -249,7 +249,7 @@ namespace MazeParty.Multiplayer
                 visual.SetOwnerFirstPerson(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
                 visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
-                DisableBuiltInNameplate(playerObject.transform);
+                visual.SetNameplateVisible(false);
                 DisableGeneratedHitColliders(playerObject);
 
                 _players[slot] = new PlayerView(

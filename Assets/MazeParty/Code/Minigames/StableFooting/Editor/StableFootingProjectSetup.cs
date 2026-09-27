@@ -27,6 +27,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/StableFooting";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/StableFootingEnvironment.prefab";
         private const string ArtFolder = ProjectRoot + "/Art";
         private const string MinigameArtFolder = ArtFolder + "/Minigames";
         private const string StableFootingArtFolder =
@@ -228,23 +230,14 @@ namespace MazeParty.Editor
             Transform parent,
             StableFootingMaterials materials)
         {
-            var width = StableFootingRules.BoardWidth *
-                        NetworkStableFootingState.TileSize;
             var length = StableFootingRules.BoardHeight *
                          NetworkStableFootingState.TileSize;
-
-            CreatePrimitive(
-                "Arena Understructure",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(
-                    NetworkStableFootingState.ArenaCenterX,
-                    -1.25f,
-                    0f),
-                Quaternion.identity,
-                new Vector3(width + 2f, 1.2f, length + 2f),
-                materials.Understructure,
-                true);
+                () => CreateEnvironmentTemplate(materials.Understructure),
+                "Stable Footing Environment");
 
             var tileRoot = new GameObject("Tile Anchors").transform;
             tileRoot.SetParent(parent, false);
@@ -287,6 +280,49 @@ namespace MazeParty.Editor
                 SafeSymbolCircleRenderer = safeDisplay.CircleRenderer,
                 SafeSymbolSquareRenderer = safeDisplay.SquareRenderer
             };
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            var width = StableFootingRules.BoardWidth *
+                        NetworkStableFootingState.TileSize;
+            var length = StableFootingRules.BoardHeight *
+                         NetworkStableFootingState.TileSize;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Understructure",
+                colliderRoot,
+                new Vector3(
+                    NetworkStableFootingState.ArenaCenterX,
+                    -1.25f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(width + 2f, 1.2f, length + 2f));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            Material understructureMaterial)
+        {
+            var environment = new GameObject("Stable Footing Environment");
+            var width = StableFootingRules.BoardWidth *
+                        NetworkStableFootingState.TileSize;
+            var length = StableFootingRules.BoardHeight *
+                         NetworkStableFootingState.TileSize;
+            CreatePrimitive(
+                "Arena Understructure Visual",
+                PrimitiveType.Cube,
+                environment.transform,
+                new Vector3(
+                    NetworkStableFootingState.ArenaCenterX,
+                    -1.25f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(width + 2f, 1.2f, length + 2f),
+                understructureMaterial,
+                false);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateTileAnchor(

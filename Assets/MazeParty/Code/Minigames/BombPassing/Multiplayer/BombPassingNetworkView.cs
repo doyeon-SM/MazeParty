@@ -44,13 +44,14 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform bombTransform;
         [SerializeField] private Renderer bombRenderer;
         [SerializeField] private Light bombLight;
+        [SerializeField] private Light explosionFlashLight;
 
         private readonly PlayerView[] _players =
             new PlayerView[BombPassingRules.PlayerCount];
         private GameplayCameraDirector _cameraDirector;
         private MaterialPropertyBlock _colorBlock;
-        private Light _explosionLight;
         private float _baseLightIntensity = 1f;
+        private float _explosionPeakIntensity = 4f;
         private float _explosionFlashUntil;
         private uint _lastExplosionSequence;
         private bool _cameraRegistered;
@@ -70,6 +71,7 @@ namespace MazeParty.Multiplayer
         public Transform BombTransform => bombTransform;
         public Renderer BombRenderer => bombRenderer;
         public Light BombLight => bombLight;
+        public Light ExplosionFlashLight => explosionFlashLight;
 
         public Transform GetPlayerTransform(int slot)
         {
@@ -92,7 +94,8 @@ namespace MazeParty.Multiplayer
             GameObject arena,
             Transform bomb,
             Renderer bombVisual,
-            Light light)
+            Light warningLight,
+            Light explosionLight)
         {
             state = networkState;
             sharedCamera = camera;
@@ -100,7 +103,8 @@ namespace MazeParty.Multiplayer
             arenaPresentation = arena;
             bombTransform = bomb;
             bombRenderer = bombVisual;
-            bombLight = light;
+            bombLight = warningLight;
+            explosionFlashLight = explosionLight;
             ConfigureCamera();
             if (Application.isPlaying)
             {
@@ -114,18 +118,32 @@ namespace MazeParty.Multiplayer
             _baseLightIntensity = bombLight != null
                 ? Mathf.Max(0.01f, bombLight.intensity)
                 : 1f;
+            _explosionPeakIntensity = explosionFlashLight != null
+                ? Mathf.Max(0.01f, explosionFlashLight.intensity)
+                : 4f;
             _colorBlock = new MaterialPropertyBlock();
             ConfigureCamera();
             EnsurePlayers();
-            EnsureExplosionLight();
+            if (explosionFlashLight == null)
+            {
+                Debug.LogError(
+                    "[Bomb Passing] Authored explosion flash Light is " +
+                    "missing. Rebuild the Bomb Passing scene; explosion " +
+                    "flash presentation will remain disabled.",
+                    this);
+            }
+            else
+            {
+                explosionFlashLight.enabled = false;
+            }
             SetWorldPresentationActive(false);
         }
 
         private void OnDisable()
         {
-            if (_explosionLight != null)
+            if (explosionFlashLight != null)
             {
-                _explosionLight.enabled = false;
+                explosionFlashLight.enabled = false;
             }
             SetWorldPresentationActive(false);
             UnregisterCamera();
@@ -205,28 +223,6 @@ namespace MazeParty.Multiplayer
                 _players[slot] =
                     new PlayerView(playerObject.transform, visual);
             }
-        }
-
-        private void EnsureExplosionLight()
-        {
-            if (!Application.isPlaying || arenaPresentation == null ||
-                _explosionLight != null)
-            {
-                return;
-            }
-
-            var lightObject = new GameObject("Bomb Explosion Flash");
-            lightObject.transform.SetParent(
-                arenaPresentation.transform,
-                false);
-            _explosionLight = lightObject.AddComponent<Light>();
-            _explosionLight.type = LightType.Point;
-            _explosionLight.color = bombLight != null
-                ? bombLight.color
-                : new Color(1f, 0.32f, 0.08f);
-            _explosionLight.range = 7f;
-            _explosionLight.shadows = LightShadows.None;
-            _explosionLight.enabled = false;
         }
 
         private void ResolveLocalSlot(NetworkMatchState match)
@@ -384,19 +380,25 @@ namespace MazeParty.Multiplayer
                 _lastExplosionSequence = sequence;
                 return;
             }
-            if (sequence == _lastExplosionSequence ||
-                _explosionLight == null)
+            if (sequence == _lastExplosionSequence)
             {
                 return;
             }
 
             _lastExplosionSequence = sequence;
+            if (explosionFlashLight == null)
+            {
+                return;
+            }
+
             var slot = state.LastExplodedSlot;
+            var arena = arenaPresentation != null
+                ? arenaPresentation.transform
+                : transform;
             if (BombPassingRules.IsValidPlayerSlot(slot))
             {
-                var arena = arenaPresentation.transform;
                 var position = state.GetPlayerPosition(slot);
-                _explosionLight.transform.position =
+                explosionFlashLight.transform.position =
                     arena.TransformPoint(new Vector3(
                         position.x,
                         1.2f,
@@ -404,20 +406,20 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                _explosionLight.transform.position =
+                explosionFlashLight.transform.position =
                     bombTransform != null
                         ? bombTransform.position
-                        : arenaPresentation.transform.position +
-                          Vector3.up;
+                        : arena.position + Vector3.up;
             }
             _explosionFlashUntil =
                 Time.unscaledTime + ExplosionFlashSeconds;
-            _explosionLight.enabled = true;
+            explosionFlashLight.enabled = true;
         }
 
         private void RefreshExplosionLight()
         {
-            if (_explosionLight == null || !_explosionLight.enabled)
+            if (explosionFlashLight == null ||
+                !explosionFlashLight.enabled)
             {
                 return;
             }
@@ -425,12 +427,12 @@ namespace MazeParty.Multiplayer
             var remaining = _explosionFlashUntil - Time.unscaledTime;
             if (remaining <= 0f)
             {
-                _explosionLight.enabled = false;
+                explosionFlashLight.enabled = false;
                 return;
             }
 
-            _explosionLight.intensity =
-                _baseLightIntensity * 5f *
+            explosionFlashLight.intensity =
+                _explosionPeakIntensity *
                 (remaining / ExplosionFlashSeconds);
         }
 
@@ -474,9 +476,9 @@ namespace MazeParty.Multiplayer
             {
                 _hadVisibleFrame = false;
                 _explosionFlashUntil = 0f;
-                if (_explosionLight != null)
+                if (explosionFlashLight != null)
                 {
-                    _explosionLight.enabled = false;
+                    explosionFlashLight.enabled = false;
                 }
             }
             if (arenaPresentation != null)

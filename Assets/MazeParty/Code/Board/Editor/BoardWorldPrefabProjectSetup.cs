@@ -63,8 +63,10 @@ namespace MazeParty.Editor
             var player = PrefabUtility.LoadPrefabContents(playerPath);
             try
             {
-                foreach (var walls in player.GetComponentsInChildren<PlayerBoardBoundaryWalls>(true)) Bind(walls, assets);
-                PrefabUtility.SaveAsPrefabAsset(player, playerPath);
+                var changed = false;
+                foreach (var walls in player.GetComponentsInChildren<PlayerBoardBoundaryWalls>(true))
+                    changed |= Bind(walls, assets);
+                if (changed) PrefabUtility.SaveAsPrefabAsset(player, playerPath);
             }
             finally { PrefabUtility.UnloadPrefabContents(player); }
             AssetDatabase.SaveAssets();
@@ -90,16 +92,17 @@ namespace MazeParty.Editor
             PrefabUtility.RecordPrefabInstancePropertyModifications(instance.transform);
         }
 
-        internal static void Bind(Component target, BoardWorldPrefabs assets)
+        internal static bool Bind(Component target, BoardWorldPrefabs assets)
         {
-            if (target == null) return;
+            if (target == null) return false;
             var so = new SerializedObject(target);
             var property = so.FindProperty("worldPrefabs");
             if (property.objectReferenceValue == null)
             {
                 property.objectReferenceValue = assets;
-                so.ApplyModifiedPropertiesWithoutUndo();
+                return so.ApplyModifiedPropertiesWithoutUndo();
             }
+            return false;
         }
 
         internal static BoardWorldPrefabs EnsureAssets()

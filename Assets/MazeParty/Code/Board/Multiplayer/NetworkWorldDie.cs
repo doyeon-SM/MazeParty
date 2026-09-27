@@ -81,9 +81,11 @@ namespace MazeParty.Multiplayer
 
         [Header("Presentation")]
         [SerializeField] private Renderer[] dieRenderers = Array.Empty<Renderer>();
+        [SerializeField] private Renderer slotTintRenderer;
         [SerializeField] private WorldDieFaceMarker[] faceMarkers =
             Array.Empty<WorldDieFaceMarker>();
         [SerializeField] private TextMesh publicResultText;
+        [SerializeField] private Color[] slotTints = Array.Empty<Color>();
 
         private readonly NetworkVariable<int> _slot = new NetworkVariable<int>(
             -1,
@@ -152,11 +154,60 @@ namespace MazeParty.Multiplayer
         public Vector2Int TileCoordinate => _tileCoordinate.Value;
         public bool IsSimulationPaused => _simulationPaused.Value;
         public bool IsVisible => Phase != WorldDiePhase.Hidden;
+        public bool HasRequiredPresentation
+        {
+            get
+            {
+                if (slotTintRenderer == null || publicResultText == null ||
+                    dieRenderers == null || dieRenderers.Length == 0 ||
+                    faceMarkers == null ||
+                    faceMarkers.Length != WorldDieAuthorityModel.MaximumFace ||
+                    slotTints == null ||
+                    slotTints.Length != MultiplayerConstants.MaxPlayers)
+                {
+                    return false;
+                }
+
+                var seenFaces = new bool[WorldDieAuthorityModel.MaximumFace];
+                for (var index = 0; index < faceMarkers.Length; index++)
+                {
+                    var marker = faceMarkers[index];
+                    if (marker == null ||
+                        marker.Value < WorldDieAuthorityModel.MinimumFace ||
+                        marker.Value > WorldDieAuthorityModel.MaximumFace)
+                    {
+                        return false;
+                    }
+
+                    var faceIndex = marker.Value - WorldDieAuthorityModel.MinimumFace;
+                    if (seenFaces[faceIndex])
+                    {
+                        return false;
+                    }
+                    seenFaces[faceIndex] = true;
+                }
+
+                for (var index = 0; index < dieRenderers.Length; index++)
+                {
+                    if (dieRenderers[index] == null)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            }
+        }
 
         private void Awake()
         {
             CacheComponents();
+            ApplyConfiguredSlotTint();
             ApplyVisibility(WorldDiePhase.Hidden);
+        }
+
+        private void OnValidate()
+        {
+            ApplyConfiguredSlotTint();
         }
 
         public override void OnNetworkSpawn()
@@ -194,18 +245,30 @@ namespace MazeParty.Multiplayer
             ActiveServerDice.Remove(this);
         }
 
-        public void ConfigureSceneDie(
-            int slot,
+        public void ConfigurePrefabPresentation(
+            Renderer tintRenderer,
             Renderer[] renderers,
             WorldDieFaceMarker[] markers,
-            TextMesh resultText)
+            TextMesh resultText,
+            Color[] playerTints)
         {
-            configuredSlot = Mathf.Clamp(slot, 0, MultiplayerConstants.MaxPlayers - 1);
+            slotTintRenderer = tintRenderer;
             dieRenderers = renderers ?? Array.Empty<Renderer>();
             faceMarkers = markers ?? Array.Empty<WorldDieFaceMarker>();
             publicResultText = resultText;
+            slotTints = playerTints ?? Array.Empty<Color>();
             CacheFaceMarkers();
             RefreshWorldResultText();
+        }
+
+        public void ConfigureSceneIdentity(int slot, int index)
+        {
+            configuredSlot = Mathf.Clamp(
+                slot,
+                0,
+                MultiplayerConstants.MaxPlayers - 1);
+            dieIndex = Mathf.Clamp(index, 0, 1);
+            ApplyConfiguredSlotTint();
         }
 
         private void FixedUpdate()
@@ -1305,6 +1368,21 @@ namespace MazeParty.Multiplayer
             {
                 dieRenderers = GetComponentsInChildren<Renderer>(true);
             }
+        }
+
+        private void ApplyConfiguredSlotTint()
+        {
+            if (slotTintRenderer == null || slotTints == null ||
+                configuredSlot < 0 || configuredSlot >= slotTints.Length)
+            {
+                return;
+            }
+
+            var properties = new MaterialPropertyBlock();
+            slotTintRenderer.GetPropertyBlock(properties);
+            properties.SetColor("_BaseColor", slotTints[configuredSlot]);
+            properties.SetColor("_Color", slotTints[configuredSlot]);
+            slotTintRenderer.SetPropertyBlock(properties);
         }
 
         private void SyncAuthorityToNetwork()

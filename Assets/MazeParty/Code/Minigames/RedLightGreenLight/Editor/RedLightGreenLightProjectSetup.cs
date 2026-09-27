@@ -39,6 +39,9 @@ namespace MazeParty.Editor
         private const string SignalTowerPrefabPath =
             ProjectRoot +
             "/Prefabs/Minigames/RedLightGreenLight/SignalTower.prefab";
+        public const string EnvironmentPrefabPath =
+            ProjectRoot +
+            "/Prefabs/Minigames/RedLightGreenLight/RedLightGreenLightEnvironment.prefab";
         private const string BoardScenePath = "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string MinefieldScenePath =
             "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
@@ -231,103 +234,12 @@ namespace MazeParty.Editor
             Transform parent,
             RedLightGreenLightMaterials materials)
         {
-            var centerZ =
-                (NetworkRedLightGreenLightState.ArenaMinZ +
-                 NetworkRedLightGreenLightState.ArenaMaxZ) * 0.5f;
-            var width =
-                NetworkRedLightGreenLightState.ArenaMaxX -
-                NetworkRedLightGreenLightState.ArenaMinX;
-            var length =
-                NetworkRedLightGreenLightState.ArenaMaxZ -
-                NetworkRedLightGreenLightState.ArenaMinZ;
-
-            CreatePrimitive(
-                "Arena Floor",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(
-                    NetworkRedLightGreenLightState.ArenaCenterX,
-                    -0.1f,
-                    centerZ),
-                Quaternion.identity,
-                new Vector3(width, 0.2f, length),
-                materials.Floor,
-                true);
-
-            const float wallThickness = 0.5f;
-            const float wallHeight = 2.5f;
-            CreatePrimitive(
-                "West Wall",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkRedLightGreenLightState.ArenaMinX -
-                    wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    centerZ),
-                Quaternion.identity,
-                new Vector3(wallThickness, wallHeight, length),
-                materials.Wall,
-                true);
-            CreatePrimitive(
-                "East Wall",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkRedLightGreenLightState.ArenaMaxX +
-                    wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    centerZ),
-                Quaternion.identity,
-                new Vector3(wallThickness, wallHeight, length),
-                materials.Wall,
-                true);
-            CreatePrimitive(
-                "Start Wall",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkRedLightGreenLightState.ArenaCenterX,
-                    wallHeight * 0.5f,
-                    NetworkRedLightGreenLightState.ArenaMinZ -
-                    wallThickness * 0.5f),
-                Quaternion.identity,
-                new Vector3(
-                    width + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                materials.Wall,
-                true);
-            CreatePrimitive(
-                "Finish Wall",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    NetworkRedLightGreenLightState.ArenaCenterX,
-                    wallHeight * 0.5f,
-                    NetworkRedLightGreenLightState.ArenaMaxZ +
-                    wallThickness * 0.5f),
-                Quaternion.identity,
-                new Vector3(
-                    width + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                materials.Wall,
-                true);
-
-            CreateLine(
-                "Start Line",
-                parent,
-                NetworkRedLightGreenLightState.ArenaMinZ + 0.75f,
-                width,
-                materials.Start);
-            CreateLine(
-                "Finish Line",
-                parent,
-                NetworkRedLightGreenLightState.ArenaMaxZ - 0.5f,
-                width,
-                materials.Finish);
-            CreateCourseGuides(parent, width, length, materials.Guide);
+                () => CreateEnvironmentTemplate(materials),
+                "Red Light Green Light Environment");
 
             var observerHead = CreateObserver(parent, materials);
             CreateSignalTower(
@@ -346,6 +258,180 @@ namespace MazeParty.Editor
                 GreenSignalLight = greenSignalLight,
                 RedSignalLight = redSignalLight
             };
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            var centerZ =
+                (NetworkRedLightGreenLightState.ArenaMinZ +
+                 NetworkRedLightGreenLightState.ArenaMaxZ) * 0.5f;
+            var width =
+                NetworkRedLightGreenLightState.ArenaMaxX -
+                NetworkRedLightGreenLightState.ArenaMinX;
+            var length =
+                NetworkRedLightGreenLightState.ArenaMaxZ -
+                NetworkRedLightGreenLightState.ArenaMinZ;
+            const float wallThickness = 0.5f;
+            const float wallHeight = 2.5f;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Floor", colliderRoot,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    -0.1f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(width, 0.2f, length));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "West Wall", colliderRoot,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaMinX -
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, length));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "East Wall", colliderRoot,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaMaxX +
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, length));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Start Wall", colliderRoot,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkRedLightGreenLightState.ArenaMinZ -
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Finish Wall", colliderRoot,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkRedLightGreenLightState.ArenaMaxZ +
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            RedLightGreenLightMaterials materials)
+        {
+            var environment = new GameObject(
+                "Red Light Green Light Environment");
+            var parent = environment.transform;
+            var centerZ =
+                (NetworkRedLightGreenLightState.ArenaMinZ +
+                 NetworkRedLightGreenLightState.ArenaMaxZ) * 0.5f;
+            var width =
+                NetworkRedLightGreenLightState.ArenaMaxX -
+                NetworkRedLightGreenLightState.ArenaMinX;
+            var length =
+                NetworkRedLightGreenLightState.ArenaMaxZ -
+                NetworkRedLightGreenLightState.ArenaMinZ;
+
+            CreatePrimitive(
+                "Arena Floor Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    -0.1f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(width, 0.2f, length),
+                materials.Floor,
+                false);
+
+            const float wallThickness = 0.5f;
+            const float wallHeight = 2.5f;
+            CreatePrimitive(
+                "West Wall Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaMinX -
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, length),
+                materials.Wall,
+                false);
+            CreatePrimitive(
+                "East Wall Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaMaxX +
+                    wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, length),
+                materials.Wall,
+                false);
+            CreatePrimitive(
+                "Start Wall Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkRedLightGreenLightState.ArenaMinZ -
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                materials.Wall,
+                false);
+            CreatePrimitive(
+                "Finish Wall Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    NetworkRedLightGreenLightState.ArenaCenterX,
+                    wallHeight * 0.5f,
+                    NetworkRedLightGreenLightState.ArenaMaxZ +
+                    wallThickness * 0.5f),
+                Quaternion.identity,
+                new Vector3(
+                    width + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                materials.Wall,
+                false);
+
+            CreateLine(
+                "Start Line",
+                parent,
+                NetworkRedLightGreenLightState.ArenaMinZ + 0.75f,
+                width,
+                materials.Start);
+            CreateLine(
+                "Finish Line",
+                parent,
+                NetworkRedLightGreenLightState.ArenaMaxZ - 0.5f,
+                width,
+                materials.Finish);
+            CreateCourseGuides(parent, width, length, materials.Guide);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLine(

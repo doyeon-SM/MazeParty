@@ -15,7 +15,9 @@
 이 폴더의 프리팹을 더블클릭해 Prefab Mode에서 편집한다. 재질은
 `Assets/MazeParty/Board/Materials`에 있다. 주사위 외형은 인접한
 `../Dice/D12WorldDieVisual.prefab`, Canvas UI는 `../UI`에서 편집한다.
-공용 플레이어 외형·1인칭 손·장착 아이템 모델은 이번 범위에서 제외했다.
+공용 플레이어 외형·1인칭 손·히트 영역은
+`../../Multiplayer/PlayerAvatarPresentation.prefab`에서 편집한다. 장착 아이템
+모델은 `../Items`의 개별 프리팹을 원본으로 사용한다.
 
 ## 에셋 교체 방법
 

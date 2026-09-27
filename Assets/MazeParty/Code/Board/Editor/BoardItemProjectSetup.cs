@@ -29,15 +29,32 @@ namespace MazeParty.Editor
             try
             {
                 var dice = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<NetworkWorldDie>(true)).ToList();
+                var diePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    BoardFlowProjectSetup.NetworkWorldDiePrefabPath);
                 foreach (var first in dice.Where(d => d.DieIndex == 0).ToArray())
                 {
                     if (dice.Any(d => d.ConfiguredSlot == first.ConfiguredSlot && d.DieIndex == 1)) continue;
-                    var second = UnityEngine.Object.Instantiate(first.gameObject, first.transform.parent).GetComponent<NetworkWorldDie>();
+                    if (diePrefab == null)
+                    {
+                        throw new InvalidOperationException(
+                            "NetworkWorldDie.prefab must be created by the board " +
+                            "flow setup before upgrading legacy dice.");
+                    }
+                    var secondObject = PrefabUtility.InstantiatePrefab(
+                        diePrefab,
+                        first.transform.parent) as GameObject;
+                    if (secondObject == null)
+                    {
+                        throw new InvalidOperationException(
+                            "Could not instantiate NetworkWorldDie.prefab.");
+                    }
+                    var second = secondObject.GetComponent<NetworkWorldDie>();
                     SceneManager.MoveGameObjectToScene(second.gameObject, scene);
                     second.name = first.name + " Second";
-                    var data = new SerializedObject(second);
-                    data.FindProperty("dieIndex").intValue = 1;
-                    data.ApplyModifiedPropertiesWithoutUndo();
+                    second.transform.SetPositionAndRotation(
+                        first.transform.position,
+                        first.transform.rotation);
+                    second.ConfigureSceneIdentity(first.ConfiguredSlot, 1);
                     dice.Add(second);
                 }
                 var coordinator = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<NetworkWorldDiceCoordinator>(true)).Single();

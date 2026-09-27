@@ -24,6 +24,10 @@ namespace MazeParty.Editor
             ProjectRoot + "/Prefabs/Minigames/CliffBarrage";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/CliffBarrage/Materials";
+        private const string ProjectilePrefabPath =
+            CorePrefabFolder + "/Projectile.prefab";
+        private const string LaserRigPrefabPath =
+            CorePrefabFolder + "/LaserRig.prefab";
         public const string ScenePath = "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity";
 
         private static readonly Vector3[] SpawnPoints =
@@ -65,9 +69,178 @@ namespace MazeParty.Editor
             {
                 BuildScene(materials);
             }
+            else
+            {
+                MigrateSharedPoolPrefabs();
+            }
 
             EnsureInBuildSettings();
             AssetDatabase.SaveAssets();
+        }
+
+        private static void MigrateSharedPoolPrefabs()
+        {
+            var projectilePrefab = LoadOrCopySharedPrefab(
+                ProjectilePrefabPath,
+                CorePrefabFolder + "/Projectile1.prefab");
+            var laserRigPrefab = LoadOrCopySharedPrefab(
+                LaserRigPrefabPath,
+                CorePrefabFolder + "/LaserRig1.prefab");
+            AssetDatabase.SaveAssets();
+
+            var previousActive = SceneManager.GetActiveScene();
+            var scene = SceneManager.GetSceneByPath(ScenePath);
+            var openedForMigration = !scene.IsValid() || !scene.isLoaded;
+            if (openedForMigration)
+            {
+                scene = EditorSceneManager.OpenScene(
+                    ScenePath,
+                    OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                CliffBarrageNetworkView view = null;
+                var roots = scene.GetRootGameObjects();
+                for (var index = 0; index < roots.Length && view == null; index++)
+                {
+                    view = roots[index]
+                        .GetComponentInChildren<CliffBarrageNetworkView>(true);
+                }
+                if (view == null)
+                {
+                    throw new InvalidOperationException(
+                        "CliffBarrage.unity is missing CliffBarrageNetworkView.");
+                }
+
+                var projectiles = new Transform[
+                    NetworkCliffBarrageState.ProjectilePoolSize];
+                for (var index = 0; index < projectiles.Length; index++)
+                {
+                    var current = view.GetProjectileTransform(index);
+                    projectiles[index] = ReplaceWithSharedPrefab(
+                        current != null ? current.gameObject : null,
+                        projectilePrefab,
+                        ProjectilePrefabPath).transform;
+                }
+
+                var laserCount = NetworkCliffBarrageState.LaserPoolSize;
+                var laserRoots = new GameObject[laserCount];
+                var warningBeams = new Transform[laserCount];
+                var firingBeams = new Transform[laserCount];
+                for (var index = 0; index < laserCount; index++)
+                {
+                    laserRoots[index] = ReplaceWithSharedPrefab(
+                        view.GetLaserRoot(index),
+                        laserRigPrefab,
+                        LaserRigPrefabPath);
+                    warningBeams[index] = laserRoots[index].transform.Find(
+                        "One Second Telegraph");
+                    firingBeams[index] = laserRoots[index].transform.Find(
+                        "Half Second Beam");
+                    if (warningBeams[index] == null ||
+                        firingBeams[index] == null)
+                    {
+                        throw new InvalidOperationException(
+                            "LaserRig.prefab must contain telegraph and beam children.");
+                    }
+                }
+
+                view.Configure(
+                    view.GetComponent<NetworkCliffBarrageState>(),
+                    view.SharedCamera,
+                    view.ArenaPresentation,
+                    view.PlayerRoot,
+                    projectiles,
+                    laserRoots,
+                    warningBeams,
+                    firingBeams);
+                ValidateScene(view.gameObject, view);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene);
+            }
+            finally
+            {
+                if (previousActive.IsValid() && previousActive.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousActive);
+                }
+                if (openedForMigration && scene.IsValid() && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        private static GameObject LoadOrCopySharedPrefab(
+            string targetPath,
+            string legacyPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(targetPath);
+            if (prefab != null)
+            {
+                return prefab;
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(legacyPath) == null ||
+                !AssetDatabase.CopyAsset(legacyPath, targetPath))
+            {
+                throw new InvalidOperationException(
+                    "Could not seed shared Cliff Barrage prefab from " +
+                    legacyPath + ".");
+            }
+            AssetDatabase.ImportAsset(targetPath);
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(targetPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not load shared Cliff Barrage prefab: " + targetPath);
+            }
+            return prefab;
+        }
+
+        private static GameObject ReplaceWithSharedPrefab(
+            GameObject current,
+            GameObject prefab,
+            string prefabPath)
+        {
+            if (current == null)
+            {
+                throw new InvalidOperationException(
+                    "Cliff Barrage scene is missing a pooled object for " +
+                    prefabPath + ".");
+            }
+            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(current) ==
+                    prefabPath &&
+                PrefabUtility.GetPrefabInstanceStatus(current) ==
+                    PrefabInstanceStatus.Connected)
+            {
+                return current;
+            }
+
+            var parent = current.transform.parent;
+            var siblingIndex = current.transform.GetSiblingIndex();
+            var localPosition = current.transform.localPosition;
+            var localRotation = current.transform.localRotation;
+            var activeSelf = current.activeSelf;
+            var instance = PrefabUtility.InstantiatePrefab(
+                prefab,
+                parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not instantiate shared Cliff Barrage prefab: " +
+                    prefabPath);
+            }
+
+            instance.name = current.name;
+            instance.transform.SetSiblingIndex(siblingIndex);
+            instance.transform.SetLocalPositionAndRotation(
+                localPosition,
+                localRotation);
+            instance.SetActive(activeSelf);
+            UnityEngine.Object.DestroyImmediate(current);
+            return instance;
         }
 
         private static void BuildScene(Materials materials)
@@ -220,7 +393,7 @@ namespace MazeParty.Editor
                     materials.ProjectileHighlight);
                 shell.SetActive(false);
                 shell = MinigameCorePrefabUtility.Connect(shell,
-                    CorePrefabFolder + "/Projectile" + (index + 1) + ".prefab");
+                    CorePrefabFolder + "/Projectile.prefab");
                 shells[index] = shell.transform;
             }
             return shells;
@@ -257,7 +430,7 @@ namespace MazeParty.Editor
                 firing.SetActive(false);
                 root.SetActive(false);
                 root = MinigameCorePrefabUtility.Connect(root,
-                    CorePrefabFolder + "/LaserRig" + (index + 1) + ".prefab");
+                    CorePrefabFolder + "/LaserRig.prefab");
                 var warningBeam = root.transform.Find("One Second Telegraph");
                 var firingBeam = root.transform.Find("Half Second Beam");
                 if (warningBeam == null || firingBeam == null)

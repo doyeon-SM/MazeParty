@@ -55,6 +55,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         private const string D12VisualPrefabPath =
             "Assets/MazeParty/Prefabs/Board/Dice/D12WorldDieVisual.prefab";
+        private const string NetworkWorldDiePrefabPath =
+            "Assets/MazeParty/Prefabs/Board/Dice/NetworkWorldDie.prefab";
         private const string D12ModelPath =
             "Assets/MazeParty/Art/Dice/D12/Models/Dice_d12.fbx";
 
@@ -234,6 +236,28 @@ namespace MazeParty.Multiplayer.Tests
             var meshCollider = visualPrefab.GetComponent<MeshCollider>();
             Assert.That(meshCollider, Is.Not.Null);
             Assert.That(meshCollider.convex, Is.True);
+            var networkDiePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                NetworkWorldDiePrefabPath);
+            Assert.That(
+                networkDiePrefab,
+                Is.Not.Null,
+                NetworkWorldDiePrefabPath);
+            Assert.That(
+                PrefabUtility.GetPrefabAssetType(networkDiePrefab),
+                Is.EqualTo(PrefabAssetType.Variant));
+            Assert.That(
+                AssetDatabase.GetAssetPath(
+                    PrefabUtility.GetCorrespondingObjectFromOriginalSource(
+                        networkDiePrefab)),
+                Is.EqualTo(D12VisualPrefabPath));
+            Assert.That(
+                networkDiePrefab.GetComponent<NetworkWorldDie>()
+                    .HasRequiredPresentation,
+                Is.True);
+            Assert.That(
+                networkDiePrefab.GetComponentsInChildren<NetworkObject>(true),
+                Has.Length.EqualTo(1));
+
             var modelImporter = AssetImporter.GetAtPath(D12ModelPath) as ModelImporter;
             Assert.That(modelImporter, Is.Not.Null, D12ModelPath);
             Assert.That(
@@ -278,6 +302,22 @@ namespace MazeParty.Multiplayer.Tests
                 foreach (var die in dice)
                 {
                     AssertStableInSceneNetworkObject(die.gameObject);
+                    Assert.That(
+                        PrefabUtility.GetPrefabInstanceStatus(die.gameObject),
+                        Is.EqualTo(PrefabInstanceStatus.Connected));
+                    Assert.That(
+                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                            die.gameObject),
+                        Is.EqualTo(NetworkWorldDiePrefabPath));
+                    Assert.That(
+                        PrefabUtility.GetAddedComponents(die.gameObject),
+                        Is.Empty,
+                        die.name);
+                    Assert.That(
+                        PrefabUtility.GetAddedGameObjects(die.gameObject),
+                        Is.Empty,
+                        die.name);
+                    Assert.That(die.HasRequiredPresentation, Is.True, die.name);
                     Assert.That(
                         die.GetComponent<MeshFilter>()?.sharedMesh,
                         Is.SameAs(expectedMesh));

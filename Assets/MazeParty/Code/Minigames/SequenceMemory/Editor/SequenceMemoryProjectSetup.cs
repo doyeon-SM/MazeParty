@@ -28,6 +28,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/SequenceMemory";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/SequenceMemoryEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/SequenceMemory/Materials";
         private const string RaceScenePath = "Assets/MazeParty/Scenes/Minigames/Race/Race.unity";
@@ -217,33 +219,12 @@ namespace MazeParty.Editor
             Transform parent,
             SequenceMemoryMaterials materials)
         {
-            CreatePrimitive(
-                "Stage Floor",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(ArenaCenterX, -0.4f, 0f),
-                Quaternion.identity,
-                new Vector3(15.5f, 0.8f, 10f),
-                materials.Stage,
-                true);
-            CreatePrimitive(
-                "Backdrop",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(ArenaCenterX, 3.2f, 4.55f),
-                Quaternion.identity,
-                new Vector3(15.5f, 7.2f, 0.35f),
-                materials.Backdrop,
-                false);
-            CreatePrimitive(
-                "Stage Trim",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(ArenaCenterX, 0.05f, -4.55f),
-                Quaternion.identity,
-                new Vector3(15.5f, 0.32f, 0.4f),
-                materials.Trim,
-                false);
+                () => CreateEnvironmentTemplate(materials),
+                "Sequence Memory Environment");
 
             var playerAnchorRoot =
                 new GameObject("Player Anchors").transform;
@@ -322,6 +303,54 @@ namespace MazeParty.Editor
                 PlayerAnchors = playerAnchors,
                 NpcAnchor = npcAnchor
             };
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Stage Floor",
+                colliderRoot,
+                new Vector3(ArenaCenterX, -0.4f, 0f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.8f, 10f));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            SequenceMemoryMaterials materials)
+        {
+            var environment = new GameObject("Sequence Memory Environment");
+            var parent = environment.transform;
+            CreatePrimitive(
+                "Stage Floor Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(ArenaCenterX, -0.4f, 0f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.8f, 10f),
+                materials.Stage,
+                false);
+            CreatePrimitive(
+                "Backdrop",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(ArenaCenterX, 3.2f, 4.55f),
+                Quaternion.identity,
+                new Vector3(15.5f, 7.2f, 0.35f),
+                materials.Backdrop,
+                false);
+            CreatePrimitive(
+                "Stage Trim",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(ArenaCenterX, 0.05f, -4.55f),
+                Quaternion.identity,
+                new Vector3(15.5f, 0.32f, 0.4f),
+                materials.Trim,
+                false);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLighting(Transform parent)

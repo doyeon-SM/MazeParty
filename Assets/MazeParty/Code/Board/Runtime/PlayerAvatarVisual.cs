@@ -1,5 +1,4 @@
 using UnityEngine;
-using UnityEngine.Rendering;
 
 namespace MazeParty.Gameplay
 {
@@ -19,11 +18,9 @@ namespace MazeParty.Gameplay
         public const float CrouchingEyeHeight = 0.12f;
 
         private static readonly Color DefaultBodyColor = new Color(0.95f, 0.25f, 0.25f);
-        private static readonly Color FeatureColor = new Color(0.025f, 0.02f, 0.02f);
-        private static readonly Color HatColor = new Color(0.12f, 0.28f, 0.7f);
-        private static readonly Color BlasterColor = new Color(0.18f, 0.72f, 1f);
-        private static readonly Color MineColor = new Color(1f, 0.62f, 0.12f);
-        private static readonly Color MedKitColor = new Color(0.92f, 0.16f, 0.18f);
+
+        [SerializeField]
+        private PlayerAvatarPresentationBindings bindings;
 
         private Transform _visualRoot;
         private Transform _worldModel;
@@ -39,6 +36,7 @@ namespace MazeParty.Gameplay
         private Transform _nameplate;
         private TextMesh _nameText;
         private Transform _firstPersonHands;
+        private Transform _firstPersonPresentation;
         private Transform _firstPersonLeftHand;
         private Transform _firstPersonRightHand;
         private Transform _worldItemRoot;
@@ -50,13 +48,6 @@ namespace MazeParty.Gameplay
         private SphereCollider _headHitbox;
         private SphereCollider _leftHandHitbox;
         private SphereCollider _rightHandHitbox;
-        private Material _clayMaterial;
-        private Material _featureMaterial;
-        private Material _hatMaterial;
-        private Material _blasterMaterial;
-        private Material _mineMaterial;
-        private Material _medKitMaterial;
-        private Material _itemAccentMaterial;
         private MaterialPropertyBlock _bodyProperties;
         private Vector3 _previousPosition;
         private float _speed;
@@ -74,6 +65,8 @@ namespace MazeParty.Gameplay
         private bool _eliminated;
         private bool _ownerFirstPerson;
         private bool _hiddenFromViewer;
+        private bool _nameplateAllowed = true;
+        private bool _missingPresentationReported;
         public void SetHiddenFromViewer(bool hidden)
         {
             if (_hiddenFromViewer == hidden) return;
@@ -84,6 +77,7 @@ namespace MazeParty.Gameplay
         private Color _bodyColor = DefaultBodyColor;
 
         public bool IsBuilt => _worldModel != null;
+        public PlayerAvatarPresentationBindings Bindings => bindings;
         public bool IsCrouching => _crouching;
         public Color BodyColor => _bodyColor;
         public bool IsUsingItem => _itemUseTimer > 0f || _equippedItemId != PrototypeItemId.None;
@@ -100,15 +94,18 @@ namespace MazeParty.Gameplay
             EnsureBuilt();
         }
 
-        private void OnDestroy()
+        public void ConfigurePresentationBindings(
+            PlayerAvatarPresentationBindings value)
         {
-            DestroyRuntimeMaterial(_clayMaterial);
-            DestroyRuntimeMaterial(_featureMaterial);
-            DestroyRuntimeMaterial(_hatMaterial);
-            DestroyRuntimeMaterial(_blasterMaterial);
-            DestroyRuntimeMaterial(_mineMaterial);
-            DestroyRuntimeMaterial(_medKitMaterial);
-            DestroyRuntimeMaterial(_itemAccentMaterial);
+            if (IsBuilt && bindings != value)
+            {
+                Debug.LogError(
+                    "Player avatar presentation cannot be replaced after initialization.",
+                    this);
+                return;
+            }
+            bindings = value;
+            _missingPresentationReported = false;
         }
 
         public void EnsureBuilt()
@@ -124,68 +121,123 @@ namespace MazeParty.Gameplay
                 gameObject.AddComponent<PlayerHitZoneOwner>();
             }
 
-            _clayMaterial = CreateClayMaterial("MazeParty Clay Body", DefaultBodyColor, 0.22f);
-            _featureMaterial = CreateClayMaterial("MazeParty Face", FeatureColor, 0.12f);
-            _hatMaterial = CreateClayMaterial("MazeParty Test Hat", HatColor, 0.2f);
-            _blasterMaterial = CreateClayMaterial("MazeParty Pulse Blaster", BlasterColor, 0.25f);
-            _mineMaterial = CreateClayMaterial("MazeParty Push Mine", MineColor, 0.18f);
-            _medKitMaterial = CreateClayMaterial("MazeParty Med Kit", MedKitColor, 0.18f);
-            _itemAccentMaterial = CreateClayMaterial("MazeParty Item Accent", Color.white, 0.16f);
-            _bodyProperties = new MaterialPropertyBlock();
+            if (TryInitializeAuthoredPresentation())
+            {
+                return;
+            }
 
-            _visualRoot = CreateAnchor(transform, "VisualRoot");
-            _worldModel = CreateAnchor(_visualRoot, "WorldModel");
-            _body = CreatePart(_worldModel, "BodyAnchor", PrimitiveType.Capsule, _clayMaterial);
-            _head = CreatePart(_worldModel, "HeadAnchor", PrimitiveType.Sphere, _clayMaterial);
-            _leftHand = CreatePart(_worldModel, "LeftHandAnchor", PrimitiveType.Sphere, _clayMaterial);
-            _rightHand = CreatePart(_worldModel, "RightHandAnchor", PrimitiveType.Sphere, _clayMaterial);
-            _leftEye = CreatePart(_worldModel, "LeftEyeAnchor", PrimitiveType.Sphere, _featureMaterial);
-            _rightEye = CreatePart(_worldModel, "RightEyeAnchor", PrimitiveType.Sphere, _featureMaterial);
-            _mouth = CreatePart(_worldModel, "MouthAnchor", PrimitiveType.Sphere, _featureMaterial);
-            _hat = CreateAnchor(_worldModel, "HatAnchor");
-            _outfit = CreateAnchor(_worldModel, "OutfitAnchor");
-            BuildTestHat();
-            _worldItemRoot = CreateAnchor(_worldModel, "ItemUseAnchor");
-            BuildItemModels(_worldItemRoot, _worldItemModels, false);
-            BuildExpressionVisuals();
-            BuildNameplate();
-            BuildHitboxes();
-
-            _previousPosition = transform.position;
-            ApplyBodyColor();
-            ApplyAppearance(0, 0, 0);
-            UpdatePose(true);
-            RefreshVisibility();
+            ReportMissingPresentation();
         }
 
         public void ConfigureEyePivot(Transform eyePivot)
         {
             EnsureBuilt();
-            if (eyePivot == null || _firstPersonHands != null)
+            if (!IsBuilt)
+            {
+                return;
+            }
+            if (eyePivot != null && _firstPersonPresentation != null)
+            {
+                if (_firstPersonPresentation.parent != eyePivot)
+                {
+                    _firstPersonPresentation.SetParent(eyePivot, false);
+                }
+                RefreshVisibility();
+            }
+        }
+
+        public void SetNameplateVisible(bool visible)
+        {
+            EnsureBuilt();
+            _nameplateAllowed = visible;
+            if (_nameplate != null)
+            {
+                _nameplate.gameObject.SetActive(
+                    visible && !_ownerFirstPerson && !_hiddenFromViewer);
+            }
+        }
+
+        private bool TryInitializeAuthoredPresentation()
+        {
+            if (bindings == null)
+            {
+                bindings = GetComponentInChildren<
+                    PlayerAvatarPresentationBindings>(true);
+            }
+            if (bindings == null)
+            {
+                var assets = Resources.Load<PlayerAvatarPresentationAssets>(
+                    PlayerAvatarPresentationAssets.ResourcePath);
+                if (assets != null && assets.HasRequiredReferences)
+                {
+                    var source = assets.PresentationPrefab;
+                    bindings = Instantiate(source, transform, false);
+                    bindings.gameObject.name = source.gameObject.name;
+                }
+            }
+            if (bindings == null)
+            {
+                return false;
+            }
+            if (!bindings.HasRequiredReferences)
+            {
+                return false;
+            }
+
+            _visualRoot = bindings.transform;
+            _worldModel = bindings.WorldModel;
+            _body = bindings.BodyAnchor;
+            _head = bindings.HeadAnchor;
+            _leftHand = bindings.LeftHandAnchor;
+            _rightHand = bindings.RightHandAnchor;
+            _leftEye = bindings.LeftEyeAnchor;
+            _rightEye = bindings.RightEyeAnchor;
+            _mouth = bindings.MouthAnchor;
+            _hat = bindings.HatAnchor;
+            _outfit = bindings.OutfitAnchor;
+            _nameplate = bindings.NameplateAnchor;
+            _nameText = bindings.NameText;
+            _worldItemRoot = bindings.WorldItemRoot;
+            _firstPersonPresentation = bindings.FirstPersonPresentation;
+            _firstPersonHands = bindings.FirstPersonHands;
+            _firstPersonLeftHand = bindings.FirstPersonLeftHand;
+            _firstPersonRightHand = bindings.FirstPersonRightHand;
+            _firstPersonItemRoot = bindings.FirstPersonItemRoot;
+            _topViewHighlight = bindings.TopViewHighlight;
+            _bodyHitbox = bindings.BodyHitbox;
+            _headHitbox = bindings.HeadHitbox;
+            _leftHandHitbox = bindings.LeftHandHitbox;
+            _rightHandHitbox = bindings.RightHandHitbox;
+            _bodyProperties = new MaterialPropertyBlock();
+
+            BuildItemModels(_worldItemRoot, _worldItemModels, false);
+            BuildItemModels(_firstPersonItemRoot, _firstPersonItemModels, true);
+            BuildExpressionVisuals();
+            _previousPosition = transform.position;
+            ApplyBodyColor();
+            ApplyAppearance(0, 0, 0);
+            UpdatePose(true);
+            RefreshVisibility();
+            _missingPresentationReported = false;
+            return true;
+        }
+
+        private void ReportMissingPresentation()
+        {
+            if (_missingPresentationReported)
             {
                 return;
             }
 
-            _firstPersonHands = CreateAnchor(eyePivot, "FirstPersonHands");
-            _firstPersonLeftHand = CreatePart(
-                _firstPersonHands,
-                "FirstPersonLeftHand",
-                PrimitiveType.Sphere,
-                _clayMaterial);
-            _firstPersonRightHand = CreatePart(
-                _firstPersonHands,
-                "FirstPersonRightHand",
-                PrimitiveType.Sphere,
-                _clayMaterial);
-            _firstPersonLeftHand.localPosition = new Vector3(-0.27f, -0.24f, 0.52f);
-            _firstPersonRightHand.localPosition = new Vector3(0.27f, -0.24f, 0.52f);
-            _firstPersonLeftHand.localScale = Vector3.one * 0.22f;
-            _firstPersonRightHand.localScale = Vector3.one * 0.22f;
-            _firstPersonItemRoot = CreateAnchor(eyePivot, "FirstPersonItemUseAnchor");
-            BuildItemModels(_firstPersonItemRoot, _firstPersonItemModels, true);
-            BuildFirstPersonGestures(eyePivot);
-            ApplyBodyColor();
-            RefreshVisibility();
+            _missingPresentationReported = true;
+            var reason = bindings == null
+                ? "No authored presentation binding or Resources catalog entry was found."
+                : "The assigned authored presentation bindings are incomplete.";
+            Debug.LogError(
+                "Player avatar presentation is unavailable. " + reason +
+                " Run MazeParty/Multiplayer/Install Player And Lobby Prefabs; " +
+                "runtime geometry will not be generated.",
+                bindings != null ? bindings.gameObject : gameObject);
         }
 
         public void SetBodyColor(Color color)
@@ -199,6 +251,10 @@ namespace MazeParty.Gameplay
         public void ApplyAppearance(byte eyeId, byte mouthId, byte hatId)
         {
             EnsureBuilt();
+            if (!IsBuilt)
+            {
+                return;
+            }
             // IDs are intentionally independent so additional face combinations can
             // be dropped into these fixed anchors without changing save/network data.
             _leftEye.gameObject.SetActive(eyeId == 0);
@@ -212,6 +268,10 @@ namespace MazeParty.Gameplay
         public void SetDisplayName(string value)
         {
             EnsureBuilt();
+            if (!IsBuilt)
+            {
+                return;
+            }
             _nameText.text = string.IsNullOrWhiteSpace(value) ? GameText.T("Player") : value.Trim();
         }
 
@@ -237,14 +297,9 @@ namespace MazeParty.Gameplay
         public void SetTopViewHighlight(bool highlighted)
         {
             EnsureBuilt();
-            if (highlighted && _topViewHighlight == null)
+            if (!IsBuilt)
             {
-                _topViewHighlight = TopViewHighlightUtility.CreateSquareOutline(
-                    transform,
-                    "Local Player Top View Highlight",
-                    0.72f,
-                    0.09f,
-                    -0.98f);
+                return;
             }
 
             if (_topViewHighlight != null &&
@@ -433,16 +488,6 @@ namespace MazeParty.Gameplay
             UpdateHitboxPose(t);
         }
 
-        private void BuildTestHat()
-        {
-            var crown = CreatePart(_hat, "TestHatCrown", PrimitiveType.Sphere, _hatMaterial);
-            crown.localPosition = new Vector3(0f, 0.08f, 0f);
-            crown.localScale = new Vector3(0.62f, 0.34f, 0.62f);
-            var brim = CreatePart(_hat, "TestHatBrim", PrimitiveType.Cylinder, _hatMaterial);
-            brim.localPosition = new Vector3(0f, -0.05f, 0.08f);
-            brim.localScale = new Vector3(0.48f, 0.025f, 0.62f);
-        }
-
         private void BuildItemModels(
             Transform parent,
             Transform[] models,
@@ -453,85 +498,6 @@ namespace MazeParty.Gameplay
                     models[(int)item.Id] = Instantiate(item.HeldPrefab, parent, false).transform;
             parent.localScale = Vector3.one * (firstPerson ? 0.78f : 0.72f);
             SetItemModelVisibility(models, PrototypeItemId.None);
-        }
-
-        private Transform BuildPulseBlaster(Transform parent)
-        {
-            var root = CreateAnchor(parent, "PulseBlasterModel");
-            var barrel = CreatePart(root, "Barrel", PrimitiveType.Cylinder, _blasterMaterial);
-            barrel.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            barrel.localScale = new Vector3(0.16f, 0.34f, 0.16f);
-            var muzzle = CreatePart(root, "Muzzle", PrimitiveType.Cylinder, _itemAccentMaterial);
-            muzzle.localPosition = new Vector3(0f, 0f, 0.35f);
-            muzzle.localRotation = Quaternion.Euler(90f, 0f, 0f);
-            muzzle.localScale = new Vector3(0.11f, 0.055f, 0.11f);
-            var grip = CreatePart(root, "Grip", PrimitiveType.Cube, _featureMaterial);
-            grip.localPosition = new Vector3(0f, -0.22f, -0.08f);
-            grip.localRotation = Quaternion.Euler(-12f, 0f, 0f);
-            grip.localScale = new Vector3(0.14f, 0.3f, 0.14f);
-            return root;
-        }
-
-        private Transform BuildPushMine(Transform parent)
-        {
-            var root = CreateAnchor(parent, "PushMineModel");
-            var shell = CreatePart(root, "Shell", PrimitiveType.Cylinder, _mineMaterial);
-            shell.localScale = new Vector3(0.36f, 0.09f, 0.36f);
-            var light = CreatePart(root, "Indicator", PrimitiveType.Sphere, _itemAccentMaterial);
-            light.localPosition = new Vector3(0f, 0.12f, 0f);
-            light.localScale = Vector3.one * 0.12f;
-            return root;
-        }
-
-        private Transform BuildMedKit(Transform parent)
-        {
-            var root = CreateAnchor(parent, "MedKitModel");
-            var casePart = CreatePart(root, "Case", PrimitiveType.Cube, _medKitMaterial);
-            casePart.localScale = new Vector3(0.48f, 0.34f, 0.18f);
-            var vertical = CreatePart(root, "CrossVertical", PrimitiveType.Cube, _itemAccentMaterial);
-            vertical.localPosition = new Vector3(0f, 0f, 0.095f);
-            vertical.localScale = new Vector3(0.09f, 0.24f, 0.025f);
-            var horizontal = CreatePart(root, "CrossHorizontal", PrimitiveType.Cube, _itemAccentMaterial);
-            horizontal.localPosition = new Vector3(0f, 0f, 0.096f);
-            horizontal.localScale = new Vector3(0.23f, 0.09f, 0.025f);
-            return root;
-        }
-
-        private void BuildNameplate()
-        {
-            _nameplate = CreateAnchor(_visualRoot, "NameplateAnchor");
-            var textObject = new GameObject("PlayerName");
-            textObject.transform.SetParent(_nameplate, false);
-            _nameText = textObject.AddComponent<TextMesh>();
-            _nameText.text = GameText.T("Player");
-            _nameText.anchor = TextAnchor.MiddleCenter;
-            _nameText.alignment = TextAlignment.Center;
-            _nameText.fontSize = 64;
-            _nameText.characterSize = 0.025f;
-            _nameText.color = Color.white;
-            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
-            if (font == null)
-            {
-                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
-            }
-            if (font != null)
-            {
-                _nameText.font = font;
-            }
-            WorldTextOcclusion.Apply(_nameText);
-        }
-
-        private void BuildHitboxes()
-        {
-            var root = CreateAnchor(transform, "HitboxRoot");
-            _bodyHitbox = CreateHitbox<CapsuleCollider>(root, "BodyHitbox", PlayerHitRegion.Body);
-            _bodyHitbox.radius = 0.36f;
-            _headHitbox = CreateHitbox<SphereCollider>(root, "HeadHitbox", PlayerHitRegion.Head);
-            _headHitbox.radius = 0.38f;
-            _leftHandHitbox = CreateHitbox<SphereCollider>(root, "LeftHandHitbox", PlayerHitRegion.Hand);
-            _leftHandHitbox.radius = 0.16f;
-            _rightHandHitbox = CreateHitbox<SphereCollider>(root, "RightHandHitbox", PlayerHitRegion.Hand);
-            _rightHandHitbox.radius = 0.16f;
         }
 
         private void UpdateHitboxPose(float crouch)
@@ -553,12 +519,18 @@ namespace MazeParty.Gameplay
             _bodyProperties.Clear();
             _bodyProperties.SetColor("_BaseColor", _bodyColor);
             _bodyProperties.SetColor("_Color", _bodyColor);
-            ApplyProperties(_body, _bodyProperties);
-            ApplyProperties(_head, _bodyProperties);
-            ApplyProperties(_leftHand, _bodyProperties);
-            ApplyProperties(_rightHand, _bodyProperties);
-            ApplyProperties(_firstPersonLeftHand, _bodyProperties);
-            ApplyProperties(_firstPersonRightHand, _bodyProperties);
+            if (bindings == null)
+            {
+                return;
+            }
+            var renderers = bindings.BodyTintRenderers;
+            for (var index = 0; index < renderers.Length; index++)
+            {
+                if (renderers[index] != null)
+                {
+                    renderers[index].SetPropertyBlock(_bodyProperties);
+                }
+            }
             ColorGestureModels();
         }
 
@@ -573,7 +545,8 @@ namespace MazeParty.Gameplay
             }
             if (_nameplate != null)
             {
-                _nameplate.gameObject.SetActive(!_ownerFirstPerson && !_hiddenFromViewer);
+                _nameplate.gameObject.SetActive(
+                    _nameplateAllowed && !_ownerFirstPerson && !_hiddenFromViewer);
             }
             if (_firstPersonHands != null)
             {
@@ -637,95 +610,5 @@ namespace MazeParty.Gameplay
             }
         }
 
-        private static Transform CreateAnchor(Transform parent, string name)
-        {
-            var anchor = new GameObject(name).transform;
-            anchor.SetParent(parent, false);
-            return anchor;
-        }
-
-        private static Transform CreatePart(
-            Transform parent,
-            string name,
-            PrimitiveType primitive,
-            Material material)
-        {
-            var part = GameObject.CreatePrimitive(primitive);
-            part.name = name;
-            part.transform.SetParent(parent, false);
-            var collider = part.GetComponent<Collider>();
-            if (collider != null)
-            {
-                if (Application.isPlaying)
-                {
-                    Destroy(collider);
-                }
-                else
-                {
-                    DestroyImmediate(collider);
-                }
-            }
-            var renderer = part.GetComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.On;
-            renderer.receiveShadows = true;
-            return part.transform;
-        }
-
-        private static T CreateHitbox<T>(
-            Transform parent,
-            string name,
-            PlayerHitRegion region)
-            where T : Collider
-        {
-            var hitbox = new GameObject(name);
-            hitbox.transform.SetParent(parent, false);
-            var zone = hitbox.AddComponent<PlayerHitZone>();
-            zone.Configure(region);
-            var collider = hitbox.AddComponent<T>();
-            collider.isTrigger = true;
-            return collider;
-        }
-
-        private static Material CreateClayMaterial(
-            string name,
-            Color color,
-            float smoothness)
-        {
-            var material = WorldTextOcclusion.CreateBuildSafeLitMaterial(name);
-            if (material == null)
-            {
-                return null;
-            }
-            material.SetColor("_BaseColor", color);
-            material.SetColor("_Color", color);
-            material.SetFloat("_Metallic", 0f);
-            material.SetFloat("_Smoothness", smoothness);
-            return material;
-        }
-
-        private static void ApplyProperties(Transform target, MaterialPropertyBlock properties)
-        {
-            if (target != null && target.TryGetComponent<Renderer>(out var renderer))
-            {
-                renderer.SetPropertyBlock(properties);
-            }
-        }
-
-        private static void DestroyRuntimeMaterial(Material material)
-        {
-            if (material == null)
-            {
-                return;
-            }
-            if (Application.isPlaying)
-            {
-                Destroy(material);
-            }
-            else
-            {
-                DestroyImmediate(material);
-            }
-        }
     }
 }

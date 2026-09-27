@@ -1,4 +1,4 @@
-# MazeParty UI prefab workflow
+# MazeParty prefab workflow
 
 ## Shared prefab contract
 
@@ -61,3 +61,45 @@ the command creates a new default prefab as a bootstrap.
 The prefab root must keep `Canvas`, `CanvasScaler`, `GraphicRaycaster`,
 `BoardEventSystemBootstrap`, and `BoardFlowView`. Scene rebuild validates this
 contract and stops with a descriptive error if a required binding is missing.
+
+## World presentation workflow
+
+Player, lobby, board-die, and minigame environment visuals follow the same
+missing-only authoring rule as Canvas UI:
+
+- `Multiplayer/PlayerAvatarPresentation.prefab` owns the shared non-networked
+  player model, first-person hands, hit regions, nameplate, and top-view
+  highlight. `NetworkPlayer.prefab` keeps its stable NGO root and nests this
+  presentation; minigame and award stand-ins reuse it through
+  `PlayerAvatarPresentationAssets`.
+- `Multiplayer/World/LobbyArena.prefab` owns lobby geometry and authored spawn
+  anchors. The online bootstrap scene keeps session/runtime objects outside it.
+- `Board/Dice/NetworkWorldDie.prefab` is the complete networked D12 contract:
+  physics, NGO components, face markers, result text, and a nested
+  `D12WorldDieVisual` source. Board scene instances override only slot and die
+  identity.
+- Each converted minigame has one `*Environment.prefab` for static presentation.
+  The in-scene NetworkState, gameplay/core prefabs, and runtime anchors retain
+  scene identity and must not be moved into that environment prefab.
+
+The setup commands seed these assets only when missing, then validate and
+instantiate the existing source. Edit an existing prefab directly for art or
+layout changes; setup must never recreate it as a way to repair an invalid
+binding. Production runtime code updates values, visibility, pose, and tint but
+does not assemble replacement presentation geometry.
+
+## Nested modules and repeated families
+
+`Board/UI/BoardCanvas.prefab` composes its reconnect and minigame-ready panels
+from connected prefabs under `Board/UI/Modules`. Change those modules at their
+source so the board and testbed stay in sync.
+
+Repeated objects that are structurally identical share one prefab source and
+use scene-instance transforms for slot differences. Current shared families are
+Bouncing Balls balls and Cliff Barrage projectiles/laser rigs. Do not split a
+family into numbered prefab copies unless its serialized component contract or
+visual hierarchy genuinely diverges.
+
+`RaceHud`, `TagChaseHud`, and `CliffBarrageHud` are recovery-only migration
+assets. Production scenes use `MinigameCommonHud`; do not use the legacy HUDs as
+new design sources.

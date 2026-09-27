@@ -1418,7 +1418,7 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
 
 ## 2026-09-27 권장안 1~7 구현 결과
 
-사용자 승인에 따라 위 개발 구조 권장안 1~7을 구현했다. 작업 브랜치는 `dev/board`, 구현 전 기준 HEAD는 `098477278aac469417ca1cfb60b7dff1f5127868`이며 이번 작업에서는 커밋하지 않았다.
+사용자 승인에 따라 위 개발 구조 권장안 1~7을 구현했다. 작업 브랜치는 `dev/board`, 구현 전 기준 HEAD는 `098477278aac469417ca1cfb60b7dff1f5127868`이다. 구현은 `03001c71c25eb2a82843e62e4ec991cc19536b63` (`26.09.27`, 본문 `리팩토링 및 버그 수정`)에 커밋되었으며 실제 변경량은 110 files, +9,223/-4,132다.
 
 ### 1. 대형 네트워크 클래스와 세션 수명주기 분리
 - `OnlineSessionController`는 `Lifecycle`, `Presentation`, `ReconnectTicket`, `MatchRecovery` partial로 책임을 분리했다.
@@ -1464,3 +1464,31 @@ EditMode 테스트 293개 전부 통과. 4인 멀티 실기 테스트는 아직 
 - `git diff --check`, conflict marker 검사, 신규 asset `.meta` 검사 통과.
 - 아직 실제 4클라이언트에서 프로세스를 강제 종료하고 새 방에서 Continue/Discard를 수행하는 복구 실기는 하지 않았다. 다음 온라인 검증에서 TurnOverview, MinigameIntroReady, MatchComplete 각각의 크래시 복구와 다른 roster 거부를 우선 확인한다.
 - Notion은 이번 구현 턴에서 수정하지 않았다. 최종 커밋 뒤 사용자가 회의록 작성을 요청하면 확정 코드와 커밋 정보를 근거로 기획서/일일 회의록을 갱신한다.
+
+## 2026-09-27 프리팹 아키텍처 후속 작업 — 구현 완료
+
+사용자 요청에 따라 권장 순서대로 플레이어 표현, 비파괴 setup, 로비 환경, 네트워크 주사위, 미니게임 환경, 중첩 UI·동일 슬롯 통합, 월드 프리팹 계약을 적용했다. 기준 HEAD는 위 구조 권장안 커밋 `03001c71c25eb2a82843e62e4ec991cc19536b63`이다.
+
+### 확정 구조와 구현
+1. 플레이어 표현을 `PlayerAvatarPresentation.prefab`과 `PlayerAvatarPresentationBindings`, Resources catalog로 통합했다. `NetworkPlayer.prefab`, 12개 미니게임의 동적 슬롯 컨테이너와 수상식이 같은 표현 원본을 사용한다. 몸 색, 표정, 장비, 1인칭 손, 이름표, 피격 영역, 탑뷰 강조는 직렬화된 바인딩만 갱신한다.
+2. 플레이어·로비 설치기는 기존 프리팹을 덮어쓰지 않고 누락된 자산만 최초 생성한 뒤 계약을 검증한다. `PlayerHitZone`과 `PlayerHitZoneOwner`를 Unity 직렬화 규칙에 맞는 개별 파일로 분리하고 기존 공유 표현 프리팹의 누락 스크립트 4개를 복구했다.
+3. 로비 방을 `Prefabs/Multiplayer/World/LobbyArena.prefab`과 `LobbyArenaBindings`로 옮겼다. 런타임 방·벽·카메라 대체 생성은 제거했고 authored 인스턴스가 없거나 불완전하면 오류 1회 후 안전하게 비활성화한다.
+4. `NetworkWorldDie.prefab`을 D12 visual variant 기반의 완전한 네트워크 주사위 원본으로 만들었다. 물리·면 마커·결과 텍스트·슬롯 tint 계약을 포함하며 Board의 8개 주사위는 이 프리팹 인스턴스와 슬롯/주사위 ID override만 사용한다.
+5. Bomb Passing, Bouncing Balls, Gift Grab, Minefield, Red Light Green Light, Tag Chase, Territory Paint, Balloon Blow, Race, Sequence Memory, WrongWay, Stable Footing의 정적 디자인을 각 `*Environment.prefab`으로 분리했다. environment는 Renderer 전용이고 Collider·NetworkObject·NetworkBehaviour를 갖지 않는다. 서버 판정용 정적 Collider가 필요한 9종은 씬 소유 `Authority Colliders` 아래로 분리했고 게임별 `Network*State`와 핵심 앵커도 계속 씬이 소유한다.
+6. `BoardCanvas.prefab`의 `ReconnectOverlay`, `MinigameReadyPanel`을 중첩 모듈 프리팹으로 분리했다. Bouncing Balls의 3개 공은 `Ball.prefab`, Cliff Barrage의 5개 투사체와 2개 레이저 장치는 각각 `Projectile.prefab`, `LaserRig.prefab` 하나를 공유한다. 기존 numbered Cliff 자산과 Race/Tag Chase/Cliff HUD는 삭제하지 않고 recovery-only로 남겼으며 생산 씬은 참조하지 않는다.
+7. 생성기 재실행은 기존 디자인을 보존한다. 플레이어·로비·보드·12개 환경·공용 슬롯을 두 차례 실행한 뒤 핵심 프리팹 22개의 SHA-256이 모두 동일함을 확인했다. 프리팹 출처, 직렬화 바인딩, 씬 소유 상태·Collider, environment 비권위성, UI module, 공용 family, legacy 비참조를 EditMode 계약으로 고정했다.
+
+### 함께 수정한 문제
+- Bomb Passing의 폭발 플래시 Light를 런타임 `GameObject` 생성에서 씬 저작 참조로 옮기고 경고등과 분리했다.
+- `PlayerAvatarVisual`의 primitive/material/nameplate/hitbox/1인칭/표정/강조 fallback과 `LobbyArena`의 runtime room fallback을 제거해 계약 파손이 임시 형상으로 숨겨지지 않게 했다.
+- prefab asset을 검사할 때 유효한 nested prefab도 `NotAPrefab`으로 보고되는 Unity API 차이를 source asset path 계약으로 처리했다.
+- Board 재생성 뒤 공용 미니게임 HUD가 빠지던 경로를 복구했고, 로컬 BoardFlowTestbed에서는 구동하지 않는 네트워크 시상식 UI를 제외했다.
+- 실패한 Board setup이 만든 임시 `InterruptedBoardSetupRecovery.unity`와 `.meta`는 생성물임을 확인한 뒤 Unity AssetDatabase로 제거했다.
+
+### 최종 검증
+- Unity 6000.6.0f1 script refresh/domain reload: 컴파일 오류·경고 0.
+- 프리팹·씬 집중 EditMode: **37/37 통과**, 실패·스킵 0.
+- 전체 EditMode: **392/392 통과**, 최종 정규화 후 재실행 12.272초, 실패·스킵 0. 이전 372개 기준보다 장기 계약 20개가 늘었다.
+- Win64 Development 빌드: `Builds/Verification/MazeParty.exe`, **275.24 MB**, 59.87초, 오류 0, 경고 2. 두 경고는 기존 MCP build runner의 `Hidden/Core/DebugOccluder`, `DebugOcclusionTest` shader strip 경고다.
+- `git diff --check`, conflict marker, 신규 asset `.meta`, prefab/scene missing script, 대상 runtime fallback 검색을 통과했다.
+- 실제 아트·모델·VFX 교체와 61개 SoundCue clip 입력, 이번 프리팹 변경 이후의 4클라이언트 온라인 실기는 별도 콘텐츠/온라인 검증 TODO로 유지한다.

@@ -27,7 +27,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/CliffBarrage/UI/CliffBarrageHud.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameTimerDial.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab",
@@ -39,8 +38,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab",
             "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/TagChase/UI/TagChaseHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/Race/UI/RaceHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
@@ -60,7 +57,6 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinigameCommonHudView",
             "MazeParty.Multiplayer.MinigameResultCanvasBindings",
             "MazeParty.Multiplayer.ArenaCombatHitFlashView",
-            "MazeParty.Multiplayer.CliffBarrageHudView",
             "MazeParty.Multiplayer.OnlineLobbyView",
             "MazeParty.Multiplayer.MinigameTimerDial",
             "MazeParty.Multiplayer.MinefieldHudBindings",
@@ -72,8 +68,6 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.GiftGrabHudBindings",
             "MazeParty.Multiplayer.GiftGrabBaseLabel",
             "MazeParty.Multiplayer.TerritoryPaintHudBindings",
-            "MazeParty.Multiplayer.TagChaseHudBindings",
-            "MazeParty.Multiplayer.RaceHudBindings",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
             "MazeParty.Multiplayer.BouncingBallsHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
@@ -84,6 +78,30 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.GameMenuBindings"
+        };
+
+        private static readonly string[] NestedBoardUiModulePaths =
+        {
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/ReconnectOverlay.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab"
+        };
+
+        // Recovery-only assets retained for the one-time Group B migration.
+        // Production scenes deliberately use MinigameCommonHud instead.
+        private static readonly LegacyHudContract[] LegacyGroupBHuds =
+        {
+            new LegacyHudContract(
+                "Assets/MazeParty/Scenes/Minigames/TagChase/TagChase.unity",
+                "Assets/MazeParty/Prefabs/Minigames/TagChase/UI/TagChaseHud.prefab",
+                "MazeParty.Multiplayer.TagChaseHudBindings"),
+            new LegacyHudContract(
+                "Assets/MazeParty/Scenes/Minigames/Race/Race.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Race/UI/RaceHud.prefab",
+                "MazeParty.Multiplayer.RaceHudBindings"),
+            new LegacyHudContract(
+                "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity",
+                "Assets/MazeParty/Prefabs/Minigames/CliffBarrage/UI/CliffBarrageHud.prefab",
+                "MazeParty.Multiplayer.CliffBarrageHudView")
         };
 
         private static readonly SceneUiContract[] SceneContracts =
@@ -222,6 +240,64 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void LegacyGroupBHuds_AreRecoveryAssetsNotProductionSources()
+        {
+            foreach (var contract in LegacyGroupBHuds)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    contract.PrefabPath);
+                Assert.That(prefab, Is.Not.Null, contract.PrefabPath);
+                var binding = prefab.GetComponentsInChildren<MonoBehaviour>(true)
+                    .SingleOrDefault(component =>
+                        component != null &&
+                        component.GetType().FullName == contract.BindingTypeName);
+                Assert.That(
+                    binding,
+                    Is.Not.Null,
+                    contract.PrefabPath + " :: " + contract.BindingTypeName);
+
+                var scene = SceneManager.GetSceneByPath(contract.ScenePath);
+                var openedForTest = !scene.IsValid() || !scene.isLoaded;
+                if (openedForTest)
+                {
+                    scene = EditorSceneManager.OpenScene(
+                        contract.ScenePath,
+                        OpenSceneMode.Additive);
+                }
+
+                try
+                {
+                    var components = scene.GetRootGameObjects()
+                        .SelectMany(root =>
+                            root.GetComponentsInChildren<MonoBehaviour>(true))
+                        .Where(component => component != null)
+                        .ToArray();
+                    Assert.That(
+                        components.Any(component =>
+                            component.GetType().FullName ==
+                            contract.BindingTypeName),
+                        Is.False,
+                        contract.ScenePath);
+                    Assert.That(
+                        components.Any(component =>
+                            PrefabUtility
+                                .GetPrefabAssetPathOfNearestInstanceRoot(
+                                    component.gameObject) ==
+                            contract.PrefabPath),
+                        Is.False,
+                        contract.ScenePath);
+                }
+                finally
+                {
+                    if (openedForTest && scene.IsValid() && scene.isLoaded)
+                    {
+                        EditorSceneManager.CloseScene(scene, true);
+                    }
+                }
+            }
+        }
+
+        [Test]
         public void GeneratedScenes_UseOnlyRegisteredCanvasPrefabInstances()
         {
             foreach (var contract in SceneContracts)
@@ -332,11 +408,13 @@ namespace MazeParty.Multiplayer.Tests
                                 .GetOutermostPrefabInstanceRoot(
                                     component.gameObject) ??
                             instanceRoot);
+                        var visualSourcePath = PrefabUtility
+                            .GetPrefabAssetPathOfNearestInstanceRoot(
+                                component.gameObject);
                         Assert.That(
-                            RequiredPrefabPaths,
-                            Does.Contain(PrefabUtility
-                                .GetPrefabAssetPathOfNearestInstanceRoot(
-                                    component.gameObject)),
+                            RequiredPrefabPaths.Contains(visualSourcePath) ||
+                            NestedBoardUiModulePaths.Contains(visualSourcePath),
+                            Is.True,
                             contract.Path + " :: " + component.name);
                     }
 
@@ -922,6 +1000,23 @@ namespace MazeParty.Multiplayer.Tests
 
             public string Path { get; }
             public IReadOnlyCollection<string> AllowedPrefabPaths { get; }
+        }
+
+        private sealed class LegacyHudContract
+        {
+            public LegacyHudContract(
+                string scenePath,
+                string prefabPath,
+                string bindingTypeName)
+            {
+                ScenePath = scenePath;
+                PrefabPath = prefabPath;
+                BindingTypeName = bindingTypeName;
+            }
+
+            public string ScenePath { get; }
+            public string PrefabPath { get; }
+            public string BindingTypeName { get; }
         }
 
         private static bool IsVisualCanvasUiComponent(Component component)

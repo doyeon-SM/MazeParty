@@ -3,7 +3,6 @@ using System.Linq;
 using MazeParty.Gameplay;
 using MazeParty.Multiplayer;
 using Unity.Netcode;
-using Unity.Netcode.Components;
 using Unity.Netcode.Transports.UTP;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -40,15 +39,10 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Scenes/Minigames/TagChase/TagChase.unity";
         private const string RacePath =
             "Assets/MazeParty/Scenes/Minigames/Race/Race.unity";
-        private const string PlayerPrefabPath = "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         private const string LobbyCanvasPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
         private const string MinigameScheduleTowerPrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab";
-        private const string LobbyFloorMaterialPath =
-            Root + "/Board/Materials/RoomNormalA.mat";
-        private const string LobbyWallMaterialPath =
-            Root + "/Board/Materials/RoomNormalB.mat";
 
         [MenuItem("MazeParty/Multiplayer/Rebuild Online Prototype")]
         public static void BuildOnlinePrototype()
@@ -62,8 +56,11 @@ namespace MazeParty.Editor
             EnsureFolders();
             MinigameTimerDialProjectSetup.EnsurePrefabExists();
 
-            var playerPrefab = CreatePlayerPrefab();
-            CreateBootstrapScene(playerPrefab);
+            var playerPrefab = MultiplayerPresentationPrefabProjectSetup
+                .LoadOrCreatePlayerPrefab();
+            var lobbyArenaPrefab = MultiplayerPresentationPrefabProjectSetup
+                .LoadOrCreateLobbyArenaPrefab();
+            CreateBootstrapScene(playerPrefab, lobbyArenaPrefab);
             BoardFlowProjectSetup.BuildBoardSceneBase();
             BoardFlowProjectSetup.BuildLocalTestbedFromBoard();
             MinefieldProjectSetup.BuildMinefieldAssets();
@@ -75,6 +72,9 @@ namespace MazeParty.Editor
             TerritoryPaintProjectSetup.BuildTerritoryPaintAssets();
             TagChaseProjectSetup.BuildTagChaseAssets();
             RaceProjectSetup.BuildRaceAssets();
+            SequenceMemoryProjectSetup.BuildSequenceMemoryAssets();
+            BouncingBallsProjectSetup.BuildBouncingBallsAssets();
+            BombPassingProjectSetup.BuildBombPassingAssets();
             ConfigureBuildSettings();
             BoardFlowProjectSetup.AddNetworkStateAndSave();
 
@@ -111,42 +111,9 @@ namespace MazeParty.Editor
             AssetDatabase.CreateFolder(parent, folderName);
         }
 
-        private static GameObject CreatePlayerPrefab()
-        {
-            var player = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-            player.name = "NetworkPlayer";
-
-            var capsuleCollider = player.GetComponent<CapsuleCollider>();
-            if (capsuleCollider != null)
-            {
-                Object.DestroyImmediate(capsuleCollider);
-            }
-
-            var controller = player.AddComponent<CharacterController>();
-            controller.height = 2f;
-            controller.radius = 0.5f;
-            controller.center = Vector3.zero;
-
-            player.AddComponent<NetworkObject>();
-            var networkTransform = player.AddComponent<NetworkTransform>();
-            networkTransform.Interpolate = true;
-            networkTransform.SyncScaleX = false;
-            networkTransform.SyncScaleY = false;
-            networkTransform.SyncScaleZ = false;
-
-            player.AddComponent<PlayerAvatarVisual>();
-            player.AddComponent<NetworkPlayerAvatar>();
-            // Four reusable boundaries are created by this component per player
-            // instance (16 total for the fixed four-player match).
-            var boundaryWalls = player.AddComponent<PlayerBoardBoundaryWalls>();
-            boundaryWalls.ConfigureWorldPrefabs(BoardWorldPrefabProjectSetup.EnsureAssets());
-
-            var prefab = PrefabUtility.SaveAsPrefabAsset(player, PlayerPrefabPath);
-            Object.DestroyImmediate(player);
-            return prefab;
-        }
-
-        private static void CreateBootstrapScene(GameObject playerPrefab)
+        private static void CreateBootstrapScene(
+            GameObject playerPrefab,
+            GameObject lobbyArenaPrefab)
         {
             var lobbyCanvasPrefab = LoadOrCreateLobbyCanvasPrefab();
             var scheduleTowerPrefab = LoadOrCreateScheduleTowerPrefab();
@@ -168,7 +135,10 @@ namespace MazeParty.Editor
             light.intensity = 1.2f;
             lightObject.transform.rotation = Quaternion.Euler(50f, -30f, 0f);
 
-            CreateLobbyArena();
+            var lobbyArena = (GameObject)PrefabUtility.InstantiatePrefab(
+                lobbyArenaPrefab,
+                scene);
+            lobbyArena.transform.position = new Vector3(3.5f, 0f, 0f);
 
             var lobbyCanvas = (GameObject)PrefabUtility.InstantiatePrefab(
                 lobbyCanvasPrefab,
@@ -206,87 +176,6 @@ namespace MazeParty.Editor
             sessionController.ConfigureSceneReferences(camera, light, lobbyView);
 
             EditorSceneManager.SaveScene(scene, BootstrapPath);
-        }
-
-        private static void CreateLobbyArena()
-        {
-            var center = new Vector3(3.5f, 0f, 0f);
-            var innerSize = new Vector2(12f, 8f);
-            var root = new GameObject("Lobby Waiting Room");
-            var arena = root.AddComponent<LobbyArena>();
-            arena.Configure(
-                center,
-                innerSize,
-                new[]
-                {
-                    center + new Vector3(-2.7f, 1f, -1.8f),
-                    center + new Vector3(2.7f, 1f, -1.8f),
-                    center + new Vector3(-2.7f, 1f, 1.8f),
-                    center + new Vector3(2.7f, 1f, 1.8f)
-                });
-
-            var floorMaterial = LoadRequiredMaterial(LobbyFloorMaterialPath);
-            var wallMaterial = LoadRequiredMaterial(LobbyWallMaterialPath);
-            CreateLobbyPrimitive(
-                "Floor",
-                root.transform,
-                center + Vector3.down * 0.25f,
-                new Vector3(innerSize.x + 1f, 0.5f, innerSize.y + 1f),
-                floorMaterial);
-
-            const float thickness = 0.5f;
-            const float height = 0.8f;
-            CreateLobbyPrimitive(
-                "North Wall",
-                root.transform,
-                center + new Vector3(0f, height * 0.5f, innerSize.y * 0.5f + thickness * 0.5f),
-                new Vector3(innerSize.x + thickness * 2f, height, thickness),
-                wallMaterial);
-            CreateLobbyPrimitive(
-                "South Wall",
-                root.transform,
-                center + new Vector3(0f, height * 0.5f, -innerSize.y * 0.5f - thickness * 0.5f),
-                new Vector3(innerSize.x + thickness * 2f, height, thickness),
-                wallMaterial);
-            CreateLobbyPrimitive(
-                "East Wall",
-                root.transform,
-                center + new Vector3(innerSize.x * 0.5f + thickness * 0.5f, height * 0.5f, 0f),
-                new Vector3(thickness, height, innerSize.y),
-                wallMaterial);
-            CreateLobbyPrimitive(
-                "West Wall",
-                root.transform,
-                center + new Vector3(-innerSize.x * 0.5f - thickness * 0.5f, height * 0.5f, 0f),
-                new Vector3(thickness, height, innerSize.y),
-                wallMaterial);
-        }
-
-        private static void CreateLobbyPrimitive(
-            string name,
-            Transform parent,
-            Vector3 position,
-            Vector3 scale,
-            Material material)
-        {
-            var value = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            value.name = name;
-            value.transform.SetParent(parent, false);
-            value.transform.position = position;
-            value.transform.localScale = scale;
-            value.GetComponent<MeshRenderer>().sharedMaterial = material;
-        }
-
-        private static Material LoadRequiredMaterial(string path)
-        {
-            var material = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (material == null)
-            {
-                throw new System.InvalidOperationException(
-                    "Required URP material is missing: " + path);
-            }
-
-            return material;
         }
 
         private static GameObject LoadOrCreateLobbyCanvasPrefab()

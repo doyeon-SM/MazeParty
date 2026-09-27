@@ -23,6 +23,8 @@ namespace MazeParty.Editor
         private const string PrefabFolder = "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/BouncingBalls";
+        public const string EnvironmentPrefabPath =
+            CorePrefabFolder + "/BouncingBallsEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/BouncingBalls/Materials";
 
@@ -148,36 +150,11 @@ namespace MazeParty.Editor
 
         private static ArenaReferences CreateArena(Transform parent, Materials materials)
         {
-            CreatePrimitive("Field", PrimitiveType.Cube, parent,
-                new Vector3(0f, 0f, 1.05f), Quaternion.identity,
-                new Vector3(16.4f, 16.4f, 0.35f), materials.Field);
-            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, parent,
-                new Vector3(0f, 0f, 0.72f), Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(2.1f, 0.025f, 2.1f), materials.Trim);
-
-            var wallRoot = new GameObject("Boundary Walls").transform;
-            wallRoot.SetParent(parent, false);
-            var segmentHalf = (Boundary - GoalHalfWidth) * 0.5f;
-            var segmentCenter = GoalHalfWidth + segmentHalf;
-            for (var side = -1; side <= 1; side += 2)
-            {
-                CreatePrimitive("Bottom Wall " + side, PrimitiveType.Cube,
-                    wallRoot, new Vector3(side * segmentCenter, -Boundary, 0.32f),
-                    Quaternion.identity, new Vector3(segmentHalf * 2f, 0.26f, 0.6f),
-                    materials.Wall);
-                CreatePrimitive("Top Wall " + side, PrimitiveType.Cube,
-                    wallRoot, new Vector3(side * segmentCenter, Boundary, 0.32f),
-                    Quaternion.identity, new Vector3(segmentHalf * 2f, 0.26f, 0.6f),
-                    materials.Wall);
-                CreatePrimitive("Left Wall " + side, PrimitiveType.Cube,
-                    wallRoot, new Vector3(-Boundary, side * segmentCenter, 0.32f),
-                    Quaternion.identity, new Vector3(0.26f, segmentHalf * 2f, 0.6f),
-                    materials.Wall);
-                CreatePrimitive("Right Wall " + side, PrimitiveType.Cube,
-                    wallRoot, new Vector3(Boundary, side * segmentCenter, 0.32f),
-                    Quaternion.identity, new Vector3(0.26f, segmentHalf * 2f, 0.6f),
-                    materials.Wall);
-            }
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
+                parent,
+                () => CreateEnvironmentTemplate(materials),
+                "Bouncing Balls Environment");
 
             var goalRoot = new GameObject("Goals").transform;
             goalRoot.SetParent(parent, false);
@@ -237,7 +214,7 @@ namespace MazeParty.Editor
                     Quaternion.identity, Vector3.one * 0.48f,
                     materials.NeutralBall);
                 ball = MinigameCorePrefabUtility.Connect(ball,
-                    CorePrefabFolder + "/Ball" + (index + 1) + ".prefab");
+                    CorePrefabFolder + "/Ball.prefab");
                 balls[index] = ball.transform;
                 ballRenderers[index] = ball.GetComponent<Renderer>();
             }
@@ -249,6 +226,44 @@ namespace MazeParty.Editor
                 Balls = balls,
                 BallRenderers = ballRenderers
             };
+        }
+
+        private static GameObject CreateEnvironmentTemplate(Materials materials)
+        {
+            var environment = new GameObject("Bouncing Balls Environment");
+            var parent = environment.transform;
+            CreatePrimitive("Field", PrimitiveType.Cube, parent,
+                new Vector3(0f, 0f, 1.05f), Quaternion.identity,
+                new Vector3(16.4f, 16.4f, 0.35f), materials.Field);
+            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, parent,
+                new Vector3(0f, 0f, 0.72f), Quaternion.Euler(90f, 0f, 0f),
+                new Vector3(2.1f, 0.025f, 2.1f), materials.Trim);
+
+            var wallRoot = new GameObject("Boundary Walls").transform;
+            wallRoot.SetParent(parent, false);
+            var segmentHalf = (Boundary - GoalHalfWidth) * 0.5f;
+            var segmentCenter = GoalHalfWidth + segmentHalf;
+            for (var side = -1; side <= 1; side += 2)
+            {
+                CreatePrimitive("Bottom Wall " + side, PrimitiveType.Cube,
+                    wallRoot, new Vector3(side * segmentCenter, -Boundary, 0.32f),
+                    Quaternion.identity, new Vector3(segmentHalf * 2f, 0.26f, 0.6f),
+                    materials.Wall);
+                CreatePrimitive("Top Wall " + side, PrimitiveType.Cube,
+                    wallRoot, new Vector3(side * segmentCenter, Boundary, 0.32f),
+                    Quaternion.identity, new Vector3(segmentHalf * 2f, 0.26f, 0.6f),
+                    materials.Wall);
+                CreatePrimitive("Left Wall " + side, PrimitiveType.Cube,
+                    wallRoot, new Vector3(-Boundary, side * segmentCenter, 0.32f),
+                    Quaternion.identity, new Vector3(0.26f, segmentHalf * 2f, 0.6f),
+                    materials.Wall);
+                CreatePrimitive("Right Wall " + side, PrimitiveType.Cube,
+                    wallRoot, new Vector3(Boundary, side * segmentCenter, 0.32f),
+                    Quaternion.identity, new Vector3(0.26f, segmentHalf * 2f, 0.6f),
+                    materials.Wall);
+            }
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLighting(Transform parent)

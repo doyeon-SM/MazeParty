@@ -284,7 +284,9 @@ namespace MazeParty.Multiplayer
 
             DisableGeneratedHitColliders(runnerObject);
 
-            var head = FindDescendant(runnerObject.transform, "HeadAnchor");
+            var head = avatarVisual.Bindings != null
+                ? avatarVisual.Bindings.HeadAnchor
+                : FindDescendant(runnerObject.transform, "HeadAnchor");
             var siren = Instantiate(
                 sirenPrefab,
                 head != null ? head : runnerObject.transform,

@@ -31,6 +31,9 @@ namespace MazeParty.Editor
         private const string PaintSurfacePrefabPath =
             ProjectRoot +
             "/Prefabs/Minigames/TerritoryPaint/PaintSurface.prefab";
+        public const string EnvironmentPrefabPath =
+            ProjectRoot +
+            "/Prefabs/Minigames/TerritoryPaint/TerritoryPaintEnvironment.prefab";
 
         public const string TerritoryPaintScenePath =
             "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity";
@@ -213,16 +216,15 @@ namespace MazeParty.Editor
                 NetworkTerritoryPaintState.ArenaCenterX;
             var size =
                 NetworkTerritoryPaintState.ArenaHalfExtent * 2f;
-
-            CreatePrimitive(
-                "Arena Understructure",
-                PrimitiveType.Cube,
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(centerX, -0.34f, 0f),
-                Quaternion.identity,
-                new Vector3(size, 0.65f, size),
-                understructureMaterial,
-                true);
+                () => CreateEnvironmentTemplate(
+                    understructureMaterial,
+                    boundaryMaterial),
+                "Territory Paint Environment");
+
             var paintSurface = CreatePrimitive(
                 "Paint Surface",
                 PrimitiveType.Plane,
@@ -241,66 +243,6 @@ namespace MazeParty.Editor
                     "PaintSurface.prefab must keep a root Renderer for " +
                     "the territory display contract.");
             }
-
-            const float wallThickness = 0.42f;
-            const float wallHeight = 0.9f;
-            var wallOffset =
-                NetworkTerritoryPaintState.ArenaHalfExtent +
-                wallThickness * 0.5f;
-            CreatePrimitive(
-                "North Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX, wallHeight * 0.5f, wallOffset),
-                Quaternion.identity,
-                new Vector3(
-                    size + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                boundaryMaterial,
-                true);
-            CreatePrimitive(
-                "South Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(centerX, wallHeight * 0.5f, -wallOffset),
-                Quaternion.identity,
-                new Vector3(
-                    size + wallThickness * 2f,
-                    wallHeight,
-                    wallThickness),
-                boundaryMaterial,
-                true);
-            CreatePrimitive(
-                "West Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    centerX - wallOffset,
-                    wallHeight * 0.5f,
-                    0f),
-                Quaternion.identity,
-                new Vector3(
-                    wallThickness,
-                    wallHeight,
-                    size),
-                boundaryMaterial,
-                true);
-            CreatePrimitive(
-                "East Boundary",
-                PrimitiveType.Cube,
-                parent,
-                new Vector3(
-                    centerX + wallOffset,
-                    wallHeight * 0.5f,
-                    0f),
-                Quaternion.identity,
-                new Vector3(
-                    wallThickness,
-                    wallHeight,
-                    size),
-                boundaryMaterial,
-                true);
 
             for (var slot = 0;
                  slot < TerritoryPaintRules.PlayerCount;
@@ -326,6 +268,131 @@ namespace MazeParty.Editor
             }
 
             return paintSurface.GetComponent<Renderer>();
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            var centerX = NetworkTerritoryPaintState.ArenaCenterX;
+            var size = NetworkTerritoryPaintState.ArenaHalfExtent * 2f;
+            const float wallThickness = 0.42f;
+            const float wallHeight = 0.9f;
+            var wallOffset =
+                NetworkTerritoryPaintState.ArenaHalfExtent +
+                wallThickness * 0.5f;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Understructure", colliderRoot,
+                new Vector3(centerX, -0.34f, 0f),
+                Quaternion.identity,
+                new Vector3(size, 0.65f, size));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "North Boundary", colliderRoot,
+                new Vector3(centerX, wallHeight * 0.5f, wallOffset),
+                Quaternion.identity,
+                new Vector3(
+                    size + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "South Boundary", colliderRoot,
+                new Vector3(centerX, wallHeight * 0.5f, -wallOffset),
+                Quaternion.identity,
+                new Vector3(
+                    size + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "West Boundary", colliderRoot,
+                new Vector3(centerX - wallOffset, wallHeight * 0.5f, 0f),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, size));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "East Boundary", colliderRoot,
+                new Vector3(centerX + wallOffset, wallHeight * 0.5f, 0f),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, size));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            Material understructureMaterial,
+            Material boundaryMaterial)
+        {
+            var environment = new GameObject("Territory Paint Environment");
+            var parent = environment.transform;
+            var centerX = NetworkTerritoryPaintState.ArenaCenterX;
+            var size = NetworkTerritoryPaintState.ArenaHalfExtent * 2f;
+            CreatePrimitive(
+                "Arena Understructure Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, -0.34f, 0f),
+                Quaternion.identity,
+                new Vector3(size, 0.65f, size),
+                understructureMaterial,
+                false);
+
+            const float wallThickness = 0.42f;
+            const float wallHeight = 0.9f;
+            var wallOffset =
+                NetworkTerritoryPaintState.ArenaHalfExtent +
+                wallThickness * 0.5f;
+            CreatePrimitive(
+                "North Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, wallHeight * 0.5f, wallOffset),
+                Quaternion.identity,
+                new Vector3(
+                    size + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                boundaryMaterial,
+                false);
+            CreatePrimitive(
+                "South Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(centerX, wallHeight * 0.5f, -wallOffset),
+                Quaternion.identity,
+                new Vector3(
+                    size + wallThickness * 2f,
+                    wallHeight,
+                    wallThickness),
+                boundaryMaterial,
+                false);
+            CreatePrimitive(
+                "West Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    centerX - wallOffset,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    size),
+                boundaryMaterial,
+                false);
+            CreatePrimitive(
+                "East Boundary Visual",
+                PrimitiveType.Cube,
+                parent,
+                new Vector3(
+                    centerX + wallOffset,
+                    wallHeight * 0.5f,
+                    0f),
+                Quaternion.identity,
+                new Vector3(
+                    wallThickness,
+                    wallHeight,
+                    size),
+                boundaryMaterial,
+                false);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static void CreateLighting(Transform parent)

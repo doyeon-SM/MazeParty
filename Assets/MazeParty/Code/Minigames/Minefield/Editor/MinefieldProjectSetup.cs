@@ -30,6 +30,8 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab";
         private const string CrusherPrefabPath =
             Root + "/Prefabs/Minigames/Minefield/Crusher.prefab";
+        public const string EnvironmentPrefabPath =
+            Root + "/Prefabs/Minigames/Minefield/MinefieldEnvironment.prefab";
         private const string SirenPrefabPath =
             Root + "/Prefabs/Minigames/Minefield/ProximitySiren.prefab";
         private const string SonarPulsePrefabPath =
@@ -186,58 +188,15 @@ namespace MazeParty.Editor
             Transform parent,
             MinefieldMaterials materials)
         {
-            var centerZ =
-                (NetworkMinefieldState.ArenaMinZ +
-                 NetworkMinefieldState.ArenaMaxZ) * 0.5f;
             var width =
                 NetworkMinefieldState.ArenaMaxX -
                 NetworkMinefieldState.ArenaMinX;
-            var depth =
-                NetworkMinefieldState.ArenaMaxZ -
-                NetworkMinefieldState.ArenaMinZ;
-
-            CreateCube(
-                "Arena Floor",
+            CreateAuthorityColliders(parent);
+            MinigameCorePrefabUtility.InstantiateOrSeed(
+                EnvironmentPrefabPath,
                 parent,
-                new Vector3(NetworkMinefieldState.ArenaCenterX, -0.1f, centerZ),
-                new Vector3(width, 0.2f, depth),
-                materials.Floor);
-
-            const float wallThickness = 0.5f;
-            const float wallHeight = 2.5f;
-            CreateCube(
-                "West Wall",
-                parent,
-                new Vector3(
-                    NetworkMinefieldState.ArenaMinX - wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    centerZ),
-                new Vector3(wallThickness, wallHeight, depth),
-                materials.Wall);
-            CreateCube(
-                "East Wall",
-                parent,
-                new Vector3(
-                    NetworkMinefieldState.ArenaMaxX + wallThickness * 0.5f,
-                    wallHeight * 0.5f,
-                    centerZ),
-                new Vector3(wallThickness, wallHeight, depth),
-                materials.Wall);
-
-            CreateGrid(parent, width, depth, materials.Grid);
-
-            CreateLine(
-                "Start Line",
-                parent,
-                NetworkMinefieldState.ArenaMinZ + 0.75f,
-                width,
-                materials.Start);
-            CreateLine(
-                "Finish Line",
-                parent,
-                NetworkMinefieldState.ArenaMaxZ - 0.5f,
-                width,
-                materials.Finish);
+                () => CreateEnvironmentTemplate(materials),
+                "Minefield Environment");
 
             var crusher = CreateCube(
                 "Crusher Placeholder",
@@ -257,6 +216,107 @@ namespace MazeParty.Editor
                 throw new InvalidOperationException(
                     "Crusher.prefab must retain its MinefieldCrusher component.");
             }
+        }
+
+        private static void CreateAuthorityColliders(Transform parent)
+        {
+            var colliderRoot = new GameObject("Authority Colliders").transform;
+            colliderRoot.SetParent(parent, false);
+            var centerZ =
+                (NetworkMinefieldState.ArenaMinZ +
+                 NetworkMinefieldState.ArenaMaxZ) * 0.5f;
+            var width =
+                NetworkMinefieldState.ArenaMaxX -
+                NetworkMinefieldState.ArenaMinX;
+            var depth =
+                NetworkMinefieldState.ArenaMaxZ -
+                NetworkMinefieldState.ArenaMinZ;
+            const float wallThickness = 0.5f;
+            const float wallHeight = 2.5f;
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "Arena Floor",
+                colliderRoot,
+                new Vector3(NetworkMinefieldState.ArenaCenterX, -0.1f, centerZ),
+                Quaternion.identity,
+                new Vector3(width, 0.2f, depth));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "West Wall",
+                colliderRoot,
+                new Vector3(
+                    NetworkMinefieldState.ArenaMinX - wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, depth));
+            MinigameCorePrefabUtility.CreateSceneOwnedBoxCollider(
+                "East Wall",
+                colliderRoot,
+                new Vector3(
+                    NetworkMinefieldState.ArenaMaxX + wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                Quaternion.identity,
+                new Vector3(wallThickness, wallHeight, depth));
+        }
+
+        private static GameObject CreateEnvironmentTemplate(
+            MinefieldMaterials materials)
+        {
+            var environment = new GameObject("Minefield Environment");
+            var parent = environment.transform;
+            var centerZ =
+                (NetworkMinefieldState.ArenaMinZ +
+                 NetworkMinefieldState.ArenaMaxZ) * 0.5f;
+            var width =
+                NetworkMinefieldState.ArenaMaxX -
+                NetworkMinefieldState.ArenaMinX;
+            var depth =
+                NetworkMinefieldState.ArenaMaxZ -
+                NetworkMinefieldState.ArenaMinZ;
+
+            CreateCube(
+                "Arena Floor Visual",
+                parent,
+                new Vector3(NetworkMinefieldState.ArenaCenterX, -0.1f, centerZ),
+                new Vector3(width, 0.2f, depth),
+                materials.Floor);
+
+            const float wallThickness = 0.5f;
+            const float wallHeight = 2.5f;
+            CreateCube(
+                "West Wall Visual",
+                parent,
+                new Vector3(
+                    NetworkMinefieldState.ArenaMinX - wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                new Vector3(wallThickness, wallHeight, depth),
+                materials.Wall);
+            CreateCube(
+                "East Wall Visual",
+                parent,
+                new Vector3(
+                    NetworkMinefieldState.ArenaMaxX + wallThickness * 0.5f,
+                    wallHeight * 0.5f,
+                    centerZ),
+                new Vector3(wallThickness, wallHeight, depth),
+                materials.Wall);
+
+            CreateGrid(parent, width, depth, materials.Grid);
+            CreateLine(
+                "Start Line",
+                parent,
+                NetworkMinefieldState.ArenaMinZ + 0.75f,
+                width,
+                materials.Start);
+            CreateLine(
+                "Finish Line",
+                parent,
+                NetworkMinefieldState.ArenaMaxZ - 0.5f,
+                width,
+                materials.Finish);
+            MinigameCorePrefabUtility.StripColliders(environment);
+            return environment;
         }
 
         private static GameObject LoadOrCreateCorePrefab(
