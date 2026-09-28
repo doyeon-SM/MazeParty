@@ -237,6 +237,7 @@ namespace MazeParty.Editor
                 typeof(Canvas),
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster),
+                typeof(LocalizedFontScope),
                 typeof(GameMenuBindings),
                 typeof(GameMenuView));
             root.layer = LayerMask.NameToLayer("UI");
@@ -360,7 +361,10 @@ namespace MazeParty.Editor
 
             CreateSpacer(menuPanel, 6f);
             var pauseButton = CreateButton(menuPanel, "Pause Button", "Request Pause", font, uiSprite, PauseColor, 54f, false, out var pauseText);
-            var applyButton = CreateButton(menuPanel, "Apply Button", "Apply", font, uiSprite, ApplyColor, 54f, true, out _);
+            var applyButton = CreateButton(menuPanel, "Apply Button", "Apply", font, uiSprite, ApplyColor, 54f, true, out var applyText);
+            applyText.verticalOverflow = VerticalWrapMode.Overflow;
+            applyText.rectTransform.offsetMin = new Vector2(8f, 4f);
+            applyText.rectTransform.offsetMax = new Vector2(-8f, -4f);
             var exitButton = CreateButton(menuPanel, "Exit Button", "Quit Game", font, uiSprite, DangerColor, 54f, false, out var exitText);
 
             // In-game leave confirmation.

@@ -60,6 +60,43 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void MenuPrefab_ApplyLabelFitsEveryLanguageFont()
+        {
+            var root = PrefabUtility.LoadPrefabContents(MenuPrefabPath);
+            try
+            {
+                var bindings = root.GetComponent<GameMenuBindings>();
+                var label = bindings.ApplyButton.transform.Find("Label")
+                    .GetComponent<Text>();
+
+                foreach (var language in new[]
+                         {
+                             GameLanguage.English,
+                             GameLanguage.Korean,
+                             GameLanguage.Japanese,
+                             GameLanguage.ChineseSimplified
+                         })
+                {
+                    GameText.SetLanguage(language);
+                    label.font = GameFonts.Get(language);
+                    label.text = GameText.T("Apply");
+                    var generator = new TextGenerator();
+                    var settings = label.GetGenerationSettings(
+                        label.rectTransform.rect.size);
+                    Assert.That(generator.Populate(label.text, settings), Is.True,
+                        language + " Apply label could not be generated.");
+                    Assert.That(generator.characterCountVisible,
+                        Is.EqualTo(label.text.Length),
+                        language + " Apply label is not fully visible.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        [Test]
         public void BootstrapScene_HasExactlyOneMenuPrefabInstance()
         {
             var scene = SceneManager.GetSceneByPath(BootstrapScenePath);

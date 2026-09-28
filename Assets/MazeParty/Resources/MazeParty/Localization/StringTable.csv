@@ -96,6 +96,7 @@ CLIFF BARRAGE,절벽 탄막,崖っぷち弾幕,悬崖弹幕
 CLIFF BARRAGE RESULTS,절벽 탄막 결과,崖っぷち弾幕結果,悬崖弹幕结果
 CLOAK ACTIVE / ENDS BEFORE COMBAT,망토 활성 / 전투 전 해제,マント発動中 / バトル前に解除,斗篷生效中 / 战斗前结束
 CLOSE,닫기,閉じる,关闭
+Color,색,色,颜色
 COMBAT QUEUE,전투 대기열,バトル待機列,战斗队列
 Connected to the online game.,온라인 게임에 접속했습니다.,オンラインゲームに接続しました。,已连接到在线游戏。
 Connected to the online lobby.,온라인 로비에 접속했습니다.,オンラインロビーに接続しました。,已连接到在线大厅。
@@ -171,6 +172,7 @@ Four connected players with server-assigned seats are required.,서버에서 자
 Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。
 FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^
 Fullscreen,전체화면,フルスクリーン,全屏
+Face,얼굴,顔,脸
 Face1,표정1,表情1,表情1
 Face2,표정2,表情2,表情2
 Face3,표정3,表情3,表情3
@@ -206,6 +208,7 @@ Happy,기쁨,うれしい,开心
 HEALING +{0} HP,회복 +{0} HP,回復 +{0} HP,恢复 +{0} HP
 HEART,하트,ハート,爱心
 High Dice (7-12),하이 주사위 (7-12),ハイダイス (7-12),高点骰子 (7-12)
+Hat,모자,帽子,帽子
 Hat1,모자1,帽子1,帽子1
 Hat2,모자2,帽子2,帽子2
 Hat3,모자3,帽子3,帽子3

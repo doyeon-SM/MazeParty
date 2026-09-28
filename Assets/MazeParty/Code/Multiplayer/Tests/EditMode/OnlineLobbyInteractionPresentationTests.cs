@@ -148,7 +148,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Wardrobe_UsesBoundFaceAndHatSelectorsWithinAuthoredFooter()
+        public void Wardrobe_StacksLabeledColorFaceAndHatSections()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
@@ -161,18 +161,52 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(face.HasRequiredReferences, Is.True);
                 Assert.That(hat.HasRequiredReferences, Is.True);
 
-                var footer = root.GetComponentsInChildren<RectTransform>(true)
-                    .Single(item => item.name == "Customization Footer");
-                var layout = footer.GetComponent<HorizontalLayoutGroup>();
+                var customization = root.GetComponentsInChildren<RectTransform>(true)
+                    .Single(item => item.name == "Player Customization");
+                Assert.That(customization.GetComponent<VerticalLayoutGroup>(), Is.Not.Null);
+                var childNames = Enumerable.Range(0, customization.childCount)
+                    .Select(index => customization.GetChild(index).name)
+                    .ToArray();
+                Assert.That(childNames, Is.EqualTo(new[]
+                {
+                    "Color Label",
+                    "Body Color Palette",
+                    "Customization Footer"
+                }));
+
+                var footer = customization.Find("Customization Footer")
+                    .GetComponent<RectTransform>();
+                Assert.That(footer.GetComponent<VerticalLayoutGroup>(), Is.Not.Null);
+                var footerChildNames = Enumerable.Range(0, footer.childCount)
+                    .Select(index => footer.GetChild(index).name)
+                    .ToArray();
+                Assert.That(footerChildNames, Is.EqualTo(new[]
+                {
+                    "Face Label",
+                    "Face Expression",
+                    "Hat Label",
+                    "Hat Selection"
+                }));
+
+                foreach (var source in new[] { "Color", "Face", "Hat" })
+                {
+                    var label = source == "Color"
+                        ? customization.Find(source + " Label")
+                        : footer.Find(source + " Label");
+                    Assert.That(label, Is.Not.Null, source);
+                    Assert.That(label.GetComponent<LocalizedText>().SourceText,
+                        Is.EqualTo(source));
+                }
+
+                Assert.That(face.transform.parent, Is.SameAs(footer));
+                Assert.That(hat.transform.parent, Is.SameAs(footer));
                 var selectors = new[]
                 {
                     face.GetComponent<LayoutElement>(),
                     hat.GetComponent<LayoutElement>()
                 };
                 Assert.That(selectors, Has.None.Null);
-                Assert.That(
-                    selectors.Sum(item => item.preferredWidth) + layout.spacing,
-                    Is.LessThanOrEqualTo(footer.rect.width));
+                Assert.That(selectors.All(item => !item.ignoreLayout), Is.True);
                 Assert.That(footer.GetComponentsInChildren<Toggle>(true), Is.Empty,
                     "The legacy test-hat toggle must not return.");
 

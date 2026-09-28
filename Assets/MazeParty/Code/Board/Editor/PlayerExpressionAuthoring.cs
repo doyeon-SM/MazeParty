@@ -146,6 +146,14 @@ namespace MazeParty.Editor
         {var go=new GameObject(name,typeof(RectTransform));go.layer=LayerMask.NameToLayer("UI");var r=(RectTransform)go.transform;r.SetParent(parent,false);r.anchorMin=r.anchorMax=r.pivot=Vector2.one*.5f;r.sizeDelta=size;r.anchoredPosition=pos;return r;}
         static Text Label(Transform parent,string name,string text,Vector2 size,Vector2 pos,int font=18)
         {var t=Rect(parent,name,size,pos).gameObject.AddComponent<Text>();t.font=Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");t.fontSize=font;t.text=text;t.alignment=TextAnchor.MiddleCenter;t.color=Color.white;t.raycastTarget=false;return t;}
+        static void SectionLabel(Transform parent,string source)
+        {
+            if(parent.Find(source+" Label")!=null)return;
+            var label=Label(parent,source+" Label",source,new Vector2(472,28),Vector2.zero,20);
+            label.alignment=TextAnchor.MiddleLeft;label.color=new Color(.84f,.8f,1f);
+            var layout=label.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=28;
+            label.gameObject.AddComponent<LocalizedText>().Configure(source);
+        }
         static void Bind(SerializedObject data,string field,UnityEngine.Object value){data.FindProperty(field).objectReferenceValue=value;}
         static void EnsureWheel(GameObject canvas,bool lobby)
         {
@@ -183,11 +191,12 @@ namespace MazeParty.Editor
         {
             if(canvas.GetComponentInChildren<LobbyExpressionView>(true)!=null)return;
             var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            var row=Rect(footer,"Face Expression",new Vector2(230,32),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredWidth=230;layout.preferredHeight=32;
+            SectionLabel(footer,"Face");
+            var row=Rect(footer,"Face Expression",new Vector2(472,48),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=48;
             var view=row.gameObject.AddComponent<LobbyExpressionView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
             foreach(bool previous in new[]{true,false})
             {
-                var r=Rect(row,previous?"Previous":"Next",new Vector2(30,30),new Vector2(previous?-99:99,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
+                var r=Rect(row,previous?"Previous":"Next",new Vector2(40,36),new Vector2(previous?-204:204,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
                 Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
             }
             var previewBackground=Rect(row,"Face Preview Background",new Vector2(34,32),new Vector2(-65,0)).gameObject.AddComponent<Image>();previewBackground.color=new Color(.82f,.86f,.9f);previewBackground.raycastTarget=false;
@@ -206,11 +215,12 @@ namespace MazeParty.Editor
             var existing=canvas.GetComponentInChildren<LobbyHatView>(true);
             if(existing!=null){if(!existing.HasRequiredReferences)throw new InvalidOperationException("Incomplete hat selector bindings");return;}
             var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            var row=Rect(footer,"Hat Selection",new Vector2(230,32),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredWidth=230;layout.preferredHeight=32;
+            SectionLabel(footer,"Hat");
+            var row=Rect(footer,"Hat Selection",new Vector2(472,48),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=48;
             var view=row.gameObject.AddComponent<LobbyHatView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
             foreach(bool previous in new[]{true,false})
             {
-                var r=Rect(row,previous?"Previous":"Next",new Vector2(30,30),new Vector2(previous?-99:99,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
+                var r=Rect(row,previous?"Previous":"Next",new Vector2(40,36),new Vector2(previous?-204:204,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
                 Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
             }
             Bind(data,"title",Label(row,"Hat Name","None",new Vector2(175,30),Vector2.zero,16));data.ApplyModifiedPropertiesWithoutUndo();

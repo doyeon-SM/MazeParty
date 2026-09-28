@@ -21,6 +21,9 @@ namespace MazeParty.Editor
         private const string PrefabsFolder = Root + "/Prefabs";
         private const string UiFolder = "Assets/MazeParty/Prefabs/Multiplayer";
         private const string UiPrefabsFolder = "Assets/MazeParty/Prefabs/Multiplayer/UI";
+        private const string RoundedPanelSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Border/Rounded/1024px/" +
+            "Rounded Filled 1024px.png";
         private const string BootstrapPath = "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
         private const string BoardPath = "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string MinefieldPath = "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
@@ -238,6 +241,7 @@ namespace MazeParty.Editor
                 typeof(CanvasScaler),
                 typeof(GraphicRaycaster),
                 typeof(CanvasGroup),
+                typeof(LocalizedFontScope),
                 typeof(OnlineLobbyView));
             canvasObject.transform.localScale = Vector3.one;
             canvasObject.layer = LayerMask.NameToLayer("UI");
@@ -451,7 +455,7 @@ namespace MazeParty.Editor
                 font,
                 out _);
             var customizationPanel = CreateLobbyCustomization(
-                sessionPanel.transform,
+                canvasObject.transform,
                 font,
                 out var paletteButtons,
                 out var paletteOutlines);
@@ -512,23 +516,46 @@ namespace MazeParty.Editor
             var customizationPanel = CreateUiObject(
                 "Player Customization",
                 parent);
+            var customizationRect = customizationPanel.GetComponent<RectTransform>();
+            customizationRect.anchorMin = new Vector2(1f, 0.5f);
+            customizationRect.anchorMax = new Vector2(1f, 0.5f);
+            customizationRect.pivot = new Vector2(1f, 0.5f);
+            customizationRect.anchoredPosition = new Vector2(-24f, 0f);
+            customizationRect.sizeDelta = new Vector2(520f, 360f);
+            var panelSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                RoundedPanelSpritePath);
+            if (panelSprite == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Wardrobe panel sprite is missing at " +
+                    RoundedPanelSpritePath + ".");
+            }
+
+            var panelImage = customizationPanel.AddComponent<Image>();
+            panelImage.sprite = panelSprite;
+            panelImage.type = Image.Type.Sliced;
+            panelImage.color = new Color(0.045f, 0.035f, 0.14f, 0.98f);
+            panelImage.raycastTarget = false;
             var layout = customizationPanel.AddComponent<VerticalLayoutGroup>();
-            layout.spacing = 6f;
+            layout.padding = new RectOffset(24, 24, 24, 24);
+            layout.spacing = 10f;
             layout.childControlWidth = true;
             layout.childControlHeight = true;
             layout.childForceExpandWidth = true;
             layout.childForceExpandHeight = false;
             var panelSize = customizationPanel.AddComponent<LayoutElement>();
-            panelSize.preferredHeight = 164f;
+            panelSize.preferredHeight = 360f;
+            panelSize.enabled = false;
 
-            CreateText(
-                "Customization Label",
+            var colorLabel = CreateText(
+                "Color Label",
                 customizationPanel.transform,
-                "Character - Unique Body Color / Face / Hat",
+                "Color",
                 font,
-                17,
+                20,
                 TextAnchor.MiddleLeft,
-                26f);
+                28f);
+            colorLabel.gameObject.AddComponent<LocalizedText>().Configure("Color");
 
             var paletteGrid = CreateUiObject(
                 "Body Color Palette",
@@ -540,7 +567,7 @@ namespace MazeParty.Editor
             grid.constraintCount = 4;
             grid.childAlignment = TextAnchor.MiddleLeft;
             var gridSize = paletteGrid.AddComponent<LayoutElement>();
-            gridSize.preferredHeight = 80f;
+            gridSize.preferredHeight = 88f;
 
             paletteButtons = new Button[LobbyColorPalette.Count];
             paletteOutlines = new Outline[LobbyColorPalette.Count];
@@ -583,13 +610,15 @@ namespace MazeParty.Editor
             var footer = CreateUiObject(
                 "Customization Footer",
                 customizationPanel.transform);
-            var footerLayout = footer.AddComponent<HorizontalLayoutGroup>();
-            footerLayout.spacing = 10f;
-            footerLayout.childAlignment = TextAnchor.MiddleLeft;
-            footerLayout.childControlWidth = false;
+            var footerLayout = footer.AddComponent<VerticalLayoutGroup>();
+            footerLayout.spacing = 8f;
+            footerLayout.childAlignment = TextAnchor.UpperLeft;
+            footerLayout.childControlWidth = true;
             footerLayout.childControlHeight = true;
+            footerLayout.childForceExpandWidth = true;
+            footerLayout.childForceExpandHeight = false;
             var footerSize = footer.AddComponent<LayoutElement>();
-            footerSize.preferredHeight = 32f;
+            footerSize.preferredHeight = 176f;
 
             return customizationPanel;
         }
