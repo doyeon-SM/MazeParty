@@ -43,6 +43,13 @@ namespace MazeParty.Multiplayer
         private const int NetworkIdentityPublishAttempts = 3;
         private const int NetworkIdentityPublishRetryBaseMilliseconds = 250;
         private const double CompletedMatchUnloadClientGraceSeconds = 15d;
+        private const int CompletedMatchPhaseSaveFailureLimit = 3;
+        private const int CompletedMatchPhaseSaveRetryMilliseconds = 1000;
+        private const double CompletedMatchFailClosedRetrySeconds = 1d;
+        private const int CompletedMatchFailClosedTerminationAttemptLimit = 3;
+        private const int CompletedMatchFailClosedLeaveTimeoutMilliseconds = 10000;
+        private const double CompletedMatchSceneOperationFallbackTimeoutSeconds = 120d;
+
         private const double VoluntaryLeaveAckTimeoutSeconds = 3d;
         private const double VoluntaryLeaveAnnouncementFlushSeconds = 0.35d;
         private const int VoluntaryLeaveSessionEndDelayMilliseconds = 350;
@@ -96,6 +103,15 @@ namespace MazeParty.Multiplayer
         private string _completedMatchSceneBeingUnloaded = string.Empty;
         private string _completedMatchPendingUnloadScene = string.Empty;
         private double _completedMatchPendingUnloadDeadline;
+        private int _completedMatchPhaseSaveFailureCount;
+        private double _completedMatchSceneOperationDeadline;
+        private bool _completedMatchFailClosedTerminationPending;
+        private string _completedMatchFailClosedReason = string.Empty;
+        private double _completedMatchFailClosedRetryAt;
+        private int _completedMatchFailClosedTerminationAttemptCount;
+        private bool _completedMatchFailClosedCallTimedOut;
+        private bool _completedMatchFailClosedExhaustedStatusShown;
+
         private bool _voluntaryLeavePending;
         private double _voluntaryLeaveDeadline;
         private double _voluntaryLeaveAcknowledgedAt = -1d;
@@ -321,11 +337,28 @@ namespace MazeParty.Multiplayer
             AdvanceLocalReadyReset();
             AdvancePendingBoardLoadReconnect();
             TryAdvanceVoidedMatchLobbyReturn();
+            TryAdvanceCompletedMatchFailClosedTermination();
+            if (_completedMatchFailClosedTerminationPending)
+            {
+                return;
+            }
+
+            var now = Time.realtimeSinceStartupAsDouble;
+            if (_completedMatchLobbyReturnInProgress &&
+                CompletedMatchReturnRules.HasSceneUnloadTimedOut(
+                    _completedMatchSceneOperationDeadline,
+                    now))
+            {
+                BeginCompletedMatchFailClosedTermination(GameText.F(
+                    "Could not return the completed match to the lobby: {0}",
+                    "Scene synchronization timed out."));
+                return;
+            }
+
             if (_completedMatchLobbyReturnInProgress &&
                 _completedMatchPendingUnloadClients.Count > 0 &&
                 _completedMatchPendingUnloadDeadline > 0d &&
-                Time.realtimeSinceStartupAsDouble >=
-                _completedMatchPendingUnloadDeadline)
+                now >= _completedMatchPendingUnloadDeadline)
             {
                 ResolveCompletedMatchUnloadTimeout();
             }
@@ -343,6 +376,7 @@ namespace MazeParty.Multiplayer
                 var manager = _networkManager != null
                     ? _networkManager
                     : NetworkManager.Singleton;
+                EnsureCompletedMatchSceneOperationDeadline(manager);
                 if (!TryPrepareConnectedAvatarsForLobbyOnServer(manager))
                 {
                     SetLocalizedStatus(
@@ -351,6 +385,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
+                _completedMatchSceneOperationDeadline = 0d;
                 _completedMatchAvatarsPrepared = true;
             }
 
@@ -776,7 +811,7 @@ namespace MazeParty.Multiplayer
             return match != null && match.IsSpawned && match.IsFinalRankingLocked;
         }
 
-        private bool IsMatchLobbyReturnOwned =>
+        public bool IsMatchLobbyReturnOwned =>
             _completedMatchLobbyReturnInProgress ||
             _voidedMatchLobbyReturnPending;
 
@@ -1271,7 +1306,11 @@ namespace MazeParty.Multiplayer
         /// </summary>
         public bool BeginCompletedMatchLobbyReturnOnServer()
         {
-            return BeginMatchLobbyReturnOnServer();
+            // The ceremony owns its retry latch. Requiring an immediate start
+            // prevents a queued operation from being accepted and later skipped
+            // after the lifecycle state changes underneath it.
+            return BeginMatchLobbyReturnOnServer(
+                requireImmediateOperationStart: true);
         }
 
         /// <summary>
@@ -1479,8 +1518,8 @@ namespace MazeParty.Multiplayer
             {
                 if (requireImmediateOperationStart)
                 {
-                    // The active match has already been irreversibly voided.
-                    // Preserve its unload plan and retry when the coordinator is idle.
+                    // Preserve the validated unload plan. The caller owns retry
+                    // and may immediately submit again once the coordinator is idle.
                     _completedMatchLobbyReturnInProgress = false;
                 }
                 else
@@ -1511,6 +1550,7 @@ namespace MazeParty.Multiplayer
                         "Returning the match to the player ready screen...");
                     await _sessions.SetPlayingAsync(false);
                     cancellationToken.ThrowIfCancellationRequested();
+                    _completedMatchPhaseSaveFailureCount = 0;
                     QueueCompletedMatchDisconnectedLobbyCleanups();
 
                     if (_destroyed || !_completedMatchLobbyReturnInProgress)
@@ -1534,42 +1574,48 @@ namespace MazeParty.Multiplayer
                 }
                 catch (Exception exception)
                 {
-                    if (!_destroyed &&
-                        _completedMatchLobbyReturnInProgress &&
-                        _sessions != null &&
-                        _sessions.IsInSession &&
-                        _sessions.Current.Phase == MultiplayerConstants.LobbyPhase)
+                    _completedMatchPhaseSaveFailureCount++;
+                    var snapshot = _sessions != null && _sessions.IsInSession
+                        ? _sessions.Current
+                        : SessionSnapshot.Empty;
+                    var disposition = CompletedMatchReturnRules.
+                        GetPhaseSaveFailureDisposition(
+                            !_destroyed &&
+                            _completedMatchLobbyReturnInProgress,
+                            _sessions != null && _sessions.IsInSession,
+                            snapshot.IsHost,
+                            snapshot.Phase,
+                            _completedMatchPhaseSaveFailureCount,
+                            CompletedMatchPhaseSaveFailureLimit);
+                    switch (disposition)
                     {
-                        SetLocalizedStatus(
-                            "The lobby phase was saved; retrying local match cleanup: {0}",
-                            exception.Message);
-                        Debug.LogWarning(exception);
-                        ScheduleCompletedMatchUnloadForNextFrame();
-                        return;
+                        case CompletedMatchPhaseSaveFailureDisposition.
+                            ContinueSceneCleanup:
+                            SetLocalizedStatus(
+                                "The lobby phase was saved; retrying local match cleanup: {0}",
+                                exception.Message);
+                            Debug.LogWarning(exception);
+                            _completedMatchPhaseSaveFailureCount = 0;
+                            ScheduleCompletedMatchUnloadForNextFrame();
+                            return;
+                        case CompletedMatchPhaseSaveFailureDisposition.Retry:
+                            SetLocalizedStatus(
+                                "Could not save the lobby phase; retrying: {0}",
+                                exception.Message);
+                            Debug.LogWarning(exception);
+                            await Task.Delay(
+                                CompletedMatchPhaseSaveRetryMilliseconds,
+                                cancellationToken);
+                            continue;
+                        default:
+                            Debug.LogWarning(exception);
+                            BeginCompletedMatchFailClosedTermination(GameText.F(
+                                "Could not return the completed match to the lobby: {0}",
+                                "Lobby phase save failed after " +
+                                _completedMatchPhaseSaveFailureCount +
+                                " attempts."));
+                            return;
                     }
-
-                    if (!_destroyed &&
-                        _completedMatchLobbyReturnInProgress &&
-                        _sessions != null &&
-                        _sessions.IsInSession &&
-                        _sessions.Current.IsHost &&
-                        _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
-                    {
-                        SetLocalizedStatus(
-                            "Could not save the lobby phase; retrying: {0}",
-                            exception.Message);
-                        Debug.LogWarning(exception);
-                        await Task.Delay(1000, cancellationToken);
-                        continue;
-                    }
-
-                    ResetCompletedMatchLobbyReturnState();
-                    SynchronizeLifecycleStateFromSession(force: true);
-                    SetLocalizedStatus(
-                        "Could not return the completed match to the lobby: {0}",
-                        exception.Message);
-                    Debug.LogException(exception);
-                    return;
                 }
             }
         }
@@ -1614,6 +1660,7 @@ namespace MazeParty.Multiplayer
             error = string.Empty;
             _completedMatchSceneUnloadQueue.Clear();
             _completedMatchSceneBeingUnloaded = string.Empty;
+            _completedMatchSceneOperationDeadline = 0d;
             var queuedSceneNames = new HashSet<string>(StringComparer.Ordinal);
             var synchronizedSceneHandles = new HashSet<SceneHandle>();
             var synchronizedScenes = sceneManager.GetSynchronizedScenes();
@@ -1668,6 +1715,7 @@ namespace MazeParty.Multiplayer
         private void TryBeginNextCompletedMatchSceneUnload()
         {
             if (!_completedMatchLobbyReturnInProgress ||
+                _completedMatchFailClosedTerminationPending ||
                 !string.IsNullOrEmpty(_completedMatchSceneBeingUnloaded) ||
                 _completedMatchPendingUnloadClients.Count > 0)
             {
@@ -1679,6 +1727,7 @@ namespace MazeParty.Multiplayer
                 : NetworkManager.Singleton;
             if (manager == null || !manager.IsServer || manager.SceneManager == null)
             {
+                EnsureCompletedMatchSceneOperationDeadline(manager);
                 SetLocalizedStatus(
                     "Waiting for the server scene manager during lobby return.");
                 ScheduleCompletedMatchUnloadForNextFrame();
@@ -1693,39 +1742,248 @@ namespace MazeParty.Multiplayer
                 if (!scene.IsValid() || !scene.isLoaded)
                 {
                     _completedMatchSceneUnloadQueue.Dequeue();
+                    _completedMatchSceneOperationDeadline = 0d;
                     continue;
                 }
 
+                EnsureCompletedMatchSceneOperationDeadline(manager);
                 var result = manager.SceneManager.UnloadScene(scene);
-                if (result == SceneEventProgressStatus.Started)
+                switch (CompletedMatchReturnRules.
+                    GetSceneUnloadDisposition(result))
                 {
-                    _completedMatchSceneUnloadQueue.Dequeue();
-                    _completedMatchSceneBeingUnloaded = sceneName;
-                    SetLocalizedStatus("Synchronizing scene unload: {0}", sceneName);
-                    return;
+                    case CompletedMatchSceneUnloadDisposition.WaitForCompletion:
+                        _completedMatchSceneUnloadQueue.Dequeue();
+                        _completedMatchSceneBeingUnloaded = sceneName;
+                        // A preceding SceneEventInProgress wait belongs to a
+                        // different operation. The accepted unload receives its
+                        // own full NGO timeout window.
+                        _completedMatchSceneOperationDeadline = 0d;
+                        EnsureCompletedMatchSceneOperationDeadline(manager);
+                        SetLocalizedStatus(
+                            "Synchronizing scene unload: {0}",
+                            sceneName);
+                        return;
+                    case CompletedMatchSceneUnloadDisposition.AdvanceQueue:
+                        _completedMatchSceneUnloadQueue.Dequeue();
+                        _completedMatchSceneOperationDeadline = 0d;
+                        continue;
+                    case CompletedMatchSceneUnloadDisposition.Retry:
+                        SetLocalizedStatus(
+                            "Waiting to retry synchronized scene unload for {0}: {1}",
+                            sceneName,
+                            result);
+                        ScheduleCompletedMatchUnloadForNextFrame();
+                        return;
+                    default:
+                        BeginCompletedMatchFailClosedTermination(GameText.F(
+                            "Could not return the completed match to the lobby: {0}",
+                            "UnloadScene(" + sceneName + ") returned " +
+                            result + "."));
+                        return;
                 }
+            }
 
-                if (result == SceneEventProgressStatus.SceneEventInProgress)
-                {
-                    ScheduleCompletedMatchUnloadForNextFrame();
-                    return;
-                }
+            _completedMatchSceneOperationDeadline = 0d;
+            CompleteCompletedMatchLobbyReturn();
+        }
 
-                if (result == SceneEventProgressStatus.SceneNotLoaded)
-                {
-                    _completedMatchSceneUnloadQueue.Dequeue();
-                    continue;
-                }
-
-                SetLocalizedStatus(
-                    "Waiting to retry synchronized scene unload for {0}: {1}",
-                    sceneName,
-                    result);
-                ScheduleCompletedMatchUnloadForNextFrame();
+        private void EnsureCompletedMatchSceneOperationDeadline(
+            NetworkManager manager)
+        {
+            if (_completedMatchSceneOperationDeadline > 0d)
+            {
                 return;
             }
 
-            CompleteCompletedMatchLobbyReturn();
+            var timeoutSeconds =
+                CompletedMatchSceneOperationFallbackTimeoutSeconds;
+            if (manager != null && manager.NetworkConfig != null)
+            {
+                timeoutSeconds = Math.Max(
+                    1d,
+                    manager.NetworkConfig.LoadSceneTimeOut +
+                    CompletedMatchUnloadClientGraceSeconds);
+            }
+
+            _completedMatchSceneOperationDeadline =
+                CompletedMatchReturnRules.GetSceneOperationDeadline(
+                    Time.realtimeSinceStartupAsDouble,
+                    timeoutSeconds);
+        }
+
+        private void BeginCompletedMatchFailClosedTermination(
+            string reason)
+        {
+            if (!_completedMatchFailClosedTerminationPending)
+            {
+                _completedMatchFailClosedTerminationPending = true;
+                _completedMatchFailClosedReason = reason ?? string.Empty;
+                _completedMatchFailClosedRetryAt = 0d;
+                _completedMatchFailClosedTerminationAttemptCount = 0;
+                _completedMatchFailClosedCallTimedOut = false;
+                _completedMatchFailClosedExhaustedStatusShown = false;
+                _completedMatchUnloadNextFrame = false;
+                _completedMatchSceneOperationDeadline = 0d;
+                SetStatus(_completedMatchFailClosedReason);
+            }
+
+            TryAdvanceCompletedMatchFailClosedTermination();
+        }
+
+        private void TryAdvanceCompletedMatchFailClosedTermination()
+        {
+            if (!_completedMatchFailClosedTerminationPending || _destroyed)
+            {
+                return;
+            }
+
+            if (_sessions == null || !_sessions.IsInSession)
+            {
+                // A failed return is not a successful completion, explicit
+                // discard, or voluntary leave. Preserve the recovery journal
+                // so the host can resume it on the next session.
+                ResetCompletedMatchLobbyReturnState();
+                UnloadBoardLocally();
+                return;
+            }
+
+            var now = Time.realtimeSinceStartupAsDouble;
+            var disposition = CompletedMatchReturnRules.
+                GetTerminationAttemptDisposition(
+                    _completedMatchFailClosedTerminationPending,
+                    _networkTerminationRequested,
+                    _completedMatchFailClosedCallTimedOut,
+                    _completedMatchFailClosedTerminationAttemptCount,
+                    CompletedMatchFailClosedTerminationAttemptLimit,
+                    _completedMatchFailClosedRetryAt,
+                    now);
+            if (disposition ==
+                CompletedMatchTerminationAttemptDisposition.Wait)
+            {
+                return;
+            }
+
+            if (disposition ==
+                CompletedMatchTerminationAttemptDisposition.Exhausted)
+            {
+                if (!_completedMatchFailClosedExhaustedStatusShown)
+                {
+                    _completedMatchFailClosedExhaustedStatusShown = true;
+                    var detail = _completedMatchFailClosedCallTimedOut
+                        ? "Session cleanup timed out. Retry Leave Session or restart the game."
+                        : "Session cleanup failed after " +
+                          _completedMatchFailClosedTerminationAttemptCount +
+                          " attempts. Retry Leave Session or restart the game.";
+                    SetLocalizedStatus(
+                        "Could not return the completed match to the lobby: {0}",
+                        detail);
+                    Debug.LogError(_status);
+                }
+                return;
+            }
+
+            _completedMatchFailClosedTerminationAttemptCount++;
+            _networkTerminationRequested = true;
+            if (!_sessionOperations.TryEnqueue(
+                    SessionLifecycleState.Terminating,
+                    EndCompletedMatchFailClosedSessionAsync))
+            {
+                _networkTerminationRequested = false;
+                _completedMatchFailClosedTerminationAttemptCount--;
+                _completedMatchFailClosedRetryAt =
+                    now + CompletedMatchFailClosedRetrySeconds;
+            }
+        }
+
+        private async Task EndCompletedMatchFailClosedSessionAsync(
+            CancellationToken cancellationToken)
+        {
+            ClearPlayingReconnectTicket();
+            SetStatus(_completedMatchFailClosedReason);
+            var callTimedOut = false;
+            try
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (_sessions != null && _sessions.IsInSession)
+                {
+                    var leaveTask = _sessions.LeaveAsync();
+                    var timeoutTask = Task.Delay(
+                        CompletedMatchFailClosedLeaveTimeoutMilliseconds,
+                        cancellationToken);
+                    var completedTask = await Task.WhenAny(
+                        leaveTask,
+                        timeoutTask);
+                    if (!ReferenceEquals(completedTask, leaveTask))
+                    {
+                        // Observe the provider call before propagating lifetime
+                        // cancellation so it cannot become an unobserved task or
+                        // race provider disposal without an owner.
+                        _ = ObserveTimedOutCompletedMatchLeaveAsync(leaveTask);
+                        cancellationToken.ThrowIfCancellationRequested();
+                        if (!leaveTask.IsCompleted)
+                        {
+                            callTimedOut = true;
+                            _completedMatchFailClosedCallTimedOut = true;
+                            Debug.LogWarning(
+                                "Completed-match fail-closed session cleanup timed out.");
+                            return;
+                        }
+                    }
+
+                    await leaveTask;
+                }
+                cancellationToken.ThrowIfCancellationRequested();
+            }
+            catch (OperationCanceledException) when (
+                cancellationToken.IsCancellationRequested)
+            {
+                // Component lifetime shutdown owns cancellation.
+            }
+            catch (Exception exception)
+            {
+                if (!_destroyed)
+                {
+                    SetLocalizedStatus(
+                        "Could not return the completed match to the lobby: {0}",
+                        "Session cleanup attempt " +
+                        _completedMatchFailClosedTerminationAttemptCount +
+                        " failed: " + exception.Message);
+                    Debug.LogWarning(_status);
+                }
+            }
+            finally
+            {
+                _networkTerminationRequested = false;
+                if (!_destroyed &&
+                    _sessions != null &&
+                    _sessions.IsInSession &&
+                    !callTimedOut &&
+                    !_completedMatchFailClosedCallTimedOut &&
+                    _completedMatchFailClosedTerminationAttemptCount <
+                    CompletedMatchFailClosedTerminationAttemptLimit)
+                {
+                    _completedMatchFailClosedRetryAt =
+                        Time.realtimeSinceStartupAsDouble +
+                        CompletedMatchFailClosedRetrySeconds;
+                }
+
+                SynchronizeLifecycleStateFromSession(force: true);
+            }
+        }
+
+        private static async Task ObserveTimedOutCompletedMatchLeaveAsync(
+            Task leaveTask)
+        {
+            try
+            {
+                await leaveTask;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    "Timed-out completed-match session cleanup later failed: " +
+                    exception.Message);
+            }
         }
 
         private void CompleteCompletedMatchLobbyReturn()
@@ -1746,6 +2004,14 @@ namespace MazeParty.Multiplayer
             _completedMatchSceneBeingUnloaded = string.Empty;
             _completedMatchPendingUnloadScene = string.Empty;
             _completedMatchPendingUnloadDeadline = 0d;
+            _completedMatchPhaseSaveFailureCount = 0;
+            _completedMatchSceneOperationDeadline = 0d;
+            _completedMatchFailClosedTerminationPending = false;
+            _completedMatchFailClosedReason = string.Empty;
+            _completedMatchFailClosedRetryAt = 0d;
+            _completedMatchFailClosedTerminationAttemptCount = 0;
+            _completedMatchFailClosedCallTimedOut = false;
+            _completedMatchFailClosedExhaustedStatusShown = false;
             _completedMatchAvatarsPrepared = false;
             _completedMatchUnloadNextFrame = false;
             _completedMatchUnloadEarliestFrame = 0;
@@ -2212,6 +2478,7 @@ namespace MazeParty.Multiplayer
             }
 
             _completedMatchSceneBeingUnloaded = string.Empty;
+            _completedMatchSceneOperationDeadline = 0d;
             _completedMatchPendingUnloadClients.Clear();
             _completedMatchPendingUnloadScene = sceneName;
             if (_networkManager != null)

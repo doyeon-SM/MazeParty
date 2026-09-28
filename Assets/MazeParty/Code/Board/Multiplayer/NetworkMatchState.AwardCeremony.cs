@@ -449,6 +449,15 @@ namespace MazeParty.Multiplayer
 
         private void TryBeginCompletedMatchReturnOnServer()
         {
+            var controller = OnlineSessionController.Instance;
+            if (CompletedMatchReturnRules.ShouldReleaseLobbyReturnLatch(
+                    _completedMatchReturnQueued,
+                    controller != null && controller.IsMatchLobbyReturnOwned))
+            {
+                _completedMatchReturnQueued = false;
+                _awardCeremonyRevision.Value++;
+            }
+
             DropDepartedCeremonyPlayersOnServer();
             if (!AwardCeremonyFlowRules.ShouldBeginLobbyReturn(
                     CeremonyPhase,
@@ -462,7 +471,6 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var controller = OnlineSessionController.Instance;
             if (controller != null &&
                 controller.BeginCompletedMatchLobbyReturnOnServer())
             {
