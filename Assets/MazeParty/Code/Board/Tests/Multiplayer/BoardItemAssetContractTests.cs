@@ -15,9 +15,35 @@ namespace MazeParty.Multiplayer.Tests
         {
             var expressions = PlayerExpressionCatalog.Instance;
             Assert.That(expressions, Is.Not.Null);
-            Assert.That(expressions.Faces.Length, Is.EqualTo(4));
+            Assert.That(
+                expressions.Faces.Select(face => face.Name),
+                Is.EqualTo(new[] { "Face1", "Face2", "Face3" }));
+            Assert.That(
+                expressions.Faces.Select(face => AssetDatabase.GetAssetPath(face.Sprite)),
+                Is.EqualTo(new[]
+                {
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 1.png",
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 2.png",
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 3.png"
+                }));
+            Assert.That(
+                expressions.Hats.Select(hat => hat.Name),
+                Is.EqualTo(new[] { "Hat1", "Hat2", "Hat3" }));
+            Assert.That(
+                expressions.Hats.Select(hat => AssetDatabase.GetAssetPath(hat.Prefab)),
+                Is.EqualTo(new[]
+                {
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/chef hat.prefab",
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/orange fedora.prefab",
+                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/party hat.prefab"
+                }));
             Assert.That(expressions.Gestures.Length, Is.EqualTo(3));
             foreach (var face in expressions.Faces) Assert.That(face.Sprite, Is.Not.Null);
+            foreach (var hat in expressions.Hats)
+            {
+                Assert.That(PrefabUtility.IsPartOfPrefabAsset(hat.Prefab), Is.True);
+                Assert.That(hat.LocalScale.sqrMagnitude, Is.GreaterThan(0f));
+            }
             foreach (var gesture in expressions.Gestures)
             {
                 Assert.That(PrefabUtility.IsPartOfPrefabAsset(gesture.HandsPrefab), Is.True);

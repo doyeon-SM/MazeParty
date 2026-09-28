@@ -42,6 +42,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"
         };
@@ -66,6 +67,7 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.RaceHudBindings",
             "MazeParty.Multiplayer.TagChaseHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
+            "MazeParty.Multiplayer.LobbyHatView",
             "MazeParty.Multiplayer.LobbyExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
@@ -268,6 +270,8 @@ namespace MazeParty.Multiplayer.Tests
                         { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
                         if (component is LobbyExpressionView faces)
                         { Assert.That(faces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(faces), Is.Not.Null); }
+                        if (component is LobbyHatView hats)
+                        { Assert.That(hats.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(hats), Is.Not.Null); }
                     }
 
                     var visualUiComponents = scene.GetRootGameObjects()

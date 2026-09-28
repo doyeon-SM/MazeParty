@@ -352,7 +352,8 @@ namespace MazeParty.Multiplayer
                     runner.Visual.ApplyAppearance(
                         appearance.EyeId,
                         appearance.MouthId,
-                        appearance.HatId);
+                        appearance.HatId,
+                        appearance.ExpressionId);
                     runner.Visual.SetDisplayName(
                         string.IsNullOrWhiteSpace(avatar.DisplayName)
                             ? GameText.F("PLAYER {0}", slot + 1)

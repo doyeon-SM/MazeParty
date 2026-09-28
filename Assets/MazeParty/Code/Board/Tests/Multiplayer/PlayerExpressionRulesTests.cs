@@ -14,16 +14,31 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(old.Appearance.ExpressionId, Is.Zero);
             Assert.That(old.Appearance.HatId, Is.EqualTo(1));
             Assert.That((Color32)old.Appearance.BodyColor, Is.EqualTo(LobbyColorPalette.GetColor(4)));
-            for (byte i = 0; i < 4; i++)
+            var removedFace = PlayerProfilePreferences.Decode(
+                "{\"version\":2,\"displayName\":\"Legacy Face\",\"bodyRed\":55,\"bodyGreen\":125,\"bodyBlue\":230,\"expressionId\":3}",
+                "Fallback");
+            Assert.That(removedFace.Appearance.ExpressionId, Is.Zero,
+                "The removed fourth face must fall back to Face1.");
+            for (byte face = 0; face < 3; face++)
             {
-                var appearance = PlayerAppearanceState.FromColor(Color.red, 0, 0, 1, 0, i);
-                var restored = PlayerProfilePreferences.Decode(PlayerProfilePreferences.Encode("Saved", appearance), "Fallback");
-                Assert.That(restored.Appearance, Is.EqualTo(appearance));
-                Assert.That(restored.Appearance.WithPaletteColor(3).ExpressionId, Is.EqualTo(i));
+                for (byte hat = 0; hat <= 3; hat++)
+                {
+                    var appearance = PlayerAppearanceState.FromColor(
+                        Color.red, 0, 0, hat, 0, face);
+                    var restored = PlayerProfilePreferences.Decode(
+                        PlayerProfilePreferences.Encode("Saved", appearance),
+                        "Fallback");
+                    Assert.That(restored.Appearance, Is.EqualTo(appearance));
+                    Assert.That(
+                        restored.Appearance.WithPaletteColor(3).ExpressionId,
+                        Is.EqualTo(face));
+                    Assert.That(restored.Appearance.HatId, Is.EqualTo(hat));
+                }
             }
             foreach (var json in new[] { "broken", "null", "{\"version\":99}", "{\"version\":0}" })
                 Assert.That(PlayerProfilePreferences.Decode(json, "Fallback").Appearance, Is.EqualTo(PlayerAppearanceState.Default));
             Assert.That(PlayerAppearanceState.FromColor(Color.red, 0, 0, 0, 0, 255).ExpressionId, Is.Zero);
+            Assert.That(PlayerAppearanceState.FromColor(Color.red, 0, 0, 255, 0, 0).HatId, Is.Zero);
         }
         [Test]
         public void HandGesture_ExpiresAtOneSecond_RejectsExtensionAndDisallowedStarts()

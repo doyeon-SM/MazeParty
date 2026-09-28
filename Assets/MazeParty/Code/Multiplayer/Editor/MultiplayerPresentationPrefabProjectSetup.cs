@@ -39,8 +39,6 @@ namespace MazeParty.Editor
             PlayerAssetFolder + "/PlayerBody.mat";
         private const string FeatureMaterialPath =
             PlayerAssetFolder + "/PlayerFeature.mat";
-        private const string HatMaterialPath =
-            PlayerAssetFolder + "/PlayerHat.mat";
         private const string HighlightMaterialPath =
             PlayerAssetFolder + "/PlayerHighlight.mat";
         private const string LobbyFloorMaterialPath =
@@ -429,10 +427,6 @@ namespace MazeParty.Editor
                 FeatureMaterialPath,
                 new Color(0.025f, 0.02f, 0.02f),
                 0.12f);
-            var hatMaterial = EnsureMaterial(
-                HatMaterialPath,
-                new Color(0.12f, 0.28f, 0.7f),
-                0.2f);
             var highlightMaterial = EnsureMaterial(
                 HighlightMaterialPath,
                 Color.white,
@@ -486,20 +480,6 @@ namespace MazeParty.Editor
                 out _);
 
             var hat = CreateAnchor(world, "HatAnchor");
-            var crown = CreatePrimitive(
-                "TestHatCrown",
-                PrimitiveType.Sphere,
-                hat,
-                hatMaterial);
-            crown.transform.localPosition = new Vector3(0f, 0.08f, 0f);
-            crown.transform.localScale = new Vector3(0.62f, 0.34f, 0.62f);
-            var brim = CreatePrimitive(
-                "TestHatBrim",
-                PrimitiveType.Cylinder,
-                hat,
-                hatMaterial);
-            brim.transform.localPosition = new Vector3(0f, -0.05f, 0.08f);
-            brim.transform.localScale = new Vector3(0.48f, 0.025f, 0.62f);
             var outfit = CreateAnchor(world, "OutfitAnchor");
             var worldItems = CreateAnchor(world, "ItemUseAnchor");
             worldItems.localScale = Vector3.one * 0.72f;
@@ -510,7 +490,7 @@ namespace MazeParty.Editor
                 typeof(SpriteRenderer));
             faceObject.transform.SetParent(head, false);
             faceObject.transform.localPosition = new Vector3(0f, 0f, 0.51f);
-            faceObject.transform.localScale = Vector3.one * 0.8f;
+            faceObject.transform.localScale = Vector3.one * 0.15625f;
             var face = faceObject.GetComponent<SpriteRenderer>();
             face.shadowCastingMode = ShadowCastingMode.Off;
             face.receiveShadows = false;

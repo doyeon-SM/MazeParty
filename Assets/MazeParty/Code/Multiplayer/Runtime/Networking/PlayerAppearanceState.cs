@@ -154,7 +154,7 @@ namespace MazeParty.Multiplayer
             value.BodyBlue = paletteColor.b;
             value.EyeId = 0;
             value.MouthId = 0;
-            value.HatId = (byte)(value.HatId == 1 ? 1 : 0);
+            value.HatId = PlayerExpressionCatalog.SanitizeHat(value.HatId);
             value.OutfitId = 0;
             value.ExpressionId = PlayerExpressionCatalog.SanitizeFace(value.ExpressionId);
             return value;

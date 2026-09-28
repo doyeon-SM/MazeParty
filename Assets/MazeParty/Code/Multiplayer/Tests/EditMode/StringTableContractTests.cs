@@ -143,6 +143,18 @@ namespace MazeParty.Multiplayer.Tests
                 sources.Add(item.Description);
             }
 
+            var appearanceCatalog = PlayerExpressionCatalog.Instance;
+            Assert.That(appearanceCatalog, Is.Not.Null);
+            foreach (var face in appearanceCatalog.Faces)
+            {
+                sources.Add(face.Name);
+            }
+            foreach (var hat in appearanceCatalog.Hats)
+            {
+                sources.Add(hat.Name);
+            }
+            sources.Add("None");
+
             for (var index = 0; index < DisplayModeOptions.Count; index++)
             {
                 sources.Add(DisplayModeOptions.GetLabelSource((DisplayModeOption)index));

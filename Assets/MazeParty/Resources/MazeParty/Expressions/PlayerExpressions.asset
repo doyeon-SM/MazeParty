@@ -13,14 +13,28 @@ MonoBehaviour:
   m_Name: PlayerExpressions
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerExpressionCatalog
   Faces:
-  - Name: Neutral
-    Sprite: {fileID: 3622792381989719942, guid: 0bfeecb6c125a154a931ebcaa036a0e5, type: 3}
-  - Name: Happy
-    Sprite: {fileID: 7985626363670038235, guid: 15a8d5f16b1a9854ebb9ed16d729360d, type: 3}
-  - Name: Angry
-    Sprite: {fileID: 621222158458474870, guid: d2d8dbfe8772b3b4d82ce7c9daa4feb4, type: 3}
-  - Name: Surprised
-    Sprite: {fileID: 5767058898976193538, guid: a87ba6672bdad4845852444b57191c0e, type: 3}
+  - Name: Face1
+    Sprite: {fileID: 21300000, guid: 9d2056dcf837a4c4ab662ffd4e65d641, type: 3}
+  - Name: Face2
+    Sprite: {fileID: 21300000, guid: fac5a081943222b4ab3b8bcc324d1044, type: 3}
+  - Name: Face3
+    Sprite: {fileID: 21300000, guid: 193bf5ce06d0c964da2635b288c3421f, type: 3}
+  Hats:
+  - Name: Hat1
+    Prefab: {fileID: 4534976698548840661, guid: 2acb1e28f8227e04c8fa7e95ff2871e8, type: 3}
+    LocalPosition: {x: 0, y: -0.33, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+  - Name: Hat2
+    Prefab: {fileID: 316543382625110381, guid: 5179d38856852ec47a9e090cdcfe59f0, type: 3}
+    LocalPosition: {x: 0, y: -0.31, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
+  - Name: Hat3
+    Prefab: {fileID: 231839627225837898, guid: 27746de78f38aa84590124f2fef79885, type: 3}
+    LocalPosition: {x: 0, y: -0.34, z: 0}
+    LocalEulerAngles: {x: 0, y: 0, z: 0}
+    LocalScale: {x: 1, y: 1, z: 1}
   Gestures:
   - Name: THUMBS UP
     HandsPrefab: {fileID: 4684904999885387765, guid: a4ad932aedf08ee46ab2c16aec2911e9, type: 3}

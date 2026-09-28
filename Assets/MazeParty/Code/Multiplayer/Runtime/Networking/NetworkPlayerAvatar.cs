@@ -2018,8 +2018,11 @@ namespace MazeParty.Multiplayer
 
             var safe = appearance.Sanitized();
             _avatarVisual.SetBodyColor(safe.BodyColor);
-            _avatarVisual.ApplyAppearance(safe.EyeId, safe.MouthId, safe.HatId);
-            _avatarVisual.SetFaceExpression(safe.ExpressionId);
+            _avatarVisual.ApplyAppearance(
+                safe.EyeId,
+                safe.MouthId,
+                safe.HatId,
+                safe.ExpressionId);
         }
 
         private void ApplyDisplayName(FixedString64Bytes displayName)

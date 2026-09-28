@@ -83,7 +83,7 @@ CARRYING GIFT,선물 운반 중,プレゼント運搬中,搬运礼物中
 CEREMONY COMPLETE,시상식 종료,表彰式終了,颁奖典礼结束
 CEREMONY PAUSED,시상식 일시정지,表彰式 一時停止中,颁奖典礼已暂停
 CEREMONY PAUSED  -  WAITING FOR PLAYER,시상식 일시정지  -  플레이어 대기 중,表彰式 一時停止中  -  プレイヤー待ち,颁奖典礼已暂停  -  等待玩家
-Character - Unique Body Color / Test Hat,캐릭터 - 고유 몸 색상 / 테스트 모자,キャラクター - 固有ボディカラー / テスト帽子,角色 - 专属身体颜色 / 测试帽子
+Character - Unique Body Color / Face / Hat,캐릭터 - 고유 몸 색상 / 표정 / 모자,キャラクター - 固有の体色 / 表情 / 帽子,角色 - 专属身体颜色 / 表情 / 帽子
 CHARGE  --,잔량  --,残量  --,剩余  --
 CHOICE  {0},선택  {0},選択  {0},选择  {0}
 Choice timed out. DO NOT USE selected automatically.,선택 시간이 초과되었습니다. '사용 안 함'이 자동으로 선택되었습니다.,選択時間切れです。「使わない」が自動で選択されました。,选择超时。已自动选择“不使用”。
@@ -171,6 +171,9 @@ Four connected players with server-assigned seats are required.,서버에서 자
 Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。
 FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^
 Fullscreen,전체화면,フルスクリーン,全屏
+Face1,표정1,表情1,表情1
+Face2,표정2,表情2,表情2
+Face3,표정3,表情3,表情3
 GAME PAUSED,일시정지,一時停止中,游戏已暂停
 GET READY,준비하세요,準備して,准备
 Get ready at the shared start line.,공용 출발선에서 준비하세요.,共通のスタートラインで準備してください。,在共同起跑线上准备。
@@ -203,6 +206,9 @@ Happy,기쁨,うれしい,开心
 HEALING +{0} HP,회복 +{0} HP,回復 +{0} HP,恢复 +{0} HP
 HEART,하트,ハート,爱心
 High Dice (7-12),하이 주사위 (7-12),ハイダイス (7-12),高点骰子 (7-12)
+Hat1,모자1,帽子1,帽子1
+Hat2,모자2,帽子2,帽子2
+Hat3,모자3,帽子3,帽子3
 Hit! Position swap cancelled; item consumed.,피격! 위치 교환이 취소되고 아이템이 소모되었습니다.,被弾！位置交換がキャンセルされ、アイテムは消費されました。,被击中！位置交换已取消，道具已消耗。
 Hold A or D to slide your shield. A touched ball takes your color; a goal scores for its color owner.,"A 또는 D를 누르고 있으면 보호막이 움직입니다. 공에 닿으면 내 색이 되고, 골이 들어가면 그 색의 주인이 득점합니다.",AまたはDを押し続けてシールドをスライドさせます。触れたボールは自分の色になり、ゴールするとその色の持ち主に得点が入ります。,按住A或D滑动护盾。被你碰到的球会变成你的颜色；进球时由该颜色的所有者得分。
 HOLD LMB\nPOP FIRST,좌클릭 길게 누르기\n먼저 터뜨리기,左クリック長押し\n先に割ろう,按住左键\n抢先吹爆
@@ -302,6 +308,7 @@ MOVES  0 / FREE IN ROOM,이동  0 / 방 안에서 자유 이동,移動  0 / 部�
 MOVES  {0},이동  {0},移動  {0},移动  {0}
 MPS has not unregistered the session yet. Try cleanup again.,MPS에서 아직 방 등록이 해제되지 않았습니다. 정리를 다시 시도하세요.,MPSがまだルームの登録を解除していません。クリーンアップを再試行してください。,MPS 尚未注销该房间。请再次尝试清理。
 Neutral,무표정,ふつう,平静
+None,없음,なし,无
 NO EFFECT (0 change),효과 없음 (변화 0),効果なし (変化 0),无效果 (变化 0)
 No landing effect,도착 효과 없음,到着効果なし,无停留效果
 NO MINIGAME / SKIP,미니게임 없음 / 건너뛰기,ミニゲームなし / スキップ,无小游戏 / 跳过

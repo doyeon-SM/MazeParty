@@ -35,6 +35,12 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.NameplateAnchor.gameObject.activeSelf, Is.True);
             Assert.That(bindings.NameText, Is.Not.Null);
             Assert.That(bindings.BodyTintRenderers, Is.Not.Empty);
+            Assert.That(bindings.HatAnchor.childCount, Is.Zero,
+                "Hat models must come from the appearance catalog, not placeholder geometry.");
+            Assert.That(
+                prefab.GetComponentsInChildren<Transform>(true)
+                    .Any(child => child.name.StartsWith("TestHat")),
+                Is.False);
             AssertHitZone(bindings.BodyHitbox, PlayerHitRegion.Body);
             AssertHitZone(bindings.HeadHitbox, PlayerHitRegion.Head);
             AssertHitZone(bindings.LeftHandHitbox, PlayerHitRegion.Hand);
@@ -106,6 +112,20 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     visual.Bindings.gameObject.name,
                     Is.EqualTo(assets.PresentationPrefab.gameObject.name));
+
+                var catalog = PlayerExpressionCatalog.Instance;
+                Assert.That(catalog, Is.Not.Null);
+                Assert.That(
+                    visual.Bindings.HatAnchor.childCount,
+                    Is.EqualTo(catalog.Hats.Length));
+                visual.ApplyAppearance(0, 0, 2, 1);
+                Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(
+                    visual.Bindings.HatAnchor.Cast<Transform>()
+                        .Select(child => child.gameObject.activeSelf),
+                    Is.EqualTo(new[] { false, true, false }));
+                visual.ApplyAppearance(0, 0, 0, 2);
+                Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.False);
 
                 var authoredHighlight = visual.Bindings.TopViewHighlight;
                 var authoredObjectCount = root

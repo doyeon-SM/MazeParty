@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
@@ -139,6 +140,52 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(wardrobeButton.gameObject.activeSelf, Is.True);
                 Assert.That(wardrobePanel.activeSelf, Is.False,
                     "Returning to the lobby must not reopen the wardrobe.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        [Test]
+        public void Wardrobe_UsesBoundFaceAndHatSelectorsWithinAuthoredFooter()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            try
+            {
+                var view = GetLobbyView(root);
+                var face = root.GetComponentsInChildren<LobbyExpressionView>(true)
+                    .Single();
+                var hat = root.GetComponentsInChildren<LobbyHatView>(true)
+                    .Single();
+                Assert.That(face.HasRequiredReferences, Is.True);
+                Assert.That(hat.HasRequiredReferences, Is.True);
+
+                var footer = root.GetComponentsInChildren<RectTransform>(true)
+                    .Single(item => item.name == "Customization Footer");
+                var layout = footer.GetComponent<HorizontalLayoutGroup>();
+                var selectors = new[]
+                {
+                    face.GetComponent<LayoutElement>(),
+                    hat.GetComponent<LayoutElement>()
+                };
+                Assert.That(selectors, Has.None.Null);
+                Assert.That(
+                    selectors.Sum(item => item.preferredWidth) + layout.spacing,
+                    Is.LessThanOrEqualTo(footer.rect.width));
+                Assert.That(footer.GetComponentsInChildren<Toggle>(true), Is.Empty,
+                    "The legacy test-hat toggle must not return.");
+
+                PlayerAppearanceState? published = null;
+                view.AppearanceChanged += appearance => published = appearance;
+                view.SetAppearance(PlayerAppearanceState.FromColor(
+                    LobbyColorPalette.GetColor(2), 0, 0, 3, 0, 2));
+                view.SelectHat(2);
+                Assert.That(view.SelectedHat, Is.EqualTo(2));
+                Assert.That(view.SelectedExpression, Is.EqualTo(2));
+                Assert.That(published.HasValue, Is.True);
+                Assert.That(published.Value.HatId, Is.EqualTo(2));
+                Assert.That(published.Value.ExpressionId, Is.EqualTo(2));
             }
             finally
             {

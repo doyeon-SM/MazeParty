@@ -309,7 +309,8 @@ namespace MazeParty.Multiplayer
                     player.Visual.ApplyAppearance(
                         appearance.EyeId,
                         appearance.MouthId,
-                        appearance.HatId);
+                        appearance.HatId,
+                        appearance.ExpressionId);
                 }
                 player.Visual.SetEliminated(false);
             }

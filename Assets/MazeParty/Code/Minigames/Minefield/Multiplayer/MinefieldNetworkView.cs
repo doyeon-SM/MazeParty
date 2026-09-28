@@ -358,7 +358,8 @@ namespace MazeParty.Multiplayer
                     view.AvatarVisual.ApplyAppearance(
                         appearance.EyeId,
                         appearance.MouthId,
-                        appearance.HatId);
+                        appearance.HatId,
+                        appearance.ExpressionId);
                     view.AvatarVisual.SetDisplayName(boardAvatar.DisplayName);
                 }
 

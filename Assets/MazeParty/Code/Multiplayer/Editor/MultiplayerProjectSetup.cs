@@ -454,8 +454,7 @@ namespace MazeParty.Editor
                 sessionPanel.transform,
                 font,
                 out var paletteButtons,
-                out var paletteOutlines,
-                out var testHatToggle);
+                out var paletteOutlines);
 
             var statusText = CreateText(
                 "Status",
@@ -493,14 +492,14 @@ namespace MazeParty.Editor
                 statusText,
                 customizationPanel,
                 paletteButtons,
-                paletteOutlines,
-                testHatToggle);
+                paletteOutlines);
             lobbyView.ConfigureInteractionPanels(
                 joinCodePopup,
                 openJoinPopupButton,
                 cancelJoinButton,
                 revealControl,
                 customizationButton);
+            PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
             return lobbyView;
         }
 
@@ -508,8 +507,7 @@ namespace MazeParty.Editor
             Transform parent,
             Font font,
             out Button[] paletteButtons,
-            out Outline[] paletteOutlines,
-            out Toggle testHatToggle)
+            out Outline[] paletteOutlines)
         {
             var customizationPanel = CreateUiObject(
                 "Player Customization",
@@ -526,7 +524,7 @@ namespace MazeParty.Editor
             CreateText(
                 "Customization Label",
                 customizationPanel.transform,
-                "Character - Unique Body Color / Test Hat",
+                "Character - Unique Body Color / Face / Hat",
                 font,
                 17,
                 TextAnchor.MiddleLeft,
@@ -593,58 +591,7 @@ namespace MazeParty.Editor
             var footerSize = footer.AddComponent<LayoutElement>();
             footerSize.preferredHeight = 32f;
 
-            testHatToggle = CreateToggle("Test Hat", footer.transform, font);
             return customizationPanel;
-        }
-
-        private static Toggle CreateToggle(
-            string label,
-            Transform parent,
-            Font font)
-        {
-            var root = CreateUiObject(label + " Toggle", parent);
-            var size = root.AddComponent<LayoutElement>();
-            size.preferredWidth = 180f;
-            size.preferredHeight = 28f;
-
-            var background = CreateUiObject("Background", root.transform);
-            var backgroundRect = background.GetComponent<RectTransform>();
-            backgroundRect.anchorMin = new Vector2(0f, 0.5f);
-            backgroundRect.anchorMax = new Vector2(0f, 0.5f);
-            backgroundRect.sizeDelta = new Vector2(24f, 24f);
-            backgroundRect.anchoredPosition = new Vector2(12f, 0f);
-            var backgroundImage = background.AddComponent<Image>();
-            backgroundImage.color = new Color(0.12f, 0.15f, 0.2f, 1f);
-
-            var checkmark = CreateUiObject("Checkmark", background.transform);
-            SetStretch(
-                checkmark.GetComponent<RectTransform>(),
-                4f,
-                4f,
-                4f,
-                4f);
-            var checkmarkImage = checkmark.AddComponent<Image>();
-            checkmarkImage.color = new Color(0.3f, 0.75f, 1f, 1f);
-
-            var labelText = CreateText(
-                "Label",
-                root.transform,
-                label,
-                font,
-                15,
-                TextAnchor.MiddleLeft,
-                28f);
-            Object.DestroyImmediate(labelText.GetComponent<LayoutElement>());
-            var labelRect = labelText.rectTransform;
-            labelRect.anchorMin = Vector2.zero;
-            labelRect.anchorMax = Vector2.one;
-            labelRect.offsetMin = new Vector2(34f, 0f);
-            labelRect.offsetMax = Vector2.zero;
-
-            var toggle = root.AddComponent<Toggle>();
-            toggle.targetGraphic = backgroundImage;
-            toggle.graphic = checkmarkImage;
-            return toggle;
         }
 
         private static GameObject LoadOrCreateScheduleTowerPrefab()

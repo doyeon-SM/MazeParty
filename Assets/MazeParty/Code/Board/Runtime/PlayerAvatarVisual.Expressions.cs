@@ -5,6 +5,7 @@ namespace MazeParty.Gameplay
     public sealed partial class PlayerAvatarVisual
     {
         private SpriteRenderer _faceSprite;
+        private GameObject[] _hatModels;
         private Transform _worldGestureRoot, _firstGestureRoot;
         private GameObject[] _worldGestures, _firstGestures;
         private byte _gesture;
@@ -18,6 +19,7 @@ namespace MazeParty.Gameplay
                 return;
             }
             _faceSprite = bindings.FaceSprite;
+            _hatModels = InstantiateHats(_hat);
             _worldGestureRoot = bindings.WorldGestureRoot;
             _firstGestureRoot = bindings.FirstPersonGestureRoot;
             _worldGestures = InstantiateGestures(_worldGestureRoot);
@@ -26,6 +28,25 @@ namespace MazeParty.Gameplay
                 _firstGestures = InstantiateGestures(_firstGestureRoot);
             }
             SetFaceExpression(0);
+            SetHat(0);
+        }
+        private GameObject[] InstantiateHats(Transform root)
+        {
+            var catalog = PlayerExpressionCatalog.Instance;
+            var result = new GameObject[catalog.Hats.Length];
+            for (int i = 0; i < result.Length; i++)
+            {
+                var hat = catalog.Hats[i];
+                if (hat == null || hat.Prefab == null) continue;
+                result[i] = Instantiate(hat.Prefab, root, false);
+                result[i].name = hat.Prefab.name;
+                var hatTransform = result[i].transform;
+                hatTransform.localPosition = hat.LocalPosition;
+                hatTransform.localRotation = Quaternion.Euler(hat.LocalEulerAngles);
+                hatTransform.localScale = hat.LocalScale;
+                result[i].SetActive(false);
+            }
+            return result;
         }
         private GameObject[] InstantiateGestures(Transform root)
         {
@@ -47,6 +68,15 @@ namespace MazeParty.Gameplay
             if (catalog.Faces.Length == 0) return;
             _faceSprite.sprite = catalog.Faces[PlayerExpressionCatalog.SanitizeFace(id)].Sprite;
             _leftEye.gameObject.SetActive(false); _rightEye.gameObject.SetActive(false); _mouth.gameObject.SetActive(false);
+        }
+        private void SetHat(byte id)
+        {
+            _hatId = PlayerExpressionCatalog.SanitizeHat(id);
+            if (_hat == null) return;
+            _hat.gameObject.SetActive(_hatId > 0);
+            if (_hatModels == null) return;
+            for (int i = 0; i < _hatModels.Length; i++)
+                if (_hatModels[i] != null) _hatModels[i].SetActive(i + 1 == _hatId);
         }
         public void SetHandGesture(byte id)
         {

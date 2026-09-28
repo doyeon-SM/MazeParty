@@ -44,7 +44,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button customizationButton;
         [SerializeField] private Button[] paletteButtons = Array.Empty<Button>();
         [SerializeField] private Outline[] paletteOutlines = Array.Empty<Outline>();
-        [SerializeField] private Toggle testHatToggle;
 
         private bool _buttonEventsBound;
         private UnityAction[] _paletteButtonActions = Array.Empty<UnityAction>();
@@ -54,9 +53,20 @@ namespace MazeParty.Multiplayer
         private bool _lastRenderedInSession;
         private bool _inviteCodeRevealed;
         private string _currentInviteCode = string.Empty;
+        public byte SelectedHat { get; private set; }
         public byte SelectedExpression { get; private set; }
+
+        public void SelectHat(byte id)
+        {
+            SelectedHat = PlayerExpressionCatalog.SanitizeHat(id);
+            PublishAppearance(_selectedPaletteIndex);
+        }
+
         public void SelectExpression(byte id)
-        { SelectedExpression = MazeParty.Gameplay.PlayerExpressionCatalog.SanitizeFace(id); PublishAppearance(_selectedPaletteIndex); }
+        {
+            SelectedExpression = PlayerExpressionCatalog.SanitizeFace(id);
+            PublishAppearance(_selectedPaletteIndex);
+        }
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
         private bool _presentationVisible = true;
@@ -110,8 +120,7 @@ namespace MazeParty.Multiplayer
             Array.TrueForAll(paletteButtons, button => button != null) &&
             paletteOutlines != null &&
             paletteOutlines.Length == LobbyColorPalette.Count &&
-            Array.TrueForAll(paletteOutlines, outline => outline != null) &&
-            testHatToggle != null;
+            Array.TrueForAll(paletteOutlines, outline => outline != null);
 
         public int PlayerRowCount => playerRows != null ? playerRows.Length : 0;
         public bool PresentationVisible => _presentationVisible;
@@ -137,8 +146,7 @@ namespace MazeParty.Multiplayer
             Text configuredStatusText,
             GameObject configuredCustomizationPanel,
             Button[] configuredPaletteButtons,
-            Outline[] configuredPaletteOutlines,
-            Toggle configuredTestHatToggle)
+            Outline[] configuredPaletteOutlines)
         {
             canvasGroup = configuredCanvasGroup;
             connectionPanel = configuredConnectionPanel;
@@ -161,7 +169,6 @@ namespace MazeParty.Multiplayer
             customizationPanel = configuredCustomizationPanel;
             paletteButtons = configuredPaletteButtons ?? Array.Empty<Button>();
             paletteOutlines = configuredPaletteOutlines ?? Array.Empty<Outline>();
-            testHatToggle = configuredTestHatToggle;
         }
 
         public void ConfigureInteractionPanels(
@@ -193,11 +200,11 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SelectedExpression = appearance.ExpressionId;
+            SelectedHat = PlayerExpressionCatalog.SanitizeHat(appearance.HatId);
+            SelectedExpression = PlayerExpressionCatalog.SanitizeFace(appearance.ExpressionId);
             _suppressAppearanceEvents = true;
             _selectedPaletteIndex = LobbyColorPalette.FindClosestIndex(
                 (Color32)appearance.BodyColor);
-            testHatToggle.SetIsOnWithoutNotify(appearance.HatId == 1);
             _suppressAppearanceEvents = false;
             RefreshPaletteAvailability();
         }
@@ -428,7 +435,6 @@ namespace MazeParty.Multiplayer
                 paletteButtons[index].onClick.AddListener(action);
             }
 
-            testHatToggle.onValueChanged.AddListener(OnHatControlChanged);
             _buttonEventsBound = true;
         }
 
@@ -458,7 +464,6 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            testHatToggle.onValueChanged.RemoveListener(OnHatControlChanged);
             _paletteButtonActions = Array.Empty<UnityAction>();
             _buttonEventsBound = false;
         }
@@ -466,11 +471,6 @@ namespace MazeParty.Multiplayer
         private void OnPaletteColorClicked(int paletteIndex)
         {
             PublishAppearance(paletteIndex);
-        }
-
-        private void OnHatControlChanged(bool _)
-        {
-            PublishAppearance(_selectedPaletteIndex);
         }
 
         private void PublishAppearance(int paletteIndex)
@@ -485,7 +485,7 @@ namespace MazeParty.Multiplayer
                 LobbyColorPalette.GetColor(paletteIndex),
                 0,
                 0,
-                (byte)(testHatToggle.isOn ? 1 : 0),
+                SelectedHat,
                 0, SelectedExpression));
         }
 

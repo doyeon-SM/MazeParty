@@ -215,7 +215,7 @@ namespace MazeParty.Gameplay
             BuildExpressionVisuals();
             _previousPosition = transform.position;
             ApplyBodyColor();
-            ApplyAppearance(0, 0, 0);
+            ApplyAppearance(0, 0, 0, 0);
             UpdatePose(true);
             RefreshVisibility();
             _missingPresentationReported = false;
@@ -248,7 +248,11 @@ namespace MazeParty.Gameplay
             ApplyBodyColor();
         }
 
-        public void ApplyAppearance(byte eyeId, byte mouthId, byte hatId)
+        public void ApplyAppearance(
+            byte eyeId,
+            byte mouthId,
+            byte hatId,
+            byte expressionId)
         {
             EnsureBuilt();
             if (!IsBuilt)
@@ -260,9 +264,8 @@ namespace MazeParty.Gameplay
             _leftEye.gameObject.SetActive(eyeId == 0);
             _rightEye.gameObject.SetActive(eyeId == 0);
             _mouth.gameObject.SetActive(mouthId == 0);
-            SetFaceExpression(0);
-            _hatId = hatId;
-            _hat.gameObject.SetActive(hatId == 1);
+            SetFaceExpression(expressionId);
+            SetHat(hatId);
         }
 
         public void SetDisplayName(string value)

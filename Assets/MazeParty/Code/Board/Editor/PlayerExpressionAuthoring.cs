@@ -13,6 +13,7 @@ namespace MazeParty.Editor
     {
         const string Data = "Assets/MazeParty/Resources/MazeParty/Expressions";
         const string Models = "Assets/MazeParty/Prefabs/Multiplayer/Expressions";
+        const string PartyPack = "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources";
         [MenuItem("MazeParty/Player/Upgrade Expressions")]
         public static void Upgrade()
         {
@@ -21,14 +22,16 @@ namespace MazeParty.Editor
             if (catalog == null)
             {
                 catalog = ScriptableObject.CreateInstance<PlayerExpressionCatalog>();
-                var names = new[] { "Neutral", "Happy", "Angry", "Surprised" };
-                catalog.Faces = new PlayerExpressionCatalog.Face[4];
-                for (int i = 0; i < 4; i++)
-                { int face = i; catalog.Faces[i] = new PlayerExpressionCatalog.Face { Name = names[i], Sprite = Sprite(names[i], (x,y) => FacePixel(face,x,y)) }; }
-                names = new[] { "THUMBS UP", "PEACE", "HEART" };
+                ConfigurePartyPackAppearance(catalog);
+                var names = new[] { "THUMBS UP", "PEACE", "HEART" };
                 catalog.Gestures = new PlayerExpressionCatalog.Gesture[3];
                 for (int i = 0; i < 3; i++) catalog.Gestures[i] = new PlayerExpressionCatalog.Gesture { Name = names[i], HandsPrefab = Hands(i) };
                 AssetDatabase.CreateAsset(catalog, Data + "/PlayerExpressions.asset");
+            }
+            else if (IsLegacyAppearanceCatalog(catalog))
+            {
+                ConfigurePartyPackAppearance(catalog);
+                EditorUtility.SetDirty(catalog);
             }
             foreach (string path in new[] { "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab", "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" })
             {
@@ -37,30 +40,59 @@ namespace MazeParty.Editor
                 {
                     bool lobby = path.Contains("LobbyCanvas");
                     EnsureWheel(root, lobby);
-                    if (lobby) EnsureFaceSelector(root);
+                    if (lobby)
+                    {
+                        EnsureLobbySelectors(root);
+                    }
                     PrefabUtility.SaveAsPrefabAsset(root, path);
                 }
                 finally { PrefabUtility.UnloadPrefabContents(root); }
             }
             AssetDatabase.SaveAssets();
         }
-        static Color FacePixel(int id, float x, float y)
+        static T RequiredAsset<T>(string path) where T : UnityEngine.Object
         {
-            bool eye = Ellipse(x,y,-.21f,.13f,.04f,id==3?.075f:.055f) || Ellipse(x,y,.21f,.13f,.04f,id==3?.075f:.055f);
-            bool mouth = false;
-            if (id == 0) mouth = Line(x,y,new Vector2(-.13f,-.16f),new Vector2(.13f,-.16f),.018f);
-            if (id == 1) mouth = Mathf.Abs(y - (-.24f + 2.5f*x*x)) < .018f && Mathf.Abs(x)<.2f;
-            if (id == 2)
+            var asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (asset == null)
             {
-                mouth = Mathf.Abs(y - (-.12f - 2*x*x)) < .018f && Mathf.Abs(x)<.16f;
-                eye |= Line(x,y,new Vector2(-.29f,.27f),new Vector2(-.12f,.19f),.018f) || Line(x,y,new Vector2(.29f,.27f),new Vector2(.12f,.19f),.018f);
+                throw new InvalidOperationException("Required Party Characters asset is missing: " + path);
             }
-            if (id == 3) mouth = Ellipse(x,y,0,-.17f,.085f,.105f) && !Ellipse(x,y,0,-.17f,.052f,.073f);
-            return eye || mouth ? new Color(.035f,.025f,.03f,1) : Color.clear;
+            return asset;
         }
-        static bool Ellipse(float x,float y,float cx,float cy,float rx,float ry) => (x-cx)*(x-cx)/(rx*rx)+(y-cy)*(y-cy)/(ry*ry)<=1;
-        static bool Line(float x,float y,Vector2 a,Vector2 b,float width)
-        { var p=new Vector2(x,y);var delta=b-a;return Vector2.Distance(p,a+delta*Mathf.Clamp01(Vector2.Dot(p-a,delta)/delta.sqrMagnitude))<width; }
+        static bool IsLegacyAppearanceCatalog(PlayerExpressionCatalog catalog)
+        {
+            return catalog.Faces != null && catalog.Faces.Length == 4 &&
+                   (catalog.Hats == null || catalog.Hats.Length == 0) &&
+                   catalog.Faces.Select(face => face != null ? face.Name : string.Empty)
+                       .SequenceEqual(new[] { "Neutral", "Happy", "Angry", "Surprised" });
+        }
+        static void ConfigurePartyPackAppearance(PlayerExpressionCatalog catalog)
+        {
+            var names = new[] { "Face1", "Face2", "Face3" };
+            catalog.Faces = new PlayerExpressionCatalog.Face[names.Length];
+            for (int i = 0; i < names.Length; i++)
+            {
+                catalog.Faces[i] = new PlayerExpressionCatalog.Face
+                {
+                    Name = names[i],
+                    Sprite = RequiredAsset<Sprite>(PartyPack + "/Materials/Face Images/face " + (i + 1) + ".png")
+                };
+            }
+            var hatNames = new[] { "Hat1", "Hat2", "Hat3" };
+            var hatFiles = new[] { "chef hat", "orange fedora", "party hat" };
+            var hatY = new[] { -0.33f, -0.31f, -0.34f };
+            catalog.Hats = new PlayerExpressionCatalog.Hat[hatNames.Length];
+            for (int i = 0; i < hatNames.Length; i++)
+            {
+                catalog.Hats[i] = new PlayerExpressionCatalog.Hat
+                {
+                    Name = hatNames[i],
+                    Prefab = RequiredAsset<GameObject>(PartyPack + "/Prefabs/Hats/" + hatFiles[i] + ".prefab"),
+                    LocalPosition = new Vector3(0f, hatY[i], 0f),
+                    LocalScale = Vector3.one
+                };
+            }
+        }
         static Sprite Sprite(string name, Func<float,float,Color> pixel)
         {
             string path=Data+"/"+name+".png";
@@ -151,16 +183,37 @@ namespace MazeParty.Editor
         {
             if(canvas.GetComponentInChildren<LobbyExpressionView>(true)!=null)return;
             var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            var row=Rect(footer,"Face Expression",new Vector2(245,32),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredWidth=245;layout.preferredHeight=32;
+            var row=Rect(footer,"Face Expression",new Vector2(230,32),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredWidth=230;layout.preferredHeight=32;
             var view=row.gameObject.AddComponent<LobbyExpressionView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
             foreach(bool previous in new[]{true,false})
             {
-                var r=Rect(row,previous?"Previous":"Next",new Vector2(30,30),new Vector2(previous?-107:107,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
+                var r=Rect(row,previous?"Previous":"Next",new Vector2(30,30),new Vector2(previous?-99:99,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
                 Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
             }
             var previewBackground=Rect(row,"Face Preview Background",new Vector2(34,32),new Vector2(-65,0)).gameObject.AddComponent<Image>();previewBackground.color=new Color(.82f,.86f,.9f);previewBackground.raycastTarget=false;
             var preview=Rect(row,"Face Preview",new Vector2(32,32),new Vector2(-65,0)).gameObject.AddComponent<Image>();preview.color=Color.white;preview.raycastTarget=false;Bind(data,"preview",preview);
-            Bind(data,"title",Label(row,"Face Name","Neutral",new Vector2(125,30),new Vector2(17,0),16));data.ApplyModifiedPropertiesWithoutUndo();
+            Bind(data,"title",Label(row,"Face Name","Face1",new Vector2(125,30),new Vector2(17,0),16));data.ApplyModifiedPropertiesWithoutUndo();
+        }
+        internal static void EnsureLobbySelectors(GameObject canvas)
+        {
+            EnsureFaceSelector(canvas);
+            EnsureHatSelector(canvas);
+        }
+        static void EnsureHatSelector(GameObject canvas)
+        {
+            var legacy=canvas.GetComponentsInChildren<Transform>(true).FirstOrDefault(x=>x.name=="Test Hat Toggle");
+            if(legacy!=null)UnityEngine.Object.DestroyImmediate(legacy.gameObject);
+            var existing=canvas.GetComponentInChildren<LobbyHatView>(true);
+            if(existing!=null){if(!existing.HasRequiredReferences)throw new InvalidOperationException("Incomplete hat selector bindings");return;}
+            var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
+            var row=Rect(footer,"Hat Selection",new Vector2(230,32),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredWidth=230;layout.preferredHeight=32;
+            var view=row.gameObject.AddComponent<LobbyHatView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
+            foreach(bool previous in new[]{true,false})
+            {
+                var r=Rect(row,previous?"Previous":"Next",new Vector2(30,30),new Vector2(previous?-99:99,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
+                Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
+            }
+            Bind(data,"title",Label(row,"Hat Name","None",new Vector2(175,30),Vector2.zero,16));data.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }

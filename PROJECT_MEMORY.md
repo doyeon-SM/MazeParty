@@ -7,13 +7,13 @@
 
 - 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
 - 브랜치: `dev/UI`
-- 최신 구현 커밋: `9d07c762d625cafb9dcf60190f641bb621388c96`
-  (`26.09.28`, 본문 `UI 계약 및 경기 복귀 안정화`). 로컬 `dev/UI`는
-  `origin/dev/UI`보다 1개 커밋 앞서 있으며 아직 push하지 않았다.
+- 작업 시작 기준 커밋: `9c1c0c496364214f7fb20e6e073590460156ef43`
+  (`26.09.28`, 본문 `TODO 1~3 검증 기록`). 로컬 `dev/UI`와
+  `origin/dev/UI`는 동기화되어 있다.
 - 완료 범위: `LobbyCanvas`·`GameMenuCanvas` 루트 스케일과 `OnlineBootstrap`의
   잘못된 RectTransform override를 바로잡고, 완료 경기의 로비 복귀 실패 경로를
   유한 재시도·fail-closed 정책으로 보강했다.
-- 최종 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode **436/436 통과**,
+- 최종 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode **437/437 통과**,
   실패·스킵 0이다. Mono x64 Development 빌드도 성공했다.
 - Ignore 경로 무료 캐릭터 에디터 스크립트의 기존 `CS0414` 경고 2개가 남아 있다.
 - Solo 시각 스모크에서 Minefield·Balloon Blow·Wrong Way·Gift Grab·Stable Footing의
@@ -72,3 +72,20 @@
 - TODO 페이지와 같은 날짜 회의록에는 커밋 `9d07c762d625cafb9dcf60190f641bb621388c96`,
   UI 계약 수정, 완료 경기 복귀 실패 정책, 436/436, 5종 Solo 스모크와 실제
   4클라이언트 Board→Wrong Way→Board 결과를 최종 근거로 반영한다.
+
+## 완료: 캐릭터 커스터마이징 확장
+
+- `Assets/Ignore/FREE/Pack_FREE_PartyCharacters`의 원본을 복사하지 않고 직접 참조한다.
+- 기존 표정 4종은 팩의 `Resources/Materials/Face Images/face 1~3.png` 3종으로 교체하고,
+  데이터 에셋에서 `Face1`·`Face2`·`Face3`으로 관리한다.
+- 모자는 `없음`을 기본값(식별자 0)으로 포함하고, 팩의 chef hat·orange fedora·party hat을
+  각각 `Hat1`·`Hat2`·`Hat3`으로 관리한다.
+- 로비에서는 표정과 동일하게 좌우 버튼으로 모자를 순환 선택하며, 선택값은 프로필 저장과
+  네트워크 상태를 거쳐 로비·보드·미니게임·수상식의 캐릭터 표시 모두에 반영한다.
+- `Assets/Ignore` 직접 참조는 해당 무료 팩이 없는 다른 체크아웃에서 참조가 끊기는
+  의도된 제약이다. 이번 작업에서는 에셋 복사나 추적 경로 이전을 하지 않는다.
+- `LobbyCanvas` 프리팹에 표정·모자 선택 바인딩을 두고 레거시 Test Hat 토글과
+  아바타의 임시 모자 메시를 제거했다. 모자 프리팹은 런타임에 작성된 `HatAnchor` 아래에만
+  생성한다.
+- Face1~3과 Hat1~3의 실제 프리뷰, 로비 UI의 좌우 선택·레이아웃을 Play Mode에서 확인했고,
+  관련 집중 계약 테스트 19/19와 전체 EditMode 437/437가 실패·스킵 없이 통과했다.
