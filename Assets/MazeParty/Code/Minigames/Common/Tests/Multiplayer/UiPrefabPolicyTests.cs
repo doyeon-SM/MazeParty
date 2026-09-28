@@ -40,6 +40,9 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab",
+            "Assets/MazeParty/Prefabs/Minigames/CliffBarrage/UI/CliffBarrageHud.prefab",
+            "Assets/MazeParty/Prefabs/Minigames/Race/UI/RaceHud.prefab",
+            "Assets/MazeParty/Prefabs/Minigames/TagChase/UI/TagChaseHud.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
@@ -67,6 +70,9 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.TerritoryPaintHudBindings",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
             "MazeParty.Multiplayer.BouncingBallsHudBindings",
+            "MazeParty.Multiplayer.CliffBarrageHudView",
+            "MazeParty.Multiplayer.RaceHudBindings",
+            "MazeParty.Multiplayer.TagChaseHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Multiplayer.LobbyExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
@@ -175,6 +181,13 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(PrefabAssetType.Regular).Or.EqualTo(
                         PrefabAssetType.Variant),
                     path);
+                if (prefab.GetComponent<Canvas>() != null)
+                {
+                    Assert.That(
+                        prefab.transform.localScale,
+                        Is.EqualTo(Vector3.one),
+                        path + " must remain visible when instantiated.");
+                }
 
                 foreach (var transform in
                          prefab.GetComponentsInChildren<Transform>(true))

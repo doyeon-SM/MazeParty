@@ -61,9 +61,8 @@ namespace MazeParty.Multiplayer
         private NetworkManager _networkManager;
         private NetworkSceneManager _networkSceneManager;
         private string _status = string.Empty;
-        private LocalizedMessage _localizedStatus = new LocalizedMessage(
-            GameText.N("Create a private session or join with an invite code."));
-        private bool _statusUsesLocalization = true;
+        private LocalizedMessage _localizedStatus = new LocalizedMessage(string.Empty);
+        private bool _statusUsesLocalization;
         private readonly SessionOperationCoordinator _sessionOperations =
             new SessionOperationCoordinator();
         private bool _networkTerminationRequested;

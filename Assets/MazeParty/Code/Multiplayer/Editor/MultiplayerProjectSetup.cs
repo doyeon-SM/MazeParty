@@ -315,10 +315,21 @@ namespace MazeParty.Editor
                 "Create Private Room",
                 font,
                 out _);
+            var openJoinPopupButton = CreateButton(
+                "Open Join Popup Button",
+                connectionPanel.transform,
+                "Join by Code",
+                font,
+                out _);
+
+            var joinCodePopup = CreateVerticalContainer(
+                "Join Code Popup",
+                window.transform,
+                220f);
 
             CreateText(
                 "Invite Code Label",
-                connectionPanel.transform,
+                joinCodePopup.transform,
                 "Invite Code",
                 font,
                 18,
@@ -326,15 +337,24 @@ namespace MazeParty.Editor
                 26f);
             var joinCodeInput = CreateInputField(
                 "Invite Code Input",
-                connectionPanel.transform,
+                joinCodePopup.transform,
                 "Enter invite code",
                 font,
-                InputField.ContentType.Alphanumeric,
+                InputField.ContentType.Custom,
                 16);
+            joinCodeInput.inputType = InputField.InputType.Password;
+            joinCodeInput.characterValidation = InputField.CharacterValidation.Alphanumeric;
+            joinCodeInput.asteriskChar = '*';
             var joinButton = CreateButton(
                 "Join by Code Button",
-                connectionPanel.transform,
+                joinCodePopup.transform,
                 "Join by Code",
+                font,
+                out _);
+            var cancelJoinButton = CreateButton(
+                "Cancel Join Button",
+                joinCodePopup.transform,
+                "Cancel",
                 font,
                 out _);
 
@@ -359,6 +379,15 @@ namespace MazeParty.Editor
                 20,
                 TextAnchor.MiddleLeft,
                 30f);
+            var revealCodeButton = CreateButton(
+                "View Code Button",
+                sessionPanel.transform,
+                "View Code",
+                font,
+                out _);
+            var revealControl =
+                revealCodeButton.gameObject.AddComponent<HoldToRevealButton>();
+            revealControl.Configure(revealCodeButton);
             var copyButton = CreateButton(
                 "Copy Code Button",
                 sessionPanel.transform,
@@ -415,6 +444,12 @@ namespace MazeParty.Editor
                 16,
                 TextAnchor.MiddleLeft,
                 36f);
+            var customizationButton = CreateButton(
+                "Wardrobe Button",
+                sessionPanel.transform,
+                "Wardrobe",
+                font,
+                out _);
             var customizationPanel = CreateLobbyCustomization(
                 sessionPanel.transform,
                 font,
@@ -432,6 +467,8 @@ namespace MazeParty.Editor
                 52f);
 
             sessionPanel.SetActive(false);
+            joinCodePopup.SetActive(false);
+            customizationPanel.SetActive(false);
             runningText.gameObject.SetActive(false);
 
             var lobbyView = canvasObject.GetComponent<OnlineLobbyView>();
@@ -458,6 +495,12 @@ namespace MazeParty.Editor
                 paletteButtons,
                 paletteOutlines,
                 testHatToggle);
+            lobbyView.ConfigureInteractionPanels(
+                joinCodePopup,
+                openJoinPopupButton,
+                cancelJoinButton,
+                revealControl,
+                customizationButton);
             return lobbyView;
         }
 

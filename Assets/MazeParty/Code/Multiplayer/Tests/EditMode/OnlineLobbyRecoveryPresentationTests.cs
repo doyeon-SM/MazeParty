@@ -87,7 +87,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(startButtonText.text, Is.EqualTo(normalStartLabel));
                 Assert.That(readyButton.interactable, Is.True);
                 Assert.That(startButton.interactable, Is.True);
-                Assert.That(customizationPanel.activeSelf, Is.True);
+                Assert.That(customizationPanel.activeSelf, Is.False);
 
                 readyButton.onClick.Invoke();
                 startButton.onClick.Invoke();
@@ -101,7 +101,7 @@ namespace MazeParty.Multiplayer.Tests
                     string.Empty);
                 Assert.That(readyButton.gameObject.activeSelf, Is.True);
                 Assert.That(startButton.gameObject.activeSelf, Is.False);
-                Assert.That(customizationPanel.activeSelf, Is.True);
+                Assert.That(customizationPanel.activeSelf, Is.False);
 
                 readyButton.onClick.Invoke();
                 Assert.That(readyRequests, Is.EqualTo(2));

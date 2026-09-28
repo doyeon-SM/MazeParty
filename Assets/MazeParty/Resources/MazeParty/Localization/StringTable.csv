@@ -567,6 +567,8 @@ UNKNOWN,알 수 없음,不明,未知
 Unknown,알 수 없음,不明,未知
 Unsafe platforms are dropping. Falling eliminates immediately.,안전하지 않은 발판이 떨어지고 있습니다. 떨어지면 즉시 탈락합니다.,安全でない足場が落下しています。落ちると即脱落です。,不安全的平台正在掉落。掉落即被淘汰。
 W  A  S  D\n50 STEPS,W  A  S  D\n50계단,W  A  S  D\n50段,W  A  S  D\n50级台阶
+View Code,번호 보기,コードを表示,查看代码
+Wardrobe,옷장,ワードローブ,衣柜
 WAIT...,대기 중...,待機中...,请稍候...
 WAITING,대기 중,待機中,等待中
 WAITING FOR 4 PLAYERS,플레이어 4명 대기 중,プレイヤー4人を待機中,等待4名玩家
