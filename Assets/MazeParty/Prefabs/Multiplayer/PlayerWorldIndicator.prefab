@@ -429,6 +429,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7931853541292671098}
   - component: {fileID: 5082429567285203579}
+  - component: {fileID: 3859113776385546099}
   m_Layer: 0
   m_Name: PlayerWorldIndicator
   m_TagString: Untagged
@@ -468,6 +469,18 @@ MonoBehaviour:
   nameplateAnchor: {fileID: 702202334972615627}
   nameText: {fileID: 2501993380410070232}
   localStartHighlight: {fileID: 8987805890766462157}
+--- !u!114 &3859113776385546099
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7275634723398061508}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8987805890766462157
 GameObject:
   m_ObjectHideFlags: 0

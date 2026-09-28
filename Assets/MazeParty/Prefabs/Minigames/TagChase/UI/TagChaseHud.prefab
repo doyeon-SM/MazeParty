@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 8271028024024166346}
   - component: {fileID: 5633540427549272616}
   - component: {fileID: 9034135876207591016}
+  - component: {fileID: 2089264996034533345}
   m_Layer: 5
   m_Name: TagChaseHud
   m_TagString: Untagged
@@ -100,6 +101,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.TagChaseHudBindings
   rootCanvas: {fileID: 8271028024024166346}
   timerDial: {fileID: 1936468404808310890}
+--- !u!114 &2089264996034533345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4263574070734015019}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1001 &505456185177255705
 PrefabInstance:
   m_ObjectHideFlags: 0

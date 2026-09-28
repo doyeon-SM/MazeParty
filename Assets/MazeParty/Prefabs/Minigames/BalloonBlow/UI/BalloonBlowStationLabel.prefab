@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4565547519277258027}
   - component: {fileID: 2398391442361497532}
+  - component: {fileID: 1758655636046167213}
   m_Layer: 0
   m_Name: BalloonBlowStationLabel
   m_TagString: Untagged
@@ -55,6 +56,18 @@ MonoBehaviour:
   progressFill: {fileID: 1277829374629248437}
   progressFillRenderer: {fileID: 1589876401962589963}
   localHighlightRenderer: {fileID: 1523486236586570062}
+--- !u!114 &1758655636046167213
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1542453549405484869}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &2117506148122852501
 GameObject:
   m_ObjectHideFlags: 0

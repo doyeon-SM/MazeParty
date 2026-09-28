@@ -42833,6 +42833,7 @@ GameObject:
   - component: {fileID: 7694165308968310958}
   - component: {fileID: 3721651464840080945}
   - component: {fileID: 8106923847892350542}
+  - component: {fileID: 2876798175314323127}
   m_Layer: 5
   m_Name: BoardCanvas
   m_TagString: Untagged
@@ -44480,6 +44481,18 @@ MonoBehaviour:
   selectedColor: {r: 0.15, g: 0.6, b: 0.72, a: 1}
   neutralText: DRAG TO SELECT
   releaseText: 'RELEASE T: {0}'
+--- !u!114 &2876798175314323127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2769638015134659521}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &2776786972335059748
 GameObject:
   m_ObjectHideFlags: 0

@@ -7,18 +7,15 @@
 
 - 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
 - 브랜치: `dev/UI`
-- 작업 시작 기준 커밋: `9c1c0c496364214f7fb20e6e073590460156ef43`
-  (`26.09.28`, 본문 `TODO 1~3 검증 기록`). 로컬 `dev/UI`와
+- 작업 시작 기준 커밋: `9584b8904dbdddd2b2805badaaa30d84a925aaaf`
+  (`26.09.28`, 본문 `캐릭터 표정·모자 커스터마이징`). 로컬 `dev/UI`와
   `origin/dev/UI`는 동기화되어 있다.
-- 완료 범위: `LobbyCanvas`·`GameMenuCanvas` 루트 스케일과 `OnlineBootstrap`의
-  잘못된 RectTransform override를 바로잡고, 완료 경기의 로비 복귀 실패 경로를
-  유한 재시도·fail-closed 정책으로 보강했다.
-- 최종 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode **437/437 통과**,
-  실패·스킵 0이다. Mono x64 Development 빌드도 성공했다.
+- 완료 범위: 영어·한국어, 일본어, 중국어 간체용 폰트를 각 언어 선택과 연결하고,
+  플레이어 표시용 프리팹 36개에 공통 폰트 적용 계약을 추가했다.
+- 최종 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode **441/441 통과**,
+  실패·스킵 0이다. Play Mode의 한국어·일본어·중국어 간체 전환에서 활성 UI Text
+  104개의 폰트 불일치가 모두 0개였다.
 - Ignore 경로 무료 캐릭터 에디터 스크립트의 기존 `CS0414` 경고 2개가 남아 있다.
-- Solo 시각 스모크에서 Minefield·Balloon Blow·Wrong Way·Gift Grab·Stable Footing의
-  축소 HUD와 월드 이름표를 확인했다. 같은 PC 4프로세스 Relay에서는
-  입장→4/4 READY→Board→Wrong Way→Board 복귀와 연결 상태 유지를 확인했다.
 
 ## 완료 경기 복귀 실패 정책
 
@@ -89,3 +86,19 @@
   생성한다.
 - Face1~3과 Hat1~3의 실제 프리뷰, 로비 UI의 좌우 선택·레이아웃을 Play Mode에서 확인했고,
   관련 집중 계약 테스트 19/19와 전체 EditMode 437/437가 실패·스킵 없이 통과했다.
+
+## 완료: 언어별 UI 폰트 적용
+
+- 영어·한국어는 `KCCMurukmuruk.otf`, 일본어는 `NotoSansJP-Regular.ttf`, 중국어 간체는
+  `NotoSansSC-Regular.ttf`를 사용한다. Noto의 `SC`는 중국어 간체, `TC`는 번체다.
+- 실제 런타임 폰트 3개만 `Assets/Ignore/Resources/Font`에 두고, 다운로드 원본 묶음은
+  Resources 밖의 `Assets/Ignore/FontSources`로 이동해 빌드 포함 범위를 제한한다.
+- 모든 플레이어 표시용 텍스트 프리팹 36개의 루트에 `LocalizedFontScope`를 두어 활성·비활성
+  자식의 `UnityEngine.UI.Text`와 `TextMesh`가 언어 변경 즉시 해당 폰트를 사용한다.
+- `TextMesh`는 폰트와 함께 렌더러의 폰트 머티리얼도 교체한다. 임의 언어가 섞일 수 있는
+  플레이어 이름을 위해 세 폰트의 importer fallback도 서로 연결한다.
+- 각 폰트의 대표 글리프·fallback·런타임 전환·36개 프리팹 바인딩을 계약 테스트로 유지한다.
+  Play Mode에서 한국어·일본어·중국어 간체를 각각 전환해 활성 UI Text 104개 모두 폰트
+  불일치 0개임을 확인했고, 전체 EditMode 441/441가 실패·스킵 없이 통과했다.
+- 폰트 파일은 `Assets/Ignore`에 있으므로 다른 체크아웃에는 자동으로 전달되지 않는다.
+  해당 파일이 있는 환경에서 setup 메뉴가 importer fallback과 프리팹 스코프를 재설정한다.

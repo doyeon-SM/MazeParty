@@ -1491,6 +1491,7 @@ GameObject:
   - component: {fileID: 1572246161069508138}
   - component: {fileID: 3331180306321776018}
   - component: {fileID: 4734390316768265378}
+  - component: {fileID: 6603150609274296741}
   m_Layer: 5
   m_Name: AwardCeremonyCanvas
   m_TagString: Untagged
@@ -1628,6 +1629,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.AwardCeremonyView
   bindings: {fileID: 3331180306321776018}
+--- !u!114 &6603150609274296741
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7924714383451942946}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8172575798888007836
 GameObject:
   m_ObjectHideFlags: 0

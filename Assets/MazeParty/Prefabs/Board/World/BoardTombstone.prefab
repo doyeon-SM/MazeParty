@@ -191,6 +191,7 @@ GameObject:
   - component: {fileID: 7734852381176434338}
   - component: {fileID: 8281985170450731341}
   - component: {fileID: 2413794503999873475}
+  - component: {fileID: 3991206783429300480}
   m_Layer: 0
   m_Name: BoardTombstone
   m_TagString: Untagged
@@ -226,7 +227,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d9947a061462b3a43b6825749f335ac6, type: 3}
-  m_Name:
+  m_Name: ''
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardTombstoneMarker
   goldLabel: {fileID: 7125541596955005554}
 --- !u!65 &2413794503999873475
@@ -250,6 +251,18 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.62, y: 1.1, z: 0.34}
   m_Center: {x: 0, y: 0.55, z: 0}
+--- !u!114 &3991206783429300480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7295189525881216069}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8580624159425069999
 GameObject:
   m_ObjectHideFlags: 0

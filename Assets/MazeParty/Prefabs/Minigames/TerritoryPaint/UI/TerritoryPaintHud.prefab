@@ -107,6 +107,7 @@ GameObject:
   - component: {fileID: 5234284843052205670}
   - component: {fileID: 9179968997234406359}
   - component: {fileID: 1074051236281784804}
+  - component: {fileID: 5292909195275412641}
   m_Layer: 0
   m_Name: TerritoryPaintHud
   m_TagString: Untagged
@@ -199,6 +200,18 @@ MonoBehaviour:
   - {fileID: 358970243806716800}
   - {fileID: 245328487118352999}
   - {fileID: 8687998356921842533}
+--- !u!114 &5292909195275412641
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1333124768151481324}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &2856464523403631916
 GameObject:
   m_ObjectHideFlags: 0

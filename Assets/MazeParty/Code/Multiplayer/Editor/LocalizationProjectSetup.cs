@@ -42,7 +42,43 @@ namespace MazeParty.Editor
 
             AssetDatabase.SaveAssets();
             WriteSourceList();
-            Debug.Log("Localized labels added: " + added + ". Source list: " + SourceListPath);
+            Debug.Log(
+                "Localization components added: " + added +
+                ". Source list: " + SourceListPath);
+        }
+
+        [MenuItem("MazeParty/Localization/Add Language Font Scopes To Prefabs")]
+        public static void AddLanguageFontScopes()
+        {
+            ConfigureLanguageFontFallbacks();
+            var added = 0;
+            foreach (var path in PlayerFacingPrefabPaths())
+            {
+                added += AddFontScopeToPrefab(path);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("Language font scopes added: " + added + ".");
+        }
+
+        public static void ConfigureLanguageFontFallbacks()
+        {
+            var englishKorean = RequiredFont(GameFonts.EnglishKoreanAssetPath);
+            var japanese = RequiredFont(GameFonts.JapaneseAssetPath);
+            var chineseSimplified = RequiredFont(GameFonts.ChineseSimplifiedAssetPath);
+
+            ConfigureFallbacks(
+                GameFonts.EnglishKoreanAssetPath,
+                japanese,
+                chineseSimplified);
+            ConfigureFallbacks(
+                GameFonts.JapaneseAssetPath,
+                englishKorean,
+                chineseSimplified);
+            ConfigureFallbacks(
+                GameFonts.ChineseSimplifiedAssetPath,
+                englishKorean,
+                japanese);
         }
 
         [MenuItem("MazeParty/Localization/Write Localized Label Source List")]
@@ -106,7 +142,16 @@ namespace MazeParty.Editor
                 var staticTextMeshPrefab = StaticReferencedTextMeshPrefabNames
                     .Any(name => Path.GetFileNameWithoutExtension(path).Contains(name));
                 var added = 0;
-                foreach (var text in contents.GetComponentsInChildren<Text>(true))
+                var texts = contents.GetComponentsInChildren<Text>(true);
+                var textMeshes = contents.GetComponentsInChildren<TextMesh>(true);
+                if ((texts.Length > 0 || textMeshes.Length > 0) &&
+                    contents.GetComponent<LocalizedFontScope>() == null)
+                {
+                    contents.AddComponent<LocalizedFontScope>();
+                    added++;
+                }
+
+                foreach (var text in texts)
                 {
                     if (IsInsideNestedPrefab(contents, text) ||
                         text.GetComponent<LocalizedText>() != null ||
@@ -120,7 +165,7 @@ namespace MazeParty.Editor
                     added++;
                 }
 
-                foreach (var textMesh in contents.GetComponentsInChildren<TextMesh>(true))
+                foreach (var textMesh in textMeshes)
                 {
                     if (IsInsideNestedPrefab(contents, textMesh) ||
                         textMesh.GetComponent<LocalizedTextMesh>() != null ||
@@ -145,6 +190,58 @@ namespace MazeParty.Editor
             {
                 PrefabUtility.UnloadPrefabContents(contents);
             }
+        }
+
+        private static int AddFontScopeToPrefab(string path)
+        {
+            var contents = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                if (contents.GetComponent<LocalizedFontScope>() != null ||
+                    (contents.GetComponentsInChildren<Text>(true).Length == 0 &&
+                     contents.GetComponentsInChildren<TextMesh>(true).Length == 0))
+                {
+                    return 0;
+                }
+
+                contents.AddComponent<LocalizedFontScope>();
+                PrefabUtility.SaveAsPrefabAsset(contents, path);
+                return 1;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+
+        private static Font RequiredFont(string path)
+        {
+            var font = AssetDatabase.LoadAssetAtPath<Font>(path);
+            if (font == null)
+            {
+                throw new FileNotFoundException("Required localized font is missing.", path);
+            }
+
+            return font;
+        }
+
+        private static void ConfigureFallbacks(string path, params Font[] fallbacks)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TrueTypeFontImporter;
+            if (importer == null)
+            {
+                throw new InvalidDataException(
+                    "Localized font does not use TrueTypeFontImporter: " + path);
+            }
+
+            if (importer.fontReferences != null &&
+                importer.fontReferences.SequenceEqual(fallbacks))
+            {
+                return;
+            }
+
+            importer.fontReferences = fallbacks;
+            importer.SaveAndReimport();
         }
 
         private static HashSet<Object> CollectReferencedObjects(GameObject root)

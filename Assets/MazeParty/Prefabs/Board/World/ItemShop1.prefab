@@ -508,6 +508,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7019814352469301982}
   - component: {fileID: 7674607633808116207}
+  - component: {fileID: 7699665592912421477}
   m_Layer: 0
   m_Name: ItemShop1
   m_TagString: Untagged
@@ -556,6 +557,18 @@ MonoBehaviour:
   soldOutText: 'ITEM SHOP {0}
 
     SOLD OUT'
+--- !u!114 &7699665592912421477
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8130075273029810268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8602292988926607276
 GameObject:
   m_ObjectHideFlags: 0

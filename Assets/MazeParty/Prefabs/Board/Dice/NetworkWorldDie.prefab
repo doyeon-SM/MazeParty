@@ -762,6 +762,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 1965584247455857997, guid: fa9c2f723b1e50d438fd80563ef52641, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1097549950385807298}
+    - targetCorrespondingSourceObject: {fileID: 1965584247455857997, guid: fa9c2f723b1e50d438fd80563ef52641, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 7966331824649137439}
   m_SourcePrefab: {fileID: 100100000, guid: fa9c2f723b1e50d438fd80563ef52641, type: 3}
 --- !u!23 &713289509295081094 stripped
 MeshRenderer:
@@ -947,3 +950,15 @@ MonoBehaviour:
   - {r: 0.25, g: 0.55, b: 1, a: 1}
   - {r: 0.25, g: 0.85, b: 0.4, a: 1}
   - {r: 1, g: 0.75, b: 0.2, a: 1}
+--- !u!114 &7966331824649137439
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6332856393601814274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope

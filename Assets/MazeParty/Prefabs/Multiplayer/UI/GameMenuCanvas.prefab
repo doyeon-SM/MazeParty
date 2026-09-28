@@ -587,6 +587,7 @@ GameObject:
   - component: {fileID: 5103284705878540002}
   - component: {fileID: 7163739991555431002}
   - component: {fileID: 7023557077756487888}
+  - component: {fileID: 5864622361702165876}
   m_Layer: 5
   m_Name: GameMenuCanvas
   m_TagString: Untagged
@@ -751,6 +752,18 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GameMenuView
   bindings: {fileID: 7163739991555431002}
+--- !u!114 &5864622361702165876
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 466475295837956497}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &665086005864619445
 GameObject:
   m_ObjectHideFlags: 0

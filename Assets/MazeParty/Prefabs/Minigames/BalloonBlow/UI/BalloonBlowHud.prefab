@@ -87,6 +87,7 @@ GameObject:
   - component: {fileID: 6140092584503523229}
   - component: {fileID: 118667937873126264}
   - component: {fileID: 2379498389467827663}
+  - component: {fileID: 6520924407899965085}
   m_Layer: 0
   m_Name: BalloonBlowHud
   m_TagString: Untagged
@@ -181,6 +182,18 @@ MonoBehaviour:
   localProgressFill: {fileID: 6100480615402360221}
   resultText: {fileID: 3194366475415042055}
   resultPanel: {fileID: 4210663710145047375}
+--- !u!114 &6520924407899965085
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1250455251809444971}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &4098461629448866185
 GameObject:
   m_ObjectHideFlags: 0

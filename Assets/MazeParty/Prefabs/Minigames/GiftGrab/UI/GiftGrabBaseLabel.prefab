@@ -190,6 +190,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1609909341354135926}
   - component: {fileID: 7421023785523861466}
+  - component: {fileID: 8415603208592573613}
   m_Layer: 0
   m_Name: GiftGrabBaseLabel
   m_TagString: Untagged
@@ -233,6 +234,18 @@ MonoBehaviour:
   detailText: {fileID: 8963947716209433739}
   colorSwatchRenderer: {fileID: 2624284527648846560}
   localHighlightRenderer: {fileID: 2788313998759957856}
+--- !u!114 &8415603208592573613
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5525969272611593875}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &6529718093185635620
 GameObject:
   m_ObjectHideFlags: 0

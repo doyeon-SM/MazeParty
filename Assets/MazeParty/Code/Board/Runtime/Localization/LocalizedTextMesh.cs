@@ -60,7 +60,13 @@ namespace MazeParty.Gameplay
                 _textMesh = GetComponent<TextMesh>();
             }
 
-            if (_textMesh == null || string.IsNullOrEmpty(sourceText))
+            if (_textMesh == null)
+            {
+                return;
+            }
+
+            GameFonts.Apply(_textMesh);
+            if (string.IsNullOrEmpty(sourceText))
             {
                 return;
             }

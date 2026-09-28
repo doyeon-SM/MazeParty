@@ -1910,6 +1910,7 @@ GameObject:
   - component: {fileID: 5826677810692006871}
   - component: {fileID: 8971164936383757467}
   - component: {fileID: 4817521863601465611}
+  - component: {fileID: 6708204921288234087}
   m_Layer: 5
   m_Name: SequenceMemoryHud
   m_TagString: Untagged
@@ -2019,6 +2020,18 @@ MonoBehaviour:
   - {fileID: 8808431234215897154}
   - {fileID: 503236963494345121}
   - {fileID: 7635224514335010934}
+--- !u!114 &6708204921288234087
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7376156174633161984}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &7763110892941345108
 GameObject:
   m_ObjectHideFlags: 0

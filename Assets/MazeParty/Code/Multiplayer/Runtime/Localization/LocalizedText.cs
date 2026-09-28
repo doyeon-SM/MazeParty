@@ -65,7 +65,13 @@ namespace MazeParty.Multiplayer
                 _text = GetComponent<Text>();
             }
 
-            if (_text == null || string.IsNullOrEmpty(sourceText))
+            if (_text == null)
+            {
+                return;
+            }
+
+            _text.font = GameFonts.Current;
+            if (string.IsNullOrEmpty(sourceText))
             {
                 return;
             }

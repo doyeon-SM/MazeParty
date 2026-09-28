@@ -1580,6 +1580,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7828881785306681898}
   - component: {fileID: 8334713507667692283}
+  - component: {fileID: 2631679501533035671}
   m_Layer: 0
   m_Name: PlayerAvatarPresentation
   m_TagString: Untagged
@@ -1652,6 +1653,18 @@ MonoBehaviour:
   - {fileID: 2179586275733366588}
   - {fileID: 8622999725297850101}
   - {fileID: 4466200121754496958}
+--- !u!114 &2631679501533035671
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5900126037354093323}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &5960822197029752517
 GameObject:
   m_ObjectHideFlags: 0

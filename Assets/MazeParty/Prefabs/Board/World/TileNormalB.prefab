@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8921864110827147734}
   - component: {fileID: 2056344012568167142}
   - component: {fileID: 8659366198880417631}
+  - component: {fileID: 4131068437444443380}
   m_Layer: 0
   m_Name: TileNormalB
   m_TagString: Untagged
@@ -130,6 +131,18 @@ MonoBehaviour:
   tileType: 0
   drawDebugBoundary: 1
   landingEffectRenderer: {fileID: 2056344012568167142}
+--- !u!114 &4131068437444443380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2051214812205757758}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &7520061210304841612
 GameObject:
   m_ObjectHideFlags: 0

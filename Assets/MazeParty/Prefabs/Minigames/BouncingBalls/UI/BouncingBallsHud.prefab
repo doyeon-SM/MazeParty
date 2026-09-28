@@ -1487,6 +1487,7 @@ GameObject:
   - component: {fileID: 6652563782231797239}
   - component: {fileID: 8311271402345573765}
   - component: {fileID: 8758510255912059391}
+  - component: {fileID: 3823775137677154704}
   m_Layer: 5
   m_Name: BouncingBallsHud
   m_TagString: Untagged
@@ -1585,3 +1586,15 @@ MonoBehaviour:
   - {fileID: 6578681793470692391}
   - {fileID: 2511120627964077457}
   - {fileID: 839324029912788320}
+--- !u!114 &3823775137677154704
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8947122821540895794}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope

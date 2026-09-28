@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 7153586499231511868}
   - component: {fileID: 7491834872354934871}
   - component: {fileID: 3179959754448891041}
+  - component: {fileID: 2292186601987664655}
   m_Layer: 0
   m_Name: TileRespawn
   m_TagString: Untagged
@@ -130,6 +131,18 @@ MonoBehaviour:
   tileType: 3
   drawDebugBoundary: 1
   landingEffectRenderer: {fileID: 7491834872354934871}
+--- !u!114 &2292186601987664655
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3403276100302004997}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &5686772411874558914
 GameObject:
   m_ObjectHideFlags: 0

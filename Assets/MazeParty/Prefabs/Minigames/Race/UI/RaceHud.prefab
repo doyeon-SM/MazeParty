@@ -12,6 +12,7 @@ GameObject:
   - component: {fileID: 7251680368806746456}
   - component: {fileID: 6535274191362105796}
   - component: {fileID: 1158257962638885561}
+  - component: {fileID: 2370233348871803402}
   m_Layer: 5
   m_Name: RaceHud
   m_TagString: Untagged
@@ -100,6 +101,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.RaceHudBindings
   rootCanvas: {fileID: 7251680368806746456}
   timerDial: {fileID: 5835743519488274838}
+--- !u!114 &2370233348871803402
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1322668751594628884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1001 &5557639535031795429
 PrefabInstance:
   m_ObjectHideFlags: 0

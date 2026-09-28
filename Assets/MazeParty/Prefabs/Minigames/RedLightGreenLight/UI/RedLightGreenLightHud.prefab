@@ -107,6 +107,7 @@ GameObject:
   - component: {fileID: 4060710371611452542}
   - component: {fileID: 5046938515851887912}
   - component: {fileID: 5509254371631203981}
+  - component: {fileID: 8981946130845424077}
   m_Layer: 0
   m_Name: RedLightGreenLightHud
   m_TagString: Untagged
@@ -199,6 +200,18 @@ MonoBehaviour:
   greenSignalColor: {r: 0.22, g: 1, b: 0.35, a: 1}
   turnWarningSignalColor: {r: 1, g: 0.74, b: 0.12, a: 1}
   redSignalColor: {r: 1, g: 0.16, b: 0.1, a: 1}
+--- !u!114 &8981946130845424077
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1973714785378542857}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8239605424294318492
 GameObject:
   m_ObjectHideFlags: 0
