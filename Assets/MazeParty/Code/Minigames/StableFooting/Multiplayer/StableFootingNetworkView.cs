@@ -53,7 +53,6 @@ namespace MazeParty.Multiplayer
         private bool _tileViewsCached;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
-        private int _localSlot = -1;
         private int _lastCueCycle = -1;
         private StableFootingCyclePhase _lastCuePhase =
             (StableFootingCyclePhase)byte.MaxValue;
@@ -157,7 +156,8 @@ namespace MazeParty.Multiplayer
             }
 
             SetWorldPresentationActive(true);
-            ResolveLocalSlot(match);
+            // MinigameLocalPlayerHighlight owns the brief shared countdown
+            // marker; this view does not keep a persistent local-player mark.
             RefreshRunners(match);
             RefreshPushPresentation();
             RefreshTiles();
@@ -280,31 +280,6 @@ namespace MazeParty.Multiplayer
             return new RunnerView(runnerObject.transform, visual);
         }
 
-        private void ResolveLocalSlot(NetworkMatchState match)
-        {
-            var resolved = -1;
-            for (var slot = 0; slot < _runners.Length; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                if (avatar != null && avatar.IsOwner)
-                {
-                    resolved = slot;
-                    break;
-                }
-            }
-            if (resolved == _localSlot)
-            {
-                return;
-            }
-
-            _localSlot = resolved;
-            for (var slot = 0; slot < _runners.Length; slot++)
-            {
-                _runners[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
-            }
-        }
-
         private void RefreshRunners(NetworkMatchState match)
         {
             for (var slot = 0; slot < _runners.Length; slot++)
@@ -359,7 +334,10 @@ namespace MazeParty.Multiplayer
                         appearance.EyeId,
                         appearance.MouthId,
                         appearance.HatId);
-                    runner.Visual.SetDisplayName(avatar.DisplayName);
+                    runner.Visual.SetDisplayName(
+                        string.IsNullOrWhiteSpace(avatar.DisplayName)
+                            ? GameText.F("Player {0}", slot + 1)
+                            : avatar.DisplayName);
                 }
                 runner.Visual.SetEliminated(eliminated);
             }
@@ -446,9 +424,6 @@ namespace MazeParty.Multiplayer
             }
 
             var reconnectPaused = match.IsSimulationSuspended;
-            hud.ResultPanel.SetActive(
-                state.Phase == NetworkStableFootingPhase.RoundResult);
-
             hud.InstructionText.text = reconnectPaused
                 ? GameText.T("PAUSED")
                 : BuildInstructionLabel();

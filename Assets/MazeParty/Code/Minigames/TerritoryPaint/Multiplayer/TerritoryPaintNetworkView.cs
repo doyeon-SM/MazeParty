@@ -294,11 +294,6 @@ namespace MazeParty.Multiplayer
             }
 
             _localSlot = resolved;
-            for (var slot = 0; slot < _runners.Length; slot++)
-            {
-                _runners[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
-            }
         }
 
         private void RefreshRunners(NetworkMatchState match)

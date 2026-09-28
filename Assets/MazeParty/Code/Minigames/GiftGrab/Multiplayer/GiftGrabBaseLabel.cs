@@ -4,8 +4,8 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Prefab-authored world label shared by player nameplates and corner-base
-    /// score signs. Runtime only changes text, color and local emphasis.
+    /// Prefab-authored world label shared by temporary player status and
+    /// corner-base score signs. Runtime only changes text, color and emphasis.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class GiftGrabBaseLabel : MonoBehaviour

@@ -297,7 +297,6 @@ namespace MazeParty.Multiplayer
                 player.Visual.SetOwnerFirstPerson(false);
                 player.Visual.SetCrouching(state.IsStunned(slot));
                 player.Visual.SetEliminated(state.IsEliminated(slot));
-                player.Visual.SetTopViewHighlight(slot == _localSlot);
             }
         }
 

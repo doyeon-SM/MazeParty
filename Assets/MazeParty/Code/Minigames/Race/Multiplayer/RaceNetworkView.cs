@@ -208,7 +208,6 @@ namespace MazeParty.Multiplayer
                 }
                 player.Visual.SetOwnerFirstPerson(false);
                 player.Visual.SetEliminated(false);
-                player.Visual.SetTopViewHighlight(slot == _localSlot);
             }
         }
 

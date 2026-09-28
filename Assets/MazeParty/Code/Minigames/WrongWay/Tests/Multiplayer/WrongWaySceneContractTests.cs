@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -18,7 +19,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab";
 
         [Test]
-        public void WrongWayScene_PreservesNetworkHudCourseAndAdditiveContract()
+        public void WrongWayScene_PreservesMinimalHudCourseAndAdditiveContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -46,8 +47,21 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(hud, Is.Not.Null);
                 Assert.That(hud.HasRequiredReferences, Is.True);
                 Assert.That(
-                    hud.ProgressRows,
-                    Has.Length.EqualTo(WrongWayRules.PlayerCount));
+                    hud.GetComponentsInChildren<Text>(true),
+                    Is.Empty,
+                    "WrongWay gameplay shows the local direction icon alone.");
+                Assert.That(hud.DirectionIcon, Is.Not.Null);
+                Assert.That(
+                    new[]
+                    {
+                        hud.UpIcon,
+                        hud.DownIcon,
+                        hud.LeftIcon,
+                        hud.RightIcon
+                    }.Select(AssetDatabase.GetAssetPath),
+                    Is.All.StartsWith(
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/" +
+                        "Navigation/Arrow Simple "));
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         hud.gameObject),

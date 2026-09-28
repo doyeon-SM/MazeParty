@@ -34,6 +34,11 @@ namespace MazeParty.Editor
             CorePrefabFolder + "/WrongWayEnvironment.prefab";
         private const string WrongWayHudPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab";
+        private const string ModernUiNavigationFolder =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/";
+        private const string ModernUiRoundedFillPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Border/Rounded/1024px/" +
+            "Rounded Filled 1024px.png";
         private const string ArtFolder =
             ProjectRoot + "/Art";
         private const string MinigameArtFolder =
@@ -79,7 +84,7 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "WrongWay rebuilt: four 50-step lanes, network state, " +
-                "lead-follow race camera, connected HUD prefab and " +
+                "local-runner camera, connected HUD prefab and " +
                 "additive-safe presentation.");
         }
 
@@ -594,16 +599,19 @@ namespace MazeParty.Editor
 
         private static GameObject CreateWrongWayHudTemplate()
         {
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
-            }
+            var roundedFill = LoadRequiredSprite(
+                ModernUiRoundedFillPath);
+            var upIcon = LoadRequiredSprite(
+                ModernUiNavigationFolder + "Arrow Simple Up.png");
+            var downIcon = LoadRequiredSprite(
+                ModernUiNavigationFolder + "Arrow Simple Down.png");
+            var leftIcon = LoadRequiredSprite(
+                ModernUiNavigationFolder + "Arrow Simple Left.png");
+            var rightIcon = LoadRequiredSprite(
+                ModernUiNavigationFolder + "Arrow Simple Right.png");
 
             var canvasObject = new GameObject(
-                "WrongWay HUD",
+                "WrongWayHud",
                 typeof(RectTransform),
                 typeof(Canvas),
                 typeof(CanvasScaler));
@@ -619,96 +627,71 @@ namespace MazeParty.Editor
             scaler.matchWidthOrHeight = 0.5f;
 
             var panel = new GameObject(
-                "WrongWay HUD Panel",
+                "Direction Backplate",
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
-                typeof(Image));
+                typeof(Image),
+                typeof(Shadow));
             SetUiLayer(panel);
             panel.transform.SetParent(canvasObject.transform, false);
             var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.anchorMin = new Vector2(0.5f, 1f);
-            panelRect.anchorMax = new Vector2(0.5f, 1f);
-            panelRect.pivot = new Vector2(0.5f, 1f);
-            panelRect.anchoredPosition = new Vector2(0f, -22f);
-            panelRect.sizeDelta = new Vector2(1120f, 220f);
+            panelRect.anchorMin = new Vector2(0.5f, 0f);
+            panelRect.anchorMax = new Vector2(0.5f, 0f);
+            panelRect.pivot = new Vector2(0.5f, 0f);
+            panelRect.anchoredPosition = new Vector2(0f, 54f);
+            panelRect.sizeDelta = new Vector2(132f, 132f);
             var panelImage = panel.GetComponent<Image>();
+            panelImage.sprite = roundedFill;
+            panelImage.type = Image.Type.Sliced;
             panelImage.color =
-                new Color(0.025f, 0.035f, 0.07f, 0.88f);
+                new Color(0.035f, 0.045f, 0.13f, 0.9f);
             panelImage.raycastTarget = false;
+            var shadow = panel.GetComponent<Shadow>();
+            shadow.effectColor = new Color(0.36f, 0.18f, 0.65f, 0.65f);
+            shadow.effectDistance = new Vector2(0f, -6f);
 
-            var promptText = CreateHudText(
-                "Local Prompt",
-                panel.transform,
-                font,
-                new Vector2(0f, -20f),
-                new Vector2(1060f, 78f),
-                50,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold);
-
-            var playerColors = new[]
-            {
-                new Color(0.18f, 0.62f, 1f),
-                new Color(1f, 0.32f, 0.24f),
-                new Color(0.25f, 0.86f, 0.42f),
-                new Color(0.72f, 0.38f, 1f)
-            };
-            var progressRows = new Text[WrongWayRules.PlayerCount];
-            for (var slot = 0; slot < progressRows.Length; slot++)
-            {
-                progressRows[slot] = CreateHudText(
-                    "Player " + (slot + 1) + " Progress",
-                    panel.transform,
-                    font,
-                    new Vector2(0f, -100f - slot * 29f),
-                    new Vector2(1000f, 28f),
-                    19,
-                    TextAnchor.MiddleLeft,
-                    FontStyle.Bold);
-                progressRows[slot].color = playerColors[slot];
-            }
+            var iconObject = new GameObject(
+                "Direction Icon",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            SetUiLayer(iconObject);
+            iconObject.transform.SetParent(panel.transform, false);
+            var iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+            iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.anchoredPosition = Vector2.zero;
+            iconRect.sizeDelta = new Vector2(78f, 78f);
+            var directionIcon = iconObject.GetComponent<Image>();
+            directionIcon.sprite = upIcon;
+            directionIcon.color = new Color(0.86f, 0.95f, 1f, 1f);
+            directionIcon.preserveAspect = true;
+            directionIcon.raycastTarget = false;
 
             var bindings =
                 canvasObject.AddComponent<WrongWayHudBindings>();
-            bindings.Configure(canvas, promptText, progressRows);
+            bindings.Configure(
+                canvas,
+                directionIcon,
+                upIcon,
+                downIcon,
+                leftIcon,
+                rightIcon);
             canvasObject.SetActive(false);
             return canvasObject;
         }
 
-        private static Text CreateHudText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            TextAnchor alignment,
-            FontStyle style)
+        private static Sprite LoadRequiredSprite(string path)
         {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            SetUiLayer(textObject);
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
+            var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (sprite == null)
+            {
+                throw new InvalidOperationException(
+                    "Required WrongWay HUD sprite is missing: " + path);
+            }
 
-            var text = textObject.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = new Color(0.94f, 0.97f, 1f);
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            return text;
+            return sprite;
         }
 
         private static void SetUiLayer(GameObject target)

@@ -632,36 +632,9 @@ namespace MazeParty.Editor
                 FontStyle.Bold,
                 "SAFE: X");
 
-            var resultPanel = CreatePanel(
-                "ResultPanel",
-                root.transform,
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(760f, 220f),
-                new Color(0.02f, 0.025f, 0.04f, 0.94f));
-            CreateHudText(
-                "ResultMessage",
-                resultPanel.transform,
-                font,
-                Vector2.zero,
-                new Vector2(720f, 180f),
-                30,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "ROUND RESULTS");
-            var resultCanvas = resultPanel.AddComponent<Canvas>();
-            resultCanvas.overrideSorting = true;
-            resultCanvas.sortingOrder = 100;
-            var resultSorting = new SerializedObject(resultCanvas)
-                .FindProperty("m_OverrideSorting");
-            resultSorting.boolValue = true;
-            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            resultPanel.SetActive(false);
-
             root.GetComponent<StableFootingHudBindings>().Configure(
                 canvas,
-                instructions,
-                resultPanel);
+                instructions);
             return root;
         }
 

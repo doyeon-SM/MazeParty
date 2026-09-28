@@ -67,7 +67,7 @@ namespace MazeParty.Editor
             }
             Debug.Log(
                 "Minefield rebuilt: additive-safe top-view arena, network state, " +
-                "connected HUD prefab, and image-centered board minigame UI.");
+                "world presentation, and image-centered board minigame UI.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -79,7 +79,6 @@ namespace MazeParty.Editor
         public static void BuildMinefieldAssets()
         {
             EnsureFolders();
-            var hudPrefab = LoadOrCreateMinefieldHudPrefab();
             var materials = CreateMaterials();
             var sirenPrefab = LoadOrCreateCorePrefab(
                 SirenPrefabPath,
@@ -92,7 +91,6 @@ namespace MazeParty.Editor
                 () => CreateMineMarkerTemplate(materials));
             BuildMinefieldScene(
                 materials,
-                hudPrefab,
                 sirenPrefab,
                 sonarPulsePrefab,
                 mineMarkerPrefab);
@@ -101,7 +99,6 @@ namespace MazeParty.Editor
 
         private static void BuildMinefieldScene(
             MinefieldMaterials materials,
-            GameObject hudPrefab,
             GameObject sirenPrefab,
             GameObject sonarPulsePrefab,
             GameObject mineMarkerPrefab)
@@ -141,9 +138,6 @@ namespace MazeParty.Editor
             CreateArena(arenaPresentation.transform, materials);
             CreateLighting(arenaPresentation.transform);
             CreateTopDownCamera(root.transform);
-            var hud = InstantiateMinefieldHud(
-                hudPrefab,
-                root.transform);
 
             // Save and enable the scene before adding its NetworkObject so NGO can
             // assign a stable in-scene GlobalObjectIdHash.
@@ -155,7 +149,6 @@ namespace MazeParty.Editor
             var networkView = root.AddComponent<MinefieldNetworkView>();
             ConfigureNetworkView(
                 networkView,
-                hud,
                 sirenPrefab,
                 sonarPulsePrefab,
                 mineMarkerPrefab);
@@ -786,20 +779,11 @@ namespace MazeParty.Editor
 
         private static void ConfigureNetworkView(
             MinefieldNetworkView view,
-            MinefieldHudBindings hud,
             GameObject sirenPrefab,
             GameObject sonarPulsePrefab,
             GameObject mineMarkerPrefab)
         {
             var serializedView = new SerializedObject(view);
-            var hudProperty = serializedView.FindProperty("hud");
-            if (hudProperty == null)
-            {
-                throw new InvalidOperationException(
-                    "MinefieldNetworkView no longer exposes its HUD contract.");
-            }
-
-            hudProperty.objectReferenceValue = hud;
             var sirenProperty = serializedView.FindProperty("sirenPrefab");
             var sonarProperty = serializedView.FindProperty("sonarPulsePrefab");
             var mineProperty = serializedView.FindProperty("mineMarkerPrefab");
@@ -819,29 +803,18 @@ namespace MazeParty.Editor
         private static void ValidateSceneContract(GameObject root)
         {
             var networkView = root.GetComponent<MinefieldNetworkView>();
-            var hud = root.GetComponentInChildren<MinefieldHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkMinefieldState>() == null ||
                 networkView == null ||
                 FindDescendant(root.transform, "Arena Presentation") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 FindDescendant(root.transform, "Crusher Placeholder") == null ||
-                hud == null ||
-                !hud.HasRequiredReferences ||
-                PrefabUtility.GetPrefabInstanceStatus(hud.gameObject) !=
-                PrefabInstanceStatus.Connected)
+                root.GetComponentInChildren<MinefieldHudBindings>(true) != null)
             {
                 throw new InvalidOperationException(
                     "Generated Minefield scene is missing its network or presentation contract.");
             }
-
             var serializedView = new SerializedObject(networkView);
-            if (serializedView.FindProperty("hud")?.objectReferenceValue != hud)
-            {
-                throw new InvalidOperationException(
-                    "MinefieldNetworkView must reference the connected HUD " +
-                    "prefab instance in its scene.");
-            }
             if (AssetDatabase.GetAssetPath(
                     serializedView.FindProperty("sirenPrefab")?.objectReferenceValue) !=
                     SirenPrefabPath ||

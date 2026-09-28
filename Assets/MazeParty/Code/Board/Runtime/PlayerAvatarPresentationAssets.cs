@@ -17,16 +17,27 @@ namespace MazeParty.Gameplay
         [SerializeField]
         private PlayerAvatarPresentationBindings presentationPrefab;
 
+        [SerializeField]
+        private PlayerWorldIndicator worldIndicatorPrefab;
+
         public PlayerAvatarPresentationBindings PresentationPrefab =>
             presentationPrefab;
 
+        public PlayerWorldIndicator WorldIndicatorPrefab =>
+            worldIndicatorPrefab;
+
         public bool HasRequiredReferences =>
             presentationPrefab != null &&
-            presentationPrefab.HasRequiredReferences;
+            presentationPrefab.HasRequiredReferences &&
+            worldIndicatorPrefab != null &&
+            worldIndicatorPrefab.HasRequiredReferences;
 
-        public void Configure(PlayerAvatarPresentationBindings prefab)
+        public void Configure(
+            PlayerAvatarPresentationBindings prefab,
+            PlayerWorldIndicator indicatorPrefab)
         {
             presentationPrefab = prefab;
+            worldIndicatorPrefab = indicatorPrefab;
         }
 
         public static PlayerAvatarPresentationAssets LoadRequired()

@@ -60,6 +60,15 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Not.Null,
                         propertyName);
                 }
+                var hud = serializedView.FindProperty("hud")
+                    ?.objectReferenceValue as StableFootingHudBindings;
+                Assert.That(hud, Is.Not.Null);
+                Assert.That(hud.HasRequiredReferences, Is.True);
+                Assert.That(
+                    FindDescendant(hud.transform, "ResultPanel"),
+                    Is.Null,
+                    "Stable Footing must not show a duplicate, content-free " +
+                    "round-result panel.");
 
                 var networkObject = state.GetComponent<NetworkObject>();
                 Assert.That(networkObject, Is.Not.Null);

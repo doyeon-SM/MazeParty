@@ -49,7 +49,7 @@ namespace MazeParty.Multiplayer.Tests
                              "state", "sharedCamera", "playerRoot",
                              "giftRoot", "pushVfxAnchor", "throwVfxAnchor",
                              "dropVfxAnchor", "arenaPresentation",
-                             "cueAudioSource", "hud"
+                             "cueAudioSource"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -146,6 +146,11 @@ namespace MazeParty.Multiplayer.Tests
                             label.gameObject),
                         Is.EqualTo(LabelPrefabPath));
                 }
+                Assert.That(
+                    state.GetComponentsInChildren<GiftGrabHudBindings>(true),
+                    Is.Empty,
+                    "Gift Grab keeps only its essential world labels and " +
+                    "the shared minigame HUD.");
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component => component != null &&

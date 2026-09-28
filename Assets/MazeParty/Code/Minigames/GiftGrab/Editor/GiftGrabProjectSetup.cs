@@ -76,7 +76,7 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "Gift Grab rebuilt: symmetric arena, 19 reusable gift " +
-                "presentations, prefab HUD and prefab world labels. Existing " +
+                "presentations and prefab world labels. Existing " +
                 "designer prefab styling was preserved.");
         }
 
@@ -90,15 +90,13 @@ namespace MazeParty.Editor
         {
             EnsureFolders();
             var materials = CreateMaterials();
-            var hudPrefab = LoadOrCreateHudPrefab();
             var labelPrefab = LoadOrCreateBaseLabelPrefab(materials);
-            BuildGiftGrabScene(materials, hudPrefab, labelPrefab);
+            BuildGiftGrabScene(materials, labelPrefab);
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildGiftGrabScene(
             GiftGrabMaterials materials,
-            GameObject hudPrefab,
             GameObject labelPrefab)
         {
             var previousActive = SceneManager.GetActiveScene();
@@ -166,19 +164,6 @@ namespace MazeParty.Editor
             var state = root.AddComponent<NetworkGiftGrabState>();
             var view = root.AddComponent<GiftGrabNetworkView>();
 
-            var hudObject = PrefabUtility.InstantiatePrefab(
-                hudPrefab,
-                root.transform) as GameObject;
-            var hud = hudObject != null
-                ? hudObject.GetComponent<GiftGrabHudBindings>()
-                : null;
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "GiftGrabHud.prefab could not be instantiated with its " +
-                    "required serialized bindings.");
-            }
-
             view.Configure(
                 state,
                 sharedCamera,
@@ -194,8 +179,7 @@ namespace MazeParty.Editor
                 arena.DropVfx,
                 arena.StunVfx,
                 arenaPresentation,
-                audioSource,
-                hud);
+                audioSource);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, GiftGrabScenePath);
@@ -1047,7 +1031,6 @@ namespace MazeParty.Editor
                 root.transform,
                 "Deposited Gift Display Anchors");
             var gifts = FindDescendant(root.transform, "Gift Anchors");
-            var hud = root.GetComponentInChildren<GiftGrabHudBindings>(true);
             var labels = root.GetComponentsInChildren<GiftGrabBaseLabel>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkGiftGrabState>() == null ||
@@ -1062,20 +1045,11 @@ namespace MazeParty.Editor
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
                 FindDescendant(root.transform, "VFX Replacement Anchors") == null ||
-                hud == null)
+                root.GetComponentInChildren<GiftGrabHudBindings>(true) != null)
             {
                 throw new InvalidOperationException(
                     "Generated Gift Grab scene is missing its state, arena, " +
-                    "gift, label, camera, audio, VFX, art or HUD contract.");
-            }
-            if (!hud.HasRequiredReferences ||
-                hud.transform.localScale != Vector3.one ||
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    hud.gameObject) != HudPrefabPath)
-            {
-                throw new InvalidOperationException(
-                    "Gift Grab HUD must remain a renderable configured prefab " +
-                    "instance with unit root scale.");
+                    "gift, label, camera, audio, VFX or art contract.");
             }
             foreach (var label in labels)
             {

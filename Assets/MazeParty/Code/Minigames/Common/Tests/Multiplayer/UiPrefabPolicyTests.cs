@@ -29,13 +29,9 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameTimerDial.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/RedLightGreenLight/UI/RedLightGreenLightHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI/StableFootingHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowStationLabel.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab",
             "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
@@ -59,13 +55,9 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.ArenaCombatHitFlashView",
             "MazeParty.Multiplayer.OnlineLobbyView",
             "MazeParty.Multiplayer.MinigameTimerDial",
-            "MazeParty.Multiplayer.MinefieldHudBindings",
             "MazeParty.Multiplayer.WrongWayHudBindings",
             "MazeParty.Multiplayer.RedLightGreenLightHudBindings",
             "MazeParty.Multiplayer.StableFootingHudBindings",
-            "MazeParty.Multiplayer.BalloonBlowHudBindings",
-            "MazeParty.Multiplayer.BalloonBlowStationLabel",
-            "MazeParty.Multiplayer.GiftGrabHudBindings",
             "MazeParty.Multiplayer.GiftGrabBaseLabel",
             "MazeParty.Multiplayer.TerritoryPaintHudBindings",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
@@ -100,8 +92,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity",
-                "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab"),
+                "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/WrongWay/WrongWay.unity",
                 "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab"),
@@ -112,11 +103,9 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity",
                 "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI/StableFootingHud.prefab"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity",
-                "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowHud.prefab"),
+                "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity",
-                "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabHud.prefab"),
+                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity",
                 "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab"),
@@ -378,12 +367,9 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab";
             var hudPaths = new[]
             {
-                "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/RedLightGreenLight/UI/RedLightGreenLightHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI/StableFootingHud.prefab",
-                "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowHud.prefab",
-                "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab"

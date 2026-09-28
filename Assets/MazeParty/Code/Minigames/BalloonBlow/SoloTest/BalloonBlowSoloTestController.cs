@@ -9,7 +9,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 {
     /// <summary>
     /// Offline Balloon Blow harness injected by the shared minigame launcher.
-    /// It reuses the generated production arena, balloons, label prefabs and
+    /// It reuses the generated production arena and balloons and
     /// production pure rules without starting NGO or online services.
     /// </summary>
     [DefaultExecutionOrder(-100)]
@@ -36,8 +36,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             new Transform[BalloonBlowRules.PlayerCount];
         private readonly Transform[] _balloonKnots =
             new Transform[BalloonBlowRules.PlayerCount];
-        private readonly BalloonBlowStationLabel[] _stationLabels =
-            new BalloonBlowStationLabel[BalloonBlowRules.PlayerCount];
         private readonly Transform[] _players =
             new Transform[BalloonBlowRules.PlayerCount];
         private readonly PlayerAvatarVisual[] _playerVisuals =
@@ -58,12 +56,10 @@ namespace MazeParty.Dev.MinigameSoloTest
         private NetworkBalloonBlowState _productionState;
         private BalloonBlowNetworkView _productionView;
         private GameObject _productionPlayerRoot;
-        private GameObject _productionHud;
         private GameObject _arenaPresentation;
         private bool _productionStateWasEnabled;
         private bool _productionViewWasEnabled;
         private bool _productionPlayerRootWasActive;
-        private bool _productionHudWasActive;
         private bool _arenaPresentationWasActive;
         private bool _productionStateCaptured;
 
@@ -183,8 +179,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionView = state.GetComponent<BalloonBlowNetworkView>();
             _productionPlayerRoot =
                 FindNamedTransform("Runtime Players")?.gameObject;
-            _productionHud =
-                FindNamedTransform("BalloonBlowHud")?.gameObject;
             _arenaPresentation =
                 FindNamedTransform("Arena Presentation")?.gameObject;
             _productionStateWasEnabled = state.enabled;
@@ -193,8 +187,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionPlayerRootWasActive =
                 _productionPlayerRoot != null &&
                 _productionPlayerRoot.activeSelf;
-            _productionHudWasActive =
-                _productionHud != null && _productionHud.activeSelf;
             _arenaPresentationWasActive =
                 _arenaPresentation != null &&
                 _arenaPresentation.activeSelf;
@@ -206,7 +198,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _productionView.enabled = false;
             }
             _productionPlayerRoot?.SetActive(false);
-            _productionHud?.SetActive(false);
         }
 
         private void ResolveArenaContract()
@@ -220,17 +211,14 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             var playerRoot = FindNamedTransform("Player Anchors");
             var balloonRoot = FindNamedTransform("Balloon Anchors");
-            var labelRoot = FindNamedTransform("Station Label Anchors");
             if (playerRoot == null ||
                 balloonRoot == null ||
-                labelRoot == null ||
                 playerRoot.childCount != BalloonBlowRules.PlayerCount ||
-                balloonRoot.childCount != BalloonBlowRules.PlayerCount ||
-                labelRoot.childCount != BalloonBlowRules.PlayerCount)
+                balloonRoot.childCount != BalloonBlowRules.PlayerCount)
             {
                 throw new InvalidOperationException(
-                    "Balloon Blow scene is missing its four fixed player, " +
-                    "balloon or prefab label anchors.");
+                    "Balloon Blow scene is missing its four fixed player " +
+                    "or balloon anchors.");
             }
 
             for (var slot = 0;
@@ -249,19 +237,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _balloonKnots[slot] = RequireChild(
                     _balloonAnchors[slot],
                     "Balloon Knot");
-
-                var labelTransform = RequireChild(
-                    labelRoot,
-                    "Station Label " + (slot + 1));
-                _stationLabels[slot] = labelTransform.GetComponent<
-                    BalloonBlowStationLabel>();
-                if (_stationLabels[slot] == null ||
-                    !_stationLabels[slot].HasRequiredReferences)
-                {
-                    throw new InvalidOperationException(
-                        "Balloon Blow station label " + (slot + 1) +
-                        " has invalid prefab bindings.");
-                }
             }
         }
 
@@ -280,7 +255,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _productionView.enabled = _productionViewWasEnabled;
             }
             _productionPlayerRoot?.SetActive(_productionPlayerRootWasActive);
-            _productionHud?.SetActive(_productionHudWasActive);
             _arenaPresentation?.SetActive(_arenaPresentationWasActive);
             _productionStateCaptured = false;
         }
@@ -317,7 +291,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                         : "PRACTICE " + (slot + 1));
                 visual.SetTopViewHighlight(
                     slot == BalloonBlowSoloSession.LocalPlayerSlot);
-                DisableBuiltInNameplate(playerObject.transform);
                 DisableGeneratedHitColliders(playerObject);
                 _playerVisuals[slot] = visual;
             }
@@ -376,12 +349,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                     Vector3.one * BalloonMinimumScale;
                 _balloonBodies[slot].gameObject.SetActive(true);
                 _balloonKnots[slot].gameObject.SetActive(true);
-                _stationLabels[slot].SetContent(
-                    GetPlayerName(slot),
-                    0f,
-                    false,
-                    slot == BalloonBlowSoloSession.LocalPlayerSlot,
-                    PlayerColors[slot]);
             }
         }
 
@@ -409,17 +376,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _balloonAnchors[slot].localScale = Vector3.one * scale;
                 _balloonBodies[slot].gameObject.SetActive(!popped);
                 _balloonKnots[slot].gameObject.SetActive(!popped);
-
-                _stationLabels[slot].SetContent(
-                    GetPlayerName(slot),
-                    player.ProgressPercent,
-                    popped,
-                    slot == BalloonBlowSoloSession.LocalPlayerSlot,
-                    PlayerColors[slot]);
-                _stationLabels[slot].transform.position =
-                    _playerAnchors[slot].position +
-                    Vector3.up * 3.2f;
-                _stationLabels[slot].FaceCamera(_runtimeCamera);
                 _playerVisuals[slot].SetCrouching(
                     player.Phase == BalloonBlowPlayerPhase.Inflating);
             }
@@ -699,15 +655,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
             }
             return null;
-        }
-
-        private static void DisableBuiltInNameplate(Transform root)
-        {
-            var nameplate = FindDescendant(root, "NameplateAnchor");
-            if (nameplate != null)
-            {
-                nameplate.gameObject.SetActive(false);
-            }
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

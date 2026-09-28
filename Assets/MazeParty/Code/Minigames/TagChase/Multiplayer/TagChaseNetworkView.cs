@@ -288,10 +288,6 @@ namespace MazeParty.Multiplayer
                     localIsTagger &&
                     !showingStartCountdown &&
                     slot == _localSlot);
-                player.Visual.SetTopViewHighlight(
-                    !localIsTagger &&
-                    slot == _localSlot &&
-                    !state.IsCaught(slot));
             }
         }
 

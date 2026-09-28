@@ -1,5 +1,4 @@
 using MazeParty.Gameplay;
-using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -36,11 +35,8 @@ namespace MazeParty.Multiplayer
             new Transform[BalloonBlowRules.PlayerCount];
         [SerializeField] private Transform[] balloonAnchors =
             new Transform[BalloonBlowRules.PlayerCount];
-        [SerializeField] private BalloonBlowStationLabel[] stationLabels =
-            new BalloonBlowStationLabel[BalloonBlowRules.PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
-        [SerializeField] private BalloonBlowHudBindings hud;
 
         private readonly PlayerView[] _players =
             new PlayerView[BalloonBlowRules.PlayerCount];
@@ -53,7 +49,6 @@ namespace MazeParty.Multiplayer
         private bool _cameraConfigured;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
-        private int _localSlot = -1;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(0f, 11.5f, -16f);
@@ -67,20 +62,16 @@ namespace MazeParty.Multiplayer
             Transform runtimePlayers,
             Transform[] fixedPlayerAnchors,
             Transform[] fixedBalloonAnchors,
-            BalloonBlowStationLabel[] fixedStationLabels,
             GameObject arena,
-            AudioSource audioSource,
-            BalloonBlowHudBindings hudBindings)
+            AudioSource audioSource)
         {
             state = networkState;
             sharedCamera = camera;
             playerRoot = runtimePlayers;
             playerAnchors = fixedPlayerAnchors;
             balloonAnchors = fixedBalloonAnchors;
-            stationLabels = fixedStationLabels;
             arenaPresentation = arena;
             cueAudioSource = audioSource;
-            hud = hudBindings;
             _cameraConfigured = false;
             ConfigureCamera();
             CacheBalloonViews();
@@ -97,13 +88,11 @@ namespace MazeParty.Multiplayer
             CacheBalloonViews();
             EnsurePlayers();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -128,10 +117,6 @@ namespace MazeParty.Multiplayer
                 state != null && state.IsSpawned && selected &&
                 (match.FlowState == BoardFlowState.MinigamePlaying ||
                  match.FlowState == BoardFlowState.MinigameResult);
-            var shouldShowHud = shouldShowWorld &&
-                                match.FlowState ==
-                                BoardFlowState.MinigamePlaying;
-            SetHudActive(shouldShowHud);
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
@@ -139,11 +124,10 @@ namespace MazeParty.Multiplayer
             }
 
             SetWorldPresentationActive(true);
-            ResolveLocalSlot(match);
+            // MinigameLocalPlayerHighlight owns the brief shared countdown
+            // marker; this view does not keep a persistent local-player mark.
             RefreshPlayers(match);
             RefreshBalloons();
-            RefreshStationLabels(match);
-            RefreshHud(match);
         }
 
         private void ConfigureCamera()
@@ -249,37 +233,12 @@ namespace MazeParty.Multiplayer
                 visual.SetOwnerFirstPerson(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
                 visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
-                visual.SetNameplateVisible(false);
+                visual.SetNameplateVisible(true);
                 DisableGeneratedHitColliders(playerObject);
 
                 _players[slot] = new PlayerView(
                     playerObject.transform,
                     visual);
-            }
-        }
-
-        private void ResolveLocalSlot(NetworkMatchState match)
-        {
-            var resolved = -1;
-            for (var slot = 0; slot < _players.Length; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                if (avatar != null && avatar.IsOwner)
-                {
-                    resolved = slot;
-                    break;
-                }
-            }
-            if (_localSlot == resolved)
-            {
-                return;
-            }
-
-            _localSlot = resolved;
-            for (var slot = 0; slot < _players.Length; slot++)
-            {
-                _players[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
             }
         }
 
@@ -303,6 +262,13 @@ namespace MazeParty.Multiplayer
                 }
 
                 var avatar = match.GetAvatarForSlot(slot);
+                var displayName =
+                    avatar != null &&
+                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                        ? avatar.DisplayName
+                        : GameText.F("Player {0}", slot + 1);
+                player.Visual.SetDisplayName(
+                    displayName);
                 if (avatar != null)
                 {
                     var appearance = avatar.Appearance;
@@ -347,148 +313,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshStationLabels(NetworkMatchState match)
-        {
-            if (stationLabels == null)
-            {
-                return;
-            }
-
-            var outputCamera = Camera.main;
-            for (var slot = 0;
-                 slot < stationLabels.Length &&
-                 slot < BalloonBlowRules.PlayerCount;
-                 slot++)
-            {
-                var label = stationLabels[slot];
-                if (label == null)
-                {
-                    continue;
-                }
-
-                var avatar = match.GetAvatarForSlot(slot);
-                var playerName = avatar != null
-                    ? avatar.DisplayName
-                    : GameText.F("Player {0}", slot + 1);
-                var color = avatar != null
-                    ? avatar.Appearance.BodyColor
-                    : FallbackPlayerColors[slot];
-                if (playerAnchors != null &&
-                    slot < playerAnchors.Length &&
-                    playerAnchors[slot] != null)
-                {
-                    label.transform.position =
-                        playerAnchors[slot].position +
-                        Vector3.up * 3.2f;
-                }
-                label.SetContent(
-                    playerName,
-                    state.GetPlayerProgress(slot),
-                    state.IsPlayerPopped(slot),
-                    slot == _localSlot,
-                    color);
-                label.FaceCamera(outputCamera);
-            }
-        }
-
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            hud.InstructionText.text = GetLocalInstruction();
-            var showResult =
-                state.Phase == NetworkBalloonBlowPhase.RoundResult;
-            hud.ResultPanel.SetActive(showResult);
-            if (showResult)
-            {
-                hud.ResultText.text = GetResultLabel();
-            }
-
-            if (_localSlot >= 0 &&
-                _localSlot < BalloonBlowRules.PlayerCount)
-            {
-                var localAvatar = match.GetAvatarForSlot(_localSlot);
-                var localColor = localAvatar != null
-                    ? localAvatar.Appearance.BodyColor
-                    : FallbackPlayerColors[_localSlot];
-                hud.LocalProgressText.color = localColor;
-                hud.LocalProgressFill.color = localColor;
-                var progress = Mathf.Clamp(
-                    state.GetPlayerProgress(_localSlot),
-                    0f,
-                    BalloonBlowRules.MaxProgressPercent);
-                hud.LocalProgressText.text = GameText.F(
-                    "YOU  ·  {0}%  ·  {1}",
-                    Mathf.RoundToInt(progress),
-                    GetPlayerStateLabel(_localSlot));
-                hud.LocalProgressFill.fillAmount =
-                    progress / BalloonBlowRules.MaxProgressPercent;
-            }
-        }
-
-        private string GetLocalInstruction()
-        {
-            if (_localSlot < 0)
-            {
-                return GameText.T("SPECTATING");
-            }
-
-            switch (state.GetPlayerPhase(_localSlot))
-            {
-                case BalloonBlowPlayerPhase.Inflating:
-                    return GameText.T("INFLATING");
-                case BalloonBlowPlayerPhase.Cooldown:
-                    return GameText.F(
-                        "COOLDOWN {0:0.0}s",
-                        state.GetPlayerCooldownRemainingSeconds(_localSlot));
-                case BalloonBlowPlayerPhase.AwaitingRelease:
-                    return GameText.T("RELEASE TO REARM");
-                case BalloonBlowPlayerPhase.Popped:
-                    return GameText.T("POPPED");
-                default:
-                    return GameText.T("READY");
-            }
-        }
-
-        private string GetPlayerStateLabel(int slot)
-        {
-            if (state.IsPlayerPopped(slot))
-            {
-                return MinigameDisplayFormatter.ToOrdinal(
-                    state.GetPopOrder(slot));
-            }
-            if (state.IsPlayerInflating(slot))
-            {
-                return GameText.T("INFLATING");
-            }
-
-            switch (state.GetPlayerPhase(slot))
-            {
-                case BalloonBlowPlayerPhase.Cooldown:
-                    return GameText.T("RESTING");
-                case BalloonBlowPlayerPhase.AwaitingRelease:
-                    return GameText.T("RELEASE");
-                default:
-                    return GameText.T("READY");
-            }
-        }
-
-        private string GetResultLabel()
-        {
-            if (_localSlot < 0)
-            {
-                return GameText.T("ROUND COMPLETE");
-            }
-            return GameText.F(
-                "ROUND {0}\n+{1} POINTS",
-                MinigameDisplayFormatter.ToOrdinal(
-                    state.GetRoundRank(_localSlot)),
-                state.GetRoundPoints(_localSlot));
-        }
-
         private void SetWorldPresentationActive(bool active)
         {
             if (_worldVisibilityInitialized &&
@@ -509,29 +333,12 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void SetHudActive(bool active)
-        {
-            if (hud != null && hud.gameObject.activeSelf != active)
-            {
-                hud.gameObject.SetActive(active);
-            }
-        }
-
         private static void DisableGeneratedHitColliders(GameObject root)
         {
             var colliders = root.GetComponentsInChildren<Collider>(true);
             for (var index = 0; index < colliders.Length; index++)
             {
                 colliders[index].enabled = false;
-            }
-        }
-
-        private static void DisableBuiltInNameplate(Transform root)
-        {
-            var nameplate = FindDescendant(root, "NameplateAnchor");
-            if (nameplate != null)
-            {
-                nameplate.gameObject.SetActive(false);
             }
         }
 

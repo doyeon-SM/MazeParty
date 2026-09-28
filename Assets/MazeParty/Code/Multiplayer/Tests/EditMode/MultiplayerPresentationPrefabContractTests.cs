@@ -13,6 +13,8 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string PlayerPresentationPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
+        private const string PlayerWorldIndicatorPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/PlayerWorldIndicator.prefab";
         private const string NetworkPlayerPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         private const string LobbyArenaPrefabPath =
@@ -30,6 +32,8 @@ namespace MazeParty.Multiplayer.Tests
                 PlayerAvatarPresentationBindings>();
             Assert.That(bindings, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
+            Assert.That(bindings.NameplateAnchor.gameObject.activeSelf, Is.True);
+            Assert.That(bindings.NameText, Is.Not.Null);
             Assert.That(bindings.BodyTintRenderers, Is.Not.Empty);
             AssertHitZone(bindings.BodyHitbox, PlayerHitRegion.Body);
             AssertHitZone(bindings.HeadHitbox, PlayerHitRegion.Head);
@@ -57,6 +61,28 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 AssetDatabase.GetAssetPath(assets.PresentationPrefab),
                 Is.EqualTo(PlayerPresentationPrefabPath));
+            Assert.That(
+                AssetDatabase.GetAssetPath(assets.WorldIndicatorPrefab),
+                Is.EqualTo(PlayerWorldIndicatorPrefabPath));
+        }
+
+        [Test]
+        public void PlayerWorldIndicatorPrefab_HasAuthoredNameAndStartMarker()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                PlayerWorldIndicatorPrefabPath);
+            Assert.That(prefab, Is.Not.Null, PlayerWorldIndicatorPrefabPath);
+            var indicator = prefab.GetComponent<PlayerWorldIndicator>();
+            Assert.That(indicator, Is.Not.Null);
+            Assert.That(indicator.HasRequiredReferences, Is.True);
+            Assert.That(indicator.NameplateAnchor, Is.Not.Null);
+            Assert.That(indicator.NameText, Is.Not.Null);
+            Assert.That(indicator.LocalStartHighlight, Is.Not.Null);
+            Assert.That(indicator.LocalStartHighlight.activeSelf, Is.False);
+            Assert.That(
+                prefab.GetComponentsInChildren<Canvas>(true),
+                Is.Empty,
+                "The shared marker must remain an authored world-space prefab.");
         }
 
         [Test]

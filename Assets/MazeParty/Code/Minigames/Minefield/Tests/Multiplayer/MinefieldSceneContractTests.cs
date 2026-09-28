@@ -14,9 +14,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/Minefield/UI/MinefieldHud.prefab";
-
         [Test]
         public void MinefieldScene_PreservesAuthoritativeLayoutAndAdditiveContract()
         {
@@ -42,15 +39,11 @@ namespace MazeParty.Multiplayer.Tests
 
                 var view = state.GetComponent<MinefieldNetworkView>();
                 Assert.That(view, Is.Not.Null);
-                var serializedView = new SerializedObject(view);
-                var hud = serializedView.FindProperty("hud")
-                    ?.objectReferenceValue as MinefieldHudBindings;
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
                 Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject),
-                    Is.EqualTo(HudPrefabPath));
+                    state.GetComponentsInChildren<MinefieldHudBindings>(true),
+                    Is.Empty,
+                    "Minefield communicates state through its world " +
+                    "presentation and the shared minigame HUD.");
 
                 var networkObject = state.GetComponent<NetworkObject>();
                 Assert.That(networkObject, Is.Not.Null);

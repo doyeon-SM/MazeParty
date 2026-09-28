@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
-using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -26,7 +25,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform mineRoot;
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private GameObject crusherPlaceholder;
-        [SerializeField] private MinefieldHudBindings hud;
         [SerializeField] private GameObject sirenPrefab;
         [SerializeField] private GameObject sonarPulsePrefab;
         [SerializeField] private GameObject mineMarkerPrefab;
@@ -37,7 +35,6 @@ namespace MazeParty.Multiplayer
         private GameplayCameraDirector _cameraDirector;
         private int _mineLayoutHash;
         private bool _cameraConfigured;
-        private bool _hudContractErrorLogged;
         private bool _corePrefabContractErrorLogged;
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
@@ -61,7 +58,6 @@ namespace MazeParty.Multiplayer
             ConfigureCamera();
             EnsurePresentation();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnEnable()
@@ -72,7 +68,6 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             if (_cameraDirector != null && topDownCamera != null)
             {
                 _cameraDirector.ClearMinigameCamera(topDownCamera);
@@ -105,10 +100,6 @@ namespace MazeParty.Multiplayer
                                   selected &&
                                   (match.FlowState == BoardFlowState.MinigamePlaying ||
                                    match.FlowState == BoardFlowState.MinigameResult);
-            var shouldShowHud = shouldShowWorld &&
-                                match.FlowState == BoardFlowState.MinigamePlaying;
-            SetHudActive(shouldShowHud);
-
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
@@ -120,17 +111,6 @@ namespace MazeParty.Multiplayer
             RefreshPlayerCamera(match);
             RefreshMines();
             RefreshCrusher();
-            RefreshHud(match);
-        }
-
-        private void SetHudActive(bool active)
-        {
-            if (hud != null &&
-                hud.Canvas != null &&
-                hud.Canvas.gameObject.activeSelf != active)
-            {
-                hud.Canvas.gameObject.SetActive(active);
-            }
         }
 
         private void ResolveSceneReferences()
@@ -257,16 +237,6 @@ namespace MazeParty.Multiplayer
                 {
                     _runners[slot] = CreateRunner(slot);
                 }
-            }
-
-            if ((hud == null || !hud.HasRequiredReferences) &&
-                !_hudContractErrorLogged)
-            {
-                Debug.LogError(
-                    "MinefieldNetworkView requires a connected " +
-                    "MinefieldHud.prefab instance with complete bindings.",
-                    this);
-                _hudContractErrorLogged = true;
             }
             return true;
         }
@@ -468,43 +438,6 @@ namespace MazeParty.Multiplayer
             crusherPlaceholder.transform.position = position;
         }
 
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            var scoreRows = hud.ScoreRows;
-            for (var slot = 0; slot < scoreRows.Length; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                var displayName = avatar != null ? avatar.DisplayName : GameText.F("PLAYER {0}", slot + 1);
-                var playerState = state.GetPlayerState(slot);
-                var stateLabel = playerState == MinefieldPlayerState.Crippled
-                    ? GameText.T("INJURED")
-                    : playerState == MinefieldPlayerState.Eliminated
-                        ? GameText.T("OUT")
-                        : playerState == MinefieldPlayerState.Finished
-                            ? GameText.T("FINISHED")
-                            : GameText.T("RUNNING");
-                var progress = Mathf.Clamp(
-                    Mathf.RoundToInt(
-                        100f * (state.GetRunnerPosition(slot).z -
-                                NetworkMinefieldState.ArenaMinZ) /
-                        (NetworkMinefieldState.ArenaMaxZ -
-                         NetworkMinefieldState.ArenaMinZ)),
-                    0,
-                    100);
-                scoreRows[slot].text = displayName + "  ·  " +
-                                       stateLabel + "  ·  " + progress + "%";
-                if (avatar != null)
-                {
-                    scoreRows[slot].color = avatar.Appearance.BodyColor;
-                }
-            }
-        }
-
         private void SetWorldPresentationActive(bool active)
         {
             if (arenaPresentation != null &&
@@ -520,16 +453,10 @@ namespace MazeParty.Multiplayer
             {
                 mineRoot.gameObject.SetActive(active);
             }
-            if (crusherPlaceholder != null && crusherPlaceholder.activeSelf != active)
+            if (crusherPlaceholder != null &&
+                crusherPlaceholder.activeSelf != active)
             {
                 crusherPlaceholder.SetActive(active);
-            }
-            if (!active &&
-                hud != null &&
-                hud.Canvas != null &&
-                hud.Canvas.gameObject.activeSelf)
-            {
-                hud.Canvas.gameObject.SetActive(false);
             }
         }
 

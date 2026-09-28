@@ -1,5 +1,4 @@
 using MazeParty.Gameplay;
-using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -9,7 +8,8 @@ namespace MazeParty.Multiplayer
     /// <summary>
     /// Client-side presentation for the server-authoritative WrongWay race.
     /// The network state owns progress and scoring while this component builds
-    /// four visual runners, drives the race camera and renders the local HUD.
+    /// four visual runners, drives the local runner camera and renders only
+    /// the next direction icon needed by this client.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class WrongWayNetworkView : MonoBehaviour
@@ -102,6 +102,14 @@ namespace MazeParty.Multiplayer
             return runnerPosition + new Vector3(0f, 1.35f, 1.6f);
         }
 
+        private static Vector3 CalculateLocalCameraFocus(
+            int playerSlot,
+            int completedSteps)
+        {
+            return GetRunnerWorldPosition(playerSlot, completedSteps) +
+                   new Vector3(0f, 1.35f, 1.6f);
+        }
+
         public static Vector3 CalculateCameraPosition(Vector3 focus)
         {
             return focus + new Vector3(0f, 8.5f, -12.5f);
@@ -151,14 +159,10 @@ namespace MazeParty.Multiplayer
                                   state != null &&
                                   state.IsSpawned &&
                                   state.Phase != NetworkWrongWayPhase.Inactive;
-            var shouldShowHud = shouldShowWorld &&
-                                match.IsWrongWayPlaying;
-
-            SetHudActive(shouldShowHud);
-
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
+                SetHudActive(false);
                 return;
             }
 
@@ -166,7 +170,20 @@ namespace MazeParty.Multiplayer
             ResolveLocalSlot(match);
             RefreshRunners(match);
             RefreshRaceCamera();
-            RefreshHud(match);
+
+            var shouldShowDirection = match.IsWrongWayPlaying &&
+                                      state.Phase ==
+                                      NetworkWrongWayPhase.Running &&
+                                      !state.IsPaused &&
+                                      _localSlot >= 0 &&
+                                      _localSlot < WrongWayRules.PlayerCount &&
+                                      state.GetProgress(_localSlot) <
+                                      WrongWayRules.StepCount;
+            SetHudActive(shouldShowDirection);
+            if (shouldShowDirection)
+            {
+                RefreshHud();
+            }
         }
 
         private void SetHudActive(bool active)
@@ -236,6 +253,7 @@ namespace MazeParty.Multiplayer
             visual.SetBodyColor(FallbackPlayerColors[slot]);
             visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
             visual.SetOwnerFirstPerson(false);
+            visual.SetTopViewHighlight(false);
 
             var colliders = runnerObject.GetComponentsInChildren<Collider>(true);
             for (var index = 0; index < colliders.Length; index++)
@@ -259,17 +277,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (resolved == _localSlot)
-            {
-                return;
-            }
-
             _localSlot = resolved;
-            for (var slot = 0; slot < _runners.Length; slot++)
-            {
-                _runners[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
-            }
         }
 
         private void RefreshRunners(NetworkMatchState match)
@@ -315,7 +323,10 @@ namespace MazeParty.Multiplayer
                         appearance.EyeId,
                         appearance.MouthId,
                         appearance.HatId);
-                    runner.Visual.SetDisplayName(avatar.DisplayName);
+                    runner.Visual.SetDisplayName(
+                        string.IsNullOrWhiteSpace(avatar.DisplayName)
+                            ? GameText.F("Player {0}", slot + 1)
+                            : avatar.DisplayName);
                 }
                 else
                 {
@@ -400,15 +411,13 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var leadingProgress = 0;
-            for (var slot = 0; slot < WrongWayRules.PlayerCount; slot++)
-            {
-                leadingProgress = Mathf.Max(
-                    leadingProgress,
-                    state.GetProgress(slot));
-            }
-
-            var targetFocus = CalculateCameraFocus(leadingProgress);
+            var hasLocalRunner = _localSlot >= 0 &&
+                                 _localSlot < WrongWayRules.PlayerCount;
+            var targetFocus = hasLocalRunner
+                ? CalculateLocalCameraFocus(
+                    _localSlot,
+                    state.GetProgress(_localSlot))
+                : CalculateCameraFocus(0);
             if (!_hasCameraFocus ||
                 Vector3.SqrMagnitude(_cameraFocus - targetFocus) > 100f ||
                 state.Phase == NetworkWrongWayPhase.Countdown)
@@ -430,126 +439,18 @@ namespace MazeParty.Multiplayer
                 CalculateCameraRotation(_cameraFocus));
         }
 
-        private void RefreshHud(NetworkMatchState match)
+        private void RefreshHud()
         {
             if (hud == null || !hud.HasRequiredReferences)
             {
                 return;
             }
 
-            hud.PromptText.text = BuildLocalPrompt();
-            var progressRows = hud.ProgressRows;
-
-            for (var slot = 0; slot < progressRows.Length; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                var displayName = avatar != null &&
-                                  !string.IsNullOrWhiteSpace(
-                                      avatar.DisplayName)
-                    ? avatar.DisplayName
-                    : GameText.F("Player {0}", slot + 1);
-                var prefix = slot == _localSlot ? ">  " : "   ";
-                progressRows[slot].text =
-                    prefix +
-                    GameText.F(
-                        "{0}   STEP {1} / {2}",
-                        displayName,
-                        state.GetProgress(slot),
-                        WrongWayRules.StepCount);
-
-                progressRows[slot].color = avatar != null
-                    ? avatar.Appearance.BodyColor
-                    : hud.GetDefaultProgressRowColor(slot);
-            }
+            hud.DirectionIcon.sprite = hud.GetDirectionIcon(
+                state.GetCurrentDirection(_localSlot));
         }
 
-        private string BuildLocalPrompt()
-        {
-            if (_localSlot < 0 ||
-                _localSlot >= WrongWayRules.PlayerCount)
-            {
-                return GameText.T("WAITING FOR LOCAL PLAYER");
-            }
-
-            if (state.IsPaused)
-            {
-                return GameText.T("PAUSED");
-            }
-
-            switch (state.Phase)
-            {
-                case NetworkWrongWayPhase.Countdown:
-                    return Mathf.Max(
-                        1,
-                        Mathf.CeilToInt((float)state.Remaining)).ToString();
-                case NetworkWrongWayPhase.Running:
-                    if (state.IsRecovering(_localSlot))
-                    {
-                        return GameText.T("WRONG!  GET UP...");
-                    }
-
-                    if (state.GetProgress(_localSlot) >=
-                        WrongWayRules.StepCount)
-                    {
-                        return GameText.T("FINISH!");
-                    }
-
-                    return DirectionLabel(
-                        state.GetCurrentDirection(_localSlot));
-                case NetworkWrongWayPhase.RoundResult:
-                    return GameText.F(
-                        "ROUND {0}  ·  +{1} POINTS",
-                        MinigameDisplayFormatter.ToOrdinal(
-                            state.GetRoundRank(_localSlot)),
-                        state.GetRoundPoints(_localSlot));
-                case NetworkWrongWayPhase.Complete:
-                    return GameText.F(
-                        "FINAL {0}",
-                        MinigameDisplayFormatter.ToOrdinal(
-                            state.GetFinalRank(_localSlot)));
-                default:
-                    return GameText.T("GET READY");
-            }
-        }
-
-        private int ResolveDisplayedRank(int slot)
-        {
-            var finalRank = state.GetFinalRank(slot);
-            if (finalRank > 0)
-            {
-                return finalRank;
-            }
-
-            var roundRank = state.GetRoundRank(slot);
-            if (state.Phase == NetworkWrongWayPhase.RoundResult &&
-                roundRank > 0)
-            {
-                return roundRank;
-            }
-
-            var progress = state.GetProgress(slot);
-            var rank = 1;
-            for (var other = 0;
-                 other < WrongWayRules.PlayerCount;
-                 other++)
-            {
-                if (other == slot)
-                {
-                    continue;
-                }
-
-                var otherProgress = state.GetProgress(other);
-                if (otherProgress > progress ||
-                    (otherProgress == progress && other < slot))
-                {
-                    rank++;
-                }
-            }
-
-            return rank;
-        }
-
-private void SetWorldPresentationActive(bool active)
+        private void SetWorldPresentationActive(bool active)
         {
             if (arenaPresentation != null &&
                 arenaPresentation.activeSelf != active)
@@ -577,23 +478,6 @@ private void SetWorldPresentationActive(bool active)
                 {
                     _runners[slot]?.Visual.SetEliminated(false);
                 }
-            }
-        }
-
-        private static string DirectionLabel(WrongWayDirection direction)
-        {
-            switch (direction)
-            {
-                case WrongWayDirection.Up:
-                    return "W    ↑";
-                case WrongWayDirection.Down:
-                    return "S    ↓";
-                case WrongWayDirection.Left:
-                    return "A    ←";
-                case WrongWayDirection.Right:
-                    return "D    →";
-                default:
-                    return "?";
             }
         }
 

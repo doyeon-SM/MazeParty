@@ -212,11 +212,6 @@ namespace MazeParty.Multiplayer
             }
 
             _localSlot = resolved;
-            for (var slot = 0; slot < _players.Length; slot++)
-            {
-                _players[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
-            }
         }
 
         private void RefreshPlayers(NetworkMatchState match)
@@ -264,7 +259,6 @@ namespace MazeParty.Multiplayer
                     player.LastMistakeCount = mistakeCount;
                     player.LastEliminated = eliminated;
                 }
-                player.Visual.SetTopViewHighlight(slot == _localSlot);
             }
         }
 

@@ -171,7 +171,10 @@ namespace MazeParty.Multiplayer
                         appearance.EyeId,
                         appearance.MouthId,
                         appearance.HatId);
-                    player.SetDisplayName(avatar.DisplayName);
+                    player.SetDisplayName(
+                        string.IsNullOrWhiteSpace(avatar.DisplayName)
+                            ? GameText.F("Player {0}", slot + 1)
+                            : avatar.DisplayName);
                     _appearanceApplied[slot] = true;
                 }
                 else if (!_appearanceApplied[slot])
@@ -242,7 +245,6 @@ namespace MazeParty.Multiplayer
                 root.transform.SetParent(bindings.RuntimePlayerRoot, false);
                 var visual = root.AddComponent<PlayerAvatarVisual>();
                 visual.EnsureBuilt();
-                visual.SetNameplateVisible(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
                 visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
                 foreach (var collider in

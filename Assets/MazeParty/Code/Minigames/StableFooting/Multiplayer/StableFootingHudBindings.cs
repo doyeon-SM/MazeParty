@@ -13,26 +13,20 @@ namespace MazeParty.Multiplayer
     {
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private Text instructionText;
-        [SerializeField] private GameObject resultPanel;
 
         public Canvas RootCanvas => rootCanvas;
         public Text InstructionText => instructionText;
-        public GameObject ResultPanel => resultPanel;
 
         public bool HasRequiredReferences =>
             rootCanvas != null &&
-            instructionText != null &&
-            resultPanel != null &&
-            resultPanel.GetComponent<Canvas>() != null;
+            instructionText != null;
 
         public void Configure(
             Canvas canvas,
-            Text instructions,
-            GameObject result)
+            Text instructions)
         {
             rootCanvas = canvas;
             instructionText = instructions;
-            resultPanel = result;
         }
     }
 }

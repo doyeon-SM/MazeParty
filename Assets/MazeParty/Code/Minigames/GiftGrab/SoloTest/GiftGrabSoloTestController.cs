@@ -49,7 +49,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private NetworkGiftGrabState _productionState;
         private GiftGrabNetworkView _productionView;
         private GameObject _productionPlayerRoot;
-        private GameObject _productionHud;
         private GameObject _arenaPresentation;
         private Transform[] _playerAnchors;
         private Transform[] _baseAnchors;
@@ -63,7 +62,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private bool _productionStateWasEnabled;
         private bool _productionViewWasEnabled;
         private bool _productionPlayerRootWasActive;
-        private bool _productionHudWasActive;
         private bool _arenaWasActive;
         private bool _productionCaptured;
         private bool _initialized;
@@ -210,17 +208,12 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionPlayerRoot = _productionView.PlayerRoot != null
                 ? _productionView.PlayerRoot.gameObject
                 : null;
-            _productionHud = _productionView.Hud != null
-                ? _productionView.Hud.gameObject
-                : null;
             _arenaPresentation = _productionView.ArenaPresentation;
             _productionStateWasEnabled = _productionState.enabled;
             _productionViewWasEnabled = _productionView.enabled;
             _productionPlayerRootWasActive =
                 _productionPlayerRoot != null &&
                 _productionPlayerRoot.activeSelf;
-            _productionHudWasActive =
-                _productionHud != null && _productionHud.activeSelf;
             _arenaWasActive =
                 _arenaPresentation != null &&
                 _arenaPresentation.activeSelf;
@@ -229,7 +222,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionState.enabled = false;
             _productionView.enabled = false;
             _productionPlayerRoot?.SetActive(false);
-            _productionHud?.SetActive(false);
             // GiftGrabNetworkView.OnDisable hides this root. Solo deliberately
             // re-enables the production art after the production view stops.
             _arenaPresentation?.SetActive(true);
@@ -328,7 +320,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 visual.SetDisplayName(GetPlayerName(slot));
                 visual.SetTopViewHighlight(
                     slot == GiftGrabSoloSession.LocalPlayerSlot);
-                DisableBuiltInNameplate(root.transform);
                 DisableGeneratedHitColliders(root);
                 _players[slot] = root.transform;
                 _playerVisuals[slot] = visual;
@@ -772,10 +763,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 _productionPlayerRoot.SetActive(_productionPlayerRootWasActive);
             }
-            if (_productionHud != null)
-            {
-                _productionHud.SetActive(_productionHudWasActive);
-            }
             if (_arenaPresentation != null)
             {
                 _arenaPresentation.SetActive(_arenaWasActive);
@@ -812,15 +799,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             return slot == GiftGrabSoloSession.LocalPlayerSlot
                 ? "SOLO DEV"
                 : "PRACTICE " + (slot + 1);
-        }
-
-        private static void DisableBuiltInNameplate(Transform root)
-        {
-            var nameplate = FindDescendant(root, "NameplateAnchor");
-            if (nameplate != null)
-            {
-                nameplate.gameObject.SetActive(false);
-            }
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

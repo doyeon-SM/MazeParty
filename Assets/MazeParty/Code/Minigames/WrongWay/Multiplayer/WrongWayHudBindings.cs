@@ -1,4 +1,3 @@
-using System;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -13,83 +12,58 @@ namespace MazeParty.Multiplayer
     public sealed class WrongWayHudBindings : MonoBehaviour
     {
         [SerializeField] private Canvas canvas;
-        [SerializeField] private Text promptText;
-        [SerializeField] private Text[] progressRows;
-
-        private Color[] _defaultProgressRowColors;
+        [SerializeField] private Image directionIcon;
+        [SerializeField] private Sprite upIcon;
+        [SerializeField] private Sprite downIcon;
+        [SerializeField] private Sprite leftIcon;
+        [SerializeField] private Sprite rightIcon;
 
         public Canvas Canvas => canvas;
-        public Text PromptText => promptText;
-        public Text[] ProgressRows => progressRows;
+        public Image DirectionIcon => directionIcon;
+        public Sprite UpIcon => upIcon;
+        public Sprite DownIcon => downIcon;
+        public Sprite LeftIcon => leftIcon;
+        public Sprite RightIcon => rightIcon;
 
         public bool HasRequiredReferences =>
             canvas != null &&
-            promptText != null &&
-            progressRows != null &&
-            progressRows.Length == WrongWayRules.PlayerCount &&
-            AllAssigned(progressRows);
+            directionIcon != null &&
+            upIcon != null &&
+            downIcon != null &&
+            leftIcon != null &&
+            rightIcon != null;
 
         public void Configure(
             Canvas targetCanvas,
-            Text targetPromptText,
-            Text[] targetProgressRows)
+            Image targetDirectionIcon,
+            Sprite targetUpIcon,
+            Sprite targetDownIcon,
+            Sprite targetLeftIcon,
+            Sprite targetRightIcon)
         {
             canvas = targetCanvas;
-            promptText = targetPromptText;
-            progressRows = targetProgressRows;
+            directionIcon = targetDirectionIcon;
+            upIcon = targetUpIcon;
+            downIcon = targetDownIcon;
+            leftIcon = targetLeftIcon;
+            rightIcon = targetRightIcon;
         }
 
-
-        public Color GetDefaultProgressRowColor(int index)
+        public Sprite GetDirectionIcon(WrongWayDirection direction)
         {
-            if (progressRows == null ||
-                index < 0 ||
-                index >= progressRows.Length)
+            switch (direction)
             {
-                throw new ArgumentOutOfRangeException(nameof(index));
+                case WrongWayDirection.Up:
+                    return upIcon;
+                case WrongWayDirection.Down:
+                    return downIcon;
+                case WrongWayDirection.Left:
+                    return leftIcon;
+                case WrongWayDirection.Right:
+                    return rightIcon;
+                default:
+                    return null;
             }
-
-            CaptureDefaultProgressRowColors();
-            return _defaultProgressRowColors[index];
-        }
-
-        private void Awake()
-        {
-            CaptureDefaultProgressRowColors();
-        }
-
-        private void CaptureDefaultProgressRowColors()
-        {
-            if (_defaultProgressRowColors != null &&
-                progressRows != null &&
-                _defaultProgressRowColors.Length == progressRows.Length)
-            {
-                return;
-            }
-
-            var count = progressRows != null ? progressRows.Length : 0;
-            _defaultProgressRowColors = new Color[count];
-            for (var index = 0; index < count; index++)
-            {
-                if (progressRows[index] != null)
-                {
-                    _defaultProgressRowColors[index] =
-                        progressRows[index].color;
-                }
-            }
-        }
-
-        private static bool AllAssigned(Text[] texts)
-        {
-            for (var index = 0; index < texts.Length; index++)
-            {
-                if (texts[index] == null)
-                {
-                    return false;
-                }
-            }
-
-            return true;
         }
     }
 }

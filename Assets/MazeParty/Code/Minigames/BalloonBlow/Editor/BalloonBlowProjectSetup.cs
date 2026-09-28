@@ -99,16 +99,12 @@ namespace MazeParty.Editor
         {
             EnsureFolders();
             var materials = CreateMaterials();
-            var hudPrefab = LoadOrCreateHudPrefab();
-            var labelPrefab = LoadOrCreateStationLabelPrefab(materials);
-            BuildBalloonBlowScene(materials, hudPrefab, labelPrefab);
+            BuildBalloonBlowScene(materials);
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildBalloonBlowScene(
-            BalloonBlowMaterials materials,
-            GameObject hudPrefab,
-            GameObject stationLabelPrefab)
+            BalloonBlowMaterials materials)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -147,8 +143,7 @@ namespace MazeParty.Editor
 
             var arena = CreateArena(
                 arenaPresentation.transform,
-                materials,
-                stationLabelPrefab);
+                materials);
             CreateLighting(arenaPresentation.transform);
             var sharedCamera = CreateSharedCamera(root.transform);
 
@@ -177,29 +172,14 @@ namespace MazeParty.Editor
             var state = root.AddComponent<NetworkBalloonBlowState>();
             var view = root.AddComponent<BalloonBlowNetworkView>();
 
-            var hudObject = PrefabUtility.InstantiatePrefab(
-                hudPrefab,
-                root.transform) as GameObject;
-            var hud = hudObject != null
-                ? hudObject.GetComponent<BalloonBlowHudBindings>()
-                : null;
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "BalloonBlowHud.prefab could not be instantiated with " +
-                    "its required serialized bindings.");
-            }
-
             view.Configure(
                 state,
                 sharedCamera,
                 runtimePlayers.transform,
                 arena.PlayerAnchors,
                 arena.BalloonAnchors,
-                arena.StationLabels,
                 arenaPresentation,
-                cueAudioSource,
-                hud);
+                cueAudioSource);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, BalloonBlowScenePath);
@@ -221,8 +201,7 @@ namespace MazeParty.Editor
 
         private static ArenaReferences CreateArena(
             Transform parent,
-            BalloonBlowMaterials materials,
-            GameObject stationLabelPrefab)
+            BalloonBlowMaterials materials)
         {
             CreateAuthorityColliders(parent);
             MinigameCorePrefabUtility.InstantiateOrSeed(
@@ -235,15 +214,10 @@ namespace MazeParty.Editor
             playerRoot.SetParent(parent, false);
             var balloonRoot = new GameObject("Balloon Anchors").transform;
             balloonRoot.SetParent(parent, false);
-            var labelRoot = new GameObject("Station Label Anchors").transform;
-            labelRoot.SetParent(parent, false);
-
             var playerAnchors =
                 new Transform[BalloonBlowRules.PlayerCount];
             var balloonAnchors =
                 new Transform[BalloonBlowRules.PlayerCount];
-            var stationLabels =
-                new BalloonBlowStationLabel[BalloonBlowRules.PlayerCount];
             for (var slot = 0;
                  slot < BalloonBlowRules.PlayerCount;
                  slot++)
@@ -299,36 +273,12 @@ namespace MazeParty.Editor
                     .transform;
                 balloonAnchors[slot] = balloonAnchor;
 
-                var labelObject = PrefabUtility.InstantiatePrefab(
-                    stationLabelPrefab,
-                    labelRoot) as GameObject;
-                if (labelObject == null)
-                {
-                    throw new InvalidOperationException(
-                        "Could not instantiate BalloonBlowStationLabel.prefab.");
-                }
-                labelObject.name = "Station Label " + (slot + 1);
-                labelObject.transform.position = new Vector3(
-                    PlayerPositions[slot].x,
-                    4.25f,
-                    PlayerPositions[slot].z);
-                labelObject.transform.rotation =
-                    BalloonBlowNetworkView.SharedCameraRotation;
-                stationLabels[slot] = labelObject.GetComponent<
-                    BalloonBlowStationLabel>();
-                if (stationLabels[slot] == null ||
-                    !stationLabels[slot].HasRequiredReferences)
-                {
-                    throw new InvalidOperationException(
-                        "Balloon Blow station-label prefab bindings are invalid.");
-                }
             }
 
             return new ArenaReferences
             {
                 PlayerAnchors = playerAnchors,
-                BalloonAnchors = balloonAnchors,
-                StationLabels = stationLabels
+                BalloonAnchors = balloonAnchors
             };
         }
 
@@ -898,12 +848,6 @@ namespace MazeParty.Editor
         {
             var playerAnchors = FindDescendant(root.transform, "Player Anchors");
             var balloonAnchors = FindDescendant(root.transform, "Balloon Anchors");
-            var labelAnchors = FindDescendant(
-                root.transform,
-                "Station Label Anchors");
-            var hud = root.GetComponentInChildren<BalloonBlowHudBindings>(true);
-            var labels = root.GetComponentsInChildren<
-                BalloonBlowStationLabel>(true);
 
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkBalloonBlowState>() == null ||
@@ -912,36 +856,15 @@ namespace MazeParty.Editor
                 playerAnchors.childCount != BalloonBlowRules.PlayerCount ||
                 balloonAnchors == null ||
                 balloonAnchors.childCount != BalloonBlowRules.PlayerCount ||
-                labelAnchors == null ||
-                labelAnchors.childCount != BalloonBlowRules.PlayerCount ||
-                labels.Length != BalloonBlowRules.PlayerCount ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
-                hud == null)
+                root.GetComponentInChildren<BalloonBlowHudBindings>(true) != null ||
+                root.GetComponentInChildren<BalloonBlowStationLabel>(true) != null)
             {
                 throw new InvalidOperationException(
                     "Generated Balloon Blow scene is missing its network, " +
-                    "station, balloon, label, camera, audio, art or HUD contract.");
-            }
-
-            if (!hud.HasRequiredReferences ||
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    hud.gameObject) != HudPrefabPath)
-            {
-                throw new InvalidOperationException(
-                    "Balloon Blow HUD must remain a configured prefab instance.");
-            }
-            for (var index = 0; index < labels.Length; index++)
-            {
-                if (!labels[index].HasRequiredReferences ||
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        labels[index].gameObject) != StationLabelPrefabPath)
-                {
-                    throw new InvalidOperationException(
-                        "Every Balloon Blow station label must remain a " +
-                        "configured prefab instance.");
-                }
+                    "station, balloon, camera, audio or art contract.");
             }
 
             if (root.GetComponentInChildren<Camera>(true) != null ||
@@ -1034,7 +957,6 @@ namespace MazeParty.Editor
         {
             public Transform[] PlayerAnchors;
             public Transform[] BalloonAnchors;
-            public BalloonBlowStationLabel[] StationLabels;
         }
 
         private sealed class BalloonBlowMaterials

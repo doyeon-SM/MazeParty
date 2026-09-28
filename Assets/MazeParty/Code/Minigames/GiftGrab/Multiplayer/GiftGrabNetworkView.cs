@@ -1,5 +1,4 @@
 using MazeParty.Gameplay;
-using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -51,7 +50,6 @@ namespace MazeParty.Multiplayer
             new Transform[PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
-        [SerializeField] private GiftGrabHudBindings hud;
 
         private readonly PlayerView[] _players = new PlayerView[PlayerCount];
         private GiftView[] _gifts = System.Array.Empty<GiftView>();
@@ -59,7 +57,6 @@ namespace MazeParty.Multiplayer
         private bool _cameraConfigured;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
-        private int _localSlot = -1;
         private ulong _lastActionRevision;
         private float _pushVfxRemaining;
         private float _throwVfxRemaining;
@@ -74,7 +71,6 @@ namespace MazeParty.Multiplayer
         public Transform[] DepositedGiftAnchors => depositedGiftAnchors;
         public GiftGrabBaseLabel[] PlayerLabels => playerLabels;
         public GiftGrabBaseLabel[] BaseLabels => baseLabels;
-        public GiftGrabHudBindings Hud => hud;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(NetworkGiftGrabState.ArenaCenterX, 26f, 0f);
@@ -97,8 +93,7 @@ namespace MazeParty.Multiplayer
             Transform dropEffect,
             Transform[] stunEffects,
             GameObject arena,
-            AudioSource audioSource,
-            GiftGrabHudBindings hudBindings)
+            AudioSource audioSource)
         {
             state = networkState;
             sharedCamera = camera;
@@ -115,7 +110,6 @@ namespace MazeParty.Multiplayer
             stunVfxAnchors = stunEffects;
             arenaPresentation = arena;
             cueAudioSource = audioSource;
-            hud = hudBindings;
             _cameraConfigured = false;
             ConfigureCamera();
             CacheGiftViews();
@@ -133,13 +127,11 @@ namespace MazeParty.Multiplayer
             EnsurePlayers();
             SetActionVfxActive(false);
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -163,8 +155,6 @@ namespace MazeParty.Multiplayer
             var showWorld = state != null && state.IsSpawned && selected &&
                             (match.FlowState == BoardFlowState.MinigamePlaying ||
                              match.FlowState == BoardFlowState.MinigameResult);
-            SetHudActive(showWorld &&
-                         match.FlowState == BoardFlowState.MinigamePlaying);
             if (!showWorld)
             {
                 SetWorldPresentationActive(false);
@@ -172,12 +162,12 @@ namespace MazeParty.Multiplayer
             }
 
             SetWorldPresentationActive(true);
-            ResolveLocalSlot(match);
+            // MinigameLocalPlayerHighlight owns the brief shared countdown
+            // marker; this view does not keep a persistent local-player mark.
             RefreshPlayers(match);
             RefreshGifts();
             RefreshLabels(match);
             RefreshActionVfx();
-            RefreshHud(match);
         }
 
         private void ConfigureCamera()
@@ -249,7 +239,7 @@ namespace MazeParty.Multiplayer
                 visual.SetOwnerFirstPerson(false);
                 visual.SetBodyColor(FallbackPlayerColors[slot]);
                 visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
-                visual.SetNameplateVisible(false);
+                visual.SetNameplateVisible(true);
                 DisableGeneratedHitColliders(root);
                 _players[slot] = new PlayerView(root.transform, visual);
             }
@@ -281,30 +271,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void ResolveLocalSlot(NetworkMatchState match)
-        {
-            var resolved = -1;
-            for (var slot = 0; slot < PlayerCount; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                if (avatar != null && avatar.IsOwner)
-                {
-                    resolved = slot;
-                    break;
-                }
-            }
-            if (_localSlot == resolved)
-            {
-                return;
-            }
-
-            _localSlot = resolved;
-            for (var slot = 0; slot < PlayerCount; slot++)
-            {
-                _players[slot]?.Visual.SetTopViewHighlight(slot == _localSlot);
-            }
-        }
-
         private void RefreshPlayers(NetworkMatchState match)
         {
             for (var slot = 0; slot < PlayerCount; slot++)
@@ -329,6 +295,13 @@ namespace MazeParty.Multiplayer
                 }
 
                 var avatar = match.GetAvatarForSlot(slot);
+                var displayName =
+                    avatar != null &&
+                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                        ? avatar.DisplayName
+                        : GameText.F("Player {0}", slot + 1);
+                player.Visual.SetDisplayName(
+                    displayName);
                 if (avatar != null)
                 {
                     var appearance = avatar.Appearance;
@@ -419,9 +392,11 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < PlayerCount; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                var playerName = avatar != null
-                    ? avatar.DisplayName
-                    : GameText.F("Player {0}", slot + 1);
+                var playerName =
+                    avatar != null &&
+                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                        ? avatar.DisplayName
+                        : GameText.F("Player {0}", slot + 1);
                 var color = avatar != null
                     ? avatar.Appearance.BodyColor
                     : FallbackPlayerColors[slot];
@@ -434,13 +409,23 @@ namespace MazeParty.Multiplayer
                                                Vector3.up * LabelHeight;
                     var carried = state.GetCarriedGiftId(slot);
                     var stun = state.GetPlayerStunRemaining(slot);
-                    label.SetContent(
-                        playerName,
-                        stun > 0d ? GameText.F("STUN {0:0.0}s", stun) :
-                        carried >= 0 ? GameText.T("CARRYING GIFT") : "",
-                        slot == _localSlot,
-                        color);
-                    label.FaceCamera(outputCamera);
+                    var status =
+                        stun > 0d
+                            ? GameText.F("STUN {0:0.0}s", stun)
+                            : carried >= 0
+                                ? GameText.T("CARRYING GIFT")
+                                : "";
+                    var showStatus = !string.IsNullOrWhiteSpace(status);
+                    label.gameObject.SetActive(showStatus);
+                    if (showStatus)
+                    {
+                        label.SetContent(
+                            status,
+                            "",
+                            false,
+                            color);
+                        label.FaceCamera(outputCamera);
+                    }
                 }
 
                 if (baseLabels != null && slot < baseLabels.Length &&
@@ -450,7 +435,7 @@ namespace MazeParty.Multiplayer
                     label.SetContent(
                         GameText.F("{0} BASE", playerName),
                         GameText.F("{0} GIFTS", state.GetStoredGiftCount(slot)),
-                        slot == _localSlot,
+                        false,
                         color);
                     label.FaceCamera(outputCamera);
                 }
@@ -553,67 +538,6 @@ namespace MazeParty.Multiplayer
             return remaining;
         }
 
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            hud.LocalStatusText.text = GetLocalStatus();
-            var showResult =
-                state.Phase == NetworkGiftGrabPhase.RoundResult;
-            hud.ResultPanel.SetActive(showResult);
-            if (showResult)
-            {
-                hud.ResultText.text = GetResultLabel();
-            }
-
-            for (var slot = 0; slot < PlayerCount; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                var playerName = avatar != null
-                    ? avatar.DisplayName
-                    : GameText.F("PLAYER {0}", slot + 1);
-                hud.PlayerRows[slot].text = GameText.F(
-                    "{0}  ·  {1} STORED",
-                    playerName.ToUpperInvariant(),
-                    state.GetStoredGiftCount(slot));
-                hud.PlayerRows[slot].color = slot == _localSlot
-                    ? hud.LocalPlayerRowColor
-                    : hud.GetDefaultPlayerRowColor(slot);
-            }
-        }
-
-        private string GetLocalStatus()
-        {
-            if (_localSlot < 0)
-            {
-                return GameText.T("SPECTATING");
-            }
-            var carried = state.GetCarriedGiftId(_localSlot);
-            return GameText.F(
-                "YOU  ·  {0} STORED  ·  {1}",
-                state.GetStoredGiftCount(_localSlot),
-                carried >= 0
-                    ? GameText.T("CARRYING")
-                    : GameText.T("HANDS FREE"));
-        }
-
-        private string GetResultLabel()
-        {
-            if (_localSlot < 0)
-            {
-                return GameText.T("ROUND COMPLETE");
-            }
-            return GameText.F(
-                "ROUND {0}\n+{1} POINTS · {2} GIFTS",
-                MinigameDisplayFormatter.ToOrdinal(
-                    state.GetRoundRank(_localSlot)),
-                state.GetRoundPoints(_localSlot),
-                state.GetStoredGiftCount(_localSlot));
-        }
-
         private void SetWorldPresentationActive(bool active)
         {
             if (_worldVisibilityInitialized && _worldVisible == active)
@@ -629,14 +553,6 @@ namespace MazeParty.Multiplayer
             if (playerRoot != null)
             {
                 playerRoot.gameObject.SetActive(active);
-            }
-        }
-
-        private void SetHudActive(bool active)
-        {
-            if (hud != null && hud.gameObject.activeSelf != active)
-            {
-                hud.gameObject.SetActive(active);
             }
         }
 
@@ -660,15 +576,6 @@ namespace MazeParty.Multiplayer
             foreach (var collider in root.GetComponentsInChildren<Collider>(true))
             {
                 collider.enabled = false;
-            }
-        }
-
-        private static void DisableBuiltInNameplate(Transform root)
-        {
-            var nameplate = FindDescendant(root, "NameplateAnchor");
-            if (nameplate != null)
-            {
-                nameplate.gameObject.SetActive(false);
             }
         }
 

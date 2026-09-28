@@ -13,3 +13,4 @@ MonoBehaviour:
   m_Name: PlayerAvatarPresentationAssets
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarPresentationAssets
   presentationPrefab: {fileID: 8334713507667692283, guid: ec442d25f4f82c744908ab3d3c82dc5f, type: 3}
+  worldIndicatorPrefab: {fileID: 5082429567285203579, guid: f64d026d0d9808046a3e92bb05bf13ea, type: 3}

@@ -267,11 +267,6 @@ namespace MazeParty.Multiplayer
             }
 
             _localSlot = resolved;
-            for (var slot = 0; slot < _runners.Length; slot++)
-            {
-                _runners[slot]?.Visual.SetTopViewHighlight(
-                    slot == _localSlot);
-            }
         }
 
         private void RefreshRunners(NetworkMatchState match)
@@ -317,7 +312,10 @@ namespace MazeParty.Multiplayer
                         appearance.EyeId,
                         appearance.MouthId,
                         appearance.HatId);
-                    runner.Visual.SetDisplayName(avatar.DisplayName);
+                    runner.Visual.SetDisplayName(
+                        string.IsNullOrWhiteSpace(avatar.DisplayName)
+                            ? GameText.F("Player {0}", slot + 1)
+                            : avatar.DisplayName);
                 }
 
                 var playerState = state.GetPlayerState(slot);

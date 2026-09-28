@@ -22,6 +22,8 @@ namespace MazeParty.Editor
     {
         public const string PlayerPresentationPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
+        public const string PlayerWorldIndicatorPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/PlayerWorldIndicator.prefab";
         public const string PlayerPresentationAssetsPath =
             "Assets/MazeParty/Resources/MazeParty/Player/PlayerAvatarPresentationAssets.asset";
         public const string PlayerPrefabPath =
@@ -65,6 +67,21 @@ namespace MazeParty.Editor
             AssetDatabase.SaveAssets();
             Debug.Log(
                 "Authored player presentation, NetworkPlayer, and lobby arena prefabs are ready.");
+        }
+
+        [MenuItem("MazeParty/Multiplayer/Install Shared Player World Indicator")]
+        public static void InstallSharedPlayerWorldIndicator()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Player world indicator installation requires Edit Mode.");
+            }
+
+            EnsurePlayerPresentationAssets();
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Authored shared player world indicator prefab is ready.");
         }
 
         internal static GameObject LoadOrCreatePlayerPrefab()
@@ -136,6 +153,8 @@ namespace MazeParty.Editor
             EnsureFolder(PlayerAssetFolder);
             EnsureFolder("Assets/MazeParty/Resources/MazeParty/Player");
 
+            var worldIndicator = EnsurePlayerWorldIndicatorPrefab();
+
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PlayerPresentationPrefabPath);
             if (prefab == null)
@@ -186,12 +205,13 @@ namespace MazeParty.Editor
             {
                 assets = ScriptableObject.CreateInstance<
                     PlayerAvatarPresentationAssets>();
-                assets.Configure(bindings);
+                assets.Configure(bindings, worldIndicator);
                 AssetDatabase.CreateAsset(assets, PlayerPresentationAssetsPath);
             }
-            else if (assets.PresentationPrefab == null)
+            else if (assets.PresentationPrefab == null ||
+                     assets.WorldIndicatorPrefab == null)
             {
-                assets.Configure(bindings);
+                assets.Configure(bindings, worldIndicator);
                 EditorUtility.SetDirty(assets);
             }
             if (!assets.HasRequiredReferences)
@@ -200,6 +220,46 @@ namespace MazeParty.Editor
                     "PlayerAvatarPresentationAssets has incomplete references.");
             }
             return bindings;
+        }
+
+        private static PlayerWorldIndicator EnsurePlayerWorldIndicatorPrefab()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                PlayerWorldIndicatorPrefabPath);
+            if (prefab == null)
+            {
+                if (AssetDatabase.LoadMainAssetAtPath(
+                        PlayerWorldIndicatorPrefabPath) != null)
+                {
+                    throw new InvalidOperationException(
+                        "An incompatible asset exists at " +
+                        PlayerWorldIndicatorPrefabPath + ".");
+                }
+
+                var template = CreatePlayerWorldIndicatorTemplate();
+                try
+                {
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        template,
+                        PlayerWorldIndicatorPrefabPath);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(template);
+                }
+            }
+
+            var indicator = prefab != null
+                ? prefab.GetComponent<PlayerWorldIndicator>()
+                : null;
+            if (indicator == null || !indicator.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "PlayerWorldIndicator.prefab has incomplete bindings. " +
+                    "Repair the prefab instead of recreating it.");
+            }
+
+            return indicator;
         }
 
         /// <summary>
@@ -569,6 +629,46 @@ namespace MazeParty.Editor
                     firstPersonRightRenderer
                 });
             highlight.SetActive(false);
+            return root;
+        }
+
+        private static GameObject CreatePlayerWorldIndicatorTemplate()
+        {
+            var highlightMaterial = EnsureMaterial(
+                HighlightMaterialPath,
+                Color.white,
+                0.05f);
+            var root = new GameObject(
+                "Player World Indicator",
+                typeof(PlayerWorldIndicator));
+            var nameplate = CreateAnchor(root.transform, "NameplateAnchor");
+            var nameObject = new GameObject("PlayerName", typeof(TextMesh));
+            nameObject.transform.SetParent(nameplate, false);
+            var nameText = nameObject.GetComponent<TextMesh>();
+            nameText.text = "PLAYER";
+            nameText.anchor = TextAnchor.MiddleCenter;
+            nameText.alignment = TextAlignment.Center;
+            nameText.fontSize = 64;
+            nameText.characterSize = 0.025f;
+            nameText.color = Color.white;
+            var font = Resources.Load<Font>(
+                           "MazeParty/Fonts/PlayerNameFont") ??
+                       Resources.GetBuiltinResource<Font>(
+                           "LegacyRuntime.ttf");
+            if (font != null)
+            {
+                nameText.font = font;
+            }
+            WorldTextOcclusion.Apply(nameText);
+
+            var highlight = CreateCameraPlaneHighlight(
+                root.transform,
+                highlightMaterial);
+            highlight.SetActive(false);
+            root.GetComponent<PlayerWorldIndicator>().Configure(
+                nameplate,
+                nameText,
+                highlight);
             return root;
         }
 
@@ -948,6 +1048,60 @@ namespace MazeParty.Editor
         }
 
         private static void CreateHighlightLine(
+            Transform parent,
+            string name,
+            Vector3 position,
+            Vector3 scale,
+            Material material)
+        {
+            var line = CreatePrimitive(
+                name,
+                PrimitiveType.Cube,
+                parent,
+                material);
+            line.transform.localPosition = position;
+            line.transform.localScale = scale;
+            var renderer = line.GetComponent<Renderer>();
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+        }
+
+        private static GameObject CreateCameraPlaneHighlight(
+            Transform parent,
+            Material material)
+        {
+            var root = new GameObject("Local Player Start Highlight");
+            root.transform.SetParent(parent, false);
+            const float extent = 0.72f;
+            const float width = 0.09f;
+            CreateCameraPlaneHighlightLine(
+                root.transform,
+                "North",
+                new Vector3(0f, extent, 0f),
+                new Vector3(extent * 2f + width, width, 0.025f),
+                material);
+            CreateCameraPlaneHighlightLine(
+                root.transform,
+                "South",
+                new Vector3(0f, -extent, 0f),
+                new Vector3(extent * 2f + width, width, 0.025f),
+                material);
+            CreateCameraPlaneHighlightLine(
+                root.transform,
+                "East",
+                new Vector3(extent, 0f, 0f),
+                new Vector3(width, extent * 2f + width, 0.025f),
+                material);
+            CreateCameraPlaneHighlightLine(
+                root.transform,
+                "West",
+                new Vector3(-extent, 0f, 0f),
+                new Vector3(width, extent * 2f + width, 0.025f),
+                material);
+            return root;
+        }
+
+        private static void CreateCameraPlaneHighlightLine(
             Transform parent,
             string name,
             Vector3 position,

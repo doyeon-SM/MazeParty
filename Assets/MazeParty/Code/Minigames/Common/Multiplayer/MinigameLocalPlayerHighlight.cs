@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
@@ -6,23 +7,28 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// A client-only world-space marker for the first two seconds of the shared
-    /// minigame start countdown. It follows the local representation rather than
-    /// the persistent board avatar, which is not used by every minigame.
+    /// Keeps player names on every minigame representation and shows the local
+    /// player's authored locator only during the shared start countdown.
+    /// Avatar games reuse PlayerAvatarPresentation; ball/shield games use the
+    /// shared PlayerWorldIndicator prefab from PlayerAvatarPresentationAssets.
     /// </summary>
+    [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class MinigameLocalPlayerHighlight : MonoBehaviour
     {
-        private const float AvatarHalfExtent = 0.96f;
-        private const float BallHalfExtent = 0.86f;
-        private const float ShieldHalfExtent = 1.34f;
-        private const float LineWidth = 0.14f;
+        private const float SnowySpinNameOffset = 1.15f;
+        private const float BouncingBallsNameOffset = 1.05f;
+        private static readonly Vector2 SnowySpinHighlightScale =
+            new Vector2(1.2f, 1.2f);
 
-        private GameObject _outline;
-        private Transform _target;
-        private ScheduledMinigameId _targetMinigame;
-        private int _targetSlot = -1;
-        private Scene _targetScene;
+        private readonly List<PlayerAvatarVisual> _standardVisuals =
+            new List<PlayerAvatarVisual>(4);
+        private readonly PlayerWorldIndicator[] _specialIndicators =
+            new PlayerWorldIndicator[4];
+
+        private PlayerAvatarVisual _localVisual;
+        private Scene _standardVisualScene;
+        private bool _missingIndicatorReported;
 
         public static void EnsureInstalled(GameObject host)
         {
@@ -33,33 +39,37 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        public static bool IsHighlightWindow(
-            bool countdownActive,
-            double remainingSeconds)
+        private static bool UsesWorldIndicator(ScheduledMinigameId minigame)
         {
-            return countdownActive && remainingSeconds > 1d;
+            return minigame == ScheduledMinigameId.SnowySpin ||
+                   minigame == ScheduledMinigameId.BouncingBalls;
         }
 
         private void OnDisable()
         {
-            Hide();
-            ClearTarget();
+            ClearStandardHighlight();
+            HideSpecialIndicators();
+            ResetStandardVisualCache();
         }
 
         private void OnDestroy()
         {
-            if (_outline == null)
+            for (var slot = 0; slot < _specialIndicators.Length; slot++)
             {
-                return;
-            }
+                var indicator = _specialIndicators[slot];
+                if (indicator == null)
+                {
+                    continue;
+                }
 
-            if (Application.isPlaying)
-            {
-                Destroy(_outline);
-            }
-            else
-            {
-                DestroyImmediate(_outline);
+                if (Application.isPlaying)
+                {
+                    Destroy(indicator.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(indicator.gameObject);
+                }
             }
         }
 
@@ -67,45 +77,54 @@ namespace MazeParty.Multiplayer
         {
             var match = NetworkMatchState.Instance;
             if (match == null || !match.IsSpawned ||
-                !IsHighlightWindow(
-                    match.IsMinigameStartCountdown,
-                    match.MinigameStartCountdownRemaining))
+                !MinigameCatalog.IsRegistered(match.CurrentMinigame) ||
+                !TryGetLocalSlot(match, out var localSlot))
             {
-                Hide();
-                ClearTarget();
+                ClearPresentation();
                 return;
             }
 
-            var sceneName = MinigameCatalog.GetSceneName(match.CurrentMinigame);
+            var sceneName = MinigameCatalog.GetSceneName(
+                match.CurrentMinigame);
             var scene = SceneManager.GetSceneByName(sceneName);
-            if (!scene.IsValid() || !scene.isLoaded ||
-                !TryGetLocalSlot(match, out var slot))
+            if (!scene.IsValid() || !scene.isLoaded)
             {
-                Hide();
-                ClearTarget();
+                ClearPresentation();
                 return;
             }
 
-            if (_target == null || _targetMinigame != match.CurrentMinigame ||
-                _targetSlot != slot || _targetScene != scene ||
-                (match.CurrentMinigame !=
-                     ScheduledMinigameId.ArenaCombat &&
-                 _target.gameObject.scene != scene) ||
-                !_target.gameObject.activeInHierarchy)
+            var highlightVisible = match.IsMinigameStartCountdown &&
+                                   match.MinigameStartCountdownRemaining > 0d;
+            if (UsesWorldIndicator(match.CurrentMinigame))
             {
-                _target = ResolveTarget(match.CurrentMinigame, scene, slot);
-                _targetMinigame = match.CurrentMinigame;
-                _targetSlot = slot;
-                _targetScene = scene;
-            }
-
-            if (_target == null || !_target.gameObject.activeInHierarchy)
-            {
-                Hide();
+                ClearStandardHighlight();
+                RefreshSpecialPresentation(
+                    match,
+                    scene,
+                    localSlot,
+                    highlightVisible);
                 return;
             }
 
-            ShowAt(_target, match.CurrentMinigame, slot);
+            HideSpecialIndicators();
+            RefreshStandardNameplates(match, scene);
+            var localVisual = ResolveAvatarVisual(
+                match.CurrentMinigame,
+                scene,
+                localSlot);
+            if (_localVisual != localVisual)
+            {
+                ClearStandardHighlight();
+                _localVisual = localVisual;
+            }
+
+            if (_localVisual == null)
+            {
+                return;
+            }
+
+            _localVisual.SetNameplateVisible(true);
+            _localVisual.SetTopViewHighlight(highlightVisible);
         }
 
         private static bool TryGetLocalSlot(
@@ -125,20 +144,177 @@ namespace MazeParty.Multiplayer
             return false;
         }
 
-        private static Transform ResolveTarget(
+        private void RefreshStandardNameplates(
+            NetworkMatchState match,
+            Scene scene)
+        {
+            if (match.CurrentMinigame == ScheduledMinigameId.ArenaCombat)
+            {
+                ResetStandardVisualCache();
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    var visual = match.GetAvatarForSlot(slot)?.AvatarVisual;
+                    if (visual != null)
+                    {
+                        visual.SetNameplateVisible(true);
+                    }
+                }
+                return;
+            }
+
+            if (_standardVisualScene != scene ||
+                _standardVisuals.Count < 4)
+            {
+                _standardVisuals.Clear();
+                var visuals = FindObjectsByType<PlayerAvatarVisual>(
+                    FindObjectsInactive.Include);
+                foreach (var visual in visuals)
+                {
+                    if (visual != null && visual.gameObject.scene == scene)
+                    {
+                        _standardVisuals.Add(visual);
+                    }
+                }
+                _standardVisualScene = scene;
+            }
+
+            foreach (var visual in _standardVisuals)
+            {
+                if (visual != null)
+                {
+                    visual.SetNameplateVisible(true);
+                }
+            }
+        }
+
+        private static PlayerAvatarVisual ResolveAvatarVisual(
             ScheduledMinigameId minigame,
             Scene scene,
             int slot)
         {
-            // Arena Combat reuses the persistent, network-authoritative board
-            // avatars. Their GameObjects live in the bootstrap scene while the
-            // authored arena scene is loaded additively.
             if (minigame == ScheduledMinigameId.ArenaCombat)
             {
                 return NetworkMatchState.Instance?
-                    .GetAvatarForSlot(slot)?.transform;
+                    .GetAvatarForSlot(slot)?.AvatarVisual;
             }
 
+            var rootName = GetAvatarRootName(minigame, slot);
+            if (rootName == null)
+            {
+                return null;
+            }
+
+            var visuals = FindObjectsByType<PlayerAvatarVisual>(
+                FindObjectsInactive.Include);
+            foreach (var visual in visuals)
+            {
+                if (visual.gameObject.scene == scene &&
+                    visual.gameObject.name == rootName)
+                {
+                    return visual;
+                }
+            }
+
+            return null;
+        }
+
+        private void RefreshSpecialPresentation(
+            NetworkMatchState match,
+            Scene scene,
+            int localSlot,
+            bool highlightVisible)
+        {
+            if (!EnsureSpecialIndicators())
+            {
+                return;
+            }
+
+            var camera = Camera.main;
+            for (var slot = 0; slot < _specialIndicators.Length; slot++)
+            {
+                var indicator = _specialIndicators[slot];
+                var target = ResolveSpecialTarget(
+                    match.CurrentMinigame,
+                    scene,
+                    slot);
+                if (indicator == null || target == null ||
+                    !target.gameObject.activeInHierarchy || camera == null)
+                {
+                    indicator?.SetVisible(false);
+                    continue;
+                }
+
+                var avatar = match.GetAvatarForSlot(slot);
+                indicator.SetDisplayName(
+                    avatar != null &&
+                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                        ? avatar.DisplayName
+                        : GameText.F("PLAYER {0}", slot + 1));
+                indicator.SetPose(
+                    target,
+                    camera,
+                    match.CurrentMinigame ==
+                        ScheduledMinigameId.SnowySpin
+                            ? SnowySpinNameOffset
+                            : BouncingBallsNameOffset,
+                    GetSpecialHighlightScale(
+                        match.CurrentMinigame,
+                        slot));
+                indicator.SetLocalStartHighlight(
+                    slot == localSlot && highlightVisible);
+            }
+        }
+
+        private bool EnsureSpecialIndicators()
+        {
+            var assets = Resources.Load<PlayerAvatarPresentationAssets>(
+                PlayerAvatarPresentationAssets.ResourcePath);
+            var source = assets != null
+                ? assets.WorldIndicatorPrefab
+                : null;
+            if (source == null || !source.HasRequiredReferences)
+            {
+                if (!_missingIndicatorReported)
+                {
+                    _missingIndicatorReported = true;
+                    Debug.LogError(
+                        "Shared player world indicator prefab is missing or " +
+                        "incomplete. Run MazeParty/Multiplayer/Install " +
+                        "Shared Player World Indicator.",
+                        this);
+                }
+                return false;
+            }
+
+            for (var slot = 0; slot < _specialIndicators.Length; slot++)
+            {
+                if (_specialIndicators[slot] != null)
+                {
+                    continue;
+                }
+
+                var indicator = Instantiate(source);
+                indicator.gameObject.name =
+                    "Player World Indicator " + (slot + 1);
+                if (gameObject.scene.IsValid())
+                {
+                    SceneManager.MoveGameObjectToScene(
+                        indicator.gameObject,
+                        gameObject.scene);
+                }
+                indicator.SetVisible(false);
+                _specialIndicators[slot] = indicator;
+            }
+
+            _missingIndicatorReported = false;
+            return true;
+        }
+
+        private static Transform ResolveSpecialTarget(
+            ScheduledMinigameId minigame,
+            Scene scene,
+            int slot)
+        {
             if (minigame == ScheduledMinigameId.SnowySpin)
             {
                 var views = FindObjectsByType<SnowySpinNetworkView>(
@@ -150,11 +326,8 @@ namespace MazeParty.Multiplayer
                         return view.GetPlayerBall(slot);
                     }
                 }
-
-                return null;
             }
-
-            if (minigame == ScheduledMinigameId.BouncingBalls)
+            else if (minigame == ScheduledMinigameId.BouncingBalls)
             {
                 var views = FindObjectsByType<BouncingBallsNetworkView>(
                     FindObjectsInactive.Include);
@@ -165,30 +338,23 @@ namespace MazeParty.Multiplayer
                         return view.GetShieldTransform(slot);
                     }
                 }
-
-                return null;
-            }
-
-            var rootName = GetAvatarRootName(minigame, slot);
-            if (rootName == null)
-            {
-                return null;
-            }
-
-            // The views create their players after scene load. Search every
-            // countdown frame until the correct scene-local visual appears.
-            var visuals = FindObjectsByType<PlayerAvatarVisual>(
-                FindObjectsInactive.Include);
-            foreach (var visual in visuals)
-            {
-                if (visual.gameObject.scene == scene &&
-                    visual.gameObject.name == rootName)
-                {
-                    return visual.transform;
-                }
             }
 
             return null;
+        }
+
+        private static Vector2 GetSpecialHighlightScale(
+            ScheduledMinigameId minigame,
+            int slot)
+        {
+            if (minigame == ScheduledMinigameId.SnowySpin)
+            {
+                return SnowySpinHighlightScale;
+            }
+
+            return slot == 1 || slot == 3
+                ? new Vector2(0.39f, 1.86f)
+                : new Vector2(1.86f, 0.39f);
         }
 
         private static string GetAvatarRootName(
@@ -235,80 +401,34 @@ namespace MazeParty.Multiplayer
             return prefix + (slot + 1);
         }
 
-        private void ShowAt(
-            Transform target,
-            ScheduledMinigameId minigame,
-            int slot)
+        private void ClearPresentation()
         {
-            EnsureOutline();
-            if (_outline == null)
-            {
-                return;
-            }
+            ClearStandardHighlight();
+            HideSpecialIndicators();
+            ResetStandardVisualCache();
+        }
 
-            var marker = _outline.transform;
-            if (minigame == ScheduledMinigameId.BouncingBalls)
+        private void ClearStandardHighlight()
+        {
+            if (_localVisual != null)
             {
-                marker.SetPositionAndRotation(
-                    target.position + new Vector3(0f, 0f, -0.16f),
-                    Quaternion.Euler(90f, 0f, 0f));
-                marker.localScale = slot == 1 || slot == 3
-                    ? new Vector3(0.21f, 1f, 1f)
-                    : new Vector3(1f, 1f, 0.21f);
-            }
-            else
-            {
-                var verticalOffset = minigame == ScheduledMinigameId.SnowySpin
-                    ? -0.62f
-                    : -0.98f;
-                marker.SetPositionAndRotation(
-                    target.position + Vector3.up * verticalOffset,
-                    Quaternion.identity);
-                var extent = minigame == ScheduledMinigameId.SnowySpin
-                    ? BallHalfExtent
-                    : AvatarHalfExtent;
-                var scale = extent / ShieldHalfExtent;
-                marker.localScale = new Vector3(scale, 1f, scale);
-            }
-
-            if (!_outline.activeSelf)
-            {
-                _outline.SetActive(true);
+                _localVisual.SetTopViewHighlight(false);
+                _localVisual = null;
             }
         }
 
-        private void EnsureOutline()
+        private void HideSpecialIndicators()
         {
-            if (_outline != null)
+            foreach (var indicator in _specialIndicators)
             {
-                return;
-            }
-
-            // BoardFlowView lives on the screen-space BoardCanvas prefab. Keep
-            // the world marker outside that hierarchy so disabling the Canvas
-            // during play never hides or scales the outline.
-            _outline = TopViewHighlightUtility.CreateSquareOutline(
-                null,
-                "Countdown Local Player White Outline",
-                ShieldHalfExtent,
-                LineWidth,
-                0f);
-            _outline.SetActive(false);
-        }
-
-        private void Hide()
-        {
-            if (_outline != null && _outline.activeSelf)
-            {
-                _outline.SetActive(false);
+                indicator?.SetVisible(false);
             }
         }
 
-        private void ClearTarget()
+        private void ResetStandardVisualCache()
         {
-            _target = null;
-            _targetSlot = -1;
-            _targetScene = default;
+            _standardVisualScene = default;
+            _standardVisuals.Clear();
         }
     }
 }

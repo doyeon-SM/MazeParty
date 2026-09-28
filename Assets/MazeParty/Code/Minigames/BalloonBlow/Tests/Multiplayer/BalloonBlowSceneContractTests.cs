@@ -13,13 +13,8 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowHud.prefab";
-        private const string LabelPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowStationLabel.prefab";
-
         [Test]
-        public void Scene_PreservesFixedStationsSharedCameraAndPrefabUiContract()
+        public void Scene_PreservesFixedStationsAndSharedCameraContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -53,8 +48,7 @@ namespace MazeParty.Multiplayer.Tests
                              "sharedCamera",
                              "playerRoot",
                              "arenaPresentation",
-                             "cueAudioSource",
-                             "hud"
+                             "cueAudioSource"
                          })
                 {
                     var property = serializedView.FindProperty(propertyName);
@@ -67,8 +61,7 @@ namespace MazeParty.Multiplayer.Tests
                 foreach (var propertyName in new[]
                          {
                              "playerAnchors",
-                             "balloonAnchors",
-                             "stationLabels"
+                             "balloonAnchors"
                          })
                 {
                     var property = serializedView.FindProperty(propertyName);
@@ -112,33 +105,17 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(balloon.Find("Balloon Knot"), Is.Not.Null);
                 }
 
-                var labels = state.GetComponentsInChildren<
-                    BalloonBlowStationLabel>(true);
                 Assert.That(
-                    labels,
-                    Has.Length.EqualTo(BalloonBlowRules.PlayerCount));
-                foreach (var label in labels)
-                {
-                    Assert.That(label.HasRequiredReferences, Is.True);
-                    Assert.That(
-                        PrefabUtility
-                            .GetPrefabAssetPathOfNearestInstanceRoot(
-                                label.gameObject),
-                        Is.EqualTo(LabelPrefabPath));
-                }
-
-                var hud = state.GetComponentInChildren<
-                    BalloonBlowHudBindings>(true);
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
+                    state.GetComponentsInChildren<
+                        BalloonBlowStationLabel>(true),
+                    Is.Empty,
+                    "Balloon growth and pop state are conveyed by the " +
+                    "world presentation.");
                 Assert.That(
-                    hud.transform.localScale,
-                    Is.EqualTo(Vector3.one),
-                    "The prefab-authored HUD root must remain renderable.");
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject),
-                    Is.EqualTo(HudPrefabPath));
+                    state.GetComponentsInChildren<
+                        BalloonBlowHudBindings>(true),
+                    Is.Empty,
+                    "Balloon Blow uses only the shared minigame HUD.");
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component =>
