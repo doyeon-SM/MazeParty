@@ -165,7 +165,7 @@ namespace MazeParty.Multiplayer
 
             var cells = overview ? overviewCells : minimapCells;
             var mapRoot = overview
-                ? _topology.GetComponentInParent<BoardMapRoot>()
+                ? BoardMapRuntimeLoader.ResolveActiveMapRoot(_topology)
                 : null;
             for (var y = 0; y < GridSize; y++)
             {

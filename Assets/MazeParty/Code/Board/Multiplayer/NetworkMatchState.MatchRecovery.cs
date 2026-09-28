@@ -35,19 +35,28 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            string contentFingerprint;
-            string legacyContentFingerprint;
+            string[] compatibleContentFingerprints;
             try
             {
-                contentFingerprint = MatchRecoveryFingerprint.CreateContentFingerprint(
-                    _boardTopology,
-                    _minigameSchedule);
-                legacyContentFingerprint =
+                compatibleContentFingerprints = new[]
+                {
+                    MatchRecoveryFingerprint.CreateContentFingerprint(
+                        _boardTopology,
+                        _minigameSchedule,
+                        CurrentBoardMapSelection),
                     MatchRecoveryFingerprint.CreateContentFingerprint(
                         _boardTopology,
                         _minigameSchedule,
                         MatchRecoverySnapshot.
-                            LegacyRecoveryVersionWithoutMines);
+                            LegacyRecoveryVersionWithoutMapIdentity,
+                        BoardMapSelection.Legacy),
+                    MatchRecoveryFingerprint.CreateContentFingerprint(
+                        _boardTopology,
+                        _minigameSchedule,
+                        MatchRecoverySnapshot.
+                            LegacyRecoveryVersionWithoutMines,
+                        BoardMapSelection.Legacy)
+                };
             }
             catch (Exception exception)
             {
@@ -64,8 +73,7 @@ namespace MazeParty.Multiplayer
             {
                 status = _minigameScheduleSession.TryLoadRecovery(
                     rosterFingerprint,
-                    contentFingerprint,
-                    legacyContentFingerprint,
+                    compatibleContentFingerprints,
                     out snapshot);
             }
             catch (Exception exception)
@@ -201,6 +209,11 @@ namespace MazeParty.Multiplayer
             error = string.Empty;
 
             if (snapshot == null || controller == null ||
+                !BoardMapSelection.TryCreate(
+                    snapshot.boardMapId,
+                    snapshot.boardMapContentVersion,
+                    out var savedMapSelection) ||
+                savedMapSelection != CurrentBoardMapSelection ||
                 snapshot.scheduleSeed != _minigameSchedule.Seed ||
                 snapshot.scheduleTurnCount != _minigameSchedule.TurnCount ||
                 snapshot.catalogEntryCount !=
@@ -470,7 +483,8 @@ namespace MazeParty.Multiplayer
                 var contentFingerprint =
                     MatchRecoveryFingerprint.CreateContentFingerprint(
                         _boardTopology,
-                        _minigameSchedule);
+                        _minigameSchedule,
+                        CurrentBoardMapSelection);
                 var record = _minigameScheduleSession.SaveRecovery(
                     rosterFingerprint,
                     contentFingerprint,
@@ -609,6 +623,9 @@ namespace MazeParty.Multiplayer
                 remainingMinigameSlots = remaining,
                 boardEffectSeed = _boardEffectSeed.Value,
                 boardEffectRevision = _boardEffectRevision.Value,
+                boardMapId = CurrentBoardMapSelection.MapId,
+                boardMapContentVersion =
+                    CurrentBoardMapSelection.ContentVersion,
                 keyShop = new MatchRecoveryKeyShopSnapshot
                 {
                     lifecycle = (byte)stableKeyShopState,

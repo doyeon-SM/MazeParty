@@ -125,10 +125,48 @@ namespace MazeParty.Gameplay
             return Mathf.Abs(horizontal) <= extent && Mathf.Abs(depth) <= extent;
         }
 
-        public Vector3 GetRecoveryCenter(float verticalOffset = 0f)
+        public bool CanContainHorizontalInset(float inset)
+        {
+            if (!float.IsFinite(inset))
+            {
+                return false;
+            }
+
+            var safeInset = Mathf.Max(0f, inset);
+            if (TryGetValidFootprint(out var authoredFootprint))
+            {
+                return authoredFootprint.CanContainInset(safeInset);
+            }
+
+            return safeInset <= HalfRoomSize;
+        }
+
+        public bool ContainsHorizontalDisc(Vector3 worldPoint, float radius)
+        {
+            if (!float.IsFinite(radius))
+            {
+                return false;
+            }
+
+            var safeRadius = Mathf.Max(0f, radius);
+            if (!CanContainHorizontalInset(safeRadius))
+            {
+                return false;
+            }
+
+            var closest = GetClosestPointInside(worldPoint, safeRadius);
+            var delta = closest - worldPoint;
+            var up = transform.up.normalized;
+            delta -= up * Vector3.Dot(delta, up);
+            return delta.sqrMagnitude <= 0.000001f;
+        }
+
+        public Vector3 GetRecoveryCenter(
+            float verticalOffset = 0f,
+            float horizontalInset = 0f)
         {
             var center = TryGetValidFootprint(out var authoredFootprint)
-                ? authoredFootprint.GetSafeCenter()
+                ? authoredFootprint.GetSafeCenter(Mathf.Max(0f, horizontalInset))
                 : WorldCenter;
             return center + transform.up.normalized * verticalOffset;
         }

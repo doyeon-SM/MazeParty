@@ -23,6 +23,10 @@ namespace MazeParty.Gameplay
     [DisallowMultipleComponent]
     public sealed class BoardGate : MonoBehaviour
     {
+        public const float MinimumTraversalRadius = 0.5f;
+
+        private const float CorridorEpsilon = 0.001f;
+
         [SerializeField] private BoardTile source;
         [SerializeField] private BoardTile destination;
         [SerializeField, Min(0.1f)] private float gateWidth = 2.5f;
@@ -77,7 +81,148 @@ namespace MazeParty.Gameplay
             var right = transform.right.normalized;
             var lateralDistance = Mathf.Abs(Vector3.Dot(center - PlanePoint, right));
             var support = GetCapsuleSupport(controller, right);
-            return lateralDistance - support <= GateWidth * 0.5f;
+            return lateralDistance + support <=
+                   GateWidth * 0.5f + CorridorEpsilon;
+        }
+
+        public bool IsCapsuleWithinEndpointCorridor(
+            BoardTile endpoint,
+            CharacterController controller)
+        {
+            if (endpoint == null || controller == null)
+            {
+                return false;
+            }
+
+            var right = transform.right.normalized;
+            var lateralSupport = GetCapsuleSupport(controller, right);
+            var footprintSupport = GetMaximumPlanarCapsuleSupport(
+                controller,
+                endpoint.transform.up);
+            var center = controller.transform.TransformPoint(controller.center);
+            return IsPointWithinEndpointCorridor(
+                endpoint,
+                center,
+                lateralSupport,
+                footprintSupport);
+        }
+
+        /// <summary>
+        /// Returns whether a point lies in the authored approach corridor between
+        /// one endpoint footprint and this gate plane. This keeps separated
+        /// freeform tiles traversable without treating the whole area between tile
+        /// centers as playable space.
+        /// </summary>
+        public bool IsPointWithinEndpointCorridor(
+            BoardTile endpoint,
+            Vector3 worldPoint)
+        {
+            return IsPointWithinEndpointCorridor(endpoint, worldPoint, 0f, 0f);
+        }
+
+        /// <summary>
+        /// Resolves the signed start of the guaranteed corridor from an endpoint's
+        /// safe interior center to this gate plane. Using an interior anchor keeps
+        /// slanted triangle and pentagon edges continuously traversable.
+        /// </summary>
+        public bool TryGetEndpointCorridorLimit(
+            BoardTile endpoint,
+            out float signedDistance,
+            float lateralInset = 0f)
+        {
+            return TryGetEndpointCorridorLimit(
+                endpoint,
+                out signedDistance,
+                lateralInset,
+                lateralInset,
+                out _);
+        }
+
+        private bool TryGetEndpointCorridorLimit(
+            BoardTile endpoint,
+            out float signedDistance,
+            float lateralInset,
+            float endpointInset,
+            out Vector3 endpointAnchor)
+        {
+            signedDistance = 0f;
+            endpointAnchor = default;
+            var isSource = endpoint != null && endpoint == source;
+            var isDestination = endpoint != null && endpoint == destination;
+            if (!isSource && !isDestination)
+            {
+                return false;
+            }
+
+            var usableHalfWidth =
+                GateWidth * 0.5f - Mathf.Max(0f, lateralInset);
+            if (usableHalfWidth < -CorridorEpsilon)
+            {
+                return false;
+            }
+
+            if (!endpoint.CanContainHorizontalInset(endpointInset))
+            {
+                return false;
+            }
+
+            endpointAnchor = endpoint.GetRecoveryCenter(
+                horizontalInset: endpointInset);
+            signedDistance = GetSignedDistance(endpointAnchor);
+            return float.IsFinite(signedDistance) &&
+                   (isSource
+                       ? signedDistance <= CorridorEpsilon
+                       : signedDistance >= -CorridorEpsilon);
+        }
+
+        private bool IsPointWithinEndpointCorridor(
+            BoardTile endpoint,
+            Vector3 worldPoint,
+            float lateralInset,
+            float endpointInset)
+        {
+            if (!TryGetEndpointCorridorLimit(
+                    endpoint,
+                    out var endpointDistance,
+                    lateralInset,
+                    endpointInset,
+                    out var endpointAnchor))
+            {
+                return false;
+            }
+
+            var distance = GetSignedDistance(worldPoint);
+            var betweenEndpointAndPlane = endpoint == source
+                ? distance >= endpointDistance - CorridorEpsilon &&
+                  distance <= CorridorEpsilon
+                : distance <= endpointDistance + CorridorEpsilon &&
+                  distance >= -CorridorEpsilon;
+            if (!betweenEndpointAndPlane)
+            {
+                return false;
+            }
+
+            var right = transform.right.normalized;
+            var forward = ForwardNormal;
+            var endpointOffset = endpointAnchor - PlanePoint;
+            var pointOffset = worldPoint - PlanePoint;
+            var endpointOnPlane = new Vector2(
+                Vector3.Dot(endpointOffset, right),
+                Vector3.Dot(endpointOffset, forward));
+            var pointOnPlane = new Vector2(
+                Vector3.Dot(pointOffset, right),
+                Vector3.Dot(pointOffset, forward));
+            var denominator = endpointOnPlane.sqrMagnitude;
+            var progress = denominator > CorridorEpsilon * CorridorEpsilon
+                ? Mathf.Clamp01(Vector2.Dot(pointOnPlane, endpointOnPlane) /
+                                denominator)
+                : 0f;
+            var closest = endpointOnPlane * progress;
+            var usableHalfWidth = Mathf.Max(
+                0f,
+                GateWidth * 0.5f - Mathf.Max(0f, lateralInset));
+            return (pointOnPlane - closest).sqrMagnitude <=
+                   usableHalfWidth * usableHalfWidth + CorridorEpsilon;
         }
 
         public BoardGateTraversalOutcome TryTraverse(
@@ -115,6 +260,31 @@ namespace MazeParty.Gameplay
             var segmentHalfLength = Mathf.Max(0f, height * 0.5f - radius);
             var axis = controllerTransform.up.normalized;
             return radius + segmentHalfLength * Mathf.Abs(Vector3.Dot(axis, direction.normalized));
+        }
+
+        public static float GetMaximumPlanarCapsuleSupport(
+            CharacterController controller,
+            Vector3 planeNormal)
+        {
+            if (controller == null)
+            {
+                return 0f;
+            }
+
+            var controllerTransform = controller.transform;
+            var scale = controllerTransform.lossyScale;
+            var radialScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Abs(scale.z));
+            var verticalScale = Mathf.Abs(scale.y);
+            var radius = controller.radius * radialScale;
+            var height = Mathf.Max(controller.height * verticalScale, radius * 2f);
+            var segmentHalfLength = Mathf.Max(0f, height * 0.5f - radius);
+            var safePlaneNormal = planeNormal.sqrMagnitude > 0.000001f
+                ? planeNormal.normalized
+                : Vector3.up;
+            var projectedAxis = Vector3.ProjectOnPlane(
+                controllerTransform.up.normalized,
+                safePlaneNormal);
+            return radius + segmentHalfLength * projectedAxis.magnitude;
         }
 
         private void OnDrawGizmos()

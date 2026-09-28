@@ -219,6 +219,104 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void ContentFingerprint_UsesActiveMapIdentityForMirroredTopology()
+        {
+            var definition = ScriptableObject.CreateInstance<BoardMapDefinition>();
+            var catalog = ScriptableObject.CreateInstance<BoardMapCatalog>();
+            try
+            {
+                var host = CreateObject("Runtime Loader Host");
+                var proxyObject = CreateObject("Legacy Topology");
+                proxyObject.transform.SetParent(host.transform);
+                var proxy = proxyObject.AddComponent<BoardTopology>();
+                var legacyContent = CreateObject("Legacy Content");
+                legacyContent.transform.SetParent(proxyObject.transform);
+                var legacyTile = CreateTile(Vector2Int.zero);
+                legacyTile.transform.SetParent(legacyContent.transform);
+                proxy.Configure(
+                    new[] { legacyTile },
+                    System.Array.Empty<BoardGate>());
+
+                var template = CreateObject("Authored Map Template");
+                var mapRoot = template.AddComponent<BoardMapRoot>();
+                var topologyObject = CreateObject("Authored Topology");
+                topologyObject.transform.SetParent(template.transform);
+                var authoredTopology =
+                    topologyObject.AddComponent<BoardTopology>();
+                var tilesRoot = CreateObject("Tiles").transform;
+                tilesRoot.SetParent(topologyObject.transform);
+                var authoredStart = CreateTile(new Vector2Int(1, 0));
+                authoredStart.Configure(
+                    new Vector2Int(1, 0),
+                    BoardTileType.Start);
+                authoredStart.transform.SetParent(tilesRoot);
+                var connectionsRoot = CreateObject("Connections").transform;
+                connectionsRoot.SetParent(topologyObject.transform);
+                var environmentRoot = CreateObject("Environment").transform;
+                environmentRoot.SetParent(template.transform);
+                var spawnAnchor = CreateObject("Spawn Anchor").transform;
+                spawnAnchor.SetParent(template.transform);
+                authoredTopology.Configure(
+                    new[] { authoredStart },
+                    System.Array.Empty<BoardGate>());
+                mapRoot.Configure(
+                    definition,
+                    authoredTopology,
+                    tilesRoot,
+                    connectionsRoot,
+                    environmentRoot,
+                    authoredStart,
+                    new[] { authoredStart },
+                    new[] { spawnAnchor });
+                definition.Configure(
+                    "forest-graybox",
+                    "Forest Graybox",
+                    4,
+                    template);
+                catalog.Configure(new[] { definition });
+
+                var loader = host.AddComponent<BoardMapRuntimeLoader>();
+                loader.Configure(
+                    catalog,
+                    proxy,
+                    new[] { legacyContent },
+                    host.transform);
+                Assert.That(
+                    loader.TryResolveFreshSelection(
+                        out var selection,
+                        out var resolveError),
+                    Is.True,
+                    resolveError);
+                Assert.That(
+                    loader.TryActivate(selection, out var loadError),
+                    Is.True,
+                    loadError);
+
+                var schedule = HostMinigameSchedule.Create(7391);
+                var derived = MatchRecoveryFingerprint.CreateContentFingerprint(
+                    proxy,
+                    schedule);
+                var explicitSelection =
+                    MatchRecoveryFingerprint.CreateContentFingerprint(
+                        proxy,
+                        schedule,
+                        selection);
+                var legacy = MatchRecoveryFingerprint.CreateContentFingerprint(
+                    proxy,
+                    schedule,
+                    BoardMapSelection.Legacy);
+
+                Assert.That(derived, Is.EqualTo(explicitSelection));
+                Assert.That(derived, Is.Not.EqualTo(legacy));
+            }
+            finally
+            {
+                Object.DestroyImmediate(catalog);
+                Object.DestroyImmediate(definition);
+            }
+        }
+
         private BoardTile CreateTile(Vector2Int coordinate)
         {
             var tile = CreateObject("Tile " + coordinate).AddComponent<BoardTile>();

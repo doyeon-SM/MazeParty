@@ -170,6 +170,86 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void DisabledMeshCollider_PreservesWorldBoundsForFootprintChecks()
+        {
+            var dieObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                dieObject.name = "Disabled Die Geometry";
+                dieObject.transform.SetPositionAndRotation(
+                    new Vector3(2.5f, -1f, 4.25f),
+                    Quaternion.Euler(19f, 37f, 11f));
+                dieObject.transform.localScale = new Vector3(1.2f, 0.8f, 1.6f);
+                var mesh = dieObject.GetComponent<MeshFilter>().sharedMesh;
+                Object.DestroyImmediate(dieObject.GetComponent<BoxCollider>());
+                var collider = dieObject.AddComponent<MeshCollider>();
+                collider.sharedMesh = mesh;
+                collider.convex = true;
+                Physics.SyncTransforms();
+                var enabledBounds = collider.bounds;
+
+                collider.enabled = false;
+
+                Assert.That(
+                    WorldDieColliderGeometry.TryGetWorldBounds(
+                        collider,
+                        out var disabledBounds),
+                    Is.True);
+                Assert.That(
+                    Vector3.Distance(disabledBounds.center, enabledBounds.center),
+                    Is.LessThan(0.0001f));
+                Assert.That(
+                    Vector3.Distance(disabledBounds.size, enabledBounds.size),
+                    Is.LessThan(0.0001f));
+                Assert.That(disabledBounds.extents.x, Is.GreaterThan(0f));
+                Assert.That(disabledBounds.extents.z, Is.GreaterThan(0f));
+
+                Assert.That(
+                    WorldDieColliderGeometry
+                        .TryGetRotationIndependentWorldRadius(
+                            collider,
+                            out var conservativeRadius),
+                    Is.True);
+                var localBounds = mesh.bounds;
+                var rotations = new[]
+                {
+                    Quaternion.identity,
+                    Quaternion.Euler(17f, 83f, 241f),
+                    Quaternion.Euler(311f, 129f, 44f)
+                };
+                foreach (var rotation in rotations)
+                {
+                    dieObject.transform.rotation = rotation;
+                    for (var x = -1; x <= 1; x += 2)
+                    {
+                        for (var y = -1; y <= 1; y += 2)
+                        {
+                            for (var z = -1; z <= 1; z += 2)
+                            {
+                                var localCorner = localBounds.center +
+                                    Vector3.Scale(
+                                        localBounds.extents,
+                                        new Vector3(x, y, z));
+                                var worldCorner = dieObject.transform
+                                    .TransformPoint(localCorner);
+                                Assert.That(
+                                    Vector3.Distance(
+                                        worldCorner,
+                                        dieObject.transform.position),
+                                    Is.LessThanOrEqualTo(
+                                        conservativeRadius + 0.0001f));
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(dieObject);
+            }
+        }
+
+        [Test]
         public void Lifecycle_RejectsInvalidSlotsAndInvalidOrRepeatedSettlement()
         {
             var model = new WorldDieAuthorityModel();

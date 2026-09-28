@@ -228,7 +228,7 @@ namespace MazeParty.Multiplayer
 
             _orderedTiles.Sort(CompareTiles);
             var freeform = UsesFreeformProjection(topology);
-            var mapRoot = topology.GetComponentInParent<BoardMapRoot>();
+            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(topology);
             var referenceTileSize = GetReferenceTileSize(topology, localCoordinate);
             var extent = Mathf.Max(0.1f, Mathf.Max(bounds.size.x, bounds.size.z));
             if (radiusInTiles > 0f)

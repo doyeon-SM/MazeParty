@@ -1525,7 +1525,10 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (!currentTile.ContainsHorizontalPoint(capsuleCenter) && !allowedPartialCrossing)
+            if (!_topology.ContainsTraversableCapsule(
+                    currentTile,
+                    _characterController) &&
+                !allowedPartialCrossing)
             {
                 ClampControllerInsideTile(currentTile);
             }
@@ -1698,10 +1701,9 @@ namespace MazeParty.Multiplayer
             }
 
             var center = _characterController.transform.TransformPoint(_characterController.center);
-            var radialScale = Mathf.Max(
-                Mathf.Abs(transform.lossyScale.x),
-                Mathf.Abs(transform.lossyScale.z));
-            var safeInset = _characterController.radius * radialScale +
+            var safeInset = BoardGate.GetMaximumPlanarCapsuleSupport(
+                                _characterController,
+                                tile.transform.up) +
                             ControllerFootprintPadding;
             var clampedCenter = tile.GetClosestPointInside(center, safeInset);
             var correction = clampedCenter - center;
@@ -1812,7 +1814,14 @@ namespace MazeParty.Multiplayer
         {
             if (_topology == null)
             {
-                _topology = FindAnyObjectByType<BoardTopology>();
+                var match = NetworkMatchState.Instance;
+                _topology = match != null && match.IsSpawned
+                    ? match.ActiveBoardTopology
+                    : BoardMapRuntimeLoader.ActiveTopology;
+                if (_topology == null)
+                {
+                    _topology = FindAnyObjectByType<BoardTopology>();
+                }
             }
         }
 
@@ -1824,7 +1833,7 @@ namespace MazeParty.Multiplayer
                 return null;
             }
 
-            var mapRoot = _topology.GetComponentInParent<BoardMapRoot>();
+            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(_topology);
             if (mapRoot != null && PlayerSlotRules.IsValid(slot))
             {
                 var authoredStart = mapRoot.GetStartTile(slot);
@@ -1860,9 +1869,7 @@ namespace MazeParty.Multiplayer
             out Quaternion rotation)
         {
             ResolveTopology();
-            var mapRoot = _topology != null
-                ? _topology.GetComponentInParent<BoardMapRoot>()
-                : null;
+            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(_topology);
             TryResolveAuthoredBoardStartPose(
                 _topology,
                 mapRoot,
@@ -2929,7 +2936,9 @@ namespace MazeParty.Multiplayer
         private static bool IsBoardLoaded()
         {
             var board = SceneManager.GetSceneByName(MultiplayerConstants.BoardScene);
-            return board.IsValid() && board.isLoaded;
+            var match = NetworkMatchState.Instance;
+            return board.IsValid() && board.isLoaded &&
+                   match != null && match.IsSpawned && match.IsBoardMapReady;
         }
 
         private static bool IsPointerOverUi()

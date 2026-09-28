@@ -414,6 +414,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            InitializeBoardMapRuntime();
             if (IsServer)
             {
                 EnsureFlowModel();
@@ -431,6 +432,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkDespawn()
         {
             ClearBoardItemWorld();
+            ShutdownBoardMapRuntime();
             if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
             {
                 NetworkManager.SceneManager.OnLoadEventCompleted -=
@@ -604,19 +606,27 @@ namespace MazeParty.Multiplayer
             AdvanceKeyShopLifecycleOnServer(now);
         }
 
-        public void EnableGameplayOnServer()
+        public bool EnableGameplayOnServer()
         {
-            if (!IsServer ||
-                _gameplayEnabled.Value ||
-                !_activeMatchVoidGate.AllowsGameplayMutation)
+            if (!IsServer || !_activeMatchVoidGate.AllowsGameplayMutation)
             {
-                return;
+                return false;
+            }
+            if (_gameplayEnabled.Value)
+            {
+                return true;
+            }
+            if (!TryEnsureBoardMapReadyOnServer(out var mapError))
+            {
+                OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
+                    mapError);
+                return false;
             }
 
             EnsureFlowModel();
             if (!TryInitializeMinigameScheduleOnServer())
             {
-                return;
+                return false;
             }
             EnsureKeyShopRuntime();
             var now = ServerNow;
@@ -628,7 +638,7 @@ namespace MazeParty.Multiplayer
                     OnlineSessionController.Instance?.EndActiveMatchForNetworkFailure(
                         recoveryError);
                 }
-                return;
+                return _gameplayEnabled.Value;
             }
 
             ClearBoardItemWorld();
@@ -670,6 +680,7 @@ namespace MazeParty.Multiplayer
             RefreshItemShopsForTurnOnServer(1);
             SyncFlowSnapshot(now);
             SaveMatchRecoveryCheckpoint(MatchRecoveryCheckpoint.TurnOverview);
+            return true;
         }
 
         /// <summary>

@@ -36,13 +36,39 @@ namespace MazeParty.Multiplayer
             return CreateContentFingerprint(
                 topology,
                 schedule,
-                MatchRecoverySnapshot.CurrentRecoveryVersion);
+                MatchRecoverySnapshot.CurrentRecoveryVersion,
+                ResolveMapSelection(topology));
+        }
+
+        public static string CreateContentFingerprint(
+            BoardTopology topology,
+            HostMinigameSchedule schedule,
+            BoardMapSelection mapSelection)
+        {
+            return CreateContentFingerprint(
+                topology,
+                schedule,
+                MatchRecoverySnapshot.CurrentRecoveryVersion,
+                mapSelection);
         }
 
         public static string CreateContentFingerprint(
             BoardTopology topology,
             HostMinigameSchedule schedule,
             int recoveryVersion)
+        {
+            return CreateContentFingerprint(
+                topology,
+                schedule,
+                recoveryVersion,
+                ResolveMapSelection(topology));
+        }
+
+        public static string CreateContentFingerprint(
+            BoardTopology topology,
+            HostMinigameSchedule schedule,
+            int recoveryVersion,
+            BoardMapSelection mapSelection)
         {
             if (topology == null)
             {
@@ -57,6 +83,15 @@ namespace MazeParty.Multiplayer
             {
                 throw new ArgumentOutOfRangeException(nameof(recoveryVersion));
             }
+            if (!BoardMapSelection.TryCreate(
+                    mapSelection.MapId,
+                    mapSelection.ContentVersion,
+                    out mapSelection))
+            {
+                throw new ArgumentException(
+                    "A valid board map selection is required.",
+                    nameof(mapSelection));
+            }
 
             var text = new StringBuilder(1024);
             text.Append("recovery=")
@@ -67,18 +102,16 @@ namespace MazeParty.Multiplayer
                     CultureInfo.InvariantCulture))
                 .Append('|');
 
-            var mapRoot = topology.GetComponentInParent<BoardMapRoot>();
-            var mapDefinition = mapRoot != null ? mapRoot.Definition : null;
             text.Append("map=");
-            if (mapDefinition == null)
+            if (mapSelection.IsLegacy)
             {
                 text.Append("legacy");
             }
             else
             {
-                text.Append(mapDefinition.MapId)
+                text.Append(mapSelection.MapId)
                     .Append(':')
-                    .Append(mapDefinition.ContentVersion.ToString(
+                    .Append(mapSelection.ContentVersion.ToString(
                         CultureInfo.InvariantCulture));
             }
             text.Append('|');
@@ -203,6 +236,16 @@ namespace MazeParty.Multiplayer
             }
 
             return ComputeSha256Hex(text.ToString());
+        }
+
+        private static BoardMapSelection ResolveMapSelection(
+            BoardTopology topology)
+        {
+            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(topology);
+            var definition = mapRoot != null ? mapRoot.Definition : null;
+            return definition != null && definition.HasValidIdentity
+                ? BoardMapSelection.FromDefinition(definition)
+                : BoardMapSelection.Legacy;
         }
 
         private static void AppendVector(

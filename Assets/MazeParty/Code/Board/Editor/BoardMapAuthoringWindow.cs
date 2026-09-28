@@ -62,6 +62,8 @@ namespace MazeParty.Editor
         private void OnGUI()
         {
             _scroll = EditorGUILayout.BeginScrollView(_scroll);
+            DrawPrototypeTemplates();
+            EditorGUILayout.Space(8f);
             DrawMapAssets();
             EditorGUILayout.Space(8f);
             DrawMapRoot();
@@ -72,6 +74,20 @@ namespace MazeParty.Editor
             EditorGUILayout.Space(8f);
             DrawValidation();
             EditorGUILayout.EndScrollView();
+        }
+
+        private static void DrawPrototypeTemplates()
+        {
+            EditorGUILayout.LabelField("Prototype Templates", EditorStyles.boldLabel);
+            if (GUILayout.Button("Create / Refresh Forest Graybox (40 Tiles)"))
+            {
+                ForestGrayboxMapAuthoring.CreateOrRefreshFromMenu();
+            }
+
+            EditorGUILayout.HelpBox(
+                "Rebuilds the deterministic forest prototype topology and spawn anchors. " +
+                "Everything below its Environment root is preserved for later forest art.",
+                MessageType.Info);
         }
 
         private void DrawMapAssets()

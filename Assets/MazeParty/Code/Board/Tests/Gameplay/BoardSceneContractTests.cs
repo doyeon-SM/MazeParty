@@ -27,6 +27,17 @@ namespace MazeParty.Gameplay.Tests
             {
                 var topology = FindTopology(scene);
                 Assert.That(topology, Is.Not.Null, "Board scene must contain one BoardTopology.");
+                var mapLoader = scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<BoardMapRuntimeLoader>(true))
+                    .Single();
+                Assert.That(mapLoader.HasRequiredReferences, Is.True);
+                Assert.That(mapLoader.RuntimeTopology, Is.SameAs(topology));
+                Assert.That(
+                    Resources.Load<BoardMapCatalog>(
+                        BoardMapRuntimeLoader.CatalogResourcesPath),
+                    Is.Not.Null,
+                    "The production runtime map catalog must stay at its stable Resources path.");
                 var tombstoneView = topology.GetComponents<MonoBehaviour>()
                     .SingleOrDefault(component => component != null &&
                         component.GetType().FullName ==

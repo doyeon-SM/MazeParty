@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -119,6 +120,290 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(controller.transform.position, Is.EqualTo(new Vector3(8f, 0.5f, 0f)));
             Assert.That(first.CurrentTile, Is.SameAs(destination));
             Assert.That(source.IsOccupiedBy(second), Is.True);
+        }
+
+        [Test]
+        public void SeparatedFreeformTiles_UseGateWidthCorridorAcrossTheGap()
+        {
+            var source = CreateTile(
+                "Separated Source",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            source.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(2f));
+            var destination = CreateTile(
+                "Separated Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * 12f);
+            destination.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(2f));
+            var gate = CreateGate(source, destination);
+            var topology = CreateTopology(source, destination, gate);
+
+            var validation = topology.ValidateTopology();
+            Assert.That(
+                validation.IsValid,
+                Is.True,
+                string.Join("\n", validation.Issues));
+            Assert.That(
+                gate.TryGetEndpointCorridorLimit(source, out var sourceLimit),
+                Is.True);
+            Assert.That(sourceLimit, Is.EqualTo(-6f).Within(0.0001f));
+            Assert.That(
+                gate.TryGetEndpointCorridorLimit(
+                    destination,
+                    out var destinationLimit),
+                Is.True);
+            Assert.That(destinationLimit, Is.EqualTo(6f).Within(0.0001f));
+
+            Assert.That(
+                topology.ContainsTraversablePoint(
+                    source,
+                    new Vector3(4f, 0f, 0f)),
+                Is.True,
+                "The source-side dirt-path gap remains traversable.");
+            Assert.That(
+                topology.ContainsTraversablePoint(
+                    destination,
+                    new Vector3(8f, 0f, 0f)),
+                Is.True,
+                "The incoming corridor remains valid after the gate commits.");
+            Assert.That(
+                topology.ContainsTraversablePoint(
+                    source,
+                    new Vector3(4f, 0f, 2f)),
+                Is.False,
+                "The connection must not make the entire inter-tile gap playable.");
+
+            var traversal = CreateTraversal(source, 1);
+            var controller = CreateController(new Vector3(4f, 0f, 0f));
+            Assert.That(
+                topology.TryRecoverOutOfBounds(controller, traversal, 0.5f),
+                Is.False,
+                "Normal out-of-bounds recovery must preserve an authored corridor.");
+            controller.transform.position = new Vector3(4f, 0f, 0.8f);
+            Assert.That(
+                topology.ContainsTraversableCapsule(source, controller),
+                Is.False,
+                "The complete player capsule must fit inside the dirt path.");
+            controller.transform.position = new Vector3(4f, 0f, 0.7f);
+            Assert.That(
+                topology.ContainsTraversableCapsule(source, controller),
+                Is.True);
+            controller.transform.position = new Vector3(4f, 0f, 0f);
+            Assert.That(
+                gate.TryTraverse(traversal, controller),
+                Is.EqualTo(BoardGateTraversalOutcome.SourceSide));
+            controller.transform.position = new Vector3(6f, 0f, 0f);
+            Assert.That(
+                gate.TryTraverse(traversal, controller),
+                Is.EqualTo(BoardGateTraversalOutcome.PartialCrossing));
+            controller.transform.position = new Vector3(6.51f, 0f, 0f);
+            Assert.That(
+                gate.TryTraverse(traversal, controller),
+                Is.EqualTo(BoardGateTraversalOutcome.Committed));
+            Assert.That(traversal.CurrentTile, Is.SameAs(destination));
+            Assert.That(
+                topology.ContainsTraversablePoint(
+                    traversal.CurrentTile,
+                    new Vector3(8f, 0f, 0f)),
+                Is.True);
+        }
+
+        [Test]
+        public void TopologyValidation_RejectsSafeEndpointPastGatePlane()
+        {
+            var source = CreateTile(
+                "Missed Source",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            source.gameObject.AddComponent<BoardTileFootprint>().Configure(new[]
+            {
+                new Vector2(7f, -1f),
+                new Vector2(9f, -1f),
+                new Vector2(9f, 1f),
+                new Vector2(7f, 1f)
+            });
+            var destination = CreateTile(
+                "Missed Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * 12f);
+            destination.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(2f));
+            var gateObject = CreateObject("Missed Corridor Gate");
+            gateObject.transform.position = new Vector3(6f, 0f, 0f);
+            gateObject.transform.rotation = Quaternion.LookRotation(
+                Vector3.right,
+                Vector3.up);
+            var gate = gateObject.AddComponent<BoardGate>();
+            gate.Configure(source, destination, 1f);
+
+            var validation = BoardTopologyValidator.Validate(
+                new[] { source, destination },
+                new[] { gate });
+
+            Assert.That(validation.IsValid, Is.False);
+            Assert.That(
+                validation.Issues.Select(issue => issue.Code),
+                Does.Contain(BoardTopologyIssueCode.GateCorridorDisconnected));
+        }
+
+        [Test]
+        public void TopologyValidation_RejectsGateNarrowerThanPlayerDiameter()
+        {
+            var source = CreateTile(
+                "Narrow Source",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            var destination = CreateTile(
+                "Narrow Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * BoardTile.RoomSize);
+            var gate = CreateGate(source, destination);
+            gate.Configure(source, destination, 0.75f);
+
+            var validation = BoardTopologyValidator.Validate(
+                new[] { source, destination },
+                new[] { gate });
+
+            Assert.That(
+                validation.Issues.Select(issue => issue.Code),
+                Does.Contain(BoardTopologyIssueCode.GateCorridorTooNarrow));
+            var controller = CreateController(gate.PlanePoint);
+            Assert.That(gate.IsCapsuleWithinGateSpan(controller), Is.False);
+        }
+
+        [Test]
+        public void SlantedTriangleEdge_HasContinuousCenterlineCorridor()
+        {
+            var source = CreateTile(
+                "Slanted Triangle",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            source.gameObject.AddComponent<BoardTileFootprint>().Configure(new[]
+            {
+                new Vector2(-2f, -2f),
+                new Vector2(3f, -1f),
+                new Vector2(-1f, 3f)
+            });
+            var destination = CreateTile(
+                "Triangle Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * 12f);
+            destination.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(2f));
+            var gate = CreateGate(source, destination);
+            var topology = CreateTopology(source, destination, gate);
+            var controller = CreateController(new Vector3(2.25f, 0f, 0f));
+
+            Assert.That(source.ContainsHorizontalPoint(
+                controller.transform.TransformPoint(controller.center)), Is.False);
+            Assert.That(topology.ValidateTopology().IsValid, Is.True);
+            Assert.That(
+                topology.ContainsTraversableCapsule(source, controller),
+                Is.True,
+                "A slanted polygon mouth must not leave a centerline gap before the dirt path.");
+        }
+
+        [Test]
+        public void SkewedFootprint_UsesCapsuleSafeInteriorForTraversalAndRecovery()
+        {
+            var source = CreateTile(
+                "Skewed Source",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            var footprint = source.gameObject.AddComponent<BoardTileFootprint>();
+            footprint.Configure(new[]
+            {
+                new Vector2(0f, 0f),
+                new Vector2(1.3f, 0f),
+                new Vector2(0f, 20f)
+            });
+            var destination = CreateTile(
+                "Skewed Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * 12f);
+            destination.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(2f));
+            var gate = CreateGate(source, destination);
+            var topology = CreateTopology(source, destination, gate);
+            var traversal = CreateTraversal(source, 1);
+            var controller = CreateController(new Vector3(0.65f, 0f, 0.1f));
+
+            var rawCenter = source.GetRecoveryCenter();
+            var capsuleSafeCenter = source.GetRecoveryCenter(
+                horizontalInset: controller.radius);
+            Assert.That(footprint.CanContainInset(controller.radius), Is.True);
+            Assert.That(
+                source.ContainsHorizontalDisc(rawCenter, controller.radius),
+                Is.False,
+                "A valid skewed polygon's centroid need not fit the player capsule.");
+            Assert.That(
+                source.ContainsHorizontalDisc(capsuleSafeCenter, controller.radius),
+                Is.True);
+            Assert.That(
+                gate.TryGetEndpointCorridorLimit(
+                    source,
+                    out var corridorLimit,
+                    controller.radius),
+                Is.True);
+            Assert.That(
+                corridorLimit,
+                Is.EqualTo(gate.GetSignedDistance(capsuleSafeCenter)).Within(0.0001f));
+
+            var controllerCenter = controller.transform.TransformPoint(controller.center);
+            Assert.That(source.ContainsHorizontalPoint(controllerCenter), Is.True);
+            Assert.That(
+                topology.ContainsTraversableCapsule(source, controller),
+                Is.False,
+                "A center inside the polygon is insufficient when the capsule crosses an edge.");
+            Assert.That(
+                topology.TryRecoverOutOfBounds(controller, traversal, 0.25f),
+                Is.True);
+            Assert.That(
+                Vector3.Distance(
+                    controller.transform.position,
+                    capsuleSafeCenter + source.transform.up * 0.25f),
+                Is.LessThan(0.0001f));
+            Assert.That(topology.ContainsTraversableCapsule(source, controller), Is.True);
+            Assert.That(topology.ValidateTopology().IsValid, Is.True);
+        }
+
+        [Test]
+        public void TopologyValidation_RejectsFootprintTooNarrowForPlayerCapsule()
+        {
+            var source = CreateTile(
+                "Too Narrow Source",
+                Vector2Int.zero,
+                BoardTileType.Start,
+                Vector3.zero);
+            source.gameObject.AddComponent<BoardTileFootprint>().Configure(
+                SquareFootprint(0.4f));
+            var destination = CreateTile(
+                "Narrow Footprint Destination",
+                Vector2Int.right,
+                BoardTileType.Normal,
+                Vector3.right * BoardTile.RoomSize);
+            var gate = CreateGate(source, destination);
+
+            var validation = BoardTopologyValidator.Validate(
+                new[] { source, destination },
+                new[] { gate });
+
+            Assert.That(validation.IsValid, Is.False);
+            Assert.That(
+                validation.Issues.Select(issue => issue.Code),
+                Does.Contain(BoardTopologyIssueCode.TileFootprintTooNarrow));
         }
 
         [Test]
@@ -320,6 +605,17 @@ namespace MazeParty.Gameplay.Tests
             var topology = CreateObject("Topology").AddComponent<BoardTopology>();
             topology.Configure(new[] { source, destination }, new[] { gate });
             return topology;
+        }
+
+        private static Vector2[] SquareFootprint(float halfExtent)
+        {
+            return new[]
+            {
+                new Vector2(-halfExtent, -halfExtent),
+                new Vector2(halfExtent, -halfExtent),
+                new Vector2(halfExtent, halfExtent),
+                new Vector2(-halfExtent, halfExtent)
+            };
         }
 
         private GameObject CreateObject(string name)

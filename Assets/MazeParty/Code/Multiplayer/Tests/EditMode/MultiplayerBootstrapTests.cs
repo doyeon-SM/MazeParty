@@ -94,6 +94,62 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void BoardMapStartup_PermanentFailureEndsMatchWithoutReadinessWait()
+        {
+            var cases = new[]
+            {
+                new
+                {
+                    MapReady = false,
+                    AllPlayersReady = false,
+                    Failure = "Map catalog is invalid.",
+                    Expected = BoardMapStartupDisposition.FailMatch
+                },
+                new
+                {
+                    MapReady = true,
+                    AllPlayersReady = true,
+                    Failure = "Saved map version is unavailable.",
+                    Expected = BoardMapStartupDisposition.FailMatch
+                },
+                new
+                {
+                    MapReady = true,
+                    AllPlayersReady = true,
+                    Failure = string.Empty,
+                    Expected = BoardMapStartupDisposition.Ready
+                },
+                new
+                {
+                    MapReady = true,
+                    AllPlayersReady = false,
+                    Failure = string.Empty,
+                    Expected = BoardMapStartupDisposition.WaitForReadiness
+                },
+                new
+                {
+                    MapReady = false,
+                    AllPlayersReady = true,
+                    Failure = string.Empty,
+                    Expected = BoardMapStartupDisposition.WaitForReadiness
+                }
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardMapStartupPolicy.Evaluate(
+                        testCase.MapReady,
+                        testCase.AllPlayersReady,
+                        testCase.Failure),
+                    Is.EqualTo(testCase.Expected),
+                    $"mapReady={testCase.MapReady}, " +
+                    $"allPlayersReady={testCase.AllPlayersReady}, " +
+                    $"failure='{testCase.Failure}'");
+            }
+        }
+
+        [Test]
         public void OnlineBootstrapScene_HasBuildNetworkPlayerAndUiContracts()
         {
             var enabledScenes = EditorBuildSettings.scenes

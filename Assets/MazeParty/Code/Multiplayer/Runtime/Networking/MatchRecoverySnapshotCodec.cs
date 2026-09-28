@@ -61,14 +61,27 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
+            if (snapshot.recoveryVersion ==
+                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines)
+            {
+                if (snapshot.mines != null && snapshot.mines.Length != 0)
+                {
+                    return false;
+                }
+
+                snapshot.mines = Array.Empty<MatchRecoveryMineSnapshot>();
+                snapshot.recoveryVersion =
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity;
+            }
+
             if (snapshot.recoveryVersion !=
-                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines ||
-                snapshot.mines != null && snapshot.mines.Length != 0)
+                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity)
             {
                 return false;
             }
 
-            snapshot.mines = Array.Empty<MatchRecoveryMineSnapshot>();
+            snapshot.boardMapId = string.Empty;
+            snapshot.boardMapContentVersion = 0;
             snapshot.recoveryVersion =
                 MatchRecoverySnapshot.CurrentRecoveryVersion;
             return true;
@@ -108,6 +121,10 @@ namespace MazeParty.Multiplayer
                 snapshot.remainingMinigameSlots < 0 ||
                 snapshot.remainingMinigameSlots > snapshot.scheduleTurnCount ||
                 snapshot.boardEffectRevision < 1 ||
+                !BoardMapSelection.TryCreate(
+                    snapshot.boardMapId,
+                    snapshot.boardMapContentVersion,
+                    out _) ||
                 snapshot.settledMinigameTurn < -1 ||
                 snapshot.players == null ||
                 snapshot.players.Length != MultiplayerConstants.MaxPlayers ||

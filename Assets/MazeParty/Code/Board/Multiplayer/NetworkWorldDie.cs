@@ -54,6 +54,140 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>
+    /// Resolves collider geometry without depending on Collider.bounds being
+    /// populated. Unity returns an empty bounds value while a collider is disabled,
+    /// which is the normal state of a hidden world die before preparation.
+    /// </summary>
+    public static class WorldDieColliderGeometry
+    {
+        public static bool TryGetWorldBounds(
+            Collider collider,
+            out Bounds worldBounds)
+        {
+            worldBounds = default;
+            if (collider == null)
+            {
+                return false;
+            }
+
+            if (!TryGetLocalBounds(collider, out var localBounds))
+            {
+                worldBounds = collider.bounds;
+                return IsFinite(worldBounds) &&
+                       worldBounds.size.sqrMagnitude > 0f;
+            }
+
+            worldBounds = TransformBounds(
+                localBounds,
+                collider.transform.localToWorldMatrix);
+            return IsFinite(worldBounds) &&
+                   worldBounds.size.sqrMagnitude > 0f;
+        }
+
+        /// <summary>
+        /// Returns a transform-centered sphere that contains the collider for any
+        /// future rotation at its current world scale. Preparation uses this value
+        /// before assigning the die a random orientation.
+        /// </summary>
+        public static bool TryGetRotationIndependentWorldRadius(
+            Collider collider,
+            out float radius)
+        {
+            radius = 0f;
+            if (collider == null ||
+                !TryGetLocalBounds(collider, out var localBounds))
+            {
+                return false;
+            }
+
+            var center = localBounds.center;
+            var extents = localBounds.extents;
+            var furthestLocalCoordinate = new Vector3(
+                Mathf.Abs(center.x) + extents.x,
+                Mathf.Abs(center.y) + extents.y,
+                Mathf.Abs(center.z) + extents.z);
+            var scale = collider.transform.lossyScale;
+            scale = new Vector3(
+                Mathf.Abs(scale.x),
+                Mathf.Abs(scale.y),
+                Mathf.Abs(scale.z));
+            radius = Vector3.Scale(
+                    furthestLocalCoordinate,
+                    scale)
+                .magnitude;
+            return float.IsFinite(radius) && radius > 0f;
+        }
+
+        private static bool TryGetLocalBounds(
+            Collider collider,
+            out Bounds localBounds)
+        {
+            localBounds = default;
+            switch (collider)
+            {
+                case MeshCollider meshCollider
+                    when meshCollider.sharedMesh != null:
+                    localBounds = meshCollider.sharedMesh.bounds;
+                    break;
+                case BoxCollider boxCollider:
+                    localBounds = new Bounds(
+                        boxCollider.center,
+                        boxCollider.size);
+                    break;
+                case SphereCollider sphereCollider:
+                    localBounds = new Bounds(
+                        sphereCollider.center,
+                        Vector3.one * (sphereCollider.radius * 2f));
+                    break;
+                case CapsuleCollider capsuleCollider:
+                    var diameter = capsuleCollider.radius * 2f;
+                    var size = Vector3.one * diameter;
+                    size[capsuleCollider.direction] = Mathf.Max(
+                        diameter,
+                        capsuleCollider.height);
+                    localBounds = new Bounds(capsuleCollider.center, size);
+                    break;
+                default:
+                    return false;
+            }
+
+            return IsFinite(localBounds) &&
+                   localBounds.size.sqrMagnitude > 0f;
+        }
+
+        private static Bounds TransformBounds(
+            Bounds localBounds,
+            Matrix4x4 localToWorld)
+        {
+            var center = localToWorld.MultiplyPoint3x4(localBounds.center);
+            var extents = localBounds.extents;
+            var worldExtents = new Vector3(
+                Mathf.Abs(localToWorld.m00) * extents.x +
+                Mathf.Abs(localToWorld.m01) * extents.y +
+                Mathf.Abs(localToWorld.m02) * extents.z,
+                Mathf.Abs(localToWorld.m10) * extents.x +
+                Mathf.Abs(localToWorld.m11) * extents.y +
+                Mathf.Abs(localToWorld.m12) * extents.z,
+                Mathf.Abs(localToWorld.m20) * extents.x +
+                Mathf.Abs(localToWorld.m21) * extents.y +
+                Mathf.Abs(localToWorld.m22) * extents.z);
+            return new Bounds(center, worldExtents * 2f);
+        }
+
+        private static bool IsFinite(Bounds bounds)
+        {
+            return IsFinite(bounds.center) && IsFinite(bounds.size);
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+    }
+
+    /// <summary>
     /// Publicly observed, server-owned physical die for one stable player slot.
     /// Clients may request a push, but the server resolves the sender's avatar and
     /// repeats all authority, phase, tile, distance and ray checks before applying it.
@@ -391,17 +525,19 @@ namespace MazeParty.Multiplayer
             var up = tile.transform.up.normalized;
             var right = tile.transform.right.normalized;
             var forward = tile.transform.forward.normalized;
-            var dieBounds = _dieCollider.bounds;
-            var projectedRightExtent = WorldDieTileFrame.ProjectedExtent(
-                dieBounds,
-                right);
-            var projectedForwardExtent = WorldDieTileFrame.ProjectedExtent(
-                dieBounds,
-                forward);
-            var requiredFootprintInset =
-                WorldDieFootprintConstraint.GetConservativeCircularInset(
-                    projectedRightExtent,
-                    projectedForwardExtent);
+            if (!WorldDieColliderGeometry.TryGetWorldBounds(
+                    _dieCollider,
+                    out var dieBounds) ||
+                !WorldDieColliderGeometry.TryGetRotationIndependentWorldRadius(
+                    _dieCollider,
+                    out var rotationIndependentRadius))
+            {
+                Debug.LogError(
+                    "The world die collider does not expose usable geometry.",
+                    this);
+                return false;
+            }
+            var requiredFootprintInset = rotationIndependentRadius;
             if (tile.HasCustomFootprint &&
                 (tile.Footprint == null ||
                  !tile.Footprint.CanContainInset(requiredFootprintInset)))
@@ -422,6 +558,25 @@ namespace MazeParty.Multiplayer
             _tileFrame = CreateTileFrame(tile);
             _hasTileFrame = true;
 
+            var targetRotation = Quaternion.Euler(
+                UnityEngine.Random.Range(0f, 360f),
+                UnityEngine.Random.Range(0f, 360f),
+                UnityEngine.Random.Range(0f, 360f));
+            var projectedRightExtent = WorldDieRollPresentationPolicy
+                .GetTargetRotationProjectedExtent(
+                    dieBounds,
+                    transform.position,
+                    transform.rotation,
+                    targetRotation,
+                    right);
+            var projectedForwardExtent = WorldDieRollPresentationPolicy
+                .GetTargetRotationProjectedExtent(
+                    dieBounds,
+                    transform.position,
+                    transform.rotation,
+                    targetRotation,
+                    forward);
+
             var ownerOffset = ownerPosition - tile.WorldCenter;
             var ownerHorizontal = right * Vector3.Dot(ownerOffset, right) +
                                   forward * Vector3.Dot(ownerOffset, forward);
@@ -440,12 +595,8 @@ namespace MazeParty.Multiplayer
                 projectedForwardExtent,
                 0f,
                 out var targetPosition,
-                out _);
-            var targetRotation = Quaternion.Euler(
-                UnityEngine.Random.Range(0f, 360f),
-                UnityEngine.Random.Range(0f, 360f),
-                UnityEngine.Random.Range(0f, 360f));
-
+                out _,
+                rotationIndependentRadius);
             FreezeBody();
             _body.detectCollisions = true;
             _nudgeInProgress = false;
@@ -1159,7 +1310,12 @@ namespace MazeParty.Multiplayer
             var desiredPosition = currentPosition +
                                   _tileFrame.Up *
                                   (targetCenterHeight - vertical);
-            var bounds = _dieCollider.bounds;
+            if (!WorldDieColliderGeometry.TryGetWorldBounds(
+                    _dieCollider,
+                    out var bounds))
+            {
+                return currentPosition;
+            }
             var targetRightExtent =
                 WorldDieRollPresentationPolicy.GetTargetRotationProjectedExtent(
                     bounds,
@@ -1294,7 +1450,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var bounds = _dieCollider.bounds;
+            if (!WorldDieColliderGeometry.TryGetWorldBounds(
+                    _dieCollider,
+                    out var bounds))
+            {
+                return;
+            }
             var rightExtent = WorldDieTileFrame.ProjectedExtent(
                 bounds,
                 _tileFrame.Right);
@@ -1351,7 +1512,8 @@ namespace MazeParty.Multiplayer
             float projectedHalfExtentForward,
             float restitution,
             out Vector3 constrainedPosition,
-            out Vector3 constrainedVelocity)
+            out Vector3 constrainedVelocity,
+            float customFootprintInset = -1f)
         {
             var changed = _tileFrame.Constrain(
                 position,
@@ -1364,8 +1526,9 @@ namespace MazeParty.Multiplayer
             if (_assignedTile == null || !_assignedTile.HasCustomFootprint)
                 return changed;
 
-            var safeInset =
-                WorldDieFootprintConstraint.GetConservativeCircularInset(
+            var safeInset = customFootprintInset >= 0f
+                ? customFootprintInset
+                : WorldDieFootprintConstraint.GetConservativeCircularInset(
                     projectedHalfExtentRight,
                     projectedHalfExtentForward);
             var polygonPosition = _assignedTile.GetClosestPointInside(

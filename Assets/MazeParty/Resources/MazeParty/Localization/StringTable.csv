@@ -678,6 +678,7 @@ The saved match checkpoint is invalid.,저장된 게임 체크포인트가 유�
 "The saved match could not be inspected. Continue to retry, or discard it.","저장된 게임을 확인하지 못했습니다. 계속을 눌러 다시 시도하거나 폐기하세요.","保存した試合を確認できませんでした。続けるを押して再試行するか、破棄してください。","无法检查已保存的对局。请选择继续以重试，或将其放弃。"
 The saved match could not be prepared for recovery.,저장된 게임의 복구 준비에 실패했습니다.,保存した試合を復旧用に準備できませんでした。,无法为恢复准备已保存的对局。
 The saved match could not be rebuilt safely.,저장된 게임을 안전하게 복원하지 못했습니다.,保存した試合を安全に再構築できませんでした。,无法安全地重建已保存的对局。
+The saved match does not contain a valid board map selection.,저장된 게임에 유효한 보드 맵 선택 정보가 없습니다.,保存した試合に有効なボードマップの選択情報がありません。,已保存的对局中没有有效的棋盘地图选择信息。
 The saved match expired after 72 hours.,저장된 게임이 72시간 후 만료되었습니다.,保存した試合は72時間後に期限切れになりました。,已保存的对局在 72 小时后过期。
 The saved match expired after 72 hours and was discarded.,저장된 게임이 72시간 후 만료되어 폐기되었습니다.,保存した試合は72時間後に期限切れとなり破棄されました。,已保存的对局在 72 小时后过期并已被放弃。
 The saved match is incompatible with this game version.,저장된 게임은 현재 게임 버전과 호환되지 않습니다.,保存した試合は現在のゲームバージョンと互換性がありません。,已保存的对局与当前游戏版本不兼容。
@@ -690,3 +691,4 @@ The saved minigame schedule is incompatible.,저장된 미니게임 일정이 �
 The saved player roster is incomplete.,저장된 플레이어 명단이 완전하지 않습니다.,保存したプレイヤー名簿が不完全です。,已保存的玩家名单不完整。
 The saved player roster is invalid.,저장된 플레이어 명단이 유효하지 않습니다.,保存したプレイヤー名簿が無効です。,已保存的玩家名单无效。
 The saved shop state is no longer valid.,저장된 상점 상태가 더 이상 유효하지 않습니다.,保存したショップの状態は無効になりました。,已保存的商店状态不再有效。
+The selected board map could not be loaded safely.,선택한 보드 맵을 안전하게 불러오지 못했습니다.,選択したボードマップを安全に読み込めませんでした。,无法安全地加载所选棋盘地图。

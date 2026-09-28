@@ -19,7 +19,10 @@ namespace MazeParty.Gameplay
         DuplicateDirectedGate,
         GateDirectionMismatch,
         GatePlaneDoesNotSeparateTiles,
-        InvalidTileFootprint
+        InvalidTileFootprint,
+        TileFootprintTooNarrow,
+        GateCorridorDisconnected,
+        GateCorridorTooNarrow
     }
 
     public readonly struct BoardTopologyIssue
@@ -83,6 +86,17 @@ namespace MazeParty.Gameplay
                         issues.Add(new BoardTopologyIssue(
                             BoardTopologyIssueCode.InvalidTileFootprint,
                             $"Tile '{tile.name}' has an invalid footprint. {footprintMessage}",
+                            footprint));
+                    }
+                    else if (footprint != null &&
+                             !footprint.CanContainInset(
+                                 BoardGate.MinimumTraversalRadius))
+                    {
+                        issues.Add(new BoardTopologyIssue(
+                            BoardTopologyIssueCode.TileFootprintTooNarrow,
+                            $"Tile '{tile.name}' footprint cannot fit the " +
+                            $"{BoardGate.MinimumTraversalRadius * 2f:0.###}-unit " +
+                            "player capsule diameter.",
                             footprint));
                     }
 
@@ -191,6 +205,42 @@ namespace MazeParty.Gameplay
                 issues.Add(new BoardTopologyIssue(
                     BoardTopologyIssueCode.GatePlaneDoesNotSeparateTiles,
                     $"Gate '{gate.name}' plane must separate source and destination centers.",
+                    gate));
+            }
+
+            var minimumDiameter = BoardGate.MinimumTraversalRadius * 2f;
+            var corridorCanFitPlayer =
+                gate.GateWidth + 0.001f >= minimumDiameter;
+            if (!corridorCanFitPlayer)
+            {
+                issues.Add(new BoardTopologyIssue(
+                    BoardTopologyIssueCode.GateCorridorTooNarrow,
+                    $"Gate '{gate.name}' width {gate.GateWidth:0.###} cannot fit " +
+                    $"the {minimumDiameter:0.###}-unit player capsule diameter.",
+                    gate));
+            }
+
+            if (corridorCanFitPlayer &&
+                !gate.TryGetEndpointCorridorLimit(
+                    source,
+                    out _,
+                    BoardGate.MinimumTraversalRadius))
+            {
+                issues.Add(new BoardTopologyIssue(
+                    BoardTopologyIssueCode.GateCorridorDisconnected,
+                    $"Gate '{gate.name}' corridor does not reach source tile '{source.name}'.",
+                    gate));
+            }
+
+            if (corridorCanFitPlayer &&
+                !gate.TryGetEndpointCorridorLimit(
+                    destination,
+                    out _,
+                    BoardGate.MinimumTraversalRadius))
+            {
+                issues.Add(new BoardTopologyIssue(
+                    BoardTopologyIssueCode.GateCorridorDisconnected,
+                    $"Gate '{gate.name}' corridor does not reach destination tile '{destination.name}'.",
                     gate));
             }
         }

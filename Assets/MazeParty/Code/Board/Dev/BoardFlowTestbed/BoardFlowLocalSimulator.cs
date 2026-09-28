@@ -788,7 +788,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 partial |= outcome == BoardGateTraversalOutcome.PartialCrossing;
             }
 
-            if (!current.ContainsHorizontalPoint(center) && !partial)
+            if (!topology.ContainsTraversableCapsule(current, player) && !partial)
             {
                 ClampPlayerInsideTile(current);
             }
@@ -873,16 +873,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             var center = player.transform.TransformPoint(player.center);
-            var offset = center - tile.WorldCenter;
-            var right = tile.transform.right.normalized;
-            var forward = tile.transform.forward.normalized;
-            var up = tile.transform.up.normalized;
-            var safeExtent = Mathf.Max(0.1f, BoardTile.HalfRoomSize - player.radius - 0.02f);
-            var horizontal = Mathf.Clamp(Vector3.Dot(offset, right), -safeExtent, safeExtent);
-            var depth = Mathf.Clamp(Vector3.Dot(offset, forward), -safeExtent, safeExtent);
-            var height = Vector3.Dot(offset, up);
-            var clampedCenter = tile.WorldCenter + right * horizontal +
-                                forward * depth + up * height;
+            var safeInset = BoardGate.GetMaximumPlanarCapsuleSupport(
+                                player,
+                                tile.transform.up) +
+                            0.02f;
+            var clampedCenter = tile.GetClosestPointInside(center, safeInset);
             var correction = clampedCenter - center;
             if (correction.sqrMagnitude > 0.000001f)
             {

@@ -260,6 +260,101 @@ namespace MazeParty.Gameplay
             return null;
         }
 
+        /// <summary>
+        /// Includes the narrow authored corridors that join separated endpoint
+        /// footprints to their connection plane. Incoming corridors remain valid
+        /// after a crossing commits so a player can finish walking onto the new
+        /// tile instead of being snapped to its center.
+        /// </summary>
+        public bool ContainsTraversablePoint(BoardTile tile, Vector3 worldPoint)
+        {
+            if (tile == null || !_registeredTiles.Contains(tile))
+            {
+                return false;
+            }
+
+            if (tile.ContainsHorizontalPoint(worldPoint))
+            {
+                return true;
+            }
+
+            if (_outgoingGates.TryGetValue(tile, out var outgoing))
+            {
+                for (var index = 0; index < outgoing.Count; index++)
+                {
+                    var gate = outgoing[index];
+                    if (gate != null &&
+                        gate.IsPointWithinEndpointCorridor(tile, worldPoint))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (_incomingGates.TryGetValue(tile, out var incoming))
+            {
+                for (var index = 0; index < incoming.Count; index++)
+                {
+                    var gate = incoming[index];
+                    if (gate != null &&
+                        gate.IsPointWithinEndpointCorridor(tile, worldPoint))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        public bool ContainsTraversableCapsule(
+            BoardTile tile,
+            CharacterController controller)
+        {
+            if (tile == null || controller == null ||
+                !_registeredTiles.Contains(tile))
+            {
+                return false;
+            }
+
+            var center = controller.transform.TransformPoint(controller.center);
+            var footprintSupport = BoardGate.GetMaximumPlanarCapsuleSupport(
+                controller,
+                tile.transform.up);
+            if (tile.ContainsHorizontalDisc(center, footprintSupport))
+            {
+                return true;
+            }
+
+            if (_outgoingGates.TryGetValue(tile, out var outgoing))
+            {
+                for (var index = 0; index < outgoing.Count; index++)
+                {
+                    var gate = outgoing[index];
+                    if (gate != null &&
+                        gate.IsCapsuleWithinEndpointCorridor(tile, controller))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            if (_incomingGates.TryGetValue(tile, out var incoming))
+            {
+                for (var index = 0; index < incoming.Count; index++)
+                {
+                    var gate = incoming[index];
+                    if (gate != null &&
+                        gate.IsCapsuleWithinEndpointCorridor(tile, controller))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public BoardGateTraversalOutcome ResolveGate(
             BoardGate gate,
             BoardTraversalState traversal,
@@ -298,8 +393,10 @@ namespace MazeParty.Gameplay
             if (controller == null)
                 return false;
 
-            var capsuleCenter = controller.transform.TransformPoint(controller.center);
-            if (FindContainingTile(capsuleCenter) != null)
+            if (traversal != null && traversal.IsInitialized &&
+                ContainsTraversableCapsule(
+                    traversal.CurrentTile,
+                    controller))
                 return false;
 
             return RecoverToLastValidCenter(controller, traversal, recoveryVerticalOffset);
@@ -316,7 +413,22 @@ namespace MazeParty.Gameplay
                 !_registeredTiles.Contains(traversal.LastValidTile))
                 return false;
 
-            var target = traversal.LastValidTile.GetRecoveryCenter(recoveryVerticalOffset);
+            var recoveryTile = traversal.LastValidTile;
+            var footprintSupport = BoardGate.GetMaximumPlanarCapsuleSupport(
+                controller,
+                recoveryTile.transform.up);
+            if (!recoveryTile.CanContainHorizontalInset(footprintSupport))
+            {
+                return false;
+            }
+
+            var target = recoveryTile.GetRecoveryCenter(
+                recoveryVerticalOffset,
+                footprintSupport);
+            var centerOffset = controller.transform.TransformVector(controller.center);
+            var tileUp = recoveryTile.transform.up.normalized;
+            centerOffset -= tileUp * Vector3.Dot(centerOffset, tileUp);
+            target -= centerOffset;
             var wasEnabled = controller.enabled;
             if (wasEnabled)
                 controller.enabled = false;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
 
@@ -114,10 +115,24 @@ namespace MazeParty.Multiplayer
                 out record);
         }
 
+        public MatchRecoveryLoadStatus TryPeekRecoverySnapshot(
+            out MatchRecoverySnapshot snapshot)
+        {
+            snapshot = null;
+            var status = TryPeekRecovery(out var record);
+            if (status != MatchRecoveryLoadStatus.Loaded)
+            {
+                return status;
+            }
+
+            return _recoveryCodec.TryDecode(record.Payload, out snapshot)
+                ? MatchRecoveryLoadStatus.Loaded
+                : MatchRecoveryLoadStatus.Corrupt;
+        }
+
         public MatchRecoveryLoadStatus TryLoadRecovery(
             string rosterFingerprint,
-            string contentFingerprint,
-            string legacyContentFingerprint,
+            IReadOnlyList<string> compatibleContentFingerprints,
             out MatchRecoverySnapshot snapshot)
         {
             snapshot = null;
@@ -138,14 +153,25 @@ namespace MazeParty.Multiplayer
                 return status;
             }
 
-            if (!string.Equals(
-                    record.ContentFingerprint,
-                    contentFingerprint,
-                    StringComparison.Ordinal) &&
-                !string.Equals(
-                    record.ContentFingerprint,
-                    legacyContentFingerprint,
-                    StringComparison.Ordinal))
+            var contentMatches = false;
+            if (compatibleContentFingerprints != null)
+            {
+                for (var index = 0;
+                     index < compatibleContentFingerprints.Count;
+                     index++)
+                {
+                    if (string.Equals(
+                            record.ContentFingerprint,
+                            compatibleContentFingerprints[index],
+                            StringComparison.Ordinal))
+                    {
+                        contentMatches = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!contentMatches)
             {
                 return MatchRecoveryLoadStatus.ContentMismatch;
             }

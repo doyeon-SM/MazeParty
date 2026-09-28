@@ -19,7 +19,8 @@ namespace MazeParty.Multiplayer
     public sealed class MatchRecoverySnapshot
     {
         public const int LegacyRecoveryVersionWithoutMines = 1;
-        public const int CurrentRecoveryVersion = 2;
+        public const int LegacyRecoveryVersionWithoutMapIdentity = 2;
+        public const int CurrentRecoveryVersion = 3;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public MatchRecoveryCheckpoint checkpoint;
@@ -35,6 +36,8 @@ namespace MazeParty.Multiplayer
         public int remainingMinigameSlots;
         public int boardEffectSeed;
         public int boardEffectRevision;
+        public string boardMapId = string.Empty;
+        public int boardMapContentVersion;
         public MatchRecoveryKeyShopSnapshot keyShop;
         public MatchRecoveryItemShopSnapshot[] itemShops =
             Array.Empty<MatchRecoveryItemShopSnapshot>();

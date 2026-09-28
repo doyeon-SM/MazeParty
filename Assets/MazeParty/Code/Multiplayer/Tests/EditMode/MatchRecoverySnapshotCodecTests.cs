@@ -12,6 +12,8 @@ namespace MazeParty.Multiplayer.Tests
         {
             var codec = new MatchRecoverySnapshotCodec();
             var snapshot = CreateValidSnapshot();
+            snapshot.boardMapId = "forest-graybox";
+            snapshot.boardMapContentVersion = 7;
 
             var payload = codec.Encode(snapshot);
             var decoded = codec.TryDecode(payload, out var restored);
@@ -32,6 +34,8 @@ namespace MazeParty.Multiplayer.Tests
                 restored.mines[0].position,
                 Is.EqualTo(new Vector3(2f, 0.06f, 3f)));
             Assert.That(restored.mines[0].armRemaining, Is.EqualTo(0.5f));
+            Assert.That(restored.boardMapId, Is.EqualTo("forest-graybox"));
+            Assert.That(restored.boardMapContentVersion, Is.EqualTo(7));
         }
 
         [Test]
@@ -198,6 +202,28 @@ namespace MazeParty.Multiplayer.Tests
                     out var currentOwnerSlots),
                 Is.True);
             Assert.That(currentOwnerSlots, Is.Empty);
+        }
+
+        [Test]
+        public void Decode_MigratesVersionTwoToLegacyMapIdentity()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.recoveryVersion =
+                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity;
+            var legacyPayload = JsonUtility.ToJson(snapshot)
+                .Replace(",\"boardMapId\":\"\"", string.Empty)
+                .Replace(",\"boardMapContentVersion\":0", string.Empty);
+
+            Assert.That(legacyPayload, Does.Not.Contain("boardMapId"));
+            Assert.That(
+                codec.TryDecode(legacyPayload, out var migrated),
+                Is.True);
+            Assert.That(
+                migrated.recoveryVersion,
+                Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+            Assert.That(migrated.boardMapId, Is.Empty);
+            Assert.That(migrated.boardMapContentVersion, Is.Zero);
         }
 
         [Test]

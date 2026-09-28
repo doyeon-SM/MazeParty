@@ -10,6 +10,31 @@ using UnityEngine.SceneManagement;
 
 namespace MazeParty.Multiplayer
 {
+    internal enum BoardMapStartupDisposition : byte
+    {
+        WaitForReadiness = 0,
+        Ready = 1,
+        FailMatch = 2
+    }
+
+    internal static class BoardMapStartupPolicy
+    {
+        public static BoardMapStartupDisposition Evaluate(
+            bool mapReady,
+            bool allPlayersReady,
+            string permanentFailure)
+        {
+            if (!string.IsNullOrWhiteSpace(permanentFailure))
+            {
+                return BoardMapStartupDisposition.FailMatch;
+            }
+
+            return mapReady && allPlayersReady
+                ? BoardMapStartupDisposition.Ready
+                : BoardMapStartupDisposition.WaitForReadiness;
+        }
+    }
+
     [RequireComponent(typeof(NetworkManager))]
     public sealed partial class OnlineSessionController : MonoBehaviour
     {
@@ -1812,6 +1837,21 @@ namespace MazeParty.Multiplayer
                 "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
         }
 
+        private void BeginPendingBoardMapReadinessWait()
+        {
+            if (!_pendingBoardLoadReconnect)
+            {
+                _pendingBoardLoadReconnect = true;
+                _pendingBoardLoadVoidRequested = false;
+                _pendingBoardLoadReconnectEndsAt =
+                    CompletedMatchReturnRules.GetReconnectGraceEndsAt(
+                        Time.realtimeSinceStartupAsDouble);
+            }
+
+            SetLocalizedStatus(
+                "Waiting for every player to finish loading the Board scene.");
+        }
+
         private void AdvancePendingBoardLoadReconnect()
         {
             if (!_pendingBoardLoadReconnect)
@@ -1835,18 +1875,36 @@ namespace MazeParty.Multiplayer
 
             var match = NetworkMatchState.Instance;
             var now = Time.realtimeSinceStartupAsDouble;
+            var allPlayersReady =
+                HasExactlyFourBoardReadyNetworkPlayers(manager);
+            var startupDisposition = BoardMapStartupPolicy.Evaluate(
+                match != null && match.IsSpawned && match.IsBoardMapReady,
+                allPlayersReady,
+                match != null && match.IsSpawned
+                    ? match.BoardMapLoadFailure
+                    : string.Empty);
+            if (startupDisposition == BoardMapStartupDisposition.FailMatch)
+            {
+                ResetPendingBoardLoadReconnect();
+                EndActiveMatchForNetworkFailure(match.BoardMapLoadFailure);
+                return;
+            }
+
             if (!_pendingBoardLoadVoidRequested &&
                 match != null &&
                 match.IsSpawned &&
+                startupDisposition == BoardMapStartupDisposition.Ready &&
                 CompletedMatchReturnRules.ShouldResumeReconnect(
-                    HasExactlyFourBoardReadyNetworkPlayers(manager),
+                    allPlayersReady,
                     _pendingBoardLoadReconnectEndsAt,
                     now))
             {
                 ResetPendingBoardLoadReconnect();
-                match.EnableGameplayOnServer();
-                SetLocalizedStatus(
-                    "All four players loaded the Board. Gameplay input is enabled.");
+                if (match.EnableGameplayOnServer())
+                {
+                    SetLocalizedStatus(
+                        "All four players loaded the Board. Gameplay input is enabled.");
+                }
                 return;
             }
 
@@ -2113,9 +2171,30 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            matchState.EnableGameplayOnServer();
-            SetLocalizedStatus(
-                "All four players loaded the Board. Gameplay input is enabled.");
+            var allPlayersReady =
+                HasExactlyFourBoardReadyNetworkPlayers(_networkManager);
+            var startupDisposition = BoardMapStartupPolicy.Evaluate(
+                matchState.IsBoardMapReady,
+                allPlayersReady,
+                matchState.BoardMapLoadFailure);
+            if (startupDisposition == BoardMapStartupDisposition.FailMatch)
+            {
+                EndActiveMatchForNetworkFailure(
+                    matchState.BoardMapLoadFailure);
+                return;
+            }
+
+            if (startupDisposition != BoardMapStartupDisposition.Ready)
+            {
+                BeginPendingBoardMapReadinessWait();
+                return;
+            }
+
+            if (matchState.EnableGameplayOnServer())
+            {
+                SetLocalizedStatus(
+                    "All four players loaded the Board. Gameplay input is enabled.");
+            }
         }
 
         private void OnNetworkUnloadEventCompleted(
