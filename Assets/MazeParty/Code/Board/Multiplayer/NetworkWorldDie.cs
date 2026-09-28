@@ -38,6 +38,22 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>
+    /// Pure geometry helpers for keeping the full horizontal die footprint
+    /// inside an authored polygon rather than constraining only its center.
+    /// </summary>
+    public static class WorldDieFootprintConstraint
+    {
+        public static float GetConservativeCircularInset(
+            float projectedHalfExtentRight,
+            float projectedHalfExtentForward)
+        {
+            var right = Mathf.Max(0f, projectedHalfExtentRight);
+            var forward = Mathf.Max(0f, projectedHalfExtentForward);
+            return Mathf.Sqrt(right * right + forward * forward);
+        }
+    }
+
+    /// <summary>
     /// Publicly observed, server-owned physical die for one stable player slot.
     /// Clients may request a push, but the server resolves the sender's avatar and
     /// repeats all authority, phase, tile, distance and ray checks before applying it.
@@ -115,6 +131,8 @@ namespace MazeParty.Multiplayer
             new List<Vector3>(WorldDieAuthorityModel.MaximumFace);
         private readonly List<int> _faceValues =
             new List<int>(WorldDieAuthorityModel.MaximumFace);
+        private readonly List<Vector3> _tileFootprintVertices =
+            new List<Vector3>(BoardTileFootprint.MaxVertexCount);
 
         private const float BounceSoundMinSpeed = 1.2f;
         private const float BounceSoundMinInterval = 0.08f;
@@ -370,23 +388,40 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            var up = tile.transform.up.normalized;
+            var right = tile.transform.right.normalized;
+            var forward = tile.transform.forward.normalized;
+            var dieBounds = _dieCollider.bounds;
+            var projectedRightExtent = WorldDieTileFrame.ProjectedExtent(
+                dieBounds,
+                right);
+            var projectedForwardExtent = WorldDieTileFrame.ProjectedExtent(
+                dieBounds,
+                forward);
+            var requiredFootprintInset =
+                WorldDieFootprintConstraint.GetConservativeCircularInset(
+                    projectedRightExtent,
+                    projectedForwardExtent);
+            if (tile.HasCustomFootprint &&
+                (tile.Footprint == null ||
+                 !tile.Footprint.CanContainInset(requiredFootprintInset)))
+            {
+                Debug.LogError(
+                    $"Tile '{tile.name}' footprint cannot contain the world die " +
+                    $"(required inset {requiredFootprintInset:0.###}).",
+                    tile);
+                return false;
+            }
+
             if (!_authority.Prepare(configuredSlot, tile.Coordinate))
             {
                 return false;
             }
 
             _assignedTile = tile;
-            _tileFrame = new WorldDieTileFrame(
-                tile.WorldCenter,
-                tile.transform.right,
-                tile.transform.forward,
-                tile.transform.up,
-                BoardTile.HalfRoomSize);
+            _tileFrame = CreateTileFrame(tile);
             _hasTileFrame = true;
 
-            var up = tile.transform.up.normalized;
-            var right = tile.transform.right.normalized;
-            var forward = tile.transform.forward.normalized;
             var ownerOffset = ownerPosition - tile.WorldCenter;
             var ownerHorizontal = right * Vector3.Dot(ownerOffset, right) +
                                   forward * Vector3.Dot(ownerOffset, forward);
@@ -398,12 +433,11 @@ namespace MazeParty.Multiplayer
             var desiredPosition = tile.WorldCenter + ownerHorizontal +
                                   projectedForward.normalized * 2f +
                                   up * spawnHeight;
-            var dieBounds = _dieCollider.bounds;
-            _tileFrame.Constrain(
+            ConstrainToAssignedTile(
                 desiredPosition,
                 Vector3.zero,
-                WorldDieTileFrame.ProjectedExtent(dieBounds, right),
-                WorldDieTileFrame.ProjectedExtent(dieBounds, forward),
+                projectedRightExtent,
+                projectedForwardExtent,
                 0f,
                 out var targetPosition,
                 out _);
@@ -840,12 +874,7 @@ namespace MazeParty.Multiplayer
             _hasTileFrame = tile != null;
             if (tile != null)
             {
-                _tileFrame = new WorldDieTileFrame(
-                    tile.WorldCenter,
-                    tile.transform.right,
-                    tile.transform.forward,
-                    tile.transform.up,
-                    BoardTile.HalfRoomSize);
+                _tileFrame = CreateTileFrame(tile);
             }
 
             configuredSlot = snapshot.Authority.Slot;
@@ -1111,7 +1140,7 @@ namespace MazeParty.Multiplayer
             if (tileCollider != null && tileCollider.enabled)
             {
                 var probeDistance =
-                    tileCollider.bounds.extents.magnitude + BoardTile.RoomSize;
+                    tileCollider.bounds.extents.magnitude + _tileFrame.HalfExtent * 2f;
                 var surfacePoint = tileCollider.ClosestPoint(
                     _tileFrame.Center + _tileFrame.Up * probeDistance);
                 tileSurfaceHeight = Vector3.Dot(
@@ -1145,7 +1174,7 @@ namespace MazeParty.Multiplayer
                     _landingStartRotation,
                     _landingTargetRotation,
                     _tileFrame.Forward);
-            _tileFrame.Constrain(
+            ConstrainToAssignedTile(
                 desiredPosition,
                 Vector3.zero,
                 targetRightExtent,
@@ -1272,7 +1301,7 @@ namespace MazeParty.Multiplayer
             var forwardExtent = WorldDieTileFrame.ProjectedExtent(
                 bounds,
                 _tileFrame.Forward);
-            if (!_tileFrame.Constrain(
+            if (!ConstrainToAssignedTile(
                     _body.position,
                     _body.linearVelocity,
                     rightExtent,
@@ -1286,6 +1315,77 @@ namespace MazeParty.Multiplayer
 
             _body.position = constrainedPosition;
             _body.linearVelocity = constrainedVelocity;
+        }
+
+        private WorldDieTileFrame CreateTileFrame(BoardTile tile)
+        {
+            var halfExtent = BoardTile.HalfRoomSize;
+            if (tile != null && tile.HasCustomFootprint)
+            {
+                _tileFootprintVertices.Clear();
+                tile.GetWorldFootprintVertices(_tileFootprintVertices);
+                var right = tile.transform.right.normalized;
+                var forward = tile.transform.forward.normalized;
+                for (var index = 0; index < _tileFootprintVertices.Count; index++)
+                {
+                    var offset = _tileFootprintVertices[index] - tile.WorldCenter;
+                    halfExtent = Mathf.Max(
+                        halfExtent,
+                        Mathf.Abs(Vector3.Dot(offset, right)),
+                        Mathf.Abs(Vector3.Dot(offset, forward)));
+                }
+            }
+
+            return new WorldDieTileFrame(
+                tile.WorldCenter,
+                tile.transform.right,
+                tile.transform.forward,
+                tile.transform.up,
+                halfExtent);
+        }
+
+        private bool ConstrainToAssignedTile(
+            Vector3 position,
+            Vector3 velocity,
+            float projectedHalfExtentRight,
+            float projectedHalfExtentForward,
+            float restitution,
+            out Vector3 constrainedPosition,
+            out Vector3 constrainedVelocity)
+        {
+            var changed = _tileFrame.Constrain(
+                position,
+                velocity,
+                projectedHalfExtentRight,
+                projectedHalfExtentForward,
+                restitution,
+                out constrainedPosition,
+                out constrainedVelocity);
+            if (_assignedTile == null || !_assignedTile.HasCustomFootprint)
+                return changed;
+
+            var safeInset =
+                WorldDieFootprintConstraint.GetConservativeCircularInset(
+                    projectedHalfExtentRight,
+                    projectedHalfExtentForward);
+            var polygonPosition = _assignedTile.GetClosestPointInside(
+                constrainedPosition,
+                safeInset);
+            var correction = polygonPosition - constrainedPosition;
+            correction -= _tileFrame.Up * Vector3.Dot(correction, _tileFrame.Up);
+            if (correction.sqrMagnitude <= 0.000001f)
+                return changed;
+
+            constrainedPosition += correction;
+            var inward = correction.normalized;
+            var inwardSpeed = Vector3.Dot(constrainedVelocity, inward);
+            if (inwardSpeed < 0f)
+            {
+                constrainedVelocity -= inward * inwardSpeed *
+                                       (1f + Mathf.Clamp01(restitution));
+            }
+
+            return true;
         }
 
         private bool ValidateFaceMarkers()

@@ -6,8 +6,8 @@ namespace MazeParty.Gameplay
     {
         [SerializeField] private BoxCollider blockingCollider;
         [SerializeField] private Renderer[] stateRenderers;
-        [SerializeField] private Color passableColor = new Color(.04f, .32f, 1f, .72f);
-        [SerializeField] private Color blockedColor = new Color(.005f, .008f, .012f, 1f);
+        [SerializeField] private Color passableColor = new Color(.28f, .78f, 1f, .48f);
+        [SerializeField] private Color blockedColor = new Color(1f, .12f, .12f, .55f);
         private MaterialPropertyBlock _properties;
         private Renderer[] _allRenderers;
         public BoxCollider BlockingCollider => blockingCollider;

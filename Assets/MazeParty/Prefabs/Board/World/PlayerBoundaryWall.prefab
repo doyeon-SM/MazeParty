@@ -128,5 +128,5 @@ MonoBehaviour:
   blockingCollider: {fileID: 3203101380656830860}
   stateRenderers:
   - {fileID: 5357324034333099323}
-  passableColor: {r: 0.04, g: 0.32, b: 1, a: 0.72}
-  blockedColor: {r: 0.005, g: 0.008, b: 0.012, a: 1}
+  passableColor: {r: 0.28, g: 0.78, b: 1, a: 0.48}
+  blockedColor: {r: 1, g: 0.12, b: 0.12, a: 0.55}

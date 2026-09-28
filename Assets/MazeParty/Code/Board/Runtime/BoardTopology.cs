@@ -286,7 +286,7 @@ namespace MazeParty.Gameplay
                 return false;
             }
 
-            center = traversal.LastValidTile.WorldCenter;
+            center = traversal.LastValidTile.GetRecoveryCenter();
             return true;
         }
 

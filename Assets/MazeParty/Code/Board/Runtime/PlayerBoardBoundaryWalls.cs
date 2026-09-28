@@ -6,14 +6,16 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Gameplay
 {
     /// <summary>
-    /// Owns exactly four reusable N/E/S/W walls for one player slot.
-    /// Each wall collides only with its owning player's colliders, so the four
-    /// slot-specific sets (16 walls total) never interfere with other players.
+    /// Owns a reusable wall pool for one player slot. One active wall is placed
+    /// at each unique gate portal connected to the player's logical tile.
+    /// Each wall collides only with its owning player's colliders, so private
+    /// movement boundaries never interfere with other players.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class PlayerBoardBoundaryWalls : MonoBehaviour
     {
         public const int MaxPlayerSlots = 4;
+        // Retained as the legacy cardinal prewarm size and source compatibility.
         public const int WallsPerSlot = BoardBoundaryWallPolicy.SideCount;
 
         private static readonly List<PlayerBoardBoundaryWalls> ActiveSystems =
@@ -27,11 +29,14 @@ namespace MazeParty.Gameplay
 
         [SerializeField] private BoardWorldPrefabs worldPrefabs;
 
-
-        private readonly WallRuntime[] _walls = new WallRuntime[WallsPerSlot];
+        private readonly List<WallRuntime> _walls =
+            new List<WallRuntime>(WallsPerSlot);
+        private readonly List<BoardBoundaryPortal> _portals =
+            new List<BoardBoundaryPortal>(WallsPerSlot);
         private readonly List<Vector2Int> _connectedCoordinates =
-            new List<Vector2Int>(4);
-        private readonly List<Vector2Int> _outgoingCoordinates = new List<Vector2Int>(2);
+            new List<Vector2Int>(WallsPerSlot);
+        private readonly List<Vector2Int> _outgoingCoordinates =
+            new List<Vector2Int>(WallsPerSlot);
         private GameObject _wallRoot;
         private Collider[] _ownerColliders = Array.Empty<Collider>();
         private BoardTile _currentTile;
@@ -40,9 +45,11 @@ namespace MazeParty.Gameplay
         private bool _presentationVisible = true;
 
         public int PlayerSlot => playerSlot;
-        public int WallCount => _wallRoot != null ? WallsPerSlot : 0;
+        public int WallCount => _walls.Count;
+        public int ActivePortalCount => _portals.Count;
         public BoardTile CurrentTile => _currentTile;
         public BoardBoundaryWallLayout CurrentLayout => _currentLayout;
+        public IReadOnlyList<BoardBoundaryPortal> CurrentPortals => _portals;
         public bool PresentationVisible => _presentationVisible;
         public BoardWorldPrefabs WorldPrefabs => worldPrefabs;
 
@@ -89,27 +96,23 @@ namespace MazeParty.Gameplay
 
             _connectedCoordinates.Clear();
             _outgoingCoordinates.Clear();
-            if (topology != null)
+            BoardBoundaryWallPolicy.EvaluatePortals(
+                topology,
+                logicalTile,
+                remainingMoves,
+                _portals);
+            for (var i = 0; i < _portals.Count; i++)
             {
-                var outgoing = topology.GetOutgoingGates(logicalTile);
-                for (var i = 0; i < outgoing.Count; i++)
+                var portal = _portals[i];
+                if (portal.ConnectedTile == null)
                 {
-                    var gate = outgoing[i];
-                    if (gate != null && gate.Destination != null)
-                    {
-                        _connectedCoordinates.Add(gate.Destination.Coordinate);
-                        _outgoingCoordinates.Add(gate.Destination.Coordinate);
-                    }
+                    continue;
                 }
 
-                var incoming = topology.GetIncomingGates(logicalTile);
-                for (var i = 0; i < incoming.Count; i++)
+                _connectedCoordinates.Add(portal.ConnectedTile.Coordinate);
+                if (portal.HasOutgoingGate)
                 {
-                    var gate = incoming[i];
-                    if (gate != null && gate.Source != null)
-                    {
-                        _connectedCoordinates.Add(gate.Source.Coordinate);
-                    }
+                    _outgoingCoordinates.Add(portal.ConnectedTile.Coordinate);
                 }
             }
 
@@ -118,13 +121,14 @@ namespace MazeParty.Gameplay
                 _connectedCoordinates,
                 _outgoingCoordinates,
                 remainingMoves);
-            PlaceWalls(logicalTile, _currentLayout);
+            PlaceWalls(logicalTile);
         }
 
         public void Hide()
         {
             _currentTile = null;
             _currentLayout = default;
+            _portals.Clear();
             if (_wallRoot != null)
                 _wallRoot.SetActive(false);
         }
@@ -146,16 +150,39 @@ namespace MazeParty.Gameplay
             out GameObject wallObject,
             out BoxCollider wallCollider)
         {
-            var index = (int)side;
-            if (index < 0 || index >= _walls.Length || _walls[index] == null)
+            for (var index = 0; index < _portals.Count; index++)
+            {
+                if (!TryGetLegacySide(_portals[index], out var portalSide) ||
+                    portalSide != side)
+                {
+                    continue;
+                }
+
+                wallObject = _walls[index].GameObject;
+                wallCollider = _walls[index].Collider;
+                return wallObject != null && wallCollider != null;
+            }
+
+            wallObject = null;
+            wallCollider = null;
+            return false;
+        }
+
+        public bool TryGetPortalWall(
+            int portalIndex,
+            out GameObject wallObject,
+            out BoxCollider wallCollider)
+        {
+            if (portalIndex < 0 || portalIndex >= _portals.Count ||
+                portalIndex >= _walls.Count)
             {
                 wallObject = null;
                 wallCollider = null;
                 return false;
             }
 
-            wallObject = _walls[index].GameObject;
-            wallCollider = _walls[index].Collider;
+            wallObject = _walls[portalIndex].GameObject;
+            wallCollider = _walls[portalIndex].Collider;
             return wallObject != null && wallCollider != null;
         }
 
@@ -197,71 +224,100 @@ namespace MazeParty.Gameplay
 
         private void EnsureWalls()
         {
-            if (_wallRoot != null)
-                return;
-
-            if (worldPrefabs == null) worldPrefabs = BoardWorldPrefabs.LoadRequired();
-
-            _wallRoot = new GameObject(GetRootName())
+            if (_wallRoot == null)
             {
-                hideFlags = HideFlags.DontSave
-            };
-            _wallRoot.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+                if (worldPrefabs == null)
+                    worldPrefabs = BoardWorldPrefabs.LoadRequired();
 
-            var ownerScene = gameObject.scene;
-            if (ownerScene.IsValid() && ownerScene.isLoaded)
-                SceneManager.MoveGameObjectToScene(_wallRoot, ownerScene);
+                _wallRoot = new GameObject(GetRootName())
+                {
+                    hideFlags = HideFlags.DontSave
+                };
+                _wallRoot.transform.SetPositionAndRotation(
+                    Vector3.zero,
+                    Quaternion.identity);
 
-            for (var i = 0; i < WallsPerSlot; i++)
-            {
-                var side = (BoardBoundarySide)i;
-                var visual = Instantiate(worldPrefabs.BoundaryWall, _wallRoot.transform, false);
-                var wall = visual.gameObject;
-                wall.name = "P" + (playerSlot + 1) + " Boundary " + side;
-                wall.hideFlags = HideFlags.DontSave;
-                var wallCollider = visual.BlockingCollider;
-                _walls[i] = new WallRuntime(wall, wallCollider, visual);
+                var ownerScene = gameObject.scene;
+                if (ownerScene.IsValid() && ownerScene.isLoaded)
+                    SceneManager.MoveGameObjectToScene(_wallRoot, ownerScene);
             }
 
+            EnsureWallPoolCapacity(WallsPerSlot);
             ApplyPresentationVisibility();
-            _wallRoot.SetActive(false);
+            if (_currentTile == null)
+                _wallRoot.SetActive(false);
+        }
+
+        private void EnsureWallPoolCapacity(int requiredCount)
+        {
+            if (_wallRoot == null)
+                return;
+
+            while (_walls.Count < requiredCount)
+            {
+                var visual = Instantiate(worldPrefabs.BoundaryWall, _wallRoot.transform, false);
+                var wall = visual.gameObject;
+                wall.name = "P" + (playerSlot + 1) + " Boundary Portal Pool " +
+                            (_walls.Count + 1);
+                wall.hideFlags = HideFlags.DontSave;
+                var wallCollider = visual.BlockingCollider;
+                wallCollider.enabled = false;
+                visual.SetVisible(false);
+                wall.SetActive(false);
+                _walls.Add(new WallRuntime(wall, wallCollider, visual));
+            }
+
             RefreshCollisionIsolationForAllSystems();
         }
 
-        private void PlaceWalls(BoardTile tile, BoardBoundaryWallLayout layout)
+        private void PlaceWalls(BoardTile tile)
         {
+            EnsureWallPoolCapacity(Mathf.Max(WallsPerSlot, _portals.Count));
             _wallRoot.name = GetRootName();
             _wallRoot.SetActive(true);
 
-            var up = tile.transform.up.normalized;
-            for (var i = 0; i < _walls.Length; i++)
+            for (var i = 0; i < _walls.Count; i++)
             {
-                var side = (BoardBoundarySide)i;
+                var pooledWall = _walls[i];
+                pooledWall.Collider.enabled = false;
+                pooledWall.Visual.SetVisible(false);
+                pooledWall.GameObject.SetActive(false);
+            }
+
+            var up = tile.transform.up.normalized;
+            var thickness = Mathf.Max(0.02f, wallThickness);
+            var height = Mathf.Max(0.25f, wallHeight);
+            for (var i = 0; i < _portals.Count; i++)
+            {
                 var wall = _walls[i];
-                var hasConnectedPath = layout.HasExit(side);
-                wall.GameObject.SetActive(hasConnectedPath);
-                if (!hasConnectedPath)
+                var portal = _portals[i];
+                var outward = portal.OutwardNormal -
+                              up * Vector3.Dot(portal.OutwardNormal, up);
+                if (outward.sqrMagnitude <= 0.0001f && portal.ConnectedTile != null)
                 {
-                    wall.Collider.enabled = false;
-                    wall.Visual.SetVisible(false);
-                    continue;
+                    outward = portal.ConnectedTile.WorldCenter - tile.WorldCenter;
+                    outward -= up * Vector3.Dot(outward, up);
                 }
 
-                var localNormal = GetLocalNormal(side);
-                var worldNormal = tile.transform.TransformDirection(localNormal).normalized;
-                var thickness = Mathf.Max(0.02f, wallThickness);
-                var height = Mathf.Max(0.25f, wallHeight);
+                if (outward.sqrMagnitude <= 0.0001f)
+                {
+                    outward = tile.transform.forward;
+                }
+                outward.Normalize();
 
                 wall.Transform.SetPositionAndRotation(
-                    tile.WorldCenter + worldNormal * (BoardTile.HalfRoomSize + thickness * 0.5f) +
+                    portal.PlanePoint + outward * (thickness * 0.5f) +
                     up * (height * 0.5f),
-                    tile.transform.rotation);
-                wall.Transform.localScale = side == BoardBoundarySide.North || side == BoardBoundarySide.South
-                    ? new Vector3(BoardTile.RoomSize + thickness * 2f, height, thickness)
-                    : new Vector3(thickness, height, BoardTile.RoomSize + thickness * 2f);
+                    Quaternion.LookRotation(outward, up));
+                wall.Transform.localScale = new Vector3(
+                    portal.Width + thickness * 2f,
+                    height,
+                    thickness);
+                wall.GameObject.name = "P" + (playerSlot + 1) +
+                                       " Boundary Portal " + (i + 1);
+                wall.GameObject.SetActive(true);
 
-                var passable = layout.IsPassable(side);
-                wall.Visual.SetPassable(passable);
+                wall.Visual.SetPassable(portal.IsPassable);
 
                 wall.Visual.SetVisible(_presentationVisible);
             }
@@ -271,11 +327,15 @@ namespace MazeParty.Gameplay
 
         private void ApplyPresentationVisibility()
         {
-            for (var i = 0; i < _walls.Length; i++)
+            for (var i = 0; i < _walls.Count; i++)
             {
                 var wall = _walls[i];
                 if (wall != null)
-                    wall.Visual.SetVisible(_presentationVisible);
+                {
+                    wall.Visual.SetVisible(
+                        _presentationVisible && i < _portals.Count &&
+                        wall.GameObject.activeSelf);
+                }
             }
         }
 
@@ -343,7 +403,7 @@ namespace MazeParty.Gameplay
                         continue;
 
                     var ignore = wallOwner != player;
-                    for (var wallIndex = 0; wallIndex < wallOwner._walls.Length; wallIndex++)
+                    for (var wallIndex = 0; wallIndex < wallOwner._walls.Count; wallIndex++)
                     {
                         var wall = wallOwner._walls[wallIndex];
                         if (wall == null || wall.Collider == null)
@@ -373,26 +433,53 @@ namespace MazeParty.Gameplay
                 return;
 
             _wallRoot.name = GetRootName();
-            for (var i = 0; i < _walls.Length; i++)
+            for (var i = 0; i < _walls.Count; i++)
             {
                 if (_walls[i] != null && _walls[i].GameObject != null)
                 {
                     _walls[i].GameObject.name = "P" + (playerSlot + 1) +
-                                                " Boundary " + (BoardBoundarySide)i;
+                                                " Boundary Portal Pool " + (i + 1);
                 }
             }
         }
 
-        private static Vector3 GetLocalNormal(BoardBoundarySide side)
+        private bool TryGetLegacySide(
+            BoardBoundaryPortal portal,
+            out BoardBoundarySide side)
         {
-            switch (side)
+            if (_currentTile != null && portal.ConnectedTile != null &&
+                BoardBoundaryWallPolicy.TryGetSide(
+                    _currentTile.Coordinate,
+                    portal.ConnectedTile.Coordinate,
+                    out side))
             {
-                case BoardBoundarySide.North: return Vector3.forward;
-                case BoardBoundarySide.East: return Vector3.right;
-                case BoardBoundarySide.South: return Vector3.back;
-                case BoardBoundarySide.West: return Vector3.left;
-                default: return Vector3.zero;
+                return true;
             }
+
+            if (_currentTile == null)
+            {
+                side = default;
+                return false;
+            }
+
+            var local = _currentTile.transform.InverseTransformDirection(
+                portal.OutwardNormal).normalized;
+            const float cardinalThreshold = 0.95f;
+            if (local.z >= cardinalThreshold)
+                side = BoardBoundarySide.North;
+            else if (local.x >= cardinalThreshold)
+                side = BoardBoundarySide.East;
+            else if (local.z <= -cardinalThreshold)
+                side = BoardBoundarySide.South;
+            else if (local.x <= -cardinalThreshold)
+                side = BoardBoundarySide.West;
+            else
+            {
+                side = default;
+                return false;
+            }
+
+            return true;
         }
 
         private sealed class WallRuntime

@@ -183,6 +183,34 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(((GameObject)highlights.GetArrayElementAtIndex(slot).objectReferenceValue).activeSelf, Is.False);
                     }
                 }
+                var fullData = new SerializedObject(full);
+                var fullMarkers = fullData.FindProperty("players");
+                var fullHighlights = fullData.FindProperty("localHighlights");
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var isLocal = slot == 2;
+                    full.PresentPlayer(
+                        slot,
+                        player.transform,
+                        Color.white,
+                        isLocal,
+                        BoardMinimapDisplayContext.TurnOverview);
+                    Assert.That(
+                        ((Image)fullMarkers.GetArrayElementAtIndex(slot)
+                            .objectReferenceValue).gameObject.activeSelf,
+                        Is.True,
+                        "The freeform turn overview must show every player.");
+                    Assert.That(
+                        ((GameObject)fullHighlights.GetArrayElementAtIndex(slot)
+                            .objectReferenceValue).activeSelf,
+                        Is.EqualTo(isLocal));
+                }
+                full.PresentPlayer(0, player.transform, Color.white, false);
+                Assert.That(
+                    ((Image)fullMarkers.GetArrayElementAtIndex(0)
+                        .objectReferenceValue).gameObject.activeSelf,
+                    Is.False,
+                    "Standard full-map refreshes must still honor localPlayerOnly.");
                 full.PrepareMap(topology, Vector2Int.zero, 2, null, player.transform.position);
                 full.SetHeading(270f);
                 var fullProjection = full.GetComponentInChildren<MiniMapView>(true);
@@ -194,6 +222,15 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(controller.FullMapOpen, Is.True, "Opening does not require holding M.");
                 controller.UpdateFullMapState(true, true);
                 Assert.That(controller.FullMapOpen || panel.activeSelf, Is.False);
+                controller.UpdateFullMapState(true, false, true);
+                Assert.That(controller.FullMapOpen, Is.False,
+                    "A forced turn overview must not mutate the M-key latch.");
+                Assert.That(panel.activeSelf, Is.True);
+                controller.UpdateFullMapState(true, false, true);
+                Assert.That(panel.activeSelf, Is.True,
+                    "Repeated freeform overview refreshes keep the authored panel active.");
+                controller.UpdateFullMapState(true, false, false);
+                Assert.That(panel.activeSelf, Is.False);
                 controller.UpdateFullMapState(true, true);
                 controller.UpdateFullMapState(false, false);
                 Assert.That(controller.FullMapOpen || panel.activeSelf, Is.False, "Leaving the board closes the map.");
@@ -276,6 +313,251 @@ namespace MazeParty.Multiplayer.Tests
                 Object.DestroyImmediate(board);
                 Object.DestroyImmediate(instance);
             }
+        }
+
+        [Test]
+        public void FreeformMap_UsesAuthoredPolygonsAndConnectedPortalOverlay()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+            var instance = Object.Instantiate(prefab);
+            var board = new GameObject("Freeform board");
+            try
+            {
+                var firstObject = new GameObject("Triangle tile");
+                firstObject.transform.SetParent(board.transform, false);
+                var first = firstObject.AddComponent<BoardTile>();
+                first.Configure(new Vector2Int(-7, 4), BoardTileType.Start);
+                firstObject.AddComponent<BoardTileFootprint>().Configure(new[]
+                {
+                    new Vector2(2f, -2f),
+                    new Vector2(8f, -2f),
+                    new Vector2(5f, 3f)
+                });
+
+                var secondObject = new GameObject("Pentagon tile");
+                secondObject.transform.SetParent(board.transform, false);
+                secondObject.transform.position = Vector3.right * 9f;
+                var second = secondObject.AddComponent<BoardTile>();
+                second.Configure(new Vector2Int(20, 31), BoardTileType.Normal);
+                secondObject.AddComponent<BoardTileFootprint>().Configure(new[]
+                {
+                    new Vector2(-2.5f, -2f),
+                    new Vector2(2.5f, -2f),
+                    new Vector2(3f, 1f),
+                    new Vector2(0f, 3f),
+                    new Vector2(-3f, 1f)
+                });
+
+                var gateObject = new GameObject("Connected portal");
+                gateObject.transform.SetParent(board.transform, false);
+                gateObject.transform.position = Vector3.right * 4.5f;
+                gateObject.transform.rotation = Quaternion.LookRotation(Vector3.right);
+                var gate = gateObject.AddComponent<BoardGate>();
+                gate.Configure(first, second, 2f);
+
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(new[] { first, second }, new[] { gate });
+
+                var views = instance.GetComponentsInChildren<BoardMinimapView>(true);
+                Assert.That(views, Has.Length.EqualTo(2));
+                foreach (var view in views)
+                {
+                    view.PrepareMap(
+                        topology,
+                        first.Coordinate,
+                        1,
+                        second.Coordinate,
+                        first.WorldCenter);
+                    var data = new SerializedObject(view);
+                    var graphic = data.FindProperty("topologyGraphic")
+                        .objectReferenceValue as BoardMapTopologyGraphic;
+                    Assert.That(graphic, Is.Not.Null);
+                    Assert.That(graphic.PresentedTileCount, Is.EqualTo(2));
+                    Assert.That(graphic.PresentedPortalCount, Is.EqualTo(1));
+
+                    var rooms = data.FindProperty("rooms");
+                    var firstFloor = (Image)rooms.GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("Floor").objectReferenceValue;
+                    var secondFloor = (Image)rooms.GetArrayElementAtIndex(1)
+                        .FindPropertyRelative("Floor").objectReferenceValue;
+                    Assert.That(firstFloor.gameObject.activeSelf, Is.True);
+                    Assert.That(secondFloor.gameObject.activeSelf, Is.True);
+                    Assert.That(firstFloor.enabled, Is.False,
+                        "The aggregate polygon graphic replaces square floor images.");
+
+                    var projection = (MiniMapView)data.FindProperty("projection")
+                        .objectReferenceValue;
+                    var probe = new GameObject(
+                        "Expected freeform anchor",
+                        typeof(RectTransform));
+                    try
+                    {
+                        probe.transform.position = first.GetRecoveryCenter();
+                        projection.Translate(
+                            probe.transform,
+                            (RectTransform)probe.transform);
+                        var expected = ((RectTransform)probe.transform).localPosition;
+                        Assert.That(
+                            Vector2.Distance(
+                                firstFloor.rectTransform.localPosition,
+                                expected),
+                            Is.LessThan(0.001f),
+                            "Freeform icons must use the authored polygon's safe center.");
+
+                        probe.transform.position = first.transform.position;
+                        projection.Translate(
+                            probe.transform,
+                            (RectTransform)probe.transform);
+                        Assert.That(
+                            Vector2.Distance(
+                                firstFloor.rectTransform.localPosition,
+                                ((RectTransform)probe.transform).localPosition),
+                            Is.GreaterThan(0.1f),
+                            "An offset polygon must not anchor icons at its transform origin.");
+                    }
+                    finally
+                    {
+                        Object.DestroyImmediate(probe);
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(board);
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void AuthoredPlayerStarts_LabelNormalRoomsForLegacyAndFreeformMaps()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+            foreach (var freeform in new[] { false, true })
+            {
+                var instance = Object.Instantiate(prefab);
+                var mapObject = new GameObject(
+                    freeform ? "Freeform starts" : "Legacy starts");
+                try
+                {
+                    var topologyObject = new GameObject("Topology");
+                    topologyObject.transform.SetParent(mapObject.transform, false);
+                    var firstObject = new GameObject("First normal start");
+                    firstObject.transform.SetParent(topologyObject.transform, false);
+                    var first = firstObject.AddComponent<BoardTile>();
+                    first.Configure(Vector2Int.zero, BoardTileType.Normal);
+
+                    var secondObject = new GameObject("Second normal start");
+                    secondObject.transform.SetParent(topologyObject.transform, false);
+                    secondObject.transform.localPosition =
+                        Vector3.right * BoardTile.RoomSize;
+                    var second = secondObject.AddComponent<BoardTile>();
+                    second.Configure(Vector2Int.right, BoardTileType.Normal);
+
+                    if (freeform)
+                    {
+                        firstObject.AddComponent<BoardTileFootprint>().Configure(
+                            new[]
+                            {
+                                new Vector2(-3f, -2f),
+                                new Vector2(3f, -2f),
+                                new Vector2(0f, 3f)
+                            });
+                    }
+
+                    var topology = topologyObject.AddComponent<BoardTopology>();
+                    topology.Configure(
+                        new[] { first, second },
+                        System.Array.Empty<BoardGate>());
+                    var starts = new BoardTile[PlayerSlotRules.Count];
+                    starts[0] = first;
+                    starts[1] = first;
+                    starts[2] = second;
+                    var mapRoot = mapObject.AddComponent<BoardMapRoot>();
+                    mapRoot.Configure(
+                        null,
+                        topology,
+                        topologyObject.transform,
+                        topologyObject.transform,
+                        mapObject.transform,
+                        second,
+                        starts,
+                        new Transform[PlayerSlotRules.Count]);
+
+                    var views = instance.GetComponentsInChildren<BoardMinimapView>(true);
+                    Assert.That(views, Has.Length.EqualTo(2));
+                    foreach (var view in views)
+                    {
+                        view.PrepareMap(
+                            topology,
+                            first.Coordinate,
+                            1,
+                            null,
+                            first.GetRecoveryCenter());
+                        var rooms = new SerializedObject(view).FindProperty("rooms");
+                        var firstSymbol = (Text)rooms.GetArrayElementAtIndex(0)
+                            .FindPropertyRelative("Symbol").objectReferenceValue;
+                        var secondSymbol = (Text)rooms.GetArrayElementAtIndex(1)
+                            .FindPropertyRelative("Symbol").objectReferenceValue;
+                        Assert.That(first.TileType, Is.EqualTo(BoardTileType.Normal));
+                        Assert.That(second.TileType, Is.EqualTo(BoardTileType.Normal));
+                        Assert.That(firstSymbol.text, Is.EqualTo("P1/P2"));
+                        Assert.That(secondSymbol.text, Is.EqualTo("P3/P4"),
+                            "P4 must use the resolved fallback start tile.");
+                    }
+
+                    if (!freeform)
+                    {
+                        Assert.That(
+                            BoardMapView.ResolveOverviewMarker(
+                                string.Empty,
+                                string.Empty,
+                                mapRoot,
+                                first),
+                            Is.EqualTo("P1/P2"));
+                        Assert.That(
+                            BoardMapView.ResolveOverviewMarker(
+                                string.Empty,
+                                ">",
+                                mapRoot,
+                                first),
+                            Is.EqualTo(">"),
+                            "Route arrows keep precedence over authored starts.");
+                        Assert.That(
+                            BoardMapView.ResolveOverviewMarker(
+                                "K1",
+                                ">",
+                                mapRoot,
+                                first),
+                            Is.EqualTo("K1"),
+                            "Shop/player markers keep precedence over routes and starts.");
+                    }
+                }
+                finally
+                {
+                    Object.DestroyImmediate(mapObject);
+                    Object.DestroyImmediate(instance);
+                }
+            }
+        }
+
+        [TestCase(false, false, BoardMinimapDisplayContext.Standard, true)]
+        [TestCase(true, true, BoardMinimapDisplayContext.Standard, true)]
+        [TestCase(true, false, BoardMinimapDisplayContext.Standard, false)]
+        [TestCase(true, false, BoardMinimapDisplayContext.TurnOverview, true)]
+        public void PlayerRevealPolicy_PreservesCloakExceptDuringTurnOverview(
+            bool isCloaked,
+            bool isLocal,
+            BoardMinimapDisplayContext displayContext,
+            bool expected)
+        {
+            Assert.That(
+                BoardMinimapView.ShouldRevealPlayer(
+                    isCloaked,
+                    isLocal,
+                    displayContext),
+                Is.EqualTo(expected));
         }
     }
 }

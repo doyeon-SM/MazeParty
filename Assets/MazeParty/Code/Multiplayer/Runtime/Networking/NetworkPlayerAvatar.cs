@@ -17,6 +17,10 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(CharacterController))]
     public sealed partial class NetworkPlayerAvatar : NetworkBehaviour, IDamageable, IPushReceiver
     {
+        private const float BoardStartRecoveryHeight = 1f;
+        private const float BoardStartAnchorHeightTolerance = 0.05f;
+        private const float ControllerFootprintPadding = 0.02f;
+
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
         [SerializeField] private Transform eyePivot;
@@ -1694,23 +1698,12 @@ namespace MazeParty.Multiplayer
             }
 
             var center = _characterController.transform.TransformPoint(_characterController.center);
-            var offset = center - tile.WorldCenter;
-            var right = tile.transform.right.normalized;
-            var forward = tile.transform.forward.normalized;
-            var up = tile.transform.up.normalized;
             var radialScale = Mathf.Max(
                 Mathf.Abs(transform.lossyScale.x),
                 Mathf.Abs(transform.lossyScale.z));
-            var safeExtent = Mathf.Max(
-                0.1f,
-                BoardTile.HalfRoomSize - _characterController.radius * radialScale - 0.02f);
-            var horizontal = Mathf.Clamp(Vector3.Dot(offset, right), -safeExtent, safeExtent);
-            var depth = Mathf.Clamp(Vector3.Dot(offset, forward), -safeExtent, safeExtent);
-            var height = Vector3.Dot(offset, up);
-            var clampedCenter = tile.WorldCenter +
-                                right * horizontal +
-                                forward * depth +
-                                up * height;
+            var safeInset = _characterController.radius * radialScale +
+                            ControllerFootprintPadding;
+            var clampedCenter = tile.GetClosestPointInside(center, safeInset);
             var correction = clampedCenter - center;
             if (correction.sqrMagnitude > 0.000001f)
             {
@@ -1831,6 +1824,20 @@ namespace MazeParty.Multiplayer
                 return null;
             }
 
+            var mapRoot = _topology.GetComponentInParent<BoardMapRoot>();
+            if (mapRoot != null && PlayerSlotRules.IsValid(slot))
+            {
+                var authoredStart = mapRoot.GetStartTile(slot);
+                if (authoredStart != null)
+                {
+                    for (var index = 0; index < _topology.Tiles.Count; index++)
+                    {
+                        if (_topology.Tiles[index] == authoredStart)
+                            return authoredStart;
+                    }
+                }
+            }
+
             var starts = new BoardTile[MultiplayerConstants.MaxPlayers];
             var count = 0;
             for (var i = 0; i < _topology.Tiles.Count && count < starts.Length; i++)
@@ -1844,6 +1851,104 @@ namespace MazeParty.Multiplayer
 
             Array.Sort(starts, 0, count, BoardTileCoordinateComparer.Instance);
             return slot < count ? starts[slot] : null;
+        }
+
+        private void ResolveInitialBoardPose(
+            int slot,
+            BoardTile expectedStart,
+            out Vector3 position,
+            out Quaternion rotation)
+        {
+            ResolveTopology();
+            var mapRoot = _topology != null
+                ? _topology.GetComponentInParent<BoardMapRoot>()
+                : null;
+            TryResolveAuthoredBoardStartPose(
+                _topology,
+                mapRoot,
+                slot,
+                expectedStart,
+                _characterController,
+                out position,
+                out rotation);
+        }
+
+        internal static bool TryResolveAuthoredBoardStartPose(
+            BoardTopology topology,
+            BoardMapRoot mapRoot,
+            int slot,
+            BoardTile expectedStart,
+            CharacterController controller,
+            out Vector3 position,
+            out Quaternion rotation)
+        {
+            position = expectedStart != null
+                ? expectedStart.GetRecoveryCenter(BoardStartRecoveryHeight)
+                : default;
+            rotation = Quaternion.identity;
+            if (topology == null || mapRoot == null || expectedStart == null ||
+                controller == null || !PlayerSlotRules.IsValid(slot) ||
+                mapRoot.Topology != topology || mapRoot.GetStartTile(slot) != expectedStart)
+            {
+                return false;
+            }
+
+            var startIsRegistered = false;
+            for (var index = 0; index < topology.Tiles.Count; index++)
+            {
+                if (topology.Tiles[index] == expectedStart)
+                {
+                    startIsRegistered = true;
+                    break;
+                }
+            }
+
+            var anchor = mapRoot.GetSpawnAnchor(slot);
+            if (!startIsRegistered || anchor == null ||
+                anchor == mapRoot.transform ||
+                !anchor.IsChildOf(mapRoot.transform) ||
+                !expectedStart.ContainsHorizontalPoint(anchor.position))
+            {
+                return false;
+            }
+
+            var anchorHeight = Vector3.Dot(
+                anchor.position - expectedStart.WorldCenter,
+                expectedStart.transform.up.normalized);
+            if (Mathf.Abs(anchorHeight - BoardStartRecoveryHeight) >
+                BoardStartAnchorHeightTolerance)
+            {
+                return false;
+            }
+
+            var controllerScale = controller.transform.lossyScale;
+            var radialScale = Mathf.Max(
+                Mathf.Abs(controllerScale.x),
+                Mathf.Abs(controllerScale.z));
+            var safeInset = controller.radius * radialScale +
+                            ControllerFootprintPadding;
+            var footprint = expectedStart.GetComponent<BoardTileFootprint>();
+            if (footprint != null && !footprint.CanContainInset(safeInset))
+            {
+                return false;
+            }
+
+            var scaledCenterOffset = Vector3.Scale(
+                controller.center,
+                controllerScale);
+            var proposedCenter = anchor.position +
+                                 anchor.rotation * scaledCenterOffset;
+            var clampedCenter = expectedStart.GetClosestPointInside(
+                proposedCenter,
+                safeInset);
+            if (!expectedStart.ContainsHorizontalPoint(clampedCenter))
+            {
+                return false;
+            }
+
+            position = anchor.position + clampedCenter - proposedCenter;
+            rotation = anchor.rotation;
+            return true;
         }
 
         private void OnSlotChanged(int _, int current)

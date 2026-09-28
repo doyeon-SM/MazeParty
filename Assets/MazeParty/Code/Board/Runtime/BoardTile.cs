@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,20 +22,34 @@ namespace MazeParty.Gameplay
         [SerializeField] private BoardTileType tileType = BoardTileType.Normal;
         [SerializeField] private bool drawDebugBoundary = true;
         [SerializeField] private Renderer landingEffectRenderer;
+        private BoardTileFootprint footprint;
 
         private readonly HashSet<BoardTraversalState> _occupants = new HashSet<BoardTraversalState>();
+        private readonly List<Vector3> _debugFootprintVertices = new List<Vector3>(
+            BoardTileFootprint.MaxVertexCount);
         private MaterialPropertyBlock _landingEffectProperties;
         private BoardLandingEffectType _landingEffect;
 
         public Vector2Int Coordinate => coordinate;
         public BoardTileType TileType => tileType;
         public Vector3 WorldCenter => transform.position;
+        public BoardTileFootprint Footprint
+        {
+            get
+            {
+                ResolveFootprint();
+                return footprint;
+            }
+        }
+        public bool HasCustomFootprint =>
+            Footprint != null && Footprint.HasAuthoredShape;
         public int OccupancyCount => _occupants.Count;
         public IReadOnlyCollection<BoardTraversalState> Occupants => _occupants;
         public BoardLandingEffectType LandingEffect => _landingEffect;
 
         private void Awake()
         {
+            ResolveFootprint();
             ResolveLandingEffectRenderer();
         }
 
@@ -96,6 +111,13 @@ namespace MazeParty.Gameplay
 
         public bool ContainsHorizontalPoint(Vector3 worldPoint, float tolerance = 0f)
         {
+            if (TryGetValidFootprint(out var authoredFootprint))
+            {
+                return authoredFootprint.ContainsHorizontalPoint(
+                    worldPoint,
+                    tolerance);
+            }
+
             var offset = worldPoint - WorldCenter;
             var horizontal = Vector3.Dot(offset, transform.right.normalized);
             var depth = Vector3.Dot(offset, transform.forward.normalized);
@@ -105,7 +127,66 @@ namespace MazeParty.Gameplay
 
         public Vector3 GetRecoveryCenter(float verticalOffset = 0f)
         {
-            return WorldCenter + transform.up.normalized * verticalOffset;
+            var center = TryGetValidFootprint(out var authoredFootprint)
+                ? authoredFootprint.GetSafeCenter()
+                : WorldCenter;
+            return center + transform.up.normalized * verticalOffset;
+        }
+
+        public Vector3 GetClosestPointInside(Vector3 worldPoint, float inset = 0f)
+        {
+            if (TryGetValidFootprint(out var authoredFootprint))
+            {
+                return authoredFootprint.GetClosestPointInside(worldPoint, inset);
+            }
+
+            var offset = worldPoint - WorldCenter;
+            var right = transform.right.normalized;
+            var forward = transform.forward.normalized;
+            var up = transform.up.normalized;
+            var extent = Mathf.Max(0f, HalfRoomSize - Mathf.Max(0f, inset));
+            return WorldCenter +
+                   right * Mathf.Clamp(Vector3.Dot(offset, right), -extent, extent) +
+                   forward * Mathf.Clamp(Vector3.Dot(offset, forward), -extent, extent) +
+                   up * Vector3.Dot(offset, up);
+        }
+
+        public void GetWorldFootprintVertices(List<Vector3> target)
+        {
+            if (target == null)
+            {
+                throw new ArgumentNullException(nameof(target));
+            }
+
+            if (TryGetValidFootprint(out var authoredFootprint))
+            {
+                authoredFootprint.GetWorldVertices(target);
+                return;
+            }
+
+            target.Clear();
+            var right = transform.right.normalized * HalfRoomSize;
+            var forward = transform.forward.normalized * HalfRoomSize;
+            target.Add(WorldCenter - right - forward);
+            target.Add(WorldCenter + right - forward);
+            target.Add(WorldCenter + right + forward);
+            target.Add(WorldCenter - right + forward);
+        }
+
+        public Bounds GetWorldFootprintBounds()
+        {
+            if (TryGetValidFootprint(out var authoredFootprint))
+            {
+                return authoredFootprint.GetWorldBounds();
+            }
+
+            var right = transform.right.normalized * HalfRoomSize;
+            var forward = transform.forward.normalized * HalfRoomSize;
+            var bounds = new Bounds(WorldCenter - right - forward, Vector3.zero);
+            bounds.Encapsulate(WorldCenter + right - forward);
+            bounds.Encapsulate(WorldCenter + right + forward);
+            bounds.Encapsulate(WorldCenter - right + forward);
+            return bounds;
         }
 
         public bool IsOccupiedBy(BoardTraversalState traversal)
@@ -133,14 +214,31 @@ namespace MazeParty.Gameplay
             }
         }
 
+        internal void BindFootprint(BoardTileFootprint authoredFootprint)
+        {
+            footprint = authoredFootprint;
+        }
+
+        private void ResolveFootprint()
+        {
+            if (footprint == null)
+            {
+                footprint = GetComponent<BoardTileFootprint>();
+            }
+        }
+
+        private bool TryGetValidFootprint(out BoardTileFootprint authoredFootprint)
+        {
+            authoredFootprint = Footprint;
+            return authoredFootprint != null && authoredFootprint.TryValidate(out _);
+        }
+
         private void OnDrawGizmos()
         {
             if (!drawDebugBoundary)
                 return;
 
-            var previousMatrix = Gizmos.matrix;
             var previousColor = Gizmos.color;
-            Gizmos.matrix = Matrix4x4.TRS(transform.position, transform.rotation, Vector3.one);
             Gizmos.color = tileType == BoardTileType.Start
                 ? Color.green
                 : tileType == BoardTileType.KeyShop
@@ -149,16 +247,15 @@ namespace MazeParty.Gameplay
                         ? Color.cyan
                         : new Color(0.35f, 0.65f, 1f);
 
-            var a = new Vector3(-HalfRoomSize, 0.02f, -HalfRoomSize);
-            var b = new Vector3(HalfRoomSize, 0.02f, -HalfRoomSize);
-            var c = new Vector3(HalfRoomSize, 0.02f, HalfRoomSize);
-            var d = new Vector3(-HalfRoomSize, 0.02f, HalfRoomSize);
-            Gizmos.DrawLine(a, b);
-            Gizmos.DrawLine(b, c);
-            Gizmos.DrawLine(c, d);
-            Gizmos.DrawLine(d, a);
+            GetWorldFootprintVertices(_debugFootprintVertices);
+            var lift = transform.up.normalized * 0.02f;
+            for (var i = 0; i < _debugFootprintVertices.Count; i++)
+            {
+                Gizmos.DrawLine(
+                    _debugFootprintVertices[i] + lift,
+                    _debugFootprintVertices[(i + 1) % _debugFootprintVertices.Count] + lift);
+            }
 
-            Gizmos.matrix = previousMatrix;
             Gizmos.color = previousColor;
         }
     }

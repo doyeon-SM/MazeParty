@@ -82,11 +82,13 @@ namespace MazeParty.Multiplayer
             var keyboard = Keyboard.current;
             var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
-            UpdateFullMapState(overview || action, !typing && keyboard != null && keyboard.mKey.wasPressedThisFrame);
-            SetActive(overviewPanel, overview && !_fullMapOpen);
-            SetActive(minimapPanel, action && !_fullMapOpen);
+            var toggleRequested = !typing && keyboard != null &&
+                                  keyboard.mKey.wasPressedThisFrame;
             if (!overview && !action)
             {
+                UpdateFullMapState(false, toggleRequested);
+                SetActive(overviewPanel, false);
+                SetActive(minimapPanel, false);
                 return;
             }
 
@@ -96,8 +98,19 @@ namespace MazeParty.Multiplayer
             }
             if (_topology == null)
             {
+                UpdateFullMapState(false, false);
+                SetActive(overviewPanel, false);
+                SetActive(minimapPanel, false);
                 return;
             }
+
+            var freeformOverview = overview && UsesFreeformMap(_topology);
+            UpdateFullMapState(
+                true,
+                toggleRequested,
+                freeformOverview);
+            SetActive(overviewPanel, overview && !_fullMapOpen && !freeformOverview);
+            SetActive(minimapPanel, action && !_fullMapOpen);
 
             var manager = NetworkManager.Singleton;
             var localObject = manager != null && manager.SpawnManager != null
@@ -106,10 +119,26 @@ namespace MazeParty.Multiplayer
             var localAvatar = localObject != null
                 ? localObject.GetComponent<NetworkPlayerAvatar>()
                 : null;
-            if (_fullMapOpen || action)
+            if (_fullMapOpen || freeformOverview || action)
             {
-                if (_fullMapOpen) fullMap.Refresh(_topology, match, localAvatar);
-                else liveMinimap.Refresh(_topology, match, localAvatar);
+                if (_fullMapOpen || freeformOverview)
+                {
+                    fullMap.Refresh(
+                        _topology,
+                        match,
+                        localAvatar,
+                        freeformOverview
+                            ? BoardMinimapDisplayContext.TurnOverview
+                            : BoardMinimapDisplayContext.Standard);
+                }
+                else
+                {
+                    liveMinimap.Refresh(
+                        _topology,
+                        match,
+                        localAvatar,
+                        BoardMinimapDisplayContext.Standard);
+                }
                 return;
             }
             var signature = ComputeSignature(match, localAvatar, overview);
@@ -135,12 +164,15 @@ namespace MazeParty.Multiplayer
             }
 
             var cells = overview ? overviewCells : minimapCells;
+            var mapRoot = overview
+                ? _topology.GetComponentInParent<BoardMapRoot>()
+                : null;
             for (var y = 0; y < GridSize; y++)
             {
                 for (var x = 0; x < GridSize; x++)
                 {
                     RefreshCell(cells[y * GridSize + x], new Vector2Int(x, y),
-                        match, localAvatar, overview);
+                        match, localAvatar, overview, mapRoot);
                 }
             }
             if (overview) PulseRoute();
@@ -148,9 +180,23 @@ namespace MazeParty.Multiplayer
 
         public void UpdateFullMapState(bool boardAvailable, bool toggleRequested)
         {
+            UpdateFullMapState(boardAvailable, toggleRequested, false);
+        }
+
+        internal void UpdateFullMapState(
+            bool boardAvailable,
+            bool toggleRequested,
+            bool turnOverviewUsesFullMap)
+        {
             if (!boardAvailable) _fullMapOpen = false;
             else if (toggleRequested) _fullMapOpen = !_fullMapOpen;
-            if (fullMapPanel != null) SetActive(fullMapPanel, _fullMapOpen);
+            if (fullMapPanel != null)
+            {
+                SetActive(
+                    fullMapPanel,
+                    boardAvailable &&
+                    (_fullMapOpen || turnOverviewUsesFullMap));
+            }
         }
 
         private void OnDisable()
@@ -160,7 +206,7 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCell(Cell cell, Vector2Int coordinate,
             NetworkMatchState match, NetworkPlayerAvatar localAvatar,
-            bool overview)
+            bool overview, BoardMapRoot mapRoot)
         {
             if (!_topology.TryGetTile(coordinate, out var tile))
             {
@@ -199,11 +245,47 @@ namespace MazeParty.Multiplayer
                     marker += (slot + 1).ToString();
                 }
             }
-            if (marker.Length == 0)
-            {
-                marker = overview ? RouteArrow(tile) : string.Empty;
-            }
+            if (overview)
+                marker = ResolveOverviewMarker(
+                    marker,
+                    RouteArrow(tile),
+                    mapRoot,
+                    tile);
             cell.Marker.text = marker;
+        }
+
+        internal static string ResolveOverviewMarker(
+            string occupiedMarker,
+            string routeMarker,
+            BoardMapRoot mapRoot,
+            BoardTile tile)
+        {
+            if (!string.IsNullOrEmpty(occupiedMarker))
+                return occupiedMarker;
+            if (!string.IsNullOrEmpty(routeMarker))
+                return routeMarker;
+            return GetPlayerStartLabel(mapRoot, tile);
+        }
+
+        internal static string GetPlayerStartLabel(
+            BoardMapRoot mapRoot,
+            BoardTile tile)
+        {
+            if (mapRoot == null || tile == null)
+                return string.Empty;
+
+            var label = string.Empty;
+            for (var slot = 0; slot < PlayerSlotRules.Count; slot++)
+            {
+                if (mapRoot.GetStartTile(slot) != tile)
+                    continue;
+
+                if (label.Length > 0)
+                    label += "/";
+                label += "P" + (slot + 1);
+            }
+
+            return label;
         }
 
         private void PulseRoute()
@@ -297,6 +379,34 @@ namespace MazeParty.Multiplayer
                 }
             }
             return true;
+        }
+
+        private static bool UsesFreeformMap(BoardTopology topology)
+        {
+            if (topology == null)
+                return false;
+
+            for (var index = 0; index < topology.Tiles.Count; index++)
+            {
+                var tile = topology.Tiles[index];
+                if (tile != null && tile.HasCustomFootprint)
+                    return true;
+            }
+
+            for (var index = 0; index < topology.Gates.Count; index++)
+            {
+                var gate = topology.Gates[index];
+                if (gate == null || gate.Source == null || gate.Destination == null)
+                    continue;
+
+                if (!BoardBoundaryWallPolicy.TryGetSide(
+                        gate.Source.Coordinate,
+                        gate.Destination.Coordinate,
+                        out _))
+                    return true;
+            }
+
+            return false;
         }
 
         private static void SetActive(GameObject target, bool active)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -47,14 +48,133 @@ namespace MazeParty.Gameplay
     }
 
     /// <summary>
-    /// Pure cardinal policy shared by online avatars and the editor testbed.
-    /// A topology exit is passable only while the player has at least one move.
-    /// With zero moves all four walls remain blocking, leaving the room interior free.
+    /// One physical connection opening around the current tile. Reciprocal
+    /// directed gates that share the same neighbor and gate plane collapse into
+    /// one portal. Passability still follows the outgoing directed gate only.
+    /// </summary>
+    public readonly struct BoardBoundaryPortal
+    {
+        internal BoardBoundaryPortal(
+            BoardGate representativeGate,
+            BoardTile connectedTile,
+            Vector3 planePoint,
+            Vector3 outwardNormal,
+            float width,
+            bool hasOutgoingGate,
+            bool isPassable)
+        {
+            RepresentativeGate = representativeGate;
+            ConnectedTile = connectedTile;
+            PlanePoint = planePoint;
+            OutwardNormal = outwardNormal.sqrMagnitude > 0.0001f
+                ? outwardNormal.normalized
+                : Vector3.forward;
+            Width = Mathf.Max(0.1f, width);
+            HasOutgoingGate = hasOutgoingGate;
+            IsPassable = isPassable && hasOutgoingGate;
+        }
+
+        public BoardGate RepresentativeGate { get; }
+        public BoardTile ConnectedTile { get; }
+        public Vector3 PlanePoint { get; }
+        public Vector3 OutwardNormal { get; }
+        public float Width { get; }
+        public bool HasOutgoingGate { get; }
+        public bool IsPassable { get; }
+        public bool IsPhysicallyBlocked => !IsPassable;
+
+        internal BoardBoundaryPortal Merge(
+            BoardGate gate,
+            Vector3 planePoint,
+            Vector3 outwardNormal,
+            float width,
+            bool outgoing,
+            int remainingMoves)
+        {
+            var preferCandidate = outgoing && !HasOutgoingGate;
+            var hasOutgoing = HasOutgoingGate || outgoing;
+            return new BoardBoundaryPortal(
+                preferCandidate ? gate : RepresentativeGate,
+                ConnectedTile,
+                preferCandidate ? planePoint : PlanePoint,
+                preferCandidate ? outwardNormal : OutwardNormal,
+                Mathf.Max(Width, width),
+                hasOutgoing,
+                hasOutgoing && remainingMoves > 0);
+        }
+    }
+
+    /// <summary>
+    /// Shared boundary policy for online avatars and the editor testbed. The
+    /// cardinal mask API remains for legacy board consumers, while portal
+    /// evaluation supports arbitrary authored gate positions and directions.
     /// </summary>
     public static class BoardBoundaryWallPolicy
     {
         public const int SideCount = 4;
         public const byte AllSidesMask = 0b0000_1111;
+
+        private const float PortalMergePointTolerance = 0.05f;
+        private const float PortalMergeNormalAlignment = 0.999f;
+
+        /// <summary>
+        /// Builds one state per unique physical gate portal connected to the
+        /// supplied tile. Incoming-only portals stay visible but blocked;
+        /// outgoing portals are passable only while a move remains.
+        /// </summary>
+        public static void EvaluatePortals(
+            BoardTopology topology,
+            BoardTile source,
+            int remainingMoves,
+            List<BoardBoundaryPortal> results)
+        {
+            if (results == null)
+            {
+                throw new ArgumentNullException(nameof(results));
+            }
+
+            results.Clear();
+            if (topology == null || source == null)
+            {
+                return;
+            }
+
+            var outgoing = topology.GetOutgoingGates(source);
+            for (var i = 0; i < outgoing.Count; i++)
+            {
+                var gate = outgoing[i];
+                if (gate == null || gate.Source != source || gate.Destination == null)
+                {
+                    continue;
+                }
+
+                AddOrMergePortal(
+                    results,
+                    gate,
+                    gate.Destination,
+                    gate.ForwardNormal,
+                    true,
+                    remainingMoves);
+            }
+
+            var incoming = topology.GetIncomingGates(source);
+            for (var i = 0; i < incoming.Count; i++)
+            {
+                var gate = incoming[i];
+                if (gate == null || gate.Destination != source || gate.Source == null)
+                {
+                    continue;
+                }
+
+                AddOrMergePortal(
+                    results,
+                    gate,
+                    gate.Source,
+                    -gate.ForwardNormal,
+                    false,
+                    remainingMoves);
+            }
+        }
 
         public static BoardBoundaryWallLayout Evaluate(
             Vector2Int source,
@@ -138,6 +258,65 @@ namespace MazeParty.Gameplay
             return index >= 0 && index < SideCount
                 ? (byte)(1 << index)
                 : (byte)0;
+        }
+
+        private static void AddOrMergePortal(
+            List<BoardBoundaryPortal> portals,
+            BoardGate gate,
+            BoardTile connectedTile,
+            Vector3 outwardNormal,
+            bool outgoing,
+            int remainingMoves)
+        {
+            for (var i = 0; i < portals.Count; i++)
+            {
+                if (!IsSamePhysicalPortal(
+                        portals[i],
+                        connectedTile,
+                        gate.PlanePoint,
+                        outwardNormal))
+                {
+                    continue;
+                }
+
+                portals[i] = portals[i].Merge(
+                    gate,
+                    gate.PlanePoint,
+                    outwardNormal,
+                    gate.GateWidth,
+                    outgoing,
+                    remainingMoves);
+                return;
+            }
+
+            portals.Add(new BoardBoundaryPortal(
+                gate,
+                connectedTile,
+                gate.PlanePoint,
+                outwardNormal,
+                gate.GateWidth,
+                outgoing,
+                outgoing && remainingMoves > 0));
+        }
+
+        private static bool IsSamePhysicalPortal(
+            BoardBoundaryPortal existing,
+            BoardTile connectedTile,
+            Vector3 planePoint,
+            Vector3 outwardNormal)
+        {
+            if (existing.ConnectedTile != connectedTile ||
+                (existing.PlanePoint - planePoint).sqrMagnitude >
+                PortalMergePointTolerance * PortalMergePointTolerance)
+            {
+                return false;
+            }
+
+            var normal = outwardNormal.sqrMagnitude > 0.0001f
+                ? outwardNormal.normalized
+                : Vector3.forward;
+            return Mathf.Abs(Vector3.Dot(existing.OutwardNormal, normal)) >=
+                   PortalMergeNormalAlignment;
         }
     }
 }

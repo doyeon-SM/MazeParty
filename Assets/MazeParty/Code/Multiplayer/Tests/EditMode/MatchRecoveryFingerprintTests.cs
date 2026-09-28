@@ -144,6 +144,81 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(reordered, Is.Not.EqualTo(epsilonChanged));
         }
 
+        [Test]
+        public void ContentFingerprint_ChangesWithAuthoredFootprint()
+        {
+            var tile = CreateTile(Vector2Int.zero);
+            var footprint = tile.gameObject.AddComponent<BoardTileFootprint>();
+            footprint.Configure(new[]
+            {
+                new Vector2(-2f, -2f),
+                new Vector2(2f, -2f),
+                new Vector2(0f, 2f)
+            });
+            var topology = CreateObject("Topology").AddComponent<BoardTopology>();
+            topology.Configure(new[] { tile }, System.Array.Empty<BoardGate>());
+            var schedule = HostMinigameSchedule.Create(3412);
+
+            var original = MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology,
+                schedule);
+            footprint.Configure(new[]
+            {
+                new Vector2(-3f, -2f),
+                new Vector2(2f, -2f),
+                new Vector2(0f, 2f)
+            });
+            var reshaped = MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology,
+                schedule);
+
+            Assert.That(reshaped, Is.Not.EqualTo(original));
+        }
+
+        [Test]
+        public void ContentFingerprint_ChangesWithMapIdentityAndContentVersion()
+        {
+            var root = CreateObject("Map Root");
+            var tile = CreateTile(Vector2Int.zero);
+            tile.transform.SetParent(root.transform, false);
+            var topology = root.AddComponent<BoardTopology>();
+            topology.Configure(new[] { tile }, System.Array.Empty<BoardGate>());
+            var mapRoot = root.AddComponent<BoardMapRoot>();
+            var definition = ScriptableObject.CreateInstance<BoardMapDefinition>();
+            var schedule = HostMinigameSchedule.Create(4312);
+            try
+            {
+                definition.Configure("forest", "Forest", 1, null);
+                mapRoot.Configure(
+                    definition,
+                    topology,
+                    root.transform,
+                    root.transform,
+                    root.transform,
+                    tile,
+                    System.Array.Empty<Transform>());
+                var first = MatchRecoveryFingerprint.CreateContentFingerprint(
+                    topology,
+                    schedule);
+
+                definition.Configure("forest", "Forest", 2, null);
+                var versionChanged = MatchRecoveryFingerprint.CreateContentFingerprint(
+                    topology,
+                    schedule);
+                Assert.That(versionChanged, Is.Not.EqualTo(first));
+
+                definition.Configure("forest-night", "Forest Night", 2, null);
+                var identityChanged = MatchRecoveryFingerprint.CreateContentFingerprint(
+                    topology,
+                    schedule);
+                Assert.That(identityChanged, Is.Not.EqualTo(versionChanged));
+            }
+            finally
+            {
+                Object.DestroyImmediate(definition);
+            }
+        }
+
         private BoardTile CreateTile(Vector2Int coordinate)
         {
             var tile = CreateObject("Tile " + coordinate).AddComponent<BoardTile>();

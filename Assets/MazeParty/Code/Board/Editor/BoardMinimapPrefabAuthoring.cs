@@ -32,9 +32,13 @@ namespace MazeParty.Editor
                 BoardLocalMapPrefabUpgrade.Ensure(root);
                 BoardMapInfoPrefabUpgrade.Ensure(root);
                 BoardMapRoutePrefabUpgrade.Ensure(root);
-            BoardItemProjectSetup.EnsureMapBindings(root);
-                if (!existing.HasRequiredReferences)
-                    throw new InvalidOperationException("Board minimap bindings are incomplete.");
+                BoardItemProjectSetup.EnsureMapBindings(root);
+                EnsureTopologyGraphics(root);
+                foreach (var currentView in root.GetComponentsInChildren<BoardMinimapView>(true))
+                {
+                    if (!currentView.HasRequiredReferences)
+                        throw new InvalidOperationException("Board minimap bindings are incomplete.");
+                }
                 return;
             }
             var map = root.GetComponent<BoardMapView>();
@@ -142,7 +146,35 @@ namespace MazeParty.Editor
             BoardMapInfoPrefabUpgrade.Ensure(root);
             BoardMapRoutePrefabUpgrade.Ensure(root);
             BoardItemProjectSetup.EnsureMapBindings(root);
+            EnsureTopologyGraphics(root);
             if (!view.HasRequiredReferences) throw new InvalidOperationException("Minimap setup failed.");
+        }
+
+        private static void EnsureTopologyGraphics(GameObject root)
+        {
+            var views = root.GetComponentsInChildren<BoardMinimapView>(true);
+            for (var index = 0; index < views.Length; index++)
+            {
+                var serialized = new SerializedObject(views[index]);
+                var projection = serialized.FindProperty("projection").objectReferenceValue as MiniMapView;
+                if (projection == null || projection.otherDotCanvas == null)
+                {
+                    throw new InvalidOperationException(
+                        "Board minimap projection is missing its authored surface.");
+                }
+
+                var graphic = projection.otherDotCanvas.GetComponent<BoardMapTopologyGraphic>();
+                if (graphic == null)
+                {
+                    graphic = projection.otherDotCanvas.gameObject
+                        .AddComponent<BoardMapTopologyGraphic>();
+                    graphic.raycastTarget = false;
+                }
+
+                views[index].BindTopologyGraphic(graphic);
+                EditorUtility.SetDirty(views[index]);
+                EditorUtility.SetDirty(graphic);
+            }
         }
 
         private static RectTransform Rect(string name, Transform parent)

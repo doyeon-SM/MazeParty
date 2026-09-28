@@ -152,6 +152,23 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(velocity.y, Is.EqualTo(-2f).Within(0.0001f));
         }
 
+        [TestCase(3f, 4f, 5f)]
+        [TestCase(0.6f, 0.8f, 1f)]
+        [TestCase(0f, 2.5f, 2.5f)]
+        public void PolygonFootprintInset_UsesConservativeCircularSupport(
+            float rightExtent,
+            float forwardExtent,
+            float expectedInset)
+        {
+            var inset = WorldDieFootprintConstraint
+                .GetConservativeCircularInset(rightExtent, forwardExtent);
+
+            Assert.That(inset, Is.EqualTo(expectedInset).Within(0.00001f));
+            Assert.That(
+                inset,
+                Is.GreaterThanOrEqualTo(Mathf.Max(rightExtent, forwardExtent)));
+        }
+
         [Test]
         public void Lifecycle_RejectsInvalidSlotsAndInvalidOrRepeatedSettlement()
         {

@@ -33,7 +33,12 @@ namespace MazeParty.Multiplayer
                 var start = FindStartTileForSlot(_slot.Value);
                 if (start != null)
                 {
-                    TeleportController(start.GetRecoveryCenter(1f), Quaternion.identity);
+                    ResolveInitialBoardPose(
+                        _slot.Value,
+                        start,
+                        out var position,
+                        out var rotation);
+                    TeleportController(position, rotation);
                 }
             }
 

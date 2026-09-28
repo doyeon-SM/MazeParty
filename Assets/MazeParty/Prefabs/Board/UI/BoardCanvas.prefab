@@ -33658,6 +33658,8 @@ GameObject:
   m_Component:
   - component: {fileID: 6708637559676884042}
   - component: {fileID: 4541444220126816560}
+  - component: {fileID: 5639703635039286223}
+  - component: {fileID: 105093585583192537}
   m_Layer: 5
   m_Name: Heading Map
   m_TagString: Untagged
@@ -33756,6 +33758,40 @@ MonoBehaviour:
   defaultSprite: {fileID: 0}
   uiDotPrefab: {fileID: 0}
   miniMapBounds: {fileID: 7659684055776135767}
+--- !u!222 &5639703635039286223
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253473408552462235}
+  m_CullTransparentMesh: 1
+--- !u!114 &105093585583192537
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2253473408552462235}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 952502d4e66fa4b4582ed04c1c73d0ae, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMapTopologyGraphic
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  outlineWidth: 1.5
+  portalWidth: 3
+  outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
+  neutralPortalColor: {r: 0.75, g: 0.82, b: 0.88, a: 0.72}
+  passablePortalColor: {r: 0.3, g: 0.82, b: 1, a: 0.62}
+  blockedPortalColor: {r: 1, g: 0.24, b: 0.2, a: 0.62}
 --- !u!1 &2256547655907003779
 GameObject:
   m_ObjectHideFlags: 0
@@ -43370,6 +43406,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMinimapView
   projection: {fileID: 8497534338314928163}
+  topologyGraphic: {fileID: 7980967367052210686}
   circularMask: {fileID: 337828874792897713}
   radiusInTiles: 2
   followHeading: 1
@@ -44354,6 +44391,8 @@ MonoBehaviour:
   floorColor: {r: 0.12, g: 0.2, b: 0.28, a: 1}
   localFloorColor: {r: 0.13, g: 0.43, b: 0.4, a: 1}
   shopColor: {r: 0.6, g: 0.39, b: 0.08, a: 1}
+  startFloorColor: {r: 0.18, g: 0.4, b: 0.35, a: 1}
+  respawnFloorColor: {r: 0.22, g: 0.33, b: 0.44, a: 1}
   exitColor: {r: 0.35, g: 0.8, b: 1, a: 1}
   blockedExitColor: {r: 1, g: 0.46, b: 0.27, a: 1}
   unknownTileText: CURRENT TILE  --
@@ -56329,6 +56368,8 @@ GameObject:
   m_Component:
   - component: {fileID: 7216711429268957453}
   - component: {fileID: 8497534338314928163}
+  - component: {fileID: 2867556446260241974}
+  - component: {fileID: 7980967367052210686}
   m_Layer: 5
   m_Name: Heading Map
   m_TagString: Untagged
@@ -56427,6 +56468,40 @@ MonoBehaviour:
   defaultSprite: {fileID: 0}
   uiDotPrefab: {fileID: 0}
   miniMapBounds: {fileID: 777190051121565900}
+--- !u!222 &2867556446260241974
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3516251889658687268}
+  m_CullTransparentMesh: 1
+--- !u!114 &7980967367052210686
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3516251889658687268}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 952502d4e66fa4b4582ed04c1c73d0ae, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMapTopologyGraphic
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 0
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  outlineWidth: 1.5
+  portalWidth: 3
+  outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
+  neutralPortalColor: {r: 0.75, g: 0.82, b: 0.88, a: 0.72}
+  passablePortalColor: {r: 0.3, g: 0.82, b: 1, a: 0.62}
+  blockedPortalColor: {r: 1, g: 0.24, b: 0.2, a: 0.62}
 --- !u!1 &3522172731280122888
 GameObject:
   m_ObjectHideFlags: 0
@@ -81907,6 +81982,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardMinimapView
   projection: {fileID: 4541444220126816560}
+  topologyGraphic: {fileID: 105093585583192537}
   circularMask: {fileID: 0}
   radiusInTiles: 0
   followHeading: 0
@@ -82891,6 +82967,8 @@ MonoBehaviour:
   floorColor: {r: 0.12, g: 0.2, b: 0.28, a: 1}
   localFloorColor: {r: 0.13, g: 0.43, b: 0.4, a: 1}
   shopColor: {r: 0.6, g: 0.39, b: 0.08, a: 1}
+  startFloorColor: {r: 0.18, g: 0.4, b: 0.35, a: 1}
+  respawnFloorColor: {r: 0.22, g: 0.33, b: 0.44, a: 1}
   exitColor: {r: 0.35, g: 0.8, b: 1, a: 1}
   blockedExitColor: {r: 1, g: 0.46, b: 0.27, a: 1}
   unknownTileText: CURRENT TILE  --

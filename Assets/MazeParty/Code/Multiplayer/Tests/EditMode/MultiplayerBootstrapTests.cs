@@ -433,6 +433,205 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [TestCase(3)]
+        [TestCase(4)]
+        [TestCase(5)]
+        public void AuthoredBoardStartPose_ClampsControllerInsideSmallFootprint(
+            int sides)
+        {
+            var mapObject = new GameObject("Start Pose Map");
+            var topologyObject = new GameObject("Start Pose Topology");
+            var tileObject = new GameObject("Assigned Start");
+            var anchorObject = new GameObject("Player Spawn 1");
+            var controllerObject = new GameObject("Start Pose Controller");
+            try
+            {
+                topologyObject.transform.SetParent(mapObject.transform);
+                tileObject.transform.SetParent(topologyObject.transform);
+                anchorObject.transform.SetParent(mapObject.transform);
+
+                var mapRoot = mapObject.AddComponent<BoardMapRoot>();
+                var topology = topologyObject.AddComponent<BoardTopology>();
+                var start = tileObject.AddComponent<BoardTile>();
+                start.Configure(Vector2Int.zero, BoardTileType.Start);
+                start.transform.SetPositionAndRotation(
+                    new Vector3(4f, 0f, -3f),
+                    Quaternion.Euler(0f, 31f, 0f));
+                var vertices = new Vector2[sides];
+                for (var index = 0; index < sides; index++)
+                {
+                    var angle = Mathf.PI * 2f * index / sides;
+                    vertices[index] = new Vector2(
+                        Mathf.Cos(angle) * 1.5f,
+                        Mathf.Sin(angle) * 1.5f);
+                }
+
+                var footprint = tileObject.AddComponent<BoardTileFootprint>();
+                footprint.Configure(vertices);
+                topology.Configure(
+                    new[] { start },
+                    System.Array.Empty<BoardGate>());
+
+                anchorObject.transform.SetPositionAndRotation(
+                    start.transform.TransformPoint(new Vector3(1.15f, 0f, 0f)) +
+                    start.transform.up.normalized,
+                    start.transform.rotation * Quaternion.Euler(0f, 17f, 0f));
+                var starts = new BoardTile[PlayerSlotRules.Count];
+                starts[0] = start;
+                var anchors = new Transform[PlayerSlotRules.Count];
+                anchors[0] = anchorObject.transform;
+                mapRoot.Configure(
+                    null,
+                    topology,
+                    null,
+                    null,
+                    null,
+                    start,
+                    starts,
+                    anchors);
+
+                var controller = controllerObject.AddComponent<CharacterController>();
+                controller.center = Vector3.zero;
+                controller.radius = 0.5f;
+                controller.height = 2f;
+
+                Assert.That(footprint.CanContainInset(0.52f), Is.True);
+                Assert.That(
+                    start.ContainsHorizontalPoint(anchorObject.transform.position),
+                    Is.True);
+                var usedAuthoredPose =
+                    NetworkPlayerAvatar.TryResolveAuthoredBoardStartPose(
+                        topology,
+                        mapRoot,
+                        0,
+                        start,
+                        controller,
+                        out var position,
+                        out var rotation);
+                var expected = start.GetClosestPointInside(
+                    anchorObject.transform.position,
+                    0.52f);
+
+                Assert.That(usedAuthoredPose, Is.True);
+                Assert.That(Vector3.Distance(position, expected), Is.LessThan(0.0001f));
+                Assert.That(
+                    Vector3.Distance(position, anchorObject.transform.position),
+                    Is.GreaterThan(0.01f));
+                Assert.That(start.ContainsHorizontalPoint(position), Is.True);
+                Assert.That(
+                    Vector3.Dot(
+                        position - start.WorldCenter,
+                        start.transform.up.normalized),
+                    Is.EqualTo(1f).Within(0.0001f));
+                Assert.That(
+                    Quaternion.Angle(rotation, anchorObject.transform.rotation),
+                    Is.LessThan(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(controllerObject);
+                Object.DestroyImmediate(mapObject);
+            }
+        }
+
+        [Test]
+        public void AuthoredBoardStartPose_FallsBackForLegacyOutsideMismatchAndHeight()
+        {
+            var mapObject = new GameObject("Start Pose Validation Map");
+            var topologyObject = new GameObject("Start Pose Validation Topology");
+            var firstObject = new GameObject("Player One Start");
+            var secondObject = new GameObject("Different Start");
+            var anchorObject = new GameObject("Player Spawn 1");
+            var controllerObject = new GameObject("Start Pose Validation Controller");
+            try
+            {
+                topologyObject.transform.SetParent(mapObject.transform);
+                firstObject.transform.SetParent(topologyObject.transform);
+                secondObject.transform.SetParent(topologyObject.transform);
+                anchorObject.transform.SetParent(mapObject.transform);
+
+                var mapRoot = mapObject.AddComponent<BoardMapRoot>();
+                var topology = topologyObject.AddComponent<BoardTopology>();
+                var first = firstObject.AddComponent<BoardTile>();
+                first.Configure(Vector2Int.zero, BoardTileType.Start);
+                var second = secondObject.AddComponent<BoardTile>();
+                second.Configure(Vector2Int.right, BoardTileType.Normal);
+                second.transform.position = Vector3.right * 12f;
+                topology.Configure(
+                    new[] { first, second },
+                    System.Array.Empty<BoardGate>());
+
+                var starts = new BoardTile[PlayerSlotRules.Count];
+                starts[0] = first;
+                var anchors = new Transform[PlayerSlotRules.Count];
+                anchors[0] = anchorObject.transform;
+                mapRoot.Configure(
+                    null,
+                    topology,
+                    null,
+                    null,
+                    null,
+                    first,
+                    starts,
+                    anchors);
+                var controller = controllerObject.AddComponent<CharacterController>();
+                controller.center = Vector3.zero;
+                controller.radius = 0.5f;
+                controller.height = 2f;
+
+                AssertFallback(null, first, first.GetRecoveryCenter(1f));
+
+                anchorObject.transform.position = second.GetRecoveryCenter(1f);
+                AssertFallback(mapRoot, first, first.GetRecoveryCenter(1f));
+
+                anchorObject.transform.position = first.GetRecoveryCenter(1f);
+                AssertFallback(mapRoot, second, second.GetRecoveryCenter(1f));
+
+                anchorObject.transform.position = first.GetRecoveryCenter(0f);
+                AssertFallback(mapRoot, first, first.GetRecoveryCenter(1f));
+
+                var undersizedFootprint = firstObject.AddComponent<BoardTileFootprint>();
+                undersizedFootprint.Configure(new[]
+                {
+                    new Vector2(-0.25f, -0.25f),
+                    new Vector2(0.25f, -0.25f),
+                    new Vector2(0.25f, 0.25f),
+                    new Vector2(-0.25f, 0.25f)
+                });
+                anchorObject.transform.position = first.GetRecoveryCenter(1f);
+                Assert.That(undersizedFootprint.CanContainInset(0.52f), Is.False);
+                AssertFallback(mapRoot, first, first.GetRecoveryCenter(1f));
+
+                void AssertFallback(
+                    BoardMapRoot candidateRoot,
+                    BoardTile expectedStart,
+                    Vector3 expectedPosition)
+                {
+                    var usedAuthoredPose =
+                        NetworkPlayerAvatar.TryResolveAuthoredBoardStartPose(
+                            topology,
+                            candidateRoot,
+                            0,
+                            expectedStart,
+                            controller,
+                            out var position,
+                            out var rotation);
+                    Assert.That(usedAuthoredPose, Is.False);
+                    Assert.That(
+                        Vector3.Distance(position, expectedPosition),
+                        Is.LessThan(0.0001f));
+                    Assert.That(
+                        Quaternion.Angle(rotation, Quaternion.identity),
+                        Is.LessThan(0.0001f));
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(controllerObject);
+                Object.DestroyImmediate(mapObject);
+            }
+        }
+
         [Test]
         public void MinigameRuntimeRegistration_AlignsWithCatalog()
         {

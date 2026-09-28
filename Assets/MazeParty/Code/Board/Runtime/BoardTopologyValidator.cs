@@ -13,10 +13,13 @@ namespace MazeParty.Gameplay
         MissingGateEndpoint,
         GateSelfLoop,
         GateEndpointNotRegistered,
+        // Kept for source compatibility. Freeform board connections no longer
+        // require Manhattan-adjacent display coordinates.
         GateTilesNotAdjacent,
         DuplicateDirectedGate,
         GateDirectionMismatch,
-        GatePlaneDoesNotSeparateTiles
+        GatePlaneDoesNotSeparateTiles,
+        InvalidTileFootprint
     }
 
     public readonly struct BoardTopologyIssue
@@ -73,6 +76,16 @@ namespace MazeParty.Gameplay
                     if (tile.TileType == BoardTileType.Start)
                         startCount++;
 
+                    var footprint = tile.Footprint;
+                    if (footprint != null &&
+                        !footprint.TryValidate(out var footprintMessage))
+                    {
+                        issues.Add(new BoardTopologyIssue(
+                            BoardTopologyIssueCode.InvalidTileFootprint,
+                            $"Tile '{tile.name}' has an invalid footprint. {footprintMessage}",
+                            footprint));
+                    }
+
                     if (coordinates.TryGetValue(tile.Coordinate, out var duplicate))
                     {
                         issues.Add(new BoardTopologyIssue(
@@ -95,7 +108,7 @@ namespace MazeParty.Gameplay
                     null));
             }
 
-            var directedEdges = new HashSet<string>(StringComparer.Ordinal);
+            var directedEdges = new HashSet<(BoardTile Source, BoardTile Destination)>();
             if (gates != null)
             {
                 for (var i = 0; i < gates.Count; i++)
@@ -120,7 +133,7 @@ namespace MazeParty.Gameplay
         private static void ValidateGate(
             BoardGate gate,
             HashSet<BoardTile> registeredTiles,
-            HashSet<string> directedEdges,
+            HashSet<(BoardTile Source, BoardTile Destination)> directedEdges,
             List<BoardTopologyIssue> issues)
         {
             var source = gate.Source;
@@ -151,16 +164,7 @@ namespace MazeParty.Gameplay
                     gate));
             }
 
-            var coordinateDelta = destination.Coordinate - source.Coordinate;
-            if (Mathf.Abs(coordinateDelta.x) + Mathf.Abs(coordinateDelta.y) != 1)
-            {
-                issues.Add(new BoardTopologyIssue(
-                    BoardTopologyIssueCode.GateTilesNotAdjacent,
-                    $"Gate '{gate.name}' must connect adjacent grid coordinates.",
-                    gate));
-            }
-
-            var edgeKey = source.Coordinate + ">" + destination.Coordinate;
+            var edgeKey = (source, destination);
             if (!directedEdges.Add(edgeKey))
             {
                 issues.Add(new BoardTopologyIssue(

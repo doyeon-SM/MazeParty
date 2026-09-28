@@ -12,7 +12,7 @@ namespace MazeParty.Multiplayer
     {
         // Increment only when a board/item rule change makes a saved stable
         // checkpoint unsafe to replay. Visual and localization changes do not.
-        public const int BoardRecoveryCompatibilityVersion = 2;
+        public const int BoardRecoveryCompatibilityVersion = 3;
 
         public static string CreatePlayerKey(string authenticatedPlayerId)
         {
@@ -66,6 +66,22 @@ namespace MazeParty.Multiplayer
                 .Append(BoardRecoveryCompatibilityVersion.ToString(
                     CultureInfo.InvariantCulture))
                 .Append('|');
+
+            var mapRoot = topology.GetComponentInParent<BoardMapRoot>();
+            var mapDefinition = mapRoot != null ? mapRoot.Definition : null;
+            text.Append("map=");
+            if (mapDefinition == null)
+            {
+                text.Append("legacy");
+            }
+            else
+            {
+                text.Append(mapDefinition.MapId)
+                    .Append(':')
+                    .Append(mapDefinition.ContentVersion.ToString(
+                        CultureInfo.InvariantCulture));
+            }
+            text.Append('|');
 
             var minigames = new SortedSet<byte>();
             for (var turn = 1; turn <= schedule.TurnCount; turn++)
@@ -125,6 +141,25 @@ namespace MazeParty.Multiplayer
                 AppendQuaternion(text, tile.transform.rotation);
                 text.Append("@s=");
                 AppendVector(text, tile.transform.lossyScale);
+                text.Append("@f=");
+                var footprint = tile.Footprint;
+                if (footprint == null || !footprint.TryValidate(out _))
+                {
+                    text.Append("legacy");
+                }
+                else
+                {
+                    text.Append(footprint.VertexCount.ToString(
+                        CultureInfo.InvariantCulture));
+                    for (var vertex = 0; vertex < footprint.VertexCount; vertex++)
+                    {
+                        var point = footprint.LocalVertices[vertex];
+                        text.Append(';')
+                            .Append(point.x.ToString("R", CultureInfo.InvariantCulture))
+                            .Append(',')
+                            .Append(point.y.ToString("R", CultureInfo.InvariantCulture));
+                    }
+                }
                 text
                     .Append('|');
             }
