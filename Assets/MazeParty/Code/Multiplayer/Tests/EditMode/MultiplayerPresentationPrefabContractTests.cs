@@ -113,6 +113,20 @@ namespace MazeParty.Multiplayer.Tests
                     visual.Bindings.gameObject.name,
                     Is.EqualTo(assets.PresentationPrefab.gameObject.name));
 
+                var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
+                visual.SetEquippedItem(PrototypeItemId.Pistol);
+                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.False);
+                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.False);
+                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.True);
+                Assert.That(
+                    visual.Bindings.WorldItemRoot.Cast<Transform>()
+                        .Single(child => child.gameObject.activeSelf).name,
+                    Does.StartWith(pistol.HeldPrefab.name));
+                visual.SetEquippedItem(PrototypeItemId.None);
+                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
+
                 var catalog = PlayerExpressionCatalog.Instance;
                 Assert.That(catalog, Is.Not.Null);
                 Assert.That(

@@ -53,12 +53,14 @@ namespace MazeParty.Multiplayer
             public Button ItemShopCloseButton;
 
             public Image[] InventorySlotBackgrounds;
+            public Image[] InventorySlotIcons;
             public Text[] InventorySlotLabels;
             public Button[] ItemChoiceButtons;
             public Text[] ItemChoiceLabels;
             public BoardItemChoiceButton[] ItemChoiceHovers;
 
             public Button[] ShopOfferButtons;
+            public Image[] ShopOfferIcons;
             public Text[] ShopOfferLabels;
             public BoardItemChoiceButton[] ShopOfferHovers;
 
@@ -166,12 +168,14 @@ namespace MazeParty.Multiplayer
         public Button ItemShopCloseButton => references.ItemShopCloseButton;
         public Image[] InventorySlotBackgrounds =>
             references.InventorySlotBackgrounds;
+        public Image[] InventorySlotIcons => references.InventorySlotIcons;
         public Text[] InventorySlotLabels => references.InventorySlotLabels;
         public Button[] ItemChoiceButtons => references.ItemChoiceButtons;
         public Text[] ItemChoiceLabels => references.ItemChoiceLabels;
         public BoardItemChoiceButton[] ItemChoiceHovers =>
             references.ItemChoiceHovers;
         public Button[] ShopOfferButtons => references.ShopOfferButtons;
+        public Image[] ShopOfferIcons => references.ShopOfferIcons;
         public Text[] ShopOfferLabels => references.ShopOfferLabels;
         public BoardItemChoiceButton[] ShopOfferHovers =>
             references.ShopOfferHovers;
@@ -236,11 +240,13 @@ namespace MazeParty.Multiplayer
             references.ReadyButton != null &&
             references.ItemShopCloseButton != null &&
             HasArray(references.InventorySlotBackgrounds, GameplayInventory.Capacity) &&
+            HasArray(references.InventorySlotIcons, GameplayInventory.Capacity) &&
             HasArray(references.InventorySlotLabels, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceButtons, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceLabels, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceHovers, GameplayInventory.Capacity) &&
             HasArray(references.ShopOfferButtons, ItemShopRules.OfferCount) &&
+            HasArray(references.ShopOfferIcons, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferLabels, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferHovers, ItemShopRules.OfferCount) &&
             HasArray(references.PlayerRows, MultiplayerConstants.MaxPlayers) &&

@@ -1484,6 +1484,7 @@ namespace MazeParty.Editor
 
             var slotBackgrounds =
                 new Image[GameplayInventory.Capacity];
+            var slotIcons = new Image[GameplayInventory.Capacity];
             var slotLabels = new Text[GameplayInventory.Capacity];
             var choiceButtons = new Button[GameplayInventory.Capacity];
             var choiceLabels = new Text[GameplayInventory.Capacity];
@@ -1496,6 +1497,9 @@ namespace MazeParty.Editor
                 slotBackgrounds[index] = RequireBoardUiComponent<Image>(
                     root,
                     "BoardInventorySlot" + index);
+                slotIcons[index] = RequireBoardUiComponent<Image>(
+                    root,
+                    "BoardInventorySlotIcon" + index);
                 slotLabels[index] = RequireBoardUiComponent<Text>(
                     root,
                     "BoardInventorySlotLabel" + index);
@@ -1512,6 +1516,7 @@ namespace MazeParty.Editor
             }
 
             var shopButtons = new Button[ItemShopRules.OfferCount];
+            var shopIcons = new Image[ItemShopRules.OfferCount];
             var shopLabels = new Text[ItemShopRules.OfferCount];
             var shopHovers =
                 new BoardItemChoiceButton[ItemShopRules.OfferCount];
@@ -1522,6 +1527,9 @@ namespace MazeParty.Editor
                 shopButtons[index] = RequireBoardUiComponent<Button>(
                     root,
                     "ItemShopOffer" + index);
+                shopIcons[index] = RequireBoardUiComponent<Image>(
+                    root,
+                    "ItemShopOfferIcon" + index);
                 shopLabels[index] = RequireBoardUiComponent<Text>(
                     root,
                     "ItemShopOfferLabel" + index);
@@ -1665,11 +1673,13 @@ namespace MazeParty.Editor
                     root,
                     "ItemShopCloseButton"),
                 InventorySlotBackgrounds = slotBackgrounds,
+                InventorySlotIcons = slotIcons,
                 InventorySlotLabels = slotLabels,
                 ItemChoiceButtons = choiceButtons,
                 ItemChoiceLabels = choiceLabels,
                 ItemChoiceHovers = choiceHovers,
                 ShopOfferButtons = shopButtons,
+                ShopOfferIcons = shopIcons,
                 ShopOfferLabels = shopLabels,
                 ShopOfferHovers = shopHovers,
                 PlayerRows = playerRows,
@@ -1882,8 +1892,13 @@ namespace MazeParty.Editor
                 var slot = CreatePanel("BoardInventorySlot" + i, panel.transform, new Vector2(0.5f, 0f),
                     new Vector2(0.5f, 0f), new Vector2((i - 1) * 210f, 14f), new Vector2(194f, 78f),
                     new Vector2(0.5f, 0f), new Color(0.18f, 0.36f, 0.58f, 0.94f));
+                CreateItemIcon(
+                    "BoardInventorySlotIcon" + i,
+                    slot.transform,
+                    new Vector2(-62f, 0f),
+                    56f);
                 CreateText("BoardInventorySlotLabel" + i, slot.transform, "EMPTY", font, 17,
-                    Vector2.zero, new Vector2(180f, 64f), TextAnchor.MiddleCenter);
+                    new Vector2(31f, 0f), new Vector2(112f, 64f), TextAnchor.MiddleCenter);
             }
 
             CreateText("BoardAmmoText", canvas, "CHARGE --", font, 24,
@@ -2016,7 +2031,16 @@ namespace MazeParty.Editor
                     new Vector2(x, y),
                     new Vector2(260f, 105f));
                 button.gameObject.AddComponent<BoardItemChoiceButton>();
-                button.GetComponentInChildren<Text>().gameObject.name = "ItemShopOfferLabel" + i;
+                var label = button.GetComponentInChildren<Text>();
+                label.gameObject.name = "ItemShopOfferLabel" + i;
+                var labelRect = (RectTransform)label.transform;
+                labelRect.anchoredPosition = new Vector2(34f, 0f);
+                labelRect.sizeDelta = new Vector2(154f, 95f);
+                CreateItemIcon(
+                    "ItemShopOfferIcon" + i,
+                    button.transform,
+                    new Vector2(-84f, 0f),
+                    72f);
             }
 
             CreateText("ItemShopTooltip", panel.transform,
@@ -2107,6 +2131,25 @@ namespace MazeParty.Editor
             CreateText("Label", buttonObject.transform, label, font, 18,
                 Vector2.zero, size - new Vector2(12f, 10f), TextAnchor.MiddleCenter);
             return button;
+        }
+
+        private static Image CreateItemIcon(
+            string name,
+            Transform parent,
+            Vector2 position,
+            float size)
+        {
+            var iconObject = CreateUiObject(name, parent);
+            var rect = iconObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = new Vector2(size, size);
+            var icon = iconObject.AddComponent<Image>();
+            icon.preserveAspect = true;
+            icon.raycastTarget = false;
+            icon.enabled = false;
+            return icon;
         }
 
         private static GameObject CreateUiObject(string name, Transform parent)

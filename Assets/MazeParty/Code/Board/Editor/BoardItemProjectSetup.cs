@@ -14,6 +14,7 @@ namespace MazeParty.Editor
     {
         public const string DataFolder = "Assets/MazeParty/Resources/MazeParty/Items";
         public const string VisualFolder = "Assets/MazeParty/Prefabs/Board/Items";
+        private const string IconFolder = "Assets/MazeParty/Art/Items/Icons";
         [MenuItem("MazeParty/Board/Upgrade Board Items")]
         public static void Upgrade()
         {
@@ -116,7 +117,13 @@ namespace MazeParty.Editor
         {
             string path = DataFolder + "/" + id + ".asset";
             // Existing designer-authored balance and prefab edits always win.
-            if (AssetDatabase.LoadAssetAtPath<BoardItemDefinition>(path) != null) return;
+            var existing =
+                AssetDatabase.LoadAssetAtPath<BoardItemDefinition>(path);
+            if (existing != null)
+            {
+                EnsureIcon(existing, id);
+                return;
+            }
             var item = ScriptableObject.CreateInstance<BoardItemDefinition>();
             item.Id = id; item.DisplayName = title; item.Description = description; item.Price = price;
             item.Charges = charges; item.Damage = damage; item.Range = range; item.FireInterval = interval;
@@ -125,7 +132,33 @@ namespace MazeParty.Editor
             item.HeldPrefab = EnsureModel(id);
             item.WorldPrefab = item.HeldPrefab;
             item.ExplosionPrefab = explosion;
+            item.Icon = RequireIcon(id);
             AssetDatabase.CreateAsset(item, path);
+        }
+        private static void EnsureIcon(
+            BoardItemDefinition item,
+            PrototypeItemId id)
+        {
+            if (item.Icon != null)
+            {
+                return;
+            }
+
+            item.Icon = RequireIcon(id);
+            EditorUtility.SetDirty(item);
+        }
+        private static Sprite RequireIcon(PrototypeItemId id)
+        {
+            var path = IconFolder + "/" + id + ".png";
+            var icon = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (icon == null)
+            {
+                throw new InvalidOperationException(
+                    "Board item icon '" + path +
+                    "' must be imported as a Sprite before upgrading items.");
+            }
+
+            return icon;
         }
         private static GameObject EnsureModel(PrototypeItemId id)
         {

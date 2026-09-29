@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Collections.Generic;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -55,15 +56,61 @@ namespace MazeParty.Multiplayer.Tests
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
                 PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.LowDice, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak }));
+            var expectedWeaponModels = new Dictionary<PrototypeItemId, string>
+            {
+                {
+                    PrototypeItemId.Pistol,
+                    "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)Revolver.fbx"
+                },
+                {
+                    PrototypeItemId.Sniper,
+                    "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)HuntingRifle.fbx"
+                },
+                {
+                    PrototypeItemId.Mine,
+                    "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)Dynamite.fbx"
+                },
+                {
+                    PrototypeItemId.Grenade,
+                    "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)Granade.fbx"
+                }
+            };
+            var itemIcons = new HashSet<Sprite>();
             foreach (var definition in definitions)
             {
+                Assert.That(definition.Icon, Is.Not.Null, definition.Id.ToString());
+                Assert.That(
+                    AssetDatabase.GetAssetPath(definition.Icon),
+                    Is.EqualTo(
+                        "Assets/MazeParty/Art/Items/Icons/" + definition.Id + ".png"),
+                    definition.Id.ToString());
+                Assert.That(itemIcons.Add(definition.Icon), Is.True,
+                    definition.Id + " must use a unique icon sprite.");
                 Assert.That(definition.HeldPrefab, Is.Not.Null);
                 Assert.That(PrefabUtility.IsPartOfPrefabAsset(definition.HeldPrefab), Is.True);
                 Assert.That(definition.WorldPrefab, Is.Not.Null);
                 Assert.That(definition.HeldPrefab.GetComponentsInChildren<Collider>(true), Is.Empty,
                     "Presentation must not obstruct authoritative item casts.");
+
+                if (expectedWeaponModels.TryGetValue(definition.Id, out var expectedModelPath))
+                {
+                    var meshPaths = definition.HeldPrefab
+                        .GetComponentsInChildren<MeshFilter>(true)
+                        .Select(filter => filter.sharedMesh)
+                        .Concat(definition.HeldPrefab
+                            .GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                            .Select(renderer => renderer.sharedMesh))
+                        .Where(mesh => mesh != null)
+                        .Select(AssetDatabase.GetAssetPath)
+                        .Distinct()
+                        .ToArray();
+                    Assert.That(meshPaths, Does.Contain(expectedModelPath),
+                        definition.Id + " must use its approved WeaponStylizedPack model.");
+                }
+
                 Assert.That(PrototypeItemCatalog.Get(definition.Id), Is.SameAs(definition));
             }
+            Assert.That(itemIcons.Count, Is.EqualTo(9));
             var first = new System.Random(901);
             var second = new System.Random(901);
             var found = new System.Collections.Generic.HashSet<PrototypeItemId>();

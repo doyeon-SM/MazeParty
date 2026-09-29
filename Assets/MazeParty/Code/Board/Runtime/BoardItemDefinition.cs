@@ -24,6 +24,7 @@ namespace MazeParty.Gameplay
         [Range(1, 12)] public int DiceMinimum = 1;
         [Range(1, 12)] public int DiceMaximum = 12;
         [Min(.01f)] public float CastDuration = 2f;
+        public Sprite Icon;
         public GameObject HeldPrefab;
         public GameObject WorldPrefab;
         public GameObject ExplosionPrefab;

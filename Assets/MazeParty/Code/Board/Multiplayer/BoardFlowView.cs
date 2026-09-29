@@ -24,11 +24,16 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public sealed class BoardFlowView : MonoBehaviour
     {
+        private static readonly Color AvailableItemIconColor = Color.white;
+        private static readonly Color SoldItemIconColor =
+            new Color(0.45f, 0.45f, 0.45f, 0.45f);
+
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private BoardCanvasBindings uiBindings;
         [SerializeField] private MinigameResultCanvasBindings resultUiBindings;
 
         private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
+        private readonly Image[] _slotIcons = new Image[GameplayInventory.Capacity];
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
@@ -42,6 +47,7 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _minigameReadyPlayerStates =
             new Text[MultiplayerConstants.MaxPlayers];
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
+        private readonly Image[] _shopOfferIcons = new Image[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
 
         private GameObject _selectionPanel;
@@ -422,10 +428,12 @@ namespace MazeParty.Multiplayer
             CopyReferences(
                 uiBindings.InventorySlotBackgrounds,
                 _slotBackgrounds);
+            CopyReferences(uiBindings.InventorySlotIcons, _slotIcons);
             CopyReferences(uiBindings.InventorySlotLabels, _slotLabels);
             CopyReferences(uiBindings.ItemChoiceButtons, _choiceButtons);
             CopyReferences(uiBindings.ItemChoiceLabels, _choiceLabels);
             CopyReferences(uiBindings.ShopOfferButtons, _shopOfferButtons);
+            CopyReferences(uiBindings.ShopOfferIcons, _shopOfferIcons);
             CopyReferences(uiBindings.ShopOfferLabels, _shopOfferLabels);
             CopyReferences(uiBindings.PlayerRows, _playerRows);
             CopyReferences(uiBindings.PlayerCards, _playerCards);
@@ -801,11 +809,23 @@ namespace MazeParty.Multiplayer
         {
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
-                var occupied = _localAvatar != null && _localAvatar.IsLocalItemOccupied(i);
+                var itemId = _localAvatar != null
+                    ? _localAvatar.GetLocalItemId(i)
+                    : PrototypeItemId.None;
+                var occupied = PrototypeItemCatalog.IsValid(itemId);
+                var definition = occupied
+                    ? PrototypeItemCatalog.Get(itemId)
+                    : null;
                 var selected = _localAvatar != null && _localAvatar.LocalSelectedItemSlot == i;
-                var label = occupied ? GameText.T(_localAvatar.GetLocalItemName(i)) : GameText.T("EMPTY");
+                var label = occupied
+                    ? GameText.T(definition.DisplayName)
+                    : GameText.T("EMPTY");
                 SetText(_slotLabels[i], label);
                 SetText(_choiceLabels[i], label);
+                SetItemIcon(
+                    _slotIcons[i],
+                    definition != null ? definition.Icon : null,
+                    AvailableItemIconColor);
 
                 if (_slotBackgrounds[i] != null)
                 {
@@ -1025,6 +1045,10 @@ namespace MazeParty.Multiplayer
                 var sold = snapshot.IsSold(offerIndex);
                 var valid = PrototypeItemCatalog.IsValid(itemId);
                 var definition = valid ? PrototypeItemCatalog.Get(itemId) : default;
+                SetItemIcon(
+                    _shopOfferIcons[offerIndex],
+                    valid ? definition.Icon : null,
+                    sold ? SoldItemIconColor : AvailableItemIconColor);
                 SetText(_shopOfferLabels[offerIndex], sold
                     ? GameText.F("SOLD\n{0}", valid ? GameText.T(definition.DisplayName) : GameText.T("ITEM"))
                     : valid
@@ -3210,6 +3234,18 @@ namespace MazeParty.Multiplayer
             {
                 target.text = value;
             }
+        }
+
+        private static void SetItemIcon(Image target, Sprite sprite, Color color)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.sprite = sprite;
+            target.color = color;
+            target.enabled = sprite != null;
         }
 
         private static void SetActive(GameObject target, bool active)

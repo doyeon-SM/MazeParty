@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 using UnityEditor;
@@ -73,6 +74,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
             Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
+            AssertItemIconBindings(prefab, bindings);
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -112,6 +114,7 @@ namespace MazeParty.Multiplayer.Tests
                         sceneBindings.gameObject),
                     Is.EqualTo(PrefabPath));
                 Assert.That(sceneBindings.HasRequiredReferences, Is.True);
+                AssertItemIconBindings(sceneBindings.gameObject, sceneBindings);
                 var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);
                 Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(utility), Is.Not.Null);
@@ -182,6 +185,49 @@ namespace MazeParty.Multiplayer.Tests
             }
 
             Assert.That(uniqueCards.Count, Is.EqualTo(MinigameCatalog.RegisteredCount));
+        }
+
+        private static void AssertItemIconBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(bindings.InventorySlotIcons.Length,
+                Is.EqualTo(GameplayInventory.Capacity));
+            Assert.That(bindings.ShopOfferIcons.Length,
+                Is.EqualTo(ItemShopRules.OfferCount));
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var slot = 0; slot < GameplayInventory.Capacity; slot++)
+            {
+                AssertItemIcon(
+                    transforms,
+                    bindings.InventorySlotIcons[slot],
+                    "BoardInventorySlot" + slot);
+            }
+
+            for (var offer = 0; offer < ItemShopRules.OfferCount; offer++)
+            {
+                AssertItemIcon(
+                    transforms,
+                    bindings.ShopOfferIcons[offer],
+                    "ItemShopOffer" + offer);
+            }
+        }
+
+        private static void AssertItemIcon(
+            IEnumerable<Transform> transforms,
+            Image icon,
+            string expectedParentName)
+        {
+            Assert.That(icon, Is.Not.Null, expectedParentName);
+            Assert.That(icon.preserveAspect, Is.True, expectedParentName);
+            Assert.That(icon.raycastTarget, Is.False, expectedParentName);
+
+            var expectedParent = transforms.SingleOrDefault(candidate =>
+                candidate.name == expectedParentName);
+            Assert.That(expectedParent, Is.Not.Null, expectedParentName);
+            Assert.That(icon.transform.IsChildOf(expectedParent), Is.True,
+                expectedParentName);
         }
     }
 }

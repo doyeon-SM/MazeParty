@@ -24,6 +24,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private const float WorldDieLandingClearance = 0.01f;
         private static readonly Color LocalWorldDieTint =
             new Color(0.95f, 0.25f, 0.25f);
+        private static readonly Color AvailableItemIconColor = Color.white;
+        private static readonly Color SoldItemIconColor =
+            new Color(0.45f, 0.45f, 0.45f, 0.45f);
 
         [SerializeField] private CharacterController player;
         [SerializeField] private Transform eyePivot;
@@ -42,6 +45,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly BoardFlowStateMachine _flow = new BoardFlowStateMachine();
         private readonly BoardTraversalState _traversal = new BoardTraversalState();
         private readonly Image[] _slotImages = new Image[GameplayInventory.Capacity];
+        private readonly Image[] _slotIcons = new Image[GameplayInventory.Capacity];
         private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
@@ -55,6 +59,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly PrototypeItemId[] _itemSlots =
             new PrototypeItemId[GameplayInventory.Capacity];
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
+        private readonly Image[] _shopOfferIcons = new Image[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
         private readonly int[] _maxHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly int[] _currentHealth = new int[BoardFlowStateMachine.RequiredPlayerCount];
@@ -3074,9 +3079,15 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 var definition = valid
                     ? PrototypeItemCatalog.Get(itemId)
                     : default;
+                SetItemIcon(
+                    _shopOfferIcons[offerIndex],
+                    valid ? definition.Icon : null,
+                    sold ? SoldItemIconColor : AvailableItemIconColor);
                 SetText(_shopOfferLabels[offerIndex], sold
                     ? "SOLD"
-                    : definition.DisplayName + "\n" + definition.Price + " GOLD");
+                    : valid
+                        ? definition.DisplayName + "\n" + definition.Price + " GOLD"
+                        : "UNAVAILABLE");
                 if (_shopOfferButtons[offerIndex] != null)
                 {
                     _shopOfferButtons[offerIndex].interactable =
@@ -3238,7 +3249,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             {
                 var occupied = (_occupiedMask & (1 << i)) != 0 &&
                                PrototypeItemCatalog.IsValid(_itemSlots[i]);
+                var definition = occupied
+                    ? PrototypeItemCatalog.Get(_itemSlots[i])
+                    : null;
                 SetText(_slotLabels[i], occupied ? ItemName(i) : "EMPTY");
+                SetItemIcon(
+                    _slotIcons[i],
+                    definition != null ? definition.Icon : null,
+                    AvailableItemIconColor);
                 if (_slotImages[i] != null)
                 {
                     _slotImages[i].color = i == _selectedSlot
@@ -3313,6 +3331,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             CopyReferences(
                 boardUiBindings.InventorySlotBackgrounds,
                 _slotImages);
+            CopyReferences(boardUiBindings.InventorySlotIcons, _slotIcons);
             CopyReferences(boardUiBindings.InventorySlotLabels, _slotLabels);
             CopyReferences(boardUiBindings.ItemChoiceButtons, _choiceButtons);
             CopyReferences(boardUiBindings.ItemChoiceLabels, _choiceLabels);
@@ -3334,6 +3353,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             CopyReferences(
                 boardUiBindings.ShopOfferButtons,
                 _shopOfferButtons);
+            CopyReferences(boardUiBindings.ShopOfferIcons, _shopOfferIcons);
             CopyReferences(boardUiBindings.ShopOfferLabels, _shopOfferLabels);
             return true;
         }
@@ -3568,6 +3588,18 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             {
                 target.text = value;
             }
+        }
+
+        private static void SetItemIcon(Image target, Sprite sprite, Color color)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.sprite = sprite;
+            target.color = color;
+            target.enabled = sprite != null;
         }
 
         private static void SetActive(GameObject target, bool active)

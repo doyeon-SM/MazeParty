@@ -10,6 +10,7 @@
 - Throw Flight Seconds / Projectile Radius / Projectile Lifetime: 수류탄 궤적·충돌·최대 수명
 - Dice Minimum / Dice Maximum: 범위 주사위의 최소/최대 눈 (1~12, 양끝 포함)
 - Cast Duration: 위치변환 시전 시간, 기본 2초
+- Icon: 퀵슬롯·상점에서 공용하는 2D Sprite
 - Held Prefab / World Prefab / Explosion Prefab: 교체 가능한 시각 프리팹
 
 데이터는 호스트 기준으로 판정합니다. 모든 참가자는 같은 에셋 버전으로 빌드하세요.
@@ -19,6 +20,7 @@
 원본 SO는 런타임에서 변경하지 않습니다. 가격/가중치를 바꾸면 재시작한 플레이 세션부터 검증하세요.
 표시 이름과 설명은 Display Name / Description에서 함께 갱신하세요.
 모델 원본: Assets/MazeParty/Prefabs/Board/Items. 프리팹에는 판정용 Collider를 추가하지 마세요.
+Pistol·Sniper·Mine·Grenade 래퍼는 `Assets/Ignore/nappin/WeaponStylizedPack`의 메시·텍스처를 참조하므로 동일 GUID 팩이 필요합니다.
 `MazeParty/Board/Upgrade Board Items`는 누락 에셋만 생성하며 기존 수치·모델 디자인을 덮어쓰지 않습니다.
 
 ## 추가 유틸리티 아이템

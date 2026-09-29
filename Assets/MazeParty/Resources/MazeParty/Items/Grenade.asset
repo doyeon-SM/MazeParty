@@ -28,6 +28,10 @@ MonoBehaviour:
   ThrowFlightSeconds: 1
   ProjectileRadius: 0.12
   ProjectileLifetime: 5
+  DiceMinimum: 1
+  DiceMaximum: 12
+  CastDuration: 2
+  Icon: {fileID: 21300000, guid: 6dc184616322467478004dfbff046c36, type: 3}
   HeldPrefab: {fileID: 7111415211140872543, guid: e7f76545a42172349a4f60344ab96b74, type: 3}
   WorldPrefab: {fileID: 7111415211140872543, guid: e7f76545a42172349a4f60344ab96b74, type: 3}
   ExplosionPrefab: {fileID: 1171816663760017513, guid: 5b4c0abfbc2abe142a80de4f63de8795, type: 3}
