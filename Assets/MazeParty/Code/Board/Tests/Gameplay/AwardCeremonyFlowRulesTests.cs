@@ -9,7 +9,9 @@ namespace MazeParty.Gameplay.Tests
         {
             var cases = new[]
             {
+                (AwardCeremonyPhase.BonusAwardOneReady, 2d),
                 (AwardCeremonyPhase.BonusAwardOne, 4d),
+                (AwardCeremonyPhase.BonusAwardTwoReady, 2d),
                 (AwardCeremonyPhase.BonusAwardTwo, 4d),
                 (AwardCeremonyPhase.FinalPodiumLocked, 5d),
                 (AwardCeremonyPhase.AwaitingReturn, 0d)
@@ -24,16 +26,36 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void ReadyPhases_AppendWithoutChangingReplicatedPhaseValues()
+        {
+            var cases = new[]
+            {
+                (AwardCeremonyPhase.None, (byte)0),
+                (AwardCeremonyPhase.BonusAwardOne, (byte)1),
+                (AwardCeremonyPhase.BonusAwardTwo, (byte)2),
+                (AwardCeremonyPhase.FinalPodiumLocked, (byte)3),
+                (AwardCeremonyPhase.AwaitingReturn, (byte)4),
+                (AwardCeremonyPhase.BonusAwardOneReady, (byte)5),
+                (AwardCeremonyPhase.BonusAwardTwoReady, (byte)6)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That((byte)testCase.Item1, Is.EqualTo(testCase.Item2));
+            }
+        }
+
+        [Test]
         public void TimedPhase_AdvancesAtExactDeadlineButNotBefore()
         {
             Assert.That(AwardCeremonyFlowRules.HasTimedPhaseEnded(
-                AwardCeremonyPhase.BonusAwardOne,
-                104d,
-                103.999d), Is.False);
+                AwardCeremonyPhase.BonusAwardOneReady,
+                102d,
+                101.999d), Is.False);
             Assert.That(AwardCeremonyFlowRules.HasTimedPhaseEnded(
-                AwardCeremonyPhase.BonusAwardOne,
-                104d,
-                104d), Is.True);
+                AwardCeremonyPhase.BonusAwardOneReady,
+                102d,
+                102d), Is.True);
             Assert.That(AwardCeremonyFlowRules.HasTimedPhaseEnded(
                 AwardCeremonyPhase.AwaitingReturn,
                 0d,
@@ -43,40 +65,45 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void TimedTransitions_GrantEachAwardAndRevealRanksExactlyOnce()
         {
-            Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
-                AwardCeremonyPhase.BonusAwardOne,
-                endsAt: 4d,
-                now: 4d,
-                out var phase,
-                out var action), Is.True);
-            Assert.That(phase, Is.EqualTo(AwardCeremonyPhase.BonusAwardTwo));
-            Assert.That(
-                action,
-                Is.EqualTo(AwardCeremonyServerAction.GrantSecondAward));
+            var cases = new[]
+            {
+                (AwardCeremonyPhase.BonusAwardOneReady, 2d,
+                    AwardCeremonyPhase.BonusAwardOne,
+                    AwardCeremonyServerAction.GrantFirstAward),
+                (AwardCeremonyPhase.BonusAwardOne, 6d,
+                    AwardCeremonyPhase.BonusAwardTwoReady,
+                    AwardCeremonyServerAction.None),
+                (AwardCeremonyPhase.BonusAwardTwoReady, 8d,
+                    AwardCeremonyPhase.BonusAwardTwo,
+                    AwardCeremonyServerAction.GrantSecondAward),
+                (AwardCeremonyPhase.BonusAwardTwo, 12d,
+                    AwardCeremonyPhase.FinalPodiumLocked,
+                    AwardCeremonyServerAction.CalculateFinalRanks),
+                (AwardCeremonyPhase.FinalPodiumLocked, 17d,
+                    AwardCeremonyPhase.AwaitingReturn,
+                    AwardCeremonyServerAction.None)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
+                    testCase.Item1,
+                    endsAt: testCase.Item2,
+                    now: testCase.Item2 - 0.001d,
+                    out _,
+                    out _), Is.False);
+                Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
+                    testCase.Item1,
+                    endsAt: testCase.Item2,
+                    now: testCase.Item2,
+                    out var phase,
+                    out var action), Is.True);
+                Assert.That(phase, Is.EqualTo(testCase.Item3));
+                Assert.That(action, Is.EqualTo(testCase.Item4));
+            }
 
             Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
-                phase,
-                endsAt: 8d,
-                now: 8d,
-                out phase,
-                out action), Is.True);
-            Assert.That(
-                phase,
-                Is.EqualTo(AwardCeremonyPhase.FinalPodiumLocked));
-            Assert.That(
-                action,
-                Is.EqualTo(AwardCeremonyServerAction.CalculateFinalRanks));
-
-            Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
-                phase,
-                endsAt: 13d,
-                now: 13d,
-                out phase,
-                out action), Is.True);
-            Assert.That(phase, Is.EqualTo(AwardCeremonyPhase.AwaitingReturn));
-            Assert.That(action, Is.EqualTo(AwardCeremonyServerAction.None));
-            Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(
-                phase,
+                AwardCeremonyPhase.AwaitingReturn,
                 endsAt: 0d,
                 now: 999d,
                 out _,
@@ -87,14 +114,14 @@ namespace MazeParty.Gameplay.Tests
         public void ReconnectPause_PreservesRemainingPresentationTime()
         {
             var remaining = AwardCeremonyFlowRules.GetPauseRemaining(
-                AwardCeremonyPhase.FinalPodiumLocked,
+                AwardCeremonyPhase.BonusAwardOneReady,
                 25d,
-                22d);
-            Assert.That(remaining, Is.EqualTo(3d));
+                24d);
+            Assert.That(remaining, Is.EqualTo(1d));
             Assert.That(AwardCeremonyFlowRules.GetResumedEndsAt(
-                AwardCeremonyPhase.FinalPodiumLocked,
+                AwardCeremonyPhase.BonusAwardOneReady,
                 100d,
-                remaining), Is.EqualTo(103d));
+                remaining), Is.EqualTo(101d));
 
             Assert.That(AwardCeremonyFlowRules.GetPauseRemaining(
                 AwardCeremonyPhase.AwaitingReturn,

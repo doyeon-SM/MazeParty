@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: item.explosion
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: dccda0a4a953937439ddaf282bc5b3c1, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

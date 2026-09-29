@@ -4,9 +4,11 @@ namespace MazeParty.Gameplay
 {
     public enum AwardCeremonyServerAction : byte
     {
-        None,
-        GrantSecondAward,
-        CalculateFinalRanks
+        None = 0,
+        GrantSecondAward = 1,
+        CalculateFinalRanks = 2,
+        // Appended to preserve the existing action values.
+        GrantFirstAward = 3
     }
 
     /// <summary>
@@ -15,13 +17,16 @@ namespace MazeParty.Gameplay
     /// </summary>
     public static class AwardCeremonyFlowRules
     {
+        public const double BonusAwardReadySeconds = 2d;
         public const double BonusAwardPresentationSeconds = 4d;
         public const double FinalPodiumInputLockSeconds = 5d;
         public const double FinalResultsAutoReturnSeconds = 60d;
 
         public static bool IsTimedPhase(AwardCeremonyPhase phase)
         {
-            return phase == AwardCeremonyPhase.BonusAwardOne ||
+            return phase == AwardCeremonyPhase.BonusAwardOneReady ||
+                   phase == AwardCeremonyPhase.BonusAwardOne ||
+                   phase == AwardCeremonyPhase.BonusAwardTwoReady ||
                    phase == AwardCeremonyPhase.BonusAwardTwo ||
                    phase == AwardCeremonyPhase.FinalPodiumLocked;
         }
@@ -30,6 +35,9 @@ namespace MazeParty.Gameplay
         {
             switch (phase)
             {
+                case AwardCeremonyPhase.BonusAwardOneReady:
+                case AwardCeremonyPhase.BonusAwardTwoReady:
+                    return BonusAwardReadySeconds;
                 case AwardCeremonyPhase.BonusAwardOne:
                 case AwardCeremonyPhase.BonusAwardTwo:
                     return BonusAwardPresentationSeconds;
@@ -64,7 +72,14 @@ namespace MazeParty.Gameplay
 
             switch (phase)
             {
+                case AwardCeremonyPhase.BonusAwardOneReady:
+                    nextPhase = AwardCeremonyPhase.BonusAwardOne;
+                    action = AwardCeremonyServerAction.GrantFirstAward;
+                    return true;
                 case AwardCeremonyPhase.BonusAwardOne:
+                    nextPhase = AwardCeremonyPhase.BonusAwardTwoReady;
+                    return true;
+                case AwardCeremonyPhase.BonusAwardTwoReady:
                     nextPhase = AwardCeremonyPhase.BonusAwardTwo;
                     action = AwardCeremonyServerAction.GrantSecondAward;
                     return true;

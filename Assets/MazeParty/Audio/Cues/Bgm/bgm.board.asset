@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: bgm.board
   channel: 1
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 949e479620d30f64eb7ebdfdebfa4822, type: 3}
   variationMode: 1
   volume: 0.7
   volumeVariance: 0

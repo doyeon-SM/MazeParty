@@ -219,10 +219,10 @@ namespace MazeParty.Multiplayer
             _completedMatchReturnQueued = false;
             SetFinalCeremonyRanks(null);
 
-            GrantCeremonyKeyAwardOnServer(firstWinnerMask);
             SetCeremonyPhaseOnServer(
-                AwardCeremonyPhase.BonusAwardOne,
-                now + BonusAwardPresentationSeconds);
+                AwardCeremonyPhase.BonusAwardOneReady,
+                now + AwardCeremonyFlowRules.GetPhaseDuration(
+                    AwardCeremonyPhase.BonusAwardOneReady));
         }
 
         private void AdvanceAwardCeremonyOnServer(double now)
@@ -250,6 +250,10 @@ namespace MazeParty.Multiplayer
 
             switch (action)
             {
+                case AwardCeremonyServerAction.GrantFirstAward:
+                    GrantCeremonyKeyAwardOnServer(
+                        _awardCeremonyWinnerMask0.Value);
+                    break;
                 case AwardCeremonyServerAction.GrantSecondAward:
                     GrantCeremonyKeyAwardOnServer(
                         _awardCeremonyWinnerMask1.Value);

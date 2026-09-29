@@ -14,11 +14,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: board.footstep
   channel: 0
-  clips: []
-  variationMode: 1
+  clips:
+  - {fileID: 8300000, guid: f3cf25c05ed1e6843abd05cd45bcb506, type: 3}
+  - {fileID: 8300000, guid: 0dc0d47c90a844f43b4a6372f5c78ccf, type: 3}
+  - {fileID: 8300000, guid: f94b3219eac30814f824d8f364d619e9, type: 3}
+  - {fileID: 8300000, guid: 4db1f737d96687d4a9b704ce0bbc871f, type: 3}
+  - {fileID: 8300000, guid: 6170d4485da905d4697e099bf48f91f6, type: 3}
+  - {fileID: 8300000, guid: 50de0fa2ef3abbd4d8b67872c0f85124, type: 3}
+  - {fileID: 8300000, guid: cea79097b65b4aa46b59f77433198045, type: 3}
+  - {fileID: 8300000, guid: 46b5170a568de1c44abbc17247e8ad6f, type: 3}
+  - {fileID: 8300000, guid: bcec608ef5d9aa14ba74dbabefa7d4d2, type: 3}
+  - {fileID: 8300000, guid: 646e33b187871a6468c8c792eacabf5f, type: 3}
+  - {fileID: 8300000, guid: e8d6c1fe986be584fa227b0eac9bc80d, type: 3}
+  variationMode: 2
   volume: 1
-  volumeVariance: 0.15
-  pitchVariance: 0.1
+  volumeVariance: 0.1
+  pitchVariance: 0.05
   spatial: 1
   minDistance: 1
   maxDistance: 30

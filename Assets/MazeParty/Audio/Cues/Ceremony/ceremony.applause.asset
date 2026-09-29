@@ -14,7 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: ceremony.applause
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: da5d104d73f72f04ab6b79a1e4d6d9be, type: 3}
+  - {fileID: 8300000, guid: 2f42536bc2597e0489e73369c32317bd, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

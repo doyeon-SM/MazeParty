@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: item.use.sniper
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 5c0537f5620f9b04d9ac47cb2177e0a0, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

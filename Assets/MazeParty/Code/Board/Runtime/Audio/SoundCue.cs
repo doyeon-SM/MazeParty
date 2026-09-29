@@ -123,10 +123,12 @@ namespace MazeParty.Gameplay
             int cuePriority,
             bool cueDuckMusic,
             float cueFadeSeconds,
-            float cueMaxDistance)
+            float cueMaxDistance,
+            SoundVariationMode cueVariationMode = SoundVariationMode.RandomNoRepeat)
         {
             key = cueKey ?? string.Empty;
             channel = cueChannel;
+            variationMode = cueVariationMode;
             spatial = cueSpatial;
             loop = cueLoop;
             volume = Mathf.Clamp01(cueVolume);

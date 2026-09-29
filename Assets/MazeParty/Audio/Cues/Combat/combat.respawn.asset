@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: combat.respawn
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 04b1e838d6a64934f9bb1deb6d6b2415, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

@@ -43,7 +43,9 @@ namespace MazeParty.Gameplay.Tests
         {
             var cases = new[]
             {
+                (AwardCeremonyPhase.BonusAwardOneReady, true),
                 (AwardCeremonyPhase.BonusAwardOne, true),
+                (AwardCeremonyPhase.BonusAwardTwoReady, true),
                 (AwardCeremonyPhase.BonusAwardTwo, true),
                 (AwardCeremonyPhase.FinalPodiumLocked, true),
                 (AwardCeremonyPhase.AwaitingReturn, false),

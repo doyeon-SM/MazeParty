@@ -24,6 +24,8 @@ namespace MazeParty.Multiplayer
         private AwardCeremonyPhase _observedPhase = AwardCeremonyPhase.None;
         private int _observedRevision = -1;
         private bool _wired;
+        private SoundHandle _awardReadyHandle;
+        private bool _wasSimulationSuspended;
 
         public AwardCeremonyCanvasBindings Bindings => bindings;
 
@@ -50,6 +52,10 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            StopAwardReady();
+            _observedPhase = AwardCeremonyPhase.None;
+            _observedRevision = -1;
+            _wasSimulationSuspended = false;
             UnwireButton();
         }
 
@@ -73,18 +79,37 @@ namespace MazeParty.Multiplayer
             if (!active || bindings == null ||
                 !bindings.HasRequiredReferences)
             {
+                StopAwardReady();
                 _observedPhase = AwardCeremonyPhase.None;
                 _observedRevision = -1;
+                _wasSimulationSuspended = false;
                 Array.Clear(_finalRows, 0, _finalRows.Length);
                 return;
             }
 
             ResolveLocalAvatar();
+            var suspended = match.IsSimulationSuspended;
             if (_observedPhase != match.CeremonyPhase)
             {
-                EnterPhase(match.CeremonyPhase);
+                EnterPhase(match.CeremonyPhase, suspended);
                 _observedPhase = match.CeremonyPhase;
             }
+            else if (_wasSimulationSuspended != suspended)
+            {
+                if (suspended)
+                {
+                    StopAwardReady();
+                }
+                else if (match.CeremonyPhase ==
+                             AwardCeremonyPhase.BonusAwardOneReady ||
+                         match.CeremonyPhase ==
+                             AwardCeremonyPhase.BonusAwardTwoReady)
+                {
+                    _awardReadyHandle =
+                        GameSound.Play(SoundKeys.CeremonyAwardReady);
+                }
+            }
+            _wasSimulationSuspended = suspended;
 
             if (_observedRevision != match.CeremonyRevision)
             {
@@ -95,17 +120,37 @@ namespace MazeParty.Multiplayer
             RefreshCountdownAndInteraction(match);
         }
 
-        private void EnterPhase(AwardCeremonyPhase phase)
+        private void EnterPhase(
+            AwardCeremonyPhase phase,
+            bool simulationSuspended)
         {
-            var bonus = phase == AwardCeremonyPhase.BonusAwardOne ||
-                        phase == AwardCeremonyPhase.BonusAwardTwo;
+            StopAwardReady();
+            var ready = phase == AwardCeremonyPhase.BonusAwardOneReady ||
+                        phase == AwardCeremonyPhase.BonusAwardTwoReady;
+            var reveal = phase == AwardCeremonyPhase.BonusAwardOne ||
+                         phase == AwardCeremonyPhase.BonusAwardTwo;
+            var bonus = ready || reveal;
             var final = phase == AwardCeremonyPhase.FinalPodiumLocked ||
                         phase == AwardCeremonyPhase.AwaitingReturn;
 
-            bindings.BonusAwardOverlay.SetActive(bonus ||
-                                                  phase == AwardCeremonyPhase.FinalPodiumLocked);
+            bindings.BonusAwardOverlay.SetActive(
+                bonus || phase == AwardCeremonyPhase.FinalPodiumLocked);
             bindings.FinalRankingPanel.SetActive(final);
-            if (bonus)
+            if (ready)
+            {
+                bindings.BonusAwardAnimator.Play(
+                    OverlayVisibleState,
+                    0,
+                    0f);
+                ShowAwardReady(
+                    phase == AwardCeremonyPhase.BonusAwardOneReady ? 0 : 1);
+                if (!simulationSuspended)
+                {
+                    _awardReadyHandle =
+                        GameSound.Play(SoundKeys.CeremonyAwardReady);
+                }
+            }
+            else if (reveal)
             {
                 bindings.BonusAwardAnimator.Play(
                     OverlayVisibleState,
@@ -132,8 +177,14 @@ namespace MazeParty.Multiplayer
         {
             switch (match.CeremonyPhase)
             {
+                case AwardCeremonyPhase.BonusAwardOneReady:
+                    ShowAwardReady(0);
+                    break;
                 case AwardCeremonyPhase.BonusAwardOne:
                     RefreshAward(match, 0);
+                    break;
+                case AwardCeremonyPhase.BonusAwardTwoReady:
+                    ShowAwardReady(1);
                     break;
                 case AwardCeremonyPhase.BonusAwardTwo:
                     RefreshAward(match, 1);
@@ -216,7 +267,9 @@ namespace MazeParty.Multiplayer
             {
                 var reconnect = match.IsReconnectPaused;
                 bindings.LeaveRoomButton.interactable = false;
-                if (match.CeremonyPhase == AwardCeremonyPhase.BonusAwardOne ||
+                if (match.CeremonyPhase == AwardCeremonyPhase.BonusAwardOneReady ||
+                    match.CeremonyPhase == AwardCeremonyPhase.BonusAwardOne ||
+                    match.CeremonyPhase == AwardCeremonyPhase.BonusAwardTwoReady ||
                     match.CeremonyPhase == AwardCeremonyPhase.BonusAwardTwo)
                 {
                     bindings.AwardRewardText.text = reconnect
@@ -279,6 +332,27 @@ namespace MazeParty.Multiplayer
                         0,
                         (int)Math.Ceiling(
                             match.CeremonyAutoReturnRemaining)));
+        }
+
+        private void StopAwardReady()
+        {
+            if (!_awardReadyHandle.IsValid)
+            {
+                return;
+            }
+
+            GameSound.Stop(_awardReadyHandle, 0f);
+            _awardReadyHandle = default;
+        }
+
+        private void ShowAwardReady(int awardIndex)
+        {
+            bindings.AwardStepText.text =
+                GameText.F("BONUS KEY AWARD {0} / 2", awardIndex + 1);
+            bindings.AwardCategoryText.text = GameText.T("GET READY");
+            bindings.AwardValueText.text = string.Empty;
+            bindings.AwardWinnerText.text = string.Empty;
+            bindings.AwardRewardText.text = string.Empty;
         }
 
         private void RequestReturnToLobby()

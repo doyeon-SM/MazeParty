@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: item.use.grenade
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 850c66ba40ef75842b7fea81157b569c, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

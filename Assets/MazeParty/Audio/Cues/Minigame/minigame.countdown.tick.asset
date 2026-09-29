@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: minigame.countdown.tick
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 6be99cac366653c4288d0093b54ed296, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0

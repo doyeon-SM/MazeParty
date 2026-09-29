@@ -409,6 +409,7 @@ namespace MazeParty.Editor
             var volume = 1f;
             var volumeVariance = 0f;
             var pitchVariance = 0f;
+            var variationMode = SoundVariationMode.RandomNoRepeat;
             var maxInstances = 0;
             var minInterval = 0f;
             var priority = 60;
@@ -452,8 +453,9 @@ namespace MazeParty.Editor
             else if (key == SoundKeys.BoardFootstep)
             {
                 spatial = true;
-                volumeVariance = 0.15f;
-                pitchVariance = 0.1f;
+                volumeVariance = 0.1f;
+                pitchVariance = 0.05f;
+                variationMode = SoundVariationMode.Shuffle;
                 maxInstances = 6;
                 priority = 20;
             }
@@ -482,9 +484,18 @@ namespace MazeParty.Editor
                 pitchVariance = 0.05f;
                 priority = 70;
             }
-            else if (key == SoundKeys.MinigameReveal || key == SoundKeys.CeremonyFanfare)
+            else if (key == SoundKeys.MinigameReveal ||
+                     key == SoundKeys.CeremonyFanfare)
             {
                 duck = true;
+                priority = 90;
+            }
+            else if (key == SoundKeys.CeremonyAwardReady)
+            {
+                // The source clip is longer than the two-second ready phase.
+                // Keep ducking off because the global duck timer follows the
+                // full clip length even when the voice is stopped early.
+                maxInstances = 1;
                 priority = 90;
             }
             else if (key.StartsWith("minigame.", StringComparison.Ordinal))
@@ -505,7 +516,8 @@ namespace MazeParty.Editor
                 priority,
                 duck,
                 fade,
-                maxDistance);
+                maxDistance,
+                variationMode);
         }
 
         private static void Bind(

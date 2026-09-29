@@ -65,6 +65,7 @@ namespace MazeParty.Gameplay
         public const string MinigameFinish = "minigame.finish";
 
         // Award ceremony.
+        public const string CeremonyAwardReady = "ceremony.award_ready";
         public const string CeremonyAward = "ceremony.award";
         public const string CeremonyFanfare = "ceremony.fanfare";
         public const string CeremonyApplause = "ceremony.applause";
@@ -80,7 +81,7 @@ namespace MazeParty.Gameplay
             BoardFootstep,
             ItemExplosion, ItemBulletImpact,
             MinigameReveal, MinigameCountdownTick, MinigameCountdownGo, MinigameFinish,
-            CeremonyAward, CeremonyFanfare, CeremonyApplause
+            CeremonyAwardReady, CeremonyAward, CeremonyFanfare, CeremonyApplause
         };
 
         /// <summary>Music of one minigame, e.g. <c>bgm.minigame.arena_combat</c>.</summary>

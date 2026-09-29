@@ -6,10 +6,13 @@ namespace MazeParty.Gameplay
     /// </summary>
     public enum AwardCeremonyPhase : byte
     {
-        None,
-        BonusAwardOne,
-        BonusAwardTwo,
-        FinalPodiumLocked,
-        AwaitingReturn
+        None = 0,
+        BonusAwardOne = 1,
+        BonusAwardTwo = 2,
+        FinalPodiumLocked = 3,
+        AwaitingReturn = 4,
+        // Appended to preserve the serialized values of existing phases.
+        BonusAwardOneReady = 5,
+        BonusAwardTwoReady = 6
     }
 }
