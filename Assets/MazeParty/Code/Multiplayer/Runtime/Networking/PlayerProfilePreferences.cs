@@ -18,7 +18,7 @@ namespace MazeParty.Multiplayer
 
     public static class PlayerProfilePreferences
     {
-        private const int CurrentVersion = 2;
+        private const int CurrentVersion = 3;
         private const string KeyPrefix = "MazeParty.PlayerProfile.";
 
         [Serializable]
@@ -60,7 +60,7 @@ namespace MazeParty.Multiplayer
 
                 var appearance = new PlayerAppearanceState
                 {
-                    Version = PlayerAppearanceState.CurrentVersion,
+                    Version = (byte)data.version,
                     BodyRed = data.bodyRed,
                     BodyGreen = data.bodyGreen,
                     BodyBlue = data.bodyBlue,

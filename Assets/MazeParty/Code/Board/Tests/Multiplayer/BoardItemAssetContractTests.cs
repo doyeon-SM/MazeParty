@@ -17,26 +17,29 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(expressions, Is.Not.Null);
             Assert.That(
                 expressions.Faces.Select(face => face.Name),
-                Is.EqualTo(new[] { "Face1", "Face2", "Face3" }));
+                Is.EqualTo(Enumerable.Range(1, 15).Select(index => "Face" + index)));
             Assert.That(
                 expressions.Faces.Select(face => AssetDatabase.GetAssetPath(face.Sprite)),
-                Is.EqualTo(new[]
-                {
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 1.png",
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 2.png",
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Materials/Face Images/face 3.png"
-                }));
+                Is.EqualTo(Enumerable.Range(1, 15).Select(index =>
+                    "Assets/Ignore/Pack_PartyCharacters/Resources/Materials/Face Images/face " +
+                    index + ".png")));
+            var expectedHatFiles = new[]
+            {
+                "chef hat", "orange fedora", "party hat", "alien", "angle hole",
+                "bandage", "bonus", "clown", "cowboy hat", "egg", "fez",
+                "fireman hat", "goat horns", "hair", "hat", "headphone",
+                "heart antenna", "horn", "king crown", "mushroom hat", "noel hat",
+                "party crown", "pineapple", "pump", "soldier hat", "sombrero",
+                "top hat", "traffic cone", "viking helmet", "witch hat"
+            };
             Assert.That(
                 expressions.Hats.Select(hat => hat.Name),
-                Is.EqualTo(new[] { "Hat1", "Hat2", "Hat3" }));
+                Is.EqualTo(Enumerable.Range(1, 30).Select(index => "Hat" + index)));
             Assert.That(
                 expressions.Hats.Select(hat => AssetDatabase.GetAssetPath(hat.Prefab)),
-                Is.EqualTo(new[]
-                {
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/chef hat.prefab",
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/orange fedora.prefab",
-                    "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources/Prefabs/Hats/party hat.prefab"
-                }));
+                Is.EqualTo(expectedHatFiles.Select(file =>
+                    "Assets/Ignore/Pack_PartyCharacters/Resources/Prefabs/Hats/" +
+                    file + ".prefab")));
             Assert.That(expressions.Gestures.Length, Is.EqualTo(3));
             foreach (var face in expressions.Faces) Assert.That(face.Sprite, Is.Not.Null);
             foreach (var hat in expressions.Hats)

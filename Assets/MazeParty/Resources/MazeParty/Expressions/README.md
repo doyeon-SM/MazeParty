@@ -5,8 +5,14 @@
 - Faces 배열 순서는 저장되는 표정 ID(0부터)다. Hats 배열은 저장 ID 1부터 대응하며
   모자 ID 0은 `없음`이다. 저장 호환성을 위해 기존 항목 순서를 바꾸지 않는다.
 - Gestures 배열은 엄지/V/하트 순서이며 현재 원형 UI는 3칸입니다.
-- 얼굴과 모자는 `Assets/Ignore/FREE/Pack_FREE_PartyCharacters`의 원본을 직접 참조한다.
-  현재 얼굴은 `face 1~3.png`, 모자는 chef hat·orange fedora·party hat이다.
+- 얼굴과 모자는 `Assets/Ignore/Pack_PartyCharacters`의 원본을 직접 참조한다.
+  얼굴은 `face 1~15.png` 전체를 Face1~Face15로 사용한다.
+  모자는 팩의 30개를 모두 사용하며 기존 저장 호환성을 위해 Hat1~Hat3은
+  chef hat·orange fedora·party hat 순서를 유지한다. Hat4~Hat30은 alien,
+  angle hole, bandage, bonus, clown, cowboy hat, egg, fez, fireman hat,
+  goat horns, hair, hat, headphone, heart antenna, horn, king crown,
+  mushroom hat, noel hat, party crown, pineapple, pump, soldier hat,
+  sombrero, top hat, traffic cone, viking helmet, witch hat 순서다.
   이 팩을 복사하거나 추적 경로로 옮기지 않았으므로 다른 체크아웃에도 같은 팩이 필요하다.
 - 손 모델 원본: `Assets/MazeParty/Prefabs/Multiplayer/Expressions`.
   두 손을 포함한 프리팹이며 Collider 없이 교체하세요. 플레이어 색상을 적용합니다.
@@ -24,5 +30,6 @@ T를 누른 채 마우스를 끌고 T를 놓으면 발동합니다. 중앙에서
 아이템 장착·사망·격투·미니게임·위치변환 시전·전역 정지 중에는 사용할 수 없습니다.
 연타로 지속시간을 늘릴 수 없고 은신 시 상대에게 손을 노출하지 않습니다.
 
-`MazeParty/Player/Upgrade Expressions`는 정확히 일치하는 기존 4종 표정 카탈로그만 새 팩으로
-한 번 이전하고, 누락된 선택 바인딩만 추가하며 이후 카탈로그 설정과 기존 디자인을 덮어쓰지 않습니다.
+`MazeParty/Player/Upgrade Expressions`는 정확히 일치하는 기존 4종 표정 카탈로그 또는
+FREE/유료 팩의 3개 얼굴·3개 모자 카탈로그만 유료 팩의 15개 얼굴·30개 모자로 한 번 이전한다.
+누락된 선택 바인딩만 추가하며 이후 카탈로그 설정과 기존 디자인을 덮어쓰지 않습니다.

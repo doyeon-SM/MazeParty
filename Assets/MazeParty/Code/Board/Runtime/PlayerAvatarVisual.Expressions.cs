@@ -19,7 +19,7 @@ namespace MazeParty.Gameplay
                 return;
             }
             _faceSprite = bindings.FaceSprite;
-            _hatModels = InstantiateHats(_hat);
+            _hatModels = new GameObject[catalog.Hats.Length];
             _worldGestureRoot = bindings.WorldGestureRoot;
             _firstGestureRoot = bindings.FirstPersonGestureRoot;
             _worldGestures = InstantiateGestures(_worldGestureRoot);
@@ -30,23 +30,49 @@ namespace MazeParty.Gameplay
             SetFaceExpression(0);
             SetHat(0);
         }
-        private GameObject[] InstantiateHats(Transform root)
+        private GameObject EnsureHatModel(int index)
         {
-            var catalog = PlayerExpressionCatalog.Instance;
-            var result = new GameObject[catalog.Hats.Length];
-            for (int i = 0; i < result.Length; i++)
+            if (_hatModels == null || index < 0 || index >= _hatModels.Length)
             {
-                var hat = catalog.Hats[i];
-                if (hat == null || hat.Prefab == null) continue;
-                result[i] = Instantiate(hat.Prefab, root, false);
-                result[i].name = hat.Prefab.name;
-                var hatTransform = result[i].transform;
-                hatTransform.localPosition = hat.LocalPosition;
-                hatTransform.localRotation = Quaternion.Euler(hat.LocalEulerAngles);
-                hatTransform.localScale = hat.LocalScale;
-                result[i].SetActive(false);
+                return null;
             }
-            return result;
+            if (_hatModels[index] != null)
+            {
+                return _hatModels[index];
+            }
+
+            var catalog = PlayerExpressionCatalog.Instance;
+            if (catalog == null || catalog.Hats == null || index >= catalog.Hats.Length)
+            {
+                return null;
+            }
+            var hat = catalog.Hats[index];
+            if (hat == null || hat.Prefab == null)
+            {
+                return null;
+            }
+
+            var model = Instantiate(hat.Prefab, _hat, false);
+            model.name = hat.Prefab.name;
+            var hatTransform = model.transform;
+            hatTransform.localPosition = hat.LocalPosition;
+            hatTransform.localRotation = Quaternion.Euler(hat.LocalEulerAngles);
+            hatTransform.localScale = hat.LocalScale;
+            foreach (var renderer in model.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                var mesh = renderer.sharedMesh;
+                if (mesh == null) continue;
+                for (var blendShape = 0; blendShape < mesh.blendShapeCount; blendShape++)
+                {
+                    if (mesh.GetBlendShapeName(blendShape) == "Scale")
+                    {
+                        renderer.SetBlendShapeWeight(blendShape, 0f);
+                    }
+                }
+            }
+            model.SetActive(false);
+            _hatModels[index] = model;
+            return model;
         }
         private GameObject[] InstantiateGestures(Transform root)
         {
@@ -75,6 +101,7 @@ namespace MazeParty.Gameplay
             if (_hat == null) return;
             _hat.gameObject.SetActive(_hatId > 0);
             if (_hatModels == null) return;
+            if (_hatId > 0) EnsureHatModel(_hatId - 1);
             for (int i = 0; i < _hatModels.Length; i++)
                 if (_hatModels[i] != null) _hatModels[i].SetActive(i + 1 == _hatId);
         }

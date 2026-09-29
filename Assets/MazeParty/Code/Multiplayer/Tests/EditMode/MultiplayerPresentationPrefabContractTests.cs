@@ -117,15 +117,46 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(catalog, Is.Not.Null);
                 Assert.That(
                     visual.Bindings.HatAnchor.childCount,
-                    Is.EqualTo(catalog.Hats.Length));
+                    Is.Zero,
+                    "Hat models must be instantiated only when selected.");
                 visual.ApplyAppearance(0, 0, 2, 1);
                 Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.HatAnchor.childCount, Is.EqualTo(1));
+                var selectedHat = visual.Bindings.HatAnchor.GetChild(0).gameObject;
+                Assert.That(selectedHat.name, Is.EqualTo(catalog.Hats[1].Prefab.name));
                 Assert.That(
                     visual.Bindings.HatAnchor.Cast<Transform>()
-                        .Select(child => child.gameObject.activeSelf),
-                    Is.EqualTo(new[] { false, true, false }));
+                        .Count(child => child.gameObject.activeSelf),
+                    Is.EqualTo(1));
+                foreach (var renderer in selectedHat.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+                {
+                    for (var blendShape = 0;
+                         blendShape < renderer.sharedMesh.blendShapeCount;
+                         blendShape++)
+                    {
+                        if (renderer.sharedMesh.GetBlendShapeName(blendShape) == "Scale")
+                        {
+                            Assert.That(renderer.GetBlendShapeWeight(blendShape), Is.Zero);
+                        }
+                    }
+                }
+                visual.ApplyAppearance(0, 0, (byte)catalog.Hats.Length,
+                    (byte)(catalog.Faces.Length - 1));
+                Assert.That(visual.Bindings.HatAnchor.childCount, Is.EqualTo(2));
+                Assert.That(
+                    visual.Bindings.HatAnchor.Cast<Transform>()
+                        .Count(child => child.gameObject.activeSelf),
+                    Is.EqualTo(1));
+                Assert.That(
+                    visual.Bindings.HatAnchor.Cast<Transform>()
+                        .Single(child => child.gameObject.activeSelf).name,
+                    Is.EqualTo(catalog.Hats[catalog.Hats.Length - 1].Prefab.name));
                 visual.ApplyAppearance(0, 0, 0, 2);
                 Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.False);
+                Assert.That(
+                    visual.Bindings.HatAnchor.Cast<Transform>()
+                        .Any(child => child.gameObject.activeSelf),
+                    Is.False);
 
                 var authoredHighlight = visual.Bindings.TopViewHighlight;
                 var authoredObjectCount = root

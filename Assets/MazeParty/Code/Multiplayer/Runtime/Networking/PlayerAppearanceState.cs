@@ -98,7 +98,7 @@ namespace MazeParty.Multiplayer
     [Serializable]
     public struct PlayerAppearanceState : INetworkSerializable, IEquatable<PlayerAppearanceState>
     {
-        public const byte CurrentVersion = 2;
+        public const byte CurrentVersion = 3;
 
         public byte Version;
         public byte BodyRed;
@@ -145,6 +145,11 @@ namespace MazeParty.Multiplayer
         public PlayerAppearanceState Sanitized()
         {
             var value = this;
+            if (value.Version < CurrentVersion)
+            {
+                if (value.HatId > 3) value.HatId = 0;
+                if (value.ExpressionId > 2) value.ExpressionId = 0;
+            }
             var paletteColor = LobbyColorPalette.GetColor(
                 LobbyColorPalette.FindClosestIndex(
                     new Color32(value.BodyRed, value.BodyGreen, value.BodyBlue, 255)));

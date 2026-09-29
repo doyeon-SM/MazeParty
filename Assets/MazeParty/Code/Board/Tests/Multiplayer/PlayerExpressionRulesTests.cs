@@ -19,15 +19,35 @@ namespace MazeParty.Multiplayer.Tests
                 "Fallback");
             Assert.That(removedFace.Appearance.ExpressionId, Is.Zero,
                 "The removed fourth face must fall back to Face1.");
-            for (byte face = 0; face < 3; face++)
+            var removedHat = PlayerProfilePreferences.Decode(
+                "{\"version\":2,\"displayName\":\"Legacy Hat\",\"bodyRed\":55,\"bodyGreen\":125,\"bodyBlue\":230,\"hatId\":4}",
+                "Fallback");
+            Assert.That(removedHat.Appearance.HatId, Is.Zero,
+                "Old profile versions did not define a fourth hat.");
+            var legacyAppearance = new PlayerAppearanceState
             {
-                for (byte hat = 0; hat <= 3; hat++)
+                Version = 2,
+                BodyRed = 55,
+                BodyGreen = 125,
+                BodyBlue = 230,
+                HatId = 4,
+                ExpressionId = 3
+            }.Sanitized();
+            Assert.That(legacyAppearance.Version, Is.EqualTo(PlayerAppearanceState.CurrentVersion));
+            Assert.That(legacyAppearance.HatId, Is.Zero);
+            Assert.That(legacyAppearance.ExpressionId, Is.Zero);
+
+            var catalog = PlayerExpressionCatalog.Instance;
+            Assert.That(catalog, Is.Not.Null);
+            for (byte face = 0; face < catalog.Faces.Length; face++)
+            {
+                for (byte hat = 0; hat <= catalog.Hats.Length; hat++)
                 {
                     var appearance = PlayerAppearanceState.FromColor(
                         Color.red, 0, 0, hat, 0, face);
-                    var restored = PlayerProfilePreferences.Decode(
-                        PlayerProfilePreferences.Encode("Saved", appearance),
-                        "Fallback");
+                    var encoded = PlayerProfilePreferences.Encode("Saved", appearance);
+                    Assert.That(encoded, Does.Contain("\"version\":3"));
+                    var restored = PlayerProfilePreferences.Decode(encoded, "Fallback");
                     Assert.That(restored.Appearance, Is.EqualTo(appearance));
                     Assert.That(
                         restored.Appearance.WithPaletteColor(3).ExpressionId,

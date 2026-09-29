@@ -13,7 +13,8 @@ namespace MazeParty.Editor
     {
         const string Data = "Assets/MazeParty/Resources/MazeParty/Expressions";
         const string Models = "Assets/MazeParty/Prefabs/Multiplayer/Expressions";
-        const string PartyPack = "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources";
+        const string PartyPack = "Assets/Ignore/Pack_PartyCharacters/Resources";
+        const string LegacyPartyPack = "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources";
         [MenuItem("MazeParty/Player/Upgrade Expressions")]
         public static void Upgrade()
         {
@@ -28,7 +29,7 @@ namespace MazeParty.Editor
                 for (int i = 0; i < 3; i++) catalog.Gestures[i] = new PlayerExpressionCatalog.Gesture { Name = names[i], HandsPrefab = Hands(i) };
                 AssetDatabase.CreateAsset(catalog, Data + "/PlayerExpressions.asset");
             }
-            else if (IsLegacyAppearanceCatalog(catalog))
+            else if (IsLegacyAppearanceCatalog(catalog) || IsLimitedPartyPackCatalog(catalog))
             {
                 ConfigurePartyPackAppearance(catalog);
                 EditorUtility.SetDirty(catalog);
@@ -66,9 +67,43 @@ namespace MazeParty.Editor
                    catalog.Faces.Select(face => face != null ? face.Name : string.Empty)
                        .SequenceEqual(new[] { "Neutral", "Happy", "Angry", "Surprised" });
         }
+        static bool IsLimitedPartyPackCatalog(PlayerExpressionCatalog catalog)
+        {
+            return IsLimitedPartyPackCatalog(catalog, PartyPack) ||
+                   IsLimitedPartyPackCatalog(catalog, LegacyPartyPack);
+        }
+        static bool IsLimitedPartyPackCatalog(
+            PlayerExpressionCatalog catalog,
+            string sourceRoot)
+        {
+            if (catalog.Faces == null || catalog.Faces.Length != 3 ||
+                catalog.Hats == null || catalog.Hats.Length != 3)
+            {
+                return false;
+            }
+
+            return catalog.Faces.Select(face => face != null ? face.Name : string.Empty)
+                       .SequenceEqual(new[] { "Face1", "Face2", "Face3" }) &&
+                   catalog.Faces.Select(face => face != null
+                           ? AssetDatabase.GetAssetPath(face.Sprite)
+                           : string.Empty)
+                       .SequenceEqual(Enumerable.Range(1, 3).Select(index =>
+                           sourceRoot + "/Materials/Face Images/face " + index + ".png")) &&
+                   catalog.Hats.Select(hat => hat != null ? hat.Name : string.Empty)
+                       .SequenceEqual(new[] { "Hat1", "Hat2", "Hat3" }) &&
+                   catalog.Hats.Select(hat => hat != null
+                           ? AssetDatabase.GetAssetPath(hat.Prefab)
+                           : string.Empty)
+                       .SequenceEqual(new[]
+                       {
+                           sourceRoot + "/Prefabs/Hats/chef hat.prefab",
+                           sourceRoot + "/Prefabs/Hats/orange fedora.prefab",
+                           sourceRoot + "/Prefabs/Hats/party hat.prefab"
+                       });
+        }
         static void ConfigurePartyPackAppearance(PlayerExpressionCatalog catalog)
         {
-            var names = new[] { "Face1", "Face2", "Face3" };
+            var names = Enumerable.Range(1, 15).Select(index => "Face" + index).ToArray();
             catalog.Faces = new PlayerExpressionCatalog.Face[names.Length];
             for (int i = 0; i < names.Length; i++)
             {
@@ -78,9 +113,19 @@ namespace MazeParty.Editor
                     Sprite = RequiredAsset<Sprite>(PartyPack + "/Materials/Face Images/face " + (i + 1) + ".png")
                 };
             }
-            var hatNames = new[] { "Hat1", "Hat2", "Hat3" };
-            var hatFiles = new[] { "chef hat", "orange fedora", "party hat" };
-            var hatY = new[] { -0.33f, -0.31f, -0.34f };
+            var hatNames = Enumerable.Range(1, 30).Select(index => "Hat" + index).ToArray();
+            var hatFiles = new[]
+            {
+                "chef hat", "orange fedora", "party hat", "alien", "angle hole",
+                "bandage", "bonus", "clown", "cowboy hat", "egg", "fez",
+                "fireman hat", "goat horns", "hair", "hat", "headphone",
+                "heart antenna", "horn", "king crown", "mushroom hat", "noel hat",
+                "party crown", "pineapple", "pump", "soldier hat", "sombrero",
+                "top hat", "traffic cone", "viking helmet", "witch hat"
+            };
+            var hatY = Enumerable.Repeat(-0.33f, hatFiles.Length).ToArray();
+            hatY[1] = -0.31f;
+            hatY[2] = -0.34f;
             catalog.Hats = new PlayerExpressionCatalog.Hat[hatNames.Length];
             for (int i = 0; i < hatNames.Length; i++)
             {
