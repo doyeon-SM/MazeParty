@@ -43,12 +43,15 @@
 
 - 아이템 모델은 `Assets/Ignore/nappin/WeaponStylizedPack`의 Pistol→Revolver,
   Sniper→HuntingRifle, Mine→Dynamite, Grenade→Granade 매핑을 사용한다.
-- 기존 아이템 프리팩 GUID는 유지하고, 충돌체를 제거한 추적 래퍼에 URP 재질로
+- 기존 아이템 프리팹 GUID는 유지하고, 충돌체를 제거한 추적 래퍼에 URP 재질로
   표현한다.
-- 장착·사용 중에는 기존 `PlayerAvatarVisual`이 손을 숨기고 `HeldPrefab`을
-  표시한다.
-- 9종 아이템 아이콘은 `Assets/MazeParty/Art/Items/Icons`에 추적하고
-  퀵슬롯·상점에서 같은 스프라이트를 사용한다.
+- 장착·사용 중 `HeldPrefab`이 있는 Pistol·Sniper·Mine·Grenade만 기존
+  `PlayerAvatarVisual`이 손을 숨기고 모델을 표시한다.
+- DoubleDice는 두 D12가 실제로 생성되므로 별도 전용 모델을 요구하지 않는다.
+  LowDice·HighDice는 기존 D12 모델을 활용하며, PositionSwapper·Cloak도 추가
+  3D 모델링을 요구하지 않는다.
+- 9종 아이템 아이콘은 Git 추적 경로로 복사하지 않고
+  `Assets/Ignore/AllImage/Icons` 원본을 퀵슬롯·상점에서 공용한다.
 
 ### 미니게임 HUD
 
@@ -76,7 +79,8 @@
 - 파일이 없는 중앙 큐 `item.bullet_impact`, `minigame.finish`와
   미니게임 씬 직접 오디오 슬롯 9개의 후속 사운드
 - 보드 칸 종류의 최종 배치 비율
-- Ignore 경로 UI 팩·AI 로고·폰트·캐릭터를 배포 가능한 추적 경로로 옮길지 여부
+- Ignore 경로 UI 팩·AI 이미지(로고·아이콘)·폰트·캐릭터를 배포 가능한 추적
+  경로로 옮길지 여부
 - Ignore 경로의 WeaponStylizedPack을 추적 배포할지 여부. 현재 래퍼가
   이 팩의 메시·텍스처 GUID를 참조하므로 다른 개발·빌드 환경에도 동일 GUID 팩이 필요하다.
 
@@ -87,6 +91,3 @@
 - pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위·수상식
 - 별도 PC, 고지연, IL2CPP 릴리즈 후보
 - 15턴 전체 여정은 사용자가 별도로 진행
-- DoubleDice·LowDice·HighDice는 재사용 가능한 D12 원본이 있지만 최종 전용
-  3D 모델은 아직 적용하지 않았다.
-- PositionSwapper·Cloak은 적합한 3D 원본 자체가 없어 추가 자산 선정·제작이 필요하다.

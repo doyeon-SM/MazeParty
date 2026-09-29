@@ -32,6 +32,6 @@ MonoBehaviour:
   DiceMaximum: 12
   CastDuration: 2
   Icon: {fileID: 21300000, guid: 7feb09b8aaa72294b8663532a69e861c, type: 3}
-  HeldPrefab: {fileID: 8794757270956828618, guid: 73cfb9cc8b9432c419e30f80b569839c, type: 3}
-  WorldPrefab: {fileID: 8794757270956828618, guid: 73cfb9cc8b9432c419e30f80b569839c, type: 3}
+  HeldPrefab: {fileID: 0}
+  WorldPrefab: {fileID: 0}
   ExplosionPrefab: {fileID: 1171816663760017513, guid: 5b4c0abfbc2abe142a80de4f63de8795, type: 3}

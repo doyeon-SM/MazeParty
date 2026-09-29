@@ -22,10 +22,12 @@ complete gameplay/customization seams. Art can replace these fixed anchors later
 - Hats: one resource per `HatId`; `0=None`, `1=Test Hat` is implemented.
 - Outfits: `0=None`. Material-only outfits may reuse the body; silhouette-changing
   coats should provide a standing mesh and a crouch-safe mesh or accept Y squashing.
-- Held/used items: one local +Z-facing model for each `PrototypeItemId`. The current
-  placeholders cover `PulseBlaster`, `PushMine`, and `MedKit`. Use a centred pivot,
-  baked transforms, no collider/Rigidbody, and keep the item within roughly a
-  0.7-metre cube so the same model fits the world and first-person item anchors.
+- Held/used items: only `Pistol`, `Sniper`, `Mine`, and `Grenade` require local
+  +Z-facing held models. Use a centred pivot, baked transforms, no
+  collider/Rigidbody, and keep each item within roughly a 0.7-metre cube so the
+  same model fits the world and first-person item anchors. `DoubleDice`, `LowDice`,
+  and `HighDice` use the existing spawned D12 presentation; `PositionSwapper` and
+  `Cloak` do not require held 3D models.
 
 Recommended source format is FBX for meshes and PNG/TGA for optional masks. Use one
 shared URP Lit material family with metallic 0 and low-to-medium smoothness for the

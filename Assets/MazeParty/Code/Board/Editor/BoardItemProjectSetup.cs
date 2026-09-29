@@ -14,7 +14,7 @@ namespace MazeParty.Editor
     {
         public const string DataFolder = "Assets/MazeParty/Resources/MazeParty/Items";
         public const string VisualFolder = "Assets/MazeParty/Prefabs/Board/Items";
-        private const string IconFolder = "Assets/MazeParty/Art/Items/Icons";
+        private const string IconFolder = "Assets/Ignore/AllImage/Icons";
         [MenuItem("MazeParty/Board/Upgrade Board Items")]
         public static void Upgrade()
         {
@@ -129,12 +129,21 @@ namespace MazeParty.Editor
             item.Charges = charges; item.Damage = damage; item.Range = range; item.FireInterval = interval;
             item.AimMagnification = zoom; item.BlastRadius = blast; item.TriggerRadius = trigger; item.ArmingDelay = delay;
             item.DiceMinimum = diceMinimum; item.DiceMaximum = diceMaximum;
-            item.HeldPrefab = EnsureModel(id);
+            item.HeldPrefab = RequiresHeldModel(id) ? EnsureModel(id) : null;
             item.WorldPrefab = item.HeldPrefab;
             item.ExplosionPrefab = explosion;
             item.Icon = RequireIcon(id);
             AssetDatabase.CreateAsset(item, path);
         }
+
+        private static bool RequiresHeldModel(PrototypeItemId id)
+        {
+            return id == PrototypeItemId.Pistol ||
+                   id == PrototypeItemId.Sniper ||
+                   id == PrototypeItemId.Grenade ||
+                   id == PrototypeItemId.Mine;
+        }
+
         private static void EnsureIcon(
             BoardItemDefinition item,
             PrototypeItemId id)
@@ -180,39 +189,21 @@ namespace MazeParty.Editor
                     Part(root, "Stock", PrimitiveType.Cube, new Vector3(0, -.04f, -.45f), new Vector3(.14f, .22f, .3f), metal);
                 }
             }
-            else if (id == PrototypeItemId.DoubleDice)
-            {
-                Part(root, "Die A", PrimitiveType.Cube, new Vector3(-.16f, 0, 0), Vector3.one * .25f, accent);
-                Part(root, "Die B", PrimitiveType.Cube, new Vector3(.16f, 0, 0), Vector3.one * .25f, accent);
-                for (int i = -1; i <= 1; i += 2) Part(root, "Pip", PrimitiveType.Sphere, new Vector3(i * .16f, .125f, 0), Vector3.one * .07f, metal);
-            }
-            else if (id == PrototypeItemId.LowDice || id == PrototypeItemId.HighDice)
-            {
-                var tint = Material(id.ToString(), id == PrototypeItemId.LowDice ? new Color(.25f, .8f, .4f) : new Color(.7f, .35f, 1f));
-                Part(root, "Die", PrimitiveType.Cube, Vector3.zero, Vector3.one * .32f, tint);
-                Part(root, "Pip", PrimitiveType.Sphere, new Vector3(0, .16f, 0), Vector3.one * .08f, metal);
-            }
-            else if (id == PrototypeItemId.PositionSwapper)
-            {
-                Part(root, "Device", PrimitiveType.Cube, Vector3.zero, new Vector3(.25f, .1f, .38f), metal);
-                Part(root, "Display", PrimitiveType.Cube, new Vector3(0, .06f, 0), new Vector3(.19f, .02f, .25f), accent);
-                Part(root, "Emitter", PrimitiveType.Cylinder, new Vector3(0, .11f, .15f), new Vector3(.09f, .09f, .09f), accent);
-            }
-            else if (id == PrototypeItemId.Cloak)
-            {
-                var cloth = Material("Cloak Cloth", new Color(.24f, .2f, .55f));
-                Part(root, "Folded Cloth", PrimitiveType.Cube, Vector3.zero, new Vector3(.5f, .08f, .35f), cloth);
-                Part(root, "Clasp", PrimitiveType.Sphere, new Vector3(0, .05f, .15f), Vector3.one * .12f, accent);
-            }
             else if (id == PrototypeItemId.Grenade)
             {
                 Part(root, "Body", PrimitiveType.Sphere, Vector3.zero, new Vector3(.25f, .32f, .25f), metal);
                 Part(root, "Fuse", PrimitiveType.Cube, new Vector3(.04f, .17f, 0), new Vector3(.06f, .1f, .12f), accent);
             }
-            else
+            else if (id == PrototypeItemId.Mine)
             {
                 Part(root, "Disc", PrimitiveType.Cylinder, Vector3.zero, new Vector3(.42f, .035f, .42f), metal);
                 Part(root, "Pressure Plate", PrimitiveType.Cylinder, new Vector3(0, .045f, 0), new Vector3(.26f, .025f, .26f), accent);
+            }
+            else
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+                throw new ArgumentOutOfRangeException(
+                    nameof(id), id, "This item does not use a held model.");
             }
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
             UnityEngine.Object.DestroyImmediate(root);

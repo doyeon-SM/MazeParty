@@ -540,7 +540,8 @@ namespace MazeParty.Gameplay
         private void RefreshVisibility()
         {
             var showingItem = IsUsingItem &&
-                              PrototypeItemCatalog.IsValid(_activeItemId);
+                              PrototypeItemCatalog.IsValid(_activeItemId) &&
+                              _worldItemModels[(int)_activeItemId] != null;
             RefreshGestureVisibility(showingItem);
             if (_worldModel != null)
             {

@@ -127,6 +127,12 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
                 Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
 
+                visual.SetEquippedItem(PrototypeItemId.DoubleDice);
+                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
+                visual.SetEquippedItem(PrototypeItemId.None);
+
                 var catalog = PlayerExpressionCatalog.Instance;
                 Assert.That(catalog, Is.Not.Null);
                 Assert.That(

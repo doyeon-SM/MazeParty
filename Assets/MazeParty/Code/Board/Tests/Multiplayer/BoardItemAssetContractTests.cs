@@ -82,33 +82,39 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     AssetDatabase.GetAssetPath(definition.Icon),
                     Is.EqualTo(
-                        "Assets/MazeParty/Art/Items/Icons/" + definition.Id + ".png"),
+                        "Assets/Ignore/AllImage/Icons/" + definition.Id + ".png"),
                     definition.Id.ToString());
                 Assert.That(itemIcons.Add(definition.Icon), Is.True,
                     definition.Id + " must use a unique icon sprite.");
+                Assert.That(PrototypeItemCatalog.Get(definition.Id), Is.SameAs(definition));
+
+                if (!expectedWeaponModels.TryGetValue(definition.Id, out var expectedModelPath))
+                {
+                    Assert.That(definition.HeldPrefab, Is.Null,
+                        definition.Id + " uses its gameplay effect instead of a held model.");
+                    Assert.That(definition.WorldPrefab, Is.Null,
+                        definition.Id + " must not create a placeholder world model.");
+                    continue;
+                }
+
                 Assert.That(definition.HeldPrefab, Is.Not.Null);
                 Assert.That(PrefabUtility.IsPartOfPrefabAsset(definition.HeldPrefab), Is.True);
                 Assert.That(definition.WorldPrefab, Is.Not.Null);
                 Assert.That(definition.HeldPrefab.GetComponentsInChildren<Collider>(true), Is.Empty,
                     "Presentation must not obstruct authoritative item casts.");
 
-                if (expectedWeaponModels.TryGetValue(definition.Id, out var expectedModelPath))
-                {
-                    var meshPaths = definition.HeldPrefab
-                        .GetComponentsInChildren<MeshFilter>(true)
-                        .Select(filter => filter.sharedMesh)
-                        .Concat(definition.HeldPrefab
-                            .GetComponentsInChildren<SkinnedMeshRenderer>(true)
-                            .Select(renderer => renderer.sharedMesh))
-                        .Where(mesh => mesh != null)
-                        .Select(AssetDatabase.GetAssetPath)
-                        .Distinct()
-                        .ToArray();
-                    Assert.That(meshPaths, Does.Contain(expectedModelPath),
-                        definition.Id + " must use its approved WeaponStylizedPack model.");
-                }
-
-                Assert.That(PrototypeItemCatalog.Get(definition.Id), Is.SameAs(definition));
+                var meshPaths = definition.HeldPrefab
+                    .GetComponentsInChildren<MeshFilter>(true)
+                    .Select(filter => filter.sharedMesh)
+                    .Concat(definition.HeldPrefab
+                        .GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                        .Select(renderer => renderer.sharedMesh))
+                    .Where(mesh => mesh != null)
+                    .Select(AssetDatabase.GetAssetPath)
+                    .Distinct()
+                    .ToArray();
+                Assert.That(meshPaths, Does.Contain(expectedModelPath),
+                    definition.Id + " must use its approved WeaponStylizedPack model.");
             }
             Assert.That(itemIcons.Count, Is.EqualTo(9));
             var first = new System.Random(901);
