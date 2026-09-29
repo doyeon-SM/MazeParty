@@ -91,7 +91,8 @@ MonoBehaviour:
   - {fileID: 2215780014936783580}
   gates:
   - {fileID: 6987533076863045356}
-  - {fileID: 2643112557317434217}
+  - {fileID: 1347828528629990793}
+  - {fileID: 2276144350002462060}
   - {fileID: 3838252303764054179}
   - {fileID: 2233084364655534118}
   - {fileID: 5982358816466642551}
@@ -104,7 +105,8 @@ MonoBehaviour:
   - {fileID: 1403782680437168465}
   - {fileID: 971223006037811197}
   - {fileID: 2336720865051095937}
-  - {fileID: 2115286438461255641}
+  - {fileID: 8295632117774243371}
+  - {fileID: 645725446707192567}
   - {fileID: 3819794490099533628}
   - {fileID: 1088487077341222786}
   - {fileID: 2491228383300071676}
@@ -137,38 +139,6 @@ MonoBehaviour:
   - {fileID: 7173575862952092347}
   - {fileID: 59005956651696841}
   - {fileID: 2338000132227969240}
---- !u!1 &166888231725834536
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5497129935689014342}
-  m_Layer: 0
-  m_Name: Connection 01 - 02 (One Way)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5497129935689014342
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 166888231725834536}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8104767871136629717}
-  m_Father: {fileID: 7616749834569059342}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &304927130848590013
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,6 +171,55 @@ Transform:
   - {fileID: 3767997800431865435}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &306249232430520032
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4727181256198065708}
+  - component: {fileID: 645725446707192567}
+  m_Layer: 0
+  m_Name: Gate (12, 0) to (14, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4727181256198065708
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306249232430520032}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.39362678, z: -0, w: 0.9192704}
+  m_LocalPosition: {x: 21.10781, y: 0.15, z: 16.24879}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 77965491494949312}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &645725446707192567
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 306249232430520032}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
+  source: {fileID: 5512828797656402536}
+  destination: {fileID: 558809296926194911}
+  gateWidth: 2.5
+  crossingEpsilon: 0.001
+  drawDebugBoundary: 1
 --- !u!1 &375598373342532184
 GameObject:
   m_ObjectHideFlags: 0
@@ -420,7 +439,7 @@ Transform:
   m_GameObject: {fileID: 722021548097660612}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -29.445568, y: 1, z: -6.0595713}
+  m_LocalPosition: {x: 17.554432, y: 1, z: 17.44043}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -920,6 +939,38 @@ Transform:
   - {fileID: 8691909440790153760}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1620357892541156932
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8708193955153353048}
+  m_Layer: 0
+  m_Name: Connection (1, 0) - (2, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8708193955153353048
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1620357892541156932}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2825394622219507863}
+  m_Father: {fileID: 7616749834569059342}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1632005701479437159
 GameObject:
   m_ObjectHideFlags: 0
@@ -1065,55 +1116,6 @@ Transform:
   - {fileID: 1397223167108459827}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1784525508963675778
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1730004761330883315}
-  - component: {fileID: 2115286438461255641}
-  m_Layer: 0
-  m_Name: Gate 12 to 13
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1730004761330883315
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1784525508963675778}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0.06213744, z: -0, w: 0.9980676}
-  m_LocalPosition: {x: 23.558846, y: 0.15, z: 18.775}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5629781304129434426}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2115286438461255641
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1784525508963675778}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
-  source: {fileID: 5512828797656402536}
-  destination: {fileID: 2801477591147595351}
-  gateWidth: 2.5
-  crossingEpsilon: 0.001
-  drawDebugBoundary: 1
 --- !u!1 &1840083621804153681
 GameObject:
   m_ObjectHideFlags: 0
@@ -1144,6 +1146,38 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5494154431380385462}
+  m_Father: {fileID: 7616749834569059342}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1878548591801538773
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 77965491494949312}
+  m_Layer: 0
+  m_Name: Connection (12, 0) - (14, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &77965491494949312
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1878548591801538773}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4727181256198065708}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1992696618601141031
@@ -1241,6 +1275,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4240528750873376066}
   destination: {fileID: 7663062526015592393}
+  gateWidth: 2.5
+  crossingEpsilon: 0.001
+  drawDebugBoundary: 1
+--- !u!1 &2280596519885632793
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 960017183259125970}
+  - component: {fileID: 2276144350002462060}
+  m_Layer: 0
+  m_Name: Gate (1, 0) to (3, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &960017183259125970
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2280596519885632793}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7269442, z: -0, w: 0.6866965}
+  m_LocalPosition: {x: -16.94051, y: 0.15, z: -19.53823}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1996961168270475298}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2276144350002462060
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2280596519885632793}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
+  source: {fileID: 8643551130689105107}
+  destination: {fileID: 5648668223849841176}
   gateWidth: 2.5
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
@@ -1536,55 +1619,6 @@ MonoBehaviour:
   gateWidth: 2.5
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
---- !u!1 &2955172221521603091
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8104767871136629717}
-  - component: {fileID: 2643112557317434217}
-  m_Layer: 0
-  m_Name: Gate 01 to 02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8104767871136629717
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2955172221521603091}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.9467376, z: -0, w: 0.32200623}
-  m_LocalPosition: {x: -16.941986, y: 0.15, z: -23.03123}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5497129935689014342}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &2643112557317434217
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2955172221521603091}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
-  source: {fileID: 8643551130689105107}
-  destination: {fileID: 8553065762714369546}
-  gateWidth: 2.5
-  crossingEpsilon: 0.001
-  drawDebugBoundary: 1
 --- !u!1 &3049915410275622958
 GameObject:
   m_ObjectHideFlags: 0
@@ -1708,7 +1742,7 @@ Transform:
   m_GameObject: {fileID: 3390915635971798356}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -21.949196, y: 1, z: -18.099205}
+  m_LocalPosition: {x: 28.300804, y: 1, z: -6.599205}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1916,7 +1950,7 @@ Transform:
   m_GameObject: {fileID: 3963918164977571187}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -13.670845, y: 1, z: -20.844587}
+  m_LocalPosition: {x: -21.670845, y: 1, z: 15.155413}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2503,38 +2537,6 @@ MonoBehaviour:
   gateWidth: 2.5
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
---- !u!1 &5309536457975185219
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5629781304129434426}
-  m_Layer: 0
-  m_Name: Connection 12 - 13 (One Way)
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5629781304129434426
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5309536457975185219}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1730004761330883315}
-  m_Father: {fileID: 7616749834569059342}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5386300217884619473
 GameObject:
   m_ObjectHideFlags: 0
@@ -2891,6 +2893,55 @@ Transform:
   - {fileID: 5265998989761375936}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6324835919192615120
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2825394622219507863}
+  - component: {fileID: 1347828528629990793}
+  m_Layer: 0
+  m_Name: Gate (1, 0) to (2, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2825394622219507863
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6324835919192615120}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.9601537, z: -0, w: 0.27947262}
+  m_LocalPosition: {x: -18.615477, y: 0.15, z: -24.300585}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8708193955153353048}
+  m_LocalEulerAnglesHint: {x: 0, y: 147.543, z: 0}
+--- !u!114 &1347828528629990793
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6324835919192615120}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
+  source: {fileID: 8643551130689105107}
+  destination: {fileID: 8553065762714369546}
+  gateWidth: 2.5
+  crossingEpsilon: 0.001
+  drawDebugBoundary: 1
 --- !u!1 &6368362769928787896
 GameObject:
   m_ObjectHideFlags: 0
@@ -3956,6 +4007,38 @@ MonoBehaviour:
   gateWidth: 2.5
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
+--- !u!1 &8484304765251608839
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3587184912082220292}
+  m_Layer: 0
+  m_Name: Connection (12, 0) - (13, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3587184912082220292
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8484304765251608839}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3935034028434717275}
+  m_Father: {fileID: 7616749834569059342}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8546536080450201839
 GameObject:
   m_ObjectHideFlags: 0
@@ -4018,7 +4101,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 2035245338303867439}
-  - {fileID: 5497129935689014342}
   - {fileID: 4662056104328103119}
   - {fileID: 3180437991795419615}
   - {fileID: 5194674408342060398}
@@ -4031,7 +4113,6 @@ Transform:
   - {fileID: 6383773782413845807}
   - {fileID: 809833164458401247}
   - {fileID: 8573133233026525077}
-  - {fileID: 5629781304129434426}
   - {fileID: 5255937507155175536}
   - {fileID: 5891316869005974809}
   - {fileID: 8358271688581933291}
@@ -4064,6 +4145,10 @@ Transform:
   - {fileID: 7926177057476803056}
   - {fileID: 6577157435925194430}
   - {fileID: 9189177173562121152}
+  - {fileID: 77965491494949312}
+  - {fileID: 1996961168270475298}
+  - {fileID: 8708193955153353048}
+  - {fileID: 3587184912082220292}
   m_Father: {fileID: 1641768858561110066}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8597431218680540266
@@ -4290,6 +4375,87 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5749128553213485864}
+  m_Father: {fileID: 7616749834569059342}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8864618026151531678
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3935034028434717275}
+  - component: {fileID: 8295632117774243371}
+  m_Layer: 0
+  m_Name: Gate (12, 0) to (13, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3935034028434717275
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8864618026151531678}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.011268917, z: -0, w: 0.9999366}
+  m_LocalPosition: {x: 25.738142, y: 0.15, z: 18.541668}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3587184912082220292}
+  m_LocalEulerAnglesHint: {x: 0, y: 1.291, z: 0}
+--- !u!114 &8295632117774243371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8864618026151531678}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
+  source: {fileID: 5512828797656402536}
+  destination: {fileID: 2801477591147595351}
+  gateWidth: 2.5
+  crossingEpsilon: 0.001
+  drawDebugBoundary: 1
+--- !u!1 &8960291238007747706
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1996961168270475298}
+  m_Layer: 0
+  m_Name: Connection (1, 0) - (3, 0)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1996961168270475298
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8960291238007747706}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 960017183259125970}
   m_Father: {fileID: 7616749834569059342}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8996450988991516322
@@ -5366,8 +5532,8 @@ MonoBehaviour:
   localVertices:
   - {x: -0.75, y: 4.6000004}
   - {x: -6.6738033, y: 0.8624611}
-  - {x: -2.1160274, y: -2.9124606}
-  - {x: 4.866026, y: -4.662462}
+  - {x: 0.13397217, y: -7.9124603}
+  - {x: 4.366026, y: -4.912462}
   - {x: 4.9238033, y: 0.8624611}
 --- !u!114 &8643551130689105107 stripped
 MonoBehaviour:
@@ -5491,7 +5657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTileFootprint
   localVertices:
   - {x: -2.25, y: 4.3500004}
-  - {x: -3.617691, y: -2.2999992}
+  - {x: -6.867691, y: 1.2000008}
   - {x: 4.117691, y: -3.5500011}
   - {x: 3.867691, y: 2.9499989}
 --- !u!114 &8553065762714369546 stripped
@@ -6858,11 +7024,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTileFootprint
   localVertices:
-  - {x: -0.25, y: 5.6000004}
+  - {x: -0.25, y: 5.3500004}
   - {x: -4.9238033, y: 0.8624611}
   - {x: -1.6160278, y: -4.4124603}
   - {x: 6.116026, y: -2.4124613}
-  - {x: 4.1738033, y: 1.3624601}
+  - {x: 4.9238033, y: 5.362461}
 --- !u!4 &4941126118701507336 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 8166908569938772701, guid: 6a84ace20da32184e82544d5f6e7f84f, type: 3}
@@ -8172,10 +8338,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTileFootprint
   localVertices:
-  - {x: -2, y: 3.8500004}
+  - {x: 2.75, y: 3.1000004}
   - {x: -5.867691, y: -1.2999992}
   - {x: 0.86769104, y: -6.050001}
-  - {x: 4.617691, y: -0.80000114}
+  - {x: 6.117691, y: -6.050001}
 --- !u!4 &6413669943337172058 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 562114866117954898, guid: 45b90dadf87013940b2678b75bd394a1, type: 3}
