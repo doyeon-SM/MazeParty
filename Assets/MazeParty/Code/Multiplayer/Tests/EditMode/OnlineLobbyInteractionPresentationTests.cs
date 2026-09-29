@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MazeParty.Gameplay;
@@ -147,6 +148,134 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void BoardMapSelector_ShowsNameToEveryoneAndOnlyHostCanCycle()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            try
+            {
+                var view = GetLobbyView(root);
+                var selector = GetField<GameObject>(
+                    view,
+                    "boardMapSelectionRoot");
+                var previous = GetField<Button>(
+                    view,
+                    "previousBoardMapButton");
+                var next = GetField<Button>(
+                    view,
+                    "nextBoardMapButton");
+                var mapName = GetField<Text>(view, "boardMapNameText");
+                var ready = GetField<Button>(view, "readyButton");
+                var sessionPanel = GetField<GameObject>(view, "sessionPanel");
+
+                Assert.That(selector.transform.parent,
+                    Is.SameAs(sessionPanel.transform));
+                Assert.That(selector.transform.GetSiblingIndex(),
+                    Is.LessThan(ready.transform.GetSiblingIndex()));
+                Assert.That(
+                    ((RectTransform)selector.transform).sizeDelta.y,
+                    Is.EqualTo(48f).Within(0.01f),
+                    "Session Panel does not control child height, so the authored row height is the runtime height.");
+                Assert.That(previous.transform.IsChildOf(selector.transform), Is.True);
+                Assert.That(next.transform.IsChildOf(selector.transform), Is.True);
+                Assert.That(mapName.transform.IsChildOf(selector.transform), Is.True);
+
+                BindButtonEvents(view);
+                var deltas = new List<int>();
+                view.MapSelectionDeltaRequested += deltas.Add;
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(selector.activeSelf, Is.True);
+                Assert.That(mapName.text,
+                    Is.EqualTo(GameText.F(
+                        "Map: {0}",
+                        GameText.T("Forest Graybox"))));
+                Assert.That(previous.gameObject.activeSelf, Is.True);
+                Assert.That(next.gameObject.activeSelf, Is.True);
+                Assert.That(previous.interactable, Is.False,
+                    "The shipped catalog currently contains one selectable map.");
+                Assert.That(next.interactable, Is.False);
+                previous.onClick.Invoke();
+                next.onClick.Invoke();
+                Assert.That(deltas, Is.Empty,
+                    "Disabled single-map controls must not publish requests.");
+
+                previous.interactable = true;
+                next.interactable = true;
+                previous.onClick.Invoke();
+                next.onClick.Invoke();
+                Assert.That(deltas, Is.EqualTo(new[] { -1, 1 }));
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        false),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(selector.activeSelf, Is.True);
+                Assert.That(mapName.text,
+                    Is.EqualTo(GameText.F(
+                        "Map: {0}",
+                        GameText.T("Forest Graybox"))));
+                Assert.That(previous.gameObject.activeSelf, Is.False);
+                Assert.That(next.gameObject.activeSelf, Is.False);
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        false,
+                        new BoardMapSelection("forest-graybox", 999)),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(mapName.text,
+                    Is.EqualTo(GameText.F(
+                        "Map: {0}",
+                        GameText.T("Unavailable Map"))));
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true),
+                    true,
+                    true,
+                    string.Empty);
+                Assert.That(previous.gameObject.activeSelf, Is.True);
+                Assert.That(next.gameObject.activeSelf, Is.True);
+                Assert.That(previous.interactable, Is.False);
+                Assert.That(next.interactable, Is.False);
+
+                view.SetBoardMapSelectionLocked(true);
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previous.interactable, Is.False);
+                Assert.That(next.interactable, Is.False);
+                view.SetBoardMapSelectionLocked(false);
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.PlayingPhase,
+                        true),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(selector.activeSelf, Is.False);
+
+                view.Render(SessionSnapshot.Empty, false, false, string.Empty);
+                Assert.That(selector.activeSelf, Is.False);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         private static OnlineLobbyView GetLobbyView(GameObject root)
         {
             var view = root.GetComponentInChildren<OnlineLobbyView>(true);
@@ -155,17 +284,32 @@ namespace MazeParty.Multiplayer.Tests
             return view;
         }
 
-        private static SessionSnapshot CreateSnapshot(string phase)
+        private static SessionSnapshot CreateSnapshot(
+            string phase,
+            bool isHost = true)
+        {
+            return CreateSnapshot(
+                phase,
+                isHost,
+                new BoardMapSelection("forest-graybox", 3));
+        }
+
+        private static SessionSnapshot CreateSnapshot(
+            string phase,
+            bool isHost,
+            BoardMapSelection boardMapSelection)
         {
             return new SessionSnapshot(
                 "ABCD",
-                true,
+                isHost,
                 phase,
-                "host",
+                isHost ? "host" : "guest",
                 new[]
                 {
-                    new OnlinePlayerSnapshot("host", "Host", 0, true, true)
-                });
+                    new OnlinePlayerSnapshot("host", "Host", 0, true, true),
+                    new OnlinePlayerSnapshot("guest", "Guest", 1, true, false)
+                },
+                boardMapSelection);
         }
 
         private static T GetField<T>(OnlineLobbyView view, string name)

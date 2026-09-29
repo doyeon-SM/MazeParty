@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
@@ -129,6 +130,62 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RunAsync(
+                SelectSavedMatchAsync,
+                GameText.N("Synchronizing the saved board map selection..."),
+                SessionLifecycleState.Lobby);
+        }
+
+        private async Task SelectSavedMatchAsync()
+        {
+            if (!_matchRecoveryChoiceVisible ||
+                _sessions == null || !_sessions.IsInSession ||
+                !_sessions.Current.IsHost ||
+                _sessions.Current.Phase != MultiplayerConstants.LobbyPhase)
+            {
+                throw new InvalidOperationException(
+                    GameText.T("Only the host can select the board map."));
+            }
+
+            var scheduleSession = new HostMinigameScheduleSession();
+            var status = scheduleSession.TryPeekRecoverySnapshot(
+                out var recoverySnapshot);
+            if (status != MatchRecoveryLoadStatus.Loaded ||
+                recoverySnapshot == null ||
+                !BoardMapSelection.TryCreate(
+                    recoverySnapshot.boardMapId,
+                    recoverySnapshot.boardMapContentVersion,
+                    out var savedSelection))
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The saved match does not contain a valid board map selection."));
+            }
+
+            if (!BoardMapRuntimeLoader.TryResolveExactSelection(
+                    LoadBoardMapCatalog(),
+                    savedSelection,
+                    out _,
+                    out var error))
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The selected board map could not be loaded safely."),
+                    new InvalidOperationException(error));
+            }
+
+            if (_sessions.Current.BoardMapSelection != savedSelection)
+            {
+                await _sessions.SetBoardMapAsync(savedSelection);
+            }
+
+            if (_sessions.Current.BoardMapSelection != savedSelection)
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The saved match board map was not synchronized to the lobby."));
+            }
+
             _hostMatchRecoveryChoice = HostMatchRecoveryChoice.Resume;
             _matchRecoveryChoiceVisible = false;
             ApplyMatchRecoveryPresentation();
@@ -157,9 +214,11 @@ namespace MazeParty.Multiplayer
             }
 
             MatchRecoveryLoadStatus status;
+            MatchRecoverySnapshot recoverySnapshot;
             try
             {
-                status = scheduleSession.TryPeekRecovery(out _);
+                status = scheduleSession.TryPeekRecoverySnapshot(
+                    out recoverySnapshot);
             }
             catch (Exception exception)
             {
@@ -168,6 +227,20 @@ namespace MazeParty.Multiplayer
                     GameText.T(
                         "The saved match could not be inspected. Continue to retry, or discard it."),
                     exception);
+            }
+
+            if (status == MatchRecoveryLoadStatus.Loaded &&
+                (recoverySnapshot == null ||
+                 !BoardMapSelection.TryCreate(
+                     recoverySnapshot.boardMapId,
+                     recoverySnapshot.boardMapContentVersion,
+                     out var savedSelection) ||
+                 _sessions.Current.BoardMapSelection != savedSelection))
+            {
+                RestoreMatchRecoveryChoiceForRetry();
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The saved match does not contain a valid board map selection."));
             }
 
             if (status == MatchRecoveryLoadStatus.Loaded)
@@ -218,6 +291,8 @@ namespace MazeParty.Multiplayer
             lobbyView?.SetRecoveryChoice(
                 _matchRecoveryChoiceVisible,
                 !IsBusy);
+            lobbyView?.SetBoardMapSelectionLocked(
+                IsBoardMapSelectionLocked);
         }
     }
 }

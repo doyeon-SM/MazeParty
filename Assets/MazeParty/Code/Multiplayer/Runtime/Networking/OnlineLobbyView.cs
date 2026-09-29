@@ -32,6 +32,10 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Text readyButtonText;
         [SerializeField] private Text startButtonText;
         [SerializeField] private Text[] playerRows = Array.Empty<Text>();
+        [SerializeField] private GameObject boardMapSelectionRoot;
+        [SerializeField] private Button previousBoardMapButton;
+        [SerializeField] private Button nextBoardMapButton;
+        [SerializeField] private Text boardMapNameText;
         [SerializeField] private GameObject startHint;
         [SerializeField] private GameObject runningMessage;
         [SerializeField] private HoldToRevealButton inviteCodeRevealButton;
@@ -71,6 +75,7 @@ namespace MazeParty.Multiplayer
         private bool _suppressAppearanceEvents;
         private bool _presentationVisible = true;
         private bool _lastBusy;
+        private bool _boardMapSelectionLocked;
         private bool _recoveryChoiceVisible;
         private bool _recoveryChoiceCanChoose = true;
         private bool _recoveryChoicePresented;
@@ -83,6 +88,7 @@ namespace MazeParty.Multiplayer
         public event Action CopyRequested;
         public event Action ReadyRequested;
         public event Action StartRequested;
+        public event Action<int> MapSelectionDeltaRequested;
         public event Action RecoveryContinueRequested;
         public event Action RecoveryDiscardRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
@@ -108,6 +114,10 @@ namespace MazeParty.Multiplayer
             playerRows != null &&
             playerRows.Length == MultiplayerConstants.MaxPlayers &&
             Array.TrueForAll(playerRows, row => row != null) &&
+            boardMapSelectionRoot != null &&
+            previousBoardMapButton != null &&
+            nextBoardMapButton != null &&
+            boardMapNameText != null &&
             startHint != null &&
             runningMessage != null &&
             inviteCodeRevealButton != null &&
@@ -141,6 +151,10 @@ namespace MazeParty.Multiplayer
             Text configuredReadyButtonText,
             Text configuredStartButtonText,
             Text[] configuredPlayerRows,
+            GameObject configuredBoardMapSelectionRoot,
+            Button configuredPreviousBoardMapButton,
+            Button configuredNextBoardMapButton,
+            Text configuredBoardMapNameText,
             GameObject configuredStartHint,
             GameObject configuredRunningMessage,
             Text configuredStatusText,
@@ -163,6 +177,10 @@ namespace MazeParty.Multiplayer
             readyButtonText = configuredReadyButtonText;
             startButtonText = configuredStartButtonText;
             playerRows = configuredPlayerRows ?? Array.Empty<Text>();
+            boardMapSelectionRoot = configuredBoardMapSelectionRoot;
+            previousBoardMapButton = configuredPreviousBoardMapButton;
+            nextBoardMapButton = configuredNextBoardMapButton;
+            boardMapNameText = configuredBoardMapNameText;
             startHint = configuredStartHint;
             runningMessage = configuredRunningMessage;
             statusText = configuredStatusText;
@@ -217,6 +235,25 @@ namespace MazeParty.Multiplayer
                 SetInviteCodeRevealed(false);
             }
             ApplyPresentationState();
+        }
+
+        public void SetBoardMapSelectionLocked(bool locked)
+        {
+            _boardMapSelectionLocked = locked;
+            if (!locked)
+            {
+                return;
+            }
+
+            if (previousBoardMapButton != null)
+            {
+                previousBoardMapButton.interactable = false;
+            }
+
+            if (nextBoardMapButton != null)
+            {
+                nextBoardMapButton.interactable = false;
+            }
         }
 
         public void SetRecoveryChoice(bool visible, bool canChoose = true)
@@ -285,6 +322,7 @@ namespace MazeParty.Multiplayer
             {
                 _recoveryChoicePresented = false;
                 RestoreActionLabelsAfterRecovery();
+                boardMapSelectionRoot.SetActive(false);
                 customizationButton.gameObject.SetActive(false);
                 customizationPanel.SetActive(false);
                 return;
@@ -320,6 +358,10 @@ namespace MazeParty.Multiplayer
             var showRecoveryChoice =
                 _recoveryChoiceVisible && isLobby && snapshot.IsHost;
             _recoveryChoicePresented = showRecoveryChoice;
+            RefreshBoardMapSelection(
+                snapshot,
+                isLobby && !_recoveryChoiceVisible,
+                busy);
             if (showRecoveryChoice)
             {
                 CaptureActionLabelsBeforeRecovery();
@@ -424,6 +466,8 @@ namespace MazeParty.Multiplayer
             copyButton.onClick.AddListener(OnCopyClicked);
             readyButton.onClick.AddListener(OnReadyClicked);
             startButton.onClick.AddListener(OnStartClicked);
+            previousBoardMapButton.onClick.AddListener(OnPreviousBoardMapClicked);
+            nextBoardMapButton.onClick.AddListener(OnNextBoardMapClicked);
             customizationButton.onClick.AddListener(OnCustomizationClicked);
             inviteCodeRevealButton.HoldChanged += OnInviteCodeRevealChanged;
             _paletteButtonActions = new UnityAction[paletteButtons.Length];
@@ -452,6 +496,8 @@ namespace MazeParty.Multiplayer
             copyButton.onClick.RemoveListener(OnCopyClicked);
             readyButton.onClick.RemoveListener(OnReadyClicked);
             startButton.onClick.RemoveListener(OnStartClicked);
+            previousBoardMapButton.onClick.RemoveListener(OnPreviousBoardMapClicked);
+            nextBoardMapButton.onClick.RemoveListener(OnNextBoardMapClicked);
             customizationButton.onClick.RemoveListener(OnCustomizationClicked);
             inviteCodeRevealButton.HoldChanged -= OnInviteCodeRevealChanged;
             for (var index = 0; index < paletteButtons.Length; index++)
@@ -585,6 +631,27 @@ namespace MazeParty.Multiplayer
             StartRequested?.Invoke();
         }
 
+        private void OnPreviousBoardMapClicked()
+        {
+            PublishBoardMapSelectionDelta(previousBoardMapButton, -1);
+        }
+
+        private void OnNextBoardMapClicked()
+        {
+            PublishBoardMapSelectionDelta(nextBoardMapButton, 1);
+        }
+
+        private void PublishBoardMapSelectionDelta(Button source, int delta)
+        {
+            if (_boardMapSelectionLocked || source == null ||
+                !source.gameObject.activeInHierarchy || !source.interactable)
+            {
+                return;
+            }
+
+            MapSelectionDeltaRequested?.Invoke(delta);
+        }
+
         private void OnCustomizationClicked()
         {
             if (!customizationButton.gameObject.activeInHierarchy)
@@ -622,6 +689,55 @@ namespace MazeParty.Multiplayer
                     ? _currentInviteCode
                     : new string('*', _currentInviteCode.Length);
             inviteCodeText.text = GameText.F("Invite Code: {0}", displayedCode);
+        }
+
+        private void RefreshBoardMapSelection(
+            SessionSnapshot snapshot,
+            bool visible,
+            bool busy)
+        {
+            boardMapSelectionRoot.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            var selectableCount = 0;
+            var selectedName = GameText.T("Unavailable Map");
+            var selected = snapshot != null
+                ? snapshot.BoardMapSelection
+                : BoardMapSelection.Legacy;
+            var catalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            if (catalog != null)
+            {
+                var definitions = catalog.Maps;
+                for (var index = 0; index < definitions.Count; index++)
+                {
+                    var definition = definitions[index];
+                    if (definition == null || !definition.HasValidIdentity ||
+                        !definition.HasValidPrefab)
+                    {
+                        continue;
+                    }
+
+                    selectableCount++;
+                    if (definition.MapId == selected.MapId &&
+                        definition.ContentVersion == selected.ContentVersion)
+                    {
+                        selectedName = GameText.T(definition.DisplayName);
+                    }
+                }
+            }
+
+            boardMapNameText.text = GameText.F("Map: {0}", selectedName);
+            var showHostControls = snapshot != null && snapshot.IsHost;
+            previousBoardMapButton.gameObject.SetActive(showHostControls);
+            nextBoardMapButton.gameObject.SetActive(showHostControls);
+            var canCycle = showHostControls && !busy &&
+                           !_boardMapSelectionLocked && selectableCount > 1;
+            previousBoardMapButton.interactable = canCycle;
+            nextBoardMapButton.interactable = canCycle;
         }
 
         private void CloseJoinPopup(bool clearInput)

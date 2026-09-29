@@ -28,6 +28,15 @@ namespace MazeParty.Multiplayer.Tests
                 var startButtonText = GetField<Text>(view, "startButtonText");
                 var startHint = GetField<GameObject>(view, "startHint");
                 var runningMessage = GetField<GameObject>(view, "runningMessage");
+                var boardMapSelectionRoot = GetField<GameObject>(
+                    view,
+                    "boardMapSelectionRoot");
+                var previousBoardMapButton = GetField<Button>(
+                    view,
+                    "previousBoardMapButton");
+                var nextBoardMapButton = GetField<Button>(
+                    view,
+                    "nextBoardMapButton");
                 var customizationPanel = GetField<GameObject>(view, "customizationPanel");
                 Assert.That(readyButton.transform.IsChildOf(root.transform), Is.True);
                 Assert.That(startButton.transform.IsChildOf(root.transform), Is.True);
@@ -55,6 +64,7 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(GameText.T("Continue Saved Match")));
                 Assert.That(startHint.activeSelf, Is.False);
                 Assert.That(runningMessage.activeSelf, Is.False);
+                Assert.That(boardMapSelectionRoot.activeSelf, Is.False);
                 Assert.That(customizationPanel.activeSelf, Is.False);
 
                 readyButton.onClick.Invoke();
@@ -87,7 +97,20 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(startButtonText.text, Is.EqualTo(normalStartLabel));
                 Assert.That(readyButton.interactable, Is.True);
                 Assert.That(startButton.interactable, Is.True);
+                Assert.That(boardMapSelectionRoot.activeSelf, Is.True);
                 Assert.That(customizationPanel.activeSelf, Is.False);
+
+                previousBoardMapButton.interactable = true;
+                nextBoardMapButton.interactable = true;
+                view.SetBoardMapSelectionLocked(true);
+                Assert.That(previousBoardMapButton.interactable, Is.False);
+                Assert.That(nextBoardMapButton.interactable, Is.False);
+                view.Render(hostSnapshot, true, false, string.Empty);
+                Assert.That(previousBoardMapButton.gameObject.activeSelf, Is.True);
+                Assert.That(nextBoardMapButton.gameObject.activeSelf, Is.True);
+                Assert.That(previousBoardMapButton.interactable, Is.False);
+                Assert.That(nextBoardMapButton.interactable, Is.False);
+                view.SetBoardMapSelectionLocked(false);
 
                 readyButton.onClick.Invoke();
                 startButton.onClick.Invoke();
@@ -101,6 +124,7 @@ namespace MazeParty.Multiplayer.Tests
                     string.Empty);
                 Assert.That(readyButton.gameObject.activeSelf, Is.True);
                 Assert.That(startButton.gameObject.activeSelf, Is.False);
+                Assert.That(boardMapSelectionRoot.activeSelf, Is.False);
                 Assert.That(customizationPanel.activeSelf, Is.False);
 
                 readyButton.onClick.Invoke();
@@ -126,7 +150,8 @@ namespace MazeParty.Multiplayer.Tests
                     new OnlinePlayerSnapshot("guest", "Guest", 1, true, false),
                     new OnlinePlayerSnapshot("p2", "Player 3", 2, true, false),
                     new OnlinePlayerSnapshot("p3", "Player 4", 3, true, false)
-                });
+                },
+                new BoardMapSelection("forest-graybox", 3));
         }
 
         private static T GetField<T>(OnlineLobbyView view, string name)

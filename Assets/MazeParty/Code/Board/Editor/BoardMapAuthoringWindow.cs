@@ -33,7 +33,7 @@ namespace MazeParty.Editor
         private int _playerStartSlot;
         private float _footprintRadius = BoardTile.HalfRoomSize;
         private float _gateWidth = DefaultGateWidth;
-        private bool _bidirectional = true;
+        private bool _bidirectional;
         private bool _placementMode;
         private bool _editVertices;
         private bool _editGate;
@@ -79,14 +79,21 @@ namespace MazeParty.Editor
         private static void DrawPrototypeTemplates()
         {
             EditorGUILayout.LabelField("Prototype Templates", EditorStyles.boldLabel);
-            if (GUILayout.Button("Create / Refresh Forest Graybox (40 Tiles)"))
+            if (GUILayout.Button("Create / Refresh Forest Graybox (42 Tiles)"))
             {
                 ForestGrayboxMapAuthoring.CreateOrRefreshFromMenu();
             }
 
+            if (GUILayout.Button("Create / Refresh Forest Ground + Dirt Paths"))
+            {
+                ForestGroundAuthoring.CreateOrRefreshFromMenu();
+            }
+
             EditorGUILayout.HelpBox(
                 "Rebuilds the deterministic forest prototype topology and spawn anchors. " +
-                "Everything below its Environment root is preserved for later forest art.",
+                "The separate ground tool replaces only Environment/Generated Ground " +
+                "using Polytope Studio terrain layers; all other Environment children " +
+                "are preserved for manually placed forest art.",
                 MessageType.Info);
         }
 

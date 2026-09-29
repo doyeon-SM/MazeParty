@@ -168,6 +168,7 @@ FINISHED,완주,ゴール,已完成
 "Finishers rank first, then survivors by forward progress, with eliminated players placed last.","완주자가 가장 높은 순위를 받고, 이어서 생존자는 전진 거리순으로, 탈락자는 마지막 순위가 됩니다.",ゴールしたプレイヤーが上位となり、次に生存者が前進距離順、脱落者は最下位となります。,完成者排名最前，其次是按前进距离排列的幸存者，淘汰者排在最后。
 FIRST-PERSON ACTION,1인칭 행동,一人称アクション,第一人称行动
 Follow the synchronized signal.,동기화된 신호를 따르세요.,同期された信号に従ってください。,请遵循同步信号。
+Forest Graybox,숲 그레이박스,森のグレーボックス,森林灰盒
 Four connected players with server-assigned seats are required.,서버에서 자리를 배정받은 접속 플레이어 4명이 필요합니다.,サーバーから席を割り当てられた接続中のプレイヤーが4人必要です。,需要四名已连接且已由服务器分配座位的玩家。
 Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。
 FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^
@@ -316,6 +317,7 @@ Local Player,로컬 플레이어,ローカルプレイヤー,本地玩家
 LOSE,잃기,失う,失去
 Low Dice (1-6),로우 주사위 (1-6),ローダイス (1-6),低点骰子 (1-6)
 Master,전체,マスター,总音量
+Map: {0},맵: {0},マップ: {0},地图：{0}
 MATCH COMPLETE,매치 종료,マッチ終了,比赛结束
 MATCH COMPLETE: all 15 turns have finished.,매치 종료: 15턴이 모두 끝났습니다.,マッチ終了：全15ターンが終了しました。,比赛结束：全部15回合已完成。
 MazeParty Online (4 Players),MazeParty 온라인 (4인),MazeParty オンライン (4人),MazeParty 在线 (4人)
@@ -369,6 +371,7 @@ One local player connects from each game process.,게임 프로세스마다 로�
 ONLINE,온라인,オンライン,在线
 ONLINE PLAYERS,온라인 플레이어,オンラインプレイヤー,在线玩家
 Online session disconnected.,온라인 방 연결이 끊겼습니다.,オンラインルームから切断されました。,在线房间已断开连接。
+Only the host can select the board map.,호스트만 보드 맵을 선택할 수 있습니다.,ホストだけがボードマップを選択できます。,只有房主可以选择棋盘地图。
 Opening the top block in the minigame tower...,미니게임 타워의 맨 위 블록을 여는 중...,ミニゲームタワーの一番上のブロックを開いています...,正在打开小游戏塔顶部的方块...
 Orange,주황,オレンジ,橙
 OUT,탈락,脱落,淘汰
@@ -485,6 +488,7 @@ Runners escape with WASD on the shared camera. The tagger uses WASD and LMB in f
 RUNNERS: WASD\nTAGGER: WASD + LMB,도망자: WASD\n술래: WASD + 좌클릭,逃げる人: WASD\n鬼: WASD + 左クリック,逃跑者: WASD\n抓人者: WASD + 左键
 RUNNING,달리는 중,走行中,奔跑中
 SAFE: {0},안전: {0},安全: {0},安全: {0}
+Saving board map selection...,보드 맵 선택을 저장하는 중...,ボードマップの選択を保存中...,正在保存棋盘地图选择...
 Saving ready state...,준비 상태를 저장하는 중...,準備状態を保存中...,正在保存准备状态...
 Saving the return-to-lobby request...,로비 복귀 요청을 저장하는 중...,ロビー復帰リクエストを保存中...,正在保存返回大厅请求...
 SCORE {0},점수 {0},スコア {0},得分 {0}
@@ -542,6 +546,7 @@ Synchronizing the Gift Grab arena...,선물 쟁탈전 경기장 동기화 중...
 Synchronizing the Minefield simulation...,지뢰밭 시뮬레이션 동기화 중...,地雷原のシミュレーションを同期中...,正在同步雷区模拟...
 Synchronizing the Race arena...,달리기 경기장 동기화 중...,かけっこのアリーナを同期中...,正在同步赛跑竞技场...
 Synchronizing the Red Light / Green Light race...,빨간불 / 초록불 레이스 동기화 중...,赤信号 / 青信号のレースを同期中...,正在同步红灯 / 绿灯比赛...
+Synchronizing the saved board map selection...,저장된 보드 맵 선택을 동기화하는 중...,保存したボードマップの選択を同期中...,正在同步已保存的棋盘地图选择...
 Synchronizing the Sequence Memory game...,순서 기억 게임 동기화 중...,順番記憶のゲームを同期中...,正在同步顺序记忆游戏...
 Synchronizing the Stable Footing arena...,안전한 발판 경기장 동기화 중...,安全な足場のアリーナを同期中...,正在同步稳固立足点竞技场...
 Synchronizing the Tag Chase arena...,술래잡기 경기장 동기화 중...,鬼ごっこのアリーナを同期中...,正在同步捉人游戏竞技场...
@@ -568,6 +573,7 @@ The active session ID is not available for network identity publishing.,네트�
 The answer is visible. One mistake loses the torso; the second eliminates.,"정답이 공개됩니다. 첫 실수 시 몸통을 잃고, 두 번째 실수 시 탈락합니다.",正解が表示されています。1回目のミスで胴体を失い、2回目で脱落します。,答案已显示。第一次失误会失去躯干，第二次失误将被淘汰。
 The award ceremony is not accepting return requests yet.,시상식에서 아직 복귀 요청을 받을 수 없습니다.,表彰式はまだ復帰リクエストを受け付けていません。,颁奖典礼尚未接受返回请求。
 The board game is running.,보드 게임이 진행 중입니다.,ボードゲームが進行中です。,棋盘游戏正在进行中。
+The board map can only be changed in the lobby.,보드 맵은 대기방에서만 변경할 수 있습니다.,ボードマップはロビーでのみ変更できます。,只能在大厅中更改棋盘地图。
 The Board network state was not created. The session is ending.,보드 네트워크 상태가 생성되지 않았습니다. 방이 종료됩니다.,ボードのネットワーク状態が作成されませんでした。ルームを終了します。,棋盘网络状态未创建。房间即将关闭。
 The first-place podium is in the spotlight.,1위 시상대에 스포트라이트가 비칩니다.,1位の表彰台にスポットライトが当たっています。,聚光灯照向第1名领奖台。
 Returning to the waiting room automatically in {0} seconds.,{0}초 후 대기방으로 자동 복귀합니다.,{0}秒後に待機ルームへ自動で戻ります。,{0} 秒后将自动返回等候室。
@@ -592,6 +598,7 @@ The saved reconnect session is no longer joined by this authenticated player.,�
 The saved reconnect target is no longer an active client game.,저장된 재접속 대상은 더 이상 진행 중인 클라이언트 게임이 아닙니다.,保存された再接続先は、もう進行中のクライアントゲームではありません。,保存的重连目标已不再是进行中的客户端游戏。
 The selected player,선택된 플레이어,選ばれたプレイヤー,被选中的玩家
 The session changed before the game could start.,게임이 시작되기 전에 방 정보가 변경되었습니다.,ゲーム開始前にルームが変更されました。,游戏开始前房间发生了变化。
+The session changed before the board map selection was saved.,보드 맵 선택이 저장되기 전에 방 정보가 변경되었습니다.,ボードマップの選択が保存される前にルームが変更されました。,棋盘地图选择保存前房间发生了变化。
 The session changed before the game state was saved.,게임 상태가 저장되기 전에 방 정보가 변경되었습니다.,ゲーム状態の保存前にルームが変更されました。,游戏状态保存前房间发生了变化。
 The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.,단판 경기가 끝났습니다. 순위에 따라 10 / 6 / 3 / 0 골드가 지급됩니다.,1回きりの試合が終了しました。順位に応じて10 / 6 / 3 / 0ゴールドが与えられます。,单局比赛已结束。按排名奖励 10 / 6 / 3 / 0 金币。
 The synchronized Board scene is required for lobby return.,로비로 돌아가려면 동기화된 보드 씬이 필요합니다.,ロビーに戻るには同期済みのボードシーンが必要です。,返回大厅需要已同步的棋盘场景。
@@ -614,6 +621,7 @@ Two rounds complete. Final placement awards {0} gold.,2라운드가 모두 끝�
 UNAVAILABLE,구매 불가,購入不可,不可购买
 UNKNOWN,알 수 없음,不明,未知
 Unknown,알 수 없음,不明,未知
+Unavailable Map,사용할 수 없는 맵,利用できないマップ,地图不可用
 Unsafe platforms are dropping. Falling eliminates immediately.,안전하지 않은 발판이 떨어지고 있습니다. 떨어지면 즉시 탈락합니다.,安全でない足場が落下しています。落ちると即脱落です。,不安全的平台正在掉落。掉落即被淘汰。
 W  A  S  D\n50 STEPS,W  A  S  D\n50계단,W  A  S  D\n50段,W  A  S  D\n50级台阶
 View Code,번호 보기,コードを表示,查看代码
@@ -724,6 +732,7 @@ Saved match selected. The same four accounts must be ready before continuing.,�
 The Board topology is not available for recovery.,복구에 필요한 보드 구조를 사용할 수 없습니다.,復旧に必要なボード構造を利用できません。,无法获取恢复所需的棋盘结构。
 The current four-player roster is not ready for recovery.,현재 4인 명단이 아직 복구 준비가 되지 않았습니다.,現在の4人のメンバーはまだ復旧の準備ができていません。,当前四人名单尚未准备好进行恢复。
 The saved match belongs to a different four-player roster.,저장된 게임은 다른 4인 명단의 게임입니다.,保存した試合は別の4人メンバーのものです。,已保存的对局属于另一组四人名单。
+The saved match board map was not synchronized to the lobby.,저장된 게임의 보드 맵이 대기방과 동기화되지 않았습니다.,保存した試合のボードマップがロビーと同期されていません。,已保存对局的棋盘地图未同步到大厅。
 The saved match checkpoint does not match its schedule.,저장된 게임 체크포인트가 일정과 일치하지 않습니다.,保存した試合のチェックポイントがスケジュールと一致しません。,已保存对局的检查点与其赛程不匹配。
 The saved match checkpoint is invalid.,저장된 게임 체크포인트가 유효하지 않습니다.,保存した試合のチェックポイントが無効です。,已保存对局的检查点无效。
 "The saved match could not be inspected. Continue to retry, or discard it.","저장된 게임을 확인하지 못했습니다. 계속을 눌러 다시 시도하거나 폐기하세요.","保存した試合を確認できませんでした。続けるを押して再試行するか、破棄してください。","无法检查已保存的对局。请选择继续以重试，或将其放弃。"

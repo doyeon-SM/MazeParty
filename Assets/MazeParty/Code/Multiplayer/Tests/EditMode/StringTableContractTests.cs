@@ -177,6 +177,15 @@ namespace MazeParty.Multiplayer.Tests
                 sources.Add(definition.DisplayName);
             }
 
+            var boardMapCatalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            Assert.That(boardMapCatalog, Is.Not.Null);
+            foreach (var definition in boardMapCatalog.Maps)
+            {
+                Assert.That(definition, Is.Not.Null);
+                sources.Add(definition.DisplayName);
+            }
+
             var missing = sources
                 .Where(source => !string.IsNullOrEmpty(source) && !table.Contains(source))
                 .ToArray();

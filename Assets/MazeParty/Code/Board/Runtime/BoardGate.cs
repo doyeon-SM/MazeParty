@@ -294,10 +294,79 @@ namespace MazeParty.Gameplay
 
             var previousColor = Gizmos.color;
             Gizmos.color = Color.magenta;
-            var right = transform.right.normalized * (GateWidth * 0.5f);
-            Gizmos.DrawLine(PlanePoint - right, PlanePoint + right);
-            Gizmos.DrawRay(PlanePoint, ForwardNormal * 1.5f);
+            var forward = ForwardNormal;
+            var right = transform.right.normalized;
+            var reverse = FindReverseSibling();
+            if (reverse != null && !IsCanonicalBidirectionalMarker())
+            {
+                Gizmos.color = previousColor;
+                return;
+            }
+
+            var halfLength = Mathf.Clamp(GateWidth * 0.5f, 0.75f, 1.5f);
+            var tip = PlanePoint + forward * halfLength;
+            var tail = PlanePoint - forward * halfLength;
+            var headLength = Mathf.Min(0.6f, halfLength * 0.6f);
+            var headHalfWidth = Mathf.Clamp(
+                GateWidth * 0.16f,
+                0.25f,
+                0.45f);
+            Gizmos.DrawLine(tail, tip);
+            DrawArrowHead(tip, forward, right, headLength, headHalfWidth);
+            if (reverse != null)
+            {
+                DrawArrowHead(
+                    tail,
+                    -forward,
+                    right,
+                    headLength,
+                    headHalfWidth);
+            }
+
             Gizmos.color = previousColor;
+        }
+
+        private BoardGate FindReverseSibling()
+        {
+            if (source == null || destination == null || transform.parent == null)
+            {
+                return null;
+            }
+
+            var parent = transform.parent;
+            for (var index = 0; index < parent.childCount; index++)
+            {
+                var sibling = parent.GetChild(index).GetComponent<BoardGate>();
+                if (sibling != null && sibling != this &&
+                    sibling.source == destination &&
+                    sibling.destination == source)
+                {
+                    return sibling;
+                }
+            }
+
+            return null;
+        }
+
+        private bool IsCanonicalBidirectionalMarker()
+        {
+            var sourceCoordinate = source.Coordinate;
+            var destinationCoordinate = destination.Coordinate;
+            return sourceCoordinate.x < destinationCoordinate.x ||
+                   sourceCoordinate.x == destinationCoordinate.x &&
+                   sourceCoordinate.y <= destinationCoordinate.y;
+        }
+
+        private static void DrawArrowHead(
+            Vector3 tip,
+            Vector3 direction,
+            Vector3 right,
+            float length,
+            float halfWidth)
+        {
+            var headBase = tip - direction * length;
+            Gizmos.DrawLine(tip, headBase + right * halfWidth);
+            Gizmos.DrawLine(tip, headBase - right * halfWidth);
         }
     }
 }

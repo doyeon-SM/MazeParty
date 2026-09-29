@@ -19,6 +19,8 @@ namespace MazeParty.Multiplayer
         public const string ReadyProperty = "ready";
         public const string PhaseProperty = "phase";
         public const string BuildVersionProperty = "buildVersion";
+        public const string BoardMapIdProperty = "boardMapId";
+        public const string BoardMapVersionProperty = "boardMapVersion";
 
         public static string SlotProperty(int slot)
         {

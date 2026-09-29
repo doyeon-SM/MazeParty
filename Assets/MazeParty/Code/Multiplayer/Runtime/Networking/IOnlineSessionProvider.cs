@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using MazeParty.Gameplay;
 
 namespace MazeParty.Multiplayer
 {
@@ -20,7 +21,10 @@ namespace MazeParty.Multiplayer
         /// </summary>
         Func<bool> KeepRoomOnPlayingDeparture { get; set; }
 
-        Task CreateAsync(string roomName, string displayName);
+        Task CreateAsync(
+            string roomName,
+            string displayName,
+            BoardMapSelection initialBoardMapSelection);
         Task JoinByCodeAsync(string code, string displayName);
         Task ReconnectToSessionAsync(string sessionId, string displayName);
         Task PublishLocalNetworkClientIdAsync(ulong clientId);
@@ -30,6 +34,7 @@ namespace MazeParty.Multiplayer
             ulong clientId,
             bool honorLeaveMarker = true);
         Task SetReadyAsync(bool ready);
+        Task SetBoardMapAsync(BoardMapSelection selection);
         Task SetPlayingAsync(bool playing);
         Task LeaveAsync();
     }

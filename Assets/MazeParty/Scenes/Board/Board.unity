@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: ab675e6698bde46fd87143fb0d7580cb, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -161,7 +161,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 256402855}
   destination: {fileID: 554222216}
@@ -210,7 +210,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 71999067}
   destination: {fileID: 1672571997}
@@ -319,7 +319,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1924524767058257242, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: matchState
-      value:
+      value: 
       objectReference: {fileID: 2028587848}
     - target: {fileID: 2676369551016440646, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: m_Name
@@ -415,7 +415,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &46393995
 GameObject:
@@ -459,7 +459,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 437167068}
   destination: {fileID: 355706550}
@@ -547,7 +547,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &82821975
 GameObject:
@@ -591,14 +591,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -666,7 +666,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 729710943}
   destination: {fileID: 1315555599}
@@ -715,7 +715,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 862935519}
   destination: {fileID: 1008367342}
@@ -764,7 +764,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 42016644}
   destination: {fileID: 1265178245}
@@ -855,7 +855,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0a14e11b9490e3140a71bae7795fb91e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardCameraFramingAnchor
   settings:
     boardSize: {x: 56, y: 56}
@@ -963,7 +963,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &278830400
 GameObject:
@@ -1007,7 +1007,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1642355609}
   destination: {fileID: 1535317403}
@@ -1056,7 +1056,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 437167068}
   destination: {fileID: 1815870277}
@@ -1105,7 +1105,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 355706550}
   destination: {fileID: 1922895363}
@@ -1197,7 +1197,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &380340897
 PrefabInstance:
@@ -1284,7 +1284,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &416095296
 GameObject:
@@ -1328,7 +1328,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1815870277}
   destination: {fileID: 792733153}
@@ -1420,7 +1420,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &535990313
 PrefabInstance:
@@ -1507,7 +1507,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &550223522
 GameObject:
@@ -1551,7 +1551,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 869195550}
   destination: {fileID: 862935519}
@@ -1643,7 +1643,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &567847458
 PrefabInstance:
@@ -1744,7 +1744,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 792733153}
   destination: {fileID: 1823263248}
@@ -1778,8 +1778,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 642230967}
   serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 69.05312, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1795,7 +1795,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
@@ -1834,7 +1834,7 @@ Camera:
   m_GameObject: {fileID: 642230967}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0.018, g: 0.026, b: 0.045, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -1858,9 +1858,9 @@ Camera:
     height: 1
   near clip plane: 0.05
   far clip plane: 500
-  field of view: 60
+  field of view: 50
   orthographic: 0
-  orthographic size: 5
+  orthographic size: 10
   m_Depth: 0
   m_CullingMask:
     serializedVersion: 2
@@ -1918,7 +1918,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 862935519}
   destination: {fileID: 1552949736}
@@ -2006,7 +2006,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &679536947
 GameObject:
@@ -2050,7 +2050,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2036706014}
   destination: {fileID: 1700613615}
@@ -2084,7 +2084,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1198655218}
   destination: {fileID: 1327134663}
@@ -2191,7 +2191,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &742337913
 PrefabInstance:
@@ -2279,7 +2279,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1 &742989739
 GameObject:
@@ -2323,7 +2323,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1922895363}
   destination: {fileID: 2036706014}
@@ -2372,7 +2372,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1315555599}
   destination: {fileID: 437167068}
@@ -2421,7 +2421,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1535317403}
   destination: {fileID: 1354915857}
@@ -2513,7 +2513,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &799264801
 GameObject:
@@ -2557,7 +2557,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 42016644}
   destination: {fileID: 664868064}
@@ -2649,7 +2649,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &812874572
 PrefabInstance:
@@ -2737,7 +2737,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1001 &816283051
 PrefabInstance:
@@ -2921,7 +2921,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &866279941
 GameObject:
@@ -2965,7 +2965,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1354915857}
   destination: {fileID: 1198655218}
@@ -3057,7 +3057,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &883905794
 PrefabInstance:
@@ -3165,11 +3165,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8800340177372016627, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: cameraDirector
-      value:
+      value: 
       objectReference: {fileID: 1548230740}
     - target: {fileID: 8800340177372016627, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: resultUiBindings
-      value:
+      value: 
       objectReference: {fileID: 1796880631}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3186,6 +3186,7 @@ GameObject:
   m_Component:
   - component: {fileID: 951461373}
   - component: {fileID: 951461372}
+  - component: {fileID: 951461374}
   m_Layer: 0
   m_Name: Board Directional Light
   m_TagString: Untagged
@@ -3273,6 +3274,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &951461374
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 951461371}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &980939617
 GameObject:
   m_ObjectHideFlags: 0
@@ -3315,7 +3345,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1552949736}
   destination: {fileID: 1419656137}
@@ -3407,7 +3437,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1093316008
 GameObject:
@@ -3451,7 +3481,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1823263248}
   destination: {fileID: 799872494}
@@ -3500,7 +3530,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1265178245}
   destination: {fileID: 380340899}
@@ -3549,7 +3579,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 799872494}
   destination: {fileID: 2036706014}
@@ -3598,7 +3628,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 380340899}
   destination: {fileID: 869195550}
@@ -3681,7 +3711,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!4 &1198655219 stripped
 Transform:
@@ -3769,7 +3799,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1232450761
 GameObject:
@@ -3813,7 +3843,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1419656137}
   destination: {fileID: 1315555599}
@@ -3905,7 +3935,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1265178243
 PrefabInstance:
@@ -3992,7 +4022,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1315555597
 PrefabInstance:
@@ -4079,7 +4109,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1327134661
 PrefabInstance:
@@ -4166,7 +4196,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1349948812
 PrefabInstance:
@@ -4250,7 +4280,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1001 &1354915855
 PrefabInstance:
@@ -4333,7 +4363,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1374219821
 GameObject:
@@ -4377,7 +4407,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1700613615}
   destination: {fileID: 1249228699}
@@ -4426,14 +4456,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -4501,7 +4531,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 664868064}
   destination: {fileID: 1222882874}
@@ -4590,7 +4620,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1001 &1419656135
 PrefabInstance:
@@ -4677,7 +4707,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1436204033
 GameObject:
@@ -4820,7 +4850,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1001 &1508309686
 PrefabInstance:
@@ -4904,7 +4934,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1001 &1535317401
 PrefabInstance:
@@ -4987,7 +5017,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1548230739
 GameObject:
@@ -5017,7 +5047,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f22ed08096c2e0e4e993131caefac1c3, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.GameplayCameraDirector
   outputCamera: {fileID: 642230971}
   firstPersonCamera: {fileID: 1400707255}
@@ -5074,7 +5104,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 23cdc0112b5dbcb46a0e6b73b460f980, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardFlowCameraPresenter
   cameraDirector: {fileID: 1548230740}
 --- !u!1001 &1552949734
@@ -5162,7 +5192,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1580079477
 PrefabInstance:
@@ -5246,7 +5276,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1 &1622973990
 GameObject:
@@ -5290,7 +5320,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 535990315}
   destination: {fileID: 1327134663}
@@ -5339,7 +5369,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1249228699}
   destination: {fileID: 535990315}
@@ -5427,7 +5457,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1663082056
 GameObject:
@@ -5471,7 +5501,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1008367342}
   destination: {fileID: 256402855}
@@ -5520,7 +5550,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1700613615}
   destination: {fileID: 1642355609}
@@ -5608,7 +5638,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1700613613
 PrefabInstance:
@@ -5695,7 +5725,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1720681276
 GameObject:
@@ -5739,7 +5769,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1222882874}
   destination: {fileID: 71999067}
@@ -5832,7 +5862,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4ecc90c7c1fc51f4aa8d80613f60bb6b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDie
 --- !u!1 &1732981727
 GameObject:
@@ -5865,7 +5895,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe98f8ee61ff5bc45a547c5ee04c1707, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardShopRouteView
   hemispherePrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
   dotSpacing: 0.8
@@ -5880,7 +5910,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7df25e825fa4458428946d912630a072, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardTombstoneWorldView
   markerPrefab: {fileID: 8281985170450731341, guid: 08a33b2f8f32dfa498c22b7717e9aa54, type: 3}
 --- !u!114 &1732981730
@@ -5893,7 +5923,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: be1e1b6ea9dc69849968b5b700acd6ae, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.ItemShopWorldMarker
   worldPrefabs: {fileID: 11400000, guid: eb5de4341874cd147b5b08fe901f25b1, type: 2}
 --- !u!114 &1732981731
@@ -5906,7 +5936,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 824e25e41ce4485ea0dcf96980ec900a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.KeyShopWorldMarker
   verticalOffset: 0.12
   worldPrefabs: {fileID: 11400000, guid: eb5de4341874cd147b5b08fe901f25b1, type: 2}
@@ -5920,7 +5950,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68d13b9b3c8046249816a3494130ab78, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTopology
   tiles:
   - {fileID: 42016644}
@@ -6127,7 +6157,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a4f8a4cfa025a0645af4a7add09e2145, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.MinigameResultCanvasBindings
 --- !u!1 &1814172385
 GameObject:
@@ -6171,7 +6201,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1672571997}
   destination: {fileID: 869195550}
@@ -6263,7 +6293,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1001 &1823263246
 PrefabInstance:
@@ -6350,7 +6380,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1830049652
 GameObject:
@@ -6394,14 +6424,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 100
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -6469,7 +6499,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 554222216}
   destination: {fileID: 729710943}
@@ -6561,7 +6591,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &1978308551
 GameObject:
@@ -6661,7 +6691,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 2476291847
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -6703,7 +6733,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3259c04c7f9d04e4b971f9385ae0e1eb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkMatchState
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!114 &2028587849
@@ -6716,7 +6746,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ecb73a8ca5e14434b0ef35cf529552a2, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.KeyShopRuntimeState
   state: 0
   hasLocation: 0
@@ -6732,7 +6762,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 41bd4057354ba2248bd90b1a4b2eda46, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWorldDiceCoordinator
   ShowTopMostFoldoutHeaderGroup: 1
   sceneDice:
@@ -6756,7 +6786,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a15ebd92040d4190a72bc5775e0fd9e7, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardMapRuntimeLoader
   catalogOverride: {fileID: 0}
   legacyTopology: {fileID: 1732981732}
@@ -6849,7 +6879,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &2058384431
 GameObject:
@@ -6893,7 +6923,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1327134663}
   destination: {fileID: 42016644}

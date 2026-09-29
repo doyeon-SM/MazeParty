@@ -5,6 +5,7 @@ using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace MazeParty.Gameplay.Tests
@@ -12,19 +13,33 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BoardSceneContractTests
     {
         private const string BoardScenePath = "Assets/MazeParty/Scenes/Board/Board.unity";
+        private const string BoardSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
 
         [Test]
         public void GeneratedBoardScene_MatchesPrototypeTopologyContract()
         {
+            var previousActiveScene = SceneManager.GetActiveScene();
             var scene = SceneManager.GetSceneByPath(BoardScenePath);
             var wasAlreadyLoaded = scene.IsValid() && scene.isLoaded;
             if (!wasAlreadyLoaded)
             {
                 scene = EditorSceneManager.OpenScene(BoardScenePath, OpenSceneMode.Additive);
             }
+            SceneManager.SetActiveScene(scene);
 
             try
             {
+                var expectedSkybox = AssetDatabase.LoadAssetAtPath<Material>(
+                    BoardSkyboxPath);
+                Assert.That(expectedSkybox, Is.Not.Null, BoardSkyboxPath);
+                Assert.That(RenderSettings.skybox, Is.SameAs(expectedSkybox));
+                Assert.That(RenderSettings.ambientMode, Is.EqualTo(AmbientMode.Skybox));
+                var mainCamera = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<Camera>(true))
+                    .Single(camera => camera.name == "Main Camera");
+                Assert.That(mainCamera.clearFlags, Is.EqualTo(CameraClearFlags.Skybox));
+
                 var topology = FindTopology(scene);
                 Assert.That(topology, Is.Not.Null, "Board scene must contain one BoardTopology.");
                 var mapLoader = scene.GetRootGameObjects()
@@ -153,6 +168,10 @@ namespace MazeParty.Gameplay.Tests
             }
             finally
             {
+                if (previousActiveScene.IsValid() && previousActiveScene.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousActiveScene);
+                }
                 if (!wasAlreadyLoaded && scene.IsValid() && scene.isLoaded)
                 {
                     EditorSceneManager.CloseScene(scene, true);

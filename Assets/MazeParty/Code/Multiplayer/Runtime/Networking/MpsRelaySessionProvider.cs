@@ -36,9 +36,14 @@ namespace MazeParty.Multiplayer
         public SessionSnapshot Current { get; private set; } = SessionSnapshot.Empty;
         public Func<bool> KeepRoomOnPlayingDeparture { get; set; }
 
-        public async Task CreateAsync(string roomName, string displayName)
+        public async Task CreateAsync(
+            string roomName,
+            string displayName,
+            BoardMapSelection initialBoardMapSelection)
         {
             ThrowIfAlreadyInSession();
+            var boardMapSelection = ValidateBoardMapSelection(
+                initialBoardMapSelection);
             await _identity.SignInAsync(displayName);
 
             var sessionProperties = new Dictionary<string, SessionProperty>
@@ -48,7 +53,16 @@ namespace MazeParty.Multiplayer
                 [MultiplayerConstants.PhaseProperty] =
                     new SessionProperty(MultiplayerConstants.LobbyPhase, VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.BuildVersionProperty] =
-                    new SessionProperty(Application.version, VisibilityPropertyOptions.Member)
+                    new SessionProperty(Application.version, VisibilityPropertyOptions.Member),
+                [MultiplayerConstants.BoardMapIdProperty] =
+                    new SessionProperty(
+                        boardMapSelection.MapId,
+                        VisibilityPropertyOptions.Member),
+                [MultiplayerConstants.BoardMapVersionProperty] =
+                    new SessionProperty(
+                        boardMapSelection.ContentVersion.ToString(
+                            CultureInfo.InvariantCulture),
+                        VisibilityPropertyOptions.Member)
             };
 
             var options = new SessionOptions
@@ -330,6 +344,55 @@ namespace MazeParty.Multiplayer
             RebuildSnapshot();
         }
 
+        public async Task SetBoardMapAsync(BoardMapSelection selection)
+        {
+            var validatedSelection = ValidateBoardMapSelection(selection);
+            await _hostMutationGate.WaitAsync();
+            try
+            {
+                var session = RequireSession();
+                var phase = GetSessionPhase(session);
+                if (!SessionRules.CanChangeBoardMap(
+                        session.IsHost,
+                        phase))
+                {
+                    throw new InvalidOperationException(!session.IsHost
+                        ? GameText.T("Only the host can select the board map.")
+                        : GameText.T(
+                            "The board map can only be changed in the lobby."));
+                }
+
+                var host = session.AsHost();
+                host.SetProperty(
+                    MultiplayerConstants.BoardMapIdProperty,
+                    new SessionProperty(
+                        validatedSelection.MapId,
+                        VisibilityPropertyOptions.Member));
+                host.SetProperty(
+                    MultiplayerConstants.BoardMapVersionProperty,
+                    new SessionProperty(
+                        validatedSelection.ContentVersion.ToString(
+                            CultureInfo.InvariantCulture),
+                        VisibilityPropertyOptions.Member));
+
+                await SaveHostPropertiesWithRetryAsync(host, session);
+                if (_ending ||
+                    !ReferenceEquals(session, _session) ||
+                    !session.IsHost)
+                {
+                    throw new InvalidOperationException(
+                        GameText.T(
+                            "The session changed before the board map selection was saved."));
+                }
+
+                RebuildSnapshot();
+            }
+            finally
+            {
+                _hostMutationGate.Release();
+            }
+        }
+
         public async Task SetPlayingAsync(bool playing)
         {
             await _hostMutationGate.WaitAsync();
@@ -367,7 +430,9 @@ namespace MazeParty.Multiplayer
                         VisibilityPropertyOptions.Member));
 
                 await SaveHostPropertiesWithRetryAsync(host, session);
-                if (_ending || !ReferenceEquals(session, _session))
+                if (_ending ||
+                    !ReferenceEquals(session, _session) ||
+                    !session.IsHost)
                 {
                     throw new InvalidOperationException(
                         GameText.T("The session changed before the game state was saved."));
@@ -912,14 +977,45 @@ namespace MazeParty.Multiplayer
                 phaseProperty != null
                 ? phaseProperty.Value
                 : MultiplayerConstants.LobbyPhase;
+            var boardMapSelection = GetSessionBoardMapSelection(session);
 
             Current = new SessionSnapshot(
                 session.Code,
                 session.IsHost,
                 phase,
                 session.CurrentPlayer.Id,
-                players);
+                players,
+                boardMapSelection);
             Changed?.Invoke();
+        }
+
+        private static BoardMapSelection GetSessionBoardMapSelection(
+            ISession session)
+        {
+            var mapId = GetSessionProperty(
+                session,
+                MultiplayerConstants.BoardMapIdProperty,
+                string.Empty);
+            var versionText = GetSessionProperty(
+                session,
+                MultiplayerConstants.BoardMapVersionProperty,
+                "0");
+            if (int.TryParse(
+                    versionText,
+                    NumberStyles.Integer,
+                    CultureInfo.InvariantCulture,
+                    out var contentVersion) &&
+                BoardMapSelection.TryCreate(
+                    mapId,
+                    contentVersion,
+                    out var selection))
+            {
+                return selection;
+            }
+
+            // Preserve invalid service data so the host's pre-start exact-map
+            // validation fails closed instead of silently selecting legacy content.
+            return new BoardMapSelection(mapId, -1);
         }
 
         private static string GetSessionPhase(ISession session)
@@ -930,6 +1026,18 @@ namespace MazeParty.Multiplayer
                    phaseProperty != null
                 ? phaseProperty.Value
                 : MultiplayerConstants.LobbyPhase;
+        }
+
+        private static string GetSessionProperty(
+            ISession session,
+            string key,
+            string fallback)
+        {
+            return session.Properties.TryGetValue(key, out var property) &&
+                   property != null &&
+                   property.Value != null
+                ? property.Value
+                : fallback;
         }
 
         private static string GetPlayerProperty(
@@ -948,6 +1056,37 @@ namespace MazeParty.Multiplayer
         {
             return _session ?? throw new InvalidOperationException(
                 GameText.T("You are not connected to an online session."));
+        }
+
+        private static BoardMapSelection ValidateBoardMapSelection(
+            BoardMapSelection selection)
+        {
+            if (!BoardMapSelection.TryCreate(
+                    selection.MapId,
+                    selection.ContentVersion,
+                    out var validated) ||
+                validated != selection)
+            {
+                throw new ArgumentException(
+                    "A valid board map selection is required.",
+                    nameof(selection));
+            }
+
+            var catalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            if (!BoardMapRuntimeLoader.TryResolveExactSelection(
+                    catalog,
+                    validated,
+                    out var exact,
+                    out var error))
+            {
+                throw new ArgumentException(
+                    GameText.T(
+                        "The selected board map could not be loaded safely."),
+                    nameof(selection));
+            }
+
+            return exact;
         }
 
         private void ThrowIfAlreadyInSession()

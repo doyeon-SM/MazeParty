@@ -135,6 +135,90 @@ namespace MazeParty.Gameplay.Tests
             }
         }
 
+        [Test]
+        public void CatalogSelection_CyclesByExactIdentityAndWraps()
+        {
+            var catalog = ScriptableObject.CreateInstance<BoardMapCatalog>();
+            var definitions = new BoardMapDefinition[3];
+            var templates = new GameObject[3];
+            try
+            {
+                for (var index = 0; index < definitions.Length; index++)
+                {
+                    definitions[index] =
+                        ScriptableObject.CreateInstance<BoardMapDefinition>();
+                    templates[index] = CreateMapTemplate(definitions[index]);
+                    definitions[index].Configure(
+                        "map-" + index,
+                        "Map " + index,
+                        index + 1,
+                        templates[index]);
+                }
+
+                catalog.Configure(definitions);
+                Assert.That(
+                    BoardMapRuntimeLoader.TryResolveFreshSelection(
+                        catalog,
+                        out var first,
+                        out var defaultError),
+                    Is.True,
+                    defaultError);
+                Assert.That(first,
+                    Is.EqualTo(BoardMapSelection.FromDefinition(definitions[0])));
+
+                Assert.That(
+                    BoardMapRuntimeLoader.TryResolveAdjacentSelection(
+                        catalog,
+                        first,
+                        -1,
+                        out var previous,
+                        out var previousError),
+                    Is.True,
+                    previousError);
+                Assert.That(previous,
+                    Is.EqualTo(BoardMapSelection.FromDefinition(definitions[2])));
+
+                Assert.That(
+                    BoardMapRuntimeLoader.TryResolveAdjacentSelection(
+                        catalog,
+                        previous,
+                        1,
+                        out var wrapped,
+                        out var nextError),
+                    Is.True,
+                    nextError);
+                Assert.That(wrapped, Is.EqualTo(first));
+
+                Assert.That(
+                    BoardMapRuntimeLoader.TryResolveAdjacentSelection(
+                        catalog,
+                        new BoardMapSelection("removed-map", 1),
+                        1,
+                        out var recovered,
+                        out var recoveryError),
+                    Is.True,
+                    recoveryError);
+                Assert.That(recovered, Is.EqualTo(first));
+            }
+            finally
+            {
+                for (var index = 0; index < templates.Length; index++)
+                {
+                    if (templates[index] != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(templates[index]);
+                    }
+
+                    if (definitions[index] != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(definitions[index]);
+                    }
+                }
+
+                UnityEngine.Object.DestroyImmediate(catalog);
+            }
+        }
+
         private static Fixture CreateFixture(bool includeRuntimeMap)
         {
             var host = new GameObject("Runtime Loader Host");

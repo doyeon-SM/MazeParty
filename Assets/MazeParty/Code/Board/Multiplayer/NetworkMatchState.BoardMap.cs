@@ -120,6 +120,35 @@ namespace MazeParty.Multiplayer
                     return false;
                 }
             }
+            else if (controller != null)
+            {
+                if (!controller.TryGetSelectedBoardMap(
+                        out var lobbySelection))
+                {
+                    error = GameText.T(
+                        "The selected board map could not be loaded safely.");
+                    return false;
+                }
+
+                var catalog = _boardMapLoader != null
+                    ? _boardMapLoader.Catalog
+                    : null;
+                if (lobbySelection.IsLegacy &&
+                    catalog != null && catalog.Maps.Count > 0)
+                {
+                    error = GameText.T(
+                        "The selected board map could not be loaded safely.");
+                    return false;
+                }
+
+                if (!TryResolveExactBoardMap(
+                        lobbySelection,
+                        out selection,
+                        out error))
+                {
+                    return false;
+                }
+            }
             else if (!TryResolveFreshBoardMap(out selection, out error))
             {
                 return false;

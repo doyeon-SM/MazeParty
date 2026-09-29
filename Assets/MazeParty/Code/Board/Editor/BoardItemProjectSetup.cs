@@ -14,7 +14,7 @@ namespace MazeParty.Editor
     {
         public const string DataFolder = "Assets/MazeParty/Resources/MazeParty/Items";
         public const string VisualFolder = "Assets/MazeParty/Prefabs/Board/Items";
-        private const string IconFolder = "Assets/Ignore/AllImage/Icons";
+        private const string IconFolder = "Assets/Ignore/AIImage/Icons";
         [MenuItem("MazeParty/Board/Upgrade Board Items")]
         public static void Upgrade()
         {

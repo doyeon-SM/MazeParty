@@ -9,6 +9,7 @@ using Unity.Netcode.Components;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -20,6 +21,8 @@ namespace MazeParty.Editor
         private const string BoardFolder = Root + "/Board";
         private const string MaterialFolder = BoardFolder + "/Materials";
         private const string BoardPath = "Assets/MazeParty/Scenes/Board/Board.unity";
+        internal const string BoardSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
 
         private const string DiceArtFolder = Root + "/Art/Dice";
         private const string D12ArtFolder = DiceArtFolder + "/D12";
@@ -179,6 +182,7 @@ namespace MazeParty.Editor
             }
 
             var materials = CreateMaterials();
+            ConfigureBoardEnvironment();
             CreateLighting();
             CreateBoardBackdrop(materials.Backdrop);
             var topology = CreateTopology(materials);
@@ -981,7 +985,7 @@ namespace MazeParty.Editor
             cameraObject.tag = "MainCamera";
             cameraObject.transform.SetParent(root.transform);
             var output = cameraObject.AddComponent<Camera>();
-            output.clearFlags = CameraClearFlags.SolidColor;
+            output.clearFlags = CameraClearFlags.Skybox;
             output.backgroundColor = new Color(0.018f, 0.026f, 0.045f);
             output.nearClipPlane = 0.05f;
             output.farClipPlane = 500f;
@@ -1005,6 +1009,19 @@ namespace MazeParty.Editor
             var presenter = root.AddComponent<BoardFlowCameraPresenter>();
             presenter.Configure(director);
             return director;
+        }
+
+        private static void ConfigureBoardEnvironment()
+        {
+            var skybox = AssetDatabase.LoadAssetAtPath<Material>(BoardSkyboxPath);
+            if (skybox == null)
+            {
+                throw new InvalidOperationException(
+                    $"Required board skybox material is missing: '{BoardSkyboxPath}'.");
+            }
+
+            RenderSettings.skybox = skybox;
+            RenderSettings.ambientMode = AmbientMode.Skybox;
         }
 
         private static CinemachineCamera CreateCinemachineCamera(

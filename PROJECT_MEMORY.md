@@ -8,7 +8,7 @@
 
 - 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
 - 작업 브랜치: `dev/UI`
-- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode 369/369 통과,
+- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode 373/373 통과,
   실패·스킵 0
 - 비차단 기존 경고: Ignore 경로 무료 캐릭터 에디터 스크립트의 `CS0414` 2개
 
@@ -39,6 +39,38 @@
   값·표시 상태만 바꾸고 setup은 기존 프리팹 디자인을 덮어쓰지 않는다.
 - 플레이어 이름은 월드 머리 위에 표시하며 최초 카운트다운에는 로컬 위치를 강조한다.
 
+### 대기방 맵 선택
+
+- 대기방 준비 영역에는 현재 선택된 보드 맵 이름을 항상 표시한다.
+- 호스트에게만 좌우 맵 선택 버튼을 표시하고 변경 권한을 부여한다. 호스트가 아닌
+  플레이어는 같은 영역에서 동기화된 현재 맵 이름만 확인한다.
+- 선택 순서는 프로덕션 `BoardMapCatalog.Maps` 순서를 따르며, 선택한 맵의
+  `MapId`와 `ContentVersion`을 세션 및 새 경기 시작에 사용한다.
+- 현재 프로덕션 카탈로그에는 `Forest Graybox` 한 개만 등록되어 있으므로 선택 버튼은
+  비활성화하되, 이후 맵이 추가되면 같은 UI에서 순환 선택한다.
+- 저장 경기를 이어갈 때는 저장된 맵 선택을 우선하며 호스트가 다른 맵으로 바꾸지 않는다.
+
+### 숲 맵 바닥과 흙길
+
+- `Forest Graybox`의 `Environment/Generated Ground`에는 잔디 바닥과 보드 연결을
+  따라가는 흙길만 자동 생성한다.
+- 표면은 `Assets/Ignore/Polytope Studio/Lowpoly_Demos/Environment_Free/Helpers`의
+  잔디 및 흙 TerrainLayer를 URP Terrain에 직접 사용하며, 원본 서드파티 에셋은 Git
+  추적 경로로 복사하지 않는다.
+- 생성 영역 이외의 `Environment` 자식은 맵 갱신 시 보존하여 숲 오브젝트를 수동으로
+  배치할 수 있게 한다. 생성 바닥은 시각 전용이며 게임플레이 Collider를 추가하지 않는다.
+- `Forest Graybox`는 수동 편집을 반영한 42칸·47개 일방통행 연결을 사용한다.
+  외곽은 `0→1→…→22→0`의 XZ 기준 반시계 방향이며, 내부 경로는
+  `4→23→…→28→12`, `8→29→…→31→26`, `26→32→…→34→17`,
+  `20→35→…→38→24`, `24→39→40→41→7` 순서로 외곽에 합류한다.
+- 시작 칸은 `03` 한 칸, 리스폰 칸은 사용자가 의도적으로 배치한 `02`, `13` 두 칸이다.
+  수동 꼭짓점과 회전은 재생성 청사진에도 동기화하며 맵 콘텐츠 버전은 3을 사용한다.
+- 칸 연결의 에디터 기즈모는 마젠타 경계선·광선 조합 대신 실제 `Source→Destination`
+  방향을 가리키는 화살표로 표시한다.
+- 보드 씬은 `Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat`
+  스카이박스를 사용하며 Main Camera는 Skybox clear flags, 환경광은 Skybox 모드로 둔다.
+  다른 개발·빌드 환경에도 같은 Ignore 에셋과 GUID가 필요하다.
+
 ### 아이템 시각 자산
 
 - 아이템 모델은 `Assets/Ignore/nappin/WeaponStylizedPack`의 Pistol→Revolver,
@@ -51,7 +83,7 @@
   LowDice·HighDice는 기존 D12 모델을 활용하며, PositionSwapper·Cloak도 추가
   3D 모델링을 요구하지 않는다.
 - 9종 아이템 아이콘은 Git 추적 경로로 복사하지 않고
-  `Assets/Ignore/AllImage/Icons` 원본을 퀵슬롯·상점에서 공용한다.
+  `Assets/Ignore/AIImage/Icons` 원본을 퀵슬롯·상점에서 공용한다.
 
 ### 미니게임 HUD
 

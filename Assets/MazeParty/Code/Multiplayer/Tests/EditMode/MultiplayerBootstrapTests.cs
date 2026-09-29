@@ -19,6 +19,8 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string BootstrapScenePath =
             "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
+        private const string LobbyCanvasPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string MinefieldScenePath =
@@ -91,6 +93,47 @@ namespace MazeParty.Multiplayer.Tests
                 false,
                 false);
             Assert.That(SessionRules.CanStart(unready), Is.False);
+        }
+
+        [Test]
+        public void BoardMapSessionState_PreservesExactSelectionAndHostLobbyAuthority()
+        {
+            var selection = new BoardMapSelection("forest-graybox", 3);
+            var snapshot = new SessionSnapshot(
+                "ABCD",
+                true,
+                MultiplayerConstants.LobbyPhase,
+                "host",
+                CreateReadyPlayers(),
+                selection);
+
+            Assert.That(snapshot.BoardMapSelection, Is.EqualTo(selection));
+            Assert.That(
+                SessionRules.CanChangeBoardMap(
+                    isHost: true,
+                    phase: MultiplayerConstants.LobbyPhase),
+                Is.True);
+            Assert.That(
+                SessionRules.CanChangeBoardMap(
+                    isHost: false,
+                    phase: MultiplayerConstants.LobbyPhase),
+                Is.False);
+            Assert.That(
+                SessionRules.CanChangeBoardMap(
+                    isHost: true,
+                    phase: MultiplayerConstants.PlayingPhase),
+                Is.False);
+
+            var legacySnapshot = new SessionSnapshot(
+                "ABCD",
+                true,
+                MultiplayerConstants.LobbyPhase,
+                "host",
+                CreateReadyPlayers());
+            Assert.That(
+                legacySnapshot.BoardMapSelection,
+                Is.EqualTo(BoardMapSelection.Legacy));
+            Assert.That(default(BoardMapSelection).IsLegacy, Is.True);
         }
 
         [Test]
@@ -238,6 +281,10 @@ namespace MazeParty.Multiplayer.Tests
                     .SingleOrDefault();
                 Assert.That(lobby, Is.Not.Null);
                 Assert.That(lobby.HasRequiredReferences, Is.True);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        lobby.gameObject),
+                    Is.EqualTo(LobbyCanvasPrefabPath));
                 Assert.That(
                     lobby.PlayerRowCount,
                     Is.EqualTo(MultiplayerConstants.MaxPlayers));

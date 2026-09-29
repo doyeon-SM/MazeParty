@@ -89,6 +89,149 @@ namespace MazeParty.Editor
                 "NetworkPlayer prefab, and the 32-room Board flow vertical slice.");
         }
 
+        [MenuItem("MazeParty/Setup/Upgrade Lobby Map Selector")]
+        public static void UpgradeLobbyMapSelector()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LobbyCanvasPrefabPath);
+            if (prefab == null)
+            {
+                throw new System.InvalidOperationException(
+                    "LobbyCanvas.prefab is missing at " + LobbyCanvasPrefabPath + ".");
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(LobbyCanvasPrefabPath);
+            try
+            {
+                var view = contents.GetComponent<OnlineLobbyView>();
+                if (view == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "LobbyCanvas.prefab has no OnlineLobbyView component.");
+                }
+
+                var serializedView = new SerializedObject(view);
+                var rootProperty = serializedView.FindProperty(
+                    "boardMapSelectionRoot");
+                var previousProperty = serializedView.FindProperty(
+                    "previousBoardMapButton");
+                var nextProperty = serializedView.FindProperty(
+                    "nextBoardMapButton");
+                var nameProperty = serializedView.FindProperty("boardMapNameText");
+                if (rootProperty == null || previousProperty == null ||
+                    nextProperty == null || nameProperty == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "OnlineLobbyView map-selector fields are unavailable. " +
+                        "Wait for scripts to compile, then run this command again.");
+                }
+
+                var row = rootProperty.objectReferenceValue as GameObject;
+                var created = false;
+                if (row == null)
+                {
+                    var sessionPanel = FindRequiredChild(
+                        contents.transform,
+                        "Session Panel");
+                    var readyButton = FindRequiredChild(
+                        sessionPanel,
+                        "Ready Button");
+                    row = FindChild(sessionPanel, "Board Map Selection");
+                    if (row == null)
+                    {
+                        var font = Resources.Load<Font>(
+                            "MazeParty/Fonts/PlayerNameFont");
+                        if (font == null)
+                        {
+                            font = Resources.GetBuiltinResource<Font>(
+                                "LegacyRuntime.ttf");
+                        }
+
+                        if (font == null)
+                        {
+                            throw new System.InvalidOperationException(
+                                "A font is required to author the lobby map selector.");
+                        }
+
+                        row = CreateBoardMapSelectionRow(
+                            sessionPanel,
+                            font,
+                            out var previous,
+                            out var next,
+                            out var mapName);
+                        row.transform.SetSiblingIndex(
+                            readyButton.GetSiblingIndex());
+
+                        var panelRect = sessionPanel.GetComponent<RectTransform>();
+                        panelRect.sizeDelta = new Vector2(680f, 640f);
+                        panelRect.anchoredPosition = new Vector2(-205f, -130f);
+                        previousProperty.objectReferenceValue = previous;
+                        nextProperty.objectReferenceValue = next;
+                        nameProperty.objectReferenceValue = mapName;
+                        created = true;
+                    }
+                }
+
+                var previousButton = previousProperty.objectReferenceValue as Button;
+                if (previousButton == null)
+                {
+                    previousButton = FindRequiredChild(
+                            row.transform,
+                            "Previous Map Button")
+                        .GetComponent<Button>();
+                    previousProperty.objectReferenceValue = previousButton;
+                }
+
+                var nextButton = nextProperty.objectReferenceValue as Button;
+                if (nextButton == null)
+                {
+                    nextButton = FindRequiredChild(
+                            row.transform,
+                            "Next Map Button")
+                        .GetComponent<Button>();
+                    nextProperty.objectReferenceValue = nextButton;
+                }
+
+                var mapNameText = nameProperty.objectReferenceValue as Text;
+                if (mapNameText == null)
+                {
+                    mapNameText = FindRequiredChild(row.transform, "Map Name")
+                        .GetComponent<Text>();
+                    nameProperty.objectReferenceValue = mapNameText;
+                }
+
+                if (previousButton == null || nextButton == null ||
+                    mapNameText == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "The existing lobby map selector is incomplete. " +
+                        "Repair its authored bindings without recreating it.");
+                }
+
+                rootProperty.objectReferenceValue = row;
+                var bindingsChanged = serializedView.ApplyModifiedPropertiesWithoutUndo();
+                if (!view.HasRequiredReferences)
+                {
+                    throw new System.InvalidOperationException(
+                        "LobbyCanvas.prefab is still missing required OnlineLobbyView bindings.");
+                }
+
+                if (created || bindingsChanged)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(contents, LobbyCanvasPrefabPath);
+                    AssetDatabase.SaveAssets();
+                }
+
+                Debug.Log(created
+                    ? "Lobby map selector authored and bound in LobbyCanvas.prefab."
+                    : "Lobby map selector bindings validated; authored design was preserved.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+
 
 
 
@@ -420,6 +563,13 @@ namespace MazeParty.Editor
                     28f);
             }
 
+            var boardMapSelectionRoot = CreateBoardMapSelectionRow(
+                sessionPanel.transform,
+                font,
+                out var previousBoardMapButton,
+                out var nextBoardMapButton,
+                out var boardMapNameText);
+
             var readyButton = CreateButton(
                 "Ready Button",
                 sessionPanel.transform,
@@ -491,6 +641,10 @@ namespace MazeParty.Editor
                 readyButtonText,
                 startButtonText,
                 playerRows,
+                boardMapSelectionRoot,
+                previousBoardMapButton,
+                nextBoardMapButton,
+                boardMapNameText,
                 startHintText.gameObject,
                 runningText.gameObject,
                 statusText,
@@ -848,6 +1002,93 @@ namespace MazeParty.Editor
             return text;
         }
 
+        private static GameObject CreateBoardMapSelectionRow(
+            Transform parent,
+            Font font,
+            out Button previousButton,
+            out Button nextButton,
+            out Text mapNameText)
+        {
+            var row = CreateUiObject("Board Map Selection", parent);
+            var rowRect = row.GetComponent<RectTransform>();
+            rowRect.sizeDelta = new Vector2(rowRect.sizeDelta.x, 48f);
+            var background = row.AddComponent<Image>();
+            background.color = new Color(0.05f, 0.08f, 0.13f, 0.94f);
+            background.raycastTarget = false;
+
+            var layout = row.AddComponent<LayoutElement>();
+            layout.preferredHeight = 48f;
+
+            previousButton = CreateBoardMapArrowButton(
+                "Previous Map Button",
+                row.transform,
+                "<",
+                font,
+                true);
+            nextButton = CreateBoardMapArrowButton(
+                "Next Map Button",
+                row.transform,
+                ">",
+                font,
+                false);
+
+            mapNameText = CreateText(
+                "Map Name",
+                row.transform,
+                "Map: Unavailable Map",
+                font,
+                18,
+                TextAnchor.MiddleCenter,
+                40f);
+            Object.DestroyImmediate(mapNameText.GetComponent<LayoutElement>());
+            SetStretch(mapNameText.rectTransform, 62f, 62f, 4f, 4f);
+            mapNameText.fontStyle = FontStyle.Bold;
+            return row;
+        }
+
+        private static Button CreateBoardMapArrowButton(
+            string name,
+            Transform parent,
+            string label,
+            Font font,
+            bool previous)
+        {
+            var buttonObject = CreateUiObject(name, parent);
+            var rect = buttonObject.GetComponent<RectTransform>();
+            var anchor = previous ? 0f : 1f;
+            rect.anchorMin = new Vector2(anchor, 0.5f);
+            rect.anchorMax = new Vector2(anchor, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(previous ? 27f : -27f, 0f);
+            rect.sizeDelta = new Vector2(44f, 36f);
+
+            var image = buttonObject.AddComponent<Image>();
+            image.color = new Color(0.12f, 0.25f, 0.32f, 1f);
+            var button = buttonObject.AddComponent<Button>();
+            button.targetGraphic = image;
+            var colors = button.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(0.9f, 0.96f, 1f, 1f);
+            colors.pressedColor = new Color(0.7f, 0.82f, 0.9f, 1f);
+            colors.selectedColor = colors.highlightedColor;
+            colors.disabledColor = new Color(0.42f, 0.46f, 0.5f, 0.55f);
+            button.colors = colors;
+            buttonObject.AddComponent<UiSoundEmitter>();
+
+            var labelText = CreateText(
+                "Arrow",
+                buttonObject.transform,
+                label,
+                font,
+                22,
+                TextAnchor.MiddleCenter,
+                32f);
+            Object.DestroyImmediate(labelText.GetComponent<LayoutElement>());
+            SetStretch(labelText.rectTransform, 4f, 4f, 2f, 2f);
+            labelText.fontStyle = FontStyle.Bold;
+            return button;
+        }
+
         private static InputField CreateInputField(
             string name,
             Transform parent,
@@ -948,6 +1189,25 @@ namespace MazeParty.Editor
             }
 
             return uiObject;
+        }
+
+        private static GameObject FindChild(Transform root, string name)
+        {
+            return root.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(candidate => candidate.name == name)
+                ?.gameObject;
+        }
+
+        private static Transform FindRequiredChild(Transform root, string name)
+        {
+            var child = FindChild(root, name);
+            if (child == null)
+            {
+                throw new System.InvalidOperationException(
+                    "LobbyCanvas.prefab is missing authored object '" + name + "'.");
+            }
+
+            return child.transform;
         }
 
         private static void SetStretch(

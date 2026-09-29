@@ -139,6 +139,29 @@ namespace MazeParty.Multiplayer
         public bool IsBusy => _sessionOperations.IsBusy;
         public SessionLifecycleState LifecycleState => _sessionOperations.State;
         public bool IsVoluntaryLeavePending => _voluntaryLeavePending;
+        public bool IsBoardMapSelectionLocked =>
+            _matchRecoveryChoiceVisible || ShouldResumeSavedMatch;
+
+        public bool TryGetSelectedBoardMap(out BoardMapSelection selection)
+        {
+            selection = BoardMapSelection.Legacy;
+            if (_sessions == null || !_sessions.IsInSession)
+            {
+                return false;
+            }
+
+            var requested = _sessions.Current.BoardMapSelection;
+            if (!BoardMapSelection.TryCreate(
+                    requested.MapId,
+                    requested.ContentVersion,
+                    out selection))
+            {
+                selection = BoardMapSelection.Legacy;
+                return false;
+            }
+
+            return true;
+        }
 
         /// <summary>
         /// True after the local player pressed "clean up board" while other
@@ -453,6 +476,8 @@ namespace MazeParty.Multiplayer
             lobbyView.CopyRequested += OnCopyRequested;
             lobbyView.ReadyRequested += OnReadyRequested;
             lobbyView.StartRequested += OnStartRequested;
+            lobbyView.MapSelectionDeltaRequested +=
+                OnMapSelectionDeltaRequested;
             lobbyView.RecoveryContinueRequested += OnRecoveryContinueRequested;
             lobbyView.RecoveryDiscardRequested += OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged += OnAppearanceChanged;
@@ -471,6 +496,8 @@ namespace MazeParty.Multiplayer
             lobbyView.CopyRequested -= OnCopyRequested;
             lobbyView.ReadyRequested -= OnReadyRequested;
             lobbyView.StartRequested -= OnStartRequested;
+            lobbyView.MapSelectionDeltaRequested -=
+                OnMapSelectionDeltaRequested;
             lobbyView.RecoveryContinueRequested -= OnRecoveryContinueRequested;
             lobbyView.RecoveryDiscardRequested -= OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged -= OnAppearanceChanged;
@@ -549,6 +576,19 @@ namespace MazeParty.Multiplayer
             RunAsync(
                 () => _sessions.SetReadyAsync(ready),
                 GameText.N("Saving ready state..."),
+                SessionLifecycleState.Lobby);
+        }
+
+        private void OnMapSelectionDeltaRequested(int delta)
+        {
+            if (delta == 0 || !CanChangeBoardMapSelection())
+            {
+                return;
+            }
+
+            RunAsync(
+                () => ChangeBoardMapSelectionAsync(delta),
+                GameText.N("Saving board map selection..."),
                 SessionLifecycleState.Lobby);
         }
 
@@ -1028,9 +1068,103 @@ namespace MazeParty.Multiplayer
             ClearPlayingReconnectTicket();
             ResetHostMatchRecoveryChoice();
             _networkIdentityPublished = false;
-            await _sessions.CreateAsync("MazeParty Room", displayName);
+            var initialBoardMapSelection = ResolveInitialBoardMapSelection();
+            await _sessions.CreateAsync(
+                "MazeParty Room",
+                displayName,
+                initialBoardMapSelection);
             PrepareHostMatchRecoveryChoice();
             await PublishLocalNetworkClientIdWhenReadyAsync();
+        }
+
+        private async Task ChangeBoardMapSelectionAsync(int delta)
+        {
+            if (!CanChangeBoardMapSelection())
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The board map can only be changed in the lobby."));
+            }
+
+            var catalog = LoadBoardMapCatalog();
+            if (!BoardMapRuntimeLoader.TryResolveAdjacentSelection(
+                    catalog,
+                    _sessions.Current.BoardMapSelection,
+                    delta,
+                    out var selection,
+                    out var error))
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The selected board map could not be loaded safely."),
+                    new InvalidOperationException(error));
+            }
+
+            if (selection == _sessions.Current.BoardMapSelection)
+            {
+                return;
+            }
+
+            await _sessions.SetBoardMapAsync(selection);
+        }
+
+        private bool CanChangeBoardMapSelection()
+        {
+            return _sessions != null &&
+                   _sessions.IsInSession &&
+                   SessionRules.CanChangeBoardMap(
+                       _sessions.Current.IsHost,
+                       _sessions.Current.Phase) &&
+                   !_matchRecoveryChoiceVisible &&
+                   !ShouldResumeSavedMatch;
+        }
+
+        private static BoardMapSelection ResolveInitialBoardMapSelection()
+        {
+            if (BoardMapRuntimeLoader.TryResolveFreshSelection(
+                    LoadBoardMapCatalog(),
+                    out var selection,
+                    out var error))
+            {
+                return selection;
+            }
+
+            throw new InvalidOperationException(
+                GameText.T(
+                    "The selected board map could not be loaded safely."),
+                new InvalidOperationException(error));
+        }
+
+        private static BoardMapCatalog LoadBoardMapCatalog()
+        {
+            return Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+        }
+
+        private static void ValidateBoardMapSelectionBeforeStart(
+            BoardMapSelection requested,
+            bool allowLegacy)
+        {
+            var catalog = LoadBoardMapCatalog();
+            if (!allowLegacy && requested.IsLegacy &&
+                catalog != null && catalog.Maps.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The selected board map could not be loaded safely."));
+            }
+
+            if (!BoardMapRuntimeLoader.TryResolveExactSelection(
+                    catalog,
+                    requested,
+                    out _,
+                    out var error))
+            {
+                throw new InvalidOperationException(
+                    GameText.T(
+                        "The selected board map could not be loaded safely."),
+                    new InvalidOperationException(error));
+            }
         }
 
         private async Task JoinAndPublishAsync(string code, string displayName)
@@ -1228,6 +1362,9 @@ namespace MazeParty.Multiplayer
             }
 
             ValidateSelectedMatchRecoveryBeforeStart();
+            ValidateBoardMapSelectionBeforeStart(
+                snapshot.BoardMapSelection,
+                ShouldResumeSavedMatch);
 
             var manager = _networkManager != null
                 ? _networkManager

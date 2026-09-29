@@ -23,7 +23,7 @@ namespace MazeParty.Gameplay
 
         public string MapId { get; }
         public int ContentVersion { get; }
-        public bool IsLegacy => MapId.Length == 0 && ContentVersion == 0;
+        public bool IsLegacy => string.IsNullOrEmpty(MapId) && ContentVersion == 0;
 
         public static bool TryCreate(
             string mapId,

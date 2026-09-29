@@ -21,7 +21,7 @@
 표시 이름과 설명은 Display Name / Description에서 함께 갱신하세요.
 모델 원본: Assets/MazeParty/Prefabs/Board/Items. 프리팹에는 판정용 Collider를 추가하지 마세요.
 Pistol·Sniper·Mine·Grenade 래퍼는 `Assets/Ignore/nappin/WeaponStylizedPack`의 메시·텍스처를 참조하므로 동일 GUID 팩이 필요합니다.
-아이콘 원본은 `Assets/Ignore/AllImage/Icons`를 사용합니다. Git 제외 경로이므로 모든 개발·빌드 환경에 동일 GUID 파일이 필요합니다.
+아이콘 원본은 `Assets/Ignore/AIImage/Icons`를 사용합니다. Git 제외 경로이므로 모든 개발·빌드 환경에 동일 GUID 파일이 필요합니다.
 `MazeParty/Board/Upgrade Board Items`는 누락 에셋만 생성하며 기존 수치·모델 디자인을 덮어쓰지 않습니다.
 
 ## 추가 유틸리티 아이템

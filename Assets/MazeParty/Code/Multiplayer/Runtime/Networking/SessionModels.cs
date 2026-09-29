@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using MazeParty.Gameplay;
 
 namespace MazeParty.Multiplayer
 {
@@ -29,7 +30,13 @@ namespace MazeParty.Multiplayer
             Array.Empty<OnlinePlayerSnapshot>();
 
         public static readonly SessionSnapshot Empty =
-            new SessionSnapshot(string.Empty, false, MultiplayerConstants.LobbyPhase, string.Empty, NoPlayers);
+            new SessionSnapshot(
+                string.Empty,
+                false,
+                MultiplayerConstants.LobbyPhase,
+                string.Empty,
+                NoPlayers,
+                MazeParty.Gameplay.BoardMapSelection.Legacy);
 
         public SessionSnapshot(
             string code,
@@ -37,12 +44,32 @@ namespace MazeParty.Multiplayer
             string phase,
             string localPlayerId,
             IReadOnlyList<OnlinePlayerSnapshot> players)
+            : this(
+                code,
+                isHost,
+                phase,
+                localPlayerId,
+                players,
+                MazeParty.Gameplay.BoardMapSelection.Legacy)
+        {
+        }
+
+        public SessionSnapshot(
+            string code,
+            bool isHost,
+            string phase,
+            string localPlayerId,
+            IReadOnlyList<OnlinePlayerSnapshot> players,
+            BoardMapSelection boardMapSelection)
         {
             Code = code;
             IsHost = isHost;
             Phase = phase;
             LocalPlayerId = localPlayerId;
             Players = players ?? NoPlayers;
+            BoardMapSelection = boardMapSelection.MapId == null
+                ? MazeParty.Gameplay.BoardMapSelection.Legacy
+                : boardMapSelection;
         }
 
         public string Code { get; }
@@ -50,6 +77,7 @@ namespace MazeParty.Multiplayer
         public string Phase { get; }
         public string LocalPlayerId { get; }
         public IReadOnlyList<OnlinePlayerSnapshot> Players { get; }
+        public BoardMapSelection BoardMapSelection { get; }
         public bool CanStart => SessionRules.CanStart(Players);
 
         public int LocalSlot
@@ -107,6 +135,11 @@ namespace MazeParty.Multiplayer
             }
 
             return uniqueSlots.Count == MultiplayerConstants.MaxPlayers;
+        }
+
+        public static bool CanChangeBoardMap(bool isHost, string phase)
+        {
+            return isHost && phase == MultiplayerConstants.LobbyPhase;
         }
     }
 }

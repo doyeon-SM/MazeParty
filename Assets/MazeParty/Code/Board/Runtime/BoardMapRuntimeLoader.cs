@@ -107,7 +107,14 @@ namespace MazeParty.Gameplay
             out BoardMapSelection selection,
             out string error)
         {
-            var catalog = Catalog;
+            return TryResolveFreshSelection(Catalog, out selection, out error);
+        }
+
+        public static bool TryResolveFreshSelection(
+            BoardMapCatalog catalog,
+            out BoardMapSelection selection,
+            out string error)
+        {
             if (catalog == null || catalog.Maps.Count == 0)
             {
                 selection = BoardMapSelection.Legacy;
@@ -138,7 +145,89 @@ namespace MazeParty.Gameplay
             return true;
         }
 
+        public static bool TryResolveAdjacentSelection(
+            BoardMapCatalog catalog,
+            BoardMapSelection current,
+            int delta,
+            out BoardMapSelection selection,
+            out string error)
+        {
+            if (delta == 0)
+            {
+                selection = current.MapId == null
+                    ? BoardMapSelection.Legacy
+                    : current;
+                error = string.Empty;
+                return true;
+            }
+
+            if (catalog == null || catalog.Maps.Count == 0)
+            {
+                selection = BoardMapSelection.Legacy;
+                error = string.Empty;
+                return true;
+            }
+
+            if (!catalog.HasUniqueValidIds())
+            {
+                selection = default;
+                error =
+                    "The board map catalog contains a missing, invalid, or duplicate map id.";
+                return false;
+            }
+
+            var definitions = catalog.Maps;
+            var currentIndex = -1;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition == null || !definition.HasValidPrefab ||
+                    !BoardMapSelection.TryCreate(
+                        definition.MapId,
+                        definition.ContentVersion,
+                        out var candidate))
+                {
+                    selection = default;
+                    error =
+                        $"Board map catalog entry {index} has no valid network identity or map-root prefab.";
+                    return false;
+                }
+
+                if (candidate == current)
+                {
+                    currentIndex = index;
+                }
+            }
+
+            var direction = delta > 0 ? 1 : -1;
+            var startIndex = currentIndex >= 0
+                ? currentIndex
+                : direction > 0 ? -1 : 0;
+            var nextIndex = (startIndex + direction) % definitions.Count;
+            if (nextIndex < 0)
+            {
+                nextIndex += definitions.Count;
+            }
+
+            selection = BoardMapSelection.FromDefinition(definitions[nextIndex]);
+            error = string.Empty;
+            return true;
+        }
+
         public bool TryResolveExactSelection(
+            BoardMapSelection requested,
+            out BoardMapSelection selection,
+            out string error)
+        {
+            return TryResolveExactSelection(
+                Catalog,
+                requested,
+                out selection,
+                out error);
+        }
+
+        public static bool TryResolveExactSelection(
+            BoardMapCatalog catalog,
             BoardMapSelection requested,
             out BoardMapSelection selection,
             out string error)
@@ -150,7 +239,6 @@ namespace MazeParty.Gameplay
                 return true;
             }
 
-            var catalog = Catalog;
             if (catalog == null || !catalog.HasUniqueValidIds() ||
                 !catalog.TryGetMap(requested.MapId, out var definition) ||
                 definition == null ||
