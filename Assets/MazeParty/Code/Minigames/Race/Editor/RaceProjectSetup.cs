@@ -8,13 +8,12 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Builds the four-lane Race arena and its prefab-owned timer-only HUD.
-    /// Existing prefab styling and material assets are never overwritten.
+    /// Builds the four-lane Race arena. The Board scene owns the shared
+    /// minigame clock and round presentation.
     /// </summary>
     public static class RaceProjectSetup
     {
@@ -22,7 +21,6 @@ namespace MazeParty.Editor
             "MazeParty/Minigames/Rebuild Race";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/Race";
-        private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/Race/UI";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/Race/Materials";
         private const string RaceTrackPrefabPath =
@@ -33,8 +31,6 @@ namespace MazeParty.Editor
             ProjectRoot + "/Prefabs/Minigames/Race/RaceEnvironment.prefab";
 
         public const string RaceScenePath = "Assets/MazeParty/Scenes/Minigames/Race/Race.unity";
-        public const string HudPrefabPath = "Assets/MazeParty/Prefabs/Minigames/Race/UI/RaceHud.prefab";
-
         [MenuItem(MenuPath)]
         public static void RebuildRace()
         {
@@ -52,7 +48,7 @@ namespace MazeParty.Editor
             EditorSceneManager.OpenScene(RaceScenePath, OpenSceneMode.Single);
             Debug.Log(
                 "Race rebuilt: four vertical lanes, fixed shared camera " +
-                "and timer-only prefab HUD.");
+                "and the Board-owned shared minigame HUD.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -373,75 +369,6 @@ namespace MazeParty.Editor
             light.color = new Color(1f, 0.95f, 0.9f);
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            if (prefab == null)
-            {
-                var template = CreateHudTemplate();
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            if (prefab != null && prefab.transform.localScale != Vector3.one)
-            {
-                var contents = PrefabUtility.LoadPrefabContents(HudPrefabPath);
-                try
-                {
-                    contents.transform.localScale = Vector3.one;
-                    PrefabUtility.SaveAsPrefabAsset(contents, HudPrefabPath);
-                }
-                finally
-                {
-                    PrefabUtility.UnloadPrefabContents(contents);
-                }
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            }
-
-            var binding = prefab != null
-                ? prefab.GetComponent<RaceHudBindings>()
-                : null;
-            if (binding == null || !binding.HasRequiredReferences ||
-                prefab.transform.localScale != Vector3.one)
-            {
-                throw new InvalidOperationException(
-                    "RaceHud.prefab must contain a complete timer binding " +
-                    "and use unit root scale.");
-            }
-            return prefab;
-        }
-
-        private static GameObject CreateHudTemplate()
-        {
-            var root = new GameObject(
-                "RaceHud",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(RaceHudBindings));
-            root.transform.localScale = Vector3.one;
-            root.layer = LayerMask.NameToLayer("UI");
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 45;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-            var timer = MinigameTimerDialProjectSetup.InstantiateTimer(
-                root.transform);
-            root.GetComponent<RaceHudBindings>().Configure(canvas, timer);
-            return root;
-        }
-
         private static GameObject CreatePrimitive(
             string name,
             PrimitiveType primitive,
@@ -583,7 +510,6 @@ namespace MazeParty.Editor
         {
             EnsureFolder(ProjectRoot);
             EnsureFolder(ScenesFolder);
-            EnsureFolder(UiPrefabFolder);
             EnsureFolder(ProjectRoot + "/Art");
             EnsureFolder(ProjectRoot + "/Art/Minigames");
             EnsureFolder(ProjectRoot + "/Art/Minigames/Race");

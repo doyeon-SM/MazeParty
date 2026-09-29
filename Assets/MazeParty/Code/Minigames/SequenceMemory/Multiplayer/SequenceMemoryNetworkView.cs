@@ -276,6 +276,8 @@ namespace MazeParty.Multiplayer
                  slot < SequenceMemoryRules.PlayerCount;
                  slot++)
             {
+                hud.PlayerRows[slot].gameObject.SetActive(
+                    slot == _localSlot);
                 var avatar = match.GetAvatarForSlot(slot);
                 var name = avatar != null &&
                            !string.IsNullOrWhiteSpace(avatar.DisplayName)

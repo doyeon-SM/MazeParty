@@ -24,12 +24,15 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(mask.Without(2).Bits, Is.EqualTo(0b0000_1001));
         }
 
-        [TestCase(-1)]
-        [TestCase(PlayerSlotRules.Count)]
-        public void PlayerMask4_MutationRejectsInvalidSlots(int slot)
+        [Test]
+        public void PlayerMask4_MutationRejectsInvalidSlots()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(
-                () => PlayerMask4.None.With(slot));
+            foreach (var slot in new[] { -1, PlayerSlotRules.Count })
+            {
+                Assert.Throws<ArgumentOutOfRangeException>(
+                    () => PlayerMask4.None.With(slot),
+                    "Slot " + slot);
+            }
         }
 
         [Test]

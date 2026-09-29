@@ -106,16 +106,11 @@ namespace MazeParty.Multiplayer.Tests
                 }
 
                 Assert.That(
-                    state.GetComponentsInChildren<
-                        BalloonBlowStationLabel>(true),
+                    state.GetComponentsInChildren<Canvas>(true),
                     Is.Empty,
                     "Balloon growth and pop state are conveyed by the " +
-                    "world presentation.");
-                Assert.That(
-                    state.GetComponentsInChildren<
-                        BalloonBlowHudBindings>(true),
-                    Is.Empty,
-                    "Balloon Blow uses only the shared minigame HUD.");
+                    "world presentation; the scene owns no dedicated " +
+                    "Canvas HUD.");
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component =>

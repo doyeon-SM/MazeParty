@@ -4,23 +4,39 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardFlowStateMachineTests
     {
-        [TestCase(BoardFlowState.TurnOverview, 7)]
-        [TestCase(BoardFlowState.MinigameIntroReady, 7)]
-        [TestCase(BoardFlowState.MatchComplete, 15)]
-        public void RestoreCheckpoint_RebuildsOnlyStableStates(
-            BoardFlowState checkpoint,
-            int turn)
+        [Test]
+        public void RestoreCheckpoint_RebuildsOnlyStableStates()
         {
-            var flow = new BoardFlowStateMachine(totalTurns: 15);
+            var cases = new[]
+            {
+                (Checkpoint: BoardFlowState.TurnOverview, Turn: 7),
+                (Checkpoint: BoardFlowState.MinigameIntroReady, Turn: 7),
+                (Checkpoint: BoardFlowState.MatchComplete, Turn: 15)
+            };
 
-            flow.RestoreCheckpoint(checkpoint, turn, 100d);
+            foreach (var testCase in cases)
+            {
+                var flow = new BoardFlowStateMachine(totalTurns: 15);
+                var context = testCase.Checkpoint + " / turn " + testCase.Turn;
 
-            Assert.That(flow.IsStarted, Is.True);
-            Assert.That(flow.IsPaused, Is.False);
-            Assert.That(flow.State, Is.EqualTo(checkpoint));
-            Assert.That(flow.CurrentTurn, Is.EqualTo(turn));
-            Assert.That(flow.StateStartedAt, Is.EqualTo(100d));
-            Assert.That(flow.ArrivedPlayerCount, Is.Zero);
+                flow.RestoreCheckpoint(
+                    testCase.Checkpoint,
+                    testCase.Turn,
+                    100d);
+
+                Assert.That(flow.IsStarted, Is.True, context);
+                Assert.That(flow.IsPaused, Is.False, context);
+                Assert.That(
+                    flow.State,
+                    Is.EqualTo(testCase.Checkpoint),
+                    context);
+                Assert.That(
+                    flow.CurrentTurn,
+                    Is.EqualTo(testCase.Turn),
+                    context);
+                Assert.That(flow.StateStartedAt, Is.EqualTo(100d), context);
+                Assert.That(flow.ArrivedPlayerCount, Is.Zero, context);
+            }
         }
 
         [Test]

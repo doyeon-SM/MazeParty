@@ -63,12 +63,10 @@ namespace MazeParty.Dev.MinigameSoloTest
         private NetworkStableFootingState _productionState;
         private StableFootingNetworkView _productionView;
         private GameObject _productionRunnerRoot;
-        private GameObject _productionHud;
         private GameObject _arenaPresentation;
         private bool _productionStateWasEnabled;
         private bool _productionViewWasEnabled;
         private bool _productionRunnerRootWasActive;
-        private bool _productionHudWasActive;
         private bool _arenaPresentationWasActive;
         private bool _productionStateCaptured;
 
@@ -187,8 +185,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 state.GetComponent<StableFootingNetworkView>();
             _productionRunnerRoot =
                 FindNamedTransform("Runtime Runners")?.gameObject;
-            _productionHud =
-                FindNamedTransform("StableFootingHud")?.gameObject;
             _arenaPresentation =
                 FindNamedTransform("Arena Presentation")?.gameObject;
             _productionStateWasEnabled = state.enabled;
@@ -197,8 +193,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _productionRunnerRootWasActive =
                 _productionRunnerRoot != null &&
                 _productionRunnerRoot.activeSelf;
-            _productionHudWasActive =
-                _productionHud != null && _productionHud.activeSelf;
             _arenaPresentationWasActive =
                 _arenaPresentation != null &&
                 _arenaPresentation.activeSelf;
@@ -210,7 +204,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _productionView.enabled = false;
             }
             _productionRunnerRoot?.SetActive(false);
-            _productionHud?.SetActive(false);
         }
 
         private void ResolveArenaContract()
@@ -280,10 +273,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 _productionRunnerRoot.SetActive(
                     _productionRunnerRootWasActive);
-            }
-            if (_productionHud != null)
-            {
-                _productionHud.SetActive(_productionHudWasActive);
             }
             if (_arenaPresentation != null)
             {

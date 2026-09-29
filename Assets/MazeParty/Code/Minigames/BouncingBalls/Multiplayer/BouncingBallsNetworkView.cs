@@ -270,15 +270,12 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
                  slot++)
             {
-                var avatar = match.GetAvatarForSlot(slot);
-                hud.PlayerNameTexts[slot].text = avatar != null &&
-                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
-                        ? avatar.DisplayName
-                        : GameText.F("PLAYER {0}", slot + 1);
+                hud.PlayerNameTexts[slot].text =
+                    "P" + (slot + 1);
                 hud.PlayerNameTexts[slot].color =
                     GetPlayerColor(match, slot);
                 hud.PlayerScoreTexts[slot].text =
-                    GameText.F("SCORE {0}", state.GetScore(slot));
+                    state.GetScore(slot).ToString();
             }
         }
 

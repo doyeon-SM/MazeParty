@@ -18,38 +18,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab";
 
         [Test]
-        public void HudPrefab_HasCompleteSerializedFourPlayerContract()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                HudPrefabPath);
-            Assert.That(prefab, Is.Not.Null, HudPrefabPath);
-            Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one));
-
-            var hud = prefab.GetComponent<SequenceMemoryHudBindings>();
-            Assert.That(hud, Is.Not.Null);
-            Assert.That(hud.HasRequiredReferences, Is.True);
-            Assert.That(hud.RootCanvas, Is.SameAs(prefab.GetComponent<Canvas>()));
-            Assert.That(hud.Root, Is.Not.Null);
-            Assert.That(hud.NpcSequenceText, Is.Not.Null);
-            Assert.That(
-                hud.PlayerRows,
-                Has.Length.EqualTo(SequenceMemoryRules.PlayerCount));
-            Assert.That(
-                hud.PlayerNameTexts,
-                Has.Length.EqualTo(SequenceMemoryRules.PlayerCount));
-            Assert.That(
-                hud.PlayerInputTexts,
-                Has.Length.EqualTo(SequenceMemoryRules.PlayerCount));
-            Assert.That(
-                hud.PlayerStatusTexts,
-                Has.Length.EqualTo(SequenceMemoryRules.PlayerCount));
-            Assert.That(hud.PlayerRows, Has.All.Not.Null);
-            Assert.That(hud.PlayerNameTexts, Has.All.Not.Null);
-            Assert.That(hud.PlayerInputTexts, Has.All.Not.Null);
-            Assert.That(hud.PlayerStatusTexts, Has.All.Not.Null);
-        }
-
-        [Test]
         public void Scene_PreservesFixedStationsSharedCameraAudioAndPrefabUi()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);

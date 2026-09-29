@@ -386,14 +386,12 @@ namespace MazeParty.Dev.MinigameSoloTest
                  slot++)
             {
                 _productionHud.PlayerNameTexts[slot].text =
-                    slot == LocalPlayerSlot
-                        ? "SOLO DEV"
-                        : "PRACTICE " + (slot + 1);
+                    "P" + (slot + 1);
                 _productionHud.PlayerNameTexts[slot].color =
                     PlayerColors[slot];
                 var score = _match.GetScore(slot);
                 _productionHud.PlayerScoreTexts[slot].text =
-                    "SCORE " + score;
+                    score.ToString();
             }
         }
 

@@ -489,12 +489,11 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [TestCase(3)]
-        [TestCase(4)]
-        [TestCase(5)]
-        public void AuthoredBoardStartPose_ClampsControllerInsideSmallFootprint(
-            int sides)
+        [Test]
+        public void AuthoredBoardStartPose_ClampsControllerInsideSmallFootprint()
         {
+            foreach (var sides in new[] { 3, 4, 5 })
+            {
             var mapObject = new GameObject("Start Pose Map");
             var topologyObject = new GameObject("Start Pose Topology");
             var tileObject = new GameObject("Assigned Start");
@@ -587,6 +586,7 @@ namespace MazeParty.Multiplayer.Tests
             {
                 Object.DestroyImmediate(controllerObject);
                 Object.DestroyImmediate(mapObject);
+            }
             }
         }
 

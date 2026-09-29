@@ -6,25 +6,35 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class MinigameRewardRulesTests
     {
-        [TestCase(1, 10)]
-        [TestCase(2, 6)]
-        [TestCase(3, 3)]
-        [TestCase(4, 0)]
-        public void FinalPlacementGold_UsesSharedEconomySchedule(
-            int rank,
-            int expectedGold)
+        [Test]
+        public void FinalPlacementGold_UsesSharedEconomySchedule()
         {
-            Assert.That(
-                MinigameRewardRules.GetFinalPlacementGold(rank),
-                Is.EqualTo(expectedGold));
+            var cases = new[]
+            {
+                (Rank: 1, ExpectedGold: 10),
+                (Rank: 2, ExpectedGold: 6),
+                (Rank: 3, ExpectedGold: 3),
+                (Rank: 4, ExpectedGold: 0)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    MinigameRewardRules.GetFinalPlacementGold(testCase.Rank),
+                    Is.EqualTo(testCase.ExpectedGold),
+                    "Rank " + testCase.Rank);
+            }
         }
 
-        [TestCase(0)]
-        [TestCase(5)]
-        public void FinalPlacementGold_RejectsInvalidRank(int rank)
+        [Test]
+        public void FinalPlacementGold_RejectsInvalidRank()
         {
-            Assert.Throws<ArgumentOutOfRangeException>(
-                () => MinigameRewardRules.GetFinalPlacementGold(rank));
+            foreach (var rank in new[] { 0, 5 })
+            {
+                Assert.Throws<ArgumentOutOfRangeException>(
+                    () => MinigameRewardRules.GetFinalPlacementGold(rank),
+                    "Rank " + rank);
+            }
         }
     }
 }

@@ -147,10 +147,10 @@ namespace MazeParty.Multiplayer.Tests
                         Is.EqualTo(LabelPrefabPath));
                 }
                 Assert.That(
-                    state.GetComponentsInChildren<GiftGrabHudBindings>(true),
+                    state.GetComponentsInChildren<Canvas>(true),
                     Is.Empty,
                     "Gift Grab keeps only its essential world labels and " +
-                    "the shared minigame HUD.");
+                    "owns no dedicated Canvas HUD.");
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component => component != null &&

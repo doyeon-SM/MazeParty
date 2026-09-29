@@ -5,14 +5,28 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardMapDataContractTests
     {
-        [TestCase("Forest Map", "forest-map")]
-        [TestCase("  FOREST__02  ", "forest-02")]
-        [TestCase("forest-map", "forest-map")]
-        [TestCase("---forest---map---", "forest-map")]
-        public void MapId_IsNormalizedToStableKebabCase(string source, string expected)
+        [Test]
+        public void MapId_IsNormalizedToStableKebabCase()
         {
-            Assert.That(BoardMapDefinition.NormalizeMapId(source), Is.EqualTo(expected));
-            Assert.That(BoardMapDefinition.IsValidMapId(expected), Is.True);
+            var cases = new[]
+            {
+                (Source: "Forest Map", Expected: "forest-map"),
+                (Source: "  FOREST__02  ", Expected: "forest-02"),
+                (Source: "forest-map", Expected: "forest-map"),
+                (Source: "---forest---map---", Expected: "forest-map")
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardMapDefinition.NormalizeMapId(testCase.Source),
+                    Is.EqualTo(testCase.Expected),
+                    testCase.Source);
+                Assert.That(
+                    BoardMapDefinition.IsValidMapId(testCase.Expected),
+                    Is.True,
+                    testCase.Source);
+            }
         }
 
         [Test]

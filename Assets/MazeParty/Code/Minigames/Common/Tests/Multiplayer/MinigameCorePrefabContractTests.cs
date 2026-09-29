@@ -213,8 +213,22 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [TestCaseSource(nameof(EnvironmentContracts))]
-        public void StaticEnvironment_IsConnectedWithoutAbsorbingRuntimeOwnership(
+        [Test]
+        public void StaticEnvironment_IsConnectedWithoutAbsorbingRuntimeOwnership()
+        {
+            foreach (var contract in EnvironmentContracts)
+            {
+                var arguments = contract.Arguments;
+                AssertStaticEnvironmentContract(
+                    (string)arguments[0],
+                    (string)arguments[1],
+                    (string)arguments[2],
+                    (Type)arguments[3],
+                    (string[])arguments[4]);
+            }
+        }
+
+        private static void AssertStaticEnvironmentContract(
             string game,
             string instanceName,
             string prefabFile,

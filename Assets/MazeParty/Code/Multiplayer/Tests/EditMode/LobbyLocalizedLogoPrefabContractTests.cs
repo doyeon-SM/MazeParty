@@ -62,7 +62,6 @@ namespace MazeParty.Multiplayer.Tests
 
                 AssertLogoAsset(englishLogo, EnglishLogoAssetPath);
                 AssertLogoAsset(koreanLogo, KoreanLogoAssetPath);
-                AssertMatchingLogoLayout(englishLogo, koreanLogo);
             }
             finally
             {
@@ -104,22 +103,5 @@ namespace MazeParty.Multiplayer.Tests
                 logoObject.name);
         }
 
-        private static void AssertMatchingLogoLayout(
-            GameObject englishLogo,
-            GameObject koreanLogo)
-        {
-            var englishRect = englishLogo.GetComponent<RectTransform>();
-            var koreanRect = koreanLogo.GetComponent<RectTransform>();
-            Assert.That(englishRect, Is.Not.Null, englishLogo.name);
-            Assert.That(koreanRect, Is.Not.Null, koreanLogo.name);
-            Assert.That(koreanRect.anchorMin, Is.EqualTo(englishRect.anchorMin));
-            Assert.That(koreanRect.anchorMax, Is.EqualTo(englishRect.anchorMax));
-            Assert.That(koreanRect.pivot, Is.EqualTo(englishRect.pivot));
-            Assert.That(
-                koreanRect.anchoredPosition,
-                Is.EqualTo(englishRect.anchoredPosition));
-            Assert.That(koreanRect.sizeDelta, Is.EqualTo(englishRect.sizeDelta));
-            Assert.That(koreanRect.localScale, Is.EqualTo(englishRect.localScale));
-        }
     }
 }

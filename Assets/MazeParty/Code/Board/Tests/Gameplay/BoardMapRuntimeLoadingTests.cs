@@ -7,20 +7,30 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardMapRuntimeLoadingTests
     {
-        [TestCase(null, 0, true)]
-        [TestCase("", 0, true)]
-        [TestCase("forest-graybox", 1, true)]
-        [TestCase("Forest Graybox", 1, false)]
-        [TestCase("forest-graybox", 0, false)]
-        [TestCase("", 1, false)]
-        public void Selection_RequiresStableIdentityAndVersion(
-            string mapId,
-            int version,
-            bool expected)
+        [Test]
+        public void Selection_RequiresStableIdentityAndVersion()
         {
-            Assert.That(
-                BoardMapSelection.TryCreate(mapId, version, out _),
-                Is.EqualTo(expected));
+            (string MapId, int Version, bool Expected)[] cases =
+            {
+                (null, 0, true),
+                (string.Empty, 0, true),
+                ("forest-graybox", 1, true),
+                ("Forest Graybox", 1, false),
+                ("forest-graybox", 0, false),
+                (string.Empty, 1, false)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardMapSelection.TryCreate(
+                        testCase.MapId,
+                        testCase.Version,
+                        out _),
+                    Is.EqualTo(testCase.Expected),
+                    (testCase.MapId ?? "<null>") + " / " +
+                    testCase.Version);
+            }
         }
 
         [Test]

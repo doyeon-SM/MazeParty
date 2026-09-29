@@ -8,13 +8,13 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Builds Gift Grab's additive production arena and its prefab-owned UI.
-    /// Existing designer prefabs and prototype materials are never overwritten.
+    /// Builds Gift Grab's additive production arena and its prefab-owned world
+    /// labels. Existing designer prefabs and prototype materials are never
+    /// overwritten.
     /// </summary>
     public static class GiftGrabProjectSetup
     {
@@ -34,8 +34,6 @@ namespace MazeParty.Editor
 
         public const string GiftGrabScenePath =
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
-        public const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabHud.prefab";
         public const string BaseLabelPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
 
@@ -597,55 +595,6 @@ namespace MazeParty.Editor
                 false);
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            var createdDefaultPrefab = prefab == null;
-            if (prefab == null)
-            {
-                var template = CreateHudTemplate();
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            if (createdDefaultPrefab && prefab != null &&
-                prefab.transform.localScale != Vector3.one)
-            {
-                var contents = PrefabUtility.LoadPrefabContents(HudPrefabPath);
-                try
-                {
-                    contents.transform.localScale = Vector3.one;
-                    PrefabUtility.SaveAsPrefabAsset(contents, HudPrefabPath);
-                }
-                finally
-                {
-                    PrefabUtility.UnloadPrefabContents(contents);
-                }
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            }
-
-            var binding = prefab != null
-                ? prefab.GetComponent<GiftGrabHudBindings>()
-                : null;
-            if (binding == null || !binding.HasRequiredReferences ||
-                prefab.transform.localScale != Vector3.one)
-            {
-                throw new InvalidOperationException(
-                    "GiftGrabHud.prefab must have complete serialized " +
-                    "bindings and a renderable unit root scale. Repair the " +
-                    "existing prefab directly; setup will not overwrite it.");
-            }
-            return prefab;
-        }
-
         private static GameObject LoadOrCreateBaseLabelPrefab(
             GiftGrabMaterials materials)
         {
@@ -676,91 +625,6 @@ namespace MazeParty.Editor
                     "binding contract. Repair it without rebuilding it.");
             }
             return prefab;
-        }
-
-        private static GameObject CreateHudTemplate()
-        {
-            var font = RequireBuiltinFont();
-            var root = new GameObject(
-                "GiftGrabHud",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(GiftGrabHudBindings));
-            root.transform.localScale = Vector3.one;
-            var rect = root.GetComponent<RectTransform>();
-            rect.localScale = Vector3.one;
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 45;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var header = CreatePanel(
-                "Header Panel",
-                root.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -18f),
-                new Vector2(620f, 90f),
-                new Color(0.055f, 0.025f, 0.09f, 0.92f));
-            var localStatus = CreateHudText(
-                "Local Status", header.transform, font,
-                new Vector2(0f, -22f), new Vector2(580f, 44f), 17,
-                FontStyle.Normal,
-                "YOU · 0 STORED · HANDS FREE");
-
-            var rows = new Text[GiftGrabRules.PlayerCount];
-            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
-            {
-                var x = -570f + slot * 380f;
-                var card = CreatePanel(
-                    "Player " + (slot + 1) + " Card",
-                    root.transform,
-                    new Vector2(0.5f, 0f),
-                    new Vector2(x, 22f),
-                    new Vector2(350f, 72f),
-                    new Color(0.025f, 0.032f, 0.052f, 0.92f));
-                rows[slot] = CreateHudText(
-                    "Player " + (slot + 1) + " Row",
-                    card.transform,
-                    font,
-                    new Vector2(0f, -12f),
-                    new Vector2(320f, 46f),
-                    15,
-                    FontStyle.Bold,
-                    "PLAYER " + (slot + 1) + " · 0 STORED");
-                rows[slot].color = PlayerColors[slot];
-            }
-
-            var resultPanel = CreatePanel(
-                "Result Panel", root.transform,
-                new Vector2(0.5f, 0.5f), Vector2.zero,
-                new Vector2(740f, 230f),
-                new Color(0.02f, 0.02f, 0.04f, 0.97f));
-            var result = CreateHudText(
-                "Result Message", resultPanel.transform, font,
-                new Vector2(0f, -28f), new Vector2(700f, 180f), 30,
-                FontStyle.Bold, "ROUND RESULTS");
-            var resultCanvas = resultPanel.AddComponent<Canvas>();
-            resultCanvas.overrideSorting = true;
-            resultCanvas.sortingOrder = 100;
-            var resultSorting = new SerializedObject(resultCanvas)
-                .FindProperty("m_OverrideSorting");
-            resultSorting.boolValue = true;
-            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            resultPanel.SetActive(false);
-
-            root.GetComponent<GiftGrabHudBindings>().Configure(
-                canvas,
-                localStatus,
-                rows,
-                result,
-                resultPanel,
-                new Color(1f, 0.88f, 0.25f, 1f));
-            root.transform.localScale = Vector3.one;
-            return root;
         }
 
         private static GameObject CreateBaseLabelTemplate(
@@ -812,65 +676,6 @@ namespace MazeParty.Editor
                 swatch.GetComponent<Renderer>(),
                 highlight.GetComponent<Renderer>());
             return root;
-        }
-
-        private static GameObject CreatePanel(
-            string name,
-            Transform parent,
-            Vector2 anchor,
-            Vector2 position,
-            Vector2 size,
-            Color color)
-        {
-            var panel = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var image = panel.GetComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            return panel;
-        }
-
-        private static Text CreateHudText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector2 position,
-            Vector2 size,
-            int fontSize,
-            FontStyle style,
-            string sample)
-        {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var text = textObject.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = new Color(0.94f, 0.97f, 1f);
-            text.alignment = TextAnchor.MiddleCenter;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            text.text = sample;
-            return text;
         }
 
         private static TextMesh CreateWorldText(
@@ -1045,7 +850,7 @@ namespace MazeParty.Editor
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
                 FindDescendant(root.transform, "VFX Replacement Anchors") == null ||
-                root.GetComponentInChildren<GiftGrabHudBindings>(true) != null)
+                root.GetComponentInChildren<Canvas>(true) != null)
             {
                 throw new InvalidOperationException(
                     "Generated Gift Grab scene is missing its state, arena, " +

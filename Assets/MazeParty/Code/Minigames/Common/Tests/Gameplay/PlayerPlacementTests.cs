@@ -1,4 +1,3 @@
-using System.Collections;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 
@@ -29,67 +28,68 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(set.GetRankForSlot(3), Is.EqualTo(2));
         }
 
-        [TestCaseSource(nameof(InvalidPlacementCases))]
-        public void TryCreate_RejectsMalformedFinalPlacements(
-            PlayerPlacement[] placements,
-            PlayerPlacementValidationError expectedError)
+        [Test]
+        public void TryCreate_RejectsMalformedFinalPlacements()
         {
-            Assert.That(PlayerPlacementSet.TryCreate(
-                placements,
-                out _,
-                out var error), Is.False);
-            Assert.That(error, Is.EqualTo(expectedError));
-        }
-
-        private static IEnumerable InvalidPlacementCases()
-        {
-            yield return new TestCaseData(
-                null,
-                PlayerPlacementValidationError.MissingPlacements);
-            yield return new TestCaseData(
-                new[]
+            (PlayerPlacement[] Placements,
+                PlayerPlacementValidationError ExpectedError)[] cases =
+            {
+                (null, PlayerPlacementValidationError.MissingPlacements),
+                (new[]
                 {
                     new PlayerPlacement(0, 1),
                     new PlayerPlacement(1, 2),
                     new PlayerPlacement(2, 3)
                 },
-                PlayerPlacementValidationError.IncorrectPlacementCount);
-            yield return new TestCaseData(
-                new[]
+                PlayerPlacementValidationError.IncorrectPlacementCount),
+                (new[]
                 {
                     new PlayerPlacement(4, 1),
                     new PlayerPlacement(1, 2),
                     new PlayerPlacement(2, 3),
                     new PlayerPlacement(3, 4)
                 },
-                PlayerPlacementValidationError.PlayerSlotOutOfRange);
-            yield return new TestCaseData(
-                new[]
+                PlayerPlacementValidationError.PlayerSlotOutOfRange),
+                (new[]
                 {
                     new PlayerPlacement(0, 0),
                     new PlayerPlacement(1, 2),
                     new PlayerPlacement(2, 3),
                     new PlayerPlacement(3, 4)
                 },
-                PlayerPlacementValidationError.RankOutOfRange);
-            yield return new TestCaseData(
-                new[]
+                PlayerPlacementValidationError.RankOutOfRange),
+                (new[]
                 {
                     new PlayerPlacement(0, 1),
                     new PlayerPlacement(0, 2),
                     new PlayerPlacement(2, 3),
                     new PlayerPlacement(3, 4)
                 },
-                PlayerPlacementValidationError.DuplicatePlayerSlot);
-            yield return new TestCaseData(
-                new[]
+                PlayerPlacementValidationError.DuplicatePlayerSlot),
+                (new[]
                 {
                     new PlayerPlacement(0, 1),
                     new PlayerPlacement(1, 1),
                     new PlayerPlacement(2, 3),
                     new PlayerPlacement(3, 4)
                 },
-                PlayerPlacementValidationError.DuplicateRank);
+                PlayerPlacementValidationError.DuplicateRank)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    PlayerPlacementSet.TryCreate(
+                        testCase.Placements,
+                        out _,
+                        out var error),
+                    Is.False,
+                    testCase.ExpectedError.ToString());
+                Assert.That(
+                    error,
+                    Is.EqualTo(testCase.ExpectedError),
+                    testCase.ExpectedError.ToString());
+            }
         }
     }
 }

@@ -136,56 +136,79 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(repeatedSecond, Is.EqualTo(second));
         }
 
-        [TestCase(MatchAwardCategory.PeakGoldHeld, 1, "MOST GOLD HELD")]
-        [TestCase(MatchAwardCategory.TotalGoldEarned, 2, "MOST GOLD EARNED")]
-        [TestCase(MatchAwardCategory.MinigameWins, 3, "MOST MINIGAME WINS")]
-        [TestCase(MatchAwardCategory.MinigameLastPlaces, 4, "MOST MINIGAME LAST PLACES")]
-        [TestCase(MatchAwardCategory.ItemUses, 5, "MOST ITEMS USED")]
-        [TestCase(MatchAwardCategory.DamageTaken, 6, "MOST DAMAGE TAKEN")]
-        [TestCase(MatchAwardCategory.PlayerDamageDealt, 7, "MOST PLAYER DAMAGE DEALT")]
-        public void CategoryMapping_ProvidesValueAndDisplayContract(
-            MatchAwardCategory category,
-            int expectedValue,
-            string expectedDisplayName)
+        [Test]
+        public void CategoryMapping_ProvidesValueAndDisplayContract()
         {
             var stats = new MatchAwardStats(1, 2, 3, 4, 5, 6, 7);
+            var cases = new[]
+            {
+                (MatchAwardCategory.PeakGoldHeld, 1, "MOST GOLD HELD"),
+                (MatchAwardCategory.TotalGoldEarned, 2, "MOST GOLD EARNED"),
+                (MatchAwardCategory.MinigameWins, 3, "MOST MINIGAME WINS"),
+                (MatchAwardCategory.MinigameLastPlaces, 4,
+                    "MOST MINIGAME LAST PLACES"),
+                (MatchAwardCategory.ItemUses, 5, "MOST ITEMS USED"),
+                (MatchAwardCategory.DamageTaken, 6, "MOST DAMAGE TAKEN"),
+                (MatchAwardCategory.PlayerDamageDealt, 7,
+                    "MOST PLAYER DAMAGE DEALT")
+            };
 
-            Assert.That(
-                MatchAwardRules.GetValue(stats, category),
-                Is.EqualTo(expectedValue));
-            Assert.That(
-                MatchAwardRules.GetDisplayName(category),
-                Is.EqualTo(expectedDisplayName));
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    MatchAwardRules.GetValue(stats, testCase.Item1),
+                    Is.EqualTo(testCase.Item2),
+                    testCase.Item1.ToString());
+                Assert.That(
+                    MatchAwardRules.GetDisplayName(testCase.Item1),
+                    Is.EqualTo(testCase.Item3),
+                    testCase.Item1.ToString());
+            }
         }
 
-        [TestCase(DamageKind.Item, true, false, true)]
-        [TestCase(DamageKind.Item, true, true, false)]
-        [TestCase(DamageKind.Item, false, false, false)]
-        [TestCase(DamageKind.Environment, true, false, false)]
-        public void PlayerDamageCredit_ExcludesSelfAndEnvironment(
-            DamageKind damageKind,
-            bool hasPlayerSource,
-            bool isSelfDamage,
-            bool expected)
+        [Test]
+        public void PlayerDamageCredit_ExcludesSelfAndEnvironment()
         {
-            Assert.That(MatchAwardRules.CountsAsPlayerDamage(
-                damageKind,
-                hasPlayerSource,
-                isSelfDamage), Is.EqualTo(expected));
+            var cases = new[]
+            {
+                (DamageKind.Item, true, false, true),
+                (DamageKind.Item, true, true, false),
+                (DamageKind.Item, false, false, false),
+                (DamageKind.Environment, true, false, false)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    MatchAwardRules.CountsAsPlayerDamage(
+                        testCase.Item1,
+                        testCase.Item2,
+                        testCase.Item3),
+                    Is.EqualTo(testCase.Item4),
+                    testCase.ToString());
+            }
         }
 
-        [TestCase(100, 20, 20)]
-        [TestCase(20, 80, 20)]
-        [TestCase(0, 80, 0)]
-        [TestCase(100, -1, 0)]
-        public void AppliedDamage_UsesActualHealthLoss(
-            int currentHealth,
-            int requestedDamage,
-            int expected)
+        [Test]
+        public void AppliedDamage_UsesActualHealthLoss()
         {
-            Assert.That(MatchAwardRules.GetAppliedDamageAmount(
-                currentHealth,
-                requestedDamage), Is.EqualTo(expected));
+            var cases = new[]
+            {
+                (CurrentHealth: 100, RequestedDamage: 20, Expected: 20),
+                (CurrentHealth: 20, RequestedDamage: 80, Expected: 20),
+                (CurrentHealth: 0, RequestedDamage: 80, Expected: 0),
+                (CurrentHealth: 100, RequestedDamage: -1, Expected: 0)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    MatchAwardRules.GetAppliedDamageAmount(
+                        testCase.CurrentHealth,
+                        testCase.RequestedDamage),
+                    Is.EqualTo(testCase.Expected),
+                    testCase.ToString());
+            }
         }
 
         private static MatchAwardStats Stats(

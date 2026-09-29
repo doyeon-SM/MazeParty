@@ -153,75 +153,82 @@ namespace MazeParty.Gameplay.Tests
             AssertSchedulesEqual(original, restored);
         }
 
-        [TestCase(1, 2)]
-        [TestCase(2, 3)]
-        [TestCase(3, 4)]
-        [TestCase(4, 5)]
-        [TestCase(5, 6)]
-        [TestCase(6, 7)]
-        [TestCase(7, 8)]
-        [TestCase(8, 9)]
-        [TestCase(9, 10)]
-        [TestCase(10, 11)]
-        [TestCase(11, 12)]
-        [TestCase(12, 13)]
-        [TestCase(13, 14)]
-        [TestCase(14, 15)]
-        public void JsonCodec_MigratesLegacyCatalogWithoutRerollingQueue(
-            int schemaVersion,
-            int catalogEntryCount)
+        [Test]
+        public void JsonCodec_MigratesLegacyCatalogWithoutRerollingQueue()
         {
-            var serializedEntries = new List<int>(catalogEntryCount);
-            for (var id = 1; id <= catalogEntryCount; id++)
+            for (var schemaVersion = 1; schemaVersion <= 14; schemaVersion++)
             {
-                serializedEntries.Add(id);
-            }
+                var catalogEntryCount = schemaVersion + 1;
+                var context = "Schema " + schemaVersion;
+                var serializedEntries = new List<int>(catalogEntryCount);
+                for (var id = 1; id <= catalogEntryCount; id++)
+                {
+                    serializedEntries.Add(id);
+                }
 
-            var matchKey = "legacy-match-" + schemaVersion;
-            var payload =
-                "{\"schemaVersion\":" + schemaVersion +
-                ",\"matchKey\":\"" + matchKey +
-                "\",\"seed\":314,\"turnCount\":" + catalogEntryCount +
-                ",\"entries\":[" +
-                string.Join(",", serializedEntries) + "]}";
-            var codec = new HostMinigameScheduleJsonCodec();
+                var matchKey = "legacy-match-" + schemaVersion;
+                var payload =
+                    "{\"schemaVersion\":" + schemaVersion +
+                    ",\"matchKey\":\"" + matchKey +
+                    "\",\"seed\":314,\"turnCount\":" + catalogEntryCount +
+                    ",\"entries\":[" +
+                    string.Join(",", serializedEntries) + "]}";
+                var codec = new HostMinigameScheduleJsonCodec();
 
-            var decoded = codec.TryDecode(
-                payload,
-                out var restoredMatchKey,
-                out var restored,
-                out var requiresMigration);
+                var decoded = codec.TryDecode(
+                    payload,
+                    out var restoredMatchKey,
+                    out var restored,
+                    out var requiresMigration);
 
-            Assert.That(decoded, Is.True);
-            Assert.That(requiresMigration, Is.True);
-            Assert.That(restoredMatchKey, Is.EqualTo(matchKey));
-            Assert.That(restored.Seed, Is.EqualTo(314));
-            Assert.That(restored.TurnCount, Is.EqualTo(catalogEntryCount));
-            for (var turn = 1; turn <= catalogEntryCount; turn++)
-            {
+                Assert.That(decoded, Is.True, context);
+                Assert.That(requiresMigration, Is.True, context);
                 Assert.That(
-                    restored.GetMinigameForTurn(turn),
-                    Is.EqualTo((ScheduledMinigameId)turn),
-                    "Turn " + turn);
-            }
+                    restoredMatchKey,
+                    Is.EqualTo(matchKey),
+                    context);
+                Assert.That(restored.Seed, Is.EqualTo(314), context);
+                Assert.That(
+                    restored.TurnCount,
+                    Is.EqualTo(catalogEntryCount),
+                    context);
+                for (var turn = 1; turn <= catalogEntryCount; turn++)
+                {
+                    Assert.That(
+                        restored.GetMinigameForTurn(turn),
+                        Is.EqualTo((ScheduledMinigameId)turn),
+                        context + " / turn " + turn);
+                }
 
-            var migrated = codec.Encode(restoredMatchKey, restored);
-            Assert.That(migrated, Does.Contain("\"formatVersion\":1"));
-            Assert.That(
-                migrated,
-                Does.Contain(
-                    "\"catalogEntryCount\":" + catalogEntryCount));
-            Assert.That(migrated, Does.Contain("\"catalogFingerprint\":"));
-            Assert.That(migrated, Does.Not.Contain("\"schemaVersion\":"));
-            Assert.That(
-                codec.TryDecode(
+                var migrated = codec.Encode(restoredMatchKey, restored);
+                Assert.That(
                     migrated,
-                    out _,
-                    out var roundTripped,
-                    out var migratedAgain),
-                Is.True);
-            Assert.That(migratedAgain, Is.False);
-            AssertSchedulesEqual(restored, roundTripped);
+                    Does.Contain("\"formatVersion\":1"),
+                    context);
+                Assert.That(
+                    migrated,
+                    Does.Contain(
+                        "\"catalogEntryCount\":" + catalogEntryCount),
+                    context);
+                Assert.That(
+                    migrated,
+                    Does.Contain("\"catalogFingerprint\":"),
+                    context);
+                Assert.That(
+                    migrated,
+                    Does.Not.Contain("\"schemaVersion\":"),
+                    context);
+                Assert.That(
+                    codec.TryDecode(
+                        migrated,
+                        out _,
+                        out var roundTripped,
+                        out var migratedAgain),
+                    Is.True,
+                    context);
+                Assert.That(migratedAgain, Is.False, context);
+                AssertSchedulesEqual(restored, roundTripped);
+            }
         }
 
         [Test]

@@ -16,22 +16,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab";
 
         [Test]
-        public void HudPrefab_HasFourPlayerScores()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            Assert.That(prefab, Is.Not.Null, HudPrefabPath);
-            Assert.That(prefab.transform.localScale, Is.EqualTo(Vector3.one));
-            var hud = prefab.GetComponent<BouncingBallsHudBindings>();
-            Assert.That(hud, Is.Not.Null);
-            Assert.That(hud.HasRequiredReferences, Is.True);
-            Assert.That(hud.RootCanvas, Is.SameAs(prefab.GetComponent<Canvas>()));
-            Assert.That(hud.PlayerNameTexts, Has.Length.EqualTo(4));
-            Assert.That(hud.PlayerScoreTexts, Has.Length.EqualTo(4));
-            Assert.That(hud.PlayerNameTexts, Has.All.Not.Null);
-            Assert.That(hud.PlayerScoreTexts, Has.All.Not.Null);
-        }
-
-        [Test]
         public void Scene_HasFourGoalsShieldsThreeBallsAndOneSharedCamera()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);

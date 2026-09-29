@@ -443,19 +443,19 @@ namespace MazeParty.Editor
             {
                 var panel = CreatePanel("Player Card " + (slot + 1),
                     visibleRoot.transform, new Vector2(0.5f, 0f),
-                    new Vector2(-690f + slot * 460f, 28f),
-                    new Vector2(420f, 120f),
+                    new Vector2(-348f + slot * 232f, 20f),
+                    new Vector2(220f, 64f),
                     new Color(0.022f, 0.03f, 0.067f, 0.94f));
                 CreatePanel("Player Accent", panel.transform,
                     new Vector2(0.5f, 1f), Vector2.zero,
-                    new Vector2(420f, 8f), PlayerColors[slot]);
+                    new Vector2(220f, 5f), PlayerColors[slot]);
                 names[slot] = CreateText("Player Name", panel.transform,
-                    font, new Vector2(0f, -20f), new Vector2(380f, 32f),
-                    21, "PLAYER " + (slot + 1));
+                    font, new Vector2(-69f, -12f), new Vector2(72f, 28f),
+                    15, "P" + (slot + 1));
                 names[slot].color = PlayerColors[slot];
                 scores[slot] = CreateText("Score", panel.transform, font,
-                    new Vector2(0f, -58f), new Vector2(380f, 51f),
-                    34, "SCORE 0");
+                    new Vector2(40f, -10f), new Vector2(110f, 32f),
+                    22, "0");
             }
 
             canvasObject.GetComponent<BouncingBallsHudBindings>().Configure(

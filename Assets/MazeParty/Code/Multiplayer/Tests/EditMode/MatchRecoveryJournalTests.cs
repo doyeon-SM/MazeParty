@@ -104,24 +104,41 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(status, Is.EqualTo(MatchRecoveryLoadStatus.Corrupt));
         }
 
-        [TestCase("other-roster", "content", MatchRecoveryLoadStatus.RosterMismatch)]
-        [TestCase("roster", "other-content", MatchRecoveryLoadStatus.ContentMismatch)]
-        public void FingerprintMismatch_IsRejected(
-            string roster,
-            string content,
-            MatchRecoveryLoadStatus expected)
+        [Test]
+        public void FingerprintMismatch_IsRejected()
         {
             var now = new DateTime(2030, 1, 2, 3, 4, 5, DateTimeKind.Utc);
-            _journal.Save("match", "roster", "content", "payload", now);
+            var cases = new[]
+            {
+                (Roster: "other-roster", Content: "content",
+                    Expected: MatchRecoveryLoadStatus.RosterMismatch),
+                (Roster: "roster", Content: "other-content",
+                    Expected: MatchRecoveryLoadStatus.ContentMismatch)
+            };
 
-            var status = _journal.TryLoadLatest(
-                "match",
-                now.AddMinutes(1),
-                roster,
-                content,
-                out _);
+            for (var index = 0; index < cases.Length; index++)
+            {
+                var testCase = cases[index];
+                var matchKey = "match-" + index;
+                _journal.Save(
+                    matchKey,
+                    "roster",
+                    "content",
+                    "payload",
+                    now);
 
-            Assert.That(status, Is.EqualTo(expected));
+                var status = _journal.TryLoadLatest(
+                    matchKey,
+                    now.AddMinutes(1),
+                    testCase.Roster,
+                    testCase.Content,
+                    out _);
+
+                Assert.That(
+                    status,
+                    Is.EqualTo(testCase.Expected),
+                    matchKey);
+            }
         }
 
         [Test]

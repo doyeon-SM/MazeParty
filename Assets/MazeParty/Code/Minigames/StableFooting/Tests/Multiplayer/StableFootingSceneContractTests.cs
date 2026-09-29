@@ -15,7 +15,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
 
         [Test]
-        public void Scene_PreservesArenaNetworkSharedCameraAndPrefabHudContract()
+        public void Scene_PreservesArenaNetworkSharedCameraAndWorldCueContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -48,8 +48,7 @@ namespace MazeParty.Multiplayer.Tests
                     "safeSymbolCrossRenderer",
                     "safeSymbolCircleRenderer",
                     "safeSymbolSquareRenderer",
-                    "cueAudioSource",
-                    "hud"
+                    "cueAudioSource"
                 };
                 foreach (var propertyName in requiredReferences)
                 {
@@ -60,15 +59,15 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Not.Null,
                         propertyName);
                 }
-                var hud = serializedView.FindProperty("hud")
-                    ?.objectReferenceValue as StableFootingHudBindings;
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
                 Assert.That(
-                    FindDescendant(hud.transform, "ResultPanel"),
+                    serializedView.FindProperty("hud"),
                     Is.Null,
-                    "Stable Footing must not show a duplicate, content-free " +
-                    "round-result panel.");
+                    "Stable Footing must not retain a dedicated HUD field.");
+                Assert.That(
+                    roots.SelectMany(root =>
+                        root.GetComponentsInChildren<Canvas>(true)),
+                    Is.Empty,
+                    "Stable Footing must not add a dedicated screen Canvas.");
 
                 var networkObject = state.GetComponent<NetworkObject>();
                 Assert.That(networkObject, Is.Not.Null);

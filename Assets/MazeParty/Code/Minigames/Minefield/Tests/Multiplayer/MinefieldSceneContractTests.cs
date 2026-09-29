@@ -40,10 +40,10 @@ namespace MazeParty.Multiplayer.Tests
                 var view = state.GetComponent<MinefieldNetworkView>();
                 Assert.That(view, Is.Not.Null);
                 Assert.That(
-                    state.GetComponentsInChildren<MinefieldHudBindings>(true),
+                    state.GetComponentsInChildren<Canvas>(true),
                     Is.Empty,
                     "Minefield communicates state through its world " +
-                    "presentation and the shared minigame HUD.");
+                    "presentation and owns no dedicated Canvas HUD.");
 
                 var networkObject = state.GetComponent<NetworkObject>();
                 Assert.That(networkObject, Is.Not.Null);

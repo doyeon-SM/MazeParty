@@ -20,16 +20,16 @@ Editor setup commands follow two rules:
 2. Reuse the existing prefab unchanged and validate its binding contract on all
 later scene rebuilds.
 
-The same contract applies to every new minigame HUD, including
-`StableFootingHud.prefab`, `BalloonBlowHud.prefab`, and
-`GiftGrabHud.prefab`: edit a prefab to change
-layout or styling, while the scene keeps only serialized gameplay-object
-references. Balloon Blow's fixed world labels are likewise authored once in
-`BalloonBlowStationLabel.prefab`; runtime code updates only the player name,
-progress, highlight, and visibility through `BalloonBlowStationLabel` bindings.
-Gift Grab follows the same rule with `GiftGrabBaseLabel.prefab`, reused for both
-moving player names and four base owner/gift-count signs. Its HUD root must keep
-a unit scale so the screen-space Canvas remains renderable.
+The same contract applies to every minigame that owns a dedicated Canvas HUD:
+edit its prefab to change layout or styling, while the scene keeps only
+serialized gameplay-object references. Minefield, Balloon Blow, and Gift Grab
+intentionally own no dedicated Canvas HUD. Balloon Blow conveys progress
+through authored balloon growth and pop state instead of a separate station
+label.
+
+Gift Grab uses `GiftGrabBaseLabel.prefab` for its essential world presentation:
+temporary carry/stun status above players and four base owner/gift-count signs.
+The runtime updates only those serialized labels' content and visibility.
 
 Scene instances must be created with `PrefabUtility.InstantiatePrefab` so their
 prefab provenance remains inspectable. Editor-only windows are outside the
@@ -99,7 +99,3 @@ use scene-instance transforms for slot differences. Current shared families are
 Bouncing Balls balls and Cliff Barrage projectiles/laser rigs. Do not split a
 family into numbered prefab copies unless its serialized component contract or
 visual hierarchy genuinely diverges.
-
-`RaceHud`, `TagChaseHud`, and `CliffBarrageHud` are recovery-only migration
-assets. Production scenes use `MinigameCommonHud`; do not use the legacy HUDs as
-new design sources.

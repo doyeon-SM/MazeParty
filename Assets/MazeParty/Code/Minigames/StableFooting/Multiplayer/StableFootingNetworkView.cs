@@ -41,7 +41,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer safeSymbolCircleRenderer;
         [SerializeField] private Renderer safeSymbolSquareRenderer;
         [SerializeField] private AudioSource cueAudioSource;
-        [SerializeField] private StableFootingHudBindings hud;
 
         private readonly RunnerView[] _runners =
             new RunnerView[StableFootingRules.PlayerCount];
@@ -76,8 +75,7 @@ namespace MazeParty.Multiplayer
             Renderer cross,
             Renderer circle,
             Renderer square,
-            AudioSource audioSource,
-            StableFootingHudBindings hudBindings)
+            AudioSource audioSource)
         {
             state = networkState;
             sharedCamera = camera;
@@ -88,7 +86,6 @@ namespace MazeParty.Multiplayer
             safeSymbolCircleRenderer = circle;
             safeSymbolSquareRenderer = square;
             cueAudioSource = audioSource;
-            hud = hudBindings;
             _cameraConfigured = false;
             _tileViewsCached = false;
             ResolveSceneReferences();
@@ -107,7 +104,6 @@ namespace MazeParty.Multiplayer
             CacheTileViews();
             EnsureRunners();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnEnable()
@@ -118,7 +114,6 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -145,10 +140,6 @@ namespace MazeParty.Multiplayer
                                        BoardFlowState.MinigamePlaying ||
                                    match.FlowState ==
                                        BoardFlowState.MinigameResult);
-            var shouldShowHud = shouldShowWorld &&
-                                match.FlowState ==
-                                BoardFlowState.MinigamePlaying;
-            SetHudActive(shouldShowHud);
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
@@ -163,7 +154,6 @@ namespace MazeParty.Multiplayer
             RefreshTiles();
             RefreshSafeSymbolDisplay();
             RefreshCue();
-            RefreshHud(match);
         }
 
         private void ResolveSceneReferences()
@@ -417,43 +407,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            var reconnectPaused = match.IsSimulationSuspended;
-            hud.InstructionText.text = reconnectPaused
-                ? GameText.T("PAUSED")
-                : BuildInstructionLabel();
-        }
-
-        private string BuildInstructionLabel()
-        {
-            if (state.Phase != NetworkStableFootingPhase.Running)
-            {
-                return string.Empty;
-            }
-
-            switch (state.CyclePhase)
-            {
-                case StableFootingCyclePhase.ShuffleReveal:
-                    return GameText.F(
-                        "SAFE: {0}",
-                        GameText.T(SymbolLabel(state.SafeSymbol)));
-                case StableFootingCyclePhase.Move:
-                    return GameText.F(
-                        "SAFE: {0}",
-                        GameText.T(SymbolLabel(state.SafeSymbol)));
-                case StableFootingCyclePhase.Drop:
-                    return GameText.T("DROPPING");
-                default:
-                    return string.Empty;
-            }
-        }
-
         private int ResolveDisplayedRank(int slot)
         {
             var finalRank = state.GetFinalRank(slot);
@@ -534,14 +487,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void SetHudActive(bool active)
-        {
-            if (hud != null && hud.gameObject.activeSelf != active)
-            {
-                hud.gameObject.SetActive(active);
-            }
-        }
-
         private static void SetRendererGroupActive(
             Renderer renderer,
             bool active)
@@ -561,16 +506,6 @@ namespace MazeParty.Multiplayer
             if (target.activeSelf != active)
             {
                 target.SetActive(active);
-            }
-        }
-
-        private static string SymbolLabel(StableFootingSymbol symbol)
-        {
-            switch (symbol)
-            {
-                case StableFootingSymbol.Circle: return GameText.N("CIRCLE");
-                case StableFootingSymbol.Square: return GameText.N("SQUARE");
-                default: return GameText.N("CROSS");
             }
         }
 

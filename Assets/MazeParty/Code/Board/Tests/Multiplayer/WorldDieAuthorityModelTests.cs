@@ -152,21 +152,36 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(velocity.y, Is.EqualTo(-2f).Within(0.0001f));
         }
 
-        [TestCase(3f, 4f, 5f)]
-        [TestCase(0.6f, 0.8f, 1f)]
-        [TestCase(0f, 2.5f, 2.5f)]
-        public void PolygonFootprintInset_UsesConservativeCircularSupport(
-            float rightExtent,
-            float forwardExtent,
-            float expectedInset)
+        [Test]
+        public void PolygonFootprintInset_UsesConservativeCircularSupport()
         {
-            var inset = WorldDieFootprintConstraint
-                .GetConservativeCircularInset(rightExtent, forwardExtent);
+            var cases = new[]
+            {
+                (RightExtent: 3f, ForwardExtent: 4f, ExpectedInset: 5f),
+                (RightExtent: 0.6f, ForwardExtent: 0.8f, ExpectedInset: 1f),
+                (RightExtent: 0f, ForwardExtent: 2.5f, ExpectedInset: 2.5f)
+            };
 
-            Assert.That(inset, Is.EqualTo(expectedInset).Within(0.00001f));
-            Assert.That(
-                inset,
-                Is.GreaterThanOrEqualTo(Mathf.Max(rightExtent, forwardExtent)));
+            foreach (var testCase in cases)
+            {
+                var inset = WorldDieFootprintConstraint
+                    .GetConservativeCircularInset(
+                        testCase.RightExtent,
+                        testCase.ForwardExtent);
+                var context = testCase.RightExtent + " / " +
+                    testCase.ForwardExtent;
+
+                Assert.That(
+                    inset,
+                    Is.EqualTo(testCase.ExpectedInset).Within(0.00001f),
+                    context);
+                Assert.That(
+                    inset,
+                    Is.GreaterThanOrEqualTo(Mathf.Max(
+                        testCase.RightExtent,
+                        testCase.ForwardExtent)),
+                    context);
+            }
         }
 
         [Test]

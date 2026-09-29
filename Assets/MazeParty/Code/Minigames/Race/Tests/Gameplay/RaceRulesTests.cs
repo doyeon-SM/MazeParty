@@ -6,29 +6,38 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class RaceRulesTests
     {
-        [TestCase("aad", 2)]
-        [TestCase("ada", 3)]
-        [TestCase("dddd", 1)]
-        public void Alternation_CountsOnlyValidNewDirectionChanges(
-            string inputs,
-            int expectedSteps)
+        [Test]
+        public void Alternation_CountsOnlyValidNewDirectionChanges()
         {
-            var previous = RaceStepInput.None;
-            var steps = 0;
-            foreach (var inputCharacter in inputs)
+            var cases = new[]
             {
-                var input = inputCharacter == 'a'
-                    ? RaceStepInput.Left
-                    : RaceStepInput.Right;
-                if (!RaceRules.IsAlternatingStep(previous, input))
-                {
-                    continue;
-                }
-                previous = input;
-                steps++;
-            }
+                (Inputs: "aad", ExpectedSteps: 2),
+                (Inputs: "ada", ExpectedSteps: 3),
+                (Inputs: "dddd", ExpectedSteps: 1)
+            };
 
-            Assert.That(steps, Is.EqualTo(expectedSteps));
+            foreach (var testCase in cases)
+            {
+                var previous = RaceStepInput.None;
+                var steps = 0;
+                foreach (var inputCharacter in testCase.Inputs)
+                {
+                    var input = inputCharacter == 'a'
+                        ? RaceStepInput.Left
+                        : RaceStepInput.Right;
+                    if (!RaceRules.IsAlternatingStep(previous, input))
+                    {
+                        continue;
+                    }
+                    previous = input;
+                    steps++;
+                }
+
+                Assert.That(
+                    steps,
+                    Is.EqualTo(testCase.ExpectedSteps),
+                    testCase.Inputs);
+            }
         }
 
         [Test]

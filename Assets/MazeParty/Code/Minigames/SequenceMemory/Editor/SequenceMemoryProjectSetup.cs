@@ -578,25 +578,25 @@ namespace MazeParty.Editor
                 "NPC Problem Panel",
                 visibleRoot.transform,
                 new Vector2(0.5f, 1f),
-                new Vector2(0f, -22f),
-                new Vector2(1080f, 160f),
+                new Vector2(0f, -18f),
+                new Vector2(720f, 108f),
                 new Color(0.045f, 0.055f, 0.12f, 0.94f));
             CreateHudText(
                 "Problem Label",
                 problemPanel.transform,
                 font,
-                new Vector2(0f, -14f),
-                new Vector2(1000f, 32f),
-                18,
+                new Vector2(0f, -8f),
+                new Vector2(680f, 22f),
+                16,
                 FontStyle.Bold,
                 "NPC SEQUENCE");
             var npcSequenceText = CreateHudText(
                 "NPC Sequence",
                 problemPanel.transform,
                 font,
-                new Vector2(0f, -48f),
-                new Vector2(1000f, 76f),
-                52,
+                new Vector2(0f, -30f),
+                new Vector2(680f, 58f),
+                34,
                 FontStyle.Bold,
                 "A  S  D  A  S");
             npcSequenceText.color = new Color(1f, 0.82f, 0.25f);
@@ -609,21 +609,21 @@ namespace MazeParty.Editor
                  slot < SequenceMemoryRules.PlayerCount;
                  slot++)
             {
-                var x = -690f + slot * 460f;
                 var row = CreatePanel(
                     "Player Row " + (slot + 1),
                     visibleRoot.transform,
                     new Vector2(0.5f, 0f),
-                    new Vector2(x, 34f),
-                    new Vector2(420f, 190f),
+                    new Vector2(0f, 24f),
+                    new Vector2(720f, 82f),
                     new Color(0.025f, 0.032f, 0.07f, 0.94f));
                 playerRows[slot] = row.GetComponent<Image>();
+                row.SetActive(false);
                 var accent = CreatePanel(
                     "Player Accent",
                     row.transform,
                     new Vector2(0.5f, 1f),
                     new Vector2(0f, 0f),
-                    new Vector2(420f, 8f),
+                    new Vector2(720f, 6f),
                     PlayerColors[slot]);
                 accent.GetComponent<Image>().raycastTarget = false;
 
@@ -631,9 +631,9 @@ namespace MazeParty.Editor
                     "Player Name",
                     row.transform,
                     font,
-                    new Vector2(0f, -18f),
-                    new Vector2(380f, 34f),
-                    20,
+                    new Vector2(-245f, -8f),
+                    new Vector2(190f, 28f),
+                    16,
                     FontStyle.Bold,
                     "PLAYER " + (slot + 1));
                 playerNames[slot].color = PlayerColors[slot];
@@ -641,18 +641,18 @@ namespace MazeParty.Editor
                     "Player Input",
                     row.transform,
                     font,
-                    new Vector2(0f, -62f),
-                    new Vector2(380f, 54f),
-                    32,
+                    new Vector2(0f, -14f),
+                    new Vector2(320f, 48f),
+                    26,
                     FontStyle.Bold,
                     "A S D");
                 playerStatuses[slot] = CreateHudText(
                     "Player Status",
                     row.transform,
                     font,
-                    new Vector2(0f, -124f),
-                    new Vector2(380f, 32f),
-                    17,
+                    new Vector2(245f, -8f),
+                    new Vector2(190f, 28f),
+                    15,
                     FontStyle.Bold,
                     "ENTERING");
                 playerStatuses[slot].color =

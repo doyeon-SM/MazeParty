@@ -466,6 +466,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                  slot < SequenceMemoryRules.PlayerCount;
                  slot++)
             {
+                _productionHud.PlayerRows[slot].gameObject.SetActive(
+                    slot == LocalPlayerSlot);
                 var player = _match.GetPlayer(slot);
                 _productionHud.PlayerNameTexts[slot].text =
                     slot == LocalPlayerSlot

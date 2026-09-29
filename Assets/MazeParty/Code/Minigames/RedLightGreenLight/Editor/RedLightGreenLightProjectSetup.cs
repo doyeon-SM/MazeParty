@@ -835,7 +835,7 @@ namespace MazeParty.Editor
             panelRect.anchorMax = new Vector2(0.5f, 1f);
             panelRect.pivot = new Vector2(0.5f, 1f);
             panelRect.anchoredPosition = new Vector2(0f, -22f);
-            panelRect.sizeDelta = new Vector2(1120f, 125f);
+            panelRect.sizeDelta = new Vector2(800f, 96f);
             panel.GetComponent<Image>().color =
                 new Color(0.025f, 0.035f, 0.055f, 0.88f);
 
@@ -843,9 +843,9 @@ namespace MazeParty.Editor
                 "Signal",
                 panel.transform,
                 font,
-                new Vector2(0f, -28f),
-                new Vector2(1060f, 72f),
-                48,
+                new Vector2(0f, -20f),
+                new Vector2(760f, 56f),
+                34,
                 TextAnchor.MiddleCenter,
                 FontStyle.Bold,
                 "GREEN LIGHT  ·  MOVE");

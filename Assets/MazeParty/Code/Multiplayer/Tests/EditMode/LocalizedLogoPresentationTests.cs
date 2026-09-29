@@ -19,51 +19,67 @@ namespace MazeParty.Multiplayer.Tests
             GameText.ResetForTests();
         }
 
-        [TestCase(GameLanguage.English, true, false)]
-        [TestCase(GameLanguage.Korean, false, true)]
-        [TestCase(GameLanguage.Japanese, true, false)]
-        [TestCase(GameLanguage.ChineseSimplified, true, false)]
-        public void LanguageChange_SelectsTheExpectedAuthoredLogo(
-            GameLanguage language,
-            bool englishVisible,
-            bool koreanVisible)
+        [Test]
+        public void LanguageChange_SelectsTheExpectedAuthoredLogo()
         {
-            var root = new GameObject("Localized Logo Contract Root");
-            LocalizedLogo localizedLogo = null;
-            try
+            var cases = new[]
             {
-                var englishLogo = new GameObject("English Logo");
-                var koreanLogo = new GameObject("Korean Logo");
-                englishLogo.transform.SetParent(root.transform, false);
-                koreanLogo.transform.SetParent(root.transform, false);
+                (GameLanguage.English, true, false),
+                (GameLanguage.Korean, false, true),
+                (GameLanguage.Japanese, true, false),
+                (GameLanguage.ChineseSimplified, true, false)
+            };
 
-                var initialLanguage = language == GameLanguage.Korean
-                    ? GameLanguage.English
-                    : GameLanguage.Korean;
-                GameText.SetLanguage(initialLanguage);
-
-                localizedLogo = root.AddComponent<LocalizedLogo>();
-                localizedLogo.Configure(englishLogo, koreanLogo);
-                Assert.That(localizedLogo.HasRequiredReferences, Is.True);
-
-                // EditMode does not consistently dispatch MonoBehaviour lifecycle
-                // methods for temporary objects. Clear any automatic subscription,
-                // then explicitly simulate the runtime enable lifecycle.
-                InvokeLifecycle(localizedLogo, "OnDisable");
-                InvokeLifecycle(localizedLogo, "OnEnable");
-                GameText.SetLanguage(language);
-
-                Assert.That(englishLogo.activeSelf, Is.EqualTo(englishVisible));
-                Assert.That(koreanLogo.activeSelf, Is.EqualTo(koreanVisible));
-            }
-            finally
+            foreach (var testCase in cases)
             {
-                if (localizedLogo != null)
+                var root = new GameObject("Localized Logo Contract Root");
+                LocalizedLogo localizedLogo = null;
+                try
                 {
-                    InvokeLifecycle(localizedLogo, "OnDisable");
-                }
+                    var englishLogo = new GameObject("English Logo");
+                    var koreanLogo = new GameObject("Korean Logo");
+                    englishLogo.transform.SetParent(root.transform, false);
+                    koreanLogo.transform.SetParent(root.transform, false);
 
-                Object.DestroyImmediate(root);
+                    var initialLanguage =
+                        testCase.Item1 == GameLanguage.Korean
+                            ? GameLanguage.English
+                            : GameLanguage.Korean;
+                    GameText.SetLanguage(initialLanguage);
+
+                    localizedLogo = root.AddComponent<LocalizedLogo>();
+                    localizedLogo.Configure(englishLogo, koreanLogo);
+                    Assert.That(
+                        localizedLogo.HasRequiredReferences,
+                        Is.True,
+                        testCase.Item1.ToString());
+
+                    // EditMode does not consistently dispatch MonoBehaviour
+                    // lifecycle methods for temporary objects. Clear any
+                    // automatic subscription, then explicitly simulate the
+                    // runtime enable lifecycle.
+                    InvokeLifecycle(localizedLogo, "OnDisable");
+                    InvokeLifecycle(localizedLogo, "OnEnable");
+                    GameText.SetLanguage(testCase.Item1);
+
+                    Assert.That(
+                        englishLogo.activeSelf,
+                        Is.EqualTo(testCase.Item2),
+                        testCase.Item1.ToString());
+                    Assert.That(
+                        koreanLogo.activeSelf,
+                        Is.EqualTo(testCase.Item3),
+                        testCase.Item1.ToString());
+                }
+                finally
+                {
+                    if (localizedLogo != null)
+                    {
+                        InvokeLifecycle(localizedLogo, "OnDisable");
+                    }
+
+                    Object.DestroyImmediate(root);
+                }
             }
         }
 

@@ -8,14 +8,13 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
     /// <summary>
     /// Builds the additive Balloon Blow arena and its replaceable prototype
-    /// presentation. Existing UI prefabs are validated and reused unchanged.
-    /// Board continues to own the output Camera and AudioListener.
+    /// presentation. Board continues to own the output Camera and
+    /// AudioListener.
     /// </summary>
     public static class BalloonBlowProjectSetup
     {
@@ -23,7 +22,6 @@ namespace MazeParty.Editor
             "MazeParty/Minigames/Rebuild Balloon Blow";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/BalloonBlow";
-        private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/BalloonBlow";
         public const string EnvironmentPrefabPath =
@@ -35,10 +33,6 @@ namespace MazeParty.Editor
 
         public const string BalloonBlowScenePath =
             "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity";
-        public const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowHud.prefab";
-        public const string StationLabelPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/BalloonBlow/UI/BalloonBlowStationLabel.prefab";
 
         private static readonly Vector3[] PlayerPositions =
         {
@@ -85,8 +79,8 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "Balloon Blow rebuilt: four fixed stations, shared camera, " +
-                "replaceable balloons and arena art, prefab HUD and prefab " +
-                "world-space station labels.");
+                "replaceable balloons and arena art. Progress is conveyed " +
+                "by balloon growth and pop state.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -379,349 +373,6 @@ namespace MazeParty.Editor
             new GameObject("VFX Anchor").transform.SetParent(root, false);
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            if (prefab == null)
-            {
-                var template = CreateHudTemplate();
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            var bindings = prefab != null
-                ? prefab.GetComponent<BalloonBlowHudBindings>()
-                : null;
-            if (bindings == null || !bindings.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "BalloonBlowHud.prefab is missing its serialized binding " +
-                    "contract. Repair the prefab instead of allowing setup or " +
-                    "runtime code to replace designer changes.");
-            }
-            return prefab;
-        }
-
-        private static GameObject LoadOrCreateStationLabelPrefab(
-            BalloonBlowMaterials materials)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                StationLabelPrefabPath);
-            if (prefab == null)
-            {
-                var template = CreateStationLabelTemplate(materials);
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        StationLabelPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            var bindings = prefab != null
-                ? prefab.GetComponent<BalloonBlowStationLabel>()
-                : null;
-            if (bindings == null || !bindings.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "BalloonBlowStationLabel.prefab is missing its serialized " +
-                    "binding contract. Repair the prefab without rebuilding it.");
-            }
-            return prefab;
-        }
-
-        private static GameObject CreateHudTemplate()
-        {
-            var font = RequireBuiltinFont();
-            var root = new GameObject(
-                "BalloonBlowHud",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(BalloonBlowHudBindings));
-            root.transform.localScale = Vector3.one;
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 45;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var headerPanel = CreatePanel(
-                "Header Panel",
-                root.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -20f),
-                new Vector2(560f, 86f),
-                new Color(0.035f, 0.025f, 0.07f, 0.9f));
-            var instructions = CreateHudText(
-                "Instructions",
-                headerPanel.transform,
-                font,
-                new Vector2(0f, -22f),
-                new Vector2(520f, 42f),
-                16,
-                FontStyle.Normal,
-                "YOU · READY");
-
-            var card = CreatePanel(
-                "Player 1 Card",
-                root.transform,
-                new Vector2(0.5f, 0f),
-                new Vector2(0f, 22f),
-                new Vector2(350f, 104f),
-                new Color(0.025f, 0.032f, 0.052f, 0.9f));
-            var localProgressText = CreateHudText(
-                "Player 1 Row",
-                card.transform,
-                font,
-                new Vector2(0f, -12f),
-                new Vector2(320f, 34f),
-                15,
-                FontStyle.Bold,
-                "YOU · 0% · READY");
-            localProgressText.color = new Color(1f, 0.88f, 0.25f);
-            var barBack = CreatePanel(
-                "Progress Back",
-                card.transform,
-                new Vector2(0.5f, 1f),
-                new Vector2(0f, -60f),
-                new Vector2(310f, 20f),
-                new Color(0.09f, 0.105f, 0.15f, 1f));
-            var fillObject = CreatePanel(
-                "Progress Fill",
-                barBack.transform,
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(298f, 12f),
-                new Color(1f, 0.88f, 0.25f));
-            var localProgressFill = fillObject.GetComponent<Image>();
-            localProgressFill.type = Image.Type.Filled;
-            localProgressFill.fillMethod = Image.FillMethod.Horizontal;
-            localProgressFill.fillOrigin = 0;
-            localProgressFill.fillAmount = 0f;
-
-            var resultPanel = CreatePanel(
-                "Result Panel",
-                root.transform,
-                new Vector2(0.5f, 0.5f),
-                Vector2.zero,
-                new Vector2(720f, 220f),
-                new Color(0.02f, 0.02f, 0.04f, 0.96f));
-            var resultText = CreateHudText(
-                "Result Message",
-                resultPanel.transform,
-                font,
-                new Vector2(0f, -28f),
-                new Vector2(680f, 170f),
-                30,
-                FontStyle.Bold,
-                "ROUND RESULTS");
-            var resultCanvas = resultPanel.AddComponent<Canvas>();
-            resultCanvas.overrideSorting = true;
-            resultCanvas.sortingOrder = 100;
-            var resultSorting = new SerializedObject(resultCanvas)
-                .FindProperty("m_OverrideSorting");
-            resultSorting.boolValue = true;
-            resultSorting.serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            resultPanel.SetActive(false);
-
-            root.GetComponent<BalloonBlowHudBindings>().Configure(
-                canvas,
-                instructions,
-                localProgressText,
-                localProgressFill,
-                resultText,
-                resultPanel);
-            return root;
-        }
-
-        private static GameObject CreateStationLabelTemplate(
-            BalloonBlowMaterials materials)
-        {
-            var font = RequireBuiltinFont();
-            var root = new GameObject(
-                "BalloonBlowStationLabel",
-                typeof(BalloonBlowStationLabel));
-
-            var highlight = CreatePrimitive(
-                "Local Highlight",
-                PrimitiveType.Cube,
-                root.transform,
-                new Vector3(0f, 0f, 0.04f),
-                Quaternion.identity,
-                new Vector3(2.85f, 1.18f, 0.035f),
-                materials.Highlight,
-                false);
-            var backing = CreatePrimitive(
-                "Label Backing",
-                PrimitiveType.Cube,
-                root.transform,
-                Vector3.zero,
-                Quaternion.identity,
-                new Vector3(2.65f, 0.98f, 0.06f),
-                materials.LabelBack,
-                false);
-            highlight.SetActive(false);
-
-            var nameText = CreateWorldText(
-                "Player Name",
-                root.transform,
-                font,
-                new Vector3(0f, 0.25f, -0.055f),
-                64,
-                0.05f,
-                "PLAYER 1");
-            var progressText = CreateWorldText(
-                "Progress Text",
-                root.transform,
-                font,
-                new Vector3(0f, -0.03f, -0.055f),
-                56,
-                0.04f,
-                "0%");
-
-            CreatePrimitive(
-                "Progress Back",
-                PrimitiveType.Cube,
-                root.transform,
-                new Vector3(0f, -0.34f, -0.07f),
-                Quaternion.identity,
-                new Vector3(2.18f, 0.14f, 0.035f),
-                materials.ProgressBack,
-                false);
-            var fill = CreatePrimitive(
-                "Progress Fill",
-                PrimitiveType.Cube,
-                root.transform,
-                new Vector3(0f, -0.34f, -0.095f),
-                Quaternion.identity,
-                new Vector3(2.08f, 0.085f, 0.035f),
-                materials.ProgressFill,
-                false);
-
-            root.GetComponent<BalloonBlowStationLabel>().Configure(
-                nameText,
-                progressText,
-                fill.transform,
-                fill.GetComponent<Renderer>(),
-                highlight.GetComponent<Renderer>());
-            return root;
-        }
-
-        private static GameObject CreatePanel(
-            string name,
-            Transform parent,
-            Vector2 anchor,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            Color color)
-        {
-            var panel = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            var image = panel.GetComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            return panel;
-        }
-
-        private static Text CreateHudText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            FontStyle style,
-            string sampleText)
-        {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            var text = textObject.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = new Color(0.94f, 0.97f, 1f);
-            text.alignment = TextAnchor.MiddleCenter;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            text.text = sampleText;
-            return text;
-        }
-
-        private static TextMesh CreateWorldText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector3 localPosition,
-            int fontSize,
-            float characterSize,
-            string sampleText)
-        {
-            var textObject = new GameObject(name);
-            textObject.transform.SetParent(parent, false);
-            textObject.transform.localPosition = localPosition;
-            var text = textObject.AddComponent<TextMesh>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
-            text.characterSize = characterSize;
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.color = Color.white;
-            text.text = sampleText;
-            var renderer = text.GetComponent<MeshRenderer>();
-            if (renderer != null && font.material != null)
-            {
-                renderer.sharedMaterial = font.material;
-            }
-            return text;
-        }
-
-        private static Font RequireBuiltinFont()
-        {
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
-            }
-            return font;
-        }
-
         private static GameObject CreatePrimitive(
             string name,
             PrimitiveType primitiveType,
@@ -780,19 +431,6 @@ namespace MazeParty.Editor
                 Plaque = CreateOrLoadMaterial(
                     "BalloonBlowPlaque",
                     new Color(0.16f, 0.08f, 0.23f)),
-                LabelBack = CreateOrLoadMaterial(
-                    "BalloonBlowLabelBack",
-                    new Color(0.025f, 0.03f, 0.055f)),
-                ProgressBack = CreateOrLoadMaterial(
-                    "BalloonBlowProgressBack",
-                    new Color(0.09f, 0.1f, 0.14f)),
-                ProgressFill = CreateOrLoadMaterial(
-                    "BalloonBlowProgressFill",
-                    Color.white),
-                Highlight = CreateOrLoadMaterial(
-                    "BalloonBlowLocalHighlight",
-                    new Color(1f, 0.82f, 0.14f),
-                    new Color(0.48f, 0.24f, 0.01f)),
                 Balloon = balloon,
                 Station = stations
             };
@@ -859,8 +497,7 @@ namespace MazeParty.Editor
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
-                root.GetComponentInChildren<BalloonBlowHudBindings>(true) != null ||
-                root.GetComponentInChildren<BalloonBlowStationLabel>(true) != null)
+                root.GetComponentInChildren<Canvas>(true) != null)
             {
                 throw new InvalidOperationException(
                     "Generated Balloon Blow scene is missing its network, " +
@@ -902,7 +539,6 @@ namespace MazeParty.Editor
         private static void EnsureFolders()
         {
             EnsureFolder(ScenesFolder);
-            EnsureFolder(UiPrefabFolder);
             EnsureFolder(ProjectRoot + "/Art");
             EnsureFolder(ProjectRoot + "/Art/Minigames");
             EnsureFolder(ProjectRoot + "/Art/Minigames/BalloonBlow");
@@ -965,10 +601,6 @@ namespace MazeParty.Editor
             public Material Backdrop;
             public Material Trim;
             public Material Plaque;
-            public Material LabelBack;
-            public Material ProgressBack;
-            public Material ProgressFill;
-            public Material Highlight;
             public Material[] Balloon;
             public Material[] Station;
         }

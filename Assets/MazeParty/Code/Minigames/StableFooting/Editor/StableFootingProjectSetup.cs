@@ -8,7 +8,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
@@ -23,8 +22,6 @@ namespace MazeParty.Editor
             "MazeParty/Minigames/Rebuild Stable Footing";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/StableFooting";
-        private const string UiFolder = "Assets/MazeParty/Prefabs/Minigames/StableFooting";
-        private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/StableFooting";
         public const string EnvironmentPrefabPath =
@@ -40,9 +37,6 @@ namespace MazeParty.Editor
 
         public const string StableFootingScenePath =
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
-        public const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/StableFooting/UI/StableFootingHud.prefab";
-
         private const float TileSurfaceSize = 2.16f;
         private const float TileSurfaceHeight = 0.34f;
         private const float MarkHeight = 0.035f;
@@ -78,7 +72,7 @@ namespace MazeParty.Editor
             Debug.Log(
                 "Stable Footing rebuilt: 6 x 8 replaceable platform arena, " +
                 "three symbols, fixed shared camera, player/tile/art/audio " +
-                "anchors, network state and prefab-only HUD.");
+                "anchors, network state and world-space safe symbol only.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -90,15 +84,12 @@ namespace MazeParty.Editor
         public static void BuildStableFootingAssets()
         {
             EnsureFolders();
-            BuildStableFootingScene(
-                CreateMaterials(),
-                LoadOrCreateHudPrefab());
+            BuildStableFootingScene(CreateMaterials());
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildStableFootingScene(
-            StableFootingMaterials materials,
-            GameObject hudPrefab)
+            StableFootingMaterials materials)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -170,24 +161,6 @@ namespace MazeParty.Editor
             var state = root.AddComponent<NetworkStableFootingState>();
             var view = root.AddComponent<StableFootingNetworkView>();
 
-            var hudObject = PrefabUtility.InstantiatePrefab(
-                hudPrefab,
-                root.transform) as GameObject;
-            if (hudObject != null)
-            {
-                hudObject.transform.localScale =
-                    hudPrefab.transform.localScale;
-            }
-            var hud = hudObject != null
-                ? hudObject.GetComponent<StableFootingHudBindings>()
-                : null;
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "StableFootingHud.prefab could not be instantiated with " +
-                    "its required serialized bindings.");
-            }
-
             view.Configure(
                 state,
                 sharedCamera,
@@ -197,8 +170,7 @@ namespace MazeParty.Editor
                 arena.SafeSymbolCrossRenderer,
                 arena.SafeSymbolCircleRenderer,
                 arena.SafeSymbolSquareRenderer,
-                cueAudioSource,
-                hud);
+                cueAudioSource);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, StableFootingScenePath);
@@ -554,151 +526,6 @@ namespace MazeParty.Editor
             return camera;
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
-        {
-            EnsureFolder(UiPrefabFolder);
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                HudPrefabPath);
-            if (prefab == null)
-            {
-                var template = CreateHudTemplate();
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            var bindings = prefab != null
-                ? prefab.GetComponent<StableFootingHudBindings>()
-                : null;
-            if (bindings == null || !bindings.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "StableFootingHud.prefab is missing its serialized UI " +
-                    "binding contract. Repair the prefab instead of allowing " +
-                    "runtime UI generation.");
-            }
-            return prefab;
-        }
-
-        private static GameObject CreateHudTemplate()
-        {
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity built-in LegacyRuntime.ttf font could not be loaded.");
-            }
-
-            var root = new GameObject(
-                "StableFootingHud",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(StableFootingHudBindings));
-            root.transform.localScale = Vector3.one;
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 45;
-
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var panel = CreatePanel(
-                "HudPanel",
-                root.transform,
-                new Vector2(0f, 1f),
-                new Vector2(24f, -24f),
-                new Vector2(500f, 82f),
-                new Color(0.025f, 0.035f, 0.055f, 0.84f));
-            var instructions = CreateHudText(
-                "Instructions",
-                panel.transform,
-                font,
-                new Vector2(0f, -12f),
-                new Vector2(450f, 50f),
-                24,
-                TextAnchor.MiddleCenter,
-                FontStyle.Bold,
-                "SAFE: X");
-
-            root.GetComponent<StableFootingHudBindings>().Configure(
-                canvas,
-                instructions);
-            return root;
-        }
-
-        private static GameObject CreatePanel(
-            string name,
-            Transform parent,
-            Vector2 anchor,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            Color color)
-        {
-            var panel = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = anchor;
-            rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-            panel.GetComponent<Image>().color = color;
-            return panel;
-        }
-
-        private static Text CreateHudText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector2 anchoredPosition,
-            Vector2 size,
-            int fontSize,
-            TextAnchor alignment,
-            FontStyle style,
-            string sampleText)
-        {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = new Vector2(0.5f, 1f);
-            rect.anchorMax = new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = anchoredPosition;
-            rect.sizeDelta = size;
-
-            var text = textObject.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = style;
-            text.color = new Color(0.94f, 0.97f, 1f);
-            text.alignment = alignment;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            text.text = sampleText;
-            return text;
-        }
-
         private static GameObject CreatePrimitive(
             string name,
             PrimitiveType primitiveType,
@@ -813,8 +640,6 @@ namespace MazeParty.Editor
             var playerAnchors = FindDescendant(
                 root.transform,
                 "Player Anchors");
-            var hud = root.GetComponentInChildren<
-                StableFootingHudBindings>(true);
 
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkStableFootingState>() == null ||
@@ -835,21 +660,18 @@ namespace MazeParty.Editor
                     root.transform,
                     "Art Replacement Anchors") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
-                root.GetComponentInChildren<AudioSource>(true) == null ||
-                hud == null)
+                root.GetComponentInChildren<AudioSource>(true) == null)
             {
                 throw new InvalidOperationException(
                     "Generated Stable Footing scene is missing its network, " +
-                    "arena, symbols, anchors, camera, audio or HUD contract.");
+                    "arena, symbols, anchors, camera or audio contract.");
             }
 
-            if (!hud.HasRequiredReferences ||
-                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    hud.gameObject) != HudPrefabPath)
+            if (root.GetComponentInChildren<Canvas>(true) != null)
             {
                 throw new InvalidOperationException(
-                    "Stable Footing HUD must remain a configured " +
-                    "StableFootingHud.prefab instance.");
+                    "Stable Footing must use the world-space safe symbol and " +
+                    "the shared minigame HUD instead of a dedicated Canvas.");
             }
 
             if (root.GetComponentInChildren<Camera>(true) != null ||
@@ -889,8 +711,7 @@ namespace MazeParty.Editor
         private static void EnsureFolders()
         {
             EnsureFolder(ScenesFolder);
-            EnsureFolder(UiFolder);
-            EnsureFolder(UiPrefabFolder);
+            EnsureFolder(CorePrefabFolder);
             EnsureFolder(ArtFolder);
             EnsureFolder(MinigameArtFolder);
             EnsureFolder(StableFootingArtFolder);

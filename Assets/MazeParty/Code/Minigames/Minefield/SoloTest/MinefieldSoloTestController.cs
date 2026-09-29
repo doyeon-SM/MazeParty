@@ -256,7 +256,6 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             DisableAndDestroyGeneratedChild("Runtime Runners");
             DisableAndDestroyGeneratedChild("Runtime Mine Markers");
-            DisableAndDestroyGeneratedChild("Minefield HUD");
         }
 
         private void DisableAndDestroyGeneratedChild(string childName)

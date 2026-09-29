@@ -403,15 +403,12 @@ namespace MazeParty.Multiplayer
                  slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                var displayName =
-                    avatar != null &&
-                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
-                        ? avatar.DisplayName
-                        : GameText.F("PLAYER {0}", slot + 1);
                 hud.PlayerRows[slot].text =
                     (slot == _localSlot ? "> " : string.Empty) +
-                    displayName + "   " +
-                    state.GetScore(slot);
+                    GameText.F(
+                        "P{0}  {1}",
+                        slot + 1,
+                        state.GetScore(slot));
                 hud.PlayerRows[slot].color =
                     avatar != null
                         ? avatar.Appearance.BodyColor

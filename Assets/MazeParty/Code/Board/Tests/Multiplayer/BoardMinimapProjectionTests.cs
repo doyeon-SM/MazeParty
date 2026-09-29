@@ -542,22 +542,27 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [TestCase(false, false, BoardMinimapDisplayContext.Standard, true)]
-        [TestCase(true, true, BoardMinimapDisplayContext.Standard, true)]
-        [TestCase(true, false, BoardMinimapDisplayContext.Standard, false)]
-        [TestCase(true, false, BoardMinimapDisplayContext.TurnOverview, true)]
-        public void PlayerRevealPolicy_PreservesCloakExceptDuringTurnOverview(
-            bool isCloaked,
-            bool isLocal,
-            BoardMinimapDisplayContext displayContext,
-            bool expected)
+        [Test]
+        public void PlayerRevealPolicy_PreservesCloakExceptDuringTurnOverview()
         {
-            Assert.That(
-                BoardMinimapView.ShouldRevealPlayer(
-                    isCloaked,
-                    isLocal,
-                    displayContext),
-                Is.EqualTo(expected));
+            var cases = new[]
+            {
+                (false, false, BoardMinimapDisplayContext.Standard, true),
+                (true, true, BoardMinimapDisplayContext.Standard, true),
+                (true, false, BoardMinimapDisplayContext.Standard, false),
+                (true, false, BoardMinimapDisplayContext.TurnOverview, true)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardMinimapView.ShouldRevealPlayer(
+                        testCase.Item1,
+                        testCase.Item2,
+                        testCase.Item3),
+                    Is.EqualTo(testCase.Item4),
+                    testCase.ToString());
+            }
         }
     }
 }

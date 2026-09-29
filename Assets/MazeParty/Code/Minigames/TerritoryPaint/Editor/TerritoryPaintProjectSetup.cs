@@ -537,8 +537,8 @@ namespace MazeParty.Editor
                 "Score Panel",
                 root.transform,
                 new Vector2(0f, 1f),
-                new Vector2(22f, -22f),
-                new Vector2(390f, 250f),
+                new Vector2(18f, -18f),
+                new Vector2(248f, 126f),
                 new Color(0.025f, 0.03f, 0.045f, 0.9f));
             var rows =
                 new Text[TerritoryPaintRules.PlayerCount];
@@ -548,10 +548,10 @@ namespace MazeParty.Editor
                     "Player " + (slot + 1) + " Row",
                     scorePanel.transform,
                     font,
-                    new Vector2(0f, -18f - slot * 55f),
-                    new Vector2(350f, 46f),
-                    22,
-                    "PLAYER " + (slot + 1) + "   0");
+                    new Vector2(0f, -8f - slot * 28f),
+                    new Vector2(220f, 26f),
+                    16,
+                    "P" + (slot + 1) + "  0");
                 rows[slot].alignment =
                     TextAnchor.MiddleLeft;
                 rows[slot].color = PlayerColors[slot];
