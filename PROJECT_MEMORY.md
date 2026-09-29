@@ -51,7 +51,7 @@
 
 ## 미정 결정과 바로 다음 작업
 
-- 파일이 없는 중앙 큐 `item.bullet_impact`, `item.use.double_dice`, `minigame.finish`와
+- 파일이 없는 중앙 큐 `item.bullet_impact`, `minigame.finish`와
   미니게임 씬 직접 오디오 슬롯 9개는 후속 사운드가 필요하다.
 - 보드 칸 종류의 최종 배치 비율을 확정해야 한다.
 - Ignore 경로의 UI 팩과 AI 로고를 배포 가능한 추적 경로로 옮길지 결정해야 한다.
@@ -75,7 +75,9 @@
 
 - `Assets/Resources/sound`의 MP3 52개를 분석해 중앙 SoundCue에 매칭했다. 키는
   `ceremony.award_ready`를 새로 추가해 기존 61개에서 62개가 되었고, 라이브러리 누락 키는
-  0개다. 현재 클립이 연결된 큐는 42개, 의도된 폴백 또는 파일 부재로 빈 큐는 20개다.
+  0개다. 현재 클립이 연결된 큐는 43개, 의도된 폴백 또는 파일 부재로 빈 큐는 19개다.
+- `item.use.double_dice`는 1~6 다이스의 `item.use.low_dice`, 7~12 다이스의
+  `item.use.high_dice`와 같은 `dicelowandhigh.mp3` 효과음을 공유한다.
 - BGM은 `bgm.lobby`, `bgm.board`, 공용 `bgm.minigame`에만 연결한다. 대기실·수상식·15개
   미니게임 전용 키는 기존 폴백을 사용해 같은 곡이 장면 전환마다 재시작되지 않게 한다.
 - 긴 BGM 4개는 `Streaming`, preload 해제, background load로 임포트해 약 284MiB 규모의
