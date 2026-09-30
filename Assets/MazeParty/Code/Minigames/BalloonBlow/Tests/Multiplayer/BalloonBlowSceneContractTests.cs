@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity";
         [Test]
-        public void Scene_PreservesFixedStationsAndSharedCameraContract()
+        public void Scene_PreservesMouthBlownBalloonsAndSharedCameraContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -103,6 +103,13 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(balloon, Is.Not.Null);
                     Assert.That(balloon.Find("Balloon Body"), Is.Not.Null);
                     Assert.That(balloon.Find("Balloon Knot"), Is.Not.Null);
+                    Assert.That(
+                        FindDescendant(
+                            state.transform,
+                            "Station " + (slot + 1)),
+                        Is.Null,
+                        "Balloon Blow is performed by mouth and must not " +
+                        "restore pump stations.");
                 }
 
                 Assert.That(

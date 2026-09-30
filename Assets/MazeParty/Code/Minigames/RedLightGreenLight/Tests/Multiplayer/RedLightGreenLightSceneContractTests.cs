@@ -78,7 +78,6 @@ namespace MazeParty.Multiplayer.Tests
                     "topDownCamera",
                     "runnerRoot",
                     "arenaPresentation",
-                    "observerHead",
                     "greenSignalRenderer",
                     "redSignalRenderer",
                     "greenSignalLight",
@@ -136,10 +135,12 @@ namespace MazeParty.Multiplayer.Tests
                     Is.Not.Null);
                 Assert.That(
                     FindDescendant(state.transform, "Observer Placeholder"),
-                    Is.Not.Null);
+                    Is.Null,
+                    "The game uses the signal tower only; no observer doll " +
+                    "belongs in the arena.");
                 Assert.That(
                     FindDescendant(state.transform, "Observer Head"),
-                    Is.Not.Null);
+                    Is.Null);
                 Assert.That(
                     FindDescendant(state.transform, "Green Signal")
                         ?.GetComponent<Renderer>(),

@@ -28,6 +28,8 @@ namespace MazeParty.Editor
         private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/SequenceMemory";
+        private const string PlayerPresentationPrefabPath =
+            ProjectRoot + "/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
         public const string EnvironmentPrefabPath =
             CorePrefabFolder + "/SequenceMemoryEnvironment.prefab";
         private const string MaterialFolder =
@@ -269,24 +271,6 @@ namespace MazeParty.Editor
             npcAnchor.SetParent(parent, false);
             npcAnchor.position = new Vector3(ArenaCenterX, 0f, 2.7f);
             CreatePrimitive(
-                "NPC Placeholder Body",
-                PrimitiveType.Capsule,
-                npcAnchor,
-                new Vector3(0f, 1.05f, 0f),
-                Quaternion.identity,
-                new Vector3(1f, 1.15f, 1f),
-                materials.Npc,
-                false);
-            CreatePrimitive(
-                "NPC Placeholder Head",
-                PrimitiveType.Sphere,
-                npcAnchor,
-                new Vector3(0f, 2.55f, 0f),
-                Quaternion.identity,
-                new Vector3(0.92f, 0.92f, 0.92f),
-                materials.NpcAccent,
-                false);
-            CreatePrimitive(
                 "NPC Podium",
                 PrimitiveType.Cylinder,
                 npcAnchor,
@@ -295,6 +279,7 @@ namespace MazeParty.Editor
                 new Vector3(1.65f, 0.3f, 1.65f),
                 materials.Trim,
                 false);
+            CreateNpcPlayerPresentation(npcAnchor);
             npcAnchor = MinigameCorePrefabUtility.Connect(
                 npcAnchor.gameObject,
                 CorePrefabFolder + "/Npc.prefab").transform;
@@ -304,6 +289,49 @@ namespace MazeParty.Editor
                 PlayerAnchors = playerAnchors,
                 NpcAnchor = npcAnchor
             };
+        }
+
+        private static void CreateNpcPlayerPresentation(Transform npcAnchor)
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                PlayerPresentationPrefabPath);
+            if (source == null)
+            {
+                throw new InvalidOperationException(
+                    "Sequence Memory NPC requires the shared player " +
+                    "presentation prefab: " + PlayerPresentationPrefabPath);
+            }
+
+            var presenter = PrefabUtility.InstantiatePrefab(
+                source,
+                npcAnchor) as GameObject;
+            if (presenter == null)
+            {
+                throw new InvalidOperationException(
+                    "Shared player presentation could not be instantiated " +
+                    "for the Sequence Memory NPC.");
+            }
+
+            presenter.name = "NPC Player Presentation";
+            presenter.transform.localPosition = new Vector3(0f, 1.3f, 0f);
+            presenter.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            presenter.transform.localScale = Vector3.one;
+
+            for (var childIndex = 0;
+                 childIndex < presenter.transform.childCount;
+                 childIndex++)
+            {
+                var child = presenter.transform.GetChild(childIndex);
+                child.gameObject.SetActive(child.name == "WorldModel");
+            }
+
+            var colliders = presenter.GetComponentsInChildren<Collider>(true);
+            for (var colliderIndex = 0;
+                 colliderIndex < colliders.Length;
+                 colliderIndex++)
+            {
+                colliders[colliderIndex].enabled = false;
+            }
         }
 
         private static void CreateAuthorityColliders(Transform parent)
@@ -817,14 +845,6 @@ namespace MazeParty.Editor
                     "SequenceMemoryTrim",
                     new Color(0.95f, 0.58f, 0.12f),
                     0.35f),
-                Npc = CreateOrLoadMaterial(
-                    "SequenceMemoryNpc",
-                    new Color(0.22f, 0.62f, 0.94f),
-                    0.3f),
-                NpcAccent = CreateOrLoadMaterial(
-                    "SequenceMemoryNpcAccent",
-                    new Color(1f, 0.78f, 0.2f),
-                    0.35f),
                 Stations = stations
             };
         }
@@ -887,7 +907,7 @@ namespace MazeParty.Editor
                 stations == null ||
                 stations.childCount != SequenceMemoryRules.PlayerCount ||
                 npcAnchor == null ||
-                npcAnchor.Find("NPC Placeholder Body") == null ||
+                npcAnchor.Find("NPC Player Presentation") == null ||
                 root.GetComponentsInChildren<CinemachineCamera>(true).Length != 1 ||
                 root.GetComponentsInChildren<Camera>(true).Length != 0 ||
                 root.GetComponentsInChildren<AudioListener>(true).Length != 0 ||
@@ -1004,8 +1024,6 @@ namespace MazeParty.Editor
             public Material Stage;
             public Material Backdrop;
             public Material Trim;
-            public Material Npc;
-            public Material NpcAccent;
             public Material[] Stations;
         }
     }

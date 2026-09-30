@@ -7,8 +7,8 @@
 ## 현재 작업 기준
 
 - 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
-- 작업 브랜치: `dev/UI`
-- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 플레이어 프레젠테이션 계약
+- 작업 브랜치: `dev/minigame`
+- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 미니게임 에셋·씬·공용 프리팹 계약
   EditMode 6/6 통과. 전체 EditMode는 410개 중 408개 통과했고, 사용자가 보존을 지시한
   `LobbyCanvas` 씬 활성 오버라이드와 프리팹 비표시 상태 계약 2개만 실패했다.
   `dotnet build`는 오류 0, 기존 경고 115개이며 2026-09-30 Windows
@@ -39,9 +39,40 @@
 - 외부 패키지, 생성 이미지와 후속 미니게임 에셋은 모두 `Assets/Ignore` 아래에 보관하고
   별도로 공유한다. Git 추적 경로로 이동할지 다시 질문하지 않으며, 새 환경에서는 공유된
   Ignore 폴더와 동일 GUID를 사용하는 것을 전제로 한다.
-- 미니게임 아트 작업은 필요한 오브젝트 에셋 목록을 먼저 확정한 뒤 진행한다. 그 다음
-  단계에서는 기존 게임 판정·앵커·프리팹 바인딩을 유지하면서 맵의 바닥만 먼저 생성하고,
-  오브젝트 배치는 준비된 에셋을 확인한 뒤 별도로 진행한다.
+- 미니게임 아트 작업은 필요한 오브젝트 에셋 목록을 먼저 확정한다. 확보된 에셋 중
+  재사용 가능한 오브젝트는 바로 적용하고, 기존 게임 판정·앵커·프리팹 바인딩을
+  유지한다. 맵은 현재 바닥까지만 생성하며 레일·경계벽·자연 장식은 후속 범위다.
+- 미니게임 환경·소품 원본으로 `Assets/Ignore/Pandazole_Ultimate_Pack`,
+  `Assets/Ignore/FreeLowpolyScifiObjects`,
+  `Assets/Ignore/Fantasy Lowpoly Pack (Demo)`를 사용한다. Built-in Standard 재질은
+  `Assets/Ignore/MazePartyGenerated/Materials`의 URP 파생 재질로 교체한다. centered·grid
+  파생 메시는 `Assets/Ignore/MazePartyGenerated/Meshes`에 두고, 외부 원본 Collider는
+  공용 환경 래퍼에서 제거한다.
+- Red Light / Green Light에는 감시인형을 두지 않고 SciFi 신호 패널만 사용한다.
+  Balloon Blow는 펌프·스테이션 없이 플레이어 입 위치에서 풍선을 부는 표현을 사용한다.
+  Sequence Memory 진행 NPC는 공용 `PlayerAvatarPresentation.prefab`과 같은 형태를
+  visual-only로 재사용한다.
+- Wrong Way와 Race의 결승 아치는 `SharedFinishGate.prefab` 하나로 통일한다.
+  현재 추가 팩을 포함하면 기능상 새로 필요한 3D 모델은 없으며, 전용 기계식 Crusher,
+  전용 풍선, 전용 선물 상자는 품질 향상용 선택 항목이다.
+- Pandazole `TileGround_01` 파생 바닥은 용도별로 구분한다. `SharedNatureGroundTile`
+  nested 래퍼는 Stable Footing `Tile Surface`에만 유지한다. Wrong Way의 각 Lane은
+  `Start Platform`, `Step 01~50`, `Finish Platform` 총 52개 surface anchor를 유지하며
+  각 기존 MeshFilter가 `SharedNatureGroundCentered` 파생 메시를 직접 참조한다.
+- 나머지 광범위 바닥은 `NatureGroundGrid_*` 결합 메시로 맵별 1 Renderer를 사용한다.
+  RLGL·Minefield는 `4x9`, Wrong Way 배경은 `3x9`, Balloon Blow·Sequence Memory는
+  `4x2`, Gift Grab·Bomb Passing·Arena Combat·Cliff Barrage는 `4x4`, Tag Chase는
+  `5x4`, Race는 `3x8`이다. Territory Paint의 연속 UV 페인트 표면, Bouncing Balls의
+  수직 필드, Snowy Spin의 얼음 표면은 전용 표현을 유지한다.
+- SciFi 공용 적용은 `object_017`을 풍선·Bouncing 공·눈덩이·Cliff 투사체에,
+  `block`을 Tag 시야 차단물·Bouncing 실드에, `ring`을 Gift base·Bouncing goal·
+  Bomb 중앙 링·Snowy Ice Edge·Arena spawn에 사용한다. `platform`은 Sequence NPC와
+  Bomb 중앙 받침, `box_002`는 Gift 본체, `wall_003`은 Minefield Crusher visual,
+  Fantasy `cliff-1`과 SciFi `laser-spin`은 Cliff Barrage에 사용한다.
+- 모든 외부 visual Collider는 제거하며 Stable Footing·Tag Chase·Race·Arena Combat·
+  Minefield Crusher의 기존 authority Collider는 그대로 유지한다.
+- 현재 단계 검증은 변경된 에셋 출처·Collider·세 게임의 씬 계약만 간소화해 실행한다.
+  전체 EditMode와 4인 플레이 테스트는 별도 요청에서 진행한다.
 
 ### 2026-09-30 4인 Development 빌드 플레이테스트
 

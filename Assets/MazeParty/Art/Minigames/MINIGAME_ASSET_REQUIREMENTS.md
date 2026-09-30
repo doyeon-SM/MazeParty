@@ -1,218 +1,138 @@
-# 미니게임 오브젝트 에셋 요구사항
+# 미니게임 에셋 적용·잔여 요구사항
 
-## 조사 결론
+## 최종 결론
 
-- 15종 미니게임의 비 UI 프리팹을 전수 확인했다.
-- 현재 환경과 핵심 오브젝트의 `MeshFilter`는 모두 Unity 기본 primitive mesh를 사용한다.
-  외부 FBX/모델 프리팹이 적용된 핵심 3D 오브젝트는 없다.
-- 공용 플레이어 프레젠테이션, UI, 재질, `CartoonExplosion`·`HitSpark`·`TaggerAura`
-  등의 VFX는 이미 적용되어 있으므로 이번 에셋 수집 대상에서 제외한다.
-- 외부 패키지와 생성 에셋은 모두 `Assets/Ignore` 아래에 보관하고 별도로 공유한다.
-  Git 추적 경로로 옮기지 않는다.
+- 추가된 `Pandazole_Ultimate_Pack`, `FreeLowpolyScifiObjects`,
+  `Fantasy Lowpoly Pack (Demo)`와 기존 Ignore 에셋을 공용화하면 15종 미니게임을
+  구현하는 데 **새로 구매·제작해야 하는 필수 3D 모델은 0개**다.
+- 외부 원본과 파생 URP 재질·결합 메시는 모두 `Assets/Ignore` 아래에 유지하고 별도로
+  공유한다. 게임 프리팹은 같은 GUID의 Ignore 원본을 참조한다.
+- 외부 모델의 Collider는 사용하지 않는다. 기존 authority collider, 네트워크 root,
+  런타임 Renderer/Light 바인딩과 현재 씬·UI 앵커를 유지한다.
+- 이번 단계에서는 에셋 변경 계약만 간소화해 검사한다. 전체 EditMode와 4인 플레이
+  테스트는 별도 요청에서 진행한다.
 
-## 적용 계약
+## 확정된 예외 사항
 
-- 현재 씬 배치, UI 앵커와 프리팹 바인딩을 원본으로 유지한다.
-- 모델은 기존 프리팹의 visual child 또는 `Art Replacement Anchors` 아래에 넣는다.
-- 외부 모델에는 `Collider`, `Rigidbody`, `NetworkObject`, `NetworkBehaviour`를 추가하지
-  않는다. 기존 authority collider와 판정 root를 그대로 사용한다.
-- Unity 단위는 1 unit = 1m, 바닥 접점은 local Y=0, 전방은 local +Z를 기본으로 한다.
-- 같은 형상은 하나의 mesh와 재질 변형을 공유한다. 슬롯별 복제 모델을 따로 만들지 않는다.
-- setup을 다시 실행해 사용자가 조정한 디자인을 덮어쓰지 않는다. 계약 테스트가 현재
-  디자인과 충돌하면 디자인이 아니라 테스트를 수정한다.
-- 다음 제작 단계는 아래 footprint에 맞춘 **시각용 바닥만** 생성한다. 기존 판정 collider,
-  타일 root, 페인트 UV, 카메라와 게임 상태 바인딩은 변경하지 않는다.
+- **Red Light / Green Light:** 감시인형은 사용하지 않는다. 씬과 런타임의 Observer
+  참조를 제거하고 신호탑만 상태를 전달한다.
+- **Balloon Blow:** 펌프·스테이션은 사용하지 않는다. 풍선은 플레이어 입 위치를
+  따라가며 입으로 부는 동안 O자 입 모양으로 표시한다.
+- **Sequence Memory:** 진행 NPC용 새 캐릭터는 만들지 않는다.
+  `PlayerAvatarPresentation.prefab`을 visual-only로 재사용하고, 이름표·1인칭 표현·
+  히트박스는 비활성화한다.
+- **Wrong Way / Race:** 서로 다른 결승 아치를 만들지 않고
+  `SharedFinishGate.prefab` 하나를 함께 사용한다.
 
-## 공용으로 먼저 확보할 에셋 묶음
+## 현재 적용된 공용 에셋
 
-### A. 경기장 모듈 키트
+| 공용 프리팹/표현/메시 | Ignore 원본 | 현재 적용 대상 |
+|---|---|---|
+| `SharedFinishGate` | Polytope `PT_Modular_Gate_Wood_01` | Wrong Way 결승, Race 결승 |
+| `SharedOutdoorFence` | Fantasy Demo `fence` | Red Light / Green Light 4면 경계 |
+| `SharedNatureGroundTile` | Pandazole `TileGround_01` | Stable Footing `Tile Surface`의 nested visual에만 사용 |
+| `SharedNatureGroundCentered` | `TileGround_01` centered 파생 메시 | Wrong Way 각 Lane의 `Start Platform`, `Step 01~50`, `Finish Platform` 총 52개 surface anchor에 직접 사용 |
+| `NatureGroundGrid_*` 결합 메시 | `TileGround_01` grid 파생 메시 | RLGL·Minefield `4x9`, Wrong Way 배경 `3x9`, Balloon Blow·Sequence Memory `4x2`, Gift Grab·Bomb Passing·Arena Combat·Cliff Barrage `4x4`, Tag Chase `5x4`, Race `3x8` 바닥을 각각 1 Renderer로 구성 |
+| 신호 패널 | SciFi `switch_007` mesh | Red/Green Signal Renderer와 Light 유지 |
+| 신호·경광 표현 | SciFi `object_008` | Minefield 머리 위 경광등 |
+| 크러셔 벽 | SciFi `wall_003` | Minefield Crusher visual, 기존 trigger Collider 유지 |
+| 폭탄 | SciFi `object_016` | Bomb Passing `Bomb` root |
+| 공용 구체 | SciFi `object_017` | Balloon Blow 풍선, Bouncing Balls 공, Snowy Spin 눈덩이, Cliff Barrage 투사체 |
+| 지뢰 | SciFi `object_018` | Minefield `DetectedMine` |
+| `SharedSciFiBlock`/block mesh | SciFi `block` | Tag Chase 시야 차단물, Bouncing Balls 실드 |
+| 공용 링 | SciFi `ring` | Gift Base, Bouncing Balls 골·중앙 링, Bomb Passing 중앙 링, Snowy Spin Ice Edge, Arena Combat Spawn Ring |
+| 공용 받침 | SciFi `platform` | Sequence Memory NPC 받침, Bomb Passing 중앙 받침 |
+| 선물 본체 | SciFi `box_002` | Gift Grab 선물. 기존 Ribbon/Bow 유지 |
+| `SharedTripleSwitch` | SciFi `switch_007` | Sequence Memory 입력 콘솔 4개 |
+| 공용 플레이어 형태 | MazeParty `PlayerAvatarPresentation` | Sequence Memory 진행 NPC |
+| `SharedFantasyCliff` | Fantasy Demo `cliff-1` | Cliff Barrage 4면에 각 4개, 총 16개 배치 |
+| 레이저 장치 | SciFi `laser-spin` | Cliff Barrage LaserRig 하우징·경광봉 디테일 |
 
-- 낮은 경계벽·난간·펜스 직선/코너 모듈
-- 시작 게이트, 결승 아치, 깃발과 체크무늬 리본
-- 원형·사각 스폰 마커 데칼, 중앙 마커 데칼
-- 무대 podium, backdrop frame, trim, 스포트라이트와 장식등
+공용 래퍼는 `Assets/MazeParty/Prefabs/Minigames/Common/Environment`에 두고,
+Standard 재질을 URP로 변환한 파생 재질은
+`Assets/Ignore/MazePartyGenerated/Materials`에 둔다. centered·grid 파생 메시는
+`Assets/Ignore/MazePartyGenerated/Meshes`에 둔다. 공용 환경 래퍼에 포함된 Ignore 원본
+Collider는 모두 제거한다.
 
-### B. 위험물 키트
+## 확보된 에셋의 통합 사용안
 
-- 납작한 지뢰, 압착기/크러셔, 회전 경광등
-- 만화풍 시한폭탄과 심지
-- 레이저 발사기 하우징, 포탄/캐논볼
+다음 항목은 별도 모델을 더 구하지 않고 같은 원본을 재질·크기 변형으로 재사용한다.
 
-### C. 게임 소품 키트
+| 공용 분류 | 통합 적용 대상 |
+|---|---|
+| Pandazole ground tile | Stable Footing만 nested 래퍼, Wrong Way 52 surface/lane은 centered 메시 직접 참조, 나머지 광범위 바닥은 grid 결합 메시 1 Renderer |
+| Fantasy/Pandazole 자연물 | RLGL·Race·Wrong Way·Gift Grab 외곽, Snowy Spin·Cliff Barrage 배경 |
+| SciFi `object_017` 구체 | 풍선, Bouncing Balls 공, Snowy Spin 눈덩이, Cliff 투사체 |
+| SciFi signal/beacon | RLGL 신호, Minefield 경광등, 위험 경고등 |
+| SciFi platform/ring | NPC 받침, Gift Base, Bomb 중앙대, Arena Spawn, Goal frame |
+| SciFi fence/wall | Minefield·Gift·Territory·Tag·Bouncing·Bomb·Arena 외곽 |
+| SciFi cover/block | Tag Chase 시야 차단물, Bouncing Balls 실드 |
+| SciFi boxes | Gift Grab 선물 본체. 기존 ribbon/bow child 유지 |
+| Fantasy cliff + SciFi laser | Cliff Barrage 절벽면과 LaserRig |
+| Polytope gate | Wrong Way와 Race의 공용 시작·결승 게이트 |
 
-- 계단 블록, 안전 타일과 심벌 인서트
-- 풍선과 펌프 스테이션
-- 선물 상자와 리본
-- 기억 입력 콘솔과 A/S/D 버튼 캡
-- 패들/실드, 골 프레임, 공
-- 눈덩이, 빙판 가장자리와 눈더미
-- 감시 인형/로봇과 2등식 신호탑
+## 게임별 적용 현황과 후속 맵 장식
 
-### D. 자연 배경 키트
+1. **Minefield** — `object_018` 지뢰, `object_008` 경광등, `wall_003` 크러셔와
+   `NatureGroundGrid_4x9` 바닥을 적용했다. 기존 Crusher trigger와
+   `Siren Red Lens/Light`를 유지한다. 외곽 SciFi wall은 후속 맵 장식 범위다.
+2. **Wrong Way** — 각 Lane의 `Start Platform`, `Step 01~50`, `Finish Platform` 총
+   52개 surface anchor는 유지하고 `SharedNatureGroundCentered` 메시를 기존 MeshFilter에
+   직접 적용했다. 배경 바닥은 `NatureGroundGrid_3x9`, 결승은 공용 Polytope gate를
+   사용하며 레일 fence는 후속 장식이다.
+3. **Red Light / Green Light** — `NatureGroundGrid_4x9` 바닥, Fantasy fence,
+   SciFi 2등식 신호를 사용한다. Observer는 만들지 않는다.
+4. **Stable Footing** — `SharedNatureGroundTile` nested visual과
+   Cross/Circle/Square 인서트 3개를 공유한다. 공용 바닥 중 유일하게 nested tile 래퍼를
+   유지하며 48개 authority tile root도 그대로 둔다.
+5. **Balloon Blow** — `object_017` 1개를 4색 풍선에 공유하고 기존 knot와
+   `NatureGroundGrid_4x2` 무대 바닥을 유지한다. 펌프·호스·스테이션은 만들지 않는다.
+6. **Gift Grab** — SciFi `box_002`와 기존 ribbon/bow를 선물로 사용하고 `ring`을
+   4색 base로 사용하며 `NatureGroundGrid_4x4` 바닥을 적용했다.
+7. **Territory Paint** — 런타임 페인트용 연속 UV surface를 그대로 유지한다.
+   SciFi 외곽 wall은 후속 맵 장식 범위다.
+8. **Tag Chase** — SciFi block을 기존 4개 authority BoxCollider 아래 visual로 넣고
+   `NatureGroundGrid_5x4` 바닥을 적용했다. SciFi 외곽 wall은 후속 장식이다.
+9. **Race** — Wrong Way와 같은 `SharedFinishGate`와 `NatureGroundGrid_3x8` 트랙 바닥을
+   사용한다. `RaceTrack` collider는 유지하며 fence·자연물은 후속 장식이다.
+10. **Sequence Memory** — 공용 플레이어 형태의 NPC, `SharedTripleSwitch` 4개,
+    SciFi platform podium, `NatureGroundGrid_4x2` 무대 바닥을 사용한다.
+11. **Bouncing Balls** — `object_017` 공, SciFi block 실드, ring 골·중앙 링을
+    적용했다. 수직 플레이 필드는 전용 표현을 유지한다.
+12. **Bomb Passing** — `object_016` 폭탄과 기존 fuse/warning Light를 유지하고
+    platform/ring과 `NatureGroundGrid_4x4` 내부 바닥을 적용했다. SciFi 경계는 후속
+    장식이다.
+13. **Snowy Spin** — `object_017` 눈덩이와 ring Ice Edge를 적용했다. 얼음 표면은
+    전용 재질을 유지하며 겨울 자연물은 후속 장식이다.
+14. **Arena Combat** — `NatureGroundGrid_4x4` 바닥과 ring 스폰 장식을 적용하고 실제
+    fighter는 네트워크 플레이어를 재사용한다. SciFi 경계는 후속 장식이다.
+15. **Cliff Barrage** — `NatureGroundGrid_4x4` 플랫폼, Fantasy `cliff-1`, SciFi
+    `laser-spin`, `object_017` 투사체를 적용했다. pool root와 beam/VFX 바인딩은
+    유지한다.
 
-- 바위·절벽면·갈라진 암석·눈 덮인 바위
-- 나무·관목·풀·버섯·꽃
-- 산업 케이블·경고 표지·경고등
+## 최종적으로 남은 에셋
 
-## 게임별 필수 오브젝트
+기능 구현에 필요한 신규 에셋은 없다. 다음 세 가지는 기존 에셋 조합보다 완성도를 더
+높이고 싶을 때만 제작하거나 교체한다.
 
-### 1. Minefield
+1. 롤러·피스톤 애니메이션이 포함된 **전용 기계식 Crusher**
+2. 주름과 매듭이 모델링된 **전용 풍선**
+3. 리본과 포장 변형이 모델링된 **전용 선물 상자**
 
-- **필수:** 크러셔 1개, 지뢰 visual 1종(최대 20개 재사용), 경광등 1종×4,
-  시작·결승 표식, 측벽 모듈.
-- **변형:** 지뢰 상태용 점멸 재질 1개, 경광등 red lens, 크러셔 피스톤/롤러.
-- **고정 계약:** 크러셔 root trigger와 `MinefieldCrusher`, 지뢰의 판정 반경 1.05m,
-  `Siren Red Lens` Renderer와 `Siren Red Light` Light 이름을 유지한다. 지뢰 visual에는
-  collider를 넣지 않는다.
-- **바닥 footprint:** 20×44m, 3×12 판정 그리드.
+위 세 항목이 없어도 현재 확보된 에셋으로 게임 규칙과 식별성을 표현할 수 있다.
 
-### 2. Wrong Way
+## 바닥·충돌 계약
 
-- **필수:** 계단 tread 1형×200 인스턴스, 4색 재질, 레일 1형×5 경계,
-  결승 아치 1개와 깃발 2개, 시작·종료 platform trim.
-- **고정 계약:** `Step 01`~`Step 50` 직접 child 구조를 4레인 모두 유지한다.
-  계단 visual에는 collider를 넣지 않고 수학 기반 러너 경로를 유지한다.
-- **바닥 footprint:** backdrop 12.05×45.2m. 각 레인은 50계단, 길이 약 36m,
-  총 상승 12m, step 폭 1.45m·깊이 0.72m·높이 증가 0.24m.
-
-### 3. Red Light / Green Light
-
-- **필수:** 회전 감시 인형/로봇 1개, red/green 2등식 신호탑 1개,
-  시작·결승 표식, 외곽 펜스.
-- **변형:** 감시자 정면/후면이 명확한 silhouette, 두 emissive 신호 재질.
-- **고정 계약:** `Observer Head` 회전 pivot과 이름, `Green Signal`·`Red Signal`
-  Renderer와 named Light를 유지한다. visual prefab에는 collider를 넣지 않는다.
-- **바닥 footprint:** 20×44m.
-
-### 4. Stable Footing
-
-- **필수:** 타일 frame/surface 1형×48, Cross/Circle/Square 심벌 인서트 3종,
-  Safe Symbol Display 1개, 하부 지지대 모듈.
-- **고정 계약:** `Tile Surface`와 세 심벌 child 이름, 48개 tile anchor를 유지한다.
-  tile root의 기존 authority collider는 유지하며 제거된 타일과 함께 전체 anchor가 꺼져야 한다.
-- **바닥 footprint:** active grid 14.4×19.2m, 받침 영역 16.4×21.2m,
-  6×8 타일, 간격 2.4m, 타일 면 2.16×2.16m.
-
-### 5. Balloon Blow
-
-- **필수:** 풍선 1형×4색, knot 1형, 펌프/스테이션 1형×4색,
-  무대 backdrop·front trim·간판.
-- **변형:** 풍선 wobble, 펌프 레버와 호스. 조명·깃발·관객 소품은 후순위다.
-- **고정 계약:** `Balloon Body`·`Balloon Knot` child 이름을 유지한다. root가
-  0.22~1.7 균일 scale되고 pop 시 두 child가 비활성화된다. authority floor collider는
-  기존 씬에 둔다.
-- **바닥 footprint:** 15.5×9m.
-
-### 6. Gift Grab
-
-- **필수:** 선물 1형(씬에서 최대 19개 재사용), 포장 재질 3~5종,
-  base pad 1형×4색, 낮은 외곽 림/경계 모듈.
-- **고정 계약:** 선물 visual은 중앙 pivot, 지름 약 0.8~0.9m 이하, collider 없음.
-  `Gift Visual` anchor를 유지한다. base는 지름 3.5m의 색 표시이며 collider가 없다.
-- **바닥 footprint:** visual 18×18m, 실제 플레이 영역 16×16m.
-
-### 7. Territory Paint
-
-- **필수:** 연속 난간 4면, 시작 마커 데칼 4개, arena trim.
-- **바닥 단계 필수:** 0~1 UV를 갖는 단일 paint surface mesh 1개. 96×96 런타임
-  paint texture가 root Renderer에 표시되어야 한다.
-- **고정 계약:** paint surface와 장식에는 collider를 넣지 않고 기존 authority collider를
-  사용한다.
-- **바닥 footprint:** paint surface와 arena 모두 18×18m.
-
-### 8. Tag Chase
-
-- **필수:** 시야 차단물 visual 2~4형을 4개 위치에 배치, 외곽벽 4면,
-  tagger marker 1개와 runner marker 3개.
-- **고정 계약:** 장애물 root collider와 2.4×3.3×2.4m AABB, 위치·축 회전을 유지한다.
-  외부 모델 collider는 제거하고 기존 root 아래 visual child로 넣는다.
-- **바닥 footprint:** 24×20m. 장애물은 중앙 기준 (±3.9, ±3.9)에 위치한다.
-
-### 9. Race
-
-- **필수:** 결승 아치/리본 1개, 시작 gate 1개, 측면 rail 2열과 후면 rail 1열,
-  출발 marker 4개, lane divider 3개.
-- **고정 계약:** `RaceTrack` root와 BoxCollider를 유지한다. 장식 collider는 제거하고
-  기존 authority wall과 겹치게 배치한다.
-- **바닥 footprint:** 10.8×40m, 4레인, 레인 폭 2.4m.
-
-### 10. Sequence Memory
-
-- **필수:** 진행 NPC 1개, NPC podium 1개, 입력 station 1형×4색,
-  A/S/D 버튼 캡 3종, 무대 backdrop과 trim.
-- **변형:** 버튼 점등을 실제로 사용할 경우 station마다 3개, 총 12개 Renderer binding이
-  추가로 필요하다.
-- **고정 계약:** NPC floor pivot과 audio/VFX anchor를 유지하고 collider를 넣지 않는다.
-  station 지름은 약 1.35m이며 collider가 없다.
-- **바닥 footprint:** 15.5×10m.
-
-### 11. Bouncing Balls
-
-- **필수:** 공 1형×3 인스턴스, 이동 패들/실드 1형×4색, goal frame 1형×4색,
-  외곽 wall/corner 모듈과 center marker.
-- **고정 계약:** 공·실드는 수학 기반 상태가 Transform을 직접 이동하므로 visual에
-  collider를 넣지 않는다. `shieldTransforms`·`shieldRenderers` 4개와
-  `ballTransforms`·`ballRenderers` 3개 바인딩을 유지한다.
-- **바닥 footprint:** 정사각 field 16.4×16.4m. goal 폭 6.2m, shield 폭 2.2m.
-
-### 12. Bomb Passing
-
-- **필수:** 만화풍 시한폭탄 1개, fuse와 warning lens, 중앙 pedestal/ring,
-  spawn marker 4개, 낮은 외곽 wall 4면.
-- **고정 계약:** `Bomb` root, `Bomb Fuse`, `Bomb Warning Light`와 기존 Light binding을
-  유지한다. 폭발 VFX는 이미 별도 프리팹으로 적용되어 있으므로 모델에 넣지 않는다.
-- **바닥 footprint:** 외곽 18.2×18.2m, 안쪽 play floor 16.2×16.2m.
-
-### 13. Snowy Spin
-
-- **필수:** 눈덩이 1형×4색, roll cap/spot, 원형 ice rim, center marker,
-  눈더미·빙판 파편·눈 덮인 바위.
-- **고정 계약:** 4개 player ball visual에는 collider가 없어야 하며 Transform을 런타임
-  상태가 직접 이동한다.
-- **바닥 footprint:** 지름 16m 원형 ice arena, player spawn 반지름 4.5m.
-
-### 14. Arena Combat
-
-- **필수:** arena boundary/ring 모듈 4면, corner/post 또는 wall trim,
-  spawn marker 4개, 경기장 조명·관중 장식.
-- **고정 계약:** 기존 `Arena Floor`와 네 `* Boundary` collider를 유지한다.
-  fighter visual은 새 모델을 만들지 않고 authoritative network avatar를 재사용한다.
-- **바닥 footprint:** 18×18m.
-
-### 15. Cliff Barrage
-
-- **필수:** 포탄 visual 1형×최대 5 pool slot, laser emitter housing 1형×최대 2,
-  절벽 edge/face 모듈, aim/spawn marker decal.
-- **선택:** launcher/cannon 1~2개, 갈라진 바위·낙석·crater 장식.
-- **고정 계약:** projectile와 laser root는 pool이 이동·활성화하므로 visual에 collider를
-  넣지 않는다. 기존 warning/firing beam과 VFX를 유지한다.
-- **바닥 footprint:** 16×16m cliff platform, 아래 낙하 연출 영역은 별도 visual이다.
-
-## 현재 `Assets/Ignore` 재사용 후보
-
-- `Maze/Prefabs`: `Wall_1M/2M/3M`, `Pilar`, `Wall_Light`, `Wall_Lamp`, `Switch`,
-  `Floor_1M/2M/3M`. Minefield·Tag Chase·무대/경기장 trim에 적합하다.
-- `Polytope Studio/Lowpoly_Village`: Fence 01~03, Gate 01, Wooden Bridge.
-  Wrong Way·Race·Red Light/Green Light의 rail과 gate 후보로 사용한다.
-- `Polytope Studio/Lowpoly_Environments`: 바위·나무·관목·풀·꽃·버섯.
-  야외 arena와 Cliff Barrage 배경 장식에 사용한다.
-- `Pack_PartyCharacters`: Sequence Memory 진행 NPC 후보. Observer는 머리 회전 pivot이
-  명확해야 하므로 별도 인형/로봇 모델이 더 적합하다.
-- `nappin/WeaponStylizedPack`: Cannon은 Cliff Barrage launcher 후보다. Granade/Dynamite는
-  임시 hazard 후보일 뿐, Bomb Passing 폭탄과 Minefield 지뢰는 전용 silhouette를 권장한다.
-
-## 새로 확보해야 하는 핵심 에셋
-
-현재 Ignore 폴더에 적합한 전용 모델이 없는 우선 항목은 다음과 같다.
-
-1. 지뢰·크러셔·경광등 세트
-2. 감시 인형/로봇과 2등식 신호탑
-3. 50계단용 modular tread와 안전 타일/glyph 세트
-4. 풍선·펌프 스테이션
-5. 선물 상자 변형과 player base
-6. 기억 입력 콘솔과 A/S/D 버튼
-7. Bouncing Balls용 공·패들·goal frame
-8. Bomb Passing 전용 시한폭탄
-9. 눈덩이·ice rim·눈 장식
-10. laser emitter와 포탄, modular cliff edge
-
+- 바닥 visual은 기존 판정 바닥보다 위로 돌출되거나 이동 범위를 바꾸지 않는다.
+- 광범위 바닥은 `Assets/Ignore/MazePartyGenerated/Meshes`의 `NatureGroundGrid_4x9`,
+  `3x9`, `4x2`, `4x4`, `5x4`, `3x8` 결합 메시를 사용해 맵별 1 MeshFilter·1 Renderer로
+  구성한다.
+- Wrong Way는 Lane마다 기존 52개 surface anchor를 유지하고 각 anchor의 MeshFilter가
+  `SharedNatureGroundCentered`를 직접 참조한다. nested tile wrapper를 추가하지 않는다.
+- Stable Footing만 `Tile Surface` 아래 `SharedNatureGroundTile` nested visual을 유지한다.
+- Pandazole/Fantasy 원본의 MeshCollider는 래퍼에서 제거한다.
+- Stable Footing의 낙하 타일, Territory Paint의 연속 UV, Tag Chase 장애물 AABB처럼
+  게임 로직이 직접 사용하는 root·mesh 계약은 유지하고 visual만 교체한다.
+- 미니게임 setup 재실행은 현재 프리팹 디자인을 덮어쓰지 않는다.
+- 이번 맵 단계는 바닥까지만 제작한다. 레일·경계벽·자연 장식은 필요한 공용 원본을
+  확정했지만 현재 수작업 디자인 범위를 넓히지 않고 후속 맵 장식으로 남긴다.

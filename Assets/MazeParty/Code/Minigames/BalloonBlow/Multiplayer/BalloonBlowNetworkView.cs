@@ -323,6 +323,19 @@ namespace MazeParty.Multiplayer
                     BalloonMinimumScale,
                     BalloonMaximumScale,
                     normalized);
+                var player = slot < _players.Length
+                    ? _players[slot]
+                    : null;
+                var mouth = player?.Visual?.Bindings?.MouthAnchor;
+                var blowing = !popped && state.IsPlayerInflating(slot);
+                player?.Visual?.SetMouthBlowing(blowing);
+                if (mouth != null)
+                {
+                    balloon.FollowMouth(
+                        mouth.position,
+                        player.Root.rotation,
+                        targetScale);
+                }
                 balloon.SetScale(targetScale, popped);
             }
 
@@ -340,7 +353,9 @@ namespace MazeParty.Multiplayer
 
             OneShotVfxPool.Play(
                 popBurstVfxPrefab,
-                balloonAnchors[slot].position,
+                _balloons[slot] != null
+                    ? _balloons[slot].BodyPosition
+                    : balloonAnchors[slot].position,
                 Quaternion.identity,
                 1.05f);
         }
@@ -427,6 +442,21 @@ namespace MazeParty.Multiplayer
                 _root = root;
                 _body = body;
                 _knot = knot;
+            }
+
+            public Vector3 BodyPosition => _body.position;
+
+            public void FollowMouth(
+                Vector3 mouthPosition,
+                Quaternion playerRotation,
+                float scale)
+            {
+                var forward = playerRotation * Vector3.forward;
+                _root.SetPositionAndRotation(
+                    mouthPosition +
+                    forward * (0.11f + 0.47f * scale) +
+                    Vector3.up * 0.06f,
+                    playerRotation);
             }
 
             public void SetScale(float scale, bool popped)

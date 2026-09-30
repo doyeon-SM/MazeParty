@@ -32,7 +32,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera topDownCamera;
         [SerializeField] private Transform runnerRoot;
         [SerializeField] private GameObject arenaPresentation;
-        [SerializeField] private Transform observerHead;
         [SerializeField] private Renderer greenSignalRenderer;
         [SerializeField] private Renderer redSignalRenderer;
         [SerializeField] private Light greenSignalLight;
@@ -159,7 +158,6 @@ namespace MazeParty.Multiplayer
                     ? arena.gameObject
                     : null;
             }
-            observerHead ??= FindDescendant(transform, "Observer Head");
             greenSignalRenderer ??= FindRenderer(
                 transform,
                 "Green Signal");
@@ -368,29 +366,6 @@ namespace MazeParty.Multiplayer
                 ? state.SignalPhase
                 : RedLightGreenLightSignalPhase.Green;
 
-            if (observerHead != null)
-            {
-                var yaw = 180f;
-                if (state.Phase ==
-                    NetworkRedLightGreenLightPhase.Running)
-                {
-                    switch (phase)
-                    {
-                        case RedLightGreenLightSignalPhase.TurnWarning:
-                            var progress = 1f - Mathf.Clamp01(
-                                (float)(state.SignalRemaining /
-                                RedLightGreenLightRules
-                                    .TurnWarningSeconds));
-                            yaw = Mathf.LerpAngle(180f, 0f, progress);
-                            break;
-                        case RedLightGreenLightSignalPhase.Red:
-                            yaw = 0f;
-                            break;
-                    }
-                }
-                observerHead.localRotation = Quaternion.Euler(0f, yaw, 0f);
-            }
-
             var greenColor = phase ==
                 RedLightGreenLightSignalPhase.Green
                     ? new Color(0.12f, 1f, 0.25f)
@@ -458,10 +433,14 @@ namespace MazeParty.Multiplayer
                 var anchor = phase == RedLightGreenLightSignalPhase.Red
                     ? redSignalLight != null
                         ? redSignalLight.transform
-                        : observerHead
+                        : redSignalRenderer != null
+                            ? redSignalRenderer.transform
+                            : null
                     : greenSignalLight != null
                         ? greenSignalLight.transform
-                        : observerHead;
+                        : greenSignalRenderer != null
+                            ? greenSignalRenderer.transform
+                            : null;
                 if (anchor != null)
                 {
                     OneShotVfxPool.Play(

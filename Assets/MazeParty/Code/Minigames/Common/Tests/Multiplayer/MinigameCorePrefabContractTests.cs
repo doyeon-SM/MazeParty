@@ -55,7 +55,7 @@ namespace MazeParty.Multiplayer.Tests
                 "RedLightGreenLight", "Red Light Green Light Environment",
                 "RedLightGreenLightEnvironment.prefab",
                 typeof(NetworkRedLightGreenLightState),
-                "Observer Placeholder", "Signal Tower Placeholder"),
+                "Signal Tower Placeholder"),
             EnvironmentCase(
                 "TagChase", "Tag Chase Environment",
                 "TagChaseEnvironment.prefab",

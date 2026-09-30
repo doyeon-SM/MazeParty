@@ -120,7 +120,11 @@ Transform:
   m_LocalPosition: {x: 0, y: -3.5, z: 8}
   m_LocalScale: {x: 16, y: 6.25, z: 0.7}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1505399998958122598}
+  - {fileID: 4729272735849188319}
+  - {fileID: 6042252421591834503}
+  - {fileID: 79219890181771677}
   m_Father: {fileID: 1499658475027029757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7183790484671362081
@@ -138,7 +142,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 706359502455337005}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -480,7 +484,11 @@ Transform:
   m_LocalPosition: {x: 0, y: -3.5, z: -8}
   m_LocalScale: {x: 16, y: 6.25, z: 0.7}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1028270069999643952}
+  - {fileID: 387901859339095357}
+  - {fileID: 3483929302771566572}
+  - {fileID: 8363443145375440749}
   m_Father: {fileID: 1499658475027029757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5044052666790884966
@@ -498,7 +506,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1728054822840348054}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -570,7 +578,11 @@ Transform:
   m_LocalPosition: {x: 8, y: -3.5, z: 0}
   m_LocalScale: {x: 0.7, y: 6.25, z: 16}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1717960733821434229}
+  - {fileID: 7887054179199283117}
+  - {fileID: 2769632442560720884}
+  - {fileID: 3308327227824448569}
   m_Father: {fileID: 1499658475027029757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3422990557006553382
@@ -588,7 +600,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1957381140852132675}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -670,7 +682,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4105539452081127940}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: 6c6ac2cfde910fb4a9805140e06b2275, type: 2}
 --- !u!23 &2149278601332612076
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -696,7 +708,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 051efe585be0b764f9697481ef32dbfd, type: 2}
+  - {fileID: 2100000, guid: 953ee8248d740cb499536b0f182160ff, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -930,7 +942,11 @@ Transform:
   m_LocalPosition: {x: -8, y: -3.5, z: 0}
   m_LocalScale: {x: 0.7, y: 6.25, z: 16}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 6183698401982015677}
+  - {fileID: 4559250119791722658}
+  - {fileID: 6938806777671717295}
+  - {fileID: 7847023852740884485}
   m_Father: {fileID: 1499658475027029757}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &3110373999426046903
@@ -948,7 +964,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8070623697952915209}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -1032,3 +1048,1187 @@ Transform:
   - {fileID: 168517551996684423}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &443129063178494521
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3510315345719445849}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &4559250119791722658 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 443129063178494521}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &665016952014906743
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2029723506881811471}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &3483929302771566572 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 665016952014906743}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1480118912804357794
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1633047780677123260}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &3308327227824448569 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 1480118912804357794}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2237247032937581935
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1633047780677123260}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &2769632442560720884 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 2237247032937581935}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3280796497921545469
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1760442474724026816}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &1505399998958122598 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 3280796497921545469}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3365480253312916462
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1633047780677123260}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &1717960733821434229 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 3365480253312916462}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3974106115319173035
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2029723506881811471}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &1028270069999643952 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 3974106115319173035}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4069715060352496390
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1760442474724026816}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &79219890181771677 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 4069715060352496390}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4323984461964177318
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2029723506881811471}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &387901859339095357 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 4323984461964177318}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5580823468522831350
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2029723506881811471}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &8363443145375440749 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 5580823468522831350}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6059465376974949686
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1633047780677123260}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &7887054179199283117 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 6059465376974949686}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6162543615832955550
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3510315345719445849}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &7847023852740884485 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 6162543615832955550}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6424493010419069748
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3510315345719445849}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &6938806777671717295 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 6424493010419069748}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7690352431414754588
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1760442474724026816}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &6042252421591834503 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 7690352431414754588}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7832624749291883046
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 3510315345719445849}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.375
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &6183698401982015677 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 7832624749291883046}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8701581364413802820
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1760442474724026816}
+    m_Modifications:
+    - target: {fileID: 3138898645031467517, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_Name
+      value: Shared Fantasy Cliff 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.3125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.96
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.285714
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.125
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+--- !u!4 &4729272735849188319 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 4135424151474152091, guid: e7038270f62c0db44b0da79f56a9accc, type: 3}
+  m_PrefabInstance: {fileID: 8701581364413802820}
+  m_PrefabAsset: {fileID: 0}

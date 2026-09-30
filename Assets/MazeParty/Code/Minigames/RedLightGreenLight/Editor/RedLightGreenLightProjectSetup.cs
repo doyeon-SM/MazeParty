@@ -33,9 +33,6 @@ namespace MazeParty.Editor
             MinigameArtFolder + "/RedLightGreenLight";
         private const string MaterialFolder =
             RedLightGreenLightArtFolder + "/Materials";
-        private const string ObserverPrefabPath =
-            ProjectRoot +
-            "/Prefabs/Minigames/RedLightGreenLight/Observer.prefab";
         private const string SignalTowerPrefabPath =
             ProjectRoot +
             "/Prefabs/Minigames/RedLightGreenLight/SignalTower.prefab";
@@ -81,7 +78,7 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "Red Light / Green Light rebuilt: 20 x 44 shared arena, " +
-                "replaceable observer and signal anchors, network state, " +
+                "replaceable signal anchors, network state, " +
                 "and additive-safe personal top-view camera.");
         }
 
@@ -243,7 +240,6 @@ namespace MazeParty.Editor
                 () => CreateEnvironmentTemplate(materials),
                 "Red Light Green Light Environment");
 
-            var observerHead = CreateObserver(parent, materials);
             CreateSignalTower(
                 parent,
                 materials,
@@ -254,7 +250,6 @@ namespace MazeParty.Editor
 
             return new PresentationReferences
             {
-                ObserverHead = observerHead,
                 GreenSignalRenderer = greenSignalRenderer,
                 RedSignalRenderer = redSignalRenderer,
                 GreenSignalLight = greenSignalLight,
@@ -482,86 +477,6 @@ namespace MazeParty.Editor
             }
         }
 
-        private static Transform CreateObserver(
-            Transform parent,
-            RedLightGreenLightMaterials materials)
-        {
-            var observer = new GameObject("Observer Placeholder");
-            observer.transform.SetParent(parent, false);
-            observer.transform.position = new Vector3(
-                NetworkRedLightGreenLightState.ArenaCenterX,
-                0f,
-                NetworkRedLightGreenLightState.ArenaMaxZ - 1.6f);
-
-            CreatePrimitive(
-                "Observer Plinth",
-                PrimitiveType.Cylinder,
-                observer.transform,
-                new Vector3(0f, 0.3f, 0f),
-                Quaternion.identity,
-                new Vector3(1.8f, 0.3f, 1.8f),
-                materials.ObserverAccent,
-                true);
-            CreatePrimitive(
-                "Observer Body",
-                PrimitiveType.Capsule,
-                observer.transform,
-                new Vector3(0f, 1.9f, 0f),
-                Quaternion.identity,
-                new Vector3(1.25f, 1.35f, 1.1f),
-                materials.ObserverBody,
-                false);
-            CreatePrimitive(
-                "Observer Left Arm",
-                PrimitiveType.Capsule,
-                observer.transform,
-                new Vector3(-0.95f, 2f, 0f),
-                Quaternion.Euler(0f, 0f, -12f),
-                new Vector3(0.42f, 1f, 0.42f),
-                materials.ObserverBody,
-                false);
-            CreatePrimitive(
-                "Observer Right Arm",
-                PrimitiveType.Capsule,
-                observer.transform,
-                new Vector3(0.95f, 2f, 0f),
-                Quaternion.Euler(0f, 0f, 12f),
-                new Vector3(0.42f, 1f, 0.42f),
-                materials.ObserverBody,
-                false);
-
-            var head = CreatePrimitive(
-                "Observer Head",
-                PrimitiveType.Sphere,
-                observer.transform,
-                new Vector3(0f, 3.75f, 0f),
-                Quaternion.Euler(0f, 180f, 0f),
-                new Vector3(1.35f, 1.35f, 1.35f),
-                materials.ObserverHead,
-                false);
-            CreatePrimitive(
-                "Observer Face Direction",
-                PrimitiveType.Cube,
-                head.transform,
-                new Vector3(0f, 0f, -0.48f),
-                Quaternion.identity,
-                new Vector3(0.62f, 0.2f, 0.18f),
-                materials.ObserverAccent,
-                false);
-            var connectedObserver = MinigameCorePrefabUtility.Connect(
-                observer,
-                ObserverPrefabPath);
-            var connectedHead = connectedObserver.transform.Find(
-                "Observer Head");
-            if (connectedHead == null)
-            {
-                throw new InvalidOperationException(
-                    "Observer.prefab must contain Observer Head for the " +
-                    "red-light rotation contract.");
-            }
-            return connectedHead;
-        }
-
         private static void CreateSignalTower(
             Transform parent,
             RedLightGreenLightMaterials materials,
@@ -737,10 +652,6 @@ namespace MazeParty.Editor
                 serializedView,
                 "arenaPresentation",
                 arenaPresentation);
-            SetObjectReference(
-                serializedView,
-                "observerHead",
-                presentation.ObserverHead);
             SetObjectReference(
                 serializedView,
                 "greenSignalRenderer",
@@ -961,15 +872,6 @@ namespace MazeParty.Editor
                 Finish = CreateOrUpdateMaterial(
                     "RedLightGreenLightFinish",
                     new Color(1f, 0.74f, 0.1f)),
-                ObserverBody = CreateOrUpdateMaterial(
-                    "RedLightGreenLightObserverBody",
-                    new Color(0.78f, 0.17f, 0.2f)),
-                ObserverHead = CreateOrUpdateMaterial(
-                    "RedLightGreenLightObserverHead",
-                    new Color(0.92f, 0.72f, 0.55f)),
-                ObserverAccent = CreateOrUpdateMaterial(
-                    "RedLightGreenLightObserverAccent",
-                    new Color(0.1f, 0.07f, 0.09f)),
                 SignalHousing = CreateOrUpdateMaterial(
                     "RedLightGreenLightSignalHousing",
                     new Color(0.08f, 0.09f, 0.1f)),
@@ -1044,8 +946,6 @@ namespace MazeParty.Editor
                 FindDescendant(root.transform, "Arena Floor") == null ||
                 FindDescendant(root.transform, "Start Line") == null ||
                 FindDescendant(root.transform, "Finish Line") == null ||
-                FindDescendant(root.transform, "Observer Placeholder") == null ||
-                FindDescendant(root.transform, "Observer Head") == null ||
                 FindDescendant(root.transform, "Green Signal") == null ||
                 FindDescendant(root.transform, "Red Signal") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
@@ -1053,7 +953,7 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Red Light / Green Light scene is missing its " +
-                    "network, arena, signal, observer, camera or audio contract.");
+                    "network, arena, signal, camera or audio contract.");
             }
 
             var hud = root.GetComponentInChildren<
@@ -1184,7 +1084,6 @@ namespace MazeParty.Editor
 
         private sealed class PresentationReferences
         {
-            public Transform ObserverHead;
             public Renderer GreenSignalRenderer;
             public Renderer RedSignalRenderer;
             public Light GreenSignalLight;
@@ -1198,9 +1097,6 @@ namespace MazeParty.Editor
             public Material Wall;
             public Material Start;
             public Material Finish;
-            public Material ObserverBody;
-            public Material ObserverHead;
-            public Material ObserverAccent;
             public Material SignalHousing;
             public Material GreenSignal;
             public Material RedSignal;

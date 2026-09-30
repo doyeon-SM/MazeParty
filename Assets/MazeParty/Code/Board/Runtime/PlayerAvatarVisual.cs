@@ -75,12 +75,19 @@ namespace MazeParty.Gameplay
         }
         private byte _hatId;
         private Color _bodyColor = DefaultBodyColor;
+        private bool _mouthBlowing;
 
         public bool IsBuilt => _worldModel != null;
         public PlayerAvatarPresentationBindings Bindings => bindings;
         public bool IsCrouching => _crouching;
         public Color BodyColor => _bodyColor;
         public bool IsUsingItem => _itemUseTimer > 0f || _equippedItemId != PrototypeItemId.None;
+
+        public void SetMouthBlowing(bool blowing)
+        {
+            _mouthBlowing = blowing;
+        }
+
         public void SetEquippedItem(PrototypeItemId id)
         {
             if (_equippedItemId == id) return;
@@ -458,7 +465,9 @@ namespace MazeParty.Gameplay
             _leftEye.localRotation = Quaternion.Euler(0f, 0f, headWobble);
             _rightEye.localRotation = Quaternion.Euler(0f, 0f, headWobble);
             _mouth.localPosition = new Vector3(headOffsetX, headY - 0.17f, 0.37f);
-            _mouth.localScale = new Vector3(0.2f, 0.055f, 0.045f);
+            _mouth.localScale = _mouthBlowing
+                ? new Vector3(0.115f, 0.14f, 0.045f)
+                : new Vector3(0.2f, 0.055f, 0.045f);
             _mouth.localRotation = Quaternion.Euler(0f, 0f, headWobble);
             _hat.localPosition = new Vector3(headOffsetX, headY + 0.34f, 0f);
             _hat.localRotation = Quaternion.Euler(0f, 0f, headWobble);

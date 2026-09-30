@@ -349,6 +349,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     Vector3.one * BalloonMinimumScale;
                 _balloonBodies[slot].gameObject.SetActive(true);
                 _balloonKnots[slot].gameObject.SetActive(true);
+                _playerVisuals[slot].SetMouthBlowing(false);
             }
         }
 
@@ -376,8 +377,22 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _balloonAnchors[slot].localScale = Vector3.one * scale;
                 _balloonBodies[slot].gameObject.SetActive(!popped);
                 _balloonKnots[slot].gameObject.SetActive(!popped);
-                _playerVisuals[slot].SetCrouching(
-                    player.Phase == BalloonBlowPlayerPhase.Inflating);
+                var inflating =
+                    player.Phase == BalloonBlowPlayerPhase.Inflating;
+                _playerVisuals[slot].SetCrouching(inflating);
+                _playerVisuals[slot].SetMouthBlowing(
+                    inflating && !popped);
+                var mouth = _playerVisuals[slot].Bindings?.MouthAnchor;
+                if (mouth != null)
+                {
+                    var playerRotation = _players[slot].rotation;
+                    _balloonAnchors[slot].SetPositionAndRotation(
+                        mouth.position +
+                        playerRotation * Vector3.forward *
+                        (0.11f + 0.47f * targetScale) +
+                        Vector3.up * 0.06f,
+                        playerRotation);
+                }
             }
         }
 

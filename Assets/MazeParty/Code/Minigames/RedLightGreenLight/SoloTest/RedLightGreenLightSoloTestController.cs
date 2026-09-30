@@ -28,7 +28,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private PlayerAvatarVisual _avatarVisual;
         private RedLightGreenLightPlayerPresentation _presentation;
         private Camera _runtimeCamera;
-        private Transform _observerHead;
         private Renderer _greenSignalRenderer;
         private Renderer _redSignalRenderer;
         private Light _greenSignalLight;
@@ -237,7 +236,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
             arena.gameObject.SetActive(true);
 
-            _observerHead = FindNamedTransform("Observer Head");
             _greenSignalRenderer =
                 FindNamedTransform("Green Signal")?.GetComponent<Renderer>();
             _redSignalRenderer =
@@ -396,31 +394,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                         RedLightGreenLightSoloPhase.Running
                 ? _session.SignalPhase
                 : RedLightGreenLightSignalPhase.Green;
-
-            if (_observerHead != null)
-            {
-                var yaw = 180f;
-                if (_session.Phase ==
-                    RedLightGreenLightSoloPhase.Running)
-                {
-                    if (phase ==
-                        RedLightGreenLightSignalPhase.TurnWarning)
-                    {
-                        var progress = 1f - Mathf.Clamp01(
-                            _session.SignalRemainingSeconds /
-                            (float)RedLightGreenLightRules
-                                .TurnWarningSeconds);
-                        yaw = Mathf.LerpAngle(180f, 0f, progress);
-                    }
-                    else if (phase ==
-                             RedLightGreenLightSignalPhase.Red)
-                    {
-                        yaw = 0f;
-                    }
-                }
-                _observerHead.localRotation =
-                    Quaternion.Euler(0f, yaw, 0f);
-            }
 
             var greenColor = phase ==
                 RedLightGreenLightSignalPhase.Green

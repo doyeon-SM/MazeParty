@@ -78,8 +78,8 @@ namespace MazeParty.Editor
             }
 
             Debug.Log(
-                "Balloon Blow rebuilt: four fixed stations, shared camera, " +
-                "replaceable balloons and arena art. Progress is conveyed " +
+                "Balloon Blow rebuilt: four mouth-blown balloons, shared " +
+                "camera, and replaceable arena art. Progress is conveyed " +
                 "by balloon growth and pop state.");
         }
 
@@ -223,19 +223,6 @@ namespace MazeParty.Editor
                 playerAnchor.position = PlayerPositions[slot];
                 playerAnchor.rotation = Quaternion.identity;
                 playerAnchors[slot] = playerAnchor;
-
-                var station = CreatePrimitive(
-                    "Station " + (slot + 1),
-                    PrimitiveType.Cylinder,
-                    parent,
-                    new Vector3(PlayerPositions[slot].x, -0.02f, -1.8f),
-                    Quaternion.identity,
-                    new Vector3(1.45f, 0.16f, 1.45f),
-                    materials.Station[slot],
-                    false);
-                MinigameCorePrefabUtility.Connect(
-                    station,
-                    CorePrefabFolder + "/Station" + (slot + 1) + ".prefab");
 
                 var balloonAnchor = new GameObject(
                     "Balloon Anchor " + (slot + 1)).transform;
@@ -405,16 +392,12 @@ namespace MazeParty.Editor
         private static BalloonBlowMaterials CreateMaterials()
         {
             var balloon = new Material[BalloonBlowRules.PlayerCount];
-            var stations = new Material[BalloonBlowRules.PlayerCount];
             for (var slot = 0; slot < BalloonBlowRules.PlayerCount; slot++)
             {
                 balloon[slot] = CreateOrLoadMaterial(
                     "BalloonBlowBalloon" + (slot + 1),
                     PlayerColors[slot],
                     PlayerColors[slot] * 0.18f);
-                stations[slot] = CreateOrLoadMaterial(
-                    "BalloonBlowStation" + (slot + 1),
-                    Color.Lerp(PlayerColors[slot], Color.black, 0.35f));
             }
 
             return new BalloonBlowMaterials
@@ -432,8 +415,7 @@ namespace MazeParty.Editor
                 Plaque = CreateOrLoadMaterial(
                     "BalloonBlowPlaque",
                     new Color(0.16f, 0.08f, 0.23f)),
-                Balloon = balloon,
-                Station = stations
+                Balloon = balloon
             };
         }
 
@@ -502,7 +484,7 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Balloon Blow scene is missing its network, " +
-                    "station, balloon, camera, audio or art contract.");
+                    "player, balloon, camera, audio or art contract.");
             }
 
             if (root.GetComponentInChildren<Camera>(true) != null ||
@@ -603,7 +585,6 @@ namespace MazeParty.Editor
             public Material Trim;
             public Material Plaque;
             public Material[] Balloon;
-            public Material[] Station;
         }
     }
 }

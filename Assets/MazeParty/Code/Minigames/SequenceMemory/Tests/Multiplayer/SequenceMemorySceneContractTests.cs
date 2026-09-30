@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Linq;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -16,6 +17,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/SequenceMemory/SequenceMemory.unity";
         private const string HudPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab";
+        private const string PlayerPresentationPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
 
         [Test]
         public void Scene_PreservesFixedStationsSharedCameraAudioAndPrefabUi()
@@ -145,12 +148,29 @@ namespace MazeParty.Multiplayer.Tests
                     state.transform,
                     "NPC Anchor");
                 Assert.That(npcAnchor, Is.Not.Null);
+                Assert.That(npcAnchor.Find("NPC Podium"), Is.Not.Null);
                 Assert.That(
                     npcAnchor.Find("NPC Placeholder Body"),
-                    Is.Not.Null);
+                    Is.Null);
                 Assert.That(
                     npcAnchor.Find("NPC Placeholder Head"),
+                    Is.Null);
+                var npcPresentation = npcAnchor.Find(
+                    "NPC Player Presentation");
+                Assert.That(npcPresentation, Is.Not.Null);
+                Assert.That(
+                    npcPresentation.GetComponent<
+                        PlayerAvatarPresentationBindings>(),
                     Is.Not.Null);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        npcPresentation.gameObject),
+                    Is.EqualTo(PlayerPresentationPrefabPath));
+                Assert.That(
+                    npcPresentation.GetComponentsInChildren<Collider>(true)
+                        .Any(collider => collider.enabled),
+                    Is.False,
+                    "The NPC reuses player visuals without player hitboxes.");
 
                 var hud = state.GetComponentInChildren<
                     SequenceMemoryHudBindings>(true);
