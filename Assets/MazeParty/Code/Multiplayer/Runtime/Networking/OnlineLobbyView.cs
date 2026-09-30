@@ -82,6 +82,8 @@ namespace MazeParty.Multiplayer
         private bool _hasCapturedActionLabels;
         private string _readyButtonTextBeforeRecovery = string.Empty;
         private string _startButtonTextBeforeRecovery = string.Empty;
+        private LocalizedLogo _localizedLogo;
+        private bool _localizedLogoLookupCompleted;
 
         public event Action<string> CreateRequested;
         public event Action<string, string> JoinRequested;
@@ -316,6 +318,7 @@ namespace MazeParty.Multiplayer
             connectionPanel.SetActive(!isInSession);
             joinCodePopup.SetActive(!isInSession && _joinPopupOpen);
             sessionPanel.SetActive(isInSession);
+            SetLocalizedLogoVisible(!isInSession);
             statusText.text = busy ? GameText.T("Working...") : status ?? string.Empty;
 
             if (!isInSession)
@@ -402,6 +405,7 @@ namespace MazeParty.Multiplayer
 
         private void Awake()
         {
+            CacheLocalizedLogo();
             if (!HasRequiredReferences)
             {
                 Debug.LogError(
@@ -450,6 +454,26 @@ namespace MazeParty.Multiplayer
             canvasGroup.alpha = _presentationVisible ? 1f : 0f;
             canvasGroup.interactable = _presentationVisible && !_lastBusy;
             canvasGroup.blocksRaycasts = _presentationVisible;
+        }
+
+        private void SetLocalizedLogoVisible(bool visible)
+        {
+            CacheLocalizedLogo();
+            if (_localizedLogo != null)
+            {
+                _localizedLogo.SetPresentationVisible(visible);
+            }
+        }
+
+        private void CacheLocalizedLogo()
+        {
+            if (_localizedLogoLookupCompleted)
+            {
+                return;
+            }
+
+            _localizedLogo = GetComponentInChildren<LocalizedLogo>(true);
+            _localizedLogoLookupCompleted = true;
         }
 
         private void BindButtonEvents()

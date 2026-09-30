@@ -14,6 +14,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject englishLogo;
         [SerializeField] private GameObject koreanLogo;
 
+        private bool _presentationVisible = true;
+
         public bool HasRequiredReferences =>
             englishLogo != null &&
             koreanLogo != null &&
@@ -23,6 +25,12 @@ namespace MazeParty.Multiplayer
         {
             englishLogo = english;
             koreanLogo = korean;
+            ApplyLanguage();
+        }
+
+        public void SetPresentationVisible(bool visible)
+        {
+            _presentationVisible = visible;
             ApplyLanguage();
         }
 
@@ -45,8 +53,8 @@ namespace MazeParty.Multiplayer
             }
 
             var useKoreanLogo = GameText.Language == GameLanguage.Korean;
-            englishLogo.SetActive(!useKoreanLogo);
-            koreanLogo.SetActive(useKoreanLogo);
+            englishLogo.SetActive(_presentationVisible && !useKoreanLogo);
+            koreanLogo.SetActive(_presentationVisible && useKoreanLogo);
         }
     }
 }

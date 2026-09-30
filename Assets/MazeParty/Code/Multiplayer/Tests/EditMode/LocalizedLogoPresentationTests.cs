@@ -83,6 +83,52 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void HiddenPresentation_RemainsHiddenAcrossLanguageChanges_AndRestoresCurrentLanguage()
+        {
+            var root = new GameObject("Localized Logo Visibility Root");
+            LocalizedLogo localizedLogo = null;
+            try
+            {
+                var englishLogo = new GameObject("English Logo");
+                var koreanLogo = new GameObject("Korean Logo");
+                englishLogo.transform.SetParent(root.transform, false);
+                koreanLogo.transform.SetParent(root.transform, false);
+
+                GameText.SetLanguage(GameLanguage.English);
+                localizedLogo = root.AddComponent<LocalizedLogo>();
+                localizedLogo.Configure(englishLogo, koreanLogo);
+                InvokeLifecycle(localizedLogo, "OnDisable");
+                InvokeLifecycle(localizedLogo, "OnEnable");
+
+                Assert.That(englishLogo.activeSelf, Is.True);
+                Assert.That(koreanLogo.activeSelf, Is.False);
+
+                localizedLogo.SetPresentationVisible(false);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.False);
+
+                GameText.SetLanguage(GameLanguage.Korean);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.False,
+                    "A language change must not reveal a hidden lobby logo.");
+
+                localizedLogo.SetPresentationVisible(true);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.True,
+                    "Restoring presentation must use the current language.");
+            }
+            finally
+            {
+                if (localizedLogo != null)
+                {
+                    InvokeLifecycle(localizedLogo, "OnDisable");
+                }
+
+                Object.DestroyImmediate(root);
+            }
+        }
+
         private static void InvokeLifecycle(
             LocalizedLogo localizedLogo,
             string methodName)

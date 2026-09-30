@@ -519,7 +519,23 @@ namespace MazeParty.Multiplayer
 
         private void FixedUpdate()
         {
-            if (!IsSpawned || !IsServer || _slot.Value < 0)
+            if (!IsSpawned || !IsServer)
+            {
+                return;
+            }
+
+            if (BoardBoundaryActivationRules.IsLobbyPhase(
+                    GetCurrentSessionPhase()))
+            {
+                HideBoundaryWalls();
+                if (_slot.Value >= 0 && CanUseLobbyInput())
+                {
+                    SimulateLobbyMovementOnServer();
+                }
+                return;
+            }
+
+            if (_slot.Value < 0)
             {
                 return;
             }
@@ -1261,6 +1277,14 @@ namespace MazeParty.Multiplayer
             return LobbyArena.Instance != null && !_boardReady.Value && !IsBoardLoaded();
         }
 
+        private static string GetCurrentSessionPhase()
+        {
+            var controller = OnlineSessionController.Instance;
+            return controller != null && controller.IsInSession
+                ? controller.CurrentSession.Phase
+                : null;
+        }
+
         private void InitializeLobbyPositionOnServer()
         {
             if (!IsServer || _lobbyPositionInitialized || _slot.Value < 0 ||
@@ -1574,10 +1598,17 @@ namespace MazeParty.Multiplayer
         {
             var match = NetworkMatchState.Instance;
             var showForAction = match != null && match.IsActionPhase;
-            var showForCombat = match != null && match.IsCombatPhase &&
-                                match.CanAvatarUseCombatInput(this);
-            if (!IsOwner || match == null || (!showForAction && !showForCombat) ||
-                !_hasLogicalTile.Value)
+            var showForCombat = match != null && match.IsCombatPhase;
+            var canUseCombatInput = showForCombat &&
+                                    match.CanAvatarUseCombatInput(this);
+            if (!IsOwner ||
+                !BoardBoundaryActivationRules.ShouldActivate(
+                    GetCurrentSessionPhase(),
+                    match != null && match.GameplayEnabled,
+                    showForAction,
+                    showForCombat,
+                    canUseCombatInput,
+                    _hasLogicalTile.Value))
             {
                 HideBoundaryWalls();
                 return;
@@ -1593,18 +1624,30 @@ namespace MazeParty.Multiplayer
 
             EnsureBoundaryWallsConfigured();
             _boundaryWalls.SetPresentationVisible(true);
-            RefreshBoundaryWalls(tile, showForCombat ? 0 : LocalRemainingMoves);
+            RefreshBoundaryWalls(tile, canUseCombatInput ? 0 : LocalRemainingMoves);
         }
 
         private void RefreshBoundaryWallsOnServer()
         {
-            if (!IsServer || !_traversal.IsInitialized)
+            var match = NetworkMatchState.Instance;
+            var showForAction = match != null && match.IsActionPhase;
+            var showForCombat = match != null && match.IsCombatPhase;
+            var hasActiveCombatState = showForCombat &&
+                                       CombatState == NetworkCombatState.Active;
+            if (!IsServer || !_traversal.IsInitialized ||
+                !BoardBoundaryActivationRules.ShouldActivate(
+                    GetCurrentSessionPhase(),
+                    match != null && match.GameplayEnabled,
+                    showForAction,
+                    showForCombat,
+                    hasActiveCombatState,
+                    _hasLogicalTile.Value))
             {
                 HideBoundaryWalls();
                 return;
             }
 
-            if (CombatState == NetworkCombatState.Active)
+            if (hasActiveCombatState)
             {
                 RefreshCombatBoundaryWallsOnServer();
                 return;

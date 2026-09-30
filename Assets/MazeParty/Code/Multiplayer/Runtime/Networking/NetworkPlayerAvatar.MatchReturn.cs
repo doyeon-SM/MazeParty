@@ -70,6 +70,7 @@ namespace MazeParty.Multiplayer
         [Rpc(SendTo.ClientsAndHost)]
         private void PrepareForLobbyPresentationRpc()
         {
+            HideBoundaryWalls();
             DisposeBoardItems();
             ClearLocalWorldDieCache();
             LocalUtilityNotice = BoardUtilityNotice.None;

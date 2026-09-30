@@ -16,6 +16,117 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
 
         [Test]
+        public void PreLobbyGameplayBackground_IsAuthoredAndFollowsSessionVisibility()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            try
+            {
+                var view = GetLobbyView(root);
+                var connectionPanel = GetField<GameObject>(
+                    view,
+                    "connectionPanel");
+                var sessionPanel = GetField<GameObject>(view, "sessionPanel");
+                var background = connectionPanel.transform.Find(
+                    "Pre-Lobby Gameplay Background");
+
+                Assert.That(background, Is.Not.Null,
+                    "The pre-session gameplay art must be authored directly under Connection Panel.");
+                Assert.That(background.parent, Is.SameAs(connectionPanel.transform));
+
+                var image = background.GetComponent<Image>();
+                Assert.That(image, Is.Not.Null,
+                    "The pre-session background must use an authored uGUI Image.");
+                Assert.That(image.sprite, Is.Not.Null,
+                    "The pre-session background must reference an imported sprite.");
+                Assert.That(
+                    AssetDatabase.GetAssetPath(image.sprite),
+                    Does.StartWith("Assets/Ignore/AIImage/"),
+                    "Temporary generated lobby art must stay under Assets/Ignore/AIImage.");
+
+                view.Render(
+                    SessionSnapshot.Empty,
+                    false,
+                    false,
+                    string.Empty);
+                Assert.That(connectionPanel.activeSelf, Is.True);
+                Assert.That(sessionPanel.activeSelf, Is.False);
+                Assert.That(background.gameObject.activeInHierarchy, Is.True,
+                    "The gameplay background must be visible before joining a session.");
+
+                view.Render(
+                    CreateSnapshot(MultiplayerConstants.LobbyPhase),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(connectionPanel.activeSelf, Is.False);
+                Assert.That(sessionPanel.activeSelf, Is.True);
+                Assert.That(background.gameObject.activeInHierarchy, Is.False,
+                    "The gameplay background must be hidden once the session panel is active.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        [Test]
+        public void LocalizedLogo_IsVisibleOnlyBeforeJoiningSession()
+        {
+            GameText.SetLanguage(GameLanguage.English);
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            LocalizedLogo localizedLogo = null;
+            try
+            {
+                var view = GetLobbyView(root);
+                localizedLogo = root.GetComponentInChildren<LocalizedLogo>(true);
+                Assert.That(localizedLogo, Is.Not.Null, LobbyPrefabPath);
+
+                var serializedLogo = new SerializedObject(localizedLogo);
+                var englishLogo = serializedLogo.FindProperty("englishLogo")
+                    .objectReferenceValue as GameObject;
+                var koreanLogo = serializedLogo.FindProperty("koreanLogo")
+                    .objectReferenceValue as GameObject;
+                Assert.That(englishLogo, Is.Not.Null);
+                Assert.That(koreanLogo, Is.Not.Null);
+
+                InvokeLogoLifecycle(localizedLogo, "OnDisable");
+                InvokeLogoLifecycle(localizedLogo, "OnEnable");
+
+                view.Render(SessionSnapshot.Empty, false, false, string.Empty);
+                Assert.That(englishLogo.activeSelf, Is.True);
+                Assert.That(koreanLogo.activeSelf, Is.False);
+
+                view.Render(
+                    CreateSnapshot(MultiplayerConstants.LobbyPhase),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.False);
+
+                GameText.SetLanguage(GameLanguage.Korean);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.False,
+                    "Changing language in a session must not reveal the logo.");
+
+                view.Render(SessionSnapshot.Empty, false, false, string.Empty);
+                Assert.That(englishLogo.activeSelf, Is.False);
+                Assert.That(koreanLogo.activeSelf, Is.True,
+                    "Leaving the session must restore the current-language logo.");
+            }
+            finally
+            {
+                if (localizedLogo != null)
+                {
+                    InvokeLogoLifecycle(localizedLogo, "OnDisable");
+                }
+
+                PrefabUtility.UnloadPrefabContents(root);
+                GameText.ResetForTests();
+            }
+        }
+
+        [Test]
         public void JoinPopup_UsesMaskedInputAndOpensOnlyWhenRequested()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
@@ -329,6 +440,17 @@ namespace MazeParty.Multiplayer.Tests
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(method, Is.Not.Null);
             method.Invoke(view, null);
+        }
+
+        private static void InvokeLogoLifecycle(
+            LocalizedLogo localizedLogo,
+            string methodName)
+        {
+            var method = typeof(LocalizedLogo).GetMethod(
+                methodName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(method, Is.Not.Null, methodName);
+            method.Invoke(localizedLogo, null);
         }
     }
 }
