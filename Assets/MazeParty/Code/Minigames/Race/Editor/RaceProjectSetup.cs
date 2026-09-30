@@ -77,6 +77,7 @@ namespace MazeParty.Editor
                 new Color(0.2f, 0.82f, 0.45f),
                 0.1f);
             BuildScene(floor, lane, boundary, finish);
+            MinigameVfxProjectSetup.InstallScene(RaceScenePath);
             AssetDatabase.SaveAssets();
         }
 

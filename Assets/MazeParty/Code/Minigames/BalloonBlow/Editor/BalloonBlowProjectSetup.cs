@@ -94,6 +94,7 @@ namespace MazeParty.Editor
             EnsureFolders();
             var materials = CreateMaterials();
             BuildBalloonBlowScene(materials);
+            MinigameVfxProjectSetup.InstallScene(BalloonBlowScenePath);
             AssetDatabase.SaveAssets();
         }
 

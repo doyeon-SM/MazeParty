@@ -32,6 +32,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform runnerRoot;
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private WrongWayHudBindings hud;
+        [SerializeField] private GameObject progressVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[WrongWayRules.PlayerCount];
@@ -43,6 +44,8 @@ namespace MazeParty.Multiplayer
         private Vector3 _cameraFocus;
         private bool _hasCameraFocus;
         private bool _hudContractErrorLogged;
+
+        public GameObject ProgressVfxPrefab => progressVfxPrefab;
 
         public static float CourseLength =>
             WrongWayRules.StepCount * NetworkWrongWayState.StepDepth;
@@ -119,6 +122,11 @@ namespace MazeParty.Multiplayer
         {
             var direction = focus - CalculateCameraPosition(focus);
             return Quaternion.LookRotation(direction.normalized, Vector3.up);
+        }
+
+        public void ConfigureVfx(GameObject progressPrefab)
+        {
+            progressVfxPrefab = progressPrefab;
         }
 
         private void Awake()
@@ -311,8 +319,8 @@ namespace MazeParty.Multiplayer
                 }
 
                 runner.Root.rotation = Quaternion.identity;
-                runner.LastProgress = progress;
-                runner.Visual.SetEliminated(state.IsRecovering(slot));
+                var recovering = state.IsRecovering(slot);
+                runner.Visual.SetEliminated(recovering);
 
                 var avatar = match.GetAvatarForSlot(slot);
                 if (avatar != null)
@@ -335,7 +343,54 @@ namespace MazeParty.Multiplayer
                     runner.Visual.SetDisplayName(
                         GameText.F("Player {0}", slot + 1));
                 }
+
+                RefreshRunnerVfx(runner, progress, recovering);
+                runner.LastProgress = progress;
             }
+        }
+
+        private void RefreshRunnerVfx(
+            RunnerView runner,
+            int progress,
+            bool recovering)
+        {
+            var finished = progress >= WrongWayRules.StepCount;
+            if (!runner.HasVfxBaseline)
+            {
+                runner.HasVfxBaseline = true;
+                runner.WasRecovering = recovering;
+                runner.WasFinished = finished;
+                return;
+            }
+
+            var scale = 0f;
+            var height = 0.35f;
+            if (finished && !runner.WasFinished)
+            {
+                scale = 1.1f;
+                height = 0.9f;
+            }
+            else if (recovering && !runner.WasRecovering)
+            {
+                scale = 0.8f;
+                height = 0.65f;
+            }
+            else if (progress > runner.LastProgress)
+            {
+                scale = 0.5f;
+            }
+
+            if (scale > 0f && progressVfxPrefab != null)
+            {
+                OneShotVfxPool.Play(
+                    progressVfxPrefab,
+                    runner.Root.position + Vector3.up * height,
+                    Quaternion.identity,
+                    scale);
+            }
+
+            runner.WasRecovering = recovering;
+            runner.WasFinished = finished;
         }
 
         private void ConfigureCamera()
@@ -478,6 +533,10 @@ namespace MazeParty.Multiplayer
                 for (var slot = 0; slot < _runners.Length; slot++)
                 {
                     _runners[slot]?.Visual.SetEliminated(false);
+                    if (_runners[slot] != null)
+                    {
+                        _runners[slot].HasVfxBaseline = false;
+                    }
                 }
             }
         }
@@ -539,6 +598,9 @@ namespace MazeParty.Multiplayer
             public PlayerAvatarVisual Visual { get; }
             public bool HasPosition { get; set; }
             public int LastProgress { get; set; }
+            public bool HasVfxBaseline { get; set; }
+            public bool WasRecovering { get; set; }
+            public bool WasFinished { get; set; }
         }
     }
 }

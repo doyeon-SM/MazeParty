@@ -99,6 +99,7 @@ namespace MazeParty.Editor
             EnsureFolders();
             var hudPrefab = LoadOrCreateWrongWayHudPrefab();
             BuildWrongWayScene(CreateMaterials(), hudPrefab);
+            MinigameVfxProjectSetup.InstallScene(WrongWayScenePath);
             AssetDatabase.SaveAssets();
         }
 

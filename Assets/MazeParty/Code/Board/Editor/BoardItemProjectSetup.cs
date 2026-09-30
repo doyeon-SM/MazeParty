@@ -98,17 +98,21 @@ namespace MazeParty.Editor
             Directory.CreateDirectory(VisualFolder);
             Directory.CreateDirectory("Assets/MazeParty/Resources/MazeParty/ItemViews");
             AssetDatabase.Refresh();
-            var explosion = EnsureSimple("Explosion", PrimitiveType.Sphere, new Color(1f, .45f, .08f), VisualFolder);
+            var explosion = SharedVfxProjectSetup.EnsureCartoonExplosionPrefab();
+            var impact = SharedVfxProjectSetup.EnsureHitSparkPrefab();
             EnsureSimple("Shot", PrimitiveType.Cube, new Color(1f, .85f, .2f), "Assets/MazeParty/Resources/MazeParty/ItemViews");
-            Create(PrototypeItemId.DoubleDice, "Double Dice", "Roll two D12s with RMB. Move after both settle.", 8, 1, 0, 0, .25f, 1, 0, 0, 0, explosion);
-            Create(PrototypeItemId.Pistol, "Pistol", "7 rounds / 20 damage / 2 tiles. LMB fires through board barriers.", 10, 7, 20, 16, .25f, 1, 0, 0, 0, explosion);
-            Create(PrototypeItemId.Sniper, "Sniper", "5 rounds / 50 damage / 7 tiles. Hold RMB: 2x scope. LMB fires.", 15, 5, 50, 56, 1, 2, 0, 0, 0, explosion);
+            Create(PrototypeItemId.DoubleDice, "Double Dice", "Roll two D12s with RMB. Move after both settle.", 8, 1, 0, 0, .25f, 1, 0, 0, 0, null);
+            Create(PrototypeItemId.Pistol, "Pistol", "7 rounds / 20 damage / 2 tiles. LMB fires through board barriers.", 10, 7, 20, 16, .25f, 1, 0, 0, 0, null);
+            Create(PrototypeItemId.Sniper, "Sniper", "5 rounds / 50 damage / 7 tiles. Hold RMB: 2x scope. LMB fires.", 15, 5, 50, 56, 1, 2, 0, 0, 0, null);
             Create(PrototypeItemId.Grenade, "Grenade", "Throw up to 2 tiles. 80 damage within 4m, including yourself.", 8, 1, 80, 16, .25f, 1, 4, 0, 0, explosion);
             Create(PrototypeItemId.Mine, "Mine", "Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.", 6, 1, 50, 4, .25f, 1, 4, 2, 1, explosion);
-            Create(PrototypeItemId.LowDice, "Low Dice (1-6)", "One D12 rolls only 1-6, each equally likely. Applied automatically.", 5, 1, 0, 0, .25f, 1, 0, 0, 0, explosion, 1, 6);
-            Create(PrototypeItemId.HighDice, "High Dice (7-12)", "One D12 rolls only 7-12, each equally likely. Applied automatically.", 8, 1, 0, 0, .25f, 1, 0, 0, 0, explosion, 7, 12);
-            Create(PrototypeItemId.PositionSwapper, "Position Swapper", "LMB: select a player. Channel for 2s; damage interrupts. Swap positions without spending moves.", 12, 1, 0, 0, .25f, 1, 0, 0, 0, explosion);
-            Create(PrototypeItemId.Cloak, "Invisibility Cloak", "LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.", 10, 1, 0, 0, .25f, 1, 0, 0, 0, explosion);
+            Create(PrototypeItemId.LowDice, "Low Dice (1-6)", "One D12 rolls only 1-6, each equally likely. Applied automatically.", 5, 1, 0, 0, .25f, 1, 0, 0, 0, null, 1, 6);
+            Create(PrototypeItemId.HighDice, "High Dice (7-12)", "One D12 rolls only 7-12, each equally likely. Applied automatically.", 8, 1, 0, 0, .25f, 1, 0, 0, 0, null, 7, 12);
+            Create(PrototypeItemId.PositionSwapper, "Position Swapper", "LMB: select a player. Channel for 2s; damage interrupts. Swap positions without spending moves.", 12, 1, 0, 0, .25f, 1, 0, 0, 0, null);
+            Create(PrototypeItemId.Cloak, "Invisibility Cloak", "LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.", 10, 1, 0, 0, .25f, 1, 0, 0, 0, null);
+            SharedVfxProjectSetup.EnsureBoardItemBindings(
+                explosion,
+                impact);
             AssetDatabase.SaveAssets();
         }
 

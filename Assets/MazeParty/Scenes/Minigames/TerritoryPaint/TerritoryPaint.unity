@@ -203,6 +203,7 @@ MonoBehaviour:
   arenaPresentation: {fileID: 1225877318}
   paintSurfaceRenderer: {fileID: 1257873002}
   hud: {fileID: 217610974}
+  paintSplashVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &20650845
 MonoBehaviour:
   m_ObjectHideFlags: 0

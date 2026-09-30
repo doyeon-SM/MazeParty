@@ -50,6 +50,7 @@ namespace MazeParty.Multiplayer
             new Transform[PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
+        [SerializeField] private GameObject actionBurstVfxPrefab;
 
         private readonly PlayerView[] _players = new PlayerView[PlayerCount];
         private GiftView[] _gifts = System.Array.Empty<GiftView>();
@@ -57,7 +58,7 @@ namespace MazeParty.Multiplayer
         private bool _cameraConfigured;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
-        private ulong _lastActionRevision;
+        private NetworkGiftGrabState _subscribedVfxState;
         private float _pushVfxRemaining;
         private float _throwVfxRemaining;
         private float _dropVfxRemaining;
@@ -71,6 +72,7 @@ namespace MazeParty.Multiplayer
         public Transform[] DepositedGiftAnchors => depositedGiftAnchors;
         public GiftGrabBaseLabel[] PlayerLabels => playerLabels;
         public GiftGrabBaseLabel[] BaseLabels => baseLabels;
+        public GameObject ActionBurstVfxPrefab => actionBurstVfxPrefab;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(NetworkGiftGrabState.ArenaCenterX, 26f, 0f);
@@ -96,6 +98,7 @@ namespace MazeParty.Multiplayer
             AudioSource audioSource)
         {
             state = networkState;
+            EnsureActionVfxSubscription();
             sharedCamera = camera;
             playerRoot = runtimePlayers;
             giftRoot = runtimeGifts;
@@ -119,9 +122,15 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void ConfigureVfx(GameObject actionBurstPrefab)
+        {
+            actionBurstVfxPrefab = actionBurstPrefab;
+        }
+
         private void Awake()
         {
             state ??= GetComponent<NetworkGiftGrabState>();
+            EnsureActionVfxSubscription();
             ConfigureCamera();
             CacheGiftViews();
             EnsurePlayers();
@@ -129,8 +138,15 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(false);
         }
 
+        private void OnEnable()
+        {
+            state ??= GetComponent<NetworkGiftGrabState>();
+            EnsureActionVfxSubscription();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeFromActionVfxEvents();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -138,6 +154,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkGiftGrabState>();
+            EnsureActionVfxSubscription();
             EnsurePlayers();
             CacheGiftViews();
 
@@ -445,12 +462,6 @@ namespace MazeParty.Multiplayer
 
         private void RefreshActionVfx()
         {
-            if (_lastActionRevision != state.ActionRevision)
-            {
-                _lastActionRevision = state.ActionRevision;
-                TriggerActionVfx();
-            }
-
             _pushVfxRemaining = TickVfx(pushVfxAnchor, _pushVfxRemaining);
             _throwVfxRemaining = TickVfx(throwVfxAnchor, _throwVfxRemaining);
             _dropVfxRemaining = TickVfx(dropVfxAnchor, _dropVfxRemaining);
@@ -477,40 +488,71 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void TriggerActionVfx()
+        private void HandleActionPresentationRequested(
+            GiftGrabNetworkActionType actionType,
+            Vector2 actionPosition)
         {
-            var actor = state.LastActionActorSlot;
-            var target = state.LastActionTargetSlot;
-            var giftId = state.LastActionGiftId;
-            var actorPosition = actor >= 0 && actor < PlayerCount
-                ? state.GetPlayerPosition(actor)
-                : new Vector2(NetworkGiftGrabState.ArenaCenterX, 0f);
-            var targetPosition = target >= 0 && target < PlayerCount
-                ? state.GetPlayerPosition(target)
-                : actorPosition;
+            if (!_worldVisible)
+            {
+                return;
+            }
 
-            switch (state.LastActionType)
+            switch (actionType)
             {
                 case GiftGrabNetworkActionType.Push:
                 case GiftGrabNetworkActionType.ThrownHit:
-                    PlaceVfx(pushVfxAnchor, targetPosition);
+                    PlaceVfx(pushVfxAnchor, actionPosition);
                     _pushVfxRemaining = ActionVfxSeconds;
                     break;
                 case GiftGrabNetworkActionType.Throw:
-                    PlaceVfx(throwVfxAnchor, actorPosition);
+                    PlaceVfx(throwVfxAnchor, actionPosition);
                     _throwVfxRemaining = ActionVfxSeconds;
                     break;
                 case GiftGrabNetworkActionType.Drop:
                 case GiftGrabNetworkActionType.BoundsReturn:
-                    var dropPosition = giftId >= 0 &&
-                                       giftId < state.GiftSpawnedCount
-                        ? state.GetGiftPosition(giftId)
-                        : targetPosition;
-                    PlaceVfx(dropVfxAnchor, dropPosition);
+                    PlaceVfx(dropVfxAnchor, actionPosition);
                     _dropVfxRemaining = ActionVfxSeconds;
                     break;
             }
+
+            if (actionBurstVfxPrefab != null &&
+                actionType != GiftGrabNetworkActionType.None)
+            {
+                OneShotVfxPool.Play(
+                    actionBurstVfxPrefab,
+                    new Vector3(
+                        actionPosition.x,
+                        0.62f,
+                        actionPosition.y),
+                    Quaternion.identity,
+                    0.72f);
+            }
             cueAudioSource?.Play();
+        }
+
+        private void EnsureActionVfxSubscription()
+        {
+            if (_subscribedVfxState == state)
+            {
+                return;
+            }
+            UnsubscribeFromActionVfxEvents();
+            _subscribedVfxState = state;
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.ActionPresentationRequested +=
+                    HandleActionPresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromActionVfxEvents()
+        {
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.ActionPresentationRequested -=
+                    HandleActionPresentationRequested;
+                _subscribedVfxState = null;
+            }
         }
 
         private static void PlaceVfx(Transform effect, Vector2 position)
@@ -547,6 +589,13 @@ namespace MazeParty.Multiplayer
             }
             _worldVisibilityInitialized = true;
             _worldVisible = active;
+            if (!active)
+            {
+                _pushVfxRemaining = 0f;
+                _throwVfxRemaining = 0f;
+                _dropVfxRemaining = 0f;
+                SetActionVfxActive(false);
+            }
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(active);

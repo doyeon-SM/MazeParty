@@ -75,7 +75,7 @@ namespace MazeParty.Multiplayer
             private set;
         }
 
-        public event Action<SequenceMemoryInput, bool> ToneRequested;
+        public event Action<SequenceMemoryInput, bool, int> ToneRequested;
 
         public NetworkSequenceMemoryPhase Phase =>
             (NetworkSequenceMemoryPhase)_phase.Value;
@@ -233,7 +233,7 @@ namespace MazeParty.Multiplayer
 
             if (resolution.ShouldPlayInputTone)
             {
-                PlayToneRpc((byte)input, false);
+                PlayToneRpc((byte)input, false, slot);
             }
 
             if (resolution.InputPhaseClosed ||
@@ -373,12 +373,15 @@ namespace MazeParty.Multiplayer
         [Rpc(
             SendTo.ClientsAndHost,
             Delivery = RpcDelivery.Reliable)]
-        private void PlayToneRpc(byte inputValue, bool fromNpc)
+        private void PlayToneRpc(
+            byte inputValue,
+            bool fromNpc,
+            int actorSlot)
         {
             var input = (SequenceMemoryInput)inputValue;
             if (SequenceMemoryRules.IsValidInput(input))
             {
-                ToneRequested?.Invoke(input, fromNpc);
+                ToneRequested?.Invoke(input, fromNpc, actorSlot);
             }
         }
 
@@ -457,7 +460,7 @@ namespace MazeParty.Multiplayer
             _presentedSymbolCount++;
             _visibleProblem.Value = new FixedString32Bytes(
                 problem.ToString().Substring(0, _presentedSymbolCount));
-            PlayToneRpc((byte)input, true);
+            PlayToneRpc((byte)input, true, -1);
         }
 
         private void BeginInputWindowOnServer(double now)

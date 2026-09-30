@@ -415,6 +415,7 @@ namespace MazeParty.Multiplayer
         {
             Instance = this;
             InitializeBoardMapRuntime();
+            PrewarmBoardItemVfx();
             if (IsServer)
             {
                 EnsureFlowModel();

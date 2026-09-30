@@ -306,10 +306,10 @@ namespace MazeParty.Gameplay
                 outward.Normalize();
 
                 wall.Transform.SetPositionAndRotation(
-                    portal.PlanePoint + outward * (thickness * 0.5f) +
-                    up * (height * 0.5f),
+                    portal.PlanePoint + outward * (thickness * 0.5f),
                     Quaternion.LookRotation(outward, up));
-                wall.Transform.localScale = new Vector3(
+                wall.Transform.localScale = Vector3.one;
+                wall.Visual.ConfigureLayout(
                     portal.Width + thickness * 2f,
                     height,
                     thickness);

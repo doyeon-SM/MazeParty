@@ -57,13 +57,19 @@ namespace MazeParty.Multiplayer
             else if (id == PrototypeItemId.Pistol || id == PrototypeItemId.Sniper)
             {
                 var endpoint = origin + direction * item.Range;
-                if (BoardItemPhysics.Cast(origin, direction, item.Range, avatar.gameObject, out var hit))
+                var didHit = BoardItemPhysics.Cast(
+                    origin,
+                    direction,
+                    item.Range,
+                    avatar.gameObject,
+                    out var hit);
+                if (didHit)
                 {
                     endpoint = hit.point;
                     var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
                     if (target != null) target.ApplyDamage(new DamageRequest(item.Damage, DamageKind.Item, avatar.gameObject));
                 }
-                PresentBoardShotRpc(origin, endpoint);
+                PresentBoardShotRpc(origin, endpoint, (byte)id, didHit);
             }
             else if (id == PrototypeItemId.Grenade)
             {
@@ -302,20 +308,56 @@ namespace MazeParty.Multiplayer
             GameSound.PlayAt(SoundKeys.ItemExplosion, position);
             var item = PrototypeItemCatalog.Get((PrototypeItemId)itemId);
             if (item.ExplosionPrefab == null) return;
-            var view = Instantiate(item.ExplosionPrefab, position, Quaternion.identity);
-            view.transform.localScale = Vector3.one * item.BlastRadius * 2f;
-            Destroy(view, .3f);
+            OneShotVfxPool.Play(
+                item.ExplosionPrefab,
+                position,
+                Quaternion.identity,
+                ResolveBoardExplosionVisualScale(item.BlastRadius));
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentBoardShotRpc(Vector3 origin, Vector3 end)
+        private void PresentBoardShotRpc(
+            Vector3 origin,
+            Vector3 end,
+            byte itemId,
+            bool didHit)
         {
-            GameSound.PlayAt(SoundKeys.ItemBulletImpact, end);
+            var item = PrototypeItemCatalog.Get((PrototypeItemId)itemId);
+            if (didHit)
+            {
+                GameSound.PlayAt(SoundKeys.ItemBulletImpact, end);
+                if (item.ImpactPrefab != null)
+                {
+                    var incoming = origin - end;
+                    var rotation = incoming.sqrMagnitude > 0.0001f
+                        ? Quaternion.LookRotation(incoming.normalized, Vector3.up)
+                        : Quaternion.identity;
+                    OneShotVfxPool.Play(
+                        item.ImpactPrefab,
+                        end,
+                        rotation,
+                        item.Id == PrototypeItemId.Sniper ? 0.48f : 0.34f);
+                }
+            }
+
             var prefab = Resources.Load<GameObject>("MazeParty/ItemViews/Shot");
             if (prefab == null) return;
             var view = Instantiate(prefab, (origin + end) * .5f, Quaternion.LookRotation(end - origin));
             view.transform.localScale = new Vector3(.025f, .025f, Vector3.Distance(origin, end));
             Destroy(view, .08f);
+        }
+
+        private static float ResolveBoardExplosionVisualScale(float blastRadius)
+        {
+            return Mathf.Max(0.6f, blastRadius * 0.45f);
+        }
+
+        private static void PrewarmBoardItemVfx()
+        {
+            var grenade = PrototypeItemCatalog.Get(PrototypeItemId.Grenade);
+            var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
+            OneShotVfxPool.Prewarm(grenade.ExplosionPrefab, 4);
+            OneShotVfxPool.Prewarm(pistol.ImpactPrefab, 8);
         }
 
         private void ClearBoardItemWorld()

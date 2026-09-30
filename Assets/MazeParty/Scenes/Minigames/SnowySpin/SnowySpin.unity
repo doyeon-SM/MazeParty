@@ -1044,6 +1044,7 @@ MonoBehaviour:
   - {fileID: 426244153}
   - {fileID: 1543346696}
   - {fileID: 297955882}
+  fallImpactVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &2064843837
 MonoBehaviour:
   m_ObjectHideFlags: 0

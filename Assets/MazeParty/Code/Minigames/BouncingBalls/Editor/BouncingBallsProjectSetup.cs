@@ -73,6 +73,7 @@ namespace MazeParty.Editor
             var materials = CreateMaterials();
             var hudPrefab = LoadOrCreateHudPrefab();
             BuildScene(materials, hudPrefab);
+            MinigameVfxProjectSetup.InstallScene(ScenePath);
             AssetDatabase.SaveAssets();
         }
 

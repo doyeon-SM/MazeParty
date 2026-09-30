@@ -45,7 +45,7 @@ namespace MazeParty.Multiplayer.Tests
                              "state", "sharedCamera", "playerRoot",
                              "arenaPresentation", "bombTransform",
                              "bombRenderer", "bombLight",
-                             "explosionFlashLight"
+                             "explosionFlashLight", "explosionVfxPrefab"
                          })
                 {
                     var property = serialized.FindProperty(field);
@@ -107,6 +107,10 @@ namespace MazeParty.Multiplayer.Tests
                     Is.GreaterThan(warningLight.intensity));
                 Assert.That(view.ExplosionFlashLight,
                     Is.SameAs(explosionFlash));
+                Assert.That(view.ExplosionVfxPrefab,
+                    Is.EqualTo(AssetDatabase.LoadAssetAtPath<GameObject>(
+                        "Assets/MazeParty/Prefabs/Common/VFX/" +
+                        "CartoonExplosion.prefab")));
 
                 var cameras = roots.SelectMany(root =>
                     root.GetComponentsInChildren<Component>(true))

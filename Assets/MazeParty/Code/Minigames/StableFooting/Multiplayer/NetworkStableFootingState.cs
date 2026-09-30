@@ -140,6 +140,8 @@ namespace MazeParty.Multiplayer
             private set;
         }
 
+        public event Action<int, int, Vector3> PushPresentationRequested;
+
         public NetworkStableFootingPhase Phase =>
             (NetworkStableFootingPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -424,6 +426,10 @@ namespace MazeParty.Multiplayer
             _lastPusherSlot.Value = (byte)pusherSlot;
             _lastPushTargetSlot.Value = (byte)targetSlot;
             _pushRevision.Value++;
+            PlayPushPresentationRpc(
+                (byte)pusherSlot,
+                (byte)targetSlot,
+                _nextPositions[targetSlot]);
 
             ResolveUnsupportedPlayersOnServer(GetRunningElapsed(now));
             if (_roundState.IsComplete)
@@ -431,6 +437,24 @@ namespace MazeParty.Multiplayer
                 CompleteCurrentRoundOnServer(now);
             }
             return true;
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayPushPresentationRpc(
+            byte pusherSlot,
+            byte targetSlot,
+            Vector3 targetPosition)
+        {
+            if (StableFootingRules.IsValidPlayerSlot(pusherSlot) &&
+                StableFootingRules.IsValidPlayerSlot(targetSlot))
+            {
+                PushPresentationRequested?.Invoke(
+                    pusherSlot,
+                    targetSlot,
+                    targetPosition);
+            }
         }
 
         public bool CanAcceptInputForSlot(int slot)

@@ -18,6 +18,7 @@ namespace MazeParty.Multiplayer
         public const float RunnerPresentationHeight = 1.18f;
 
         private const float RunnerInterpolationSpeed = 18f;
+        private const float PaintSplashCooldownSeconds = 0.14f;
 
         private static readonly Color32 UnpaintedColor =
             new Color32(58, 65, 73, 255);
@@ -35,6 +36,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private Renderer paintSurfaceRenderer;
         [SerializeField] private TerritoryPaintHudBindings hud;
+        [SerializeField] private GameObject paintSplashVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[TerritoryPaintRules.PlayerCount];
@@ -44,6 +46,12 @@ namespace MazeParty.Multiplayer
                 TerritoryPaintRules.SurfaceResolution];
         private readonly Color32[] _resolvedPlayerColors =
             (Color32[])FallbackPlayerColors.Clone();
+        private readonly byte[] _paintOwners =
+            new byte[
+                TerritoryPaintRules.SurfaceResolution *
+                TerritoryPaintRules.SurfaceResolution];
+        private readonly int[] _paintChangeCounts =
+            new int[TerritoryPaintRules.PlayerCount];
 
         private GameplayCameraDirector _cameraDirector;
         private Texture2D _paintTexture;
@@ -54,6 +62,9 @@ namespace MazeParty.Multiplayer
         private bool _worldVisible;
         private bool _visibilityInitialized;
         private bool _paintColorsDirty = true;
+        private float _nextPaintSplashAt;
+
+        public GameObject PaintSplashVfxPrefab => paintSplashVfxPrefab;
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(90f, 0f, 0f);
@@ -85,6 +96,11 @@ namespace MazeParty.Multiplayer
                 EnsurePaintTexture();
                 EnsureRunners();
             }
+        }
+
+        public void ConfigureVfx(GameObject paintSplashPrefab)
+        {
+            paintSplashVfxPrefab = paintSplashPrefab;
         }
 
         private void Awake()
@@ -221,6 +237,8 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < _pixels.Length; index++)
             {
                 _pixels[index] = UnpaintedColor;
+                _paintOwners[index] =
+                    TerritoryPaintRules.UnpaintedOwner;
             }
             _paintTexture.SetPixels32(_pixels);
             _paintTexture.Apply(false, false);
@@ -364,14 +382,29 @@ namespace MazeParty.Multiplayer
 
         private void RefreshPaintSurface()
         {
-            if (_paintTexture == null ||
-                (state.PaintRevision == _lastPaintRevision &&
-                 !_paintColorsDirty))
+            if (_paintTexture == null)
             {
                 return;
             }
 
-            _lastPaintRevision = state.PaintRevision;
+            var revision = state.PaintRevision;
+            var revisionChanged = revision != _lastPaintRevision;
+            if (!revisionChanged && !_paintColorsDirty)
+            {
+                return;
+            }
+
+            if (revisionChanged)
+            {
+                for (var slot = 0;
+                     slot < _paintChangeCounts.Length;
+                     slot++)
+                {
+                    _paintChangeCounts[slot] = 0;
+                }
+            }
+            var canPlaySplash = revisionChanged &&
+                                _lastPaintRevision != uint.MaxValue;
             _paintColorsDirty = false;
             var resolution =
                 TerritoryPaintRules.SurfaceResolution;
@@ -380,7 +413,15 @@ namespace MazeParty.Multiplayer
                 for (var x = 0; x < resolution; x++)
                 {
                     var owner = state.GetPaintOwner(x, y);
-                    _pixels[y * resolution + x] =
+                    var index = y * resolution + x;
+                    if (canPlaySplash &&
+                        owner != _paintOwners[index] &&
+                        owner < _paintChangeCounts.Length)
+                    {
+                        _paintChangeCounts[owner]++;
+                    }
+                    _paintOwners[index] = owner;
+                    _pixels[index] =
                         owner < _resolvedPlayerColors.Length
                             ? _resolvedPlayerColors[owner]
                             : UnpaintedColor;
@@ -389,6 +430,49 @@ namespace MazeParty.Multiplayer
 
             _paintTexture.SetPixels32(_pixels);
             _paintTexture.Apply(false, false);
+            if (revisionChanged)
+            {
+                _lastPaintRevision = revision;
+            }
+            if (canPlaySplash)
+            {
+                RefreshPaintSplashVfx();
+            }
+        }
+
+        private void RefreshPaintSplashVfx()
+        {
+            var painterSlot = -1;
+            var largestChangeCount = 0;
+            for (var slot = 0; slot < _paintChangeCounts.Length; slot++)
+            {
+                if (_paintChangeCounts[slot] > largestChangeCount)
+                {
+                    largestChangeCount = _paintChangeCounts[slot];
+                    painterSlot = slot;
+                }
+            }
+
+            if (painterSlot < 0 ||
+                paintSplashVfxPrefab == null ||
+                Time.unscaledTime < _nextPaintSplashAt)
+            {
+                return;
+            }
+
+            var runner = _runners[painterSlot];
+            if (runner == null || !runner.HasPosition)
+            {
+                return;
+            }
+
+            OneShotVfxPool.Play(
+                paintSplashVfxPrefab,
+                runner.Root.position + Vector3.up * 0.15f,
+                Quaternion.identity,
+                0.55f);
+            _nextPaintSplashAt =
+                Time.unscaledTime + PaintSplashCooldownSeconds;
         }
 
         private void RefreshHud(NetworkMatchState match)
@@ -426,6 +510,11 @@ namespace MazeParty.Multiplayer
 
             _visibilityInitialized = true;
             _worldVisible = active;
+            if (!active)
+            {
+                _lastPaintRevision = uint.MaxValue;
+                _nextPaintSplashAt = 0f;
+            }
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(active);

@@ -455,6 +455,7 @@ MonoBehaviour:
   - {fileID: 883923564}
   - {fileID: 1365890854}
   hud: {fileID: 818126590}
+  goalBurstVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &586563901
 MonoBehaviour:
   m_ObjectHideFlags: 0

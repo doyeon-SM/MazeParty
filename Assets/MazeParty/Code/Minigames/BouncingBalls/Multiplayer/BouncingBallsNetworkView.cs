@@ -43,6 +43,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer[] ballRenderers =
             new Renderer[BouncingBallsRules.BallCount];
         [SerializeField] private BouncingBallsHudBindings hud;
+        [SerializeField] private GameObject goalBurstVfxPrefab;
 
         private GameplayCameraDirector _cameraDirector;
         private MaterialPropertyBlock _colorBlock;
@@ -50,6 +51,7 @@ namespace MazeParty.Multiplayer
         private bool _worldVisible;
         private bool _visibilityInitialized;
         private bool _hadVisibleFrame;
+        private NetworkBouncingBallsState _subscribedVfxState;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(ArenaCenterX, 0f, -20f);
@@ -59,6 +61,12 @@ namespace MazeParty.Multiplayer
 
         public GameObject ArenaPresentation => arenaPresentation;
         public BouncingBallsHudBindings HudBindings => hud;
+        public GameObject GoalBurstVfxPrefab => goalBurstVfxPrefab;
+
+        public void ConfigureVfx(GameObject goalBurstPrefab)
+        {
+            goalBurstVfxPrefab = goalBurstPrefab;
+        }
 
         public Transform GetShieldTransform(int slot)
         {
@@ -95,14 +103,22 @@ namespace MazeParty.Multiplayer
         private void Awake()
         {
             ResolveReferences();
+            EnsureGoalVfxSubscription();
             ConfigureCamera();
             _colorBlock = new MaterialPropertyBlock();
             SetWorldPresentationActive(false);
             SetHudActive(false);
         }
 
+        private void OnEnable()
+        {
+            ResolveReferences();
+            EnsureGoalVfxSubscription();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeFromGoalVfxEvents();
             SetWorldPresentationActive(false);
             SetHudActive(false);
             UnregisterCamera();
@@ -111,6 +127,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             ResolveReferences();
+            EnsureGoalVfxSubscription();
             var match = NetworkMatchState.Instance;
             var selected = match != null && match.IsBouncingBallsPhase;
             var shouldShowWorld = state != null && state.IsSpawned &&
@@ -276,6 +293,69 @@ namespace MazeParty.Multiplayer
                     GetPlayerColor(match, slot);
                 hud.PlayerScoreTexts[slot].text =
                     state.GetScore(slot).ToString();
+            }
+        }
+
+        private void HandleGoalPresentationRequested(int slot)
+        {
+            if (!_worldVisible || goalBurstVfxPrefab == null ||
+                arenaPresentation == null)
+            {
+                return;
+            }
+
+            if (!BouncingBallsRules.IsValidPlayerSlot(slot))
+            {
+                return;
+            }
+
+            var edge = (float)BouncingBallsRules.ArenaHalfExtent + 0.28f;
+            Vector3 localPosition;
+            switch (slot)
+            {
+                case 0:
+                    localPosition = new Vector3(0f, -edge, 0.7f);
+                    break;
+                case 1:
+                    localPosition = new Vector3(edge, 0f, 0.7f);
+                    break;
+                case 2:
+                    localPosition = new Vector3(0f, edge, 0.7f);
+                    break;
+                default:
+                    localPosition = new Vector3(-edge, 0f, 0.7f);
+                    break;
+            }
+
+            OneShotVfxPool.Play(
+                goalBurstVfxPrefab,
+                arenaPresentation.transform.TransformPoint(localPosition),
+                Quaternion.identity,
+                1.35f);
+        }
+
+        private void EnsureGoalVfxSubscription()
+        {
+            if (_subscribedVfxState == state)
+            {
+                return;
+            }
+            UnsubscribeFromGoalVfxEvents();
+            _subscribedVfxState = state;
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.GoalPresentationRequested +=
+                    HandleGoalPresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromGoalVfxEvents()
+        {
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.GoalPresentationRequested -=
+                    HandleGoalPresentationRequested;
+                _subscribedVfxState = null;
             }
         }
 

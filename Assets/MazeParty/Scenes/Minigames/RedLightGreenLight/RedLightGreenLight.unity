@@ -1157,6 +1157,7 @@ MonoBehaviour:
   turnWarningCue: {fileID: 0}
   redCue: {fileID: 0}
   hud: {fileID: 1374519813}
+  signalPulseVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &2058619060
 MonoBehaviour:
   m_ObjectHideFlags: 0

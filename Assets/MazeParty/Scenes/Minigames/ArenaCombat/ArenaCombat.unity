@@ -160,6 +160,18 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2153382697714646967, guid: 17a5b17d78e4c8d4c95475c58a0bf22e, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2153382697714646967, guid: 17a5b17d78e4c8d4c95475c58a0bf22e, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2153382697714646967, guid: 17a5b17d78e4c8d4c95475c58a0bf22e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2153382697714646967, guid: 17a5b17d78e4c8d4c95475c58a0bf22e, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
       objectReference: {fileID: 0}
@@ -418,6 +430,7 @@ MonoBehaviour:
   - {fileID: 1652106232}
   - {fileID: 1455110934}
   - {fileID: 342140975}
+  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &765835580
 MonoBehaviour:
   m_ObjectHideFlags: 0

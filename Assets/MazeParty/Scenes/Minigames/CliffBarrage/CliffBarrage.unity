@@ -321,6 +321,7 @@ MonoBehaviour:
   firingBeams:
   - {fileID: 164297486}
   - {fileID: 1057266807}
+  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &184105905
 MonoBehaviour:
   m_ObjectHideFlags: 0

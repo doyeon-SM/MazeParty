@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay;
 using MazeParty.Multiplayer;
 using Unity.Cinemachine;
 using Unity.Netcode;
@@ -111,6 +112,8 @@ namespace MazeParty.Editor
             arena.transform.SetParent(root.transform, false);
             arena.transform.position = new Vector3(ArenaCenterX, 0f, 0f);
             var references = CreateArena(arena.transform, materials);
+            var explosionVfx =
+                SharedVfxProjectSetup.EnsureCartoonExplosionPrefab();
             CreateLighting(arena.transform);
             var sharedCamera = CreateSharedCamera(root.transform);
             CreateArtReplacementAnchors(root.transform);
@@ -123,7 +126,8 @@ namespace MazeParty.Editor
             var view = root.AddComponent<BombPassingNetworkView>();
             view.Configure(state, sharedCamera, references.PlayerRoot,
                 arena, references.Bomb, references.BombRenderer,
-                references.BombLight, references.ExplosionFlashLight);
+                references.BombLight, references.ExplosionFlashLight,
+                explosionVfx);
 
             ValidateScene(root, view, references);
             EditorSceneManager.SaveScene(scene, ScenePath);
@@ -385,6 +389,8 @@ namespace MazeParty.Editor
                 references.BombLight == null ||
                 references.ExplosionFlashLight == null ||
                 references.ExplosionFlashLight == references.BombLight ||
+                view.ExplosionVfxPrefab == null ||
+                view.ExplosionVfxPrefab.GetComponent<PooledOneShotVfx>() == null ||
                 FindDescendant(root.transform, "Boundary Walls")?.childCount != 4 ||
                 FindDescendant(root.transform, "Player Spawn Markers")?.childCount != 4 ||
                 root.GetComponentsInChildren<CinemachineCamera>(true).Length != 1 ||

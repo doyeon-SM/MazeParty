@@ -2234,6 +2234,7 @@ MonoBehaviour:
   safeSymbolCircleRenderer: {fileID: 1047435069}
   safeSymbolSquareRenderer: {fileID: 1047435068}
   cueAudioSource: {fileID: 209116704}
+  interactionVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &965000534
 MonoBehaviour:
   m_ObjectHideFlags: 0

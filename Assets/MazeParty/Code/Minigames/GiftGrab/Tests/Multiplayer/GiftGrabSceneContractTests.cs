@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -15,6 +16,22 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
         private const string LabelPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
+
+        [Test]
+        public void ActionPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkGiftGrabState).GetMethod(
+                "PlayActionPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(2));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[1].ParameterType,
+                Is.EqualTo(typeof(Vector2)));
+        }
 
         [Test]
         public void Scene_PreservesSymmetricArenaGiftAndPrefabPresentationContract()

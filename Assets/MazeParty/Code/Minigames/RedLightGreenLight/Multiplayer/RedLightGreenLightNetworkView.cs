@@ -42,6 +42,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private AudioClip turnWarningCue;
         [SerializeField] private AudioClip redCue;
         [SerializeField] private RedLightGreenLightHudBindings hud;
+        [SerializeField] private GameObject signalPulseVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[RedLightGreenLightRules.PlayerCount];
@@ -52,6 +53,14 @@ namespace MazeParty.Multiplayer
         private int _localSlot = -1;
         private RedLightGreenLightSignalPhase _lastSignalPhase =
             (RedLightGreenLightSignalPhase)byte.MaxValue;
+        private bool _signalBaselineInitialized;
+
+        public GameObject SignalPulseVfxPrefab => signalPulseVfxPrefab;
+
+        public void ConfigureVfx(GameObject signalPulsePrefab)
+        {
+            signalPulseVfxPrefab = signalPulsePrefab;
+        }
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
             90f - PlayerCameraTiltDegrees,
@@ -408,6 +417,8 @@ namespace MazeParty.Multiplayer
                     phase == RedLightGreenLightSignalPhase.Green
                         ? 4f
                         : 2f;
+                greenSignalLight.intensity *=
+                    PresentationAccessibility.FlashIntensityScale;
             }
             if (redSignalLight != null)
             {
@@ -418,8 +429,16 @@ namespace MazeParty.Multiplayer
                     phase == RedLightGreenLightSignalPhase.Red
                         ? 4f
                         : 2f;
+                redSignalLight.intensity *=
+                    PresentationAccessibility.FlashIntensityScale;
             }
 
+            if (!_signalBaselineInitialized)
+            {
+                _signalBaselineInitialized = true;
+                _lastSignalPhase = phase;
+                return;
+            }
             if (_lastSignalPhase == phase)
             {
                 return;
@@ -433,6 +452,26 @@ namespace MazeParty.Multiplayer
             if (cueAudioSource != null && clip != null)
             {
                 cueAudioSource.PlayOneShot(clip);
+            }
+            if (signalPulseVfxPrefab != null)
+            {
+                var anchor = phase == RedLightGreenLightSignalPhase.Red
+                    ? redSignalLight != null
+                        ? redSignalLight.transform
+                        : observerHead
+                    : greenSignalLight != null
+                        ? greenSignalLight.transform
+                        : observerHead;
+                if (anchor != null)
+                {
+                    OneShotVfxPool.Play(
+                        signalPulseVfxPrefab,
+                        anchor.position,
+                        Quaternion.identity,
+                        phase == RedLightGreenLightSignalPhase.TurnWarning
+                            ? 0.85f
+                            : 1.15f);
+                }
             }
         }
 
@@ -613,6 +652,7 @@ namespace MazeParty.Multiplayer
             {
                 _lastSignalPhase =
                     (RedLightGreenLightSignalPhase)byte.MaxValue;
+                _signalBaselineInitialized = false;
                 cueAudioSource?.Stop();
             }
         }

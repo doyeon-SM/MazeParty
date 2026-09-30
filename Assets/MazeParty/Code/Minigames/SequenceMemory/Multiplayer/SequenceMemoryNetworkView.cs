@@ -38,6 +38,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private AudioClip middleTone;
         [SerializeField] private AudioClip lowTone;
         [SerializeField] private SequenceMemoryHudBindings hud;
+        [SerializeField] private GameObject tonePulseVfxPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[SequenceMemoryRules.PlayerCount];
@@ -53,6 +54,13 @@ namespace MazeParty.Multiplayer
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(32f, 0f, 0f);
+
+        public GameObject TonePulseVfxPrefab => tonePulseVfxPrefab;
+
+        public void ConfigureVfx(GameObject tonePulsePrefab)
+        {
+            tonePulseVfxPrefab = tonePulsePrefab;
+        }
 
         private void Awake()
         {
@@ -345,7 +353,8 @@ namespace MazeParty.Multiplayer
 
         private void HandleToneRequested(
             SequenceMemoryInput input,
-            bool fromNpc)
+            bool fromNpc,
+            int actorSlot)
         {
             var clip = GetToneClip(input);
             var source = fromNpc ? npcToneSource : playerToneSource;
@@ -353,6 +362,26 @@ namespace MazeParty.Multiplayer
             {
                 source.PlayOneShot(clip);
             }
+            if (!_worldVisible || tonePulseVfxPrefab == null)
+            {
+                return;
+            }
+
+            Transform anchor = null;
+            if (fromNpc)
+            {
+                anchor = npcAnchor;
+            }
+            else if (actorSlot >= 0 && actorSlot < _players.Length)
+            {
+                anchor = _players[actorSlot]?.Root;
+            }
+            anchor ??= source != null ? source.transform : transform;
+            OneShotVfxPool.Play(
+                tonePulseVfxPrefab,
+                anchor.position + Vector3.up * 0.8f,
+                Quaternion.identity,
+                fromNpc ? 0.8f : 0.55f);
         }
 
         private AudioClip GetToneClip(SequenceMemoryInput input)

@@ -90,6 +90,7 @@ namespace MazeParty.Editor
             var materials = CreateMaterials();
             var labelPrefab = LoadOrCreateBaseLabelPrefab(materials);
             BuildGiftGrabScene(materials, labelPrefab);
+            MinigameVfxProjectSetup.InstallScene(GiftGrabScenePath);
             AssetDatabase.SaveAssets();
         }
 

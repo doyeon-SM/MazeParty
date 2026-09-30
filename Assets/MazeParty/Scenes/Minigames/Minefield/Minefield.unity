@@ -612,6 +612,8 @@ MonoBehaviour:
   sirenPrefab: {fileID: 9175400627416372264, guid: 4f9834db90c43234e94f048fbf570240, type: 3}
   sonarPulsePrefab: {fileID: 5991499376101921621, guid: 901f639f3a6cfca47a66215d7feb8046, type: 3}
   mineMarkerPrefab: {fileID: 717061402991843754, guid: 38e3b04e1c748074883815f1ca3ae684, type: 3}
+  mineExplosionVfxPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
+  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &1149066039
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -203,6 +203,8 @@ namespace MazeParty.Multiplayer
                     NetworkVariableWritePermission.Server);
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[CliffBarrageRules.PlayerCount];
+        private readonly int[] _deliveredHitCounts =
+            new int[CliffBarrageRules.PlayerCount];
 
         private CliffBarrageMatchState _serverMatch;
         private double _phaseStartedAt;
@@ -211,6 +213,7 @@ namespace MazeParty.Multiplayer
         private bool _completionReported;
 
         public static NetworkCliffBarrageState Instance { get; private set; }
+        public event Action<int, Vector2> DamagePresentationRequested;
         public NetworkCliffBarragePhase Phase =>
             (NetworkCliffBarragePhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -545,6 +548,47 @@ namespace MazeParty.Multiplayer
             _serverMatch?.AdvanceTo(Math.Min(
                 CliffBarrageRules.RoundDurationSeconds,
                 Math.Max(0d, now - _phaseStartedAt)));
+            DeliverPendingDamagePresentationEventsOnServer();
+        }
+
+        private void DeliverPendingDamagePresentationEventsOnServer()
+        {
+            if (_serverMatch == null)
+            {
+                return;
+            }
+
+            for (var slot = 0; slot < CliffBarrageRules.PlayerCount;
+                 slot++)
+            {
+                var player = _serverMatch.GetPlayer(slot);
+                if (player.HitCount < _deliveredHitCounts[slot])
+                {
+                    _deliveredHitCounts[slot] = 0;
+                }
+                while (_deliveredHitCounts[slot] < player.HitCount)
+                {
+                    _deliveredHitCounts[slot]++;
+                    PlayDamagePresentationRpc(
+                        (byte)slot,
+                        new Vector2((float)player.X, (float)player.Z));
+                }
+            }
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayDamagePresentationRpc(
+            byte damagedSlot,
+            Vector2 localPosition)
+        {
+            if (CliffBarrageRules.IsValidSlot(damagedSlot))
+            {
+                DamagePresentationRequested?.Invoke(
+                    damagedSlot,
+                    localPosition);
+            }
         }
 
         private void FinishRoundOnServer(double now)
@@ -582,6 +626,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
             _serverMatch.BeginNextRound();
+            Array.Clear(
+                _deliveredHitCounts,
+                0,
+                _deliveredHitCounts.Length);
             // The shared three-second countdown belongs to game start only.
             // Later rounds begin as soon as the result display ends.
             BeginPlayingOnServer(now);
@@ -797,6 +845,10 @@ namespace MazeParty.Multiplayer
             _finalRanks.Value = 0U;
             _damageSequence.Value = 0U;
             _lastDamagedSlot.Value = byte.MaxValue;
+            Array.Clear(
+                _deliveredHitCounts,
+                0,
+                _deliveredHitCounts.Length);
             _playerSnapshots.Clear();
             _projectileSnapshots.Clear();
             _laserSnapshots.Clear();

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -13,6 +14,23 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
+
+        [Test]
+        public void PushPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkStableFootingState).GetMethod(
+                "PlayPushPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(3));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[2].ParameterType,
+                Is.EqualTo(typeof(Vector3)));
+        }
 
         [Test]
         public void Scene_PreservesArenaNetworkSharedCameraAndWorldCueContract()

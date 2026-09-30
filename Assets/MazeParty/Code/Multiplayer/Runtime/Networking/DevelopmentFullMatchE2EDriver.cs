@@ -39,6 +39,17 @@ namespace MazeParty.Multiplayer
 
         private static bool s_installed;
 
+#if UNITY_STANDALONE_WIN
+        [System.Runtime.InteropServices.DllImport(
+            "kernel32.dll",
+            SetLastError = true)]
+        [return: System.Runtime.InteropServices.MarshalAs(
+            System.Runtime.InteropServices.UnmanagedType.Bool)]
+        private static extern bool TerminateProcess(
+            IntPtr processHandle,
+            uint exitCode);
+#endif
+
         private string _role;
         private string _runDirectory;
         private string _logPath;
@@ -87,16 +98,36 @@ namespace MazeParty.Multiplayer
                 WriteAtomic(
                     Path.Combine(_runDirectory, "passed-" + _playerIndex + ".marker"),
                     "PASS");
-                await Task.Delay(750);
-                Application.Quit(0);
+                QuitProcess(0);
             }
             catch (Exception exception)
             {
                 Debug.LogException(exception);
                 TryLogFailure(exception);
-                await Task.Delay(750);
-                Application.Quit(2);
+                QuitProcess(2);
             }
+        }
+
+        private static void QuitProcess(int exitCode)
+        {
+            // Unity 6000.6 can remain inside native shutdown for minutes after
+            // Application.Quit or Environment.Exit when Windows players close
+            // together. The E2E result files are synchronously persisted before
+            // this point, so terminate the development test process directly.
+            Environment.ExitCode = exitCode;
+#if UNITY_STANDALONE_WIN
+            using (var process = System.Diagnostics.Process.GetCurrentProcess())
+            {
+                if (!TerminateProcess(
+                        process.Handle,
+                        unchecked((uint)exitCode)))
+                {
+                    process.Kill();
+                }
+            }
+#else
+            Environment.Exit(exitCode);
+#endif
         }
 
         private void OnApplicationQuit()

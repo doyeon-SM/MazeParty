@@ -85,6 +85,8 @@ namespace MazeParty.Editor
         {
             EnsureFolders();
             BuildStableFootingScene(CreateMaterials());
+            MinigameVfxProjectSetup.InstallScene(
+                StableFootingScenePath);
             AssetDatabase.SaveAssets();
         }
 

@@ -237,6 +237,7 @@ MonoBehaviour:
   runnerRoot: {fileID: 0}
   arenaPresentation: {fileID: 0}
   hud: {fileID: 1169828346}
+  progressVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &74664433
 MonoBehaviour:
   m_ObjectHideFlags: 0

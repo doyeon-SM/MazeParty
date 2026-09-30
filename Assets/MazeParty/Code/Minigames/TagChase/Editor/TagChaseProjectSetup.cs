@@ -85,6 +85,8 @@ namespace MazeParty.Editor
                 floorMaterial,
                 wallMaterial,
                 obstacleMaterial);
+            MinigameVfxProjectSetup.InstallScene(
+                TagChaseScenePath);
             AssetDatabase.SaveAssets();
         }
 

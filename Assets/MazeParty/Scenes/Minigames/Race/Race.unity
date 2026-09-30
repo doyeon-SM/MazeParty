@@ -517,6 +517,8 @@ MonoBehaviour:
   sharedCamera: {fileID: 398704461}
   playerRoot: {fileID: 1026531788}
   arenaPresentation: {fileID: 1988766664}
+  progressVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  finishVfxPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
 --- !u!114 &433005347
 MonoBehaviour:
   m_ObjectHideFlags: 0

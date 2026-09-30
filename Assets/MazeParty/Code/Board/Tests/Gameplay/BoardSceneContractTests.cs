@@ -15,6 +15,10 @@ namespace MazeParty.Gameplay.Tests
         private const string BoardScenePath = "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string BoardSkyboxPath =
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
+        private const string BoundaryBlueFirePath =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Blue Fire.prefab";
+        private const string BoundaryRedFirePath =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Real Fire.prefab";
 
         [Test]
         public void GeneratedBoardScene_MatchesPrototypeTopologyContract()
@@ -92,6 +96,17 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(wall.GetComponentsInChildren<Collider>(true), Has.Length.EqualTo(1),
                     "Decorative wall children must not bypass owner-only collision isolation.");
                 Assert.That(wall.BlockingCollider.isTrigger, Is.False);
+                Assert.That(wall.HasRequiredReferences, Is.True);
+                Assert.That(
+                    AssetDatabase.GetAssetPath(
+                        PrefabUtility.GetCorrespondingObjectFromSource(
+                            wall.PassableFlameRoot)),
+                    Is.EqualTo(BoundaryBlueFirePath));
+                Assert.That(
+                    AssetDatabase.GetAssetPath(
+                        PrefabUtility.GetCorrespondingObjectFromSource(
+                            wall.BlockedFlameRoot)),
+                    Is.EqualTo(BoundaryRedFirePath));
                 var backdrop = scene.GetRootGameObjects().Single(root => root.name == "Board Backdrop (No Gameplay Collision)");
                 Assert.That(PrefabUtility.IsPartOfPrefabInstance(backdrop), Is.True);
                 Assert.That(backdrop.GetComponentsInChildren<Collider>(true), Is.Empty);

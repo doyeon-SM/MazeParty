@@ -33,6 +33,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera taggerCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private GameObject arenaPresentation;
+        [SerializeField] private GameObject hitSparkVfxPrefab;
+        [SerializeField] private GameObject taggerAuraPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[TagChaseRules.PlayerCount];
@@ -42,6 +44,19 @@ namespace MazeParty.Multiplayer
         private int _localSlot = -1;
         private bool _worldVisible;
         private bool _visibilityInitialized;
+        private bool _caughtMaskBaselineInitialized;
+        private byte _lastCaughtMask;
+
+        public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+        public GameObject TaggerAuraPrefab => taggerAuraPrefab;
+
+        public void ConfigureVfx(
+            GameObject hitSparkPrefab,
+            GameObject auraPrefab)
+        {
+            hitSparkVfxPrefab = hitSparkPrefab;
+            taggerAuraPrefab = auraPrefab;
+        }
 
         public static Vector3 InitialSharedCameraPosition =>
             new Vector3(
@@ -116,6 +131,7 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(true);
             ResolveLocalSlot(match);
             RefreshPlayers(match);
+            RefreshCatchVfx();
             RefreshCamera(match);
         }
 
@@ -203,9 +219,22 @@ namespace MazeParty.Multiplayer
             visual.SetTopViewHighlight(false);
             visual.SetEliminated(false);
             DisableGeneratedHitColliders(playerObject);
+            GameObject aura = null;
+            if (taggerAuraPrefab != null)
+            {
+                aura = Instantiate(
+                    taggerAuraPrefab,
+                    playerObject.transform,
+                    false);
+                aura.name = "Tagger Aura";
+                aura.transform.localPosition =
+                    Vector3.down * PlayerPresentationHeight;
+                aura.SetActive(false);
+            }
             return new PlayerView(
                 playerObject.transform,
-                visual);
+                visual,
+                aura);
         }
 
         private void RefreshPlayers(NetworkMatchState match)
@@ -289,6 +318,46 @@ namespace MazeParty.Multiplayer
                     localIsTagger &&
                     !showingStartCountdown &&
                     slot == _localSlot);
+                var hideAuraFromFirstPersonOwner =
+                    localIsTagger &&
+                    !showingStartCountdown &&
+                    slot == _localSlot;
+                player.SetTaggerAura(
+                    state.IsTagger(slot) &&
+                    !hideAuraFromFirstPersonOwner,
+                    PresentationAccessibility.FlashIntensityScale);
+            }
+        }
+
+        private void RefreshCatchVfx()
+        {
+            var caughtMask = state.CaughtMask;
+            if (!_caughtMaskBaselineInitialized)
+            {
+                _caughtMaskBaselineInitialized = true;
+                _lastCaughtMask = caughtMask;
+                return;
+            }
+
+            var newlyCaught = (byte)(caughtMask & ~_lastCaughtMask);
+            _lastCaughtMask = caughtMask;
+            for (var slot = 0; slot < _players.Length; slot++)
+            {
+                if ((newlyCaught & (1 << slot)) == 0)
+                {
+                    continue;
+                }
+
+                var player = _players[slot];
+                player?.Visual.TriggerHit();
+                if (player != null && hitSparkVfxPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        hitSparkVfxPrefab,
+                        player.Root.position + Vector3.up * 0.7f,
+                        Quaternion.identity,
+                        0.75f);
+                }
             }
         }
 
@@ -491,6 +560,11 @@ namespace MazeParty.Multiplayer
             {
                 playerRoot.gameObject.SetActive(active);
             }
+            if (!active)
+            {
+                _caughtMaskBaselineInitialized = false;
+                _lastCaughtMask = 0;
+            }
         }
 
         private static void DisableGeneratedHitColliders(
@@ -510,15 +584,74 @@ namespace MazeParty.Multiplayer
         {
             public PlayerView(
                 Transform root,
-                PlayerAvatarVisual visual)
+                PlayerAvatarVisual visual,
+                GameObject aura)
             {
                 Root = root;
                 Visual = visual;
+                Aura = aura;
+                if (aura != null)
+                {
+                    AuraParticles = aura.GetComponentsInChildren<
+                        ParticleSystem>(true);
+                    AuraEmissionRates = new float[AuraParticles.Length];
+                    for (var index = 0;
+                         index < AuraParticles.Length;
+                         index++)
+                    {
+                        AuraEmissionRates[index] = AuraParticles[index]
+                            .emission.rateOverTimeMultiplier;
+                    }
+                    AuraLights = aura.GetComponentsInChildren<Light>(true);
+                    AuraLightIntensities = new float[AuraLights.Length];
+                    for (var index = 0;
+                         index < AuraLights.Length;
+                         index++)
+                    {
+                        AuraLightIntensities[index] =
+                            AuraLights[index].intensity;
+                    }
+                }
             }
 
             public Transform Root { get; }
             public PlayerAvatarVisual Visual { get; }
+            public GameObject Aura { get; }
+            private ParticleSystem[] AuraParticles { get; }
+            private float[] AuraEmissionRates { get; }
+            private Light[] AuraLights { get; }
+            private float[] AuraLightIntensities { get; }
             public bool HasPosition { get; set; }
+
+            public void SetTaggerAura(bool active, float intensityScale)
+            {
+                if (Aura == null)
+                {
+                    return;
+                }
+                if (Aura.activeSelf != active)
+                {
+                    Aura.SetActive(active);
+                }
+                if (!active)
+                {
+                    return;
+                }
+
+                for (var index = 0;
+                     index < AuraParticles.Length;
+                     index++)
+                {
+                    var emission = AuraParticles[index].emission;
+                    emission.rateOverTimeMultiplier =
+                        AuraEmissionRates[index] * intensityScale;
+                }
+                for (var index = 0; index < AuraLights.Length; index++)
+                {
+                    AuraLights[index].intensity =
+                        AuraLightIntensities[index] * intensityScale;
+                }
+            }
         }
     }
 }

@@ -24,17 +24,21 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera spectatorCamera;
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private Transform[] spawnMarkers = new Transform[4];
+        [SerializeField] private GameObject hitSparkVfxPrefab;
 
         private GameplayCameraDirector _cameraDirector;
         private CinemachineCamera _registeredCamera;
         private NetworkPlayerAvatar _localAvatar;
         private bool _worldVisible;
         private bool _visibilityInitialized;
+        private readonly PresentationEventRevisionGate[] _hitVfxGates =
+            new PresentationEventRevisionGate[4];
 
         public NetworkArenaCombatState State => state;
         public CinemachineCamera FirstPersonCamera => firstPersonCamera;
         public CinemachineCamera SpectatorCamera => spectatorCamera;
         public GameObject ArenaPresentation => arenaPresentation;
+        public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
 
         public Transform GetSpawnMarker(int slot) =>
             slot >= 0 && slot < spawnMarkers.Length
@@ -56,6 +60,11 @@ namespace MazeParty.Multiplayer
             ConfigureCameras();
         }
 
+        public void ConfigureVfx(GameObject hitSparkPrefab)
+        {
+            hitSparkVfxPrefab = hitSparkPrefab;
+        }
+
         private void Awake()
         {
             state ??= GetComponent<NetworkArenaCombatState>();
@@ -66,6 +75,9 @@ namespace MazeParty.Multiplayer
         {
             if (_localAvatar != null && _localAvatar.AvatarVisual != null)
                 _localAvatar.AvatarVisual.SetOwnerFirstPerson(false);
+            ResetHitVfxGates();
+            _worldVisible = false;
+            _visibilityInitialized = false;
             UnregisterCamera();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -89,6 +101,7 @@ namespace MazeParty.Multiplayer
             }
 
             ResolveLocalAvatar(match);
+            RefreshHitVfx(match);
             var localSlot = _localAvatar != null
                 ? _localAvatar.AssignedSlot
                 : -1;
@@ -258,6 +271,30 @@ namespace MazeParty.Multiplayer
                     Vector3.up));
         }
 
+        private void RefreshHitVfx(NetworkMatchState match)
+        {
+            for (var slot = 0; slot < _hitVfxGates.Length; slot++)
+            {
+                if (!_hitVfxGates[slot].Observe(
+                        (uint)state.GetHitSequence(slot)))
+                {
+                    continue;
+                }
+
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(slot)
+                    : null;
+                if (avatar != null && hitSparkVfxPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        hitSparkVfxPrefab,
+                        avatar.transform.position + Vector3.up,
+                        Quaternion.identity,
+                        0.7f);
+                }
+            }
+        }
+
         private void RegisterCamera(CinemachineCamera desired)
         {
             _cameraDirector ??=
@@ -296,6 +333,18 @@ namespace MazeParty.Multiplayer
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(visible);
+            }
+            if (!visible)
+            {
+                ResetHitVfxGates();
+            }
+        }
+
+        private void ResetHitVfxGates()
+        {
+            for (var slot = 0; slot < _hitVfxGates.Length; slot++)
+            {
+                _hitVfxGates[slot].Reset();
             }
         }
     }

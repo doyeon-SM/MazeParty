@@ -1092,6 +1092,8 @@ MonoBehaviour:
   taggerCamera: {fileID: 206341007}
   playerRoot: {fileID: 1790258557}
   arenaPresentation: {fileID: 179743266}
+  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  taggerAuraPrefab: {fileID: 2636868620822713092, guid: 94a099d6842a72946a6d6bf32fc07d68, type: 3}
 --- !u!114 &1537570320
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -82,6 +82,7 @@ namespace MazeParty.Editor
             }
 
             EnsureInBuildSettings();
+            MinigameVfxProjectSetup.InstallScene(ScenePath);
             AssetDatabase.SaveAssets();
         }
 

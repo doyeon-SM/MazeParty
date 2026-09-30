@@ -98,6 +98,8 @@ namespace MazeParty.Editor
                 understructureMaterial,
                 boundaryMaterial,
                 hudPrefab);
+            MinigameVfxProjectSetup.InstallScene(
+                TerritoryPaintScenePath);
             AssetDatabase.SaveAssets();
         }
 

@@ -43,6 +43,7 @@ namespace MazeParty.Multiplayer
             new Transform[NetworkCliffBarrageState.LaserPoolSize];
         [SerializeField] private Transform[] firingBeams =
             new Transform[NetworkCliffBarrageState.LaserPoolSize];
+        [SerializeField] private GameObject hitSparkVfxPrefab;
 
         private readonly PlayerView[] _players = new PlayerView[4];
         private readonly bool[] _wasEliminated = new bool[4];
@@ -54,6 +55,7 @@ namespace MazeParty.Multiplayer
         private bool _hadVisibleFrame;
         private int _lastRoundNumber;
         private int _localSlot = -1;
+        private NetworkCliffBarrageState _subscribedVfxState;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(ArenaCenterX, 23f, 0f);
@@ -66,6 +68,7 @@ namespace MazeParty.Multiplayer
         public Transform PlayerRoot => playerRoot;
         public int AuthoredProjectileCount => projectiles?.Length ?? 0;
         public int AuthoredLaserCount => laserRoots?.Length ?? 0;
+        public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
 
         public Transform GetPlayerTransform(int slot) =>
             slot >= 0 && slot < _players.Length
@@ -119,16 +122,29 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void ConfigureVfx(GameObject hitSparkPrefab)
+        {
+            hitSparkVfxPrefab = hitSparkPrefab;
+        }
+
         private void Awake()
         {
             state ??= GetComponent<NetworkCliffBarrageState>();
+            EnsureDamageVfxSubscription();
             ConfigureCamera();
             EnsurePlayers();
             SetWorldPresentationActive(false);
         }
 
+        private void OnEnable()
+        {
+            state ??= GetComponent<NetworkCliffBarrageState>();
+            EnsureDamageVfxSubscription();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeFromDamageVfxEvents();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -136,6 +152,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkCliffBarrageState>();
+            EnsureDamageVfxSubscription();
             EnsurePlayers();
             var match = NetworkMatchState.Instance;
             var shouldShowWorld = state != null && state.IsSpawned &&
@@ -346,6 +363,65 @@ namespace MazeParty.Multiplayer
                 shell.Rotate(Vector3.up,
                     240f * Time.unscaledDeltaTime,
                     Space.Self);
+            }
+        }
+
+        private void HandleDamagePresentationRequested(
+            int slot,
+            Vector2 localPosition)
+        {
+            if (!_worldVisible)
+            {
+                return;
+            }
+
+            var player = slot >= 0 && slot < _players.Length
+                ? _players[slot]
+                : null;
+            if (player == null)
+            {
+                return;
+            }
+
+            player.Visual.TriggerHit();
+            if (hitSparkVfxPrefab != null)
+            {
+                var position = arenaPresentation != null
+                    ? arenaPresentation.transform.TransformPoint(new Vector3(
+                        localPosition.x,
+                        PlayerPresentationHeight + 0.75f,
+                        localPosition.y))
+                    : player.Root.position + Vector3.up * 0.75f;
+                OneShotVfxPool.Play(
+                    hitSparkVfxPrefab,
+                    position,
+                    Quaternion.identity,
+                    0.75f);
+            }
+        }
+
+        private void EnsureDamageVfxSubscription()
+        {
+            if (_subscribedVfxState == state)
+            {
+                return;
+            }
+            UnsubscribeFromDamageVfxEvents();
+            _subscribedVfxState = state;
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.DamagePresentationRequested +=
+                    HandleDamagePresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromDamageVfxEvents()
+        {
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.DamagePresentationRequested -=
+                    HandleDamagePresentationRequested;
+                _subscribedVfxState = null;
             }
         }
 

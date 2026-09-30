@@ -231,6 +231,11 @@ namespace MazeParty.Multiplayer.Tests
                 toneRpcAttribute.Delivery,
                 Is.EqualTo(RpcDelivery.Reliable),
                 "Every accepted player tone must reach every client in order.");
+            var toneParameters = toneRpc.GetParameters();
+            Assert.That(toneParameters, Has.Length.EqualTo(3));
+            Assert.That(toneParameters[2].ParameterType, Is.EqualTo(typeof(int)));
+            Assert.That(toneParameters[2].Name, Is.EqualTo("actorSlot"),
+                "Shared tone presentation must identify the authoritative actor.");
         }
 
         private static Transform FindDescendant(

@@ -28,5 +28,6 @@ namespace MazeParty.Gameplay
         public GameObject HeldPrefab;
         public GameObject WorldPrefab;
         public GameObject ExplosionPrefab;
+        public GameObject ImpactPrefab;
     }
 }

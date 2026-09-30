@@ -88,6 +88,7 @@ namespace MazeParty.Editor
                 sirenPrefab,
                 sonarPulsePrefab,
                 mineMarkerPrefab);
+            MinigameVfxProjectSetup.InstallScene(MinefieldScenePath);
             AssetDatabase.SaveAssets();
         }
 

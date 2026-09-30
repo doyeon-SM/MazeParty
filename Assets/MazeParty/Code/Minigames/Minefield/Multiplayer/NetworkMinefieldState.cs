@@ -16,6 +16,13 @@ namespace MazeParty.Multiplayer
         Complete
     }
 
+    public enum MinefieldHazardVfxKind : byte
+    {
+        None,
+        Mine,
+        Crusher
+    }
+
     /// <summary>
     /// Server-authoritative Minefield simulation. Board avatars remain in place;
     /// this in-scene object replicates four logical runners instead.
@@ -139,6 +146,24 @@ namespace MazeParty.Multiplayer
                 0U,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<ulong> _hazardSequences =
+            new NetworkVariable<ulong>(
+                0UL,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<uint> _hazardKinds =
+            new NetworkVariable<uint>(
+                0U,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<Vector3> _hazardPosition0 =
+            CreateRunnerPositionVariable();
+        private readonly NetworkVariable<Vector3> _hazardPosition1 =
+            CreateRunnerPositionVariable();
+        private readonly NetworkVariable<Vector3> _hazardPosition2 =
+            CreateRunnerPositionVariable();
+        private readonly NetworkVariable<Vector3> _hazardPosition3 =
+            CreateRunnerPositionVariable();
 
         private readonly Vector2[] _serverInputs =
             new Vector2[MinefieldRules.PlayerCount];
@@ -169,11 +194,42 @@ namespace MazeParty.Multiplayer
 
         public static NetworkMinefieldState Instance { get; private set; }
 
+        public event Action<int, MinefieldHazardVfxKind, Vector3>
+            HazardVfxRequested;
+
         public NetworkMinefieldPhase Phase =>
             (NetworkMinefieldPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
         public bool IsPaused => _paused.Value;
         public float CrusherWorldZ => _crusherWorldZ.Value;
+
+        public uint GetHazardSequence(int slot)
+        {
+            return MinefieldRules.IsValidPlayerSlot(slot)
+                ? (uint)((_hazardSequences.Value >> (slot * 16)) &
+                         0xffffUL)
+                : 0U;
+        }
+
+        public MinefieldHazardVfxKind GetLastHazardKind(int slot)
+        {
+            return MinefieldRules.IsValidPlayerSlot(slot)
+                ? (MinefieldHazardVfxKind)((_hazardKinds.Value >>
+                    (slot * 8)) & 0xffU)
+                : MinefieldHazardVfxKind.None;
+        }
+
+        public Vector3 GetLastHazardPosition(int slot)
+        {
+            switch (slot)
+            {
+                case 0: return _hazardPosition0.Value;
+                case 1: return _hazardPosition1.Value;
+                case 2: return _hazardPosition2.Value;
+                case 3: return _hazardPosition3.Value;
+                default: return Vector3.zero;
+            }
+        }
         public double Remaining
         {
             get
@@ -658,6 +714,10 @@ namespace MazeParty.Multiplayer
 
                 _detonatedMineMask |= mineBit;
                 InvalidateActiveMineCache();
+                RecordHazardVfxOnServer(
+                    slot,
+                    MinefieldHazardVfxKind.Mine,
+                    minePosition);
                 ApplyMineHitOnServer(slot);
                 RefreshSensorReplicationOnServer();
                 return;
@@ -689,10 +749,78 @@ namespace MazeParty.Multiplayer
                 if (CanAcceptInputForSlot(slot) &&
                     GetRunnerPosition(slot).z <= crusherFront)
                 {
+                    RecordHazardVfxOnServer(
+                        slot,
+                        MinefieldHazardVfxKind.Crusher,
+                        GetRunnerPosition(slot));
                     RecordEliminationOnServer(
                         slot,
                         MinefieldEliminationCause.Crusher);
                 }
+            }
+        }
+
+        private void RecordHazardVfxOnServer(
+            int slot,
+            MinefieldHazardVfxKind kind,
+            Vector3 position)
+        {
+            if (!MinefieldRules.IsValidPlayerSlot(slot) ||
+                kind == MinefieldHazardVfxKind.None)
+            {
+                return;
+            }
+
+            var sequenceShift = slot * 16;
+            var sequenceMask = 0xffffUL << sequenceShift;
+            var next = ((uint)((_hazardSequences.Value >>
+                sequenceShift) & 0xffffUL) + 1U) & 0xffffU;
+            if (next == 0U)
+            {
+                next = 1U;
+            }
+            _hazardSequences.Value =
+                (_hazardSequences.Value & ~sequenceMask) |
+                ((ulong)next << sequenceShift);
+
+            var kindShift = slot * 8;
+            var kindMask = 0xffU << kindShift;
+            _hazardKinds.Value =
+                (_hazardKinds.Value & ~kindMask) |
+                ((uint)kind << kindShift);
+
+            switch (slot)
+            {
+                case 0:
+                    _hazardPosition0.Value = position;
+                    break;
+                case 1:
+                    _hazardPosition1.Value = position;
+                    break;
+                case 2:
+                    _hazardPosition2.Value = position;
+                    break;
+                case 3:
+                    _hazardPosition3.Value = position;
+                    break;
+            }
+            PlayHazardVfxRpc((byte)slot, (byte)kind, position);
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayHazardVfxRpc(
+            byte slot,
+            byte kindValue,
+            Vector3 position)
+        {
+            var kind = (MinefieldHazardVfxKind)kindValue;
+            if (MinefieldRules.IsValidPlayerSlot(slot) &&
+                (kind == MinefieldHazardVfxKind.Mine ||
+                 kind == MinefieldHazardVfxKind.Crusher))
+            {
+                HazardVfxRequested?.Invoke(slot, kind, position);
             }
         }
 
@@ -1244,6 +1372,12 @@ namespace MazeParty.Multiplayer
             _scores.Value = 0U;
             _roundPoints.Value = 0U;
             _finalRanks.Value = 0U;
+            _hazardSequences.Value = 0UL;
+            _hazardKinds.Value = 0U;
+            _hazardPosition0.Value = Vector3.zero;
+            _hazardPosition1.Value = Vector3.zero;
+            _hazardPosition2.Value = Vector3.zero;
+            _hazardPosition3.Value = Vector3.zero;
 
             for (var slot = 0; slot < MinefieldRules.PlayerCount; slot++)
             {

@@ -14,6 +14,8 @@ namespace MazeParty.Multiplayer
         public const float PlayerPresentationHeight = 1.18f;
         public const float SharedCameraOrthographicSize = 23f;
 
+        private const int ProgressVfxStepInterval = 25;
+
         private const float PlayerInterpolationSpeed = 20f;
 
         private static readonly Color32[] FallbackPlayerColors =
@@ -28,20 +30,28 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CinemachineCamera sharedCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private GameObject arenaPresentation;
+        [SerializeField] private GameObject progressVfxPrefab;
+        [SerializeField] private GameObject finishVfxPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[RaceRules.PlayerCount];
+        private readonly int[] _lastProgress =
+            new int[RaceRules.PlayerCount];
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraRegistered;
         private int _localSlot = -1;
         private bool _visibilityInitialized;
         private bool _worldVisible;
+        private bool _progressBaselineInitialized;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(NetworkRaceState.TrackCenterX, 45f, 0f);
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(90f, 0f, 0f);
+
+        public GameObject ProgressVfxPrefab => progressVfxPrefab;
+        public GameObject FinishVfxPrefab => finishVfxPrefab;
 
         public void Configure(
             NetworkRaceState networkState,
@@ -58,6 +68,14 @@ namespace MazeParty.Multiplayer
             {
                 EnsurePlayers();
             }
+        }
+
+        public void ConfigureVfx(
+            GameObject progressPrefab,
+            GameObject finishPrefab)
+        {
+            progressVfxPrefab = progressPrefab;
+            finishVfxPrefab = finishPrefab;
         }
 
         private void Awake()
@@ -94,6 +112,7 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(true);
             ResolveLocalSlot(match);
             RefreshPlayers(match);
+            RefreshProgressVfx();
             RegisterCamera();
         }
 
@@ -212,6 +231,60 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void RefreshProgressVfx()
+        {
+            for (var slot = 0; slot < _lastProgress.Length; slot++)
+            {
+                var progress = state.GetProgress(slot);
+                var previous = _lastProgress[slot];
+                _lastProgress[slot] = progress;
+                if (!_progressBaselineInitialized ||
+                    !ShouldEmitProgressVfx(previous, progress))
+                {
+                    continue;
+                }
+
+                var reachedFinish =
+                    previous < RaceRules.RequiredSteps &&
+                    progress >= RaceRules.RequiredSteps;
+                var prefab = reachedFinish
+                    ? finishVfxPrefab
+                    : progressVfxPrefab;
+                var player = _players[slot];
+                if (prefab == null || player == null)
+                {
+                    continue;
+                }
+
+                OneShotVfxPool.Play(
+                    prefab,
+                    player.Root.position + Vector3.up * 0.65f,
+                    Quaternion.identity,
+                    reachedFinish ? 1.1f : 0.38f);
+            }
+
+            _progressBaselineInitialized = true;
+        }
+
+        private static bool ShouldEmitProgressVfx(
+            int previousProgress,
+            int currentProgress)
+        {
+            if (currentProgress <= previousProgress)
+            {
+                return false;
+            }
+
+            if (previousProgress < RaceRules.RequiredSteps &&
+                currentProgress >= RaceRules.RequiredSteps)
+            {
+                return true;
+            }
+
+            return previousProgress / ProgressVfxStepInterval <
+                   currentProgress / ProgressVfxStepInterval;
+        }
+
         private void RegisterCamera()
         {
             if (_cameraRegistered || sharedCamera == null)
@@ -247,6 +320,10 @@ namespace MazeParty.Multiplayer
             }
             _visibilityInitialized = true;
             _worldVisible = active;
+            if (!active)
+            {
+                _progressBaselineInitialized = false;
+            }
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(active);

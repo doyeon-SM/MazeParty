@@ -41,6 +41,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer safeSymbolCircleRenderer;
         [SerializeField] private Renderer safeSymbolSquareRenderer;
         [SerializeField] private AudioSource cueAudioSource;
+        [SerializeField] private GameObject interactionVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[StableFootingRules.PlayerCount];
@@ -55,7 +56,8 @@ namespace MazeParty.Multiplayer
         private int _lastCueCycle = -1;
         private StableFootingCyclePhase _lastCuePhase =
             (StableFootingCyclePhase)byte.MaxValue;
-        private uint _lastPushRevision;
+        private bool _cueBaselineInitialized;
+        private NetworkStableFootingState _subscribedVfxState;
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(90f, 0f, 0f);
@@ -65,6 +67,13 @@ namespace MazeParty.Multiplayer
                 NetworkStableFootingState.ArenaCenterX,
                 SharedCameraHeight,
                 0f);
+
+        public GameObject InteractionVfxPrefab => interactionVfxPrefab;
+
+        public void ConfigureVfx(GameObject interactionPrefab)
+        {
+            interactionVfxPrefab = interactionPrefab;
+        }
 
         public void Configure(
             NetworkStableFootingState networkState,
@@ -100,6 +109,7 @@ namespace MazeParty.Multiplayer
         private void Awake()
         {
             ResolveSceneReferences();
+            EnsurePushVfxSubscription();
             ConfigureCamera();
             CacheTileViews();
             EnsureRunners();
@@ -109,10 +119,12 @@ namespace MazeParty.Multiplayer
         private void OnEnable()
         {
             ResolveSceneReferences();
+            EnsurePushVfxSubscription();
         }
 
         private void OnDisable()
         {
+            UnsubscribeFromPushVfxEvents();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -120,6 +132,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkStableFootingState>();
+            EnsurePushVfxSubscription();
             CacheTileViews();
             EnsureRunners();
 
@@ -150,7 +163,6 @@ namespace MazeParty.Multiplayer
             // MinigameLocalPlayerHighlight owns the brief shared countdown
             // marker; this view does not keep a persistent local-player mark.
             RefreshRunners(match);
-            RefreshPushPresentation();
             RefreshTiles();
             RefreshSafeSymbolDisplay();
             RefreshCue();
@@ -334,18 +346,34 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshPushPresentation()
+        private void HandlePushPresentationRequested(
+            int pusherSlot,
+            int targetSlot,
+            Vector3 targetPosition)
         {
-            if (state.PushRevision == _lastPushRevision)
+            if (!_worldVisible)
             {
                 return;
             }
 
-            _lastPushRevision = state.PushRevision;
-            var pusherSlot = state.LastPusherSlot;
             if (pusherSlot >= 0 && pusherSlot < _runners.Length)
             {
                 _runners[pusherSlot]?.Visual.TriggerPunch();
+            }
+            var target = targetSlot >= 0 && targetSlot < _runners.Length
+                ? _runners[targetSlot]
+                : null;
+            if (target != null)
+            {
+                target.Visual.TriggerHit();
+                if (interactionVfxPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        interactionVfxPrefab,
+                        targetPosition + Vector3.up * 0.65f,
+                        Quaternion.identity,
+                        0.65f);
+                }
             }
         }
 
@@ -391,6 +419,13 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCue()
         {
+            if (!_cueBaselineInitialized)
+            {
+                _cueBaselineInitialized = true;
+                _lastCueCycle = state.CycleNumber;
+                _lastCuePhase = state.CyclePhase;
+                return;
+            }
             if (_lastCueCycle == state.CycleNumber &&
                 _lastCuePhase == state.CyclePhase)
             {
@@ -404,6 +439,24 @@ namespace MazeParty.Multiplayer
                 cueAudioSource.clip != null)
             {
                 cueAudioSource.Play();
+            }
+            if (state.Phase == NetworkStableFootingPhase.Running &&
+                interactionVfxPrefab != null)
+            {
+                var renderer = state.SafeSymbol ==
+                               StableFootingSymbol.Cross
+                    ? safeSymbolCrossRenderer
+                    : state.SafeSymbol == StableFootingSymbol.Circle
+                        ? safeSymbolCircleRenderer
+                        : safeSymbolSquareRenderer;
+                if (renderer != null)
+                {
+                    OneShotVfxPool.Play(
+                        interactionVfxPrefab,
+                        renderer.bounds.center,
+                        Quaternion.identity,
+                        1.1f);
+                }
             }
         }
 
@@ -479,11 +532,33 @@ namespace MazeParty.Multiplayer
                 _lastCueCycle = -1;
                 _lastCuePhase =
                     (StableFootingCyclePhase)byte.MaxValue;
+                _cueBaselineInitialized = false;
                 cueAudioSource?.Stop();
             }
-            else if (state != null)
+        }
+
+        private void EnsurePushVfxSubscription()
+        {
+            if (_subscribedVfxState == state)
             {
-                _lastPushRevision = state.PushRevision;
+                return;
+            }
+            UnsubscribeFromPushVfxEvents();
+            _subscribedVfxState = state;
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.PushPresentationRequested +=
+                    HandlePushPresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromPushVfxEvents()
+        {
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.PushPresentationRequested -=
+                    HandlePushPresentationRequested;
+                _subscribedVfxState = null;
             }
         }
 

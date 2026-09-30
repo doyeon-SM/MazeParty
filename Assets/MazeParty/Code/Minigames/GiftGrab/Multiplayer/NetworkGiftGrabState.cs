@@ -256,6 +256,9 @@ namespace MazeParty.Multiplayer
 
         public static NetworkGiftGrabState Instance { get; private set; }
 
+        public event Action<GiftGrabNetworkActionType, Vector2>
+            ActionPresentationRequested;
+
         public NetworkGiftGrabPhase Phase =>
             (NetworkGiftGrabPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -1513,6 +1516,60 @@ namespace MazeParty.Multiplayer
             _lastActionTargetSlot.Value = EncodeIndex(targetSlot);
             _lastActionGiftId.Value = EncodeIndex(giftId);
             AdvanceRevision(_actionRevision);
+            PlayActionPresentationRpc(
+                (byte)actionType,
+                ResolveActionPresentationPosition(
+                    actionType,
+                    actorSlot,
+                    targetSlot,
+                    giftId));
+        }
+
+        private Vector2 ResolveActionPresentationPosition(
+            GiftGrabNetworkActionType actionType,
+            int actorSlot,
+            int targetSlot,
+            int giftId)
+        {
+            var actorPosition = GiftGrabRules.IsValidPlayerSlot(actorSlot)
+                ? _playerPositions[actorSlot]
+                : new Vector2(ArenaCenterX, 0f);
+            var targetPosition = GiftGrabRules.IsValidPlayerSlot(targetSlot)
+                ? _playerPositions[targetSlot]
+                : actorPosition;
+
+            switch (actionType)
+            {
+                case GiftGrabNetworkActionType.Push:
+                case GiftGrabNetworkActionType.ThrownHit:
+                    return targetPosition;
+                case GiftGrabNetworkActionType.Throw:
+                    return actorPosition;
+                case GiftGrabNetworkActionType.Drop:
+                case GiftGrabNetworkActionType.BoundsReturn:
+                    return GiftGrabRules.IsValidGiftId(giftId)
+                        ? _giftPositions[giftId]
+                        : targetPosition;
+                default:
+                    return GiftGrabRules.IsValidGiftId(giftId)
+                        ? _giftPositions[giftId]
+                        : actorPosition;
+            }
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayActionPresentationRpc(
+            byte actionTypeValue,
+            Vector2 position)
+        {
+            var actionType = (GiftGrabNetworkActionType)actionTypeValue;
+            if (actionType > GiftGrabNetworkActionType.None &&
+                actionType <= GiftGrabNetworkActionType.BoundsReturn)
+            {
+                ActionPresentationRequested?.Invoke(actionType, position);
+            }
         }
 
         private void EnsureSnapshotCountsOnServer()

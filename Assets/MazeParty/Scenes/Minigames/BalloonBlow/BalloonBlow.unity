@@ -1024,6 +1024,7 @@ MonoBehaviour:
   - {fileID: 1836057728}
   arenaPresentation: {fileID: 229576983}
   cueAudioSource: {fileID: 1150998209}
+  popBurstVfxPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
 --- !u!114 &1171289839
 MonoBehaviour:
   m_ObjectHideFlags: 0

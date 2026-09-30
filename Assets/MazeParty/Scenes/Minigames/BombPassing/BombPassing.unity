@@ -458,6 +458,7 @@ MonoBehaviour:
   bombRenderer: {fileID: 285779441}
   bombLight: {fileID: 285779440}
   explosionFlashLight: {fileID: 1432078790}
+  explosionVfxPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
 --- !u!114 &367361659
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -48,6 +48,10 @@ namespace MazeParty.Multiplayer
             CreateUIntVariable();
         private readonly NetworkVariable<uint> _finalRanks =
             CreateUIntVariable();
+        private readonly NetworkVariable<uint> _goalSequence =
+            CreateUIntVariable();
+        private readonly NetworkVariable<byte> _lastGoalDefenderSlot =
+            CreateByteVariable(byte.MaxValue);
         private readonly NetworkVariable<Vector2> _ball0 =
             CreateVectorVariable();
         private readonly NetworkVariable<Vector2> _ball1 =
@@ -65,6 +69,8 @@ namespace MazeParty.Multiplayer
 
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[BouncingBallsRules.PlayerCount];
+        private readonly int[] _deliveredGoalCounts =
+            new int[BouncingBallsRules.PlayerCount];
         private BouncingBallsMatchState _serverMatch;
         private double _phaseStartedAt;
         private double _phaseElapsedAtPause;
@@ -73,12 +79,20 @@ namespace MazeParty.Multiplayer
 
         public static NetworkBouncingBallsState Instance { get; private set; }
 
+        public event Action<int> GoalPresentationRequested;
+
         public NetworkBouncingBallsPhase Phase =>
             (NetworkBouncingBallsPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
         public uint InputEpoch => _inputEpoch.Value;
         public bool IsPaused => _paused.Value;
         public bool IsMatchActive => _matchActive.Value;
+        public uint GoalSequence => _goalSequence.Value;
+        public int LastGoalDefenderSlot =>
+            BouncingBallsRules.IsValidPlayerSlot(
+                _lastGoalDefenderSlot.Value)
+                ? _lastGoalDefenderSlot.Value
+                : BouncingBallsRules.NoOwnerSlot;
         public double Remaining => Phase == NetworkBouncingBallsPhase.Inactive
             ? 0d
             : _paused.Value
@@ -367,6 +381,37 @@ namespace MazeParty.Multiplayer
             var elapsed = Math.Max(0d, now - _phaseStartedAt);
             _serverMatch.AdvanceTo(
                 Math.Min(BouncingBallsRules.RoundSeconds, elapsed));
+            DeliverPendingGoalPresentationEventsOnServer();
+        }
+
+        private void DeliverPendingGoalPresentationEventsOnServer()
+        {
+            for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
+                 slot++)
+            {
+                var conceded = _serverMatch.GetConceded(slot);
+                if (conceded < _deliveredGoalCounts[slot])
+                {
+                    _deliveredGoalCounts[slot] = 0;
+                }
+
+                while (_deliveredGoalCounts[slot] < conceded)
+                {
+                    _deliveredGoalCounts[slot]++;
+                    PlayGoalPresentationRpc((byte)slot);
+                }
+            }
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayGoalPresentationRpc(byte defenderSlot)
+        {
+            if (BouncingBallsRules.IsValidPlayerSlot(defenderSlot))
+            {
+                GoalPresentationRequested?.Invoke(defenderSlot);
+            }
         }
 
         private void BeginPlayingOnServer(double now)
@@ -481,6 +526,12 @@ namespace MazeParty.Multiplayer
             }
             _scores.Value = packedScores;
             _conceded.Value = packedConceded;
+
+            _goalSequence.Value = (uint)_serverMatch.GoalSequence;
+            var lastGoal = _serverMatch.LastGoal;
+            _lastGoalDefenderSlot.Value = lastGoal.HasValue
+                ? (byte)lastGoal.Value.DefenderSlot
+                : byte.MaxValue;
         }
 
         private void StopAllShieldsOnServer()
@@ -551,6 +602,12 @@ namespace MazeParty.Multiplayer
             _conceded.Value = 0UL;
             _ballOwners.Value = 0U;
             _finalRanks.Value = 0U;
+            _goalSequence.Value = 0U;
+            _lastGoalDefenderSlot.Value = byte.MaxValue;
+            Array.Clear(
+                _deliveredGoalCounts,
+                0,
+                _deliveredGoalCounts.Length);
             _ball0.Value = Vector2.zero;
             _ball1.Value = Vector2.zero;
             _ball2.Value = Vector2.zero;

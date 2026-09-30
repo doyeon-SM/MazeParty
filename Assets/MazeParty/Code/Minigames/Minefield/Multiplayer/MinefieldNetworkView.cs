@@ -28,6 +28,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject sirenPrefab;
         [SerializeField] private GameObject sonarPulsePrefab;
         [SerializeField] private GameObject mineMarkerPrefab;
+        [SerializeField] private GameObject mineExplosionVfxPrefab;
+        [SerializeField] private GameObject hitSparkVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[MinefieldRules.PlayerCount];
@@ -36,6 +38,20 @@ namespace MazeParty.Multiplayer
         private int _mineLayoutHash;
         private bool _cameraConfigured;
         private bool _corePrefabContractErrorLogged;
+        private bool _worldVisible;
+        private bool _worldVisibilityInitialized;
+        private NetworkMinefieldState _subscribedVfxState;
+
+        public GameObject MineExplosionVfxPrefab => mineExplosionVfxPrefab;
+        public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+
+        public void ConfigureVfx(
+            GameObject mineExplosionPrefab,
+            GameObject hitSparkPrefab)
+        {
+            mineExplosionVfxPrefab = mineExplosionPrefab;
+            hitSparkVfxPrefab = hitSparkPrefab;
+        }
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
             90f - PlayerCameraTiltDegrees,
@@ -55,6 +71,7 @@ namespace MazeParty.Multiplayer
         private void Awake()
         {
             ResolveSceneReferences();
+            EnsureHazardVfxSubscription();
             ConfigureCamera();
             EnsurePresentation();
             SetWorldPresentationActive(false);
@@ -63,10 +80,12 @@ namespace MazeParty.Multiplayer
         private void OnEnable()
         {
             ResolveSceneReferences();
+            EnsureHazardVfxSubscription();
         }
 
         private void OnDisable()
         {
+            UnsubscribeFromHazardVfxEvents();
             SetWorldPresentationActive(false);
             if (_cameraDirector != null && topDownCamera != null)
             {
@@ -80,6 +99,7 @@ namespace MazeParty.Multiplayer
             {
                 state = GetComponent<NetworkMinefieldState>();
             }
+            EnsureHazardVfxSubscription();
 
             if (!EnsurePresentation())
             {
@@ -426,6 +446,71 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void HandleHazardVfxRequested(
+            int slot,
+            MinefieldHazardVfxKind kind,
+            Vector3 hazardPosition)
+        {
+            if (!_worldVisible)
+            {
+                return;
+            }
+
+            var position = hazardPosition + Vector3.up * 0.35f;
+            switch (kind)
+            {
+                case MinefieldHazardVfxKind.Mine:
+                    if (mineExplosionVfxPrefab != null)
+                    {
+                        OneShotVfxPool.Play(
+                            mineExplosionVfxPrefab,
+                            position,
+                            Quaternion.identity,
+                            0.7f);
+                    }
+                    break;
+                case MinefieldHazardVfxKind.Crusher:
+                    if (slot >= 0 && slot < _runners.Length)
+                    {
+                        _runners[slot]?.AvatarVisual.TriggerHit();
+                    }
+                    if (hitSparkVfxPrefab != null)
+                    {
+                        OneShotVfxPool.Play(
+                            hitSparkVfxPrefab,
+                            position + Vector3.up * 0.4f,
+                            Quaternion.identity,
+                            0.8f);
+                    }
+                    break;
+            }
+        }
+
+        private void EnsureHazardVfxSubscription()
+        {
+            if (_subscribedVfxState == state)
+            {
+                return;
+            }
+            UnsubscribeFromHazardVfxEvents();
+            _subscribedVfxState = state;
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.HazardVfxRequested +=
+                    HandleHazardVfxRequested;
+            }
+        }
+
+        private void UnsubscribeFromHazardVfxEvents()
+        {
+            if (_subscribedVfxState != null)
+            {
+                _subscribedVfxState.HazardVfxRequested -=
+                    HandleHazardVfxRequested;
+                _subscribedVfxState = null;
+            }
+        }
+
         private void RefreshCrusher()
         {
             if (crusherPlaceholder == null)
@@ -441,6 +526,12 @@ namespace MazeParty.Multiplayer
 
         private void SetWorldPresentationActive(bool active)
         {
+            if (_worldVisibilityInitialized && _worldVisible == active)
+            {
+                return;
+            }
+            _worldVisibilityInitialized = true;
+            _worldVisible = active;
             if (arenaPresentation != null &&
                 arenaPresentation.activeSelf != active)
             {
@@ -468,7 +559,8 @@ namespace MazeParty.Multiplayer
                 view.SirenRenderer,
                 Color.Lerp(Color.black, new Color(1f, 0.03f, 0.02f), intensity),
                 Color.red * (intensity * 4f));
-            view.SirenLight.intensity = intensity * 4f;
+            view.SirenLight.intensity = intensity * 4f *
+                PresentationAccessibility.FlashIntensityScale;
             view.SirenLight.enabled = intensity > 0.001f;
         }
 

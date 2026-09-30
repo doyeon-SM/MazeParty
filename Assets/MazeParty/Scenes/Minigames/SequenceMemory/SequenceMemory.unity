@@ -623,6 +623,7 @@ MonoBehaviour:
   middleTone: {fileID: 0}
   lowTone: {fileID: 0}
   hud: {fileID: 1871442976}
+  tonePulseVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &595463111
 MonoBehaviour:
   m_ObjectHideFlags: 0

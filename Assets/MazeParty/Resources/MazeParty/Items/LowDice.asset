@@ -34,4 +34,5 @@ MonoBehaviour:
   Icon: {fileID: 21300000, guid: dfe89b67620fae146b1230ded4955e4e, type: 3}
   HeldPrefab: {fileID: 0}
   WorldPrefab: {fileID: 0}
-  ExplosionPrefab: {fileID: 1171816663760017513, guid: 5b4c0abfbc2abe142a80de4f63de8795, type: 3}
+  ExplosionPrefab: {fileID: 0}
+  ImpactPrefab: {fileID: 0}

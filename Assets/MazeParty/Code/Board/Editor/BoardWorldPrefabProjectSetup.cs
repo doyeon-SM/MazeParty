@@ -15,12 +15,23 @@ namespace MazeParty.Editor
         public const string Folder = "Assets/MazeParty/Prefabs/Board/World";
         private const string CatalogPath = "Assets/MazeParty/Resources/MazeParty/Board/BoardWorldPrefabs.asset";
         private const string Materials = "Assets/MazeParty/Board/Materials/";
+        private const string BoundaryWallPath = Folder + "/PlayerBoundaryWall.prefab";
+        private const string ToolkitPrefabFolder =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/";
+        private const string BlueFirePath = ToolkitPrefabFolder + "Blue Fire.prefab";
+        private const string RealFirePath = ToolkitPrefabFolder + "Real Fire.prefab";
+        private const float BoundaryFlamePrefabScale = .65f;
+        private const float PassableFlameDensity = .45f;
+        private const float BlockedFlameDensity = 2f;
+        private const float MaximumBoundaryParticleDiameter = .72f;
+        private const float MaximumBoundaryParticleTravel = .65f;
 
         [MenuItem("MazeParty/Board/Install World Prefabs")]
         public static void Install()
         {
             if (EditorApplication.isPlayingOrWillChangePlaymode)
                 throw new InvalidOperationException("Stop Play Mode before installing board prefabs.");
+            EnsureBoundaryFlameVfx();
             var assets = EnsureAssets();
             foreach (var path in new[] { "Assets/MazeParty/Scenes/Board/Board.unity", "Assets/MazeParty/Scenes/Board/Dev/BoardFlowTestbed.unity" })
             {
@@ -71,6 +82,19 @@ namespace MazeParty.Editor
             finally { PrefabUtility.UnloadPrefabContents(player); }
             AssetDatabase.SaveAssets();
             Debug.Log("Board world prefabs installed. Existing prefab and material designs preserved.");
+        }
+
+        [MenuItem("MazeParty/Board/Install Boundary Flame VFX")]
+        public static void InstallBoundaryFlameVfx()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+                throw new InvalidOperationException(
+                    "Stop Play Mode before installing the boundary flame VFX.");
+
+            EnsureBoundaryFlameVfx();
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Boundary flame VFX installed. Existing authored flame design was preserved when already configured.");
         }
 
         private static void Convert(GameObject instance, GameObject prefab)
@@ -252,6 +276,390 @@ namespace MazeParty.Editor
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return root;
             });
+        }
+
+        private static void EnsureBoundaryFlameVfx()
+        {
+            EnsureWall();
+            var contents = PrefabUtility.LoadPrefabContents(BoundaryWallPath);
+            try
+            {
+                var binding = contents.GetComponent<BoardBoundaryWallVisual>();
+                if (binding == null)
+                    throw new InvalidOperationException(
+                        BoundaryWallPath + " must contain BoardBoundaryWallVisual on its root.");
+
+                var serializedBinding = new SerializedObject(binding);
+                if (serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue != null &&
+                    serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue != null &&
+                    serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue != null)
+                {
+                    var changed = ApplyBoundaryFlameSettings(serializedBinding);
+                    if (!binding.HasRequiredReferences)
+                    {
+                        throw new InvalidOperationException(
+                            BoundaryWallPath +
+                            " has authored flame roots but incomplete renderer or particle bindings. Repair it manually so setup does not overwrite the design.");
+                    }
+                    changed |= EnsureBoundaryFlameUrpCompatibility(contents);
+                    changed |= EnsureBoundaryFlameEnvelope(binding);
+                    if (changed)
+                        PrefabUtility.SaveAsPrefabAsset(contents, BoundaryWallPath);
+                    return;
+                }
+
+                if (contents.transform.childCount > 0)
+                {
+                    throw new InvalidOperationException(
+                        BoundaryWallPath +
+                        " has authored children but no complete flame bindings. Repair it manually so setup does not overwrite the design.");
+                }
+
+                var blueFire = AssetDatabase.LoadAssetAtPath<GameObject>(BlueFirePath);
+                var redFire = AssetDatabase.LoadAssetAtPath<GameObject>(RealFirePath);
+                if (blueFire == null || redFire == null)
+                {
+                    throw new InvalidOperationException(
+                        "AllIn1VfxToolkit v2.32 is required at Assets/Ignore/AllIn1VfxToolkit before installing boundary VFX.");
+                }
+
+                var legacyRenderer = contents.GetComponent<MeshRenderer>();
+                if (legacyRenderer != null)
+                    Object.DestroyImmediate(legacyRenderer);
+                var legacyFilter = contents.GetComponent<MeshFilter>();
+                if (legacyFilter != null)
+                    Object.DestroyImmediate(legacyFilter);
+
+                var flameWidth = new GameObject("Flame Width").transform;
+                flameWidth.SetParent(contents.transform, false);
+
+                var passable = InstantiateNestedFlame(
+                    blueFire,
+                    flameWidth,
+                    "Passable Blue Flame",
+                    true);
+                var blocked = InstantiateNestedFlame(
+                    redFire,
+                    flameWidth,
+                    "Blocked Red Flame",
+                    false);
+
+                serializedBinding.Update();
+                serializedBinding.FindProperty("blockingCollider").objectReferenceValue =
+                    contents.GetComponent<BoxCollider>();
+                serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue =
+                    flameWidth;
+                serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue =
+                    passable;
+                serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue =
+                    blocked;
+                serializedBinding.FindProperty("authoredFlameWidth").floatValue =
+                    BoundaryFlamePrefabScale;
+                serializedBinding.FindProperty("flameTopHeight").floatValue =
+                    BoardBoundaryWallVisual.RequiredFlameTopHeight;
+                serializedBinding.FindProperty("passableEmissionDensity").floatValue =
+                    PassableFlameDensity;
+                serializedBinding.FindProperty("blockedEmissionDensity").floatValue =
+                    BlockedFlameDensity;
+                SetObjectArray(
+                    serializedBinding.FindProperty("stateRenderers"),
+                    contents.GetComponentsInChildren<Renderer>(true));
+                SetObjectArray(
+                    serializedBinding.FindProperty("stateParticles"),
+                    contents.GetComponentsInChildren<ParticleSystem>(true));
+                serializedBinding.ApplyModifiedPropertiesWithoutUndo();
+                EnsureBoundaryFlameEnvelope(binding);
+
+                PrefabUtility.SaveAsPrefabAsset(contents, BoundaryWallPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+
+        private static GameObject InstantiateNestedFlame(
+            GameObject prefab,
+            Transform parent,
+            string instanceName,
+            bool active)
+        {
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, parent);
+            if (instance == null)
+                throw new InvalidOperationException("Failed to instantiate " + prefab.name + ".");
+
+            instance.name = instanceName;
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+            instance.SetActive(active);
+
+            BakeNestedParticleScale(instance, BoundaryFlamePrefabScale);
+            EnsureBoundaryFlameUrpCompatibility(instance);
+
+            return instance;
+        }
+
+        private static bool ApplyBoundaryFlameSettings(
+            SerializedObject serializedBinding)
+        {
+            serializedBinding.Update();
+            var changed = false;
+            changed |= SetFloat(
+                serializedBinding.FindProperty("flameTopHeight"),
+                BoardBoundaryWallVisual.RequiredFlameTopHeight);
+            changed |= SetFloat(
+                serializedBinding.FindProperty("passableEmissionDensity"),
+                PassableFlameDensity);
+            changed |= SetFloat(
+                serializedBinding.FindProperty("blockedEmissionDensity"),
+                BlockedFlameDensity);
+            if (changed)
+                serializedBinding.ApplyModifiedPropertiesWithoutUndo();
+            return changed;
+        }
+
+        private static bool EnsureBoundaryFlameEnvelope(
+            BoardBoundaryWallVisual binding)
+        {
+            var changed = false;
+            var widthRoot = binding.FlameWidthRoot;
+            if (widthRoot.localPosition != Vector3.zero)
+            {
+                widthRoot.localPosition = Vector3.zero;
+                changed = true;
+            }
+            if (widthRoot.localRotation != Quaternion.identity)
+            {
+                widthRoot.localRotation = Quaternion.identity;
+                changed = true;
+            }
+            if (widthRoot.localScale != Vector3.one)
+            {
+                widthRoot.localScale = Vector3.one;
+                changed = true;
+            }
+
+            foreach (var stateRoot in new[]
+                     {
+                         binding.PassableFlameRoot,
+                         binding.BlockedFlameRoot
+                     })
+            {
+                if (stateRoot.transform.localPosition != Vector3.zero)
+                {
+                    stateRoot.transform.localPosition = Vector3.zero;
+                    changed = true;
+                }
+                if (stateRoot.transform.localRotation != Quaternion.identity)
+                {
+                    stateRoot.transform.localRotation = Quaternion.identity;
+                    changed = true;
+                }
+
+                foreach (var particle in
+                         stateRoot.GetComponentsInChildren<ParticleSystem>(true))
+                {
+                    changed |= ClampParticleAuthoring(particle);
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool ClampParticleAuthoring(ParticleSystem particle)
+        {
+            var changed = false;
+            var main = particle.main;
+            if (main.startSize3D)
+            {
+                changed |= ClampCurveMultiplier(
+                    main.startSizeX,
+                    main.startSizeXMultiplier,
+                    MaximumBoundaryParticleDiameter,
+                    value => main.startSizeXMultiplier = value);
+                changed |= ClampCurveMultiplier(
+                    main.startSizeY,
+                    main.startSizeYMultiplier,
+                    MaximumBoundaryParticleDiameter,
+                    value => main.startSizeYMultiplier = value);
+                changed |= ClampCurveMultiplier(
+                    main.startSizeZ,
+                    main.startSizeZMultiplier,
+                    MaximumBoundaryParticleDiameter,
+                    value => main.startSizeZMultiplier = value);
+            }
+            else
+            {
+                changed |= ClampCurveMultiplier(
+                    main.startSize,
+                    main.startSizeMultiplier,
+                    MaximumBoundaryParticleDiameter,
+                    value => main.startSizeMultiplier = value);
+            }
+
+            var maximumLifetime = EstimateMaximum(main.startLifetime);
+            if (maximumLifetime > .001f)
+            {
+                changed |= ClampCurveMultiplier(
+                    main.startSpeed,
+                    main.startSpeedMultiplier,
+                    MaximumBoundaryParticleTravel / maximumLifetime,
+                    value => main.startSpeedMultiplier = value);
+            }
+
+            return changed;
+        }
+
+        private static bool ClampCurveMultiplier(
+            ParticleSystem.MinMaxCurve curve,
+            float multiplier,
+            float maximum,
+            Action<float> assign)
+        {
+            var currentMaximum = EstimateMaximum(curve);
+            if (currentMaximum <= maximum + .0001f)
+                return false;
+
+            assign(multiplier * maximum / currentMaximum);
+            return true;
+        }
+
+        private static float EstimateMaximum(
+            ParticleSystem.MinMaxCurve curve)
+        {
+            var maximum = 0f;
+            const int samples = 24;
+            for (var sample = 0; sample <= samples; sample++)
+            {
+                var time = sample / (float)samples;
+                maximum = Mathf.Max(
+                    maximum,
+                    Mathf.Abs(curve.Evaluate(time, 0f)),
+                    Mathf.Abs(curve.Evaluate(time, 1f)));
+            }
+            return maximum;
+        }
+
+        private static bool SetFloat(
+            SerializedProperty property,
+            float value)
+        {
+            if (Mathf.Approximately(property.floatValue, value))
+                return false;
+
+            property.floatValue = value;
+            return true;
+        }
+
+        private static void BakeNestedParticleScale(GameObject root, float scale)
+        {
+            foreach (var child in root.GetComponentsInChildren<Transform>(true))
+            {
+                if (child != root.transform)
+                    child.localPosition *= scale;
+            }
+
+            foreach (var particle in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = particle.main;
+                main.startSpeedMultiplier *= scale;
+                if (main.startSize3D)
+                {
+                    main.startSizeXMultiplier *= scale;
+                    main.startSizeYMultiplier *= scale;
+                    main.startSizeZMultiplier *= scale;
+                }
+                else
+                {
+                    main.startSizeMultiplier *= scale;
+                }
+
+                var shape = particle.shape;
+                if (shape.enabled)
+                {
+                    shape.position *= scale;
+                    shape.scale *= scale;
+                }
+            }
+        }
+
+        private static bool EnsureBoundaryFlameUrpCompatibility(GameObject root)
+        {
+            var changed = false;
+            foreach (var particle in root.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var main = particle.main;
+                if (main.scalingMode == ParticleSystemScalingMode.Shape)
+                    continue;
+
+                main.scalingMode = ParticleSystemScalingMode.Shape;
+                changed = true;
+            }
+
+            // The demo prefabs include legacy-pipeline glow and GrabPass distortion
+            // layers. URP renders those as error planes and rejects the grab-texture
+            // globals, so keep the compatible authored fire layers and disable only
+            // incompatible renderers on our nested instances. Vendor assets remain
+            // untouched under Assets/Ignore.
+            foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+            {
+                if (!UsesUnsupportedRenderPipelineShader(renderer))
+                    continue;
+
+                if (renderer.enabled)
+                {
+                    renderer.enabled = false;
+                    changed = true;
+                }
+                if (renderer.gameObject.activeSelf)
+                {
+                    renderer.gameObject.SetActive(false);
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
+
+        private static bool UsesUnsupportedRenderPipelineShader(Renderer renderer)
+        {
+            if (renderer.name.IndexOf("Distortion", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                renderer.name.IndexOf("GrabPass", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            foreach (var material in renderer.sharedMaterials)
+            {
+                if (material == null)
+                    continue;
+
+                if (material.name.IndexOf("Distortion", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    material.name.IndexOf("GrabPass", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    material.shader != null &&
+                    (material.shader.name.IndexOf("BuiltIn", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     material.shader.name.IndexOf("Distortion", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                     material.shader.name.IndexOf("GrabPass", StringComparison.OrdinalIgnoreCase) >= 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void SetObjectArray<T>(
+            SerializedProperty property,
+            T[] values)
+            where T : Object
+        {
+            property.arraySize = values.Length;
+            for (var index = 0; index < values.Length; index++)
+            {
+                property.GetArrayElementAtIndex(index).objectReferenceValue =
+                    values[index];
+            }
         }
 
         private static TextMesh Label(Transform parent, string name, Vector3 position, string text)

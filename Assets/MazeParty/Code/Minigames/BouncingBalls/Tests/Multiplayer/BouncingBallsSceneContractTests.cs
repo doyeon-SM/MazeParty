@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -14,6 +15,20 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity";
         private const string HudPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab";
+
+        [Test]
+        public void GoalPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkBouncingBallsState).GetMethod(
+                "PlayGoalPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(1));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+        }
 
         [Test]
         public void Scene_HasFourGoalsShieldsThreeBallsAndOneSharedCamera()

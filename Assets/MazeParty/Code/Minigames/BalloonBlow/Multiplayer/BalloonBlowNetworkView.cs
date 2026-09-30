@@ -37,6 +37,7 @@ namespace MazeParty.Multiplayer
             new Transform[BalloonBlowRules.PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
+        [SerializeField] private GameObject popBurstVfxPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[BalloonBlowRules.PlayerCount];
@@ -49,12 +50,15 @@ namespace MazeParty.Multiplayer
         private bool _cameraConfigured;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
+        private bool _popBaselineInitialized;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(0f, 11.5f, -16f);
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(36f, 0f, 0f);
+
+        public GameObject PopBurstVfxPrefab => popBurstVfxPrefab;
 
         public void Configure(
             NetworkBalloonBlowState networkState,
@@ -79,6 +83,11 @@ namespace MazeParty.Multiplayer
             {
                 EnsurePlayers();
             }
+        }
+
+        public void ConfigureVfx(GameObject popBurstPrefab)
+        {
+            popBurstVfxPrefab = popBurstPrefab;
         }
 
         private void Awake()
@@ -287,22 +296,26 @@ namespace MazeParty.Multiplayer
         {
             for (var slot = 0; slot < _balloons.Length; slot++)
             {
+                var popped = state.IsPlayerPopped(slot);
+                var isNewPop = _popBaselineInitialized &&
+                               popped && !_wasPopped[slot];
+                _wasPopped[slot] = popped;
+                if (isNewPop)
+                {
+                    PlayPopVfx(slot);
+                    cueAudioSource?.Play();
+                }
+
                 var balloon = _balloons[slot];
                 if (balloon == null)
                 {
                     continue;
                 }
 
-                var popped = state.IsPlayerPopped(slot);
                 var progress = Mathf.Clamp(
                     state.GetPlayerProgress(slot),
                     0f,
                     BalloonBlowRules.MaxProgressPercent);
-                if (popped && !_wasPopped[slot])
-                {
-                    cueAudioSource?.Play();
-                }
-                _wasPopped[slot] = popped;
 
                 var normalized = progress /
                                  BalloonBlowRules.MaxProgressPercent;
@@ -312,6 +325,24 @@ namespace MazeParty.Multiplayer
                     normalized);
                 balloon.SetScale(targetScale, popped);
             }
+
+            _popBaselineInitialized = true;
+        }
+
+        private void PlayPopVfx(int slot)
+        {
+            if (popBurstVfxPrefab == null || balloonAnchors == null ||
+                slot < 0 || slot >= balloonAnchors.Length ||
+                balloonAnchors[slot] == null)
+            {
+                return;
+            }
+
+            OneShotVfxPool.Play(
+                popBurstVfxPrefab,
+                balloonAnchors[slot].position,
+                Quaternion.identity,
+                1.05f);
         }
 
         private void SetWorldPresentationActive(bool active)
@@ -324,6 +355,10 @@ namespace MazeParty.Multiplayer
 
             _worldVisibilityInitialized = true;
             _worldVisible = active;
+            if (!active)
+            {
+                _popBaselineInitialized = false;
+            }
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(active);

@@ -39,6 +39,7 @@ namespace MazeParty.Multiplayer
             new Transform[SnowySpinRules.PlayerCount];
         [SerializeField] private Renderer[] ballRenderers =
             new Renderer[SnowySpinRules.PlayerCount];
+        [SerializeField] private GameObject fallImpactVfxPrefab;
 
         private readonly float[] _fallStartedAt =
             new float[SnowySpinRules.PlayerCount];
@@ -60,6 +61,7 @@ namespace MazeParty.Multiplayer
 
         public GameObject ArenaPresentation => arenaPresentation;
         public CinemachineCamera SharedCamera => sharedCamera;
+        public GameObject FallImpactVfxPrefab => fallImpactVfxPrefab;
 
         public Transform GetPlayerBall(int slot)
         {
@@ -95,6 +97,11 @@ namespace MazeParty.Multiplayer
             playerBalls = balls;
             ballRenderers = renderers;
             ConfigureCamera();
+        }
+
+        public void ConfigureVfx(GameObject fallImpactPrefab)
+        {
+            fallImpactVfxPrefab = fallImpactPrefab;
         }
 
         private void Awake()
@@ -181,12 +188,26 @@ namespace MazeParty.Multiplayer
                 }
 
                 var ball = playerBalls[slot];
+                var position = state.GetPlayerPosition(slot);
                 var eliminated = state.IsEliminated(slot);
                 if (eliminated && !_wasEliminated[slot])
                 {
                     _fallStartedAt[slot] = _hadVisibleFrame
                         ? Time.unscaledTime
                         : Time.unscaledTime - FallDurationSeconds;
+                    if (_hadVisibleFrame && fallImpactVfxPrefab != null)
+                    {
+                        var impactPosition = arenaPresentation.transform
+                            .TransformPoint(new Vector3(
+                                position.x,
+                                BallPresentationHeight * 0.5f,
+                                position.y));
+                        OneShotVfxPool.Play(
+                            fallImpactVfxPrefab,
+                            impactPosition,
+                            Quaternion.identity,
+                            0.8f);
+                    }
                 }
                 _wasEliminated[slot] = eliminated;
 
@@ -204,7 +225,6 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                var position = state.GetPlayerPosition(slot);
                 var target = arenaPresentation.transform.TransformPoint(
                     new Vector3(
                         position.x,

@@ -14,6 +14,24 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
+
+        [Test]
+        public void HazardPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkMinefieldState).GetMethod(
+                "PlayHazardVfxRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(3));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[2].ParameterType,
+                Is.EqualTo(typeof(Vector3)));
+        }
+
         [Test]
         public void MinefieldScene_PreservesAuthoritativeLayoutAndAdditiveContract()
         {

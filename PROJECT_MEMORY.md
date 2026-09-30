@@ -8,8 +8,13 @@
 
 - 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
 - 작업 브랜치: `dev/UI`
-- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, 전체 EditMode 374/374 통과,
-  실패·스킵 0. 2026-09-30 Windows Development(Mono x64) 빌드 성공.
+- 최근 자동 검증: Unity 6000.6.0f1 컴파일 오류 0, VFX 집중 EditMode 34/34 및
+  전체 EditMode 397/397 통과(실패·스킵 0). `dotnet build`는 오류 0, 기존 경고
+  115개이며 2026-09-30 Windows Development(Mono x64) 빌드는
+  `Builds/Windows-Development-20260930-180455/MazeParty.exe`로 성공했다.
+- 표준 `Builds/Windows-Development`는 이전 Player 프로세스가 `DSTORAGE.dll`을
+  잡은 채 Windows 종료 상태에 남아 덮어쓸 수 없다. 빌드 유틸리티는 이 경우
+  시간표시가 붙은 형제 폴더로 자동 대체하며 실제 성공 경로를 로그에 남긴다.
 - 비차단 기존 경고: Ignore 경로 무료 캐릭터 에디터 스크립트의 `CS0414` 2개
 - 로컬 Ignore 캐릭터 팩의 `Resources/Scripts/MaterialImporter.cs`는 에디터 전용인데
   일반 런타임 어셈블리에 포함되어 Player 빌드를 막으므로, 파일 전체를
@@ -19,6 +24,10 @@
   `-window-mode`, `-monitor`, `-popupwindow`, `-parentHWND`, 대소문자·`flag=value`
   포함)가 있으면 시작 설정이 해상도·화면 모드를 덮어쓰지 않는다. 품질과 FPS 설정은
   그대로 적용한다. 저해상도 창 4개 D3D11 실행 중 새 재부팅·bugcheck는 없었다.
+- Unity 6000.6 Windows Player는 여러 인스턴스가 동시에 `Application.Quit` 또는
+  `Environment.Exit`을 호출하면 native shutdown에서 수 분 머물 수 있다. Development
+  E2E는 결과 파일을 동기 저장한 뒤 Windows `TerminateProcess`로 종료하며 성공/실패
+  exit code를 보존한다. 종료 스모크는 실패 마커 기록 1ms 뒤 code 2 종료를 확인했다.
 
 ### 2026-09-30 4인 Development 빌드 플레이테스트
 
@@ -28,21 +37,22 @@
   `100→80→60→40→20→0`으로 감소했고, 사망·묘비·리스폰 칸 `(13, 0)` 복귀·체력
   100·보호 상태를 확인했다. 같은 칸 전투에서는 실제 펀치 RPC로 체력 `100→95`를
   확인했다.
-- 미니게임은 `BombPassing`, `BalloonBlow`, `RedLightGreenLight`, `ArenaCombat`,
-  `Minefield`, `SequenceMemory`, `WrongWay`, `GiftGrab`, `Race`, `TerritoryPaint`,
-  `CliffBarrage`, `SnowySpin`, `StableFooting`, `BouncingBalls`, `TagChase` 순으로
+- 미니게임은 `SequenceMemory`, `WrongWay`, `SnowySpin`, `BalloonBlow`, `TagChase`,
+  `Minefield`, `CliffBarrage`, `GiftGrab`, `BouncingBalls`, `StableFooting`,
+  `TerritoryPaint`, `Race`, `RedLightGreenLight`, `ArenaCombat`, `BombPassing` 순으로
   중복·누락 없이 한 번씩 로드했다. 네 Player 모두 실제 준비 RPC와 게임별 라우팅 입력
   smoke를 통과했고, 프로덕션 결과·보상·승리 정산 경로를 확인했다.
-- 시상식은 피해량·획득 골드 수상과 최종 순위를 확인했다. 네 Player 모두 복귀를
+- 시상식은 아이템 사용·총 골드 획득 수상과 최종 순위를 확인했다. 네 Player 모두 복귀를
   제출했고, 보드·미니게임 씬 언로드 뒤 4인 세션을 유지한 채 Lobby 단계와 준비 해제를
   확인했다.
 - 자동화 시간 안에 전 여정을 검증하기 위해 보드 이동, 첫 실제 전투 타격 뒤 남은 전투
   시간, 미니게임 결과 확정은 Development 전용 훅으로 가속했다. 따라서 15종의 실제
   씬·어댑터·네트워크 입력·정산은 검증했지만, 각 게임을 자연 제한시간까지 플레이한
   조작 세부·자연 종료 검증으로 보지는 않는다.
-- 근거 로그: `C:/Unity/MazeParty/Logs/FullMatchE2E-20260930-061306`. 네 Player의
-  pass·Lobby 복귀 마커가 모두 존재하며 Player 로그에서
-  `exception|error|failed|fatal|disconnect|crash` 일치가 없었다.
+- 기능 근거 로그: `C:/Unity/MazeParty/Logs/FullMatchE2E-20260930-174245`. 네 Player의
+  pass·Lobby 복귀 마커가 모두 존재하고 JSONL에 실패 이벤트가 없다. 이 실행 뒤 발견한
+  native shutdown 지연은 최종 빌드의 종료 경로로 보정했으며 근거는
+  `C:/Unity/MazeParty/Logs/ExitSmoke-20260930-180530`이다.
 
 ## 확정된 구현 계약
 
@@ -119,6 +129,40 @@
 - 9종 아이템 아이콘은 Git 추적 경로로 복사하지 않고
   `Assets/Ignore/AIImage/Icons` 원본을 퀵슬롯·상점에서 공용한다.
 
+### VFX 제작 기준
+
+- VFX는 `Assets/Ignore/AllIn1VfxToolkit` v2.32를 사용하고 원본 에셋은 수정하거나
+  Git에 포함하지 않는다. 추적되는 `Assets/MazeParty/Prefabs/.../VFX` 프로젝트 전용
+  프리팹은 원본 계층을 완전히 Unpack하고 정리하되, 툴킷 재질·메시·텍스처·셰이더
+  GUID 의존은 유지한다. 다른 개발·빌드 환경에는 동일 GUID의 툴킷 설치가 필요하다.
+- 전체 연출은 유혈 표현이 없는 캐주얼·카툰풍으로 통일한다. 폭발은 `Toon Explosion`
+  계열, 작은 피격은 반짝임과 짧은 흔들림을 중심으로 하며 총구 화염과 탄도 VFX는
+  제작 범위에서 제외한다.
+- 플레이어 장막은 불꽃 윗선이 캐릭터 허리 높이인 1m에서 끝나게 한다. 파랑은 통과
+  가능, 빨강은 통과 불가이며 각 플레이어에게 자기 장막만 표시한다. 색상 외에도 통과
+  가능 장막은 옅고 부드럽게, 통과 불가 장막은 조밀하고 강하게 구분한다.
+- 장막 Collider와 VFX Transform을 분리하고, 숨김 상태에서는 Renderer뿐 아니라
+  ParticleSystem 방출·재생도 중지한다. 시각 효과가 게임 판정 Collider나 NetworkObject를
+  소유하지 않도록 한다.
+- 장막 불꽃은 런타임 billboard 외곽을 1m 이하로 제한한다. 통과 가능 방출 밀도는 0.45,
+  통과 불가는 2.0이며 `Reduce Flashes`는 지속 방출과 순간 burst를 함께 줄인다.
+- 공용 `CartoonExplosion`, `HitSpark`, `TaggerAura`는 툴킷 helper script, Collider,
+  NetworkObject, Distort/GrabPass 의존을 제거한 표시 전용 프리팹이다. 원샷 풀은 프리팹별
+  최대 24개, 유휴 보관 8개로 제한하고 씬 전환 정리, 외부 비활성 반환, 입자 자연 종료와
+  안전 timeout을 모두 처리한다.
+- 수류탄·지뢰와 Bomb Passing 폭발은 서버가 확정한 의미 이벤트 뒤 각 클라이언트에서
+  로컬 VFX로 재생한다. 일회성 효과는 풀링하고, 재접속·늦은 표시에서 과거 이벤트를
+  재생하지 않도록 최초 revision을 기준값으로 사용한다.
+- 보드 아이템은 Grenade·Mine만 폭발, Pistol·Sniper만 가벼운 피격 반짝임을 재생한다.
+  빗나간 공격에는 피격 SFX/VFX가 없고 신규 총구 화염·탄도는 추가하지 않는다.
+- 미니게임 15종 모두 핵심 가독성 VFX를 설치했다. Bouncing Balls·Cliff Barrage·
+  Gift Grab·Stable Footing·Minefield는 같은 프레임의 복수 이벤트를 잃지 않는 reliable
+  RPC를 사용하고, Sequence Memory는 권위 `actorSlot`, Race는 25걸음마다 및 결승선,
+  Arena 계열은 재진입 시 오래된 revision을 재생하지 않는 기준값을 사용한다.
+- 기존 `Reduce Flashes` 설정은 폭발·불꽃·신호의 발광, 순간 방출과 Light 강도에도
+  적용한다. 정확한 색·입자 수 같은 시각 세부값은 장기 EditMode 계약으로 고정하지 않고
+  4인 빌드 플레이테스트와 화면 검수로 확인한다.
+
 ### 미니게임 HUD
 
 - 게임은 항상 4인 구조를 유지한다.
@@ -152,6 +196,9 @@
 
 ## 남은 검증·TODO
 
+- 실제 화면에서 VFX 자연 재생시간, 투명 정렬, Bloom·Soft Particle, `Reduce Flashes`
+  차이를 보는 시각 QA. 자동 E2E는 이벤트·프리팹·빌드 포함 여부를 검증하지만 픽셀 품질은
+  판정하지 않는다.
 - 15종 미니게임 각각을 자연 제한시간까지 플레이하는 조작 세부·조기 종료·시간 종료·
   동률 분기 검증
 - pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위 수상식

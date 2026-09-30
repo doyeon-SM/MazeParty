@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -12,6 +13,22 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity";
+
+        [Test]
+        public void DamagePresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkCliffBarrageState).GetMethod(
+                "PlayDamagePresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(2));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[1].ParameterType,
+                Is.EqualTo(typeof(Vector2)));
+        }
 
         [Test]
         public void Scene_BindsSharedCameraAndReusableHazardPools()

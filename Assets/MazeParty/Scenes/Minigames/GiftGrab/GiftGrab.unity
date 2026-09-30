@@ -3892,6 +3892,7 @@ MonoBehaviour:
   - {fileID: 1592727050}
   arenaPresentation: {fileID: 396961884}
   cueAudioSource: {fileID: 1705933694}
+  actionBurstVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
 --- !u!114 &1633743494
 MonoBehaviour:
   m_ObjectHideFlags: 0

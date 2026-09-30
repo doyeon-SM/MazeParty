@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading;
+using System.Globalization;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -76,7 +77,9 @@ namespace MazeParty.Multiplayer.Editor
 
                 // Never validate against stale files from another backend.
                 // These two menu commands own their dedicated output folders.
-                ResetOutputDirectory(outputDirectory);
+                absoluteOutput = PrepareOutputPath(
+                    absoluteOutput,
+                    outputDirectory);
                 var report = BuildPipeline.BuildPlayer(new BuildPlayerOptions
                 {
                     scenes = scenes,
@@ -92,6 +95,8 @@ namespace MazeParty.Multiplayer.Editor
                 }
 
                 ValidateBackendArtifacts(backend, absoluteOutput);
+                UnityEngine.Debug.Log(
+                    "Windows build succeeded: " + absoluteOutput);
             }
             finally
             {
@@ -101,6 +106,33 @@ namespace MazeParty.Multiplayer.Editor
                         namedTarget,
                         previousBackend);
                 }
+            }
+        }
+
+        private static string PrepareOutputPath(
+            string preferredOutput,
+            string preferredDirectory)
+        {
+            try
+            {
+                ResetOutputDirectory(preferredDirectory);
+                return preferredOutput;
+            }
+            catch (IOException exception)
+            {
+                var fallbackDirectory = preferredDirectory + "-" +
+                    DateTime.Now.ToString(
+                        "yyyyMMdd-HHmmss",
+                        CultureInfo.InvariantCulture);
+                ResetOutputDirectory(fallbackDirectory);
+                var fallbackOutput = Path.Combine(
+                    fallbackDirectory,
+                    Path.GetFileName(preferredOutput));
+                UnityEngine.Debug.LogWarning(
+                    "The preferred Windows build folder is locked. " +
+                    "Building to an isolated fallback instead: " +
+                    fallbackOutput + "\n" + exception.Message);
+                return fallbackOutput;
             }
         }
 

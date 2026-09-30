@@ -47,6 +47,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer bombRenderer;
         [SerializeField] private Light bombLight;
         [SerializeField] private Light explosionFlashLight;
+        [SerializeField] private GameObject explosionVfxPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[BombPassingRules.PlayerCount];
@@ -77,6 +78,7 @@ namespace MazeParty.Multiplayer
         public Renderer BombRenderer => bombRenderer;
         public Light BombLight => bombLight;
         public Light ExplosionFlashLight => explosionFlashLight;
+        public GameObject ExplosionVfxPrefab => explosionVfxPrefab;
 
         public Transform GetPlayerTransform(int slot)
         {
@@ -100,7 +102,8 @@ namespace MazeParty.Multiplayer
             Transform bomb,
             Renderer bombVisual,
             Light warningLight,
-            Light explosionLight)
+            Light explosionLight,
+            GameObject explosionPrefab)
         {
             state = networkState;
             sharedCamera = camera;
@@ -110,6 +113,7 @@ namespace MazeParty.Multiplayer
             bombRenderer = bombVisual;
             bombLight = warningLight;
             explosionFlashLight = explosionLight;
+            explosionVfxPrefab = explosionPrefab;
             ConfigureCamera();
             if (Application.isPlaying)
             {
@@ -127,6 +131,7 @@ namespace MazeParty.Multiplayer
                 ? Mathf.Max(0.01f, explosionFlashLight.intensity)
                 : 4f;
             _colorBlock = new MaterialPropertyBlock();
+            OneShotVfxPool.Prewarm(explosionVfxPrefab, 2);
             ConfigureCamera();
             EnsurePlayers();
             if (explosionFlashLight == null)
@@ -398,31 +403,37 @@ namespace MazeParty.Multiplayer
             _explosionShakeStartedAt = Time.unscaledTime;
             _explosionShakeUntil =
                 _explosionShakeStartedAt + ExplosionShakeSeconds;
+            var slot = state.LastExplodedSlot;
+            var arena = arenaPresentation != null
+                ? arenaPresentation.transform
+                : transform;
+            Vector3 explosionPosition;
+            if (BombPassingRules.IsValidPlayerSlot(slot))
+            {
+                var position = state.GetPlayerPosition(slot);
+                explosionPosition = arena.TransformPoint(new Vector3(
+                    position.x,
+                    1.2f,
+                    position.y));
+            }
+            else
+            {
+                explosionPosition = bombTransform != null
+                    ? bombTransform.position
+                    : arena.position + Vector3.up;
+            }
+
+            OneShotVfxPool.Play(
+                explosionVfxPrefab,
+                explosionPosition,
+                Quaternion.identity,
+                1.35f);
             if (explosionFlashLight == null)
             {
                 return;
             }
 
-            var slot = state.LastExplodedSlot;
-            var arena = arenaPresentation != null
-                ? arenaPresentation.transform
-                : transform;
-            if (BombPassingRules.IsValidPlayerSlot(slot))
-            {
-                var position = state.GetPlayerPosition(slot);
-                explosionFlashLight.transform.position =
-                    arena.TransformPoint(new Vector3(
-                        position.x,
-                        1.2f,
-                        position.y));
-            }
-            else
-            {
-                explosionFlashLight.transform.position =
-                    bombTransform != null
-                        ? bombTransform.position
-                        : arena.position + Vector3.up;
-            }
+            explosionFlashLight.transform.position = explosionPosition;
             _explosionFlashUntil =
                 Time.unscaledTime + ExplosionFlashSeconds;
             explosionFlashLight.enabled = true;

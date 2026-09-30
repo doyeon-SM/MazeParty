@@ -97,6 +97,8 @@ namespace MazeParty.Editor
             BuildRedLightGreenLightScene(
                 CreateMaterials(),
                 LoadOrCreateHudPrefab());
+            MinigameVfxProjectSetup.InstallScene(
+                RedLightGreenLightScenePath);
             AssetDatabase.SaveAssets();
         }
 
