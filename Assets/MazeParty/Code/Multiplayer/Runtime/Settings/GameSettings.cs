@@ -376,6 +376,16 @@ namespace MazeParty.Multiplayer
 
         private static readonly IGameSettingsStore PlayerPrefsStore =
             new PlayerPrefsGameSettingsStore();
+        private static readonly string[] CommandLineDisplayArguments =
+        {
+            "-screen-width",
+            "-screen-height",
+            "-screen-fullscreen",
+            "-window-mode",
+            "-monitor",
+            "-popupwindow",
+            "-parentHWND"
+        };
         private static bool _initialized;
         private static GameSettingsData _applied = GameSettingsData.Default;
 
@@ -526,6 +536,43 @@ namespace MazeParty.Multiplayer
             return changes;
         }
 
+        internal static GameSettingsPlatformChanges GetStartupPlatformChanges(
+            IReadOnlyList<string> commandLineArguments)
+        {
+            if (commandLineArguments == null)
+            {
+                return GameSettingsPlatformChanges.All;
+            }
+
+            for (var argumentIndex = 0;
+                 argumentIndex < commandLineArguments.Count;
+                 argumentIndex++)
+            {
+                var argument = commandLineArguments[argumentIndex];
+                if (string.IsNullOrEmpty(argument))
+                {
+                    continue;
+                }
+
+                for (var optionIndex = 0;
+                     optionIndex < CommandLineDisplayArguments.Length;
+                     optionIndex++)
+                {
+                    var option = CommandLineDisplayArguments[optionIndex];
+                    if (string.Equals(argument, option,
+                            StringComparison.OrdinalIgnoreCase) ||
+                        argument.StartsWith(option + "=",
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return GameSettingsPlatformChanges.All &
+                               ~GameSettingsPlatformChanges.Display;
+                    }
+                }
+            }
+
+            return GameSettingsPlatformChanges.All;
+        }
+
         private static void ApplyPlatformSettings(
             GameSettingsData data,
             GameSettingsPlatformChanges changes,
@@ -570,18 +617,31 @@ namespace MazeParty.Multiplayer
             if (_initialized) return;
             _initialized = true;
             var loaded = Load();
-            var displaySize = GetCurrentDisplaySize();
-            var exclusiveFullscreenSizes =
-                GetCurrentExclusiveFullscreenSizes();
-            _applied = NormalizeForDisplay(
-                loaded,
-                displaySize.x,
-                displaySize.y,
-                exclusiveFullscreenSizes);
+            var startupChanges = GetStartupPlatformChanges(
+                Environment.GetCommandLineArgs());
+            Vector2Int displaySize;
+            IReadOnlyList<Vector2Int> exclusiveFullscreenSizes;
+            if ((startupChanges & GameSettingsPlatformChanges.Display) != 0)
+            {
+                displaySize = GetCurrentDisplaySize();
+                exclusiveFullscreenSizes =
+                    GetCurrentExclusiveFullscreenSizes();
+                _applied = NormalizeForDisplay(
+                    loaded,
+                    displaySize.x,
+                    displaySize.y,
+                    exclusiveFullscreenSizes);
+            }
+            else
+            {
+                displaySize = Vector2Int.zero;
+                exclusiveFullscreenSizes = null;
+                _applied = loaded.Sanitized();
+            }
             ApplyNonPlatformSettings(_applied);
             ApplyPlatformSettings(
                 _applied,
-                GameSettingsPlatformChanges.All,
+                startupChanges,
                 displaySize.x,
                 displaySize.y,
                 exclusiveFullscreenSizes);

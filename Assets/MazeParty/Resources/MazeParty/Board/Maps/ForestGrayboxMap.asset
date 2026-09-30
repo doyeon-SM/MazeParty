@@ -14,5 +14,5 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardMapDefinition
   mapId: forest-graybox
   displayName: Forest Graybox
-  contentVersion: 3
+  contentVersion: 4
   mapRootPrefab: {fileID: 805521105894613807, guid: 566768f6952a6a94497bb85f0846d51d, type: 3}

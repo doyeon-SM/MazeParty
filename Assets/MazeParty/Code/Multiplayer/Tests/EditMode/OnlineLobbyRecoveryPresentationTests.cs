@@ -151,7 +151,7 @@ namespace MazeParty.Multiplayer.Tests
                     new OnlinePlayerSnapshot("p2", "Player 3", 2, true, false),
                     new OnlinePlayerSnapshot("p3", "Player 4", 3, true, false)
                 },
-                new BoardMapSelection("forest-graybox", 3));
+                new BoardMapSelection("forest-graybox", 4));
         }
 
         private static T GetField<T>(OnlineLobbyView view, string name)

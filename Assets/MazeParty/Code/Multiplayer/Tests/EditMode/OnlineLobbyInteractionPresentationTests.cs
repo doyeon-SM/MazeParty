@@ -291,7 +291,7 @@ namespace MazeParty.Multiplayer.Tests
             return CreateSnapshot(
                 phase,
                 isHost,
-                new BoardMapSelection("forest-graybox", 3));
+                new BoardMapSelection("forest-graybox", 4));
         }
 
         private static SessionSnapshot CreateSnapshot(

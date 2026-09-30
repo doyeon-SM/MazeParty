@@ -98,7 +98,7 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void BoardMapSessionState_PreservesExactSelectionAndHostLobbyAuthority()
         {
-            var selection = new BoardMapSelection("forest-graybox", 3);
+            var selection = new BoardMapSelection("forest-graybox", 4);
             var snapshot = new SessionSnapshot(
                 "ABCD",
                 true,

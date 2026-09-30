@@ -14,7 +14,7 @@ namespace MazeParty.Editor
     internal static class ForestGrayboxMapAuthoring
     {
         internal const string MapId = "forest-graybox";
-        internal const int ContentVersion = 3;
+        internal const int ContentVersion = 4;
         internal const string MapFolder =
             "Assets/MazeParty/Resources/MazeParty/Board/Maps";
         internal const string DefinitionPath = MapFolder + "/ForestGrayboxMap.asset";
@@ -84,8 +84,8 @@ namespace MazeParty.Editor
         private static readonly Vector2[][] TileFootprints =
         {
             new[] { new Vector2(3.6f, 3.6f), new Vector2(-2.099999f, 4.350001f), new Vector2(-3.1f, -2.849999f), new Vector2(3.599999f, -3.349999f) },
-            new[] { new Vector2(-0.75f, 4.6f), new Vector2(-6.673803f, 0.862461f), new Vector2(-2.116027f, -2.912461f), new Vector2(4.866026f, -4.662462f), new Vector2(4.923803f, 0.862461f) },
-            new[] { new Vector2(-2.25f, 4.35f), new Vector2(-3.617691f, -2.299999f), new Vector2(4.117691f, -3.550001f), new Vector2(3.867691f, 2.949999f) },
+            new[] { new Vector2(-0.75f, 4.6000004f), new Vector2(-6.6738033f, 0.8624611f), new Vector2(0.13397217f, -7.9124603f), new Vector2(4.366026f, -4.912462f), new Vector2(4.9238033f, 0.8624611f) },
+            new[] { new Vector2(-2.25f, 4.3500004f), new Vector2(-6.867691f, 1.2000008f), new Vector2(4.117691f, -3.5500011f), new Vector2(3.867691f, 2.9499989f) },
             new[] { new Vector2(-2.75f, 3.6f), new Vector2(-2.867691f, -2.049999f), new Vector2(3.367691f, -3.550001f), new Vector2(3.367691f, 2.699999f) },
             new[] { new Vector2(3.1f, 3.6f), new Vector2(-4.349999f, 3.6f), new Vector2(-4.35f, -2.599998f), new Vector2(3.849999f, -2.6f) },
             new[] { new Vector2(4.75f, 1.85f), new Vector2(-4.423803f, 1.612461f), new Vector2(-3.616027f, -4.66246f), new Vector2(3.866026f, -4.162462f) },
@@ -95,8 +95,8 @@ namespace MazeParty.Editor
             new[] { new Vector2(-1.75f, 3.35f), new Vector2(-3.867691f, -1.8f), new Vector2(3.367691f, -3.3f), new Vector2(6.117691f, 2.45f) },
             new[] { new Vector2(-5f, 3.85f), new Vector2(-4.367691f, -1.3f), new Vector2(3.617691f, -2.050001f), new Vector2(3.367691f, 5.199999f) },
             new[] { new Vector2(2.1f, 3.349999f), new Vector2(-5.35f, 1.349999f), new Vector2(-3.6f, -4.849999f), new Vector2(4.849998f, -3.35f) },
-            new[] { new Vector2(-0.25f, 5.6f), new Vector2(-4.923803f, 0.862461f), new Vector2(-1.616028f, -4.41246f), new Vector2(6.116026f, -2.412461f), new Vector2(4.173803f, 1.36246f) },
-            new[] { new Vector2(-2f, 3.85f), new Vector2(-5.867691f, -1.299999f), new Vector2(0.867691f, -6.050001f), new Vector2(4.617691f, -0.800001f) },
+            new[] { new Vector2(-0.25f, 5.3500004f), new Vector2(-4.9238033f, 0.8624611f), new Vector2(-1.6160278f, -4.4124603f), new Vector2(6.116026f, -2.4124613f), new Vector2(4.9238033f, 5.362461f) },
+            new[] { new Vector2(2.75f, 3.1000004f), new Vector2(-5.867691f, -1.2999992f), new Vector2(0.86769104f, -6.050001f), new Vector2(6.117691f, -6.050001f) },
             new[] { new Vector2(-2f, 4.6f), new Vector2(-4.617691f, -2.049999f), new Vector2(0.117691f, -4.800001f), new Vector2(4.867691f, -0.300001f) },
             new[] { new Vector2(5.099998f, 2.6f), new Vector2(-4.099999f, 4.1f), new Vector2(-4.6f, -2.349998f), new Vector2(2.349998f, -3.85f) },
             new[] { new Vector2(4.25f, 2.85f), new Vector2(-2.923803f, 3.112461f), new Vector2(-3.616027f, -2.91246f), new Vector2(3.616026f, -3.412462f) },
@@ -259,9 +259,9 @@ namespace MazeParty.Editor
             }
 
             var playerStartTiles = new BoardTile[PlayerSlotRules.Count];
-            playerStartTiles[1] = tiles[1];
-            playerStartTiles[2] = tiles[22];
-            playerStartTiles[3] = tiles[3];
+            playerStartTiles[1] = tiles[9];
+            playerStartTiles[2] = tiles[14];
+            playerStartTiles[3] = tiles[19];
             var anchors = CreateSpawnAnchors(root.transform, tiles[3], playerStartTiles);
 
             topology.Configure(tiles, gates.ToArray());
@@ -569,6 +569,7 @@ namespace MazeParty.Editor
             {
                 new ConnectionSpec(0, 1),
                 new ConnectionSpec(1, 2),
+                new ConnectionSpec(1, 3),
                 new ConnectionSpec(2, 3),
                 new ConnectionSpec(3, 4),
                 new ConnectionSpec(4, 5),
@@ -582,6 +583,7 @@ namespace MazeParty.Editor
                 new ConnectionSpec(10, 11),
                 new ConnectionSpec(11, 12),
                 new ConnectionSpec(12, 13),
+                new ConnectionSpec(12, 14),
                 new ConnectionSpec(13, 14),
                 new ConnectionSpec(14, 15),
                 new ConnectionSpec(15, 16),

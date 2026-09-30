@@ -268,6 +268,45 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void Settings_StartupDisplayApplicationYieldsToCommandLineOverrides()
+        {
+            var nonDisplayChanges = GameSettingsPlatformChanges.Quality |
+                                    GameSettingsPlatformChanges.FrameRate;
+            var cases = new[]
+            {
+                ((string[])null, GameSettingsPlatformChanges.All),
+                (new string[0], GameSettingsPlatformChanges.All),
+                (new[] { "MazeParty.exe" }, GameSettingsPlatformChanges.All),
+                (new[] { "MazeParty.exe", "-auth-profile", "player1" },
+                    GameSettingsPlatformChanges.All),
+                (new[] { "MazeParty.exe", "-screen-width", "1280" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-SCREEN-HEIGHT=720" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-screen-fullscreen", "0" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-window-mode", "borderless" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-monitor", "2" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-popupwindow" },
+                    nonDisplayChanges),
+                (new[] { "MazeParty.exe", "-parentHWND", "12345" },
+                    nonDisplayChanges)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    GameSettings.GetStartupPlatformChanges(testCase.Item1),
+                    Is.EqualTo(testCase.Item2),
+                    testCase.Item1 == null
+                        ? "<null>"
+                        : string.Join(" ", testCase.Item1));
+            }
+        }
+
+        [Test]
         public void Settings_NormalizeForDisplayAlignsStoredOptionAndApplicationPlan()
         {
             var cases = new[]

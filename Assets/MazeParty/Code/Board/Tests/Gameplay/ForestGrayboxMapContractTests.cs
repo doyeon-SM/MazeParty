@@ -35,7 +35,7 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(definition.MapId, Is.EqualTo("forest-graybox"));
             Assert.That(definition.DisplayName, Is.EqualTo("Forest Graybox"));
-            Assert.That(definition.ContentVersion, Is.EqualTo(3));
+            Assert.That(definition.ContentVersion, Is.EqualTo(4));
             Assert.That(
                 AssetDatabase.GetAssetPath(definition.MapRootPrefab),
                 Is.EqualTo(PrefabPath));
@@ -74,7 +74,7 @@ namespace MazeParty.Gameplay.Tests
                 Is.True,
                 string.Join("\n", validation.Issues.Select(issue => issue.Message)));
             Assert.That(tiles.Count, Is.EqualTo(42));
-            Assert.That(gates.Count, Is.EqualTo(47));
+            Assert.That(gates.Count, Is.EqualTo(49));
             Assert.That(tiles.Select(tile => tile.Coordinate).Distinct().Count(),
                 Is.EqualTo(tiles.Count));
             Assert.That(tiles.Count(tile => tile.TileType == BoardTileType.Start),
@@ -134,6 +134,8 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(twiceSignedArea, Is.GreaterThan(0f),
                 "The authored outer loop must be counterclockwise in XZ space.");
+            AssertDirectedPath(edgeSet, tiles, 1, 3);
+            AssertDirectedPath(edgeSet, tiles, 12, 14);
             AssertDirectedPath(edgeSet, tiles, 4, 23, 24, 25, 26, 27, 28, 12);
             AssertDirectedPath(edgeSet, tiles, 8, 29, 30, 31, 26);
             AssertDirectedPath(edgeSet, tiles, 26, 32, 33, 34, 17);
@@ -145,13 +147,24 @@ namespace MazeParty.Gameplay.Tests
                         .Distinct()
                         .Count() == 2)
                 .Select(tile => tile.Coordinate.x),
-                Is.EquivalentTo(new[] { 4, 8, 20, 24, 26 }));
+                Is.EquivalentTo(new[] { 1, 4, 8, 12, 20, 24, 26 }));
             Assert.That(tiles.All(tile => CanReachAll(topology, tile)), Is.True,
                 "The directed forest graph must remain strongly connected.");
 
             Assert.That(mapRoot.PlayerStartTiles.Count, Is.EqualTo(4));
             Assert.That(mapRoot.PlayerStartTiles[0], Is.Null);
             Assert.That(mapRoot.PlayerStartTiles.Skip(1).All(tile => tile != null), Is.True);
+            Assert.That(
+                Enumerable.Range(0, 4)
+                    .Select(slot => mapRoot.GetStartTile(slot).Coordinate)
+                    .ToArray(),
+                Is.EqualTo(new[]
+                {
+                    new Vector2Int(3, 0),
+                    new Vector2Int(9, 0),
+                    new Vector2Int(14, 0),
+                    new Vector2Int(19, 0)
+                }));
             Assert.That(mapRoot.PlayerSpawnAnchors.Count, Is.EqualTo(4));
             for (var slot = 0; slot < 4; slot++)
             {
@@ -263,7 +276,7 @@ namespace MazeParty.Gameplay.Tests
                     "Dirt is missing from route " + key);
             }
 
-            Assert.That(visited, Has.Count.EqualTo(47));
+            Assert.That(visited, Has.Count.EqualTo(49));
         }
 
         private static void AssertDirectedPath(
