@@ -18,6 +18,12 @@ namespace MazeParty.Multiplayer
     {
         private const int LandingEffectCount = 9;
 
+        /// <summary>
+        /// Room icon capacity of every board map view. Authored maps may hold at most this
+        /// many tiles; freeform maps place each room from its tile at runtime.
+        /// </summary>
+        public const int MaxRoomCount = 100;
+
         [Serializable]
         public sealed class Room
         {
@@ -66,7 +72,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardMapMineGraphic mineGraphic;
         private Bounds _mineBounds;
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
-        private readonly List<BoardTile> _orderedTiles = new List<BoardTile>(BoardMapView.CellCount);
+        private readonly List<BoardTile> _orderedTiles = new List<BoardTile>(MaxRoomCount);
         private readonly List<Vector3> _footprintVertices = new List<Vector3>(BoardTileFootprint.MaxVertexCount);
         private BoardTopology _distanceTopology;
         private Vector2Int? _distanceSource, _distanceShop;
@@ -111,7 +117,7 @@ namespace MazeParty.Multiplayer
                     effectIconColors == null || typeIconColors.Length != 4 || effectIconColors.Length != LandingEffectCount ||
                     (radiusInTiles > 0f && (circularMask == null || !circularMask.enabled ||
                         circularMask.GetComponent<BoardMapCircleGraphic>() == null)) ||
-                    rooms.Length != BoardMapView.CellCount || players.Length != MultiplayerConstants.MaxPlayers ||
+                    rooms.Length != MaxRoomCount || players.Length != MultiplayerConstants.MaxPlayers ||
                     localHighlights.Length != players.Length || tileNames.Length != 4 ||
                     effectNames.Length != LandingEffectCount || compassPoints.Length != 8)
                     return false;

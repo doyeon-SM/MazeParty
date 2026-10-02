@@ -308,13 +308,15 @@ namespace MazeParty.Multiplayer.Tests
                         GameText.T("Forest Graybox"))));
                 Assert.That(previous.gameObject.activeSelf, Is.True);
                 Assert.That(next.gameObject.activeSelf, Is.True);
-                Assert.That(previous.interactable, Is.False,
-                    "The shipped catalog currently contains one selectable map.");
-                Assert.That(next.interactable, Is.False);
+                Assert.That(previous.interactable, Is.True,
+                    "The shipped catalog contains two selectable maps (forest-graybox, maze-graybox).");
+                Assert.That(next.interactable, Is.True);
+                previous.interactable = false;
+                next.interactable = false;
                 previous.onClick.Invoke();
                 next.onClick.Invoke();
                 Assert.That(deltas, Is.Empty,
-                    "Disabled single-map controls must not publish requests.");
+                    "Disabled map controls must not publish requests.");
 
                 previous.interactable = true;
                 next.interactable = true;

@@ -176,8 +176,8 @@
   플레이어는 같은 영역에서 동기화된 현재 맵 이름만 확인한다.
 - 선택 순서는 프로덕션 `BoardMapCatalog.Maps` 순서를 따르며, 선택한 맵의
   `MapId`와 `ContentVersion`을 세션 및 새 경기 시작에 사용한다.
-- 현재 프로덕션 카탈로그에는 `Forest Graybox` 한 개만 등록되어 있으므로 선택 버튼은
-  비활성화하되, 이후 맵이 추가되면 같은 UI에서 순환 선택한다.
+- 현재 프로덕션 카탈로그에는 `Forest Graybox`(0번, 새 세션 기본값)와 `Maze Graybox`(1번)
+  두 개가 등록되어 있어 호스트의 좌우 버튼이 활성화되고 같은 UI에서 순환 선택한다.
 - 저장 경기를 이어갈 때는 저장된 맵 선택을 우선하며 호스트가 다른 맵으로 바꾸지 않는다.
 
 ### 숲 맵 바닥과 흙길
@@ -202,6 +202,41 @@
 - 보드 씬은 `Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat`
   스카이박스를 사용하며 Main Camera는 Skybox clear flags, 환경광은 Skybox 모드로 둔다.
   다른 개발·빌드 환경에도 같은 Ignore 에셋과 GUID가 필요하다.
+
+### 미로 맵 (Maze Graybox)
+
+- 2026-10-02 `Forest Graybox`를 복제해 `Maze Graybox`를 추가했다. mapId `maze-graybox`,
+  표시 이름 `Maze Graybox`(ko `미로 그레이박스`), 콘텐츠 버전 1이다.
+- 에셋: `Resources/MazeParty/Board/Maps/MazeGrayboxMap.asset`,
+  `Resources/MazeParty/Board/Maps/MazeGrayboxMapRoot.prefab`,
+  `Art/Board/Maze/MazeGroundTerrain.asset`. 정의↔프리팹 상호 참조와 Terrain은 미로 전용
+  에셋만 가리키며 숲 에셋과 공유하지 않는다. 프리팹 내부 이름은 `Maze Ground`, `Maze Tile NN`.
+- 복제 시점의 칸·연결·시작/리스폰·플레이어 시작 위치는 숲과 동일한 42칸·49연결이었다.
+  2026-10-02 사용자가 미로의 칸 사이 연결을 직접 모두 삭제했으며 이 상태를 유지한다.
+  미로 전용 연결·배치는 `MazeParty/Board/Map Authoring` 창으로 새로 작성한다.
+- 미로 타일 Footprint `localVertices`는 `Maze Tile 00 - Normal` 기준 8×8m 정사각형
+  `(4,4) (4,-4) (-4,-4) (-4,4)`으로 통일한다.
+- 미로는 사용자가 배치한 8×8 격자 64칸·80개 연결로 확정한다. 시작 칸 `(0,0)`, 리스폰 칸
+  `(2,2) (2,5) (5,2) (5,5)`, 플레이어 시작 칸은 슬롯 순서대로 `(0,0) (7,0) (7,7) (0,7)`이다.
+- 미로 타일 좌표는 월드 X 순서를 열, Z 순서를 행으로 하는 `(열, 행)` 0~7 격자 좌표다.
+  칸 위치·연결은 그대로 두고 좌표만 매겨 중복 좌표 검증 오류를 해소했다.
+- 보드 미니맵·전체 맵은 방 아이콘 100개(`BoardMinimapView.MaxRoomCount`)를 지원하며 Map Authoring
+  타일 한도도 같은 상수를 쓴다. 49개를 넘는 방은 `BoardMapRoomCapacityUpgrade`가 마지막
+  `Map Cell`을 복제해 채우고, 미니맵 설치 파이프라인도 이 단계를 거친다. 7×7 개요 패널은
+  레거시 격자 맵 전용이며 자유 배치 맵에서는 표시하지 않는다.
+- 2026-10-02 Validate Authored Map 결과 `Map authoring contracts are valid.`로 미로 맵을 확정했다.
+- 2026-10-02 15:57 미로 프리팹 편집 화면이 열린 상태에서 전체 EditMode 테스트를 실행했고, 테스트 종료
+  시점(15:57:12)에 프리팹이 타일 1개·연결 0개였던 이전 상태로 자동 저장되며 덮어써졌다. 15:51:33 임포트
+  결과를 기준으로 64칸·80연결을 복원했고(원본과 값·참조 차이 0건, 타일 64개 `TileNormalA` 연결 유지),
+  복원 중 진단용 파일 로드로 OnlineBootstrap에 생긴 사본도 제거했다. 프리팹 편집 화면을 닫은 뒤 테스트를
+  실행하고, 디스크 프리팹은 `LoadSerializedFileAndForget`로 읽지 않는다(로드한 오브젝트가 활성 씬에 생김).
+- `Maze Ground` 지형은 사방 40m 확장해 160×153m(위치 `-80.25, -0.12, -77.88`)이며
+  높이맵 129, 알파맵·베이스맵 512다. 숲의 흙길 페인트는 지웠고 전체가 잔디 레이어다.
+- 숲 전용 에디터 도구(`Create / Refresh Forest Graybox`, `Forest Ground + Dirt Paths`)는
+  숲 경로만 갱신하므로 미로에는 적용되지 않는다. 숲 재생성은 카탈로그에서 숲 항목만 0번으로
+  다시 넣고 미로 항목은 유지한다.
+- `OnlineLobbyInteractionPresentationTests`의 맵 선택 테스트는 2개 맵 기준(호스트 버튼 활성)으로
+  갱신했고, 비활성 버튼이 요청을 발행하지 않는 검증은 유지했다.
 
 ### 아이템 시각 자산
 
@@ -287,3 +322,14 @@
   동률 분기 검증
 - pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위 수상식
 - 별도 PC, 고지연, IL2CPP 릴리즈 후보
+- 대기방에서 `Maze Graybox` 선택 후 4인 경기 시작·저장 경기 복구 실제 플레이 확인
+- 미로 레이아웃을 바꾸면 흙길 지형을 다시 칠할 미로용 바닥 갱신 수단이 필요하다
+- `SequenceMemory/Npc.prefab`에 루트 `LocalizedFontScope` 추가 여부 확인 (현재 EditMode 1건 실패)
+- 2026-10-02 OnlineBootstrap 씬은 이웃 지형 8개를 제거해 커밋 `829c40c`와 동일하게 정리했다. 그 지형들이 쓰던
+  `Art/Board/Maze/TerrainData_*.asset` 10개는 어디서도 참조되지 않으며 삭제 여부 결정이 남았다.
+- `ForestGrayboxMapRoot.prefab`이 15:07:30 재생성 형식(`Gate NN to NN`)으로 저장되어 커밋과 다르다. 49개
+  연결 조합은 커밋과 같다. 의도된 변경인지 확인하고 아니면 커밋 버전으로 되돌린다.
+- 2026-10-02 콘솔 분석(코드 수정 없음): `A prefab somehow lost its way...` 22,308건은 복구 중 진단 로드로 생긴
+  타일 조각 때문이며 씬 재로드 후 멈췄다. 씬 밖 사본 6개가 메모리에 남아 있어 에디터 재시작으로 정리한다.
+- 로비 점광원 4개(Warm Cell Light) Soft 그림자 24장이 2048 아틀라스를 넘어 URP가 해상도를 1/4로 줄인다는 경고 처리 방안 결정
+- 플레이 종료 후 `[Wire] FATAL The header part of a frame could not be read.`가 세션 참가 상태 종료 때마다 재현되는지 확인

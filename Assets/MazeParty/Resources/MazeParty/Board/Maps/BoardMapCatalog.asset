@@ -14,3 +14,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardMapCatalog
   maps:
   - {fileID: 11400000, guid: 115319df689cc5646aad2a11920ba257, type: 2}
+  - {fileID: 11400000, guid: f3f8de6ee90426d47886d9b9e9f9f752, type: 2}

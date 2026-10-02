@@ -320,6 +320,7 @@ Master,전체,マスター,总音量
 Map: {0},맵: {0},マップ: {0},地图：{0}
 MATCH COMPLETE,매치 종료,マッチ終了,比赛结束
 MATCH COMPLETE: all 15 turns have finished.,매치 종료: 15턴이 모두 끝났습니다.,マッチ終了：全15ターンが終了しました。,比赛结束：全部15回合已完成。
+Maze Graybox,미로 그레이박스,迷路のグレーボックス,迷宫灰盒
 MazeParty Online (4 Players),MazeParty 온라인 (4인),MazeParty オンライン (4人),MazeParty 在线 (4人)
 Mine,지뢰,地雷,地雷
 MINEFIELD,지뢰밭,地雷原,雷区

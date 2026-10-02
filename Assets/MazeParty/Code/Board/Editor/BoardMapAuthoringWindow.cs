@@ -19,7 +19,8 @@ namespace MazeParty.Editor
         private const float StartAnchorHeightTolerance = 0.05f;
         private const int MinimumPolygonSides = 3;
         private const int MaximumPolygonSides = 5;
-        private const int MaximumMapTileCount = 49;
+        private const int MaximumMapTileCount =
+            MazeParty.Multiplayer.BoardMinimapView.MaxRoomCount;
 
         private readonly List<AuthoringIssue> _issues = new List<AuthoringIssue>();
         private BoardMapCatalog _catalog;
