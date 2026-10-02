@@ -48,6 +48,10 @@
   `Assets/Ignore/MazePartyGenerated/Materials`의 URP 파생 재질로 교체한다. centered·grid
   파생 메시는 `Assets/Ignore/MazePartyGenerated/Meshes`에 두고, 외부 원본 Collider는
   공용 환경 래퍼에서 제거한다.
+- 프로덕션 미니게임 씬 15종은 보드와 동일한
+  `Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat`
+  Skybox와 Skybox ambient mode를 사용한다. 미니게임 전용 카메라를 추가하지 않고
+  보드의 지속 Main Camera·Cinemachine 경로는 유지한다.
 - Red Light / Green Light에는 감시인형을 두지 않고 SciFi 신호 패널만 사용한다.
   Balloon Blow는 펌프·스테이션 없이 플레이어 입 위치에서 풍선을 부는 표현을 사용한다.
   Sequence Memory 진행 NPC는 공용 `PlayerAvatarPresentation.prefab`과 같은 형태를
@@ -59,6 +63,9 @@
   nested 래퍼는 Stable Footing `Tile Surface`에만 유지한다. Wrong Way의 각 Lane은
   `Start Platform`, `Step 01~50`, `Finish Platform` 총 52개 surface anchor를 유지하며
   각 기존 MeshFilter가 `SharedNatureGroundCentered` 파생 메시를 직접 참조한다.
+- Stable Footing의 세 심벌은 Modern UI Pack의 흰색 Sprite를 타일과 안전 심벌판에
+  공용한다. 네트워크 호환을 위해 내부 `Cross/Circle/Square` 값과 바인딩 이름은
+  유지하고, 표시만 순서대로 `Heart Filled`/`Star Filled`/`Sun Filled`로 매핑한다.
 - 나머지 광범위 바닥은 `NatureGroundGrid_*` 결합 메시로 맵별 1 Renderer를 사용한다.
   RLGL·Minefield는 `4x9`, Wrong Way 배경은 `3x9`, Balloon Blow·Sequence Memory는
   `4x2`, Gift Grab·Bomb Passing·Arena Combat·Cliff Barrage는 `4x4`, Tag Chase는

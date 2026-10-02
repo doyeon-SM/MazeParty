@@ -31,6 +31,7 @@
 | `SharedFinishGate` | Polytope `PT_Modular_Gate_Wood_01` | Wrong Way 결승, Race 결승 |
 | `SharedOutdoorFence` | Fantasy Demo `fence` | Red Light / Green Light 4면 경계 |
 | `SharedNatureGroundTile` | Pandazole `TileGround_01` | Stable Footing `Tile Surface`의 nested visual에만 사용 |
+| Stable Footing 심벌 | Modern UI `Heart Filled`, `Star Filled`, `Weather/Sun Filled` | 흰색 SpriteRenderer로 타일과 `Safe Symbol Display`에 공통 적용. 내부 Cross/Circle/Square 순서·바인딩은 유지 |
 | `SharedNatureGroundCentered` | `TileGround_01` centered 파생 메시 | Wrong Way 각 Lane의 `Start Platform`, `Step 01~50`, `Finish Platform` 총 52개 surface anchor에 직접 사용 |
 | `NatureGroundGrid_*` 결합 메시 | `TileGround_01` grid 파생 메시 | RLGL·Minefield `4x9`, Wrong Way 배경 `3x9`, Balloon Blow·Sequence Memory `4x2`, Gift Grab·Bomb Passing·Arena Combat·Cliff Barrage `4x4`, Tag Chase `5x4`, Race `3x8` 바닥을 각각 1 Renderer로 구성 |
 | 신호 패널 | SciFi `switch_007` mesh | Red/Green Signal Renderer와 Light 유지 |
@@ -82,9 +83,11 @@ Collider는 모두 제거한다.
    사용하며 레일 fence는 후속 장식이다.
 3. **Red Light / Green Light** — `NatureGroundGrid_4x9` 바닥, Fantasy fence,
    SciFi 2등식 신호를 사용한다. Observer는 만들지 않는다.
-4. **Stable Footing** — `SharedNatureGroundTile` nested visual과
-   Cross/Circle/Square 인서트 3개를 공유한다. 공용 바닥 중 유일하게 nested tile 래퍼를
-   유지하며 48개 authority tile root도 그대로 둔다.
+4. **Stable Footing** — `SharedNatureGroundTile` nested visual을 사용하고, 타일과
+   `Safe Symbol Display`의 심벌은 Modern UI의 흰색 `Heart Filled`, `Star Filled`,
+   `Weather/Sun Filled` 스프라이트를 공통 사용한다. 기존 내부 Cross/Circle/Square 순서와
+   직렬화 바인딩은 각각 Heart/Star/Sun에 대응하도록 유지한다. 공용 바닥 중 유일하게
+   nested tile 래퍼를 유지하며 48개 authority tile root도 그대로 둔다.
 5. **Balloon Blow** — `object_017` 1개를 4색 풍선에 공유하고 기존 knot와
    `NatureGroundGrid_4x2` 무대 바닥을 유지한다. 펌프·호스·스테이션은 만들지 않는다.
 6. **Gift Grab** — SciFi `box_002`와 기존 ribbon/bow를 선물로 사용하고 `ring`을

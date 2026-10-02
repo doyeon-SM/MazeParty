@@ -14,6 +14,14 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
+        private const string StableFootingPrefabFolder =
+            "Assets/MazeParty/Prefabs/Minigames/StableFooting/";
+        private const string HeartSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Heart Filled.png";
+        private const string StarSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
+        private const string SunSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Weather/Sun Filled.png";
 
         [Test]
         public void PushPresentationRpc_IsReliablePerEvent()
@@ -30,6 +38,15 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(byte)));
             Assert.That(parameters[2].ParameterType,
                 Is.EqualTo(typeof(Vector3)));
+        }
+
+        [Test]
+        public void SymbolPrefabs_UseWhiteModernUiSprites()
+        {
+            AssertSymbolPrefab(
+                StableFootingPrefabFolder + "Tile.prefab");
+            AssertSymbolPrefab(
+                StableFootingPrefabFolder + "SafeSymbolDisplay.prefab");
         }
 
         [Test]
@@ -75,6 +92,20 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         property.objectReferenceValue,
                         Is.Not.Null,
+                        propertyName);
+                }
+                var safeSymbolReferences = new[]
+                {
+                    "safeSymbolCrossRenderer",
+                    "safeSymbolCircleRenderer",
+                    "safeSymbolSquareRenderer"
+                };
+                foreach (var propertyName in safeSymbolReferences)
+                {
+                    Assert.That(
+                        serializedView.FindProperty(propertyName)
+                            .objectReferenceValue,
+                        Is.InstanceOf<SpriteRenderer>(),
                         propertyName);
                 }
                 Assert.That(
@@ -195,6 +226,51 @@ namespace MazeParty.Multiplayer.Tests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        private static void AssertSymbolPrefab(string prefabPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            Assert.That(prefab, Is.Not.Null, prefabPath);
+
+            AssertSymbol(
+                prefab.transform,
+                "Cross Mark",
+                HeartSpritePath,
+                prefabPath);
+            AssertSymbol(
+                prefab.transform,
+                "Circle Mark",
+                StarSpritePath,
+                prefabPath);
+            AssertSymbol(
+                prefab.transform,
+                "Square Mark",
+                SunSpritePath,
+                prefabPath);
+        }
+
+        private static void AssertSymbol(
+            Transform prefabRoot,
+            string symbolName,
+            string spritePath,
+            string prefabPath)
+        {
+            var symbol = FindDescendant(prefabRoot, symbolName);
+            Assert.That(symbol, Is.Not.Null,
+                prefabPath + " / " + symbolName);
+
+            var renderer = symbol.GetComponent<SpriteRenderer>();
+            Assert.That(renderer, Is.Not.Null,
+                prefabPath + " / " + symbolName);
+
+            var expectedSprite =
+                AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+            Assert.That(expectedSprite, Is.Not.Null, spritePath);
+            Assert.That(renderer.sprite, Is.EqualTo(expectedSprite),
+                prefabPath + " / " + symbolName);
+            Assert.That(renderer.color, Is.EqualTo(Color.white),
+                prefabPath + " / " + symbolName);
         }
 
         private static Transform FindDescendant(

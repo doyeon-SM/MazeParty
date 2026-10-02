@@ -26,7 +26,7 @@ RenderSettings:
   m_AmbientIntensity: 1
   m_AmbientMode: 0
   m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
-  m_SkyboxMaterial: {fileID: 10304, guid: 0000000000000000f000000000000000, type: 0}
+  m_SkyboxMaterial: {fileID: 2100000, guid: ab675e6698bde46fd87143fb0d7580cb, type: 2}
   m_HaloStrength: 0.5
   m_FlareStrength: 1
   m_FlareFadeSpeed: 3
@@ -2372,18 +2372,18 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 8497243508194102776, guid: 584482bd041b6094ea74101d8d2f0129, type: 3}
   m_PrefabInstance: {fileID: 1047435066}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &1047435068 stripped
-MeshRenderer:
+--- !u!212 &1047435068 stripped
+SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 3967989917063841103, guid: 584482bd041b6094ea74101d8d2f0129, type: 3}
   m_PrefabInstance: {fileID: 1047435066}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &1047435069 stripped
-MeshRenderer:
+--- !u!212 &1047435069 stripped
+SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 5793378797587537176, guid: 584482bd041b6094ea74101d8d2f0129, type: 3}
   m_PrefabInstance: {fileID: 1047435066}
   m_PrefabAsset: {fileID: 0}
---- !u!23 &1047435070 stripped
-MeshRenderer:
+--- !u!212 &1047435070 stripped
+SpriteRenderer:
   m_CorrespondingSourceObject: {fileID: 6169618590251500533, guid: 584482bd041b6094ea74101d8d2f0129, type: 3}
   m_PrefabInstance: {fileID: 1047435066}
   m_PrefabAsset: {fileID: 0}
