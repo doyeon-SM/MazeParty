@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/Race/Race.unity";
         [Test]
-        public void Scene_PreservesFourLaneSharedCamera()
+        public void Scene_PreservesFourLanePlayerFollowCamera()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -91,7 +91,6 @@ namespace MazeParty.Multiplayer.Tests
                         "Unity.Cinemachine.CinemachineCamera")
                     .ToArray();
                 Assert.That(cameras, Has.Length.EqualTo(1));
-                Assert.That(cameras[0].name, Is.EqualTo("CM_RaceShared"));
                 Assert.That(
                     roots.SelectMany(root =>
                         root.GetComponentsInChildren<Camera>(true)),

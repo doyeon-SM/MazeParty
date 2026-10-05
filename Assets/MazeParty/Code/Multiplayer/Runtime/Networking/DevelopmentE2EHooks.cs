@@ -116,6 +116,86 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        /// <summary>
+        /// Selects an authored board map through the same session metadata path
+        /// used by the lobby controls, but exposes completion to standalone QA.
+        /// </summary>
+        public async Task DevelopmentSelectBoardMapAsync(string mapId)
+        {
+            if (_destroyed || _sessions == null || !_sessions.IsInSession ||
+                !_sessions.Current.IsHost ||
+                _sessions.Current.Phase != MultiplayerConstants.LobbyPhase ||
+                string.IsNullOrWhiteSpace(mapId))
+            {
+                throw new InvalidOperationException(
+                    "A development board-map selection requires an active host lobby.");
+            }
+
+            var catalog = LoadBoardMapCatalog();
+            if (catalog == null ||
+                !catalog.TryGetMap(mapId.Trim(), out var definition) ||
+                definition == null || !definition.HasValidIdentity)
+            {
+                throw new InvalidOperationException(
+                    "Unknown development board map: " + mapId + ".");
+            }
+
+            var selection = BoardMapSelection.FromDefinition(definition);
+            if (_sessions.Current.BoardMapSelection == selection)
+            {
+                return;
+            }
+
+            if (IsBusy || !CanChangeBoardMapSelection())
+            {
+                throw new InvalidOperationException(
+                    "The board map cannot be changed in the current lobby state.");
+            }
+
+            await _sessions.SetBoardMapAsync(selection);
+            if (_sessions.Current.BoardMapSelection != selection)
+            {
+                throw new InvalidOperationException(
+                    "The development board-map selection was not synchronized.");
+            }
+        }
+
+        /// <summary>Selects the currently available stable recovery journal.</summary>
+        public Task DevelopmentSelectSavedMatchAsync()
+        {
+            return SelectSavedMatchAsync();
+        }
+
+        /// <summary>Reads recovery metadata without mutating or consuming it.</summary>
+        public MatchRecoveryLoadStatus DevelopmentPeekRecoverySnapshot(
+            out MatchRecoverySnapshot snapshot)
+        {
+            return new HostMinigameScheduleSession()
+                .TryPeekRecoverySnapshot(out snapshot);
+        }
+
+        /// <summary>
+        /// Prevents a staged crash-recovery process from reconnecting to the
+        /// abandoned playing room before it can join the new recovery lobby.
+        /// Must be called during BeforeSceneLoad.
+        /// </summary>
+        public static void DevelopmentClearPlayingReconnectTicket()
+        {
+            var key = BuildPlayingReconnectTicketKey();
+            if (PlayerPrefs.HasKey(key))
+            {
+                PlayerPrefs.DeleteKey(key);
+                PlayerPrefs.Save();
+            }
+        }
+
+        /// <summary>Discards QA recovery persistence after verification.</summary>
+        public void DevelopmentDiscardSavedMatch()
+        {
+            new HostMinigameScheduleSession().CompleteActive();
+            ResetHostMatchRecoveryChoice();
+        }
+
     }
 
     public sealed partial class NetworkPlayerAvatar
@@ -305,6 +385,34 @@ namespace MazeParty.Multiplayer
             return float.IsFinite(value.x) &&
                    float.IsFinite(value.y) &&
                    float.IsFinite(value.z);
+        }
+
+        /// <summary>
+        /// Gives every player identical ceremony inputs. This is intentionally
+        /// server-only and available solely in development acceptance builds.
+        /// </summary>
+        public bool DevelopmentSetAllCeremonyStatsEqualOnServer(
+            int keys,
+            int gold,
+            int minigameWins)
+        {
+            if (!IsServer || !IsSpawned || keys < 0 || gold < 0 ||
+                minigameWins < 0)
+            {
+                return false;
+            }
+
+            _keyCount.Value = keys;
+            _gold.Value = gold;
+            _minigameWins.Value = minigameWins;
+            _matchAwardProgress = MatchAwardProgress.Restore(
+                gold,
+                0,
+                0,
+                0,
+                0,
+                0);
+            return true;
         }
     }
 

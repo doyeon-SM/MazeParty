@@ -177,7 +177,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 new Color(0.018f, 0.024f, 0.036f);
             cameraObject.transform.SetPositionAndRotation(
                 BouncingBallsNetworkView.SharedCameraPosition,
-                BouncingBallsNetworkView.SharedCameraRotation);
+                BouncingBallsNetworkView.CalculatePlayerCameraRotation(
+                    LocalPlayerSlot));
             cameraObject.AddComponent<AudioListener>();
         }
 
@@ -350,8 +351,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                         break;
                 }
 
-                _productionView.GetShieldTransform(slot).position =
+                var shieldTransform =
+                    _productionView.GetShieldTransform(slot);
+                shieldTransform.position =
                     _arenaOrigin.TransformPoint(localPosition);
+                shieldTransform.rotation =
+                    _arenaOrigin.rotation *
+                    BouncingBallsNetworkView
+                        .CalculateShieldLocalRotation(slot);
                 SetRendererColor(
                     _productionView.GetShieldRenderer(slot),
                     PlayerColors[slot]);

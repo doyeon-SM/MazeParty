@@ -24,6 +24,9 @@ namespace MazeParty.Editor
         private const string RoundedPanelSpritePath =
             "Assets/Ignore/Modern UI Pack/Textures/Border/Rounded/1024px/" +
             "Rounded Filled 1024px.png";
+        private const string MatchSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
+            "FS000_Night_01.mat";
         private const string BootstrapPath = "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
         private const string BoardPath = "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string MinefieldPath = "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
@@ -264,6 +267,15 @@ namespace MazeParty.Editor
             var lobbyCanvasPrefab = LoadOrCreateLobbyCanvasPrefab();
             var scheduleTowerPrefab = LoadOrCreateScheduleTowerPrefab();
             var scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            var matchSkybox = AssetDatabase.LoadAssetAtPath<Material>(
+                MatchSkyboxPath);
+            if (matchSkybox == null)
+            {
+                throw new System.InvalidOperationException(
+                    "The shared match skybox is missing at " +
+                    MatchSkyboxPath + ".");
+            }
+            RenderSettings.skybox = matchSkybox;
 
             var cameraObject = new GameObject("Lobby Camera");
             cameraObject.tag = "MainCamera";

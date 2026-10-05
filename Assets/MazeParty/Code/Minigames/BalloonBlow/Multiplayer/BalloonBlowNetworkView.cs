@@ -13,6 +13,7 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class BalloonBlowNetworkView : MonoBehaviour
     {
+        public const float ArenaCenterX = 580f;
         public const float PlayerPresentationHeight = 1.05f;
         public const float SharedCameraOrthographicSize = 7.8f;
 
@@ -53,7 +54,7 @@ namespace MazeParty.Multiplayer
         private bool _popBaselineInitialized;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(0f, 11.5f, -16f);
+            new Vector3(ArenaCenterX, 11.5f, -16f);
 
         public static Quaternion SharedCameraRotation =>
             Quaternion.Euler(36f, 0f, 0f);

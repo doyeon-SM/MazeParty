@@ -27,6 +27,9 @@ namespace MazeParty.Editor
             CorePrefabFolder + "/BouncingBallsEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/BouncingBalls/Materials";
+        private const string SharedSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
+            "FS000_Night_01.mat";
 
         public const string ScenePath = "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity";
         public const string HudPrefabPath = "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab";
@@ -58,7 +61,7 @@ namespace MazeParty.Editor
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            Debug.Log("Bouncing Balls stage, shared camera, and authored HUD are ready.");
+            Debug.Log("Bouncing Balls stage, player-oriented camera, and authored HUD are ready.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -103,6 +106,15 @@ namespace MazeParty.Editor
                 NewSceneSetup.EmptyScene,
                 replaceSingleOpenScene ? NewSceneMode.Single : NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
+            var sharedSkybox =
+                AssetDatabase.LoadAssetAtPath<Material>(SharedSkyboxPath);
+            if (sharedSkybox == null)
+            {
+                throw new InvalidOperationException(
+                    "The shared minigame skybox is missing at " +
+                    SharedSkyboxPath + ".");
+            }
+            RenderSettings.skybox = sharedSkybox;
 
             var root = new GameObject("Bouncing Balls Network State");
             var arena = new GameObject("Arena Presentation");
@@ -151,11 +163,21 @@ namespace MazeParty.Editor
 
         private static ArenaReferences CreateArena(Transform parent, Materials materials)
         {
-            MinigameCorePrefabUtility.InstantiateOrSeed(
+            var environment = MinigameCorePrefabUtility.InstantiateOrSeed(
                 EnvironmentPrefabPath,
                 parent,
                 () => CreateEnvironmentTemplate(materials),
                 "Bouncing Balls Environment");
+            var centerDisc = FindDescendant(
+                environment.transform,
+                "Center Disc");
+            var centerDiscRenderer = centerDisc != null
+                ? centerDisc.GetComponent<Renderer>()
+                : null;
+            if (centerDiscRenderer != null)
+            {
+                centerDiscRenderer.enabled = false;
+            }
 
             var goalRoot = new GameObject("Goals").transform;
             goalRoot.SetParent(parent, false);
@@ -194,10 +216,9 @@ namespace MazeParty.Editor
                     CorePrefabFolder + "/Goal" + (slot + 1) + ".prefab");
                 var shield = CreatePrimitive("Shield " + (slot + 1),
                     PrimitiveType.Cube, shieldRoot, shieldPositions[slot],
-                    Quaternion.identity,
-                    vertical
-                        ? new Vector3(0.34f, 2.2f, 0.42f)
-                        : new Vector3(2.2f, 0.34f, 0.42f),
+                    BouncingBallsNetworkView
+                        .CalculateShieldLocalRotation(slot),
+                    new Vector3(2.2f, 0.34f, 0.42f),
                     materials.Shields[slot]);
                 shield = MinigameCorePrefabUtility.Connect(shield,
                     CorePrefabFolder + "/Shield" + (slot + 1) + ".prefab");
@@ -236,9 +257,15 @@ namespace MazeParty.Editor
             CreatePrimitive("Field", PrimitiveType.Cube, parent,
                 new Vector3(0f, 0f, 1.05f), Quaternion.identity,
                 new Vector3(16.4f, 16.4f, 0.35f), materials.Field);
-            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, parent,
-                new Vector3(0f, 0f, 0.72f), Quaternion.Euler(90f, 0f, 0f),
-                new Vector3(2.1f, 0.025f, 2.1f), materials.Trim);
+            var centerDisc = CreatePrimitive(
+                "Center Disc",
+                PrimitiveType.Cylinder,
+                parent,
+                new Vector3(0f, 0f, 0.72f),
+                Quaternion.Euler(90f, 0f, 0f),
+                new Vector3(2.1f, 0.025f, 2.1f),
+                materials.Trim);
+            centerDisc.GetComponent<Renderer>().enabled = false;
 
             var wallRoot = new GameObject("Boundary Walls").transform;
             wallRoot.SetParent(parent, false);
@@ -288,7 +315,8 @@ namespace MazeParty.Editor
             camera.Priority = 0;
             var lens = camera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
-            lens.OrthographicSize = 11f;
+            lens.OrthographicSize =
+                BouncingBallsNetworkView.SharedCameraOrthographicSize;
             lens.NearClipPlane = 0.1f;
             lens.FarClipPlane = 100f;
             camera.Lens = lens;

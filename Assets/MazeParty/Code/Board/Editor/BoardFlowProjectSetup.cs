@@ -21,6 +21,8 @@ namespace MazeParty.Editor
         private const string BoardFolder = Root + "/Board";
         private const string MaterialFolder = BoardFolder + "/Materials";
         private const string BoardPath = "Assets/MazeParty/Scenes/Board/Board.unity";
+        private const string RuntimeTerrainResourcesName =
+            "Runtime Terrain Resources (Build Placeholder)";
         internal const string BoardSkyboxPath =
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
 
@@ -185,6 +187,7 @@ namespace MazeParty.Editor
             ConfigureBoardEnvironment();
             CreateLighting();
             CreateBoardBackdrop(materials.Backdrop);
+            CreateRuntimeTerrainBuildPlaceholder();
             var topology = CreateTopology(materials);
             var cameras = CreateCameraRig();
             CreateBoardCanvas(cameras);
@@ -2196,6 +2199,39 @@ namespace MazeParty.Editor
             var backdrop = (GameObject)PrefabUtility.InstantiatePrefab(BoardWorldPrefabProjectSetup.EnsureBackdrop());
             backdrop.name = "Board Backdrop (No Gameplay Collision)";
             backdrop.transform.position = new Vector3(0f, -0.42f, 0f);
+        }
+
+        private static void CreateRuntimeTerrainBuildPlaceholder()
+        {
+            // Both production terrains are loaded from Resources prefabs at runtime.
+            // Unity only packages the engine-side Terrain rendering resources when a
+            // Terrain component exists in an enabled build scene, so retain one
+            // enabled component on an inactive GameObject as the build-time
+            // inclusion anchor. This matches Unity's documented placeholder form.
+            var terrainData = AssetDatabase.LoadAssetAtPath<TerrainData>(
+                ForestGroundAuthoring.TerrainDataPath);
+            if (terrainData == null)
+            {
+                throw new InvalidOperationException(
+                    "The runtime Terrain build placeholder requires " +
+                    ForestGroundAuthoring.TerrainDataPath + ".");
+            }
+
+            var renderPipeline = GraphicsSettings.currentRenderPipeline;
+            if (renderPipeline == null ||
+                renderPipeline.defaultTerrainMaterial == null)
+            {
+                throw new InvalidOperationException(
+                    "The active render pipeline does not provide a default terrain material.");
+            }
+
+            var placeholder = new GameObject(RuntimeTerrainResourcesName);
+            var terrain = placeholder.AddComponent<Terrain>();
+            terrain.terrainData = terrainData;
+            terrain.materialTemplate = renderPipeline.defaultTerrainMaterial;
+            terrain.drawInstanced = false;
+            terrain.drawTreesAndFoliage = false;
+            placeholder.SetActive(false);
         }
         private static BoardMaterials CreateMaterials()
         {

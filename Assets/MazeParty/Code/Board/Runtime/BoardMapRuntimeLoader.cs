@@ -14,6 +14,8 @@ namespace MazeParty.Gameplay
     {
         public const string CatalogResourcesPath =
             "MazeParty/Board/Maps/BoardMapCatalog";
+        public const string LegacyBackdropName =
+            "Board Backdrop (No Gameplay Collision)";
 
         [SerializeField] private BoardMapCatalog catalogOverride;
         [SerializeField] private BoardTopology legacyTopology;
@@ -361,21 +363,53 @@ namespace MazeParty.Gameplay
                 mapContainer = transform;
             }
 
-            if ((legacyContentRoots == null || legacyContentRoots.Length == 0) &&
-                legacyTopology != null)
+            var roots = new List<GameObject>();
+            var configuredRoots = legacyContentRoots ?? Array.Empty<GameObject>();
+            for (var index = 0; index < configuredRoots.Length; index++)
             {
-                var roots = new List<GameObject>();
+                AddUniqueRoot(roots, configuredRoots[index]);
+            }
+
+            if (roots.Count == 0 && legacyTopology != null)
+            {
                 for (var index = 0; index < legacyTopology.transform.childCount; index++)
                 {
                     var child = legacyTopology.transform.GetChild(index);
                     if (child.GetComponentInChildren<BoardTile>(true) != null ||
                         child.GetComponentInChildren<BoardGate>(true) != null)
                     {
-                        roots.Add(child.gameObject);
+                        AddUniqueRoot(roots, child.gameObject);
                     }
                 }
+            }
 
-                legacyContentRoots = roots.ToArray();
+            // Authored maps provide their own ground. The scene backdrop belongs to
+            // the legacy board presentation, so it must follow the same activation
+            // state even when older scenes omitted it from the serialized root list.
+            var scene = gameObject.scene;
+            if (scene.IsValid() && scene.isLoaded)
+            {
+                var sceneRoots = scene.GetRootGameObjects();
+                for (var index = 0; index < sceneRoots.Length; index++)
+                {
+                    if (sceneRoots[index] != null &&
+                        sceneRoots[index].name == LegacyBackdropName)
+                    {
+                        AddUniqueRoot(roots, sceneRoots[index]);
+                    }
+                }
+            }
+
+            legacyContentRoots = roots.ToArray();
+        }
+
+        private static void AddUniqueRoot(
+            ICollection<GameObject> roots,
+            GameObject candidate)
+        {
+            if (candidate != null && !roots.Contains(candidate))
+            {
+                roots.Add(candidate);
             }
         }
 

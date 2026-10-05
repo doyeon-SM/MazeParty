@@ -443,7 +443,7 @@ namespace MazeParty.Editor
                     name.Replace(" ", string.Empty),
                     color,
                     0.15f);
-            CreatePrimitive(
+            var marker = CreatePrimitive(
                 name,
                 PrimitiveType.Cylinder,
                 parent,
@@ -454,6 +454,7 @@ namespace MazeParty.Editor
                 new Vector3(0.75f, 0.025f, 0.75f),
                 material,
                 false);
+            marker.SetActive(false);
         }
 
         private static void CreateLighting(Transform parent)

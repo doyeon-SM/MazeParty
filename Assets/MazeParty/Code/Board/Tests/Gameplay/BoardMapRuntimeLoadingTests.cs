@@ -116,6 +116,41 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void CatalogMap_HidesLegacySceneBackdropAndLegacySelectionRestoresIt()
+        {
+            var backdrop = new GameObject(BoardMapRuntimeLoader.LegacyBackdropName);
+            var fixture = CreateFixture(includeRuntimeMap: true);
+            try
+            {
+                Assert.That(
+                    fixture.Loader.TryResolveFreshSelection(
+                        out var selection,
+                        out var resolveError),
+                    Is.True,
+                    resolveError);
+                Assert.That(
+                    fixture.Loader.TryActivate(selection, out var loadError),
+                    Is.True,
+                    loadError);
+                Assert.That(backdrop.activeSelf, Is.False,
+                    "An authored map must not render over the legacy board backdrop.");
+
+                Assert.That(
+                    fixture.Loader.TryActivate(
+                        BoardMapSelection.Legacy,
+                        out var legacyError),
+                    Is.True,
+                    legacyError);
+                Assert.That(backdrop.activeSelf, Is.True);
+            }
+            finally
+            {
+                fixture.Dispose();
+                UnityEngine.Object.DestroyImmediate(backdrop);
+            }
+        }
+
+        [Test]
         public void RecoverySelection_RejectsMissingContentVersion()
         {
             var fixture = CreateFixture(includeRuntimeMap: true);

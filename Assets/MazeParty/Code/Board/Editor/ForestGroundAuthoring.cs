@@ -330,7 +330,10 @@ namespace MazeParty.Editor
             }
 
             terrain.materialTemplate = renderPipeline.defaultTerrainMaterial;
-            terrain.drawInstanced = true;
+            // Unity 6 URP can leave runtime-instantiated Terrain invisible in
+            // standalone Players when the instanced path is enabled. Keep the
+            // stable non-instanced path for board maps loaded from Resources.
+            terrain.drawInstanced = false;
             terrain.drawTreesAndFoliage = false;
             terrain.heightmapPixelError = 4f;
             terrain.basemapDistance = 1000f;

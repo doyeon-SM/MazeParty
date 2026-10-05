@@ -156,6 +156,7 @@ namespace MazeParty.Editor
 
             var spawnRoot = new GameObject("Player Spawn Markers").transform;
             spawnRoot.SetParent(parent, false);
+            spawnRoot.gameObject.SetActive(false);
             for (var slot = 0; slot < SpawnPoints.Length; slot++)
             {
                 var position = SpawnPoints[slot] + Vector3.up * 0.035f;
@@ -251,9 +252,10 @@ namespace MazeParty.Editor
             CreatePrimitive("Outer Ring", PrimitiveType.Cylinder, center,
                 new Vector3(0f, 0.02f, 0f), Quaternion.identity,
                 new Vector3(2.6f, 0.035f, 2.6f), materials.Ring);
-            CreatePrimitive("Center Disc", PrimitiveType.Cylinder, center,
+            var centerDisc = CreatePrimitive("Center Disc", PrimitiveType.Cylinder, center,
                 new Vector3(0f, 0.055f, 0f), Quaternion.identity,
                 new Vector3(1.85f, 0.025f, 1.85f), materials.Center);
+            centerDisc.SetActive(false);
             MinigameCorePrefabUtility.StripColliders(environment);
             return environment;
         }

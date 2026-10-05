@@ -42,10 +42,10 @@ namespace MazeParty.Multiplayer
 
         private static readonly int[] StartTileIndices =
         {
+            19,
             20,
-            21,
-            26,
-            27
+            27,
+            28
         };
 
         private readonly NetworkVariable<bool> _matchActive =

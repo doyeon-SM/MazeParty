@@ -16,7 +16,6 @@ namespace MazeParty.Multiplayer
         public const float FirstPersonFieldOfView = 70f;
         public const float SpectatorFieldOfView = 58f;
         public const float SpectatorHeight = 12f;
-        public const float SpectatorBackOffset = 18f;
         public const float SpectatorFocusHeight = 0.8f;
         public const float ArenaCenterX = 1620f;
         public const float ArenaHalfWidth = 9f;
@@ -44,17 +43,18 @@ namespace MazeParty.Multiplayer
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
 
         public static Vector3 CalculateSpectatorCameraPosition(
-            Vector3 center) =>
-            center + Vector3.up * SpectatorHeight +
-            Vector3.back * SpectatorBackOffset;
+            Vector3 center)
+        {
+            var focus = center + Vector3.up * SpectatorFocusHeight;
+            return SharedCameraFraming.CalculatePosition(
+                focus,
+                SpectatorHeight - SpectatorFocusHeight);
+        }
 
         public static Quaternion CalculateSpectatorCameraRotation(
             Vector3 center)
         {
-            var position = CalculateSpectatorCameraPosition(center);
-            return Quaternion.LookRotation(
-                center + Vector3.up * SpectatorFocusHeight - position,
-                Vector3.up);
+            return SharedCameraFraming.Rotation;
         }
 
         public Transform GetSpawnMarker(int slot) =>

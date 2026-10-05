@@ -90,7 +90,30 @@ namespace MazeParty.Multiplayer.Tests
                 var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
                 var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
                 Assert.That(mines, Is.Not.Null);
-                Assert.That(mines.transform.parent, Is.EqualTo(route.transform.parent));
+                Assert.That(mines.transform.parent,
+                    Is.EqualTo(route.transform.parent));
+
+                var effectLayer = data.FindProperty("landingEffectLayer")
+                    .objectReferenceValue as RectTransform;
+                Assert.That(effectLayer, Is.Not.Null);
+                Assert.That(effectLayer.parent,
+                    Is.EqualTo(route.transform.parent));
+                var players = data.FindProperty("players");
+                Assert.That(players.arraySize,
+                    Is.EqualTo(MultiplayerConstants.MaxPlayers));
+                for (var slot = 0; slot < players.arraySize; slot++)
+                {
+                    var marker = players.GetArrayElementAtIndex(slot)
+                        .objectReferenceValue as UnityEngine.UI.Image;
+                    Assert.That(marker, Is.Not.Null);
+                    Assert.That(
+                        AssetDatabase.GetAssetPath(marker.sprite),
+                        Is.EqualTo(
+                            "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png"));
+                    Assert.That(marker.preserveAspect, Is.True);
+                    Assert.That(effectLayer.GetSiblingIndex(),
+                        Is.GreaterThan(marker.transform.GetSiblingIndex()));
+                }
             }
             Assert.That(badges, Is.Not.Null);
             Assert.That(badges.HasRequiredReferences, Is.True);

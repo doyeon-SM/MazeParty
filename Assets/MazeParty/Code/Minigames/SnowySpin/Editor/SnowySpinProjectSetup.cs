@@ -134,24 +134,27 @@ namespace MazeParty.Editor
         {
             var structure = new GameObject("Ice Arena");
             structure.transform.SetParent(parent, false);
-            CreatePrimitive("Ice Edge", PrimitiveType.Cylinder,
+            var iceEdge = CreatePrimitive("Ice Edge", PrimitiveType.Cylinder,
                 structure.transform,
                 new Vector3(0f, -0.38f, 0f),
                 new Vector3(ArenaRadius * 2f, 0.38f, ArenaRadius * 2f),
                 materials.Edge);
+            iceEdge.SetActive(false);
             CreatePrimitive("Ice Surface", PrimitiveType.Cylinder,
                 structure.transform,
                 new Vector3(0f, -0.34f, 0f),
                 new Vector3(15.45f, 0.36f, 15.45f), materials.Ice);
-            CreatePrimitive("Center Marker", PrimitiveType.Cylinder,
+            var centerMarker = CreatePrimitive("Center Marker", PrimitiveType.Cylinder,
                 structure.transform,
                 new Vector3(0f, 0.022f, 0f),
                 new Vector3(1.6f, 0.015f, 1.6f), materials.Center);
+            centerMarker.SetActive(false);
             MinigameCorePrefabUtility.Connect(structure,
                 CorePrefabFolder + "/IceArena.prefab");
 
             var spawnRoot = new GameObject("Player Spawn Markers").transform;
             spawnRoot.SetParent(parent, false);
+            spawnRoot.gameObject.SetActive(false);
             var ballRoot = new GameObject("Player Balls").transform;
             ballRoot.SetParent(parent, false);
             var references = new ArenaReferences

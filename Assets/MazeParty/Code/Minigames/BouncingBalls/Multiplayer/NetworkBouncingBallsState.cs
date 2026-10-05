@@ -222,7 +222,11 @@ namespace MazeParty.Multiplayer
             // Integrate the previous held input up to this authoritative
             // receive time before applying the new direction.
             AdvancePlayingModelOnServer(now);
-            _serverMatch.SetShieldInput(slot, (int)axis);
+            _serverMatch.SetShieldInput(
+                slot,
+                BouncingBallsRules.ProjectScreenAxisToShieldRail(
+                    slot,
+                    (int)axis));
             return true;
         }
 

@@ -360,6 +360,7 @@ namespace MazeParty.Editor
             var markerRoot = new GameObject("Player Spawn Markers")
                 .transform;
             markerRoot.SetParent(parent, false);
+            markerRoot.gameObject.SetActive(false);
             for (var slot = 0; slot < SpawnPoints.Length; slot++)
             {
                 CreatePrimitive("Spawn " + (slot + 1),

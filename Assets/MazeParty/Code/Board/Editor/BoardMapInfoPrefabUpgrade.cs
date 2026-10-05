@@ -19,8 +19,13 @@ namespace MazeParty.Editor
         private static void Upgrade(BoardMinimapView view, GameObject panel, bool full)
         {
             var data = new SerializedObject(view);
-            if (data.FindProperty("shopDistanceText").objectReferenceValue != null) return;
             var rooms = data.FindProperty("rooms");
+            EnsureLandingEffectLayer(data, rooms);
+            if (data.FindProperty("shopDistanceText").objectReferenceValue != null)
+            {
+                data.ApplyModifiedPropertiesWithoutUndo();
+                return;
+            }
             for (var index = 0; index < rooms.arraySize; index++)
             {
                 var room = rooms.GetArrayElementAtIndex(index);
@@ -69,6 +74,8 @@ namespace MazeParty.Editor
             data.FindProperty("shopDistanceIcon").objectReferenceValue = key;
             data.FindProperty("shopDistanceText").objectReferenceValue = label;
             data.ApplyModifiedPropertiesWithoutUndo();
+            EnsureLandingEffectLayer(data, rooms);
+            data.ApplyModifiedPropertiesWithoutUndo();
             var description = panel.transform.Find("Current Tile").GetComponent<Text>();
             Place(description.rectTransform, new Vector2(full ? 320f : 162f, full ? -684f : -387f),
                 new Vector2(full ? 600f : 300f, 44f));
@@ -98,6 +105,90 @@ namespace MazeParty.Editor
             rect.pivot = Vector2.one * .5f;
             rect.anchoredPosition = position;
             rect.sizeDelta = size;
+        }
+
+        private static void EnsureLandingEffectLayer(
+            SerializedObject data,
+            SerializedProperty rooms)
+        {
+            var projection = data.FindProperty("projection")
+                .objectReferenceValue as Arikan.MiniMapView;
+            var surface = projection != null ? projection.otherDotCanvas : null;
+            if (surface == null)
+                return;
+
+            var layer = surface.Find("Landing Effect Layer") as RectTransform;
+            if (layer == null)
+            {
+                var layerObject = new GameObject(
+                    "Landing Effect Layer",
+                    typeof(RectTransform));
+                layerObject.layer = LayerMask.NameToLayer("UI");
+                layerObject.transform.SetParent(surface, false);
+                layer = (RectTransform)layerObject.transform;
+            }
+
+            layer.anchorMin = Vector2.zero;
+            layer.anchorMax = Vector2.one;
+            layer.pivot = Vector2.one * 0.5f;
+            layer.anchoredPosition = Vector2.zero;
+            layer.sizeDelta = Vector2.zero;
+            layer.localScale = Vector3.one;
+            data.FindProperty("landingEffectLayer").objectReferenceValue = layer;
+
+            var markerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png");
+            if (markerSprite == null)
+            {
+                var markerAssets = AssetDatabase.LoadAllAssetsAtPath(
+                    "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png");
+                for (var index = 0; index < markerAssets.Length; index++)
+                {
+                    if (markerAssets[index] is Sprite sprite)
+                    {
+                        markerSprite = sprite;
+                        break;
+                    }
+                }
+            }
+
+            var players = data.FindProperty("players");
+            for (var slot = 0; slot < players.arraySize; slot++)
+            {
+                var marker = players.GetArrayElementAtIndex(slot)
+                    .objectReferenceValue as Image;
+                if (marker == null)
+                    continue;
+
+                if (marker.sprite == null)
+                    marker.sprite = markerSprite;
+                marker.type = Image.Type.Simple;
+                marker.preserveAspect = true;
+                marker.raycastTarget = false;
+            }
+
+            for (var index = 0; index < rooms.arraySize; index++)
+            {
+                var room = rooms.GetArrayElementAtIndex(index);
+                var floor = room.FindPropertyRelative("Floor")
+                    .objectReferenceValue as Image;
+                var effect = room.FindPropertyRelative("EffectIcon")
+                    .objectReferenceValue as BoardMapIcon;
+                if (floor == null || effect == null)
+                    continue;
+
+                var rect = effect.rectTransform;
+                if (rect.parent != layer)
+                    rect.SetParent(layer, false);
+                rect.anchorMin = rect.anchorMax = rect.pivot =
+                    Vector2.one * 0.5f;
+                rect.anchoredPosition = floor.rectTransform.anchoredPosition;
+                rect.localRotation = Quaternion.identity;
+                rect.localScale = Vector3.one;
+                effect.raycastTarget = false;
+            }
+
+            layer.SetAsLastSibling();
         }
     }
 }

@@ -18,7 +18,7 @@ namespace MazeParty.Multiplayer
         {
             public int OwnerSlot;
             public Vector3 Position, Velocity;
-            public float Life;
+            public float Life, FlightDuration;
         }
         private readonly List<PlantedMine> _boardMines = new List<PlantedMine>();
         private readonly List<Grenade> _boardGrenades = new List<Grenade>();
@@ -82,8 +82,21 @@ namespace MazeParty.Multiplayer
                 // Aim at board floor: the sweep, rather than a client collision, decides the impact.
                 target.y = avatar.transform.position.y - 1f;
                 var flight = Mathf.Max(.1f, item.ThrowFlightSeconds);
-                _boardGrenades.Add(new Grenade { OwnerSlot = avatar.AssignedSlot, Position = origin,
-                    Velocity = (target - origin) / flight - Physics.gravity * (.5f * flight) });
+                _boardGrenades.Add(new Grenade
+                {
+                    OwnerSlot = avatar.AssignedSlot,
+                    Position = origin,
+                    Velocity = (target - origin) / flight -
+                               Physics.gravity * (.5f * flight),
+                    FlightDuration = flight
+                });
+#if UNITY_EDITOR || DEBUG
+                DevelopmentBeginGrenadeObservation(
+                    origin,
+                    target,
+                    item.Range,
+                    flight);
+#endif
             }
             else if (id == PrototypeItemId.Mine)
             {
@@ -169,9 +182,16 @@ namespace MazeParty.Multiplayer
                 bool exploded = false;
                 while (remaining > 0f && !exploded)
                 {
+                    // ThrowFlightSeconds is the authored landing time. It is
+                    // also the hard range boundary: a missing/late floor hit
+                    // must not let the grenade continue past its 16m target
+                    // until the longer generic projectile failsafe expires.
+                    var simulationDuration = Mathf.Min(
+                        bomb.ProjectileLifetime,
+                        grenade.FlightDuration);
                     var lifetimeRemaining = Mathf.Max(
                         0f,
-                        bomb.ProjectileLifetime - grenade.Life);
+                        simulationDuration - grenade.Life);
                     if (lifetimeRemaining <= 0f)
                     {
                         ExplodeBoardItem(grenade.Position, grenade.OwnerSlot, bomb);
@@ -198,9 +218,14 @@ namespace MazeParty.Multiplayer
                         : grenade.Position + delta;
                     grenade.Velocity += Physics.gravity * step;
                     grenade.Life += step;
+#if UNITY_EDITOR || DEBUG
+                    DevelopmentRecordGrenadePosition(
+                        grenade.Position,
+                        grenade.Life);
+#endif
                     if (hit || BoardItemLifecycleRules.HasReachedProjectileLifetime(
                             grenade.Life,
-                            bomb.ProjectileLifetime))
+                            simulationDuration))
                     {
                         ExplodeBoardItem(grenade.Position, grenade.OwnerSlot, bomb);
                         _boardGrenades.RemoveAt(i);
@@ -344,6 +369,15 @@ namespace MazeParty.Multiplayer
             if (prefab == null) return;
             var view = Instantiate(prefab, (origin + end) * .5f, Quaternion.LookRotation(end - origin));
             view.transform.localScale = new Vector3(.025f, .025f, Vector3.Distance(origin, end));
+#if UNITY_EDITOR || DEBUG
+            DevelopmentRecordPresentedShot(
+                origin,
+                end,
+                item.Id,
+                didHit,
+                view.GetComponentInChildren<Rigidbody>(true) != null ||
+                view.GetComponentInChildren<NetworkObject>(true) != null);
+#endif
             Destroy(view, .08f);
         }
 

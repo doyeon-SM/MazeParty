@@ -267,6 +267,7 @@ namespace MazeParty.Editor
                         slot);
                 marker.transform.position =
                     new Vector3(start.x, 0.018f, start.y);
+                marker.SetActive(false);
             }
 
             return paintSurface.GetComponent<Renderer>();

@@ -94,8 +94,9 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
     }
 
     /// <summary>
-    /// The three accepted inputs. Presentation maps A to the high tone, S to
-    /// the middle tone and D to the low tone.
+    /// The three accepted inputs. Presentation maps A to Do (low), S to
+    /// Mi (middle) and D to Sol (high). AudioClip slots intentionally remain
+    /// empty until the final sound cues are supplied.
     /// </summary>
     public enum SequenceMemoryInput : byte
     {

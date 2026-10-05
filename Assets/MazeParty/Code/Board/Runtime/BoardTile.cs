@@ -27,7 +27,6 @@ namespace MazeParty.Gameplay
         private readonly HashSet<BoardTraversalState> _occupants = new HashSet<BoardTraversalState>();
         private readonly List<Vector3> _debugFootprintVertices = new List<Vector3>(
             BoardTileFootprint.MaxVertexCount);
-        private MaterialPropertyBlock _landingEffectProperties;
         private BoardLandingEffectType _landingEffect;
 
         public Vector2Int Coordinate => coordinate;
@@ -51,6 +50,7 @@ namespace MazeParty.Gameplay
         {
             ResolveFootprint();
             ResolveLandingEffectRenderer();
+            HidePersistentWorldPresentation();
         }
 
         public void Configure(Vector2Int gridCoordinate, BoardTileType type)
@@ -65,47 +65,23 @@ namespace MazeParty.Gameplay
                 ? BoardLandingEffectType.None
                 : effect;
             ResolveLandingEffectRenderer();
-            if (landingEffectRenderer == null)
-            {
-                return;
-            }
-
-            if (_landingEffect == BoardLandingEffectType.None)
-            {
-                landingEffectRenderer.SetPropertyBlock(null);
-                return;
-            }
-
-            _landingEffectProperties ??= new MaterialPropertyBlock();
-            landingEffectRenderer.GetPropertyBlock(_landingEffectProperties);
-            var color = LandingEffectColor(_landingEffect);
-            _landingEffectProperties.SetColor("_BaseColor", color);
-            _landingEffectProperties.SetColor("_Color", color);
-            landingEffectRenderer.SetPropertyBlock(_landingEffectProperties);
+            HidePersistentWorldPresentation();
         }
 
-        private static Color LandingEffectColor(BoardLandingEffectType effect)
+        private void HidePersistentWorldPresentation()
         {
-            switch (effect)
+            // Tiles remain authoritative navigation and landing-effect anchors,
+            // but their persistent world geometry is intentionally map-only.
+            // The minimap reads LandingEffect above and renders its own icon.
+            var renderers = GetComponentsInChildren<Renderer>(true);
+            for (var index = 0; index < renderers.Length; index++)
             {
-                case BoardLandingEffectType.GoldGain:
-                    return new Color(0.08f, 0.38f, 0.92f, 1f);
-                case BoardLandingEffectType.GoldLoss:
-                    return new Color(0.78f, 0.08f, 0.12f, 1f);
-                case BoardLandingEffectType.ItemReward:
-                    return new Color(0.62f, 0.16f, 0.82f, 1f);
-                case BoardLandingEffectType.Healing20:
-                    return new Color(0.08f, 0.68f, 0.3f, 1f);
-                case BoardLandingEffectType.Healing10:
-                    return new Color(0.12f, 0.78f, 0.58f, 1f);
-                case BoardLandingEffectType.Damage40:
-                    return new Color(0.82f, 0.04f, 0.08f, 1f);
-                case BoardLandingEffectType.Damage20:
-                    return new Color(1f, 0.38f, 0.08f, 1f);
-                case BoardLandingEffectType.SpecialEvent:
-                    return new Color(0.95f, 0.22f, 0.78f, 1f);
-                default:
-                    return Color.white;
+                renderers[index].enabled = false;
+            }
+
+            if (landingEffectRenderer != null)
+            {
+                landingEffectRenderer.SetPropertyBlock(null);
             }
         }
 
@@ -246,6 +222,16 @@ namespace MazeParty.Gameplay
 
         private void ResolveLandingEffectRenderer()
         {
+            var surface = transform.Find("Landing Effect Surface");
+            var surfaceRenderer = surface != null
+                ? surface.GetComponent<Renderer>()
+                : null;
+            if (surfaceRenderer != null)
+            {
+                landingEffectRenderer = surfaceRenderer;
+                return;
+            }
+
             if (landingEffectRenderer == null)
             {
                 landingEffectRenderer = GetComponent<Renderer>();

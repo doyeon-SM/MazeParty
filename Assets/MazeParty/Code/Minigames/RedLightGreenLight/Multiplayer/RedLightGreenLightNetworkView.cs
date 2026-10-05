@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer
     {
         public const float PlayerCameraHeight = 18f;
         public const float PlayerCameraOrthographicSize = 9f;
-        public const float PlayerCameraTiltDegrees = 10f;
+        public const float PlayerCameraTiltDegrees = 35f;
 
         private const float RunnerInterpolationSpeed = 16f;
 

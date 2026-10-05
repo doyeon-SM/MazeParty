@@ -270,6 +270,7 @@ namespace MazeParty.Editor
             var npcAnchor = new GameObject("NPC Anchor").transform;
             npcAnchor.SetParent(parent, false);
             npcAnchor.position = new Vector3(ArenaCenterX, 0f, 2.7f);
+            npcAnchor.gameObject.AddComponent<LocalizedFontScope>();
             CreatePrimitive(
                 "NPC Podium",
                 PrimitiveType.Cylinder,

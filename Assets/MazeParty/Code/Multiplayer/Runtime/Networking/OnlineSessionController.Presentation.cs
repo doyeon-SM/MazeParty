@@ -32,6 +32,15 @@ namespace MazeParty.Multiplayer
         {
             lobbyView?.SetPresentationVisible(enabled);
 
+            var arena = LobbyArena.Instance;
+            if (arena == null)
+            {
+                arena = FindAnyObjectByType<LobbyArena>(
+                    FindObjectsInactive.Include);
+            }
+
+            arena?.SetPresentationVisible(enabled);
+
             if (lobbyCamera != null)
             {
                 lobbyCamera.enabled = enabled;

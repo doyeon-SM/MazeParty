@@ -179,16 +179,33 @@ namespace MazeParty.Editor
             {
                 var root = Primitive("Tile" + suffix, PrimitiveType.Cube, null, Vector3.zero, new Vector3(7.72f,.2f,7.72f),
                     AssetDatabase.LoadAssetAtPath<Material>(Materials + "Room" + suffix + ".mat"));
+                var rootRenderer = root.GetComponent<Renderer>();
+                rootRenderer.enabled = false;
+                var landingSurface = Primitive(
+                    "Landing Effect Surface",
+                    PrimitiveType.Cube,
+                    root.transform,
+                    new Vector3(0f, 0.115f / 0.2f, 0f),
+                    new Vector3(
+                        7.4f / 7.72f,
+                        0.03f / 0.2f,
+                        7.4f / 7.72f),
+                    rootRenderer.sharedMaterial);
+                Object.DestroyImmediate(landingSurface.GetComponent<Collider>());
+                var landingRenderer = landingSurface.GetComponent<Renderer>();
+                landingRenderer.enabled = false;
                 var tile = root.AddComponent<BoardTile>();
                 tile.Configure(Vector2Int.zero, type);
                 var so = new SerializedObject(tile);
-                so.FindProperty("landingEffectRenderer").objectReferenceValue = root.GetComponent<Renderer>();
+                so.FindProperty("landingEffectRenderer").objectReferenceValue = landingRenderer;
                 so.ApplyModifiedPropertiesWithoutUndo();
                 var label = Label(root.transform, "Room Label", new Vector3(0,.56f,0), type.ToString().ToUpperInvariant());
                 label.transform.localRotation = Quaternion.Euler(90,0,0);
                 label.transform.localScale = Vector3.one * .05f;
                 label.fontSize = 30;
                 label.characterSize = .35f;
+                label.GetComponent<Renderer>().enabled = false;
+                label.gameObject.SetActive(false);
                 return root;
             });
         }

@@ -10,6 +10,160 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardMinimapProjectionTests
     {
         [Test]
+        public void LandingEffect_StaysVisibleOnMapWhileWorldTileStaysHidden()
+        {
+            var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+            var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                board.name = "Map-only landing effect tile";
+                var worldRenderer = board.GetComponent<Renderer>();
+                var tile = board.AddComponent<BoardTile>();
+                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
+                tile.ApplyLandingEffectPresentation(BoardLandingEffectType.GoldGain);
+
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(new[] { tile }, new BoardGate[0]);
+                var view = instance.GetComponent<BoardMinimapView>();
+                view.PrepareMap(topology, tile.Coordinate, 0, null);
+
+                var rooms = new SerializedObject(view).FindProperty("rooms");
+                var effectIcon = (BoardMapIcon)rooms.GetArrayElementAtIndex(0)
+                    .FindPropertyRelative("EffectIcon").objectReferenceValue;
+                var iconKind = new SerializedObject(effectIcon)
+                    .FindProperty("kind").enumValueIndex;
+
+                Assert.That(tile.LandingEffect,
+                    Is.EqualTo(BoardLandingEffectType.GoldGain));
+                Assert.That(worldRenderer.enabled, Is.False,
+                    "Landing effects must not re-enable the world tile block.");
+                Assert.That(effectIcon.enabled, Is.True,
+                    "The same landing effect remains visible on the map.");
+                Assert.That(iconKind,
+                    Is.EqualTo((int)BoardMapIconKind.GoldGain));
+            }
+            finally
+            {
+                Object.DestroyImmediate(board);
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+[Test]
+        public void PlayerAndEffectMarkers_AreCenteredOnTileWithEffectAbovePlayer()
+        {
+            var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+            var board = new GameObject("Centered map marker board");
+            try
+            {
+                board.transform.position = new Vector3(24f, 0f, -12f);
+                var tile = board.AddComponent<BoardTile>();
+                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
+                board.AddComponent<BoardTileFootprint>().Configure(new[]
+                {
+                    new Vector2(2f, -2f),
+                    new Vector2(8f, -2f),
+                    new Vector2(5f, 3f)
+                });
+                tile.ApplyLandingEffectPresentation(
+                    BoardLandingEffectType.ItemReward);
+                Assert.That(
+                    Vector3.Distance(
+                        tile.GetRecoveryCenter(),
+                        tile.transform.position),
+                    Is.GreaterThan(0.1f),
+                    "The fixture must distinguish the authored tile center from its transform.");
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(new[] { tile }, new BoardGate[0]);
+
+                foreach (var view in instance
+                             .GetComponentsInChildren<BoardMinimapView>(true))
+                {
+                    view.PrepareMap(
+                        topology,
+                        tile.Coordinate,
+                        0,
+                        null,
+                        tile.GetRecoveryCenter());
+                    view.PresentPlayerAtTile(
+                        0,
+                        tile,
+                        Color.magenta,
+                        true,
+                        BoardMinimapDisplayContext.TurnOverview);
+
+                    var data = new SerializedObject(view);
+                    var room = data.FindProperty("rooms")
+                        .GetArrayElementAtIndex(0);
+                    var floor = (Image)room.FindPropertyRelative("Floor")
+                        .objectReferenceValue;
+                    var effect = (BoardMapIcon)room
+                        .FindPropertyRelative("EffectIcon")
+                        .objectReferenceValue;
+                    var player = (Image)data.FindProperty("players")
+                        .GetArrayElementAtIndex(0).objectReferenceValue;
+                    var effectLayer = effect.rectTransform.parent;
+                    var boundEffectLayer = (RectTransform)data
+                        .FindProperty("landingEffectLayer").objectReferenceValue;
+                    var unusedEffect = (BoardMapIcon)data.FindProperty("rooms")
+                        .GetArrayElementAtIndex(1)
+                        .FindPropertyRelative("EffectIcon").objectReferenceValue;
+
+                    Assert.That(player.gameObject.activeSelf, Is.True);
+                    Assert.That(
+                        AssetDatabase.GetAssetPath(player.sprite),
+                        Is.EqualTo(
+                            "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png"),
+                        "The player marker must use the authored circular sprite.");
+                    Assert.That(player.preserveAspect, Is.True);
+                    Assert.That(player.color, Is.EqualTo(Color.magenta));
+                    Assert.That(effect.gameObject.activeSelf, Is.True);
+                    Assert.That(unusedEffect.gameObject.activeSelf, Is.False,
+                        "Unused effect overlays must not retain stale icons.");
+                    Assert.That(effect.enabled, Is.True);
+                    Assert.That(
+                        Vector2.Distance(
+                            player.rectTransform.anchoredPosition,
+                            floor.rectTransform.anchoredPosition),
+                        Is.LessThan(0.001f),
+                        "The player color circle must use the tile center.");
+                    Assert.That(
+                        Vector2.Distance(
+                            effect.rectTransform.anchoredPosition,
+                            floor.rectTransform.anchoredPosition),
+                        Is.LessThan(0.001f),
+                        "The landing-effect icon must use the tile center.");
+                    Assert.That(
+                        boundEffectLayer,
+                        Is.EqualTo(effectLayer),
+                        "The authored effect overlay binding must be preserved.");
+                    Assert.That(
+                        effectLayer.parent,
+                        Is.EqualTo(player.rectTransform.parent),
+                        "The effect overlay and player marker must share map coordinates.");
+                    Assert.That(
+                        effectLayer.GetSiblingIndex(),
+                        Is.GreaterThan(player.rectTransform.GetSiblingIndex()),
+                        "The landing-effect icon must render above the player circle.");
+                    Assert.That(
+                        effect.rectTransform.anchorMin,
+                        Is.EqualTo(Vector2.one * 0.5f));
+                    Assert.That(
+                        effect.rectTransform.anchorMax,
+                        Is.EqualTo(Vector2.one * 0.5f));
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(board);
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+
+        [Test]
         public void RouteDots_FollowLocalProjectionAndClearWhenShopIsUnavailable()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(

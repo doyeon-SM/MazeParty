@@ -16,7 +16,8 @@ namespace MazeParty.Multiplayer
     {
         public const float PlayerCameraHeight = 18f;
         public const float PlayerCameraOrthographicSize = 9f;
-        public const float PlayerCameraTiltDegrees = 10f;
+        public const float PlayerCameraTiltDegrees = 35f;
+        public const float PlayerCameraLookAheadDistance = 1.25f;
         private const float RunnerInterpolationSpeed = 16f;
 
         [SerializeField] private NetworkMinefieldState state;
@@ -58,8 +59,10 @@ namespace MazeParty.Multiplayer
             0f,
             0f);
 
-        public static Vector3 CalculatePlayerCameraPosition(Vector3 focus)
+        public static Vector3 CalculatePlayerCameraPosition(Vector3 playerPosition)
         {
+            var focus = playerPosition +
+                        Vector3.forward * PlayerCameraLookAheadDistance;
             var backwardOffset = Mathf.Tan(
                 PlayerCameraTiltDegrees * Mathf.Deg2Rad) *
                 PlayerCameraHeight;

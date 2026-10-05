@@ -6,13 +6,16 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Shared fixed-camera presentation for the four production race lanes.
+    /// Client-local player-follow presentation for the four production
+    /// race lanes.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class RaceNetworkView : MonoBehaviour
     {
         public const float PlayerPresentationHeight = 1.18f;
-        public const float SharedCameraOrthographicSize = 23f;
+        public const float PlayerCameraHeight = 18f;
+        public const float PlayerCameraOrthographicSize = 9f;
+        public const float PlayerCameraLookAheadDistance = 1.25f;
 
         private const int ProgressVfxStepInterval = 25;
 
@@ -44,13 +47,20 @@ namespace MazeParty.Multiplayer
         private bool _worldVisible;
         private bool _progressBaselineInitialized;
 
-        public static Vector3 SharedCameraPosition =>
-            MinigameCameraFraming.CalculateSharedPosition(
-                NetworkRaceState.TrackCenterX,
-                45f);
-
-        public static Quaternion SharedCameraRotation =>
+        public static Quaternion PlayerCameraRotation =>
             MinigameCameraFraming.SharedRotation;
+
+        public static Vector3 CalculatePlayerCameraPosition(
+            Vector3 playerPosition)
+        {
+            var focus = playerPosition +
+                        Vector3.forward * PlayerCameraLookAheadDistance;
+            return MinigameCameraFraming.CalculateSharedPosition(
+                       focus.x,
+                       PlayerCameraHeight,
+                       focus.z) +
+                   Vector3.up * focus.y;
+        }
 
         public GameObject ProgressVfxPrefab => progressVfxPrefab;
         public GameObject FinishVfxPrefab => finishVfxPrefab;
@@ -85,6 +95,7 @@ namespace MazeParty.Multiplayer
             state ??= GetComponent<NetworkRaceState>();
             ConfigureCamera();
             EnsurePlayers();
+            HideStartMarkerRenderers();
             SetWorldPresentationActive(false);
         }
 
@@ -114,6 +125,7 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(true);
             ResolveLocalSlot(match);
             RefreshPlayers(match);
+            RefreshPlayerCamera();
             RefreshProgressVfx();
             RegisterCamera();
         }
@@ -124,16 +136,22 @@ namespace MazeParty.Multiplayer
             {
                 return;
             }
+
             sharedCamera.Priority = 0;
             var lens = sharedCamera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
-            lens.OrthographicSize = SharedCameraOrthographicSize;
+            lens.OrthographicSize = PlayerCameraOrthographicSize;
             lens.NearClipPlane = 0.1f;
             lens.FarClipPlane = 100f;
             sharedCamera.Lens = lens;
+
+            var initialPlayerPosition = new Vector3(
+                NetworkRaceState.TrackCenterX,
+                PlayerPresentationHeight,
+                NetworkRaceState.TrackStartZ);
             sharedCamera.ForceCameraPosition(
-                SharedCameraPosition,
-                SharedCameraRotation);
+                CalculatePlayerCameraPosition(initialPlayerPosition),
+                PlayerCameraRotation);
         }
 
         private void EnsurePlayers()
@@ -232,6 +250,27 @@ namespace MazeParty.Multiplayer
                 player.Visual.SetEliminated(false);
             }
         }
+
+        private void RefreshPlayerCamera()
+        {
+            if (sharedCamera == null ||
+                _localSlot < 0 ||
+                _localSlot >= _players.Length)
+            {
+                return;
+            }
+
+            var localPlayer = _players[_localSlot];
+            if (localPlayer?.Root == null)
+            {
+                return;
+            }
+
+            sharedCamera.ForceCameraPosition(
+                CalculatePlayerCameraPosition(localPlayer.Root.position),
+                PlayerCameraRotation);
+        }
+
 
         private void RefreshProgressVfx()
         {
@@ -335,6 +374,31 @@ namespace MazeParty.Multiplayer
                 playerRoot.gameObject.SetActive(active);
             }
         }
+
+        private void HideStartMarkerRenderers()
+        {
+            if (arenaPresentation == null)
+            {
+                return;
+            }
+
+            for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
+            {
+                var marker = arenaPresentation.transform.Find(
+                    "Start Marker " + (slot + 1));
+                if (marker == null)
+                {
+                    continue;
+                }
+
+                var renderers = marker.GetComponentsInChildren<Renderer>(true);
+                for (var index = 0; index < renderers.Length; index++)
+                {
+                    renderers[index].enabled = false;
+                }
+            }
+        }
+
 
         private static void DisableGeneratedHitColliders(GameObject root)
         {

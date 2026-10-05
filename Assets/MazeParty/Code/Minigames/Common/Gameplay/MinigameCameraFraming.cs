@@ -8,24 +8,19 @@ namespace MazeParty.Gameplay
     /// </summary>
     public static class MinigameCameraFraming
     {
-        public const float TiltFromTopDownDegrees = 35f;
+        public const float TiltFromTopDownDegrees =
+            SharedCameraFraming.TiltFromTopDownDegrees;
 
-        public static Quaternion SharedRotation => Quaternion.Euler(
-            90f - TiltFromTopDownDegrees,
-            0f,
-            0f);
+        public static Quaternion SharedRotation => SharedCameraFraming.Rotation;
 
         public static Vector3 CalculateSharedPosition(
             float centerX,
             float height,
             float centerZ = 0f)
         {
-            var backwardOffset = Mathf.Tan(
-                TiltFromTopDownDegrees * Mathf.Deg2Rad) * height;
-            return new Vector3(
-                centerX,
-                height,
-                centerZ - backwardOffset);
+            return SharedCameraFraming.CalculatePosition(
+                new Vector3(centerX, 0f, centerZ),
+                height);
         }
     }
 }

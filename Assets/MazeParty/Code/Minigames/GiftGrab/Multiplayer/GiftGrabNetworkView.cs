@@ -412,11 +412,6 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < PlayerCount; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                var playerName =
-                    avatar != null &&
-                    !string.IsNullOrWhiteSpace(avatar.DisplayName)
-                        ? avatar.DisplayName
-                        : GameText.F("Player {0}", slot + 1);
                 var color = avatar != null
                     ? avatar.Appearance.BodyColor
                     : FallbackPlayerColors[slot];
@@ -452,11 +447,7 @@ namespace MazeParty.Multiplayer
                     baseLabels[slot] != null)
                 {
                     var label = baseLabels[slot];
-                    label.SetContent(
-                        GameText.F("{0} BASE", playerName),
-                        GameText.F("{0} GIFTS", state.GetStoredGiftCount(slot)),
-                        false,
-                        color);
+                    label.SetNumberOnly(state.GetStoredGiftCount(slot));
                     label.FaceCamera(outputCamera);
                 }
             }

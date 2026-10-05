@@ -48,7 +48,6 @@ namespace MazeParty.Gameplay
 
         [Header("Combat Spectator")]
         [SerializeField, Min(1f)] private float combatSpectatorHeight = 10f;
-        [SerializeField, Min(1f)] private float combatSpectatorBackOffset = 14f;
         [SerializeField, Range(10f, 120f)] private float combatSpectatorFieldOfView = 55f;
 
         private CinemachineBrain _brain;
@@ -550,14 +549,12 @@ namespace MazeParty.Gameplay
             lens.FieldOfView = Mathf.Clamp(combatSpectatorFieldOfView, 10f, 120f);
             combatSpectatorCamera.Lens = lens;
 
-            var position = _combatSpectatorFocus +
-                           Vector3.up * Mathf.Max(1f, combatSpectatorHeight) +
-                           Vector3.back * Mathf.Max(1f, combatSpectatorBackOffset);
-            var look = _combatSpectatorFocus - position;
-            var rotation = look.sqrMagnitude > 0.0001f
-                ? Quaternion.LookRotation(look.normalized, Vector3.up)
-                : Quaternion.Euler(45f, 0f, 0f);
-            combatSpectatorCamera.ForceCameraPosition(position, rotation);
+            var position = SharedCameraFraming.CalculatePosition(
+                _combatSpectatorFocus,
+                Mathf.Max(1f, combatSpectatorHeight));
+            combatSpectatorCamera.ForceCameraPosition(
+                position,
+                SharedCameraFraming.Rotation);
         }
 
         private float GetOutputAspect()
@@ -704,7 +701,6 @@ namespace MazeParty.Gameplay
                 10f,
                 120f);
             combatSpectatorHeight = Mathf.Max(1f, combatSpectatorHeight);
-            combatSpectatorBackOffset = Mathf.Max(1f, combatSpectatorBackOffset);
             combatSpectatorFieldOfView = Mathf.Clamp(
                 combatSpectatorFieldOfView,
                 10f,

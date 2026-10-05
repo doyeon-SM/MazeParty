@@ -39,6 +39,29 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             return ballId >= 0 && ballId < BallCount;
         }
 
+        /// <summary>
+        /// Projects the local player's horizontal screen input onto that
+        /// slot's authoritative shield rail. Slots two and three view the
+        /// arena through a 180/270 degree camera rotation, so their screen
+        /// right points toward the negative rail coordinate.
+        /// </summary>
+        public static int ProjectScreenAxisToShieldRail(
+            int playerSlot,
+            int screenAxis)
+        {
+            if (!IsValidPlayerSlot(playerSlot))
+            {
+                throw new ArgumentOutOfRangeException(nameof(playerSlot));
+            }
+
+            if (screenAxis < -1 || screenAxis > 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(screenAxis));
+            }
+
+            return playerSlot < 2 ? screenAxis : -screenAxis;
+        }
+
         internal static void ValidateRoundElapsed(double seconds)
         {
             if (double.IsNaN(seconds) ||

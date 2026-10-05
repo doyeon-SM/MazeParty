@@ -47,6 +47,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Room[] rooms = Array.Empty<Room>();
         [SerializeField] private Image[] players = Array.Empty<Image>();
         [SerializeField] private GameObject[] localHighlights = Array.Empty<GameObject>();
+        [SerializeField] private RectTransform landingEffectLayer;
         [SerializeField] private Text currentTile;
         [SerializeField] private Text heading;
         [SerializeField] private BoardMapIcon shopDistanceIcon;
@@ -109,6 +110,8 @@ namespace MazeParty.Multiplayer
             {
                 if (mineGraphic == null || shopRouteGraphic == null || topologyGraphic == null ||
                     projection == null || projection.otherDotCanvas == null ||
+                    landingEffectLayer == null ||
+                    landingEffectLayer.parent != projection.otherDotCanvas ||
                     projection.miniMapBounds == null || projection.miniMapBounds.topRight == null ||
                     projection.miniMapBounds.bottomLeft == null || currentTile == null || heading == null ||
                     rooms == null || players == null || localHighlights == null || tileNames == null ||
@@ -169,10 +172,20 @@ namespace MazeParty.Multiplayer
             {
                 var avatar = match.GetAvatarForSlot(slot);
                 var isLocal = avatar != null && avatar == local;
-                PresentPlayer(slot, avatar != null && avatar.IsSpawned &&
+                BoardTile markerTile = null;
+                if (avatar != null && avatar.IsSpawned &&
                     avatar.HasLogicalBoardTile &&
-                    ShouldRevealPlayer(avatar.IsCloaked, isLocal, displayContext)
-                    ? avatar.transform : null, avatar != null ? avatar.Appearance.BodyColor : Color.white,
+                    ShouldRevealPlayer(avatar.IsCloaked, isLocal, displayContext))
+                {
+                    topology.TryGetTile(
+                        avatar.LogicalBoardTileCoordinate,
+                        out markerTile);
+                }
+
+                PresentPlayerAtTile(
+                    slot,
+                    markerTile,
+                    avatar != null ? avatar.Appearance.BodyColor : Color.white,
                     isLocal,
                     displayContext);
             }
@@ -298,6 +311,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 room.Floor.gameObject.SetActive(exists);
+                room.EffectIcon.gameObject.SetActive(exists);
                 if (!exists)
                     continue;
 
@@ -328,6 +342,7 @@ namespace MazeParty.Multiplayer
                 room.EffectIcon.enabled = effect != BoardLandingEffectType.None;
                 room.EffectIcon.SetIcon(GetEffectIcon(effect));
                 room.EffectIcon.color = effectIconColors[(int)effect];
+                PlaceEffectIcon(room);
                 if (freeform)
                 {
                     SetLegacyEdgesVisible(room, false);
@@ -359,18 +374,50 @@ namespace MazeParty.Multiplayer
             BoardMinimapDisplayContext displayContext =
                 BoardMinimapDisplayContext.Standard)
         {
+            PresentPlayerAtWorldPosition(
+                slot,
+                target != null ? target.position : (Vector3?)null,
+                color,
+                isLocal,
+                displayContext);
+        }
+
+        public void PresentPlayerAtTile(
+            int slot,
+            BoardTile tile,
+            Color color,
+            bool isLocal,
+            BoardMinimapDisplayContext displayContext =
+                BoardMinimapDisplayContext.Standard)
+        {
+            PresentPlayerAtWorldPosition(
+                slot,
+                tile != null ? tile.GetRecoveryCenter() : (Vector3?)null,
+                color,
+                isLocal,
+                displayContext);
+        }
+
+        private void PresentPlayerAtWorldPosition(
+            int slot,
+            Vector3? worldPosition,
+            Color color,
+            bool isLocal,
+            BoardMinimapDisplayContext displayContext)
+        {
             var dot = players[slot];
-            var visible = target != null &&
+            var visible = worldPosition.HasValue &&
                           (displayContext == BoardMinimapDisplayContext.TurnOverview ||
                            !localPlayerOnly || isLocal) &&
-                          IsPositionVisible(target.position);
+                          IsPositionVisible(worldPosition.Value);
             dot.gameObject.SetActive(visible);
             localHighlights[slot].SetActive(visible && isLocal);
             if (!visible) return;
-            projection.Translate(target, dot.rectTransform);
+            TranslateWorldPoint(worldPosition.Value, dot.rectTransform);
             dot.rectTransform.localRotation = Quaternion.identity;
             dot.color = color;
             if (isLocal) dot.transform.SetAsLastSibling();
+            KeepLandingEffectsAbovePlayers();
         }
 
         public bool IsPositionVisible(Vector3 position)
@@ -559,6 +606,32 @@ namespace MazeParty.Multiplayer
                 room.Exits[side].enabled = visible;
                 room.ProgressArrows[side].enabled = visible;
             }
+        }
+
+        private static void PlaceEffectIcon(Room room)
+        {
+            var floor = room.Floor.rectTransform;
+            var icon = room.EffectIcon.rectTransform;
+            icon.localRotation = Quaternion.identity;
+            icon.localScale = Vector3.one;
+            if (icon.parent == floor)
+            {
+                icon.anchorMin = icon.anchorMax = icon.pivot =
+                    Vector2.one * 0.5f;
+                icon.anchoredPosition = Vector2.zero;
+                return;
+            }
+
+            icon.anchorMin = icon.anchorMax = icon.pivot =
+                Vector2.one * 0.5f;
+            icon.anchoredPosition = floor.anchoredPosition;
+        }
+
+        private void KeepLandingEffectsAbovePlayers()
+        {
+            if (landingEffectLayer != null &&
+                landingEffectLayer.parent == projection.otherDotCanvas)
+                landingEffectLayer.SetAsLastSibling();
         }
     }
 }

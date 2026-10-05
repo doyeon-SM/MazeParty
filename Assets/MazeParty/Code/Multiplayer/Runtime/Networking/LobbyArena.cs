@@ -60,7 +60,6 @@ namespace MazeParty.Multiplayer
             Instance = arena;
             return arena;
         }
-
         public void ConfigureBindings(LobbyArenaBindings value)
         {
             bindings = value;
@@ -119,6 +118,21 @@ namespace MazeParty.Multiplayer
             if (Instance == this)
             {
                 Instance = null;
+            }
+        }
+
+        public void SetPresentationVisible(bool visible)
+        {
+            if (!HasRequiredReferences)
+            {
+                ReportMissingBindings();
+                return;
+            }
+
+            var presentation = bindings.PresentationRoot;
+            if (presentation.activeSelf != visible)
+            {
+                presentation.SetActive(visible);
             }
         }
     }

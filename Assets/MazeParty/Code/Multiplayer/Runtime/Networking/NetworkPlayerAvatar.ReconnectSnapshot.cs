@@ -6,6 +6,7 @@ using MazeParty.Gameplay.Minigames.SequenceMemory;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Collections;
 using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -139,6 +140,14 @@ namespace MazeParty.Multiplayer
                 PlayerProfilePreferences.SanitizeDisplayName(snapshot.DisplayName));
             _serverYaw = snapshot.Rotation.eulerAngles.y;
             TeleportController(snapshot.Position, snapshot.Rotation);
+            var networkTransform = GetComponent<NetworkTransform>();
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(
+                    snapshot.Position,
+                    snapshot.Rotation,
+                    transform.localScale);
+            }
             _restoredFromSnapshot = true;
             _boardPositionInitialized = true;
             if (snapshot.TraversalHistory != null &&

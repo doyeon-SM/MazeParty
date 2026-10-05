@@ -148,20 +148,25 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _visuals[slot] = visual;
             }
 
-            var cameraObject = new GameObject("Race Solo Camera");
+            var cameraObject = new GameObject("Race Solo Player-Follow Camera");
             cameraObject.transform.SetParent(_runtimeRoot, false);
             _runtimeCamera = cameraObject.AddComponent<Camera>();
             _runtimeCamera.orthographic = true;
             _runtimeCamera.orthographicSize =
-                RaceNetworkView.SharedCameraOrthographicSize;
+                RaceNetworkView.PlayerCameraOrthographicSize;
             _runtimeCamera.nearClipPlane = 0.1f;
             _runtimeCamera.farClipPlane = 100f;
             _runtimeCamera.clearFlags = CameraClearFlags.SolidColor;
             _runtimeCamera.backgroundColor =
                 new Color(0.018f, 0.024f, 0.036f);
+            var initialPlayerPosition = new Vector3(
+                NetworkRaceState.GetLaneX(RaceSoloSession.LocalPlayerSlot),
+                RaceNetworkView.PlayerPresentationHeight,
+                NetworkRaceState.TrackStartZ);
             cameraObject.transform.SetPositionAndRotation(
-                RaceNetworkView.SharedCameraPosition,
-                RaceNetworkView.SharedCameraRotation);
+                RaceNetworkView.CalculatePlayerCameraPosition(
+                    initialPlayerPosition),
+                RaceNetworkView.PlayerCameraRotation);
             cameraObject.AddComponent<AudioListener>();
         }
 
@@ -183,8 +188,29 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _players[slot].rotation = Quaternion.identity;
             }
 
+            RefreshPlayerCamera();
             RefreshDeveloperHud();
         }
+
+        private void RefreshPlayerCamera()
+        {
+            if (_runtimeCamera == null)
+            {
+                return;
+            }
+
+            var localPlayer = _players[RaceSoloSession.LocalPlayerSlot];
+            if (localPlayer == null)
+            {
+                return;
+            }
+
+            _runtimeCamera.transform.SetPositionAndRotation(
+                RaceNetworkView.CalculatePlayerCameraPosition(
+                    localPlayer.position),
+                RaceNetworkView.PlayerCameraRotation);
+        }
+
 
         private void RefreshDeveloperHud()
         {

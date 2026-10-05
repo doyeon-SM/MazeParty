@@ -15,10 +15,86 @@ namespace MazeParty.Gameplay.Tests
         private const string BoardScenePath = "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string BoardSkyboxPath =
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
+        private const string ForestTerrainDataPath =
+            "Assets/MazeParty/Art/Board/Forest/ForestGroundTerrain.asset";
         private const string BoundaryBlueFirePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Blue Fire.prefab";
         private const string BoundaryRedFirePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Real Fire.prefab";
+
+        [Test]
+        public void AuthoredTilePrefabs_KeepWorldRenderersOffAndCollidersOn()
+        {
+            var paths = new[]
+            {
+                "Assets/MazeParty/Prefabs/Board/World/TileNormalA.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/TileNormalB.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/TileStart.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/TileRespawn.prefab"
+            };
+
+            foreach (var path in paths)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.That(prefab, Is.Not.Null, path);
+                Assert.That(prefab.GetComponent<BoardTile>(), Is.Not.Null, path);
+                var collider = prefab.GetComponent<BoxCollider>();
+                Assert.That(collider, Is.Not.Null, path);
+                Assert.That(collider.enabled, Is.True, path);
+                Assert.That(
+                    prefab.GetComponentsInChildren<Renderer>(true),
+                    Is.All.Matches<Renderer>(renderer => !renderer.enabled),
+                    path);
+            }
+        }
+
+        [Test]
+        public void ShippedMapTiles_HideWorldBlocksButKeepGameplayAndMapData()
+        {
+            var catalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.Maps, Is.Not.Empty);
+
+            foreach (var definition in catalog.Maps)
+            {
+                Assert.That(definition, Is.Not.Null);
+                Assert.That(definition.MapRootPrefab, Is.Not.Null,
+                    definition.MapId);
+                var instance = UnityEngine.Object.Instantiate(
+                    definition.MapRootPrefab);
+                try
+                {
+                    var tiles = instance.GetComponentsInChildren<BoardTile>(true);
+                    Assert.That(tiles, Is.Not.Empty, definition.MapId);
+                    foreach (var tile in tiles)
+                    {
+                        tile.ApplyLandingEffectPresentation(
+                            BoardLandingEffectType.SpecialEvent);
+                        Assert.That(
+                            tile.LandingEffect,
+                            Is.EqualTo(tile.TileType == BoardTileType.Respawn
+                                ? BoardLandingEffectType.None
+                                : BoardLandingEffectType.SpecialEvent),
+                            definition.MapId + " / " + tile.name);
+                        Assert.That(
+                            tile.GetComponentsInChildren<Renderer>(true),
+                            Is.All.Matches<Renderer>(renderer =>
+                                !renderer.enabled),
+                            definition.MapId + " / " + tile.name);
+                        var collider = tile.GetComponent<BoxCollider>();
+                        Assert.That(collider, Is.Not.Null,
+                            definition.MapId + " / " + tile.name);
+                        Assert.That(collider.enabled, Is.True,
+                            definition.MapId + " / " + tile.name);
+                    }
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(instance);
+                }
+            }
+        }
 
         [Test]
         public void GeneratedBoardScene_MatchesPrototypeTopologyContract()
@@ -110,6 +186,23 @@ namespace MazeParty.Gameplay.Tests
                 var backdrop = scene.GetRootGameObjects().Single(root => root.name == "Board Backdrop (No Gameplay Collision)");
                 Assert.That(PrefabUtility.IsPartOfPrefabInstance(backdrop), Is.True);
                 Assert.That(backdrop.GetComponentsInChildren<Collider>(true), Is.Empty);
+                var terrainPlaceholder = scene.GetRootGameObjects().Single(root =>
+                    root.name == "Runtime Terrain Resources (Build Placeholder)");
+                var placeholderTerrain = terrainPlaceholder.GetComponent<Terrain>();
+                Assert.That(terrainPlaceholder.activeSelf, Is.False,
+                    "The runtime placeholder must stay hidden in the Board scene.");
+                Assert.That(placeholderTerrain, Is.Not.Null);
+                Assert.That(placeholderTerrain.enabled, Is.True,
+                    "Unity discovers an enabled Terrain component on the inactive placeholder.");
+                Assert.That(placeholderTerrain.drawInstanced, Is.False,
+                    "The placeholder must match the runtime Terrain rendering path.");
+                Assert.That(placeholderTerrain.materialTemplate, Is.Not.Null);
+                Assert.That(
+                    AssetDatabase.GetAssetPath(placeholderTerrain.terrainData),
+                    Is.EqualTo(ForestTerrainDataPath));
+                Assert.That(
+                    terrainPlaceholder.GetComponentsInChildren<TerrainCollider>(true),
+                    Is.Empty);
                 topology.RebuildIndex();
 
                 var tiles = topology.Tiles.Where(tile => tile != null).ToArray();
@@ -151,8 +244,23 @@ namespace MazeParty.Gameplay.Tests
                 {
                     Assert.That(PrefabUtility.IsPartOfPrefabInstance(tile), Is.True,
                         "Board rooms must inherit their authored prefab design.");
-                    Assert.That(tile.GetComponent<BoxCollider>(), Is.Not.Null);
+                    var tileCollider = tile.GetComponent<BoxCollider>();
+                    Assert.That(tileCollider, Is.Not.Null);
+                    Assert.That(tileCollider.enabled, Is.True,
+                        "Hidden tile visuals must not disable board collision.");
                     Assert.That(new SerializedObject(tile).FindProperty("landingEffectRenderer").objectReferenceValue, Is.Not.Null);
+                    tile.ApplyLandingEffectPresentation(
+                        BoardLandingEffectType.GoldGain);
+                    Assert.That(
+                        tile.LandingEffect,
+                        Is.EqualTo(tile.TileType == BoardTileType.Respawn
+                            ? BoardLandingEffectType.None
+                            : BoardLandingEffectType.GoldGain),
+                        "The hidden world tile must still retain map-readable effect data.");
+                    Assert.That(
+                        tile.GetComponentsInChildren<Renderer>(true),
+                        Is.All.Matches<Renderer>(renderer => !renderer.enabled),
+                        "Board tile blocks, labels and effect surfaces stay hidden in world view.");
                     Assert.That(
                         topology.GetOutgoingGates(tile),
                         Is.Not.Empty,

@@ -61,6 +61,9 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/Dice/NetworkWorldDie.prefab";
         private const string D12ModelPath =
             "Assets/MazeParty/Art/Dice/D12/Models/Dice_d12.fbx";
+        private const string MatchSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
+            "FS000_Night_01.mat";
 
         [Test]
         public void SessionRules_AssignLowestSeatAndRequireFourUniqueReadyPlayers()
@@ -250,6 +253,7 @@ namespace MazeParty.Multiplayer.Tests
 
             var scene = SceneManager.GetSceneByPath(BootstrapScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
+            var previousActiveScene = SceneManager.GetActiveScene();
             if (openedForTest)
             {
                 scene = EditorSceneManager.OpenScene(
@@ -259,6 +263,12 @@ namespace MazeParty.Multiplayer.Tests
 
             try
             {
+                Assert.That(SceneManager.SetActiveScene(scene), Is.True);
+                var expectedSkybox = AssetDatabase.LoadAssetAtPath<Material>(
+                    MatchSkyboxPath);
+                Assert.That(expectedSkybox, Is.Not.Null, MatchSkyboxPath);
+                Assert.That(RenderSettings.skybox, Is.SameAs(expectedSkybox));
+
                 var roots = scene.GetRootGameObjects();
                 var manager = roots
                     .SelectMany(root =>
@@ -320,6 +330,12 @@ namespace MazeParty.Multiplayer.Tests
             }
             finally
             {
+                if (previousActiveScene.IsValid() &&
+                    previousActiveScene.isLoaded &&
+                    previousActiveScene != scene)
+                {
+                    SceneManager.SetActiveScene(previousActiveScene);
+                }
                 if (openedForTest && scene.IsValid() && scene.isLoaded)
                 {
                     EditorSceneManager.CloseScene(scene, true);

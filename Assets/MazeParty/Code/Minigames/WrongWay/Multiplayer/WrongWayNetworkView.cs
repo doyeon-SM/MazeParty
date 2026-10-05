@@ -18,6 +18,8 @@ namespace MazeParty.Multiplayer
         public const float StartPlatformDepth = 2.2f;
         public const float FinishPlatformDepth = 2f;
         public const float RunnerInterpolationSpeed = 14f;
+        private const float LocalCameraFocusHeight = 0.85f;
+        private const float LocalCameraLookAheadDistance = 0.65f;
 
         private static readonly Color[] FallbackPlayerColors =
         {
@@ -102,15 +104,16 @@ namespace MazeParty.Multiplayer
                     progress * NetworkWrongWayState.StepHeight,
                     (progress - 0.5f) * NetworkWrongWayState.StepDepth);
 
-            return runnerPosition + new Vector3(0f, 1.35f, 1.6f);
+            return CalculateLocalCameraFocus(runnerPosition);
         }
 
         private static Vector3 CalculateLocalCameraFocus(
-            int playerSlot,
-            int completedSteps)
+            Vector3 runnerPosition)
         {
-            return GetRunnerWorldPosition(playerSlot, completedSteps) +
-                   new Vector3(0f, 1.35f, 1.6f);
+            return runnerPosition + new Vector3(
+                0f,
+                LocalCameraFocusHeight,
+                LocalCameraLookAheadDistance);
         }
 
         public static Vector3 CalculateCameraPosition(Vector3 focus)
@@ -468,11 +471,11 @@ namespace MazeParty.Multiplayer
             }
 
             var hasLocalRunner = _localSlot >= 0 &&
-                                 _localSlot < WrongWayRules.PlayerCount;
+                                 _localSlot < WrongWayRules.PlayerCount &&
+                                 _runners[_localSlot]?.Root != null;
             var targetFocus = hasLocalRunner
                 ? CalculateLocalCameraFocus(
-                    _localSlot,
-                    state.GetProgress(_localSlot))
+                    _runners[_localSlot].Root.position)
                 : CalculateCameraFocus(0);
             if (!_hasCameraFocus ||
                 Vector3.SqrMagnitude(_cameraFocus - targetFocus) > 100f ||

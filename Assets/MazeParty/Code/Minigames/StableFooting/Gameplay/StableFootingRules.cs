@@ -10,8 +10,8 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
     public static class StableFootingRules
     {
         public const int PlayerCount = 4;
-        public const int BoardWidth = 6;
-        public const int BoardHeight = 8;
+        public const int BoardWidth = 8;
+        public const int BoardHeight = 6;
         public const int TileCount = BoardWidth * BoardHeight;
         public const int SymbolCount = 3;
         public const int RoundCount = 3;

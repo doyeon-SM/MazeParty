@@ -7,15 +7,15 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Shared top-down arena presentation. Scene-authored transforms and the
-    /// BouncingBallsHud prefab are the sole visual sources; the network state
-    /// supplies only positions, owners, timing and scores.
+    /// Client-local arena presentation. Each client rotates the authored
+    /// four-goal field so its own goal remains at the bottom of the screen.
+    /// The network state supplies only positions, owners, timing and scores.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BouncingBallsNetworkView : MonoBehaviour
     {
         public const float ArenaCenterX = 1260f;
-        public const float SharedCameraOrthographicSize = 11f;
+        public const float SharedCameraOrthographicSize = 12.5f;
 
         private static readonly Color NeutralBallColor =
             new Color(0.91f, 0.96f, 1f);
@@ -52,12 +52,14 @@ namespace MazeParty.Multiplayer
         private bool _visibilityInitialized;
         private bool _hadVisibleFrame;
         private NetworkBouncingBallsState _subscribedVfxState;
+        private Renderer _centerDiscRenderer;
+        private int _localSlot;
 
         public static Vector3 SharedCameraPosition =>
             new Vector3(ArenaCenterX, 0f, -20f);
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.identity;
+            CalculatePlayerCameraRotation(0);
 
         public GameObject ArenaPresentation => arenaPresentation;
         public BouncingBallsHudBindings HudBindings => hud;
@@ -99,6 +101,24 @@ namespace MazeParty.Multiplayer
                     ? ballRenderers[ballId]
                     : null;
         }
+
+        public static Quaternion CalculatePlayerCameraRotation(
+            int playerSlot)
+        {
+            var slot = Mathf.Clamp(
+                playerSlot,
+                0,
+                BouncingBallsRules.PlayerCount - 1);
+            return Quaternion.Euler(0f, 0f, slot * 90f);
+        }
+
+        public static Quaternion CalculateShieldLocalRotation(int playerSlot)
+        {
+            return playerSlot == 1 || playerSlot == 3
+                ? Quaternion.Euler(0f, 0f, 90f)
+                : Quaternion.identity;
+        }
+
 
         private void Awake()
         {
@@ -146,6 +166,8 @@ namespace MazeParty.Multiplayer
             }
 
             SetWorldPresentationActive(true);
+            ResolveLocalSlot(match);
+            RefreshPlayerCamera();
             RegisterCamera();
             RefreshArena(match);
             RefreshHud(match);
@@ -166,6 +188,17 @@ namespace MazeParty.Multiplayer
                     ? arena.gameObject
                     : null;
             }
+
+            if (_centerDiscRenderer == null && arenaPresentation != null)
+            {
+                _centerDiscRenderer = FindDescendant(
+                    arenaPresentation.transform,
+                    "Center Disc")?.GetComponent<Renderer>();
+            }
+            if (_centerDiscRenderer != null)
+            {
+                _centerDiscRenderer.enabled = false;
+            }
         }
 
         private void ConfigureCamera()
@@ -183,9 +216,42 @@ namespace MazeParty.Multiplayer
             sharedCamera.Lens = lens;
             sharedCamera.ForceCameraPosition(
                 SharedCameraPosition,
-                SharedCameraRotation);
+                CalculatePlayerCameraRotation(_localSlot));
             sharedCamera.Priority = 0;
         }
+
+        private void ResolveLocalSlot(NetworkMatchState match)
+        {
+            var resolved = 0;
+            if (match != null)
+            {
+                for (var slot = 0;
+                     slot < BouncingBallsRules.PlayerCount;
+                     slot++)
+                {
+                    var avatar = match.GetAvatarForSlot(slot);
+                    if (avatar != null && avatar.IsOwner)
+                    {
+                        resolved = slot;
+                        break;
+                    }
+                }
+            }
+            _localSlot = resolved;
+        }
+
+        private void RefreshPlayerCamera()
+        {
+            if (sharedCamera == null)
+            {
+                return;
+            }
+
+            sharedCamera.ForceCameraPosition(
+                SharedCameraPosition,
+                CalculatePlayerCameraRotation(_localSlot));
+        }
+
 
         private void RefreshArena(NetworkMatchState match)
         {
@@ -225,6 +291,8 @@ namespace MazeParty.Multiplayer
                         shieldTransforms[slot],
                         origin.TransformPoint(localPosition),
                         false);
+                    shieldTransforms[slot].rotation =
+                        origin.rotation * CalculateShieldLocalRotation(slot);
                 }
                 if (shieldRenderers != null &&
                     slot < shieldRenderers.Length)

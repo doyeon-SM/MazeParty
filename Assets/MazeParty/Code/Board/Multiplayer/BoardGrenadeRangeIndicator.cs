@@ -23,6 +23,11 @@ namespace MazeParty.Multiplayer
         public bool IsVisible =>
             rangeGraphic != null && rangeGraphic.activeSelf;
 
+#if UNITY_EDITOR || DEBUG
+        public float DevelopmentPresentedRadius =>
+            rangeRoot != null ? rangeRoot.localScale.x : 0f;
+#endif
+
         public void Configure(
             GameObject graphic,
             Transform root,

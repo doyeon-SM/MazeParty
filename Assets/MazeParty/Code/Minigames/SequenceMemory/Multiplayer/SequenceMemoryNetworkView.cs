@@ -389,11 +389,11 @@ namespace MazeParty.Multiplayer
             switch (input)
             {
                 case SequenceMemoryInput.A:
-                    return highTone;
+                    return lowTone;
                 case SequenceMemoryInput.S:
                     return middleTone;
                 default:
-                    return lowTone;
+                    return highTone;
             }
         }
 

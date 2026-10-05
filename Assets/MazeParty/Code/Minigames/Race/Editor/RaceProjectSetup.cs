@@ -47,8 +47,9 @@ namespace MazeParty.Editor
             AssetDatabase.Refresh();
             EditorSceneManager.OpenScene(RaceScenePath, OpenSceneMode.Single);
             Debug.Log(
-                "Race rebuilt: four vertical lanes, fixed shared camera " +
-                "and the Board-owned shared minigame HUD.");
+                "Race rebuilt: four vertical lanes, client-local " +
+                "player-follow camera and the Board-owned shared " +
+                "minigame HUD.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -202,7 +203,7 @@ namespace MazeParty.Editor
 
             for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
             {
-                CreatePrimitive(
+                var startMarker = CreatePrimitive(
                     "Start Marker " + (slot + 1),
                     PrimitiveType.Cylinder,
                     parent,
@@ -213,6 +214,7 @@ namespace MazeParty.Editor
                     new Vector3(0.55f, 0.025f, 0.55f),
                     boundaryMaterial,
                     false);
+                startMarker.GetComponent<Renderer>().enabled = false;
             }
         }
 
@@ -343,16 +345,22 @@ namespace MazeParty.Editor
 
         private static CinemachineCamera CreateCamera(Transform parent)
         {
-            var cameraObject = new GameObject("CM_RaceShared");
+            var cameraObject = new GameObject("CM_RacePlayerFollow");
             cameraObject.transform.SetParent(parent, false);
+            var initialPlayerPosition = new Vector3(
+                NetworkRaceState.TrackCenterX,
+                RaceNetworkView.PlayerPresentationHeight,
+                NetworkRaceState.TrackStartZ);
             cameraObject.transform.SetPositionAndRotation(
-                RaceNetworkView.SharedCameraPosition,
-                RaceNetworkView.SharedCameraRotation);
+                RaceNetworkView.CalculatePlayerCameraPosition(
+                    initialPlayerPosition),
+                RaceNetworkView.PlayerCameraRotation);
             var camera = cameraObject.AddComponent<CinemachineCamera>();
             camera.Priority = 0;
             var lens = camera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
-            lens.OrthographicSize = RaceNetworkView.SharedCameraOrthographicSize;
+            lens.OrthographicSize =
+                RaceNetworkView.PlayerCameraOrthographicSize;
             lens.NearClipPlane = 0.1f;
             lens.FarClipPlane = 100f;
             camera.Lens = lens;
@@ -459,7 +467,7 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Race scene is missing its network state, " +
-                    "track, shared camera, light or art anchors; " +
+                    "track, player-follow camera, light or art anchors; " +
                     "it must not contain a dedicated Canvas.");
             }
 

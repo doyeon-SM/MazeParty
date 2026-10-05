@@ -234,13 +234,14 @@ namespace MazeParty.Editor
                 marker.transform.rotation = Quaternion.LookRotation(
                     center - marker.transform.position,
                     Vector3.up);
-                CreatePrimitive("Spawn Ring", PrimitiveType.Cylinder,
+                var spawnRing = CreatePrimitive("Spawn Ring", PrimitiveType.Cylinder,
                     marker.transform,
                     new Vector3(marker.transform.position.x,
                         0.017f,
                         marker.transform.position.z),
                     new Vector3(0.95f, 0.016f, 0.95f),
                     materials[slot], false);
+                spawnRing.SetActive(false);
                 marker = MinigameCorePrefabUtility.Connect(marker,
                     CorePrefabFolder + "/PlayerSpawn" + (slot + 1) + ".prefab");
                 spawns[slot] = marker.transform;

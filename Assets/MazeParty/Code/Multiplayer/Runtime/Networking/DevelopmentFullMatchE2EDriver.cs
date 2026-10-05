@@ -18,22 +18,43 @@ namespace MazeParty.Multiplayer
     /// <summary>
     /// Development-build-only four-process acceptance driver. It uses the real
     /// Relay/session, NGO ownership, board flow, minigame scenes and lobby-return
-    /// paths. Only board travel and final minigame settlement are accelerated so
-    /// one run can cover all fifteen games.
+    /// paths. Board travel is accelerated. Final minigame settlement is
+    /// accelerated by default, while an opt-in mode lets all runtimes complete
+    /// and award their results naturally.
     /// </summary>
     internal sealed class DevelopmentFullMatchE2EDriver : MonoBehaviour
     {
         private const string EnableArgument = "-e2e-full-match";
+        private const string CaptureMinigamesArgument = "-e2e-capture-minigames";
+        private const string NaturalMinigamesArgument = "-e2e-natural-minigames";
+        private const string CeremonyTieArgument = "-e2e-ceremony-tie";
+        private const string RecoveryCheckpointArgument =
+            "-e2e-recovery-checkpoint";
+        private const string RecoveryStageArgument = "-e2e-recovery-stage";
+        private const string RecoveryInitialStage = "initial";
+        private const string RecoveryResumeStage = "resume";
         private const string HostRole = "host";
         private const string ClientRole = "client";
         private const string ForestMapId = "forest-graybox";
         private const int ForestContentVersion = 4;
+        private const string MazeMapId = "maze-graybox";
+        private const int MazeContentVersion = 1;
         private const int PollMilliseconds = 100;
+
+        private enum RecoveryTarget
+        {
+            None,
+            TurnOverview,
+            MinigameIntroReady,
+            MatchComplete
+        }
 
         private readonly HashSet<ScheduledMinigameId> _completedGames =
             new HashSet<ScheduledMinigameId>();
         private readonly List<ScheduledMinigameId> _gameOrder =
             new List<ScheduledMinigameId>();
+        private readonly List<string> _minigameScreenshotPaths =
+            new List<string>();
         private readonly List<string> _damageSteps = new List<string>();
         private readonly object _fileGate = new object();
 
@@ -51,16 +72,41 @@ namespace MazeParty.Multiplayer
 #endif
 
         private string _role;
+        private string _mapId;
+        private string _recoveryStage;
         private string _runDirectory;
         private string _logPath;
+        private int _mapContentVersion;
         private int _playerIndex;
         private int _assignedSlot = -1;
         private double _startedAt;
         private bool _hostItemProvisioned;
         private bool _hostCeremonyValidated;
+        private bool _captureMinigames;
+        private bool _naturalMinigames;
+        private bool _ceremonyTie;
+        private int _verifiedMinigameResultCount;
+        private RecoveryTarget _recoveryTarget;
+        private MatchRecoverySnapshot _resumeRecoverySnapshot;
         private bool _returnRequested;
         private bool _observedMatch;
         private bool _quitting;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+        private static void PrepareRecoveryResume()
+        {
+            var arguments = Environment.GetCommandLineArgs();
+            if (HasCommandLineSwitch(arguments, EnableArgument) &&
+                !string.IsNullOrWhiteSpace(
+                    GetArgument(arguments, RecoveryCheckpointArgument)) &&
+                string.Equals(
+                    GetArgument(arguments, RecoveryStageArgument),
+                    RecoveryResumeStage,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                OnlineSessionController.DevelopmentClearPlayingReconnectTicket();
+            }
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -84,15 +130,33 @@ namespace MazeParty.Multiplayer
             {
                 ParseArguments();
                 Directory.CreateDirectory(_runDirectory);
+                var logFileName = IsRecoveryMode
+                    ? "player-" +
+                      _playerIndex.ToString(CultureInfo.InvariantCulture) +
+                      "-" + _recoveryStage + ".jsonl"
+                    : "player-" +
+                      _playerIndex.ToString(CultureInfo.InvariantCulture) +
+                      ".jsonl";
                 _logPath = Path.Combine(
                     _runDirectory,
-                    "player-" + _playerIndex.ToString(CultureInfo.InvariantCulture) + ".jsonl");
+                    logFileName);
                 if (File.Exists(_logPath))
                 {
                     File.Delete(_logPath);
                 }
 
-                Log("driver_started", "acceleratedResultSettlement=true");
+                PrepareMinigameCaptureDirectory();
+                Log(
+                    "driver_started",
+                    "acceleratedResultSettlement=" + (!_naturalMinigames) +
+                    ";captureMinigames=" +
+                    _captureMinigames +
+                    ";naturalMinigames=" + _naturalMinigames +
+                    ";ceremonyTie=" + _ceremonyTie +
+                    ";map=" + _mapId +
+                    ";mapVersion=" + _mapContentVersion +
+                    ";recoveryTarget=" + _recoveryTarget +
+                    ";recoveryStage=" + (_recoveryStage ?? string.Empty));
                 await RunAsync();
                 Log("driver_passed");
                 WriteAtomic(
@@ -149,9 +213,35 @@ namespace MazeParty.Multiplayer
                           !string.IsNullOrWhiteSpace(controller.CurrentSession.Code),
                     120d,
                     "host session creation");
-                ValidateForestSelection(controller.CurrentSession.BoardMapSelection);
+                if (IsRecoveryResume)
+                {
+                    await WaitUntilAsync(
+                        () => controller.IsMatchRecoveryChoiceVisible,
+                        60d,
+                        "saved-match recovery choice");
+                    var recoveryStatus =
+                        controller.DevelopmentPeekRecoverySnapshot(
+                            out _resumeRecoverySnapshot);
+                    if (recoveryStatus != MatchRecoveryLoadStatus.Loaded ||
+                        _resumeRecoverySnapshot == null ||
+                        _resumeRecoverySnapshot.checkpoint !=
+                            ToRecoveryCheckpoint(_recoveryTarget))
+                    {
+                        throw new InvalidOperationException(
+                            "The expected recovery checkpoint was unavailable.");
+                    }
+
+                    await controller.DevelopmentSelectSavedMatchAsync();
+                }
+                else
+                {
+                    await controller.DevelopmentSelectBoardMapAsync(_mapId);
+                }
+                ValidateMapSelection(controller.CurrentSession.BoardMapSelection);
                 WriteAtomic(JoinCodePath, controller.CurrentSession.Code.Trim());
-                Log("session_created", "map=" + ForestMapId + ";version=" + ForestContentVersion);
+                Log(
+                    "session_created",
+                    "map=" + _mapId + ";version=" + _mapContentVersion);
             }
             else
             {
@@ -167,8 +257,10 @@ namespace MazeParty.Multiplayer
                     () => controller.IsInSession,
                     120d,
                     "client session join");
-                ValidateForestSelection(controller.CurrentSession.BoardMapSelection);
-                Log("session_joined", "map=" + ForestMapId + ";version=" + ForestContentVersion);
+                ValidateMapSelection(controller.CurrentSession.BoardMapSelection);
+                Log(
+                    "session_joined",
+                    "map=" + _mapId + ";version=" + _mapContentVersion);
             }
 
             await WaitUntilAsync(
@@ -194,6 +286,10 @@ namespace MazeParty.Multiplayer
                 ";hat=" + appearance.HatId +
                 ";expression=" + appearance.ExpressionId);
 
+            // Avoid four simultaneous MPS player-property saves. Real clients
+            // naturally reach Ready at different times; deterministic players
+            // otherwise create an artificial backend burst.
+            await Task.Delay(_playerIndex * 1000);
             await controller.DevelopmentSetReadyAsync(true);
             await WaitUntilAsync(
                 () => controller.CurrentSession.LocalReady,
@@ -208,6 +304,13 @@ namespace MazeParty.Multiplayer
                           HasFourDistinctAppearances(),
                     150d,
                     "four ready players with distinct appearances");
+                await Task.Delay(1000);
+                await WaitUntilAsync(
+                    () => controller.CurrentSession.CanStart &&
+                          controller.DevelopmentHasFourAssignedPlayers() &&
+                          HasFourDistinctAppearances(),
+                    30d,
+                    "stable four-player ready lobby");
                 ValidateLobbyRoster(controller.CurrentSession);
                 TryDelete(JoinCodePath);
                 Log("lobby_verified", "players=4;ready=4;distinctAppearances=true");
@@ -223,10 +326,10 @@ namespace MazeParty.Multiplayer
                            match.IsBoardMapReady && match.GameplayEnabled;
                 },
                 180d,
-                "Forest Board scene synchronization");
+                _mapId + " Board scene synchronization");
 
             var networkMatch = NetworkMatchState.Instance;
-            ValidateForestSelection(networkMatch.CurrentBoardMapSelection);
+            ValidateMapSelection(networkMatch.CurrentBoardMapSelection);
             if (!SceneManager.GetSceneByName(MultiplayerConstants.BoardScene).isLoaded)
             {
                 throw new InvalidOperationException("Board scene did not report loaded.");
@@ -237,6 +340,12 @@ namespace MazeParty.Multiplayer
                 "board_ready",
                 "map=" + networkMatch.BoardMapId +
                 ";version=" + networkMatch.BoardMapContentVersion);
+
+            if (IsRecoveryMode)
+            {
+                await RunRecoveryAsync(controller);
+                return;
+            }
 
             var participantTask = RunLocalParticipantAsync(controller);
             if (IsHost)
@@ -356,6 +465,367 @@ namespace MazeParty.Multiplayer
             }
 
             throw new OperationCanceledException("Application quit before participant completed.");
+        }
+
+        private async Task RunRecoveryAsync(OnlineSessionController controller)
+        {
+            if (IsRecoveryResume)
+            {
+                WriteAtomic(
+                    RecoveryResumeBoardMarkerPath(_playerIndex),
+                    "READY");
+                Log(
+                    "recovery_resume_board_ready",
+                    "target=" + _recoveryTarget);
+
+                if (!IsHost)
+                {
+                    await WaitUntilAsync(
+                        () => File.Exists(QuitSignalPath),
+                        240d,
+                        "host recovery verification");
+                    return;
+                }
+
+                // TurnOverview advances after five seconds, and MatchComplete
+                // starts granting ceremony keys after two seconds. Verify those
+                // restored snapshots before a slow remote board load can mutate
+                // them, then keep four-client synchronization separate.
+                if (_recoveryTarget == RecoveryTarget.TurnOverview ||
+                    _recoveryTarget == RecoveryTarget.MatchComplete)
+                {
+                    ValidateRestoredRecoveryCheckpoint(
+                        controller,
+                        RequireMatch());
+                }
+
+                await WaitUntilAsync(
+                    AllRecoveryResumeBoardMarkersPresent,
+                    180d,
+                    "all four recovery board markers");
+                if (_recoveryTarget == RecoveryTarget.MinigameIntroReady)
+                {
+                    ValidateRestoredRecoveryCheckpoint(
+                        controller,
+                        RequireMatch());
+                }
+
+                if (_recoveryTarget == RecoveryTarget.MatchComplete)
+                {
+                    await WaitUntilAsync(
+                        () =>
+                        {
+                            var match = NetworkMatchState.Instance;
+                            return match != null &&
+                                   match.FlowState ==
+                                       BoardFlowState.MatchComplete &&
+                                   match.IsFinalRankingLocked;
+                        },
+                        120d,
+                        "recovered award ceremony final ranking");
+                    ValidateCeremony(RequireMatch());
+                }
+
+                await CaptureRecoveryScreenshotAsync(
+                    Path.Combine(
+                        _runDirectory,
+                        "recovery-" + RecoveryTargetSlug +
+                        "-resumed-host.png"));
+                controller.DevelopmentDiscardSavedMatch();
+                WriteAtomic(
+                    Path.Combine(_runDirectory, "summary.json"),
+                    "{\"recoveryCheckpoint\":\"" +
+                    EscapeJson(_recoveryTarget.ToString()) +
+                    "\",\"recoveryResumed\":true," +
+                    "\"players\":4,\"map\":\"" +
+                    EscapeJson(_mapId) +
+                    "\",\"mapContentVersion\":" +
+                    _mapContentVersion + "}");
+                WriteAtomic(QuitSignalPath, "COMPLETE");
+                Log(
+                    "recovery_checkpoint_verified",
+                    "target=" + _recoveryTarget);
+                return;
+            }
+
+            switch (_recoveryTarget)
+            {
+                case RecoveryTarget.TurnOverview:
+                    if (IsHost)
+                    {
+                        await WaitUntilAsync(
+                            () =>
+                            {
+                                var match = NetworkMatchState.Instance;
+                                return match != null &&
+                                       match.FlowState ==
+                                           BoardFlowState.TurnOverview;
+                            },
+                            60d,
+                            "initial turn-overview checkpoint");
+                        await HoldAtRecoveryCheckpointAsync(controller);
+                    }
+                    else
+                    {
+                        await WaitForExternalRecoveryKillAsync();
+                    }
+                    break;
+                case RecoveryTarget.MinigameIntroReady:
+                    await RunToMinigameIntroRecoveryCheckpointAsync(controller);
+                    break;
+                case RecoveryTarget.MatchComplete:
+                    var participantTask =
+                        RunRecoveryParticipantAutomationAsync(controller);
+                    if (IsHost)
+                    {
+                        await RunHostMatchAsync();
+                    }
+                    await participantTask;
+                    await WaitForExternalRecoveryKillAsync();
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        "A recovery target is required.");
+            }
+        }
+
+        private async Task RunToMinigameIntroRecoveryCheckpointAsync(
+            OnlineSessionController controller)
+        {
+            await WaitUntilAsync(
+                () =>
+                {
+                    var match = NetworkMatchState.Instance;
+                    return match != null &&
+                           match.FlowState == BoardFlowState.Action;
+                },
+                90d,
+                "opening recovery action phase");
+
+            var localAvatar = controller.GetLocalAvatar();
+            if (localAvatar == null)
+            {
+                throw new InvalidOperationException(
+                    "The local recovery avatar was unavailable.");
+            }
+            localAvatar.ChooseNoItem();
+
+            if (!IsHost)
+            {
+                await WaitForExternalRecoveryKillAsync();
+                return;
+            }
+
+            await WaitUntilAsync(
+                () => AllChoicesResolved(RequireMatch()),
+                45d,
+                "recovery item choices");
+            var match = RequireMatch();
+            for (var slot = 0;
+                 slot < MultiplayerConstants.MaxPlayers;
+                 slot++)
+            {
+                if (!match.ApplyWorldDieResultOnServer(slot, slot + 1))
+                {
+                    throw new InvalidOperationException(
+                        "Could not apply recovery die result for slot " +
+                        slot + ".");
+                }
+            }
+            if (!match.DevelopmentSettleAndReportAllPlayers(false))
+            {
+                throw new InvalidOperationException(
+                    "Could not settle the recovery opening turn.");
+            }
+
+            await WaitForMinigameRevealAndDrainCombatsAsync(1);
+            await HoldAtRecoveryCheckpointAsync(controller);
+        }
+
+        private async Task RunRecoveryParticipantAutomationAsync(
+            OnlineSessionController controller)
+        {
+            var lastChoiceTurn = -1;
+            var lastReadyRevision = -1;
+            while (!_quitting &&
+                   !File.Exists(RecoveryCheckpointReadyPath))
+            {
+                var match = NetworkMatchState.Instance;
+                var avatar = controller.GetLocalAvatar();
+                if (match != null && avatar != null)
+                {
+                    if (match.FlowState == BoardFlowState.Action &&
+                        !avatar.HasResolvedItemChoice &&
+                        lastChoiceTurn != match.Turn &&
+                        (!IsHost || match.Turn != 1 ||
+                         _hostItemProvisioned))
+                    {
+                        if (IsHost && match.Turn == 1)
+                        {
+                            avatar.ChooseItem(0);
+                        }
+                        else
+                        {
+                            avatar.ChooseNoItem();
+                        }
+                        lastChoiceTurn = match.Turn;
+                    }
+
+                    if (match.FlowState ==
+                            BoardFlowState.MinigameIntroReady &&
+                        !match.IsMinigameReady(avatar.AssignedSlot) &&
+                        lastReadyRevision != match.MinigameRevealRevision)
+                    {
+                        avatar.SetMinigameReady();
+                        lastReadyRevision = match.MinigameRevealRevision;
+                    }
+                }
+
+                await Task.Delay(PollMilliseconds);
+            }
+        }
+
+        private async Task HoldAtRecoveryCheckpointAsync(
+            OnlineSessionController controller)
+        {
+            var expected = ToRecoveryCheckpoint(_recoveryTarget);
+            MatchRecoverySnapshot snapshot = null;
+            await WaitUntilAsync(
+                () =>
+                {
+                    var status = controller.DevelopmentPeekRecoverySnapshot(
+                        out snapshot);
+                    return status == MatchRecoveryLoadStatus.Loaded &&
+                           snapshot != null &&
+                           snapshot.checkpoint == expected;
+                },
+                30d,
+                expected + " recovery journal");
+
+            if (!string.Equals(
+                    snapshot.boardMapId,
+                    _mapId,
+                    StringComparison.Ordinal) ||
+                snapshot.boardMapContentVersion != _mapContentVersion)
+            {
+                throw new InvalidOperationException(
+                    "The recovery journal stored the wrong board map.");
+            }
+
+            WriteAtomic(
+                Path.Combine(
+                    _runDirectory,
+                    "recovery-" + RecoveryTargetSlug +
+                    "-initial-snapshot.json"),
+                JsonUtility.ToJson(snapshot, true));
+            await CaptureRecoveryScreenshotAsync(
+                Path.Combine(
+                    _runDirectory,
+                    "recovery-" + RecoveryTargetSlug +
+                    "-initial-host.png"));
+            WriteAtomic(RecoveryCheckpointReadyPath, expected.ToString());
+            Log(
+                "recovery_checkpoint_ready",
+                "target=" + expected +
+                ";turn=" + snapshot.turn +
+                ";remaining=" + snapshot.remainingMinigameSlots +
+                ";map=" + snapshot.boardMapId);
+            await WaitForExternalRecoveryKillAsync();
+        }
+
+        private async Task WaitForExternalRecoveryKillAsync()
+        {
+            await WaitUntilAsync(
+                () => File.Exists(RecoveryExternalKillSignalPath),
+                3600d,
+                "external hard process termination");
+        }
+
+        private void ValidateRestoredRecoveryCheckpoint(
+            OnlineSessionController controller,
+            NetworkMatchState match)
+        {
+            var snapshot = _resumeRecoverySnapshot;
+            if (snapshot == null ||
+                snapshot.checkpoint != ToRecoveryCheckpoint(_recoveryTarget) ||
+                match.Turn != snapshot.turn ||
+                match.RemainingMinigameSlots !=
+                    snapshot.remainingMinigameSlots ||
+                (int)match.CurrentMinigame != snapshot.currentMinigame ||
+                !string.Equals(
+                    match.BoardMapId,
+                    snapshot.boardMapId,
+                    StringComparison.Ordinal) ||
+                match.BoardMapContentVersion !=
+                    snapshot.boardMapContentVersion ||
+                match.FlowState != ToRecoveryFlowState(_recoveryTarget))
+            {
+                throw new InvalidOperationException(
+                    "The resumed authoritative checkpoint did not match its journal.");
+            }
+
+            if (snapshot.players == null ||
+                snapshot.players.Length != MultiplayerConstants.MaxPlayers)
+            {
+                throw new InvalidOperationException(
+                    "The resumed recovery roster was incomplete.");
+            }
+
+            var savedByPlayerKey =
+                new Dictionary<string, MatchRecoveryPlayerSnapshot>(
+                    StringComparer.Ordinal);
+            for (var slot = 0; slot < snapshot.players.Length; slot++)
+            {
+                var saved = snapshot.players[slot];
+                if (saved == null || string.IsNullOrWhiteSpace(saved.playerKey) ||
+                    !savedByPlayerKey.TryAdd(saved.playerKey, saved))
+                {
+                    throw new InvalidOperationException(
+                        "The recovery journal contained an invalid player roster.");
+                }
+            }
+
+            var avatars = RequireFourAvatars(match);
+            for (var slot = 0; slot < avatars.Length; slot++)
+            {
+                if (!controller.TryGetMatchPlayerIdForSlot(
+                        slot,
+                        out var playerId) ||
+                    !savedByPlayerKey.TryGetValue(
+                        MatchRecoveryFingerprint.CreatePlayerKey(playerId),
+                        out var saved))
+                {
+                    throw new InvalidOperationException(
+                        "Recovered player identity mismatch for slot " + slot + ".");
+                }
+
+                var avatar = avatars[slot];
+                if (avatar.CurrentHealth != saved.currentHealth ||
+                    avatar.KeyCount != saved.keyCount ||
+                    avatar.Gold != saved.gold ||
+                    avatar.MinigameWins != saved.minigameWins ||
+                    avatar.HasLogicalBoardTile != saved.hasLogicalTile ||
+                    (saved.hasLogicalTile &&
+                     avatar.LogicalBoardTileCoordinate != saved.logicalTile))
+                {
+                    throw new InvalidOperationException(
+                        "Recovered player state mismatch for slot " + slot + ".");
+                }
+            }
+        }
+
+        private async Task CaptureRecoveryScreenshotAsync(string path)
+        {
+            if (File.Exists(path))
+            {
+                throw new InvalidOperationException(
+                    "Refusing to overwrite recovery evidence: " + path);
+            }
+            ScreenCapture.CaptureScreenshot(path);
+            await WaitUntilAsync(
+                () => IsNonEmptyFile(path),
+                15d,
+                "recovery screenshot " + Path.GetFileName(path));
         }
 
         private async Task RunHostMatchAsync()
@@ -486,39 +956,107 @@ namespace MazeParty.Multiplayer
                 }
 
                 await ExerciseMinigameInputAsync(match, game);
-
-                var placements = BuildPlacements(expectedTurn);
-                if (!match.DevelopmentCompleteCurrentMinigame(placements))
+                if (_captureMinigames)
                 {
-                    throw new InvalidOperationException(
-                        "Controlled result settlement was rejected for " + game + ".");
+                    await CaptureMinigameScreenshotAsync(expectedTurn, game);
                 }
 
-                await WaitUntilAsync(
-                    () =>
+                if (_naturalMinigames)
+                {
+                    await WaitForNaturalMinigameResultAsync(
+                        expectedTurn,
+                        game,
+                        goldBefore,
+                        winsBefore);
+                }
+                else
+                {
+                    var placements = BuildPlacements(expectedTurn);
+                    if (!match.DevelopmentCompleteCurrentMinigame(placements))
                     {
-                        var current = NetworkMatchState.Instance;
-                        return current != null &&
-                               current.FlowState == BoardFlowState.MinigameResult;
-                    },
-                    10d,
-                    game + " result phase");
+                        throw new InvalidOperationException(
+                            "Controlled result settlement was rejected for " +
+                            game + ".");
+                    }
 
-                ValidateRewards(
-                    RequireMatch(),
-                    placements,
-                    goldBefore,
-                    winsBefore);
+                    await WaitUntilAsync(
+                        () =>
+                        {
+                            var current = NetworkMatchState.Instance;
+                            return current != null &&
+                                   current.FlowState ==
+                                       BoardFlowState.MinigameResult;
+                        },
+                        10d,
+                        game + " result phase");
 
-                Log(
-                    "minigame_result_verified",
-                    "turn=" + expectedTurn +
-                    ";game=" + game +
-                    ";ranks=" + FormatRanks(placements));
+                    ValidateRewards(
+                        RequireMatch(),
+                        placements,
+                        goldBefore,
+                        winsBefore);
+
+                    _verifiedMinigameResultCount++;
+                    Log(
+                        "minigame_result_verified",
+                        "turn=" + expectedTurn +
+                        ";game=" + game +
+                        ";ranks=" + FormatRanks(placements));
+                }
+
+                if (expectedTurn == MinigameScheduleRules.DefaultTurnCount &&
+                    _ceremonyTie)
+                {
+                    var tieAvatars = RequireFourAvatars(RequireMatch());
+                    for (var slot = 0; slot < tieAvatars.Length; slot++)
+                    {
+                        if (!tieAvatars[slot]
+                                .DevelopmentSetAllCeremonyStatsEqualOnServer(
+                                    0,
+                                    100,
+                                    0))
+                        {
+                            throw new InvalidOperationException(
+                                "Could not prepare the four-player ceremony tie.");
+                        }
+                    }
+
+                    Log(
+                        "ceremony_tie_prepared",
+                        "keys=0;gold=100;minigameWins=0;awardStats=equal");
+                }
             }
 
             ValidateCompleteSchedule();
-            Log("schedule_complete", "order=" + JoinGameOrder());
+            if (_captureMinigames)
+            {
+                ValidateMinigameCaptures();
+            }
+
+            Log(
+                "schedule_complete",
+                "order=" + JoinGameOrder() +
+                ";resultMode=" +
+                (_naturalMinigames ? "natural" : "accelerated") +
+                ";verifiedResults=" + _verifiedMinigameResultCount);
+
+            if (IsRecoveryInitial &&
+                _recoveryTarget == RecoveryTarget.MatchComplete)
+            {
+                await WaitUntilAsync(
+                    () =>
+                    {
+                        var match = NetworkMatchState.Instance;
+                        return match != null &&
+                               match.FlowState ==
+                                   BoardFlowState.MatchComplete;
+                    },
+                    120d,
+                    "match-complete recovery checkpoint");
+                await HoldAtRecoveryCheckpointAsync(
+                    OnlineSessionController.Instance);
+                return;
+            }
 
             await WaitUntilAsync(
                 () =>
@@ -811,6 +1349,12 @@ namespace MazeParty.Multiplayer
             }
 
             var inputAccepted = AnySlotAcceptsInput(match);
+            if (!inputAccepted)
+            {
+                throw new InvalidOperationException(
+                    game + " never opened an authoritative input window.");
+            }
+
             for (var pulse = 0; pulse < 4; pulse++)
             {
                 if (match.FlowState != BoardFlowState.MinigamePlaying)
@@ -859,6 +1403,333 @@ namespace MazeParty.Multiplayer
             Log(
                 "minigame_input_smoke",
                 "game=" + game + ";inputWindowObserved=" + inputAccepted);
+        }
+
+        private async Task CaptureMinigameScreenshotAsync(
+            int turn,
+            ScheduledMinigameId game)
+        {
+            if (!IsHost)
+            {
+                throw new InvalidOperationException(
+                    "Only the host may capture minigame screenshots.");
+            }
+
+            // Give the Player one more rendered frame after the input smoke so
+            // movement and game-specific presentation are visible in the image.
+            await Task.Delay(500);
+
+            var match = RequireMatch();
+            if (match.FlowState != BoardFlowState.MinigamePlaying ||
+                match.CurrentMinigame != game ||
+                !MinigameRuntimeRegistry.TryGet(game, out var runtime) ||
+                runtime == null ||
+                !runtime.IsSpawned)
+            {
+                throw new InvalidOperationException(
+                    game + " was not visibly in progress at screenshot time.");
+            }
+
+            var fileName =
+                turn.ToString("00", CultureInfo.InvariantCulture) +
+                "-" + game + ".png";
+            var path = Path.Combine(MinigameScreenshotDirectory, fileName);
+            if (File.Exists(path))
+            {
+                throw new InvalidOperationException(
+                    "Refusing to overwrite an existing minigame screenshot: " +
+                    path);
+            }
+
+            Log(
+                "minigame_screenshot_requested",
+                "turn=" + turn +
+                ";game=" + game +
+                ";file=minigame-screenshots/" + fileName);
+            ScreenCapture.CaptureScreenshot(path);
+
+            try
+            {
+                await WaitUntilAsync(
+                    () => IsNonEmptyFile(path),
+                    15d,
+                    game + " screenshot file");
+            }
+            catch (Exception)
+            {
+                Log(
+                    "minigame_screenshot_missing",
+                    "turn=" + turn +
+                    ";game=" + game +
+                    ";file=minigame-screenshots/" + fileName);
+                throw;
+            }
+
+            var fileLength = new FileInfo(path).Length;
+            _minigameScreenshotPaths.Add(path);
+            Log(
+                "minigame_screenshot_saved",
+                "turn=" + turn +
+                ";game=" + game +
+                ";file=minigame-screenshots/" + fileName +
+                ";bytes=" + fileLength);
+        }
+
+        private async Task WaitForNaturalMinigameResultAsync(
+            int turn,
+            ScheduledMinigameId game,
+            IReadOnlyList<int> goldBefore,
+            IReadOnlyList<int> winsBefore)
+        {
+            var timeoutSeconds = GetNaturalMinigameTimeoutSeconds(game);
+            Log(
+                "minigame_natural_result_wait_started",
+                "turn=" + turn +
+                ";game=" + game +
+                ";timeoutSeconds=" +
+                timeoutSeconds.ToString("0.0", CultureInfo.InvariantCulture));
+
+            await WaitUntilAsync(
+                () =>
+                {
+                    var current = NetworkMatchState.Instance;
+                    return current != null &&
+                           current.Turn == turn &&
+                           current.CurrentMinigame == game &&
+                           current.FlowState == BoardFlowState.MinigameResult;
+                },
+                timeoutSeconds,
+                game + " natural result phase");
+
+            if (!MinigameRuntimeRegistry.TryGet(game, out var runtime) ||
+                runtime == null)
+            {
+                throw new InvalidOperationException(
+                    "The completed runtime adapter was unavailable for " +
+                    game + ".");
+            }
+
+            var runtimeSpawnedAtResult = runtime.IsSpawned;
+            if (runtimeSpawnedAtResult)
+            {
+                for (var slot = 0;
+                     slot < MultiplayerConstants.MaxPlayers;
+                     slot++)
+                {
+                    if (runtime.CanAcceptInputForSlot(slot))
+                    {
+                        throw new InvalidOperationException(
+                            game + " still accepted input for slot " + slot +
+                            " after naturally reporting its result.");
+                    }
+                }
+            }
+
+            var rewardDetails = ValidateNaturalRewardDeltas(
+                RequireMatch(),
+                goldBefore,
+                winsBefore);
+            _verifiedMinigameResultCount++;
+            Log(
+                "minigame_natural_result_verified",
+                "turn=" + turn +
+                ";game=" + game +
+                ";runtimeSpawnedAtResult=" + runtimeSpawnedAtResult +
+                ";runtimeAcceptsInput=false;" + rewardDetails);
+        }
+
+        private static double GetNaturalMinigameTimeoutSeconds(
+            ScheduledMinigameId game)
+        {
+            if (!MinigameCatalog.TryGetDefinition(game, out var definition))
+            {
+                throw new InvalidOperationException(
+                    "No minigame definition is registered for " + game + ".");
+            }
+
+            var roundCount = Math.Max(1, definition.RoundCount);
+            var phaseSeconds = Math.Max(1d, definition.PhaseDurationSeconds);
+            var timedGameplaySeconds = phaseSeconds * roundCount;
+            if (game == ScheduledMinigameId.BombPassing)
+            {
+                // The catalog stores one bomb's maximum fuse. A natural match
+                // can require one explosion for each eliminated player.
+                timedGameplaySeconds = Math.Max(
+                    timedGameplaySeconds,
+                    phaseSeconds * (MultiplayerConstants.MaxPlayers - 1));
+            }
+
+            var transitionAllowanceSeconds = (roundCount * 15d) + 45d;
+            return Math.Min(
+                480d,
+                Math.Max(
+                    120d,
+                    timedGameplaySeconds + transitionAllowanceSeconds));
+        }
+
+        private static string ValidateNaturalRewardDeltas(
+            NetworkMatchState match,
+            IReadOnlyList<int> goldBefore,
+            IReadOnlyList<int> winsBefore)
+        {
+            var avatars = RequireFourAvatars(match);
+            var firstPlaceReward =
+                MinigameRewardRules.GetFinalPlacementGold(1);
+            var firstPlaceWinnerCount = 0;
+            byte firstPlaceMask = 0;
+            var goldDeltas = new StringBuilder();
+            var winDeltas = new StringBuilder();
+
+            for (var slot = 0;
+                 slot < MultiplayerConstants.MaxPlayers;
+                 slot++)
+            {
+                var goldDelta = avatars[slot].Gold - goldBefore[slot];
+                var winDelta = avatars[slot].MinigameWins - winsBefore[slot];
+                if (goldDelta < 0 || winDelta < 0)
+                {
+                    throw new InvalidOperationException(
+                        "Natural reward delta was negative for slot " + slot +
+                        ": gold/wins " + goldDelta + "/" + winDelta + ".");
+                }
+
+                if (!IsPlacementRewardValue(goldDelta))
+                {
+                    throw new InvalidOperationException(
+                        "Natural gold delta was not a placement reward for slot " +
+                        slot + ": " + goldDelta + ".");
+                }
+
+                if (winDelta > 1)
+                {
+                    throw new InvalidOperationException(
+                        "Natural minigame-win delta exceeded one for slot " +
+                        slot + ": " + winDelta + ".");
+                }
+
+                var receivedFirstPlaceReward =
+                    goldDelta == firstPlaceReward;
+                if ((winDelta == 1) != receivedFirstPlaceReward)
+                {
+                    throw new InvalidOperationException(
+                        "Natural first-place reward/win delta disagreed for " +
+                        "slot " + slot + ": gold/wins " + goldDelta + "/" +
+                        winDelta + ".");
+                }
+
+                if (receivedFirstPlaceReward)
+                {
+                    firstPlaceWinnerCount++;
+                    firstPlaceMask = (byte)(firstPlaceMask | (1 << slot));
+                }
+
+                if (slot > 0)
+                {
+                    goldDeltas.Append(',');
+                    winDeltas.Append(',');
+                }
+
+                goldDeltas.Append(goldDelta);
+                winDeltas.Append(winDelta);
+            }
+
+            if (firstPlaceWinnerCount < 1)
+            {
+                throw new InvalidOperationException(
+                    "Natural result awarded no first-place winner.");
+            }
+
+            return
+                "goldDeltas=" + goldDeltas +
+                ";winDeltas=" + winDeltas +
+                ";firstPlaceWinners=" + firstPlaceWinnerCount +
+                ";firstPlaceMask=" + firstPlaceMask;
+        }
+
+        private static bool IsPlacementRewardValue(int value)
+        {
+            for (var rank = 1;
+                 rank <= MinigameRewardRules.PlacementCount;
+                 rank++)
+            {
+                if (value == MinigameRewardRules.GetFinalPlacementGold(rank))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void PrepareMinigameCaptureDirectory()
+        {
+            if (!_captureMinigames || !IsHost)
+            {
+                return;
+            }
+
+            Directory.CreateDirectory(MinigameScreenshotDirectory);
+            var existingScreenshots = Directory.GetFiles(
+                MinigameScreenshotDirectory,
+                "*.png",
+                SearchOption.TopDirectoryOnly);
+            if (existingScreenshots.Length > 0)
+            {
+                throw new InvalidOperationException(
+                    "The minigame screenshot directory must be empty before " +
+                    "an opt-in capture run: " + MinigameScreenshotDirectory);
+            }
+        }
+
+        private void ValidateMinigameCaptures()
+        {
+            var expectedCount = MinigameScheduleRules.DefaultTurnCount;
+            var savedScreenshots = Directory.GetFiles(
+                MinigameScreenshotDirectory,
+                "*.png",
+                SearchOption.TopDirectoryOnly);
+            if (_minigameScreenshotPaths.Count != expectedCount ||
+                savedScreenshots.Length != expectedCount)
+            {
+                throw new InvalidOperationException(
+                    "Expected exactly " + expectedCount +
+                    " minigame screenshots, captured " +
+                    _minigameScreenshotPaths.Count +
+                    " and found " + savedScreenshots.Length + " on disk.");
+            }
+
+            for (var index = 0;
+                 index < _minigameScreenshotPaths.Count;
+                 index++)
+            {
+                if (!IsNonEmptyFile(_minigameScreenshotPaths[index]))
+                {
+                    throw new InvalidOperationException(
+                        "Minigame screenshot was missing or empty: " +
+                        _minigameScreenshotPaths[index]);
+                }
+            }
+
+            Log(
+                "minigame_screenshots_verified",
+                "count=" + savedScreenshots.Length +
+                ";directory=minigame-screenshots");
+        }
+
+        private static bool IsNonEmptyFile(string path)
+        {
+            try
+            {
+                return File.Exists(path) && new FileInfo(path).Length > 0L;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return false;
+            }
         }
 
         private static void RouteMinigameInput(
@@ -986,11 +1857,14 @@ namespace MazeParty.Multiplayer
         private void ValidateCompleteSchedule()
         {
             if (_completedGames.Count != MinigameRuntimeRegistry.RegisteredIds.Count ||
-                _completedGames.Count != MinigameScheduleRules.DefaultTurnCount)
+                _completedGames.Count != MinigameScheduleRules.DefaultTurnCount ||
+                _verifiedMinigameResultCount !=
+                    MinigameScheduleRules.DefaultTurnCount)
             {
                 throw new InvalidOperationException(
-                    "Expected all fifteen unique minigames, observed " +
-                    _completedGames.Count + ".");
+                    "Expected all fifteen unique minigames and verified results, " +
+                    "observed " + _completedGames.Count + "/" +
+                    _verifiedMinigameResultCount + ".");
             }
 
             for (var index = 0;
@@ -1031,7 +1905,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static void ValidateCeremony(NetworkMatchState match)
+        private void ValidateCeremony(NetworkMatchState match)
         {
             var firstCategory = match.GetCeremonyAwardCategory(0);
             var secondCategory = match.GetCeremonyAwardCategory(1);
@@ -1064,6 +1938,18 @@ namespace MazeParty.Multiplayer
                     throw new InvalidOperationException(
                         "Final ceremony rank mismatch for slot " + slot + ".");
                 }
+
+                if (_ceremonyTie && expectedRanks[slot] != 1)
+                {
+                    throw new InvalidOperationException(
+                        "The deterministic ceremony tie did not rank every player first.");
+                }
+            }
+
+            if (_ceremonyTie && (firstMask != 0x0F || secondMask != 0x0F))
+            {
+                throw new InvalidOperationException(
+                    "The deterministic ceremony tie did not award all four players.");
             }
         }
 
@@ -1247,17 +2133,17 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static void ValidateForestSelection(BoardMapSelection selection)
+        private void ValidateMapSelection(BoardMapSelection selection)
         {
             if (!string.Equals(
                     selection.MapId,
-                    ForestMapId,
+                    _mapId,
                     StringComparison.Ordinal) ||
-                selection.ContentVersion != ForestContentVersion)
+                selection.ContentVersion != _mapContentVersion)
             {
                 throw new InvalidOperationException(
-                    "Expected Forest map " + ForestMapId +
-                    " v" + ForestContentVersion +
+                    "Expected board map " + _mapId +
+                    " v" + _mapContentVersion +
                     ", observed " + selection.MapId +
                     " v" + selection.ContentVersion + ".");
             }
@@ -1342,6 +2228,15 @@ namespace MazeParty.Multiplayer
         private void ParseArguments()
         {
             var arguments = Environment.GetCommandLineArgs();
+            var captureMinigamesRequested = HasCommandLineSwitch(
+                arguments,
+                CaptureMinigamesArgument);
+            var naturalMinigamesRequested = HasCommandLineSwitch(
+                arguments,
+                NaturalMinigamesArgument);
+            var ceremonyTieRequested = HasCommandLineSwitch(
+                arguments,
+                CeremonyTieArgument);
             _role = GetArgument(arguments, "-e2e-role");
             if (!string.Equals(_role, HostRole, StringComparison.OrdinalIgnoreCase) &&
                 !string.Equals(_role, ClientRole, StringComparison.OrdinalIgnoreCase))
@@ -1377,6 +2272,80 @@ namespace MazeParty.Multiplayer
             {
                 throw new ArgumentException("A client must use -e2e-player 1, 2, or 3.");
             }
+
+            _captureMinigames = IsHost && captureMinigamesRequested;
+            _naturalMinigames = IsHost && naturalMinigamesRequested;
+            _ceremonyTie = IsHost && ceremonyTieRequested;
+
+            _mapId = GetArgument(arguments, "-e2e-map").Trim();
+            if (string.IsNullOrEmpty(_mapId) ||
+                string.Equals(
+                    _mapId,
+                    ForestMapId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                _mapId = ForestMapId;
+                _mapContentVersion = ForestContentVersion;
+            }
+            else if (string.Equals(
+                         _mapId,
+                         MazeMapId,
+                         StringComparison.OrdinalIgnoreCase))
+            {
+                _mapId = MazeMapId;
+                _mapContentVersion = MazeContentVersion;
+            }
+            else
+            {
+                throw new ArgumentException(
+                    "-e2e-map must be forest-graybox or maze-graybox.");
+            }
+
+            var recoveryCheckpoint = GetArgument(
+                arguments,
+                RecoveryCheckpointArgument).Trim();
+            if (string.IsNullOrEmpty(recoveryCheckpoint))
+            {
+                _recoveryTarget = RecoveryTarget.None;
+                _recoveryStage = string.Empty;
+            }
+            else
+            {
+                switch (recoveryCheckpoint.ToLowerInvariant())
+                {
+                    case "turn-overview":
+                        _recoveryTarget = RecoveryTarget.TurnOverview;
+                        break;
+                    case "minigame-intro-ready":
+                        _recoveryTarget = RecoveryTarget.MinigameIntroReady;
+                        break;
+                    case "match-complete":
+                        _recoveryTarget = RecoveryTarget.MatchComplete;
+                        break;
+                    default:
+                        throw new ArgumentException(
+                            "-e2e-recovery-checkpoint must be " +
+                            "turn-overview, minigame-intro-ready, or " +
+                            "match-complete.");
+                }
+
+                _recoveryStage = GetArgument(
+                    arguments,
+                    RecoveryStageArgument).Trim().ToLowerInvariant();
+                if (_recoveryStage != RecoveryInitialStage &&
+                    _recoveryStage != RecoveryResumeStage)
+                {
+                    throw new ArgumentException(
+                        "-e2e-recovery-stage must be initial or resume.");
+                }
+
+                if (_captureMinigames || _naturalMinigames || _ceremonyTie)
+                {
+                    throw new ArgumentException(
+                        "Recovery staging cannot be combined with capture, " +
+                        "natural-minigame, or ceremony-tie modes.");
+                }
+            }
         }
 
         private static PlayerAppearanceState BuildAppearance(int slot)
@@ -1403,14 +2372,109 @@ namespace MazeParty.Multiplayer
                    left.BodyBlue == right.BodyBlue;
         }
 
+        private static MatchRecoveryCheckpoint ToRecoveryCheckpoint(
+            RecoveryTarget target)
+        {
+            switch (target)
+            {
+                case RecoveryTarget.TurnOverview:
+                    return MatchRecoveryCheckpoint.TurnOverview;
+                case RecoveryTarget.MinigameIntroReady:
+                    return MatchRecoveryCheckpoint.MinigameIntroReady;
+                case RecoveryTarget.MatchComplete:
+                    return MatchRecoveryCheckpoint.MatchComplete;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(target));
+            }
+        }
+
+        private static BoardFlowState ToRecoveryFlowState(
+            RecoveryTarget target)
+        {
+            switch (target)
+            {
+                case RecoveryTarget.TurnOverview:
+                    return BoardFlowState.TurnOverview;
+                case RecoveryTarget.MinigameIntroReady:
+                    return BoardFlowState.MinigameIntroReady;
+                case RecoveryTarget.MatchComplete:
+                    return BoardFlowState.MatchComplete;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(target));
+            }
+        }
+
         private bool IsHost =>
             string.Equals(_role, HostRole, StringComparison.OrdinalIgnoreCase);
+
+        private bool IsRecoveryMode =>
+            _recoveryTarget != RecoveryTarget.None;
+
+        private bool IsRecoveryInitial =>
+            IsRecoveryMode && string.Equals(
+                _recoveryStage,
+                RecoveryInitialStage,
+                StringComparison.Ordinal);
+
+        private bool IsRecoveryResume =>
+            IsRecoveryMode && string.Equals(
+                _recoveryStage,
+                RecoveryResumeStage,
+                StringComparison.Ordinal);
+
+        private string RecoveryTargetSlug
+        {
+            get
+            {
+                switch (_recoveryTarget)
+                {
+                    case RecoveryTarget.TurnOverview:
+                        return "turn-overview";
+                    case RecoveryTarget.MinigameIntroReady:
+                        return "minigame-intro-ready";
+                    case RecoveryTarget.MatchComplete:
+                        return "match-complete";
+                    default:
+                        return "none";
+                }
+            }
+        }
 
         private string JoinCodePath =>
             Path.Combine(_runDirectory, "join-code.txt");
 
         private string QuitSignalPath =>
             Path.Combine(_runDirectory, "quit.signal");
+
+        private string MinigameScreenshotDirectory =>
+            Path.Combine(_runDirectory, "minigame-screenshots");
+
+        private string RecoveryCheckpointReadyPath =>
+            Path.Combine(_runDirectory, "recovery-checkpoint-ready.marker");
+
+        private string RecoveryExternalKillSignalPath =>
+            Path.Combine(_runDirectory, "recovery-external-kill.signal");
+
+        private string RecoveryResumeBoardMarkerPath(int playerIndex)
+        {
+            return Path.Combine(
+                _runDirectory,
+                "recovery-resume-board-" + playerIndex + ".marker");
+        }
+
+        private bool AllRecoveryResumeBoardMarkersPresent()
+        {
+            for (var slot = 0;
+                 slot < MultiplayerConstants.MaxPlayers;
+                 slot++)
+            {
+                if (!File.Exists(RecoveryResumeBoardMarkerPath(slot)))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
 
         private void Log(string eventName, string details = "")
         {
@@ -1479,8 +2543,8 @@ namespace MazeParty.Multiplayer
         private string BuildSummary(SessionSnapshot snapshot)
         {
             var matchDescription =
-                "\"map\":\"" + ForestMapId + "\"," +
-                "\"mapContentVersion\":" + ForestContentVersion + "," +
+                "\"map\":\"" + EscapeJson(_mapId) + "\"," +
+                "\"mapContentVersion\":" + _mapContentVersion + "," +
                 "\"players\":" + snapshot.Players.Count + "," +
                 "\"minigameCount\":" + _completedGames.Count + "," +
                 "\"minigameOrder\":\"" + EscapeJson(JoinGameOrder()) + "\"," +
@@ -1489,10 +2553,21 @@ namespace MazeParty.Multiplayer
                 "\"itemDeathRespawn\":true," +
                 "\"combatDamage\":true," +
                 "\"ceremonyValidated\":true," +
+                "\"ceremonyAllTie\":" +
+                    (_ceremonyTie ? "true" : "false") + "," +
                 "\"allPlayersReturnedToLobby\":true," +
                 "\"acceleratedBoardTravel\":true," +
                 "\"acceleratedCombatAfterVerifiedHit\":true," +
-                "\"acceleratedResultSettlement\":true";
+                "\"naturalMinigameCompletion\":" +
+                    (_naturalMinigames ? "true" : "false") + "," +
+                "\"acceleratedResultSettlement\":" +
+                    (_naturalMinigames ? "false" : "true") + "," +
+                "\"verifiedMinigameResultCount\":" +
+                    _verifiedMinigameResultCount +
+                (_captureMinigames
+                    ? ",\"minigameScreenshotCount\":" +
+                      _minigameScreenshotPaths.Count
+                    : string.Empty);
             return "{" + matchDescription + "}";
         }
 

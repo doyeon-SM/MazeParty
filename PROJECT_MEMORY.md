@@ -79,6 +79,11 @@
 
 - `Environment/Generated Ground`에는 TerrainLayer 기반 잔디와 보드 연결을 따르는 흙길만
   자동 생성한다. 생성 외 `Environment` 자식은 보존하고 시각 지형에는 Collider를 두지 않는다.
+- Resources에서 런타임 로드되는 Terrain이 Player 빌드에도 포함되도록 Board 씬에는
+  비활성 GameObject와 활성 Terrain 컴포넌트로 된 참조 placeholder를 유지한다.
+- Unity 6000.6.0f1 URP Standalone Player에서는 인스턴스 Terrain 경로가 표면을 누락하므로
+  Forest·Maze Terrain과 placeholder는 `drawInstanced=false`를 사용한다. authored 맵이
+  활성화되면 레거시 `Board Backdrop (No Gameplay Collision)`은 숨기고 해제 시 복원한다.
 - 42칸·49개 일방통행 연결을 사용한다. 외곽은 `0→1→…→22→0`, 내부는
   `4→23→…→28→12`, `8→29→…→31→26`, `26→32→…→34→17`,
   `20→35→…→38→24`, `24→39→40→41→7`이며 `1→3`, `12→14` 지름길을 사용한다.
@@ -109,6 +114,17 @@
   `18/18/7/7/7/3`으로 배정한다.
 - 착지 효과 비율 변경에 따라 보드 저장 복구 호환 버전은 4이며, 이전 비율의 안정
   체크포인트는 다른 칸 배치로 복구하지 않고 콘텐츠 지문에서 차단한다.
+
+### 보드 칸 시각
+
+- 일반·시작·리스폰·효과 칸의 루트, 라벨, 착지 효과면 Renderer는 플레이 화면에서
+  항상 숨긴다. Collider·Footprint·Topology·착지 효과 데이터는 그대로 유지한다.
+- 칸 종류와 능력은 미니맵·전체 지도 UI의 아이콘과 설명으로만 표시한다. 월드에서는
+  Terrain의 길, 장막, 플레이어, 주사위·아이템과 일회성 VFX만 보여준다.
+- 미니맵·전체 지도에서 플레이어는 자신의 색 원형 표식으로 현재 논리 칸의 안전 중심에
+  표시한다. 착지 효과 아이콘도 같은 중심에 표시하며, 둘이 겹치면 효과 아이콘을 플레이어
+  원보다 위 레이어에 그린다.
+- 칸 경계 Gizmo는 Editor 작업용이므로 유지하며 Player 빌드에는 표시하지 않는다.
 
 ### 보드 아이템 시각 자산
 
@@ -159,8 +175,22 @@
   중심을 계속 바라보도록 뒤쪽 위치를 보정한다.
 - 이미 사선·정면·개인 추적 시점인 나머지 미니게임 카메라는 각 게임의 기존 구도를
   유지한다.
-- Arena Combat 관전은 높이 12m·뒤쪽 18m·FOV 58, 보드 착지 전투 관전은 높이
-  10m·뒤쪽 14m·FOV 55를 사용해 정탑뷰보다 낮은 시점에서 전투 전체를 보여준다.
+- Arena Combat 탈락자 관전과 보드 착지 전투의 비참가자·탈락자 관전도 같은
+  `SharedCameraFraming`의 정탑 기준 35°를 사용한다. Arena는 높이 12m·FOV 58,
+  보드 격투는 높이 10m·FOV 55이며 뒤쪽 거리는 35°에서 자동 계산한다. 살아 있는
+  격투 참가자는 기존 1인칭 시점을 유지한다.
+
+### 미니게임 시각 피드백
+
+- 15종의 플레이어 스폰 표시는 숨긴다. Board 단계에서는 Lobby 프레젠테이션을
+  비활성화하며 Bomb Passing은 중앙 블록만 숨기고 소환 링은 유지한다.
+- Sequence Memory의 A/S/D는 도/미/솔에 대응한다. 사운드 참조는 사용자 에셋 전달 전까지
+  비워 둔다. Snowy Spin 중앙 원, Bouncing Balls 중앙 원은 시각적으로 숨긴다.
+- Minefield·Wrong Way·Race는 로컬 플레이어 중심 개인 카메라를 사용하고 Minefield와
+  Red Light Green Light의 시점을 낮춘다. Bouncing Balls는 슬롯별 화면 축과 측면 방어바
+  방향을 보정하되 본인 점수는 별도로 강조하지 않는다.
+- Balloon Blow는 보드와 겹치지 않는 위치에서 플레이어가 카메라를 향한다. Stable Footing은
+  가로 8×세로 6이며 전광판은 뒤쪽 벽처럼 세운다. Gift Grab 기지 표시는 숫자만 사용한다.
 
 ### 오디오
 
@@ -168,85 +198,64 @@
 - 보너스 준비음은 공개 전 2초만 재생하며 공개·일시정지에서 중지하고 duck하지 않는다.
 - 보드 발소리는 짧은 원샷 11개를 shuffle 재생한다.
 
-## 미정 결정
-
-- 파일이 없는 중앙 큐 `item.bullet_impact`, `minigame.finish`와 미니게임 씬 직접 오디오
-  슬롯 9개의 후속 사운드
-
 ## 현재 검증 상태
 
-- 2026-10-05 기준 Unity 컴파일 오류는 0건이다.
-- 전체 EditMode 테스트 436개를 다시 실행해 433개가 통과했고, 이전과 동일한
-  3개가 실패했다. 실제 조치 대상은
-  `SequenceMemory/Npc.prefab` 루트의 `LocalizedFontScope` 누락 1건이다.
-- 나머지 실패 2건은 사용자가 보존을 지시한 `LobbyCanvas.prefab` 비표시와
-  `OnlineBootstrap` 씬 인스턴스 활성 override를 검사한 알려진 비차단 예외다.
-- 이번 변경의 맵 이름·현지화 계약 테스트 21개, 착지 효과·복구 지문 테스트 11개,
-  복구 저널·스냅샷 codec 테스트 16개가 모두 통과했다.
-- 아이템 관련 계약 테스트 52개를 통과했고, 최종 변경 뒤 수류탄 요청 상태 전이
-  테스트 19개도 다시 통과했다.
-- PlayMode 러너는 정상 종료했지만 등록된 실제 PlayMode 테스트는 0개였다.
-- 15종 미니게임을 고정 시드 `12345`로 Solo 실행해 모두 진입했고, 실행 중 화면을
-  캡처했다. 각 캡처 시점의 Console Error는 0건이었다.
-- 35° 공용 카메라 7종과 Arena Combat 관전 화면을 다시 Solo 실행해 경기장 전체,
-  캐릭터·벽·타일 측면과 가장자리 잘림 여부를 확인했다. 카메라 씬 계약 테스트
-  14개가 모두 통과했고 증빙은 `Builds/TestArtifacts/CameraQA/2026-10-05`에 있다.
-- `BoardFlowTestbed`의 Turn Overview와 Action/아이템 선택 상태를 캡처했으며
-  Error/Warning은 0건이었다. 증빙은
-  `Builds/TestArtifacts/TodoQA/2026-10-05`에 있다.
-- 현재 소스로 Windows Development Mono x64 빌드에 성공했고 Build Error는 0건이다.
-  AllIn1VfxToolkit의 구버전 Mesh 2개와 디버그 occlusion shader strip 경고는 남았다.
-- production UGS/Relay 기반 4프로세스 E2E
-  `Logs/FullMatchE2E-20261005-121500`가 PASS했다. Forest v4, 15종 runtime·입력
-  smoke·정산, Pistol 체력 `80→60→40→20→0`과 사망·묘비·리스폰·보호,
-  보드 전투, 수상식, 4인 로비 복귀를 확인했고 4개 pass/return 마커와 summary가 남았다.
-  보드 이동·후속 전투·미니게임 결과 정산은 가속/주입하므로 아래 실기 QA를 대체하지 않는다.
+- 2026-10-06 기준 Unity 컴파일 오류는 0건이며 Windows Development Mono x64 빌드가
+  성공했다. 전체 EditMode 445개 중 443개가 통과했다. 남은 2개는 사용자가 보존한
+  `LobbyCanvas.prefab` 비표시와 `OnlineBootstrap` 활성 override를 검사하는 알려진 예외다.
+  Terrain·Board 표적 계약 11개, Skybox·Sequence Memory 표적 테스트 20개와 카메라 관련
+  씬 계약 15개도 통과했다. 지도 중앙 정렬·원형 플레이어 표식·효과 아이콘 상위 표시를
+  포함한 지도 UI 계약 11개도 모두 통과했다.
+- Sequence Memory의 `Npc.prefab` 루트에 `LocalizedFontScope`를 적용해 이전 현지화 폰트
+  계약 실패를 해소했다.
+- 최종 아이템 4프로세스 실기 QA가 Forest v4·실제 UGS/Relay에서 4/4 PASS했다. Pistol·Sniper
+  hitscan, 조준선 조건, 무탄환 오브젝트, 전 프로세스 tracer, Sniper 무확대, Grenade
+  소유자 전용 16m 원·승인/거절 복구·1초 포물선, Mine 소유자 전용 보드/지도 표시와
+  발동 정리를 확인했다. 같은 빌드에서 월드 칸 블럭은 숨고 지도 능력 아이콘, Terrain
+  흙길, 장막·주사위는 유지됐다. 증빙은 `Logs/ItemMultiplayerQA-20261006-013807` 및
+  `Builds/TestArtifacts/ItemMultiplayerQA/2026-10-06/20261006-013807`의 31장이다.
+- pause 중 실제 client를 종료·재실행한 재접속 QA가 4/4 PASS했다. 일시정지 중 타이머
+  정지, 동적 슬롯 재연결, 동일 좌석의 권위 상태·위치 복원, player pause 복원·해제를
+  확인했다. 복원 직후 로비 초기 위치가 덮어쓰던 실제 결함은 `_restoredFromSnapshot`
+  가드와 `NetworkTransform.Teleport`로 수정했다. 증빙은
+  `Logs/ReconnectE2E-20261005-205843`이다.
+- Maze v1을 선택한 4인 경기를 실제 프로세스 종료·재실행으로 복구했다. Turn Overview,
+  Minigame Intro Ready, Match Complete 세 체크포인트가 각각 4/4 PASS했고 증빙은
+  `Builds/TestArtifacts/RecoveryQA/2026-10-05`에 있다.
+- Forest v4 Development Player 4프로세스에서 15종을 자연 결과까지 연속 실행했다.
+  15/15 입력 창·자연 종료·정산, 공동 1위 수상식(`ranks=1,1,1,1`), 4인 로비 복귀가
+  PASS했다. 결과 정산 주입은 사용하지 않았으며 게임별 1280×720 캡처는
+  `Builds/TestArtifacts/BuildMinigameQA/2026-10-05/FullMatch-20261005-212630`에 있다.
+- additive 씬에서 `OnlineBootstrap`의 기본 Skybox가 유지되던 실제 빌드 문제를 발견해
+  Bootstrap·setup·계약 테스트를 `FS000_Night_01`로 통일했다. 재빌드한 최종 15장에는
+  동일한 야간 Skybox가 적용됐다.
+- Forest Terrain은 Editor와 런타임 상태·빌드 포함 자산이 모두 정상이었지만
+  `drawInstanced=true`일 때만 Windows Player에서 사라졌다. 비인스턴스 경로로 전환한
+  `Builds/TestArtifacts/ItemMultiplayerQA/2026-10-06/20261006-010604/pistol-far-p0.png`에서
+  잔디·흙길과 야간 Skybox가 함께 표시되는 것을 확인했다. 이 실행은 이후 별도 아이템
+  마커 대기시간 초과로 중단되어 Terrain 시각 증빙으로만 사용한다.
+- 최종 Forest v4 Development Player에서 사용자 피드백 반영 후 15종을 다시 촬영했다.
+  결과·스크린샷 15/15, 수상식과 4인 로비 복귀가 통과했으며 보드 이동과 결과 정산은
+  물론 검증된 타격 이후 전투도 가속했다. 증빙은
+  `Builds/TestArtifacts/BuildMinigameQA/2026-10-06/FullMatch-20261006-011032`에 있다.
+- 공용 미니게임 7종, Arena Combat 관전, 보드 격투 관전은 하나의 정탑 기준 35° 계산을
+  사용한다. Unity 런타임 계산은 양쪽 관전 모두 `35.000°`였고 최종 빌드가 성공했다.
+- `DEVELOPER SOLO TEST` 패널은 Editor 전용이며 Player 캡처에는 없다. 우하단
+  `Development Build`는 캡처 도구 오버레이가 아니라 Development Player 자체 표시다.
 
 ## 남은 검증·TODO
 
-### 우선순위 1 — 아이템 2클라이언트 실기 QA
-
-- 4프로세스 E2E에서 호스트 Pistol의 일반 RPC 피해·탄수·사망·리스폰 기준선은 통과했다.
-  아래 조준·가시성·다른 아이템·고지연 분기는 별도 실기 검증이 필요하다.
-- 총기: 피해 가능한 상대 조준 시에만 빨간 조준선인지 확인한다. 벽 뒤, 사거리 밖, 사망,
-  리스폰 보호, Cloak 상대는 흰색이어야 하며 hitscan 피해와 tracer를 함께 확인한다.
-  Sniper에 별도 조준 모드와 2배 확대가 없는지도 확인한다.
-- 수류탄: 선택한 본인에게만 16m 최대 사거리 원이 보이고 이동을 따라가며 사용 즉시
-  사라지는지 확인한다. 다른 클라이언트에는 보이지 않아야 하며, 투척은 포물선으로 이동하되
-  궤적 미리보기는 없어야 한다. 고지연에서 서버 승인·거절 뒤 표시 상태 복구도 확인한다.
-  Forest와 Maze 지면에서 원의 밀착·클리핑·가독성과 실제 최대 사거리 일치도 확인한다.
-- 지뢰: 설치자에게만 보드·미니맵·전체 지도 위치가 보이는지 확인하고, 발동 및 재접속 뒤
-  표시가 정상 정리되는지 4인 실제 플레이로 회귀 확인한다.
-
-### 우선순위 2 — 자동 검증 부채
-
-- `SequenceMemory/Npc.prefab` 루트에 `LocalizedFontScope`를 추가해 계약 실패 1건을 해소하고
-  관련 계약 및 전체 EditMode 테스트를 다시 실행한다.
-
-### 우선순위 3 — 멀티플레이·맵 회귀
-
-- Forest 4인 전체 경기 기준선 E2E는 통과했다. 보드 이동과 미니게임 결과는
-  가속/주입했으므로 실제 플레이 분기는 아래와 같이 남는다.
-- pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위 수상식을 검증한다.
-- 대기방에서 `미로`(`maze-graybox`)를 선택한 4인 경기 시작과 저장 경기 복구를 실제
-  플레이로 확인한다.
-- 별도 PC·고지연 환경의 전체 경기와 IL2CPP 릴리즈 후보를 검증한다.
-
-### 우선순위 4 — 전체 플레이·시각 QA
-
-- 15종 미니게임을 자연 제한시간까지 플레이해 조작, 조기 종료, 시간 종료, 동률 분기를
-  검증한다. 2026-10-05 Solo 캡처와 4프로세스 runtime·입력 smoke는 통과했지만
-  결과 placement를 주입했으므로 이 항목은 미완료다.
-- VFX 자연 재생시간, 투명 정렬, Bloom·Soft Particle, `Reduce Flashes` 차이를 시각 QA한다.
-- Solo 개발자 패널의 화면 점유·겹침은 Player 빌드에 없는 Editor 전용 표시로 확인했다.
-  실제 멀티플레이에서는 ArenaCombat 이름표와 Minefield·Race의 큰 검은 여백만 별도
-  시각 QA한다.
-
-### 우선순위 5 — 도구·기술 부채
-
-- 미로 레이아웃 변경 뒤 흙길을 다시 칠할 미로용 바닥 갱신 수단을 마련한다.
-- 로비 `Warm Cell Light` 4개의 shadow atlas 초과 경고 처리 방안을 결정한다.
-  2026-10-05 `OnlineBootstrap` 짧은 실행·종료 5회에서는 재현되지 않았다.
-- 2026-10-05 `OnlineBootstrap` 실행·종료 5회와 4프로세스 E2E Player 로그에서
-  `[Wire] FATAL The header part of a frame could not be read.`는 재현되지 않았다.
-  다시 발생하면 종료 직후 Editor/Player 로그를 함께 수집한다.
+- 15종 캡처 피드백 뒤 게임별 에셋 교체, 디자인 변경, 배치·카메라 위치를 조정한다.
+  우선 검토 후보는 Bouncing Balls의 하단 골대·방어바 프레이밍과 Race의 하단 여백이다.
+- Sequence Memory의 도/미/솔 사운드 참조는 사용자 에셋 전달 뒤 연결한다.
+- Arena Combat 최종 캡처는 살아 있는 참가자의 1인칭 화면이다. 35° 관전 계산은
+  검증했지만 최종 디자인 판단용 실제 관전 화면과 보드 격투 관전 화면은 별도 캡처한다.
+- 자연 진행 QA는 15종 정상 종료를 확인했지만, 모든 게임의 조기 종료·시간 종료·공동
+  순위 조합과 수동 조작감, VFX 투명 정렬·Bloom·Soft Particle·`Reduce Flashes`는
+  화면 피드백 단계에서 추가 확인한다.
+- 실제 Relay는 사용했지만 제어된 지연·패킷 손실 주입은 하지 않았다. 별도 PC 네트워크,
+  장시간 soak, Windows IL2CPP Release 후보를 검증한다.
+- `FS000_Night_01`은 Git 비추적 `Assets/Ignore` 에셋이므로 다른 빌드 환경에도 같은
+  GUID의 원본이 필요하다.
+- 알려진 Lobby UI 계약 예외 2건은 현재 디자인을 변경할 때 함께 정리한다.
+- 미로 레이아웃 변경 뒤 흙길을 다시 칠할 미로 전용 바닥 갱신 도구는 기술 부채로 남는다.

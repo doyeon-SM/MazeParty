@@ -1811,7 +1811,13 @@ namespace MazeParty.Multiplayer
             _displayName.Value = new FixedString64Bytes(
                 PlayerProfilePreferences.SanitizeDisplayName(resolvedName));
             AssignFirstAvailableLobbyColorOnServer();
-            InitializeLobbyPositionOnServer();
+            // Setting the slot invokes OnSlotChanged synchronously. A board-ready
+            // reconnect can restore its snapshot there, so do not overwrite the
+            // restored board pose with the lobby spawn when control returns here.
+            if (!_restoredFromSnapshot)
+            {
+                InitializeLobbyPositionOnServer();
+            }
             NetworkMatchState.Instance?.TryRestoreAvatarOnServer(this);
             if (_boardReady.Value)
             {

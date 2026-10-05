@@ -28,6 +28,9 @@ namespace MazeParty.Editor
             CorePrefabFolder + "/BalloonBlowEnvironment.prefab";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/BalloonBlow/Materials";
+        private const string SharedSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
+            "FS000_Night_01.mat";
         private const string StableFootingScenePath =
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
 
@@ -131,10 +134,23 @@ namespace MazeParty.Editor
                     ? NewSceneMode.Single
                     : NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
+            var sharedSkybox =
+                AssetDatabase.LoadAssetAtPath<Material>(SharedSkyboxPath);
+            if (sharedSkybox == null)
+            {
+                throw new InvalidOperationException(
+                    "The shared minigame skybox is missing at " +
+                    SharedSkyboxPath + ".");
+            }
+            RenderSettings.skybox = sharedSkybox;
 
             var root = new GameObject("Balloon Blow Network State");
             var arenaPresentation = new GameObject("Arena Presentation");
             arenaPresentation.transform.SetParent(root.transform, false);
+            arenaPresentation.transform.localPosition = new Vector3(
+                BalloonBlowNetworkView.ArenaCenterX,
+                0f,
+                0f);
 
             var arena = CreateArena(
                 arenaPresentation.transform,
@@ -147,7 +163,8 @@ namespace MazeParty.Editor
 
             var audioAnchor = new GameObject("Audio Replacement Anchor");
             audioAnchor.transform.SetParent(root.transform, false);
-            audioAnchor.transform.position = new Vector3(0f, 2f, 2.8f);
+            audioAnchor.transform.position = new Vector3(
+                BalloonBlowNetworkView.ArenaCenterX, 2f, 2.8f);
             var cueAudioSource = audioAnchor.AddComponent<AudioSource>();
             cueAudioSource.playOnAwake = false;
             cueAudioSource.loop = false;
@@ -220,14 +237,14 @@ namespace MazeParty.Editor
                 var playerAnchor = new GameObject(
                     "Player Anchor " + (slot + 1)).transform;
                 playerAnchor.SetParent(playerRoot, false);
-                playerAnchor.position = PlayerPositions[slot];
-                playerAnchor.rotation = Quaternion.identity;
+                playerAnchor.localPosition = PlayerPositions[slot];
+                playerAnchor.localRotation = Quaternion.Euler(0f, 180f, 0f);
                 playerAnchors[slot] = playerAnchor;
 
                 var balloonAnchor = new GameObject(
                     "Balloon Anchor " + (slot + 1)).transform;
                 balloonAnchor.SetParent(balloonRoot, false);
-                balloonAnchor.position = new Vector3(
+                balloonAnchor.localPosition = new Vector3(
                     PlayerPositions[slot].x,
                     1.85f,
                     0.35f);

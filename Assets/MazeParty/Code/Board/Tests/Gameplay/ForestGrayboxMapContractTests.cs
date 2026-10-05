@@ -201,6 +201,8 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(terrain.name, Is.EqualTo("Forest Ground"));
             Assert.That(terrain.materialTemplate, Is.Not.Null,
                 "The terrain needs an explicit URP material to render in prefab stage and builds.");
+            Assert.That(terrain.drawInstanced, Is.False,
+                "Runtime-loaded Unity 6 URP board Terrain must use the stable Player rendering path.");
             Assert.That(
                 generatedGround.GetComponentsInChildren<TerrainCollider>(true),
                 Is.Empty,

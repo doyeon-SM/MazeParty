@@ -30,11 +30,11 @@ namespace MazeParty.Editor
             if (existing != null)
             {
                 BoardLocalMapPrefabUpgrade.Ensure(root);
+                BoardMapRoomCapacityUpgrade.Ensure(root);
                 BoardMapInfoPrefabUpgrade.Ensure(root);
                 BoardMapRoutePrefabUpgrade.Ensure(root);
                 BoardItemProjectSetup.EnsureMapBindings(root);
                 EnsureTopologyGraphics(root);
-                BoardMapRoomCapacityUpgrade.Ensure(root);
                 foreach (var currentView in root.GetComponentsInChildren<BoardMinimapView>(true))
                 {
                     if (!currentView.HasRequiredReferences)
@@ -144,11 +144,11 @@ namespace MazeParty.Editor
             serialized.FindProperty("liveMinimap").objectReferenceValue = view;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             BoardLocalMapPrefabUpgrade.Ensure(root);
+            BoardMapRoomCapacityUpgrade.Ensure(root);
             BoardMapInfoPrefabUpgrade.Ensure(root);
             BoardMapRoutePrefabUpgrade.Ensure(root);
             BoardItemProjectSetup.EnsureMapBindings(root);
             EnsureTopologyGraphics(root);
-            BoardMapRoomCapacityUpgrade.Ensure(root);
             if (!view.HasRequiredReferences) throw new InvalidOperationException("Minimap setup failed.");
         }
 

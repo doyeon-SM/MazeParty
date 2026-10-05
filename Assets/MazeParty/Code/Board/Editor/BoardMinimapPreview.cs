@@ -76,14 +76,16 @@ namespace MazeParty.Editor
                 var local = topology.Tiles[0];
                 var focus = local.WorldCenter + new Vector3(1.5f, 0f, -0.7f);
                 view.PrepareMap(topology, local.Coordinate, 3, topology.Tiles[4].Coordinate, focus);
-                var markerTargets = new Transform[4];
+                var markerTiles = new BoardTile[4];
                 for (var slot = 0; slot < 4; slot++)
                 {
-                    var marker = new GameObject("Preview player " + slot);
-                    SceneManager.MoveGameObjectToScene(marker, preview);
-                    marker.transform.position = slot == 0 ? focus : topology.Tiles[slot * 4].WorldCenter;
-                    markerTargets[slot] = marker.transform;
-                    view.PresentPlayer(slot, marker.transform, LobbyColorPalette.GetColor(slot), slot == 0);
+                    var markerTile = slot == 0 ? local : topology.Tiles[slot * 4];
+                    markerTiles[slot] = markerTile;
+                    view.PresentPlayerAtTile(
+                        slot,
+                        markerTile,
+                        LobbyColorPalette.GetColor(slot),
+                        slot == 0);
                 }
                 Directory.CreateDirectory("Temp");
                 foreach (var yaw in new[] { 0f, 270f })
@@ -103,8 +105,12 @@ namespace MazeParty.Editor
                 panel.gameObject.SetActive(false);
                 var fullView = ui.transform.Find("Board Full Map").GetComponent<BoardMinimapView>();
                 fullView.PrepareMap(topology, local.Coordinate, 3, topology.Tiles[4].Coordinate, focus);
-                for (var slot = 0; slot < markerTargets.Length; slot++)
-                    fullView.PresentPlayer(slot, markerTargets[slot], LobbyColorPalette.GetColor(slot), slot == 0);
+                for (var slot = 0; slot < markerTiles.Length; slot++)
+                    fullView.PresentPlayerAtTile(
+                        slot,
+                        markerTiles[slot],
+                        LobbyColorPalette.GetColor(slot),
+                        slot == 0);
                 fullView.SetHeading(270f);
                 Canvas.ForceUpdateCanvases();
                 camera.Render();

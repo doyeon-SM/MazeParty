@@ -44,6 +44,13 @@ namespace MazeParty.Multiplayer
             bool isLocalPlayer,
             Color ownerColor)
         {
+            SetElementActive(titleText, true);
+            SetElementActive(detailText, true);
+            SetElementActive(colorSwatchRenderer, true);
+            SetElementActive(
+                transform.Find("Label Backing")?.gameObject,
+                true);
+
             titleText.text = string.IsNullOrWhiteSpace(title)
                 ? GameText.T("PLAYER")
                 : title.Trim();
@@ -79,6 +86,26 @@ namespace MazeParty.Multiplayer
             WorldTextOcclusion.Apply(detailText);
         }
 
+        private static void SetElementActive(
+            Component component,
+            bool active)
+        {
+            if (component != null)
+            {
+                component.gameObject.SetActive(active);
+            }
+        }
+
+        private static void SetElementActive(
+            GameObject gameObject,
+            bool active)
+        {
+            if (gameObject != null)
+            {
+                gameObject.SetActive(active);
+            }
+        }
+
         private static void SetRendererColor(Renderer renderer, Color color)
         {
             if (renderer == null)
@@ -91,6 +118,24 @@ namespace MazeParty.Multiplayer
             block.SetColor("_BaseColor", color);
             block.SetColor("_Color", color);
             renderer.SetPropertyBlock(block);
+        }
+
+        public void SetNumberOnly(int value)
+        {
+            SetElementActive(titleText, false);
+            SetElementActive(colorSwatchRenderer, false);
+            SetElementActive(localHighlightRenderer, false);
+            SetElementActive(
+                transform.Find("Label Backing")?.gameObject,
+                false);
+            SetElementActive(detailText, true);
+
+            detailText.text = Mathf.Max(0, value).ToString();
+            detailText.color = Color.white;
+            detailText.fontSize = 72;
+            detailText.characterSize = 0.085f;
+            detailText.transform.localPosition =
+                new Vector3(0f, 0f, -0.055f);
         }
     }
 }

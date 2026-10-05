@@ -32,6 +32,9 @@ namespace MazeParty.Editor
             MinigameArtFolder + "/StableFooting";
         private const string MaterialFolder =
             StableFootingArtFolder + "/Materials";
+        private const string SharedSkyboxPath =
+            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
+            "FS000_Night_01.mat";
         private const string RedLightGreenLightScenePath =
             "Assets/MazeParty/Scenes/Minigames/RedLightGreenLight/RedLightGreenLight.unity";
 
@@ -70,7 +73,7 @@ namespace MazeParty.Editor
             }
 
             Debug.Log(
-                "Stable Footing rebuilt: 6 x 8 replaceable platform arena, " +
+                "Stable Footing rebuilt: 8 x 6 replaceable platform arena, " +
                 "three symbols, fixed shared camera, player/tile/art/audio " +
                 "anchors, network state and world-space safe symbol only.");
         }
@@ -123,6 +126,15 @@ namespace MazeParty.Editor
                 NewSceneSetup.EmptyScene,
                 NewSceneMode.Additive);
             SceneManager.SetActiveScene(scene);
+            var sharedSkybox =
+                AssetDatabase.LoadAssetAtPath<Material>(SharedSkyboxPath);
+            if (sharedSkybox == null)
+            {
+                throw new InvalidOperationException(
+                    "The shared minigame skybox is missing at " +
+                    SharedSkyboxPath + ".");
+            }
+            RenderSettings.skybox = sharedSkybox;
 
             var root = new GameObject("Stable Footing Network State");
             var arenaPresentation = new GameObject("Arena Presentation");
@@ -381,8 +393,9 @@ namespace MazeParty.Editor
             display.SetParent(parent, false);
             display.position = new Vector3(
                 NetworkStableFootingState.ArenaCenterX,
-                0.3f,
+                1.25f,
                 arenaLength * 0.5f + 0.6f);
+            display.rotation = Quaternion.Euler(-90f, 0f, 0f);
 
             CreatePrimitive(
                 "Display Backing",

@@ -6,6 +6,21 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class BouncingBallsRulesTests
     {
+        [TestCase(0, 1)]
+        [TestCase(1, 1)]
+        [TestCase(2, -1)]
+        [TestCase(3, -1)]
+        public void ScreenRightProjectsToEachPlayersShieldRail(
+            int playerSlot,
+            int expectedRailAxis)
+        {
+            Assert.That(
+                BouncingBallsRules.ProjectScreenAxisToShieldRail(
+                    playerSlot,
+                    1),
+                Is.EqualTo(expectedRailAxis));
+        }
+
         [Test]
         public void SeedStartsThreeNeutralCenterBallsWithDeterministicDirections()
         {
