@@ -168,7 +168,7 @@ FINISHED,완주,ゴール,已完成
 "Finishers rank first, then survivors by forward progress, with eliminated players placed last.","완주자가 가장 높은 순위를 받고, 이어서 생존자는 전진 거리순으로, 탈락자는 마지막 순위가 됩니다.",ゴールしたプレイヤーが上位となり、次に生存者が前進距離順、脱落者は最下位となります。,完成者排名最前，其次是按前进距离排列的幸存者，淘汰者排在最后。
 FIRST-PERSON ACTION,1인칭 행동,一人称アクション,第一人称行动
 Follow the synchronized signal.,동기화된 신호를 따르세요.,同期された信号に従ってください。,请遵循同步信号。
-Forest Graybox,숲 그레이박스,森のグレーボックス,森林灰盒
+Forest,숲,森,森林
 Four connected players with server-assigned seats are required.,서버에서 자리를 배정받은 접속 플레이어 4명이 필요합니다.,サーバーから席を割り当てられた接続中のプレイヤーが4人必要です。,需要四名已连接且已由服务器分配座位的玩家。
 Four-player Board synchronization failed. The session is ending.,4인 보드 동기화에 실패했습니다. 방이 종료됩니다.,4人のボード同期に失敗しました。ルームを終了します。,四人棋盘同步失败。房间即将关闭。
 FULL MAP / NORTH ^,전체 지도 / 북쪽 ^,全体マップ / 北 ^,全图 / 北 ^
@@ -320,7 +320,7 @@ Master,전체,マスター,总音量
 Map: {0},맵: {0},マップ: {0},地图：{0}
 MATCH COMPLETE,매치 종료,マッチ終了,比赛结束
 MATCH COMPLETE: all 15 turns have finished.,매치 종료: 15턴이 모두 끝났습니다.,マッチ終了：全15ターンが終了しました。,比赛结束：全部15回合已完成。
-Maze Graybox,미로 그레이박스,迷路のグレーボックス,迷宫灰盒
+Maze,미로,迷路,迷宫
 MazeParty Online (4 Players),MazeParty 온라인 (4인),MazeParty オンライン (4人),MazeParty 在线 (4人)
 Mine,지뢰,地雷,地雷
 MINEFIELD,지뢰밭,地雷原,雷区

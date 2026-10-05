@@ -274,8 +274,8 @@ namespace MazeParty.Editor
             var cameraObject = new GameObject("CM_BombPassingShared");
             cameraObject.transform.SetParent(parent, false);
             cameraObject.transform.SetPositionAndRotation(
-                new Vector3(ArenaCenterX, 24f, 0f),
-                Quaternion.Euler(90f, 0f, 0f));
+                BombPassingNetworkView.SharedCameraPosition,
+                BombPassingNetworkView.SharedCameraRotation);
             var camera = cameraObject.AddComponent<CinemachineCamera>();
             camera.Priority = 0;
             var lens = camera.Lens;

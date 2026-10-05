@@ -12,7 +12,7 @@ namespace MazeParty.Multiplayer
     {
         // Increment only when a board/item rule change makes a saved stable
         // checkpoint unsafe to replay. Visual and localization changes do not.
-        public const int BoardRecoveryCompatibilityVersion = 3;
+        public const int BoardRecoveryCompatibilityVersion = 4;
 
         public static string CreatePlayerKey(string authenticatedPlayerId)
         {

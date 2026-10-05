@@ -45,10 +45,12 @@ namespace MazeParty.Multiplayer
         private bool _progressBaselineInitialized;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(NetworkRaceState.TrackCenterX, 45f, 0f);
+            MinigameCameraFraming.CalculateSharedPosition(
+                NetworkRaceState.TrackCenterX,
+                45f);
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.Euler(90f, 0f, 0f);
+            MinigameCameraFraming.SharedRotation;
 
         public GameObject ProgressVfxPrefab => progressVfxPrefab;
         public GameObject FinishVfxPrefab => finishVfxPrefab;

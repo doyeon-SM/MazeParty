@@ -78,17 +78,18 @@ namespace MazeParty.Gameplay
         public const int Damage20Amount = 20;
 
         public const int GoldGainWeight = 5;
-        public const int GoldLossWeight = 3;
-        public const int ItemRewardWeight = 1;
+        public const int GoldLossWeight = 5;
+        public const int ItemRewardWeight = 2;
         public const int Healing20Weight = 1;
         public const int Healing10Weight = 1;
         public const int Damage40Weight = 1;
         public const int Damage20Weight = 1;
         public const int SpecialEventWeight = 1;
+        public const int HealingWeight = Healing20Weight + Healing10Weight;
+        public const int DamageWeight = Damage40Weight + Damage20Weight;
         public const int TotalWeight =
             GoldGainWeight + GoldLossWeight + ItemRewardWeight +
-            Healing20Weight + Healing10Weight + Damage40Weight +
-            Damage20Weight + SpecialEventWeight;
+            HealingWeight + DamageWeight + SpecialEventWeight;
 
         public const double StandardEffectDurationSeconds = 1d;
         public const double SpecialEventTargetDurationSeconds = 1d;
@@ -113,15 +114,13 @@ namespace MazeParty.Gameplay
             BoardLandingEffectType.SpecialEvent
         };
 
-        private static readonly int[] AssignableWeights =
+        private static readonly int[] CategoryWeights =
         {
             GoldGainWeight,
             GoldLossWeight,
             ItemRewardWeight,
-            Healing20Weight,
-            Healing10Weight,
-            Damage40Weight,
-            Damage20Weight,
+            HealingWeight,
+            DamageWeight,
             SpecialEventWeight
         };
 
@@ -328,14 +327,39 @@ namespace MazeParty.Gameplay
 
         private static int[] AllocateCounts(int total)
         {
-            var counts = new int[AssignableWeights.Length];
-            var remainders = new int[AssignableWeights.Length];
-            var allocated = 0;
-            for (var i = 0; i < AssignableWeights.Length; i++)
+            var categoryCounts = AllocateWeightedCounts(
+                total,
+                CategoryWeights,
+                TotalWeight);
+
+            var healingCount = categoryCounts[3];
+            var damageCount = categoryCounts[4];
+            return new[]
             {
-                var weighted = total * AssignableWeights[i];
-                counts[i] = weighted / TotalWeight;
-                remainders[i] = weighted % TotalWeight;
+                categoryCounts[0],
+                categoryCounts[1],
+                categoryCounts[2],
+                (healingCount + 1) / 2,
+                healingCount / 2,
+                (damageCount + 1) / 2,
+                damageCount / 2,
+                categoryCounts[5]
+            };
+        }
+
+        private static int[] AllocateWeightedCounts(
+            int total,
+            IReadOnlyList<int> weights,
+            int totalWeight)
+        {
+            var counts = new int[weights.Count];
+            var remainders = new int[weights.Count];
+            var allocated = 0;
+            for (var i = 0; i < weights.Count; i++)
+            {
+                var weighted = total * weights[i];
+                counts[i] = weighted / totalWeight;
+                remainders[i] = weighted % totalWeight;
                 allocated += counts[i];
             }
 

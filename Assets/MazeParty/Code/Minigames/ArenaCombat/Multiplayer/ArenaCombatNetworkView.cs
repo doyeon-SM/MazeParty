@@ -15,6 +15,9 @@ namespace MazeParty.Multiplayer
     {
         public const float FirstPersonFieldOfView = 70f;
         public const float SpectatorFieldOfView = 58f;
+        public const float SpectatorHeight = 12f;
+        public const float SpectatorBackOffset = 18f;
+        public const float SpectatorFocusHeight = 0.8f;
         public const float ArenaCenterX = 1620f;
         public const float ArenaHalfWidth = 9f;
         public const float ArenaHalfDepth = 9f;
@@ -39,6 +42,20 @@ namespace MazeParty.Multiplayer
         public CinemachineCamera SpectatorCamera => spectatorCamera;
         public GameObject ArenaPresentation => arenaPresentation;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+
+        public static Vector3 CalculateSpectatorCameraPosition(
+            Vector3 center) =>
+            center + Vector3.up * SpectatorHeight +
+            Vector3.back * SpectatorBackOffset;
+
+        public static Quaternion CalculateSpectatorCameraRotation(
+            Vector3 center)
+        {
+            var position = CalculateSpectatorCameraPosition(center);
+            return Quaternion.LookRotation(
+                center + Vector3.up * SpectatorFocusHeight - position,
+                Vector3.up);
+        }
 
         public Transform GetSpawnMarker(int slot) =>
             slot >= 0 && slot < spawnMarkers.Length
@@ -246,12 +263,10 @@ namespace MazeParty.Multiplayer
                 ArenaCenterX - 3f,
                 ArenaCenterX + 3f);
             center.z = Mathf.Clamp(center.z, -3f, 3f);
-            var cameraPosition = center + new Vector3(0f, 12f, -14f);
+            var cameraPosition = CalculateSpectatorCameraPosition(center);
             spectatorCamera.ForceCameraPosition(
                 cameraPosition,
-                Quaternion.LookRotation(
-                    center + Vector3.up * 0.8f - cameraPosition,
-                    Vector3.up));
+                CalculateSpectatorCameraRotation(center));
         }
 
         private void RefreshStaticSpectatorCamera()
@@ -261,14 +276,11 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var cameraPosition =
-                new Vector3(ArenaCenterX, 12f, -14f);
-            var focus = new Vector3(ArenaCenterX, 0.8f, 0f);
+            var center = new Vector3(ArenaCenterX, 0f, 0f);
+            var cameraPosition = CalculateSpectatorCameraPosition(center);
             spectatorCamera.ForceCameraPosition(
                 cameraPosition,
-                Quaternion.LookRotation(
-                    focus - cameraPosition,
-                    Vector3.up));
+                CalculateSpectatorCameraRotation(center));
         }
 
         private void RefreshHitVfx(NetworkMatchState match)

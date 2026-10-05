@@ -175,7 +175,7 @@ namespace MazeParty.Editor
 
                 definition.Configure(
                     MapId,
-                    "Forest Graybox",
+                    "Forest",
                     ContentVersion,
                     savedPrefab);
                 EditorUtility.SetDirty(definition);
@@ -541,7 +541,7 @@ namespace MazeParty.Editor
             }
 
             definition = ScriptableObject.CreateInstance<BoardMapDefinition>();
-            definition.Configure(MapId, "Forest Graybox", ContentVersion, null);
+            definition.Configure(MapId, "Forest", ContentVersion, null);
             AssetDatabase.CreateAsset(definition, DefinitionPath);
             return definition;
         }

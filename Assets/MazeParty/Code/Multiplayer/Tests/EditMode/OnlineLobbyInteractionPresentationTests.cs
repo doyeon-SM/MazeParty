@@ -305,7 +305,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(mapName.text,
                     Is.EqualTo(GameText.F(
                         "Map: {0}",
-                        GameText.T("Forest Graybox"))));
+                        GameText.T("Forest"))));
                 Assert.That(previous.gameObject.activeSelf, Is.True);
                 Assert.That(next.gameObject.activeSelf, Is.True);
                 Assert.That(previous.interactable, Is.True,
@@ -334,7 +334,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(mapName.text,
                     Is.EqualTo(GameText.F(
                         "Map: {0}",
-                        GameText.T("Forest Graybox"))));
+                        GameText.T("Forest"))));
                 Assert.That(previous.gameObject.activeSelf, Is.False);
                 Assert.That(next.gameObject.activeSelf, Is.False);
 

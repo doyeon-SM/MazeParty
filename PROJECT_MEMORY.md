@@ -61,9 +61,10 @@
   지시한 현재 상태이며, 관련 EditMode 계약 2건은 알려진 비차단 예외다.
 - 플레이어 장막은 대기방에서 표시와 판정을 모두 끄고 보드 단계부터 활성화한다. 남은
   보드 상태와 관계없이 세션 단계가 대기방이면 서버와 클라이언트 모두 즉시 제거한다.
-- 준비 영역에는 현재 보드 맵 이름을 항상 표시한다. 호스트만 프로덕션
+- 준비 영역에는 현재 보드 맵의 현지화된 이름을 항상 표시한다. 호스트만 프로덕션
   `BoardMapCatalog.Maps` 순서로 맵을 순환 선택하고, 다른 플레이어는 동기화된 이름만 본다.
-- 새 세션 기본은 `Forest Graybox`이며 `Maze Graybox`도 선택할 수 있다. 저장 경기에서는
+- 맵 표시 이름은 영어 `Forest`·`Maze`, 한국어 `숲`·`미로`, 일본어 `森`·`迷路`,
+  중국어 간체 `森林`·`迷宫`이다. 새 세션 기본은 `forest-graybox`이며 저장 경기에서는
   저장된 `MapId`와 `ContentVersion`을 우선한다.
 
 ### 플레이어 기본 손
@@ -87,15 +88,27 @@
 
 ### Maze Graybox
 
-- mapId는 `maze-graybox`, 표시 이름은 `Maze Graybox`(ko `미로 그레이박스`), 콘텐츠
-  버전은 1이다. 정의·루트 프리팹·Terrain은 미로 전용 에셋만 참조한다.
+- mapId는 `maze-graybox`, 표시 이름의 영문 원문은 `Maze`, 콘텐츠 버전은 1이다.
+  정의·루트 프리팹·Terrain은 미로 전용 에셋만 참조한다.
 - 사용자가 배치한 8×8 격자 64칸·80개 연결을 유지한다. 좌표는 월드 X 순서를 열,
   Z 순서를 행으로 하는 `(열, 행)` 0~7이며 Footprint는 8×8m 정사각형이다.
 - 시작은 `(0,0)`, 리스폰은 `(2,2) (2,5) (5,2) (5,5)`, 슬롯별 시작은
   `(0,0) (7,0) (7,7) (0,7)`이다.
 - 미니맵·전체 맵과 Map Authoring은 방 100개를 지원한다. 레거시 7×7 개요 패널은 자유
   배치 맵에서 표시하지 않는다.
-- `Maze Ground`는 160×153m이고 전체 잔디 레이어다. 숲 전용 갱신 도구는 미로에 적용하지 않는다.
+- `Maze Ground`는 160×153m이고 전체 잔디 레이어다. 실제 지형은
+  `MazeGroundTerrain.asset` 하나만 사용하며 숲 전용 갱신 도구는 미로에 적용하지 않는다.
+
+### 보드 착지 효과
+
+- 칸 효과 6범주의 전역 배치 비율은 골드 획득 : 골드 손실 : 아이템 : 회복 : 피해 :
+  특별 이벤트 = `5:5:2:2:2:1`이다. 회복은 `+20/+10`, 피해는 `-40/-20`으로 균등
+  분할하며 홀수일 때 강한 효과에 1칸을 더 배정한다.
+- Respawn 칸은 효과 배정에서 제외하고 Start 칸은 포함한다. 서버 시드로 위치를 결정하며
+  같은 시드는 같은 배치를 만든다. Forest 40칸은 `12/12/5/5/4/2`, Maze 60칸은
+  `18/18/7/7/7/3`으로 배정한다.
+- 착지 효과 비율 변경에 따라 보드 저장 복구 호환 버전은 4이며, 이전 비율의 안정
+  체크포인트는 다른 칸 배치로 복구하지 않고 콘텐츠 지문에서 차단한다.
 
 ### 보드 아이템 시각 자산
 
@@ -134,6 +147,20 @@
 - Gift Grab은 운반·스턴·기지 수량을 월드에, Stable Footing은 안전 문양만 표시한다.
 - Sequence Memory는 NPC 순서와 로컬 입력·상태 한 줄을 표시한다. Territory Paint와
   Bouncing Balls는 이름 중복 없이 P1~P4 점수만 작게 표시한다.
+- Solo 캡처의 좌측 `DEVELOPER SOLO TEST` 패널은 Editor 전용 테스트 HUD다.
+  `UNITY_EDITOR` 전용 assembly와 Editor 런처에서만 생성되므로 Development·Release
+  Player 빌드에는 포함되거나 표시되지 않는다.
+
+### 미니게임·격투 관전 카메라
+
+- Gift Grab·Bomb Passing·Snowy Spin·Cliff Barrage·Race·Stable Footing·
+  Territory Paint의 고정 공용 orthographic 카메라는 정탑뷰에서 수직 기준 35°를
+  낮춘 시점(Euler X 55°)을 사용한다. 높이와 orthographic size는 유지하고 경기장
+  중심을 계속 바라보도록 뒤쪽 위치를 보정한다.
+- 이미 사선·정면·개인 추적 시점인 나머지 미니게임 카메라는 각 게임의 기존 구도를
+  유지한다.
+- Arena Combat 관전은 높이 12m·뒤쪽 18m·FOV 58, 보드 착지 전투 관전은 높이
+  10m·뒤쪽 14m·FOV 55를 사용해 정탑뷰보다 낮은 시점에서 전투 전체를 보여준다.
 
 ### 오디오
 
@@ -145,18 +172,81 @@
 
 - 파일이 없는 중앙 큐 `item.bullet_impact`, `minigame.finish`와 미니게임 씬 직접 오디오
   슬롯 9개의 후속 사운드
-- 보드 칸 종류의 최종 배치 비율
-- 참조되지 않는 `Art/Board/Maze/TerrainData_*.asset` 10개 삭제 여부
-- `ForestGrayboxMapRoot.prefab`의 연결 이름 재생성 형식을 의도된 변경으로 유지할지 여부
+
+## 현재 검증 상태
+
+- 2026-10-05 기준 Unity 컴파일 오류는 0건이다.
+- 전체 EditMode 테스트 436개를 다시 실행해 433개가 통과했고, 이전과 동일한
+  3개가 실패했다. 실제 조치 대상은
+  `SequenceMemory/Npc.prefab` 루트의 `LocalizedFontScope` 누락 1건이다.
+- 나머지 실패 2건은 사용자가 보존을 지시한 `LobbyCanvas.prefab` 비표시와
+  `OnlineBootstrap` 씬 인스턴스 활성 override를 검사한 알려진 비차단 예외다.
+- 이번 변경의 맵 이름·현지화 계약 테스트 21개, 착지 효과·복구 지문 테스트 11개,
+  복구 저널·스냅샷 codec 테스트 16개가 모두 통과했다.
+- 아이템 관련 계약 테스트 52개를 통과했고, 최종 변경 뒤 수류탄 요청 상태 전이
+  테스트 19개도 다시 통과했다.
+- PlayMode 러너는 정상 종료했지만 등록된 실제 PlayMode 테스트는 0개였다.
+- 15종 미니게임을 고정 시드 `12345`로 Solo 실행해 모두 진입했고, 실행 중 화면을
+  캡처했다. 각 캡처 시점의 Console Error는 0건이었다.
+- 35° 공용 카메라 7종과 Arena Combat 관전 화면을 다시 Solo 실행해 경기장 전체,
+  캐릭터·벽·타일 측면과 가장자리 잘림 여부를 확인했다. 카메라 씬 계약 테스트
+  14개가 모두 통과했고 증빙은 `Builds/TestArtifacts/CameraQA/2026-10-05`에 있다.
+- `BoardFlowTestbed`의 Turn Overview와 Action/아이템 선택 상태를 캡처했으며
+  Error/Warning은 0건이었다. 증빙은
+  `Builds/TestArtifacts/TodoQA/2026-10-05`에 있다.
+- 현재 소스로 Windows Development Mono x64 빌드에 성공했고 Build Error는 0건이다.
+  AllIn1VfxToolkit의 구버전 Mesh 2개와 디버그 occlusion shader strip 경고는 남았다.
+- production UGS/Relay 기반 4프로세스 E2E
+  `Logs/FullMatchE2E-20261005-121500`가 PASS했다. Forest v4, 15종 runtime·입력
+  smoke·정산, Pistol 체력 `80→60→40→20→0`과 사망·묘비·리스폰·보호,
+  보드 전투, 수상식, 4인 로비 복귀를 확인했고 4개 pass/return 마커와 summary가 남았다.
+  보드 이동·후속 전투·미니게임 결과 정산은 가속/주입하므로 아래 실기 QA를 대체하지 않는다.
 
 ## 남은 검증·TODO
 
-- VFX 자연 재생시간, 투명 정렬, Bloom·Soft Particle, `Reduce Flashes` 차이 시각 QA
-- 15종 미니게임을 자연 제한시간까지 플레이하는 조작·조기 종료·시간 종료·동률 분기 검증
-- pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위 수상식
-- 별도 PC, 고지연, IL2CPP 릴리즈 후보 검증
-- 대기방에서 `Maze Graybox` 선택 후 4인 경기 시작·저장 경기 복구 실제 플레이 확인
-- 미로 레이아웃 변경 뒤 흙길을 다시 칠할 미로용 바닥 갱신 수단 마련
-- `SequenceMemory/Npc.prefab` 루트 `LocalizedFontScope` 추가 여부 확인
-- 로비 `Warm Cell Light` 4개의 shadow atlas 초과 경고 처리 방안 결정
-- 플레이 종료 후 `[Wire] FATAL The header part of a frame could not be read.` 재현 여부 확인
+### 우선순위 1 — 아이템 2클라이언트 실기 QA
+
+- 4프로세스 E2E에서 호스트 Pistol의 일반 RPC 피해·탄수·사망·리스폰 기준선은 통과했다.
+  아래 조준·가시성·다른 아이템·고지연 분기는 별도 실기 검증이 필요하다.
+- 총기: 피해 가능한 상대 조준 시에만 빨간 조준선인지 확인한다. 벽 뒤, 사거리 밖, 사망,
+  리스폰 보호, Cloak 상대는 흰색이어야 하며 hitscan 피해와 tracer를 함께 확인한다.
+  Sniper에 별도 조준 모드와 2배 확대가 없는지도 확인한다.
+- 수류탄: 선택한 본인에게만 16m 최대 사거리 원이 보이고 이동을 따라가며 사용 즉시
+  사라지는지 확인한다. 다른 클라이언트에는 보이지 않아야 하며, 투척은 포물선으로 이동하되
+  궤적 미리보기는 없어야 한다. 고지연에서 서버 승인·거절 뒤 표시 상태 복구도 확인한다.
+  Forest와 Maze 지면에서 원의 밀착·클리핑·가독성과 실제 최대 사거리 일치도 확인한다.
+- 지뢰: 설치자에게만 보드·미니맵·전체 지도 위치가 보이는지 확인하고, 발동 및 재접속 뒤
+  표시가 정상 정리되는지 4인 실제 플레이로 회귀 확인한다.
+
+### 우선순위 2 — 자동 검증 부채
+
+- `SequenceMemory/Npc.prefab` 루트에 `LocalizedFontScope`를 추가해 계약 실패 1건을 해소하고
+  관련 계약 및 전체 EditMode 테스트를 다시 실행한다.
+
+### 우선순위 3 — 멀티플레이·맵 회귀
+
+- Forest 4인 전체 경기 기준선 E2E는 통과했다. 보드 이동과 미니게임 결과는
+  가속/주입했으므로 실제 플레이 분기는 아래와 같이 남는다.
+- pause 중 재접속, 호스트 복구 3개 체크포인트, 공동 순위 수상식을 검증한다.
+- 대기방에서 `미로`(`maze-graybox`)를 선택한 4인 경기 시작과 저장 경기 복구를 실제
+  플레이로 확인한다.
+- 별도 PC·고지연 환경의 전체 경기와 IL2CPP 릴리즈 후보를 검증한다.
+
+### 우선순위 4 — 전체 플레이·시각 QA
+
+- 15종 미니게임을 자연 제한시간까지 플레이해 조작, 조기 종료, 시간 종료, 동률 분기를
+  검증한다. 2026-10-05 Solo 캡처와 4프로세스 runtime·입력 smoke는 통과했지만
+  결과 placement를 주입했으므로 이 항목은 미완료다.
+- VFX 자연 재생시간, 투명 정렬, Bloom·Soft Particle, `Reduce Flashes` 차이를 시각 QA한다.
+- Solo 개발자 패널의 화면 점유·겹침은 Player 빌드에 없는 Editor 전용 표시로 확인했다.
+  실제 멀티플레이에서는 ArenaCombat 이름표와 Minefield·Race의 큰 검은 여백만 별도
+  시각 QA한다.
+
+### 우선순위 5 — 도구·기술 부채
+
+- 미로 레이아웃 변경 뒤 흙길을 다시 칠할 미로용 바닥 갱신 수단을 마련한다.
+- 로비 `Warm Cell Light` 4개의 shadow atlas 초과 경고 처리 방안을 결정한다.
+  2026-10-05 `OnlineBootstrap` 짧은 실행·종료 5회에서는 재현되지 않았다.
+- 2026-10-05 `OnlineBootstrap` 실행·종료 5회와 4프로세스 E2E Player 로그에서
+  `[Wire] FATAL The header part of a frame could not be read.`는 재현되지 않았다.
+  다시 발생하면 종료 직후 Editor/Player 로그를 함께 수집한다.

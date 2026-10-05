@@ -34,7 +34,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(prefab, Is.Not.Null, PrefabPath);
 
             Assert.That(definition.MapId, Is.EqualTo("forest-graybox"));
-            Assert.That(definition.DisplayName, Is.EqualTo("Forest Graybox"));
+            Assert.That(definition.DisplayName, Is.EqualTo("Forest"));
             Assert.That(definition.ContentVersion, Is.EqualTo(4));
             Assert.That(
                 AssetDatabase.GetAssetPath(definition.MapRootPrefab),

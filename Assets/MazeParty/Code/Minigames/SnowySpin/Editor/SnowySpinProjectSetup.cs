@@ -207,8 +207,8 @@ namespace MazeParty.Editor
             var cameraObject = new GameObject("CM_SnowySpinShared");
             cameraObject.transform.SetParent(parent, false);
             cameraObject.transform.SetPositionAndRotation(
-                new Vector3(ArenaCenterX, 23f, 0f),
-                Quaternion.Euler(90f, 0f, 0f));
+                SnowySpinNetworkView.SharedCameraPosition,
+                SnowySpinNetworkView.SharedCameraRotation);
             var camera = cameraObject.AddComponent<CinemachineCamera>();
             camera.Priority = 0;
             var lens = camera.Lens;

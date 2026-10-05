@@ -48,7 +48,7 @@ namespace MazeParty.Gameplay
 
         [Header("Combat Spectator")]
         [SerializeField, Min(1f)] private float combatSpectatorHeight = 10f;
-        [SerializeField, Min(1f)] private float combatSpectatorBackOffset = 8f;
+        [SerializeField, Min(1f)] private float combatSpectatorBackOffset = 14f;
         [SerializeField, Range(10f, 120f)] private float combatSpectatorFieldOfView = 55f;
 
         private CinemachineBrain _brain;

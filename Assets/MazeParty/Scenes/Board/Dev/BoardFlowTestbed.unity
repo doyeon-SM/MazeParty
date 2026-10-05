@@ -5077,7 +5077,7 @@ MonoBehaviour:
   playerOverheadHeight: 8
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10
-  combatSpectatorBackOffset: 8
+  combatSpectatorBackOffset: 14
   combatSpectatorFieldOfView: 55
 --- !u!4 &1548230741
 Transform:

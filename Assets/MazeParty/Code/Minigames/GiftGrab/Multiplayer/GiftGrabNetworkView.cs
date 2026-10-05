@@ -75,10 +75,12 @@ namespace MazeParty.Multiplayer
         public GameObject ActionBurstVfxPrefab => actionBurstVfxPrefab;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(NetworkGiftGrabState.ArenaCenterX, 26f, 0f);
+            MinigameCameraFraming.CalculateSharedPosition(
+                NetworkGiftGrabState.ArenaCenterX,
+                26f);
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.Euler(90f, 0f, 0f);
+            MinigameCameraFraming.SharedRotation;
 
         public void Configure(
             NetworkGiftGrabState networkState,

@@ -66,7 +66,7 @@ namespace MazeParty.Gameplay.Tests
                     first.Damage20Count,
                     first.SpecialEventCount
                 },
-                Is.EqualTo(new[] { 10, 6, 2, 2, 2, 2, 2, 2 }));
+                Is.EqualTo(new[] { 10, 10, 4, 2, 2, 2, 2, 2 }));
             Assert.That(first.TryGetEffect(respawn.Coordinate, out _), Is.False);
             foreach (var pair in first.Effects)
                 Assert.That(repeated.Effects[pair.Key], Is.EqualTo(pair.Value));
@@ -79,6 +79,54 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(PlayerStatRules.CanPurchaseKey(19), Is.False);
             Assert.That(PlayerStatRules.CanPurchaseKey(20), Is.True);
             Assert.That(PlayerStatRules.ClampHealth(130, 100), Is.EqualTo(100));
+        }
+
+        [TestCase(40, 12, 12, 5, 3, 2, 2, 2, 2)]
+        [TestCase(60, 18, 18, 7, 4, 3, 4, 3, 3)]
+        public void LandingLayout_AuthoredMapSizes_RespectSixCategoryWeights(
+            int eligibleTileCount,
+            int goldGain,
+            int goldLoss,
+            int itemReward,
+            int healing20,
+            int healing10,
+            int damage40,
+            int damage20,
+            int specialEvent)
+        {
+            var tiles = new List<BoardTile>();
+            for (var index = 0; index < eligibleTileCount; index++)
+            {
+                tiles.Add(CreateTile(
+                    new Vector2Int(index, 0),
+                    BoardTileType.Normal));
+            }
+
+            var layout = BoardLandingEffectLayout.Create(tiles, 24680);
+
+            Assert.That(
+                new[]
+                {
+                    layout.GainCount,
+                    layout.LossCount,
+                    layout.ItemRewardCount,
+                    layout.Healing20Count,
+                    layout.Healing10Count,
+                    layout.Damage40Count,
+                    layout.Damage20Count,
+                    layout.SpecialEventCount
+                },
+                Is.EqualTo(new[]
+                {
+                    goldGain,
+                    goldLoss,
+                    itemReward,
+                    healing20,
+                    healing10,
+                    damage40,
+                    damage20,
+                    specialEvent
+                }));
         }
 
         [Test]

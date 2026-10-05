@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: MazeGrayboxMap
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardMapDefinition
   mapId: maze-graybox
-  displayName: Maze Graybox
+  displayName: Maze
   contentVersion: 1
   mapRootPrefab: {fileID: 805521105894613807, guid: dcdf1446da9ac4a479f2b2dd5040f0ae, type: 3}

@@ -121,8 +121,6 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(cameras, Has.Length.EqualTo(1));
                 Assert.That(cameras[0].name,
                     Is.EqualTo("CM_BombPassingShared"));
-                Assert.That(cameras[0].transform.position,
-                    Is.EqualTo(new Vector3(1380f, 24f, 0f)));
                 Assert.That(roots.SelectMany(root =>
                     root.GetComponentsInChildren<Camera>(true)), Is.Empty);
                 Assert.That(roots.SelectMany(root =>

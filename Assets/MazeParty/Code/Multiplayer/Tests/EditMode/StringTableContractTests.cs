@@ -193,6 +193,40 @@ namespace MazeParty.Multiplayer.Tests
                 "Add these sources to StringTable.csv:\n" + string.Join("\n", missing));
         }
 
+        [TestCase("forest-graybox", "Forest", "숲", "森", "森林")]
+        [TestCase("maze-graybox", "Maze", "미로", "迷路", "迷宫")]
+        public void BoardMapDisplayNames_AreLocalizedWithoutAuthoringSuffixes(
+            string mapId,
+            string source,
+            string korean,
+            string japanese,
+            string chineseSimplified)
+        {
+            var catalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.TryGetMap(mapId, out var definition), Is.True);
+            Assert.That(definition, Is.Not.Null);
+            Assert.That(definition.DisplayName, Is.EqualTo(source));
+
+            var table = LoadTable();
+            Assert.That(
+                table.TryGet(source, GameLanguage.Korean, out var actualKorean),
+                Is.True);
+            Assert.That(actualKorean, Is.EqualTo(korean));
+            Assert.That(
+                table.TryGet(source, GameLanguage.Japanese, out var actualJapanese),
+                Is.True);
+            Assert.That(actualJapanese, Is.EqualTo(japanese));
+            Assert.That(
+                table.TryGet(
+                    source,
+                    GameLanguage.ChineseSimplified,
+                    out var actualChineseSimplified),
+                Is.True);
+            Assert.That(actualChineseSimplified, Is.EqualTo(chineseSimplified));
+        }
+
         /// <summary>
         /// Returns the first-argument literal of each GameText.T/F/N or
         /// SetLocalizedStatus call, joining adjacent literals concatenated

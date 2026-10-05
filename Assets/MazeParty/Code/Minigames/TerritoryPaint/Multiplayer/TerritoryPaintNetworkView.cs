@@ -8,7 +8,7 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Client presentation for the replicated paint surface and four logical
-    /// runners. Every client registers the same fixed top-down camera.
+    /// runners. Every client registers the same fixed angled camera.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TerritoryPaintNetworkView : MonoBehaviour
@@ -67,13 +67,12 @@ namespace MazeParty.Multiplayer
         public GameObject PaintSplashVfxPrefab => paintSplashVfxPrefab;
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.Euler(90f, 0f, 0f);
+            MinigameCameraFraming.SharedRotation;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(
+            MinigameCameraFraming.CalculateSharedPosition(
                 NetworkTerritoryPaintState.ArenaCenterX,
-                SharedCameraHeight,
-                0f);
+                SharedCameraHeight);
 
         public void Configure(
             NetworkTerritoryPaintState networkState,

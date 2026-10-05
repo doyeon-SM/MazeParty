@@ -443,14 +443,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                     ArenaCombatRules.ArenaCenterX - 3f,
                     ArenaCombatRules.ArenaCenterX + 3f);
                 center.z = Mathf.Clamp(center.z, -3f, 3f);
-                var position = center + new Vector3(0f, 12f, -14f);
+                var position = ArenaCombatNetworkView
+                    .CalculateSpectatorCameraPosition(center);
                 _camera.fieldOfView =
                     ArenaCombatNetworkView.SpectatorFieldOfView;
                 _camera.transform.SetPositionAndRotation(
                     position,
-                    Quaternion.LookRotation(
-                        center + Vector3.up * 0.8f - position,
-                        Vector3.up));
+                    ArenaCombatNetworkView
+                        .CalculateSpectatorCameraRotation(center));
                 Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = true;
             }

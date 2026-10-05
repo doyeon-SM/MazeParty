@@ -58,10 +58,12 @@ namespace MazeParty.Multiplayer
         private NetworkCliffBarrageState _subscribedVfxState;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(ArenaCenterX, 23f, 0f);
+            MinigameCameraFraming.CalculateSharedPosition(
+                ArenaCenterX,
+                23f);
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.Euler(90f, 0f, 0f);
+            MinigameCameraFraming.SharedRotation;
 
         public GameObject ArenaPresentation => arenaPresentation;
         public CinemachineCamera SharedCamera => sharedCamera;

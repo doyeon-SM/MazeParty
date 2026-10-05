@@ -271,7 +271,7 @@ namespace MazeParty.Multiplayer.Tests
                     new[] { spawnAnchor });
                 definition.Configure(
                     "forest-graybox",
-                    "Forest Graybox",
+                    "Forest",
                     4,
                     template);
                 catalog.Configure(new[] { definition });

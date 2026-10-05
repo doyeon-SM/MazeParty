@@ -67,10 +67,12 @@ namespace MazeParty.Multiplayer
         private int _localSlot = -1;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(ArenaCenterX, 24f, 0f);
+            MinigameCameraFraming.CalculateSharedPosition(
+                ArenaCenterX,
+                24f);
 
         public static Quaternion SharedCameraRotation =>
-            Quaternion.Euler(90f, 0f, 0f);
+            MinigameCameraFraming.SharedRotation;
 
         public GameObject ArenaPresentation => arenaPresentation;
         public Transform PlayerRoot => playerRoot;
