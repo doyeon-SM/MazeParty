@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
             public GameObject Reticle;
             public GameObject ItemShopPanel;
 
+            public Text ReticleText;
             public Text TurnText;
             public Text PhaseText;
             public Text PhaseTimerText;
@@ -104,6 +105,10 @@ namespace MazeParty.Multiplayer
                 new Color(0.68f, 0.74f, 0.82f, 1f);
             public Color ReadyPlayerComplete =
                 new Color(0.35f, 1f, 0.55f, 1f);
+            public Color ReticleDefault =
+                new Color(0.93f, 0.96f, 1f, 1f);
+            public Color ReticleDamageableTarget =
+                new Color(1f, 0.2f, 0.2f, 1f);
             public Color[] Players =
             {
                 new Color(1f, 0.42f, 0.42f),
@@ -130,6 +135,7 @@ namespace MazeParty.Multiplayer
         public GameObject ReconnectOverlay => references.ReconnectOverlay;
         public GameObject Reticle => references.Reticle;
         public GameObject ItemShopPanel => references.ItemShopPanel;
+        public Text ReticleText => references.ReticleText;
         public Text TurnText => references.TurnText;
         public Text PhaseText => references.PhaseText;
         public Text PhaseTimerText => references.PhaseTimerText;
@@ -204,6 +210,9 @@ namespace MazeParty.Multiplayer
             statePalette.RuleImagePlaceholder;
         public Color ReadyPlayerWaitingColor => statePalette.ReadyPlayerWaiting;
         public Color ReadyPlayerCompleteColor => statePalette.ReadyPlayerComplete;
+        public Color ReticleDefaultColor => statePalette.ReticleDefault;
+        public Color ReticleDamageableTargetColor =>
+            statePalette.ReticleDamageableTarget;
 
         public bool HasRequiredReferences =>
             references != null &&
@@ -215,6 +224,7 @@ namespace MazeParty.Multiplayer
             references.ReconnectOverlay != null &&
             references.Reticle != null &&
             references.ItemShopPanel != null &&
+            references.ReticleText != null &&
             references.TurnText != null &&
             references.PhaseText != null &&
             references.PhaseTimerText != null &&

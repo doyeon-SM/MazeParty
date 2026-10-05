@@ -5,7 +5,7 @@
 - Price: 골드 가격 / Spawn Weight: 상점·랜덤 보상 상대 가중치 (0이면 제외)
 - Charges: 턴 시작 장착 시 탄약·수량 / Damage: 고정 피해
 - Range: 미터 단위, 한 칸은 8m / Fire Interval: 클릭 사이 최소 초
-- Aim Magnification: 조준 배율 / Blast Radius: 폭발 반경
+- Blast Radius: 폭발 반경
 - Trigger Radius / Arming Delay: 지뢰 감지 반경 / 설치 후 활성화 초
 - Throw Flight Seconds / Projectile Radius / Projectile Lifetime: 수류탄 궤적·충돌·최대 수명
 - Dice Minimum / Dice Maximum: 범위 주사위의 최소/최대 눈 (1~12, 양끝 포함)

@@ -122,12 +122,12 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<double> _personalProtectionEndsAt =
             new NetworkVariable<double>(
                 0d,
-                NetworkVariableReadPermission.Owner,
+                NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<double> _pausedPersonalProtectionRemaining =
             new NetworkVariable<double>(
                 0d,
-                NetworkVariableReadPermission.Owner,
+                NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
         private double _boardDeathEndsAt;
         private double _pausedBoardDeathRemaining;
@@ -2390,14 +2390,21 @@ namespace MazeParty.Multiplayer
         private void UseSelectedItemRpc(
             Vector3 claimedOrigin,
             Vector3 claimedDirection,
+            uint requestId,
             RpcParams rpcParams = default)
         {
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
-                NetworkMatchState.Instance?.TryUseSelectedItemOnServer(
-                    this,
-                    claimedOrigin,
-                    claimedDirection);
+                var accepted =
+                    NetworkMatchState.Instance != null &&
+                    NetworkMatchState.Instance.TryUseSelectedItemOnServer(
+                        this,
+                        claimedOrigin,
+                        claimedDirection);
+                if (requestId != 0u)
+                {
+                    ConfirmItemUseRpc(requestId, accepted);
+                }
             }
         }
 

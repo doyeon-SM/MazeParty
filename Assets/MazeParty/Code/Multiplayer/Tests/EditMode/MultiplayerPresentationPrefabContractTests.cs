@@ -21,6 +21,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Ignore/SimpleHands/";
         private const string NetworkPlayerPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
+        private const string GrenadeRangeIndicatorPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/GrenadeRangeIndicator.prefab";
         private const string LobbyArenaPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/World/LobbyArena.prefab";
         private const string BootstrapScenePath =
@@ -325,6 +327,52 @@ namespace MazeParty.Multiplayer.Tests
                 serializedAvatar.FindProperty("eyePivot").objectReferenceValue,
                 Is.SameAs(eyePivot));
             Assert.That(prefab.GetComponent<PlayerHitZoneOwner>(), Is.Not.Null);
+        }
+
+        [Test]
+        public void GrenadeRangeIndicator_UsesOwnerBoundAuthoredWorldPrefab()
+        {
+            var indicatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                GrenadeRangeIndicatorPrefabPath);
+            Assert.That(
+                indicatorPrefab,
+                Is.Not.Null,
+                GrenadeRangeIndicatorPrefabPath);
+            var authoredIndicator = indicatorPrefab.GetComponent<
+                BoardGrenadeRangeIndicator>();
+            Assert.That(authoredIndicator, Is.Not.Null);
+            Assert.That(authoredIndicator.HasRequiredReferences, Is.True);
+            Assert.That(authoredIndicator.IsVisible, Is.False);
+            Assert.That(
+                indicatorPrefab.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                "The range ring is presentation only and must not affect physics.");
+            Assert.That(
+                indicatorPrefab.GetComponentsInChildren<NetworkObject>(true),
+                Is.Empty,
+                "The owner-only range ring must not be a network object.");
+
+            var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                NetworkPlayerPrefabPath);
+            Assert.That(playerPrefab, Is.Not.Null, NetworkPlayerPrefabPath);
+            var nestedIndicator = playerPrefab.GetComponentsInChildren<
+                BoardGrenadeRangeIndicator>(true).Single();
+            var source = PrefabUtility.GetCorrespondingObjectFromSource(
+                nestedIndicator);
+            Assert.That(source, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(source),
+                Is.EqualTo(GrenadeRangeIndicatorPrefabPath));
+
+            var avatar = playerPrefab.GetComponent<NetworkPlayerAvatar>();
+            Assert.That(avatar, Is.Not.Null);
+            var serializedAvatar = new SerializedObject(avatar);
+            var binding = serializedAvatar.FindProperty(
+                "grenadeRangeIndicator");
+            Assert.That(binding, Is.Not.Null);
+            Assert.That(
+                binding.objectReferenceValue,
+                Is.SameAs(nestedIndicator));
         }
 
         [Test]

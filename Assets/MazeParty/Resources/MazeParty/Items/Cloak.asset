@@ -21,7 +21,6 @@ MonoBehaviour:
   Damage: 0
   Range: 0
   FireInterval: 0.25
-  AimMagnification: 1
   BlastRadius: 0
   TriggerRadius: 0
   ArmingDelay: 0

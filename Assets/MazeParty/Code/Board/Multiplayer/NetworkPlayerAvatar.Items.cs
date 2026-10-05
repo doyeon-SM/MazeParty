@@ -3,21 +3,23 @@ using System.Collections.Generic;
 using MazeParty.Gameplay;
 using Unity.Netcode;
 using UnityEngine;
-using UnityEngine.InputSystem;
 
 namespace MazeParty.Multiplayer
 {
     public sealed partial class NetworkPlayerAvatar
     {
+        [SerializeField] private BoardGrenadeRangeIndicator grenadeRangeIndicator;
         private readonly NetworkVariable<byte> _equippedItem = new NetworkVariable<byte>();
         private readonly NetworkVariable<int> _itemCharges = new NetworkVariable<int>(0, NetworkVariableReadPermission.Owner);
         private readonly NetworkVariable<bool> _doubleDice = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Owner);
         private readonly NetworkVariable<int> _firstDieResult = new NetworkVariable<int>(0, NetworkVariableReadPermission.Owner);
         private readonly NetworkVariable<int> _secondDieResult = new NetworkVariable<int>(0, NetworkVariableReadPermission.Owner);
         private double _itemCooldownRemaining;
-        private GameplayCameraDirector _itemCamera;
+        private readonly GrenadeRangeUseState _grenadeRangeUseState =
+            new GrenadeRangeUseState();
         private readonly List<GameObject> _mineViews = new List<GameObject>();
         private Vector3[] _localMines = Array.Empty<Vector3>();
+        public BoardGrenadeRangeIndicator GrenadeRangeIndicator => grenadeRangeIndicator;
         public IReadOnlyList<Vector3> LocalMinePositions => IsOwner ? _localMines : Array.Empty<Vector3>();
         public int LocalItemCharges => IsOwner ? _itemCharges.Value : 0;
         public bool UsesDoubleDice => (IsOwner || IsServer) && _doubleDice.Value;
@@ -82,28 +84,117 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             if (IsServer && match != null && match.IsActionPhase && !match.IsGlobalSimulationPaused)
                 _itemCooldownRemaining = Math.Max(0d, _itemCooldownRemaining - Time.unscaledDeltaTime);
-            if (_avatarVisual != null) _avatarVisual.SetEquippedItem((PrototypeItemId)_equippedItem.Value);
-            if (!IsOwner) return;
-            if (_itemCamera == null) _itemCamera = FindAnyObjectByType<GameplayCameraDirector>();
-            bool scope = match != null && match.CanAcceptActionInput && CurrentHealth > 0 &&
-                HasResolvedItemChoice && !BoardFlowView.IsItemShopOpen && Cursor.lockState == CursorLockMode.Locked &&
-                (PrototypeItemId)_equippedItem.Value == PrototypeItemId.Sniper &&
-                LocalMouse != null && LocalMouse.rightButton.isPressed &&
-                !HasAimedPriorityInteraction();
-            if (_itemCamera != null) _itemCamera.SetItemMagnification(scope
-                ? PrototypeItemCatalog.Get(PrototypeItemId.Sniper).AimMagnification : 1f);
+            var equippedItem = (PrototypeItemId)_equippedItem.Value;
+            if (_avatarVisual != null) _avatarVisual.SetEquippedItem(equippedItem);
+            if (!IsOwner)
+            {
+                grenadeRangeIndicator?.Hide();
+                return;
+            }
+
+            RefreshGrenadeRangeIndicator(match, equippedItem);
             bool visible = match != null && match.GameplayEnabled &&
                 match.FlowState <= BoardFlowState.LandingEffectResolve;
             foreach (var view in _mineViews) if (view != null) view.SetActive(visible);
         }
 
-        private bool HasAimedPriorityInteraction()
+        public bool HasLocalDamageableFirearmTarget()
         {
-            if (TryGetAimedBoardShop(out var hit) &&
-                (hit.collider.GetComponentInParent<BoardTombstoneMarker>() != null ||
-                 hit.collider.GetComponentInParent<KeyShopWorldTarget>() != null ||
-                 hit.collider.GetComponentInParent<ItemShopWorldTarget>() != null)) return true;
-            return TryGetAimedWorldDie(out _, out _);
+            var match = NetworkMatchState.Instance;
+            var itemId = LocalEquippedItem;
+            if (!IsOwner || !IsSpawned || match == null || !match.CanAcceptActionInput ||
+                CurrentHealth <= 0 || LocalChoiceResolution != ItemChoiceResolution.ItemSelected ||
+                LocalItemCharges <= 0 || IsSwapping || !BoardItemPresentationRules.IsFirearm(itemId))
+            {
+                return false;
+            }
+
+            var origin = eyePivot != null
+                ? eyePivot.position
+                : transform.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            var direction = eyePivot != null ? eyePivot.forward : transform.forward;
+            if (!BoardItemPhysics.Cast(
+                    origin,
+                    direction,
+                    PrototypeItemCatalog.Get(itemId).Range,
+                    gameObject,
+                    out var hit))
+            {
+                return false;
+            }
+
+            var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
+            return target != null && target.IsSpawned &&
+                   BoardItemPresentationRules.ShouldHighlightFirearmTarget(
+                       true,
+                       target.CurrentHealth,
+                       target.IsCloaked,
+                       match.IsOpeningProtectionActive,
+                       target.PersonalItemProtectionRemaining);
+        }
+
+        private void RefreshGrenadeRangeIndicator(
+            NetworkMatchState match,
+            PrototypeItemId equippedItem)
+        {
+            var grenadeSelectionAvailable =
+                equippedItem == PrototypeItemId.Grenade &&
+                LocalItemCharges > 0 &&
+                match != null &&
+                match.IsActionPhase &&
+                LocalChoiceResolution == ItemChoiceResolution.ItemSelected;
+            _grenadeRangeUseState.ClearWhenUnavailable(
+                grenadeSelectionAvailable);
+
+            var showRange = BoardItemPresentationRules.ShouldShowGrenadeRange(
+                IsOwner,
+                match != null && match.CanAcceptActionInput,
+                CurrentHealth,
+                LocalChoiceResolution,
+                equippedItem,
+                LocalItemCharges,
+                _grenadeRangeUseState.IsPending);
+            grenadeRangeIndicator?.SetPresentation(
+                PrototypeItemCatalog.Get(PrototypeItemId.Grenade).Range,
+                showRange);
+        }
+
+        private bool TryBeginLocalItemUseRequest(
+            PrototypeItemId itemId,
+            out uint requestId)
+        {
+            requestId = 0u;
+            if (!IsOwner)
+            {
+                return false;
+            }
+
+            if (itemId != PrototypeItemId.Grenade)
+            {
+                return true;
+            }
+
+            if (!_grenadeRangeUseState.TryBegin(out requestId))
+            {
+                return false;
+            }
+
+            grenadeRangeIndicator?.Hide();
+            return true;
+        }
+
+        private void ResolveLocalItemUseRequest(uint requestId, bool accepted)
+        {
+            if (IsOwner)
+            {
+                _grenadeRangeUseState.Resolve(requestId, accepted);
+            }
+        }
+
+        [Rpc(SendTo.Owner)]
+        private void ConfirmItemUseRpc(uint requestId, bool accepted)
+        {
+            ResolveLocalItemUseRequest(requestId, accepted);
         }
 
         public void SendMinePositionsOnServer(Vector3[] positions)
@@ -128,7 +219,8 @@ namespace MazeParty.Multiplayer
 
         private void DisposeBoardItems()
         {
-            if (_itemCamera != null) _itemCamera.SetItemMagnification(1f);
+            _grenadeRangeUseState.Clear();
+            grenadeRangeIndicator?.Hide();
             foreach (var view in _mineViews) if (view != null) Destroy(view);
             _mineViews.Clear();
             _localMines = Array.Empty<Vector3>();

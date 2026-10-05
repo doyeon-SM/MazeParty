@@ -14,7 +14,6 @@ namespace MazeParty.Gameplay
         [Min(0)] public int Damage;
         [Min(0)] public float Range;
         [Min(.01f)] public float FireInterval = .25f;
-        [Min(1)] public float AimMagnification = 1f;
         [Min(0)] public float BlastRadius;
         [Min(0)] public float TriggerRadius;
         [Min(0)] public float ArmingDelay;

@@ -250,6 +250,23 @@ namespace MazeParty.Gameplay.Tests
                 Physics.SyncTransforms();
                 Assert.That(BoardItemPhysics.HasBlastLineOfSight(origin, new Vector3(0, 100, 6)), Is.True);
                 Assert.That(BoardItemPhysics.Cast(origin, Vector3.forward, 10, null, out _, .12f), Is.False);
+
+                var outOfRangePlayer = GameObject.CreatePrimitive(
+                    PrimitiveType.Capsule);
+                outOfRangePlayer.transform.SetParent(root.transform);
+                outOfRangePlayer.transform.position =
+                    new Vector3(0, 100, 12);
+                outOfRangePlayer.AddComponent<PlayerHitZoneOwner>();
+                Physics.SyncTransforms();
+                Assert.That(
+                    BoardItemPhysics.Cast(
+                        origin,
+                        Vector3.forward,
+                        10,
+                        null,
+                        out _),
+                    Is.False,
+                    "A player beyond the authored item range must not be hit.");
             }
             finally { Object.DestroyImmediate(root); }
         }

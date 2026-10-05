@@ -62,6 +62,7 @@ namespace MazeParty.Multiplayer
         private Text _phaseText;
         private Text _phaseTimerText;
         private Text _choiceTimerText;
+        private Text _reticleText;
         private Text _shieldText;
         private Text _diceText;
         private Text _movesText;
@@ -400,6 +401,7 @@ namespace MazeParty.Multiplayer
             _reconnectOverlay = uiBindings.ReconnectOverlay;
             _reticle = uiBindings.Reticle;
             _itemShopPanel = uiBindings.ItemShopPanel;
+            _reticleText = uiBindings.ReticleText;
             _turnText = uiBindings.TurnText;
             _phaseText = uiBindings.PhaseText;
             _phaseTimerText = uiBindings.PhaseTimerText;
@@ -528,13 +530,15 @@ namespace MazeParty.Multiplayer
                 match.FlowState == BoardFlowState.MinigameResult &&
                 !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
-            SetActive(_reticle,
+            var showReticle =
                 ((match.FlowState == BoardFlowState.Action && !choicePending &&
                   !IsItemShopOpen) ||
                  (match.IsCombatPhase && _localAvatar != null &&
                   match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
                   match.IsCombatAlive(_localAvatar.AssignedSlot))) &&
-                !match.IsGlobalSimulationPaused);
+                !match.IsGlobalSimulationPaused;
+            SetActive(_reticle, showReticle);
+            RefreshReticleColor(showReticle);
 
             RefreshMinefieldPanelContent(match);
 
@@ -3213,11 +3217,27 @@ namespace MazeParty.Multiplayer
             SetActive(_resultPanel, false);
             SetActive(_reconnectOverlay, false);
             SetActive(_reticle, false);
+            RefreshReticleColor(false);
             CloseItemShop();
             SetText(_turnText, GameText.T("TURN --"));
             SetText(_phaseText, GameText.T("WAITING FOR 4 PLAYERS"));
             SetText(_phaseTimerText, "--:--");
             cameraDirector?.SetUiPointerVisible(true);
+        }
+
+        private void RefreshReticleColor(bool visible)
+        {
+            if (_reticleText == null || uiBindings == null)
+            {
+                return;
+            }
+
+            _reticleText.color =
+                visible &&
+                _localAvatar != null &&
+                _localAvatar.HasLocalDamageableFirearmTarget()
+                    ? uiBindings.ReticleDamageableTargetColor
+                    : uiBindings.ReticleDefaultColor;
         }
 
         private static void CopyReferences<T>(T[] source, T[] destination)

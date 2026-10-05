@@ -223,7 +223,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            UseSelectedItemRpc(origin, direction);
+            UseSelectedItemRpc(origin, direction, 0u);
             return true;
         }
 

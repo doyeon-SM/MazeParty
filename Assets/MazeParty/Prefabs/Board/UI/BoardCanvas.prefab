@@ -78567,6 +78567,7 @@ MonoBehaviour:
     ReconnectOverlay: {fileID: 1534147962965574055}
     Reticle: {fileID: 7302854566434752922}
     ItemShopPanel: {fileID: 2058008268472203909}
+    ReticleText: {fileID: 315521006277820248}
     TurnText: {fileID: 3426083237695331163}
     PhaseText: {fileID: 2033599159824165800}
     PhaseTimerText: {fileID: 2265626090355326490}
@@ -78695,6 +78696,8 @@ MonoBehaviour:
     RuleImagePlaceholder: {r: 0.055, g: 0.09, b: 0.14, a: 1}
     ReadyPlayerWaiting: {r: 0.68, g: 0.74, b: 0.82, a: 1}
     ReadyPlayerComplete: {r: 0.35, g: 1, b: 0.55, a: 1}
+    ReticleDefault: {r: 0.93, g: 0.96, b: 1, a: 1}
+    ReticleDamageableTarget: {r: 1, g: 0.2, b: 0.2, a: 1}
     Players:
     - {r: 1, g: 0.42, b: 0.42, a: 1}
     - {r: 0.42, g: 0.7, b: 1, a: 1}

@@ -30,6 +30,8 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         public const string LobbyArenaPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/World/LobbyArena.prefab";
+        public const string GrenadeRangeIndicatorPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/GrenadeRangeIndicator.prefab";
 
         private const string BootstrapScenePath =
             "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
@@ -45,6 +47,8 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Board/Materials/RoomNormalA.mat";
         private const string LobbyWallMaterialPath =
             "Assets/MazeParty/Board/Materials/RoomNormalB.mat";
+        private const string GrenadeRangeIndicatorMaterialPath =
+            "Assets/MazeParty/Board/Materials/GrenadeRangeIndicator.mat";
 
         [MenuItem("MazeParty/Multiplayer/Install Player And Lobby Prefabs")]
         public static void Install()
@@ -85,6 +89,8 @@ namespace MazeParty.Editor
         internal static GameObject LoadOrCreatePlayerPrefab()
         {
             var presentation = EnsurePlayerPresentationAssets();
+            var grenadeRangeIndicator =
+                EnsureGrenadeRangeIndicatorPrefab();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             if (prefab == null)
             {
@@ -93,7 +99,9 @@ namespace MazeParty.Editor
                     throw new InvalidOperationException(
                         "An incompatible asset exists at " + PlayerPrefabPath + ".");
                 }
-                var template = CreateNetworkPlayerTemplate(presentation);
+                var template = CreateNetworkPlayerTemplate(
+                    presentation,
+                    grenadeRangeIndicator);
                 try
                 {
                     prefab = PrefabUtility.SaveAsPrefabAsset(
@@ -107,7 +115,9 @@ namespace MazeParty.Editor
             }
             else
             {
-                MigrateNetworkPlayerPrefab(presentation);
+                MigrateNetworkPlayerPrefab(
+                    presentation,
+                    grenadeRangeIndicator);
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerPrefabPath);
             }
 
@@ -258,6 +268,98 @@ namespace MazeParty.Editor
             }
 
             return indicator;
+        }
+
+        private static BoardGrenadeRangeIndicator
+            EnsureGrenadeRangeIndicatorPrefab()
+        {
+            EnsureFolder("Assets/MazeParty/Prefabs/Board/UI");
+            EnsureFolder("Assets/MazeParty/Board/Materials");
+            var material = EnsureMaterial(
+                GrenadeRangeIndicatorMaterialPath,
+                new Color(1f, 0.42f, 0.1f),
+                0.05f);
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                GrenadeRangeIndicatorPrefabPath);
+            if (prefab == null)
+            {
+                if (AssetDatabase.LoadMainAssetAtPath(
+                        GrenadeRangeIndicatorPrefabPath) != null)
+                {
+                    throw new InvalidOperationException(
+                        "An incompatible asset exists at " +
+                        GrenadeRangeIndicatorPrefabPath + ".");
+                }
+
+                var template = CreateGrenadeRangeIndicatorTemplate(material);
+                try
+                {
+                    prefab = PrefabUtility.SaveAsPrefabAsset(
+                        template,
+                        GrenadeRangeIndicatorPrefabPath);
+                }
+                finally
+                {
+                    Object.DestroyImmediate(template);
+                }
+            }
+
+            var indicator = prefab != null
+                ? prefab.GetComponent<BoardGrenadeRangeIndicator>()
+                : null;
+            if (indicator == null ||
+                !indicator.HasRequiredReferences ||
+                indicator.IsVisible ||
+                prefab.GetComponentsInChildren<Collider>(true).Length != 0 ||
+                prefab.GetComponentsInChildren<NetworkObject>(true).Length != 0)
+            {
+                throw new InvalidOperationException(
+                    "GrenadeRangeIndicator.prefab has incomplete authored " +
+                    "bindings. Repair the prefab instead of recreating it.");
+            }
+
+            return indicator;
+        }
+
+        private static GameObject CreateGrenadeRangeIndicatorTemplate(
+            Material material)
+        {
+            const int segmentCount = 64;
+            var root = new GameObject(
+                "GrenadeRangeIndicator",
+                typeof(BoardGrenadeRangeIndicator));
+            var ring = new GameObject("Range Ring", typeof(LineRenderer));
+            ring.transform.SetParent(root.transform, false);
+            ring.transform.localPosition = new Vector3(0f, 0.06f, 0f);
+
+            var line = ring.GetComponent<LineRenderer>();
+            line.useWorldSpace = false;
+            line.loop = true;
+            line.positionCount = segmentCount;
+            line.widthMultiplier = 0.08f;
+            line.numCornerVertices = 2;
+            line.numCapVertices = 2;
+            line.alignment = LineAlignment.View;
+            line.textureMode = LineTextureMode.Stretch;
+            line.sharedMaterial = material;
+            line.shadowCastingMode = ShadowCastingMode.Off;
+            line.receiveShadows = false;
+            line.lightProbeUsage = LightProbeUsage.Off;
+            line.reflectionProbeUsage = ReflectionProbeUsage.Off;
+            for (var index = 0; index < segmentCount; index++)
+            {
+                var radians = index * Mathf.PI * 2f / segmentCount;
+                line.SetPosition(
+                    index,
+                    new Vector3(Mathf.Cos(radians), 0f, Mathf.Sin(radians)));
+            }
+
+            root.GetComponent<BoardGrenadeRangeIndicator>().Configure(
+                ring,
+                ring.transform,
+                line);
+            ring.SetActive(false);
+            return root;
         }
 
         /// <summary>
@@ -653,7 +755,8 @@ namespace MazeParty.Editor
         }
 
         private static void MigrateNetworkPlayerPrefab(
-            PlayerAvatarPresentationBindings presentationPrefab)
+            PlayerAvatarPresentationBindings presentationPrefab,
+            BoardGrenadeRangeIndicator grenadeRangeIndicatorPrefab)
         {
             var root = PrefabUtility.LoadPrefabContents(PlayerPrefabPath);
             try
@@ -685,6 +788,20 @@ namespace MazeParty.Editor
                     changed = true;
                 }
 
+                var grenadeRangeIndicator = root.GetComponentInChildren<
+                    BoardGrenadeRangeIndicator>(true);
+                if (grenadeRangeIndicator == null)
+                {
+                    var instance = (GameObject)PrefabUtility.InstantiatePrefab(
+                        grenadeRangeIndicatorPrefab.gameObject,
+                        root.transform);
+                    instance.name =
+                        grenadeRangeIndicatorPrefab.gameObject.name;
+                    grenadeRangeIndicator = instance.GetComponent<
+                        BoardGrenadeRangeIndicator>();
+                    changed = true;
+                }
+
                 var eyePivot = root.transform.Find("CameraPivot");
                 if (eyePivot == null)
                 {
@@ -698,9 +815,24 @@ namespace MazeParty.Editor
                 if (eyeProperty.objectReferenceValue != eyePivot)
                 {
                     eyeProperty.objectReferenceValue = eyePivot;
-                    avatarObject.ApplyModifiedPropertiesWithoutUndo();
                     changed = true;
                 }
+                var grenadeRangeProperty = avatarObject.FindProperty(
+                    "grenadeRangeIndicator");
+                if (grenadeRangeProperty == null)
+                {
+                    throw new InvalidOperationException(
+                        "NetworkPlayerAvatar is missing the serialized " +
+                        "grenade range indicator binding.");
+                }
+                if (grenadeRangeProperty.objectReferenceValue !=
+                    grenadeRangeIndicator)
+                {
+                    grenadeRangeProperty.objectReferenceValue =
+                        grenadeRangeIndicator;
+                    changed = true;
+                }
+                avatarObject.ApplyModifiedPropertiesWithoutUndo();
                 if (root.GetComponent<PlayerHitZoneOwner>() == null)
                 {
                     root.AddComponent<PlayerHitZoneOwner>();
@@ -719,7 +851,8 @@ namespace MazeParty.Editor
         }
 
         private static GameObject CreateNetworkPlayerTemplate(
-            PlayerAvatarPresentationBindings presentationPrefab)
+            PlayerAvatarPresentationBindings presentationPrefab,
+            BoardGrenadeRangeIndicator grenadeRangeIndicatorPrefab)
         {
             var root = new GameObject("NetworkPlayer");
             var controller = root.AddComponent<CharacterController>();
@@ -745,8 +878,18 @@ namespace MazeParty.Editor
             eyePivot.SetParent(root.transform, false);
             eyePivot.localPosition = new Vector3(0f, 0.75f, 0f);
             var networkAvatar = root.AddComponent<NetworkPlayerAvatar>();
+            var grenadeRangeInstance =
+                (GameObject)PrefabUtility.InstantiatePrefab(
+                    grenadeRangeIndicatorPrefab.gameObject,
+                    root.transform);
+            grenadeRangeInstance.name =
+                grenadeRangeIndicatorPrefab.gameObject.name;
+            var grenadeRangeIndicator = grenadeRangeInstance.GetComponent<
+                BoardGrenadeRangeIndicator>();
             var avatarObject = new SerializedObject(networkAvatar);
             avatarObject.FindProperty("eyePivot").objectReferenceValue = eyePivot;
+            avatarObject.FindProperty("grenadeRangeIndicator")
+                .objectReferenceValue = grenadeRangeIndicator;
             avatarObject.ApplyModifiedPropertiesWithoutUndo();
             var walls = root.AddComponent<PlayerBoardBoundaryWalls>();
             walls.ConfigureWorldPrefabs(BoardWorldPrefabProjectSetup.EnsureAssets());
@@ -872,6 +1015,18 @@ namespace MazeParty.Editor
             var avatar = prefab != null
                 ? prefab.GetComponent<NetworkPlayerAvatar>()
                 : null;
+            var grenadeRangeIndicators = prefab != null
+                ? prefab.GetComponentsInChildren<
+                    BoardGrenadeRangeIndicator>(true)
+                : Array.Empty<BoardGrenadeRangeIndicator>();
+            var grenadeRangeIndicator = grenadeRangeIndicators.Length == 1
+                ? grenadeRangeIndicators[0]
+                : null;
+            var avatarObject = avatar != null
+                ? new SerializedObject(avatar)
+                : null;
+            var grenadeRangeProperty = avatarObject?.FindProperty(
+                "grenadeRangeIndicator");
             if (prefab == null ||
                 prefab.GetComponent<NetworkObject>() == null ||
                 prefab.GetComponent<NetworkTransform>() == null ||
@@ -880,7 +1035,20 @@ namespace MazeParty.Editor
                 prefab.GetComponent<PlayerBoardBoundaryWalls>() == null ||
                 visual == null || visual.Bindings == null ||
                 !visual.Bindings.HasRequiredReferences ||
-                avatar == null || prefab.transform.Find("CameraPivot") == null)
+                avatar == null || prefab.transform.Find("CameraPivot") == null ||
+                grenadeRangeIndicator == null ||
+                !grenadeRangeIndicator.HasRequiredReferences ||
+                grenadeRangeIndicator.IsVisible ||
+                grenadeRangeIndicator.GetComponentsInChildren<Collider>(true)
+                    .Length != 0 ||
+                grenadeRangeIndicator.GetComponentsInChildren<NetworkObject>(true)
+                    .Length != 0 ||
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    grenadeRangeIndicator.gameObject) !=
+                    GrenadeRangeIndicatorPrefabPath ||
+                grenadeRangeProperty == null ||
+                grenadeRangeProperty.objectReferenceValue !=
+                    grenadeRangeIndicator)
             {
                 throw new InvalidOperationException(
                     "NetworkPlayer.prefab has incomplete authored contracts.");

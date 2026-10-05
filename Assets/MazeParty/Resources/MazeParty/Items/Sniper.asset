@@ -14,14 +14,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 6
   DisplayName: Sniper
-  Description: '5 rounds / 50 damage / 7 tiles. Hold RMB: 2x scope. LMB fires.'
+  Description: 5 rounds / 50 damage / 7 tiles. LMB fires.
   Price: 15
   SpawnWeight: 1
   Charges: 5
   Damage: 50
   Range: 56
   FireInterval: 1
-  AimMagnification: 2
   BlastRadius: 0
   TriggerRadius: 0
   ArmingDelay: 0

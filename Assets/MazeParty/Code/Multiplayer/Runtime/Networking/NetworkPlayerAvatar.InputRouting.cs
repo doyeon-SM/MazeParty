@@ -237,7 +237,15 @@ namespace MazeParty.Multiplayer
                             : transform.forward;
                         if (LocalEquippedItem == PrototypeItemId.PositionSwapper)
                             BoardUtilityItemView.Instance?.Open(this);
-                        else UseSelectedItemRpc(origin, direction);
+                        else if (TryBeginLocalItemUseRequest(
+                                     LocalEquippedItem,
+                                     out var requestId))
+                        {
+                            UseSelectedItemRpc(
+                                origin,
+                                direction,
+                                requestId);
+                        }
                     }
                 }
                 else

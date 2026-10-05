@@ -41,6 +41,7 @@ Transform:
   m_Children:
   - {fileID: 4809050092821967579}
   - {fileID: 3019039632690205383}
+  - {fileID: 4947623026140395914}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &383344527962518354
@@ -224,6 +225,7 @@ MonoBehaviour:
   m_Name: ''
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkPlayerAvatar
   ShowTopMostFoldoutHeaderGroup: 1
+  grenadeRangeIndicator: {fileID: 273685376955897446}
   moveSpeed: 5
   lookSensitivity: 0.12
   eyePivot: {fileID: 3019039632690205383}
@@ -300,6 +302,79 @@ Transform:
   m_Children: []
   m_Father: {fileID: 8222189701903262476}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &2335329142683147493
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 8222189701903262476}
+    m_Modifications:
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8169746345741250084, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+      propertyPath: m_Name
+      value: GrenadeRangeIndicator
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+--- !u!114 &273685376955897446 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2568338341138516611, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+  m_PrefabInstance: {fileID: 2335329142683147493}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c186c7250bd4b7489a61dcc6dd7cb41, type: 3}
+  m_Name: ''
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardGrenadeRangeIndicator
+--- !u!4 &4947623026140395914 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 7260292529807631727, guid: 5293ebb36a16ef147a734a3f47bf660d, type: 3}
+  m_PrefabInstance: {fileID: 2335329142683147493}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3321663201955635441
 PrefabInstance:
   m_ObjectHideFlags: 0

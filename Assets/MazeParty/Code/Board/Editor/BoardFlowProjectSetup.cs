@@ -1631,6 +1631,9 @@ namespace MazeParty.Editor
                 ItemShopPanel = RequireBoardUiObject(
                     root,
                     "ItemShopPanel"),
+                ReticleText = RequireBoardUiComponent<Text>(
+                    root,
+                    "BoardReticle"),
                 TurnText = RequireBoardUiComponent<Text>(root, "TurnText"),
                 PhaseText = RequireBoardUiComponent<Text>(root, "PhaseText"),
                 PhaseTimerText = RequireBoardUiComponent<Text>(
