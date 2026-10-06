@@ -9,8 +9,9 @@ using UnityEngine.Rendering;
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Bakes a flat Polytope Studio terrain and paints the authored board route as
-    /// dirt. Only Environment/Generated Ground is owned by this tool; sibling
+    /// Bakes a Polytope Studio terrain, preserves authored sculpting, and paints
+    /// the board route and collider-free forest vegetation. Only
+    /// Environment/Generated Ground is owned by this tool; sibling
     /// environment objects remain available for manually placed forest props.
     /// </summary>
     internal static class ForestGroundAuthoring
@@ -33,7 +34,6 @@ namespace MazeParty.Editor
         private const float MinimumGroundDepth = 70f;
         private const float DirtCoreRadius = 1.35f;
         private const float DirtFeatherRadius = 3f;
-        private const int HeightmapResolution = 33;
         private const int AlphamapResolution = 256;
 
         [MenuItem("MazeParty/Board/Create or Refresh Forest Ground")]
@@ -171,12 +171,12 @@ namespace MazeParty.Editor
             TerrainLayer grassLayer,
             TerrainLayer dirtLayer)
         {
-            terrainData.heightmapResolution = HeightmapResolution;
-            terrainData.size = new Vector3(bounds.Width, 1f, bounds.Depth);
-            terrainData.SetHeights(
-                0,
-                0,
-                new float[HeightmapResolution, HeightmapResolution]);
+            ForestFoliageAuthoring.ResizeTerrainPreservingSurface(
+                terrainData,
+                new Vector3(
+                    bounds.Width,
+                    ForestFoliageAuthoring.TerrainVerticalSize,
+                    bounds.Depth));
             terrainData.terrainLayers = new[] { grassLayer, dirtLayer };
             terrainData.alphamapResolution = AlphamapResolution;
             terrainData.baseMapResolution = AlphamapResolution;
@@ -210,6 +210,7 @@ namespace MazeParty.Editor
             }
 
             terrainData.SetAlphamaps(0, 0, weights);
+            ForestFoliageAuthoring.ConfigureTerrainData(terrainData, false);
         }
 
         private static List<PathSegment> BuildUniqueSegments(
@@ -334,7 +335,12 @@ namespace MazeParty.Editor
             // standalone Players when the instanced path is enabled. Keep the
             // stable non-instanced path for board maps loaded from Resources.
             terrain.drawInstanced = false;
-            terrain.drawTreesAndFoliage = false;
+            terrain.drawTreesAndFoliage = true;
+            terrain.treeDistance = 250f;
+            terrain.treeBillboardDistance = 250f;
+            terrain.treeMaximumFullLODCount = 48;
+            terrain.detailObjectDistance = 80f;
+            terrain.detailObjectDensity = 1f;
             terrain.heightmapPixelError = 4f;
             terrain.basemapDistance = 1000f;
             terrain.allowAutoConnect = false;

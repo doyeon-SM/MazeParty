@@ -77,8 +77,16 @@
 
 ### Forest Graybox
 
-- `Environment/Generated Ground`에는 TerrainLayer 기반 잔디와 보드 연결을 따르는 흙길만
-  자동 생성한다. 생성 외 `Environment` 자식은 보존하고 시각 지형에는 Collider를 두지 않는다.
+- `Environment/Generated Ground`에는 TerrainLayer 기반 잔디·보드 연결을 따르는 흙길과
+  Terrain 식생을 자동 생성한다. 생성 외 `Environment` 자식은 보존하고 시각 지형과 식생에는
+  Collider를 두지 않는다.
+- Forest Terrain은 `80×10×73m`, 원점 Y `-0.12`를 사용한다. 기존 조형의 실제 높이를
+  보존한 채 수직 범위를 확장하므로 현재 표면 최고점 약 `0.88m`는 유지되고 이후에는
+  약 `9.88m`까지 조형할 수 있다. Ground 갱신을 다시 실행해도 높이맵을 평탄화하지 않는다.
+- Paint Trees는 Pandazole `Tree_24_Spring`의 충돌 없는 URP 래퍼를 사용해 48그루를
+  결정론적으로 배치한다. Paint Details는 `Grass_25/24/20/19` 충돌 없는 래퍼를
+  `256/16` 해상도로 혼합하며, 원본 FBX와 아틀라스의 Read/Write를 활성화한다.
+  Terrain은 `drawTreesAndFoliage=true`를 사용한다.
 - Resources에서 런타임 로드되는 Terrain이 Player 빌드에도 포함되도록 Board 씬에는
   비활성 GameObject와 활성 Terrain 컴포넌트로 된 참조 placeholder를 유지한다.
 - Unity 6000.6.0f1 URP Standalone Player에서는 인스턴스 Terrain 경로가 표면을 누락하므로
@@ -90,6 +98,18 @@
 - 시작 칸은 `03`, 리스폰은 `02`, `13`, 슬롯별 시작은 `03`, `09`, `14`, `19`다.
   콘텐츠 버전은 4이며 수동 꼭짓점·회전은 재생성 청사진에도 동기화한다.
 - 칸 연결 기즈모는 실제 `Source→Destination` 방향 화살표로 표시한다.
+- `ForestGrayboxMapRoot.prefab`의 현재 Terrain 조형·식생과 `Environment` 오브젝트 배치는
+  사용자가 완료하고 저장한 최종 authored 디자인이다. 사용자가 다시 요청하기 전에는
+  setup·authoring 도구로 이를 재생성·정규화하거나 덮어쓰지 않는다.
+
+### 보드 상점
+
+- 열쇠 상점은 `Fantasy Lowpoly Pack (Demo)`의 `blue-house_001`, 아이템 상점 1·2는
+  `house-red_001`을 기존 상점 래퍼의 visual로 사용한다. 두 아이템 상점 래퍼와 각 인덱스는
+  유지하며, 외부 집의 MeshCollider는 제거하고 기존 구매용 interaction target만 사용한다.
+- 열쇠·아이템 상점 marker 루트는 항상 선택된 `BoardTile.WorldCenter`에 정확히 배치한다.
+  주변 장식 오브젝트와의 Physics 겹침 검사나 회피 오프셋은 사용하지 않으며, 이미 다른
+  오브젝트가 중앙을 차지해도 겹친 상태로 그대로 소환한다.
 
 ### Maze Graybox
 

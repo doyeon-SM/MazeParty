@@ -38,9 +38,7 @@ namespace MazeParty.Gameplay
     public sealed class KeyShopWorldMarker : MonoBehaviour
     {
         public const string WorldLabel = "KEY SHOP";
-        public const float DefaultVerticalOffset = 0.12f;
 
-        [SerializeField, Min(0f)] private float verticalOffset = DefaultVerticalOffset;
         [SerializeField] private BoardWorldPrefabs worldPrefabs;
 
 
@@ -121,8 +119,7 @@ namespace MazeParty.Gameplay
                 topology.TryGetTile(coordinate, out resolvedTile) && resolvedTile != null)
             {
                 EnsureMarker();
-                _markerObject.transform.position =
-                    resolvedTile.WorldCenter + Vector3.up * verticalOffset;
+                _markerObject.transform.position = resolvedTile.WorldCenter;
                 _markerObject.SetActive(true);
                 locationResolved = true;
             }

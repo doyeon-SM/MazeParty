@@ -203,6 +203,8 @@ namespace MazeParty.Gameplay.Tests
                 "The terrain needs an explicit URP material to render in prefab stage and builds.");
             Assert.That(terrain.drawInstanced, Is.False,
                 "Runtime-loaded Unity 6 URP board Terrain must use the stable Player rendering path.");
+            Assert.That(terrain.drawTreesAndFoliage, Is.True,
+                "The authored tree and grass prototypes must render in prefab stage and builds.");
             Assert.That(
                 generatedGround.GetComponentsInChildren<TerrainCollider>(true),
                 Is.Empty,
@@ -210,7 +212,53 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(AssetDatabase.GetAssetPath(terrain.terrainData),
                 Is.EqualTo(TerrainDataPath));
 
-            var layers = terrain.terrainData.terrainLayers;
+            var terrainData = terrain.terrainData;
+            Assert.That(terrainData.size.y, Is.GreaterThanOrEqualTo(10f),
+                "Terrain needs enough vertical range for continued height sculpting.");
+
+            var treePrototypes = terrainData.treePrototypes;
+            Assert.That(treePrototypes, Has.Length.EqualTo(1));
+            Assert.That(
+                AssetDatabase.GetAssetPath(treePrototypes[0].prefab),
+                Is.EqualTo(
+                    "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/" +
+                    "Tree_24_Spring.prefab"));
+            Assert.That(
+                treePrototypes[0].prefab.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                "Paint Trees must use the collision-free wrapper prefab.");
+
+            var expectedGrassPaths = new[]
+            {
+                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_25.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_24.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_20.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_19.prefab"
+            };
+            Assert.That(terrainData.detailWidth, Is.GreaterThan(0));
+            Assert.That(terrainData.detailHeight, Is.GreaterThan(0));
+            Assert.That(
+                terrainData.detailPrototypes,
+                Has.Length.EqualTo(expectedGrassPaths.Length));
+            for (var index = 0; index < expectedGrassPaths.Length; index++)
+            {
+                var detailPrototype = terrainData.detailPrototypes[index];
+                Assert.That(detailPrototype.usePrototypeMesh, Is.True);
+                string validationError;
+                Assert.That(
+                    detailPrototype.Validate(out validationError),
+                    Is.True,
+                    validationError);
+                Assert.That(
+                    AssetDatabase.GetAssetPath(detailPrototype.prototype),
+                    Is.EqualTo(expectedGrassPaths[index]));
+                Assert.That(
+                    detailPrototype.prototype.GetComponentsInChildren<Collider>(true),
+                    Is.Empty,
+                    "Paint Details must use collision-free wrapper prefabs.");
+            }
+
+            var layers = terrainData.terrainLayers;
             Assert.That(layers, Has.Length.EqualTo(2));
             Assert.That(AssetDatabase.GetAssetPath(layers[0]),
                 Is.EqualTo(GrassLayerPath));
@@ -219,7 +267,7 @@ namespace MazeParty.Gameplay.Tests
 
             var terrainOrigin = mapRoot.EnvironmentRoot.InverseTransformPoint(
                 terrain.transform.position);
-            var terrainSize = terrain.terrainData.size;
+            var terrainSize = terrainData.size;
             foreach (var tile in mapRoot.Topology.Tiles)
             {
                 var local = mapRoot.EnvironmentRoot.InverseTransformPoint(
@@ -260,15 +308,15 @@ namespace MazeParty.Gameplay.Tests
                     local.z);
                 var alphaX = Mathf.Clamp(
                     Mathf.RoundToInt(normalizedX *
-                                     (terrain.terrainData.alphamapWidth - 1)),
+                                     (terrainData.alphamapWidth - 1)),
                     0,
-                    terrain.terrainData.alphamapWidth - 1);
+                    terrainData.alphamapWidth - 1);
                 var alphaZ = Mathf.Clamp(
                     Mathf.RoundToInt(normalizedZ *
-                                     (terrain.terrainData.alphamapHeight - 1)),
+                                     (terrainData.alphamapHeight - 1)),
                     0,
-                    terrain.terrainData.alphamapHeight - 1);
-                var weights = terrain.terrainData.GetAlphamaps(
+                    terrainData.alphamapHeight - 1);
+                var weights = terrainData.GetAlphamaps(
                     alphaX,
                     alphaZ,
                     1,

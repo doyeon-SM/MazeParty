@@ -302,6 +302,51 @@ namespace MazeParty.Gameplay.Tests
             }
         }
 
+        [Test]
+        public void AuthoredShopPrefabs_UseAssignedHousesAndKeepVisualsCollisionFree()
+        {
+            var worldAssets = BoardWorldPrefabs.LoadRequired();
+
+            AssertShopPrefab(
+                worldAssets.KeyShop,
+                "Assets/Ignore/Fantasy Lowpoly Pack (Demo)/Prefabs/blue-house_001.prefab");
+            AssertShopPrefab(
+                worldAssets.ItemShop(0),
+                "Assets/Ignore/Fantasy Lowpoly Pack (Demo)/Prefabs/house-red_001.prefab");
+            AssertShopPrefab(
+                worldAssets.ItemShop(1),
+                "Assets/Ignore/Fantasy Lowpoly Pack (Demo)/Prefabs/house-red_001.prefab");
+        }
+
+        private static void AssertShopPrefab(
+            BoardShopVisual shop,
+            string expectedModelPath)
+        {
+            Assert.That(shop, Is.Not.Null);
+            Assert.That(shop.HasRequiredReferences, Is.True);
+
+            var visuals = shop.transform.Find("Visuals");
+            Assert.That(visuals, Is.Not.Null);
+            var house = visuals.Find("House Model");
+            Assert.That(house, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(
+                    PrefabUtility.GetCorrespondingObjectFromSource(
+                        house.gameObject)),
+                Is.EqualTo(expectedModelPath));
+
+            Assert.That(
+                visuals.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                "Vendor house colliders must not become gameplay collision.");
+            Assert.That(
+                shop.GetComponentsInChildren<Collider>(true),
+                Is.All.Matches<Collider>(collider =>
+                    collider.GetComponent<KeyShopWorldTarget>() != null ||
+                    collider.GetComponent<ItemShopWorldTarget>() != null),
+                "Every remaining shop collider must be an authored interaction target.");
+        }
+
         private static BoardTopology FindTopology(Scene scene)
         {
             BoardTopology found = null;

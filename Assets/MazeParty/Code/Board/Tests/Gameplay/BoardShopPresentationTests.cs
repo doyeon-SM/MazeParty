@@ -6,7 +6,7 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BoardShopPresentationTests
     {
         [Test]
-        public void PrefabShops_ReuseInstancesAndRejectStaleLocations()
+        public void PrefabShops_StayAtTileCenterWhenSceneryOverlapsAndRejectStaleLocations()
         {
             var root = new GameObject("Shop state test");
             try
@@ -20,12 +20,19 @@ namespace MazeParty.Gameplay.Tests
                 second.Configure(Vector2Int.right, BoardTileType.Normal);
                 var topology = root.AddComponent<BoardTopology>();
                 topology.Configure(new[] { first, second }, new BoardGate[0]);
+                var blockingScenery = new GameObject("Overlapping authored scenery");
+                blockingScenery.transform.SetParent(root.transform);
+                blockingScenery.transform.position = second.WorldCenter;
+                var blockingCollider = blockingScenery.AddComponent<BoxCollider>();
+                blockingCollider.size = Vector3.one * BoardTile.RoomSize;
                 var key = root.AddComponent<KeyShopWorldMarker>();
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.True);
                 var marker = key.MarkerObject;
                 Assert.That(marker.GetComponent<BoardShopVisual>().HasRequiredReferences, Is.True);
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, second.Coordinate, topology, 3), Is.True);
                 Assert.That(key.MarkerObject, Is.SameAs(marker));
+                Assert.That(marker.transform.position, Is.EqualTo(second.WorldCenter));
+                Assert.That(blockingCollider.bounds.Contains(marker.transform.position), Is.True);
                 var location = marker.transform.position;
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.False);
                 Assert.That(marker.transform.position, Is.EqualTo(location));
@@ -44,6 +51,7 @@ namespace MazeParty.Gameplay.Tests
                     Assert.That(items.ApplyReplicatedState(index, false, first.Coordinate, false, topology, 2), Is.False);
                     Assert.That(item.activeSelf, Is.True);
                     Assert.That(item.transform.position, Is.EqualTo(second.WorldCenter));
+                    Assert.That(blockingCollider.bounds.Contains(item.transform.position), Is.True);
                     items.ApplyReplicatedState(index, false, second.Coordinate, true, topology, 4);
                     Assert.That(item.activeSelf, Is.False);
                 }
