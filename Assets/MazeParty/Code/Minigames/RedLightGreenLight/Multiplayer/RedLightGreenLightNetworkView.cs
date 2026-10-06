@@ -139,7 +139,7 @@ namespace MazeParty.Multiplayer
             RefreshRunners(match);
             RefreshPlayerCamera();
             RefreshSignalPresentation();
-            RefreshHud(match);
+            RefreshHud();
         }
 
         private void ResolveSceneReferences()
@@ -366,18 +366,19 @@ namespace MazeParty.Multiplayer
                 ? state.SignalPhase
                 : RedLightGreenLightSignalPhase.Green;
 
+            var isPartialRed =
+                phase == RedLightGreenLightSignalPhase.OneRed ||
+                phase == RedLightGreenLightSignalPhase.TwoRed;
             var greenColor = phase ==
                 RedLightGreenLightSignalPhase.Green
                     ? new Color(0.12f, 1f, 0.25f)
-                    : phase ==
-                      RedLightGreenLightSignalPhase.TurnWarning
+                    : isPartialRed
                         ? new Color(1f, 0.7f, 0.08f)
                         : new Color(0.04f, 0.1f, 0.05f);
             var redColor = phase ==
                 RedLightGreenLightSignalPhase.Red
                     ? new Color(1f, 0.08f, 0.04f)
-                    : phase ==
-                      RedLightGreenLightSignalPhase.TurnWarning
+                    : isPartialRed
                         ? new Color(1f, 0.7f, 0.08f)
                         : new Color(0.12f, 0.025f, 0.02f);
             SetRendererColor(greenSignalRenderer, greenColor);
@@ -421,7 +422,7 @@ namespace MazeParty.Multiplayer
             _lastSignalPhase = phase;
             var clip = phase == RedLightGreenLightSignalPhase.Green
                 ? greenCue
-                : phase == RedLightGreenLightSignalPhase.TurnWarning
+                : isPartialRed
                     ? turnWarningCue
                     : redCue;
             if (cueAudioSource != null && clip != null)
@@ -447,7 +448,7 @@ namespace MazeParty.Multiplayer
                         signalPulseVfxPrefab,
                         anchor.position,
                         Quaternion.identity,
-                        phase == RedLightGreenLightSignalPhase.TurnWarning
+                        isPartialRed
                             ? 0.85f
                             : 1.15f);
                 }
@@ -472,61 +473,18 @@ namespace MazeParty.Multiplayer
             _signalProperties.Clear();
         }
 
-        private void RefreshHud(NetworkMatchState match)
+        private void RefreshHud()
         {
             if (hud == null || !hud.HasRequiredReferences)
             {
                 return;
             }
 
-            if (match.IsSimulationSuspended)
-            {
-                hud.SetSignal(
-                    GameText.T("PAUSED"),
-                    RedLightGreenLightHudSignalStyle.Neutral);
-            }
-            else
-            {
-                BuildSignalLabel(out var label, out var signalStyle);
-                hud.SetSignal(label, signalStyle);
-            }
-        }
-
-        private void BuildSignalLabel(
-            out string label,
-            out RedLightGreenLightHudSignalStyle style)
-        {
-            if (state.Phase == NetworkRedLightGreenLightPhase.Countdown)
-            {
-                label = GameText.T("GET READY");
-                style = RedLightGreenLightHudSignalStyle.Neutral;
-                return;
-            }
-            if (state.Phase != NetworkRedLightGreenLightPhase.Running)
-            {
-                label = state.Phase ==
-                        NetworkRedLightGreenLightPhase.Complete
-                    ? GameText.T("FINAL RESULTS")
-                    : GameText.T("ROUND RESULTS");
-                style = RedLightGreenLightHudSignalStyle.Neutral;
-                return;
-            }
-
-            switch (state.SignalPhase)
-            {
-                case RedLightGreenLightSignalPhase.Green:
-                    label = GameText.T("GREEN LIGHT  ·  MOVE");
-                    style = RedLightGreenLightHudSignalStyle.Green;
-                    break;
-                case RedLightGreenLightSignalPhase.TurnWarning:
-                    label = GameText.T("TURNING  ·  STOP!");
-                    style = RedLightGreenLightHudSignalStyle.TurnWarning;
-                    break;
-                default:
-                    label = GameText.T("RED LIGHT  ·  FREEZE");
-                    style = RedLightGreenLightHudSignalStyle.Red;
-                    break;
-            }
+            var redLightCount =
+                state.Phase == NetworkRedLightGreenLightPhase.Running
+                    ? (int)state.SignalPhase
+                    : 0;
+            hud.SetSignalLights(redLightCount);
         }
 
         private int ResolveDisplayedRank(int slot)

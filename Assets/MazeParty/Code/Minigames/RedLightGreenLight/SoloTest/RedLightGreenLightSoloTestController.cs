@@ -395,18 +395,19 @@ namespace MazeParty.Dev.MinigameSoloTest
                 ? _session.SignalPhase
                 : RedLightGreenLightSignalPhase.Green;
 
+            var isPartialRed =
+                phase == RedLightGreenLightSignalPhase.OneRed ||
+                phase == RedLightGreenLightSignalPhase.TwoRed;
             var greenColor = phase ==
                 RedLightGreenLightSignalPhase.Green
                     ? new Color(0.12f, 1f, 0.25f)
-                    : phase ==
-                      RedLightGreenLightSignalPhase.TurnWarning
+                    : isPartialRed
                         ? new Color(1f, 0.7f, 0.08f)
                         : new Color(0.04f, 0.1f, 0.05f);
             var redColor = phase ==
                 RedLightGreenLightSignalPhase.Red
                     ? new Color(1f, 0.08f, 0.04f)
-                    : phase ==
-                      RedLightGreenLightSignalPhase.TurnWarning
+                    : isPartialRed
                         ? new Color(1f, 0.7f, 0.08f)
                         : new Color(0.12f, 0.025f, 0.02f);
             SetRendererColor(_greenSignalRenderer, greenColor);
@@ -576,8 +577,10 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 case RedLightGreenLightSignalPhase.Green:
                     return "GREEN LIGHT · GO";
-                case RedLightGreenLightSignalPhase.TurnWarning:
-                    return "TURNING · STOP";
+                case RedLightGreenLightSignalPhase.OneRed:
+                    return "1 RED · 2 GREEN · GO";
+                case RedLightGreenLightSignalPhase.TwoRed:
+                    return "2 RED · 1 GREEN · GO";
                 case RedLightGreenLightSignalPhase.Red:
                     return "RED LIGHT · FREEZE";
                 default:

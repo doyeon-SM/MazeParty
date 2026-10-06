@@ -176,6 +176,26 @@
 
 ### 미니게임 HUD
 
+- 사용자가 2026-10-07 저장한 미니게임 씬·환경 프리팹의 배치, 카메라, 조명과 UI 디자인을
+  최종 authored 디자인으로 취급한다. 아래에서 명시한 세 변경 외에는 setup/rebuild 도구로
+  재생성·정규화하거나 미관을 수정하지 않는다.
+- Red Light Green Light 씬의 신호탑은 삭제된 최종 상태를 유지한다. 상단 HUD에는 글자 대신
+  빨강·초록 3등만 표시한다. 매 주기는 `초록 3 → 빨강 1/초록 2 → 빨강 2/초록 1 → 빨강 3`
+  순서이며, 빨강 3개 다음에는 세 등이 동시에 초록으로 돌아간다. 완전한 빨강 3개에서만
+  이동을 막고 위반을 판정한다. 빨강으로 바뀌기 전 세 단계의 유지시간은 서버 시드로 각각
+  `0.1~3.0초` 안에서 독립 결정한다. 완전한 빨강이 되면 이동 상태는 즉시 금지되며,
+  서버의 자발적 이동 위반 판정에는 기존 네트워크 보정용 `0.15초` 유예를 유지한다.
+- Stable Footing의 `SafeSymbolDisplay`는 authored 왼쪽·중앙·오른쪽 슬롯과 세 스프라이트를
+  그대로 사용한다. 매 사이클 세 심벌을 모두 표시하되 정답을 항상 중앙·초록색으로 옮기고,
+  오답 둘은 양옆·원래 흰색으로 표시한다.
+- Wrong Way는 기존 Lane/Step anchor, 플레이 좌표, 씬 환경 디자인을 유지한다. 네 Lane의
+  `Step 01~50`에 ToyBox `BasicBlock` 12종을 충돌 없는 nested visual로 결정론적으로 섞고,
+  Standard 셰이더 원본은 Ignore 원본을 수정하지 않은 URP/Lit 파생 재질로 표시한다.
+- 2026-10-07 관련 EditMode 계약 테스트는 16/16 통과했다. 전체 EditMode는 450개 중
+  444개 통과, 기존 최종 디자인과 옛 계약이 충돌하는 6개(Forest TerrainCollider,
+  BombPassing 환경 Collider, 공용 에셋의 옛 Bomb mesh 기대, TagChase 씬 계약,
+  Lobby UI 계약 2개)가 남아 있으며 이번 작업에서는 최종 씬 디자인을 되돌리지 않았다.
+
 - 게임은 항상 4인 구조이며 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다.
 - Tag Chase·Race·Bomb Passing·Snowy Spin·Cliff Barrage는 공통 HUD만, Arena Combat은
   공통 HUD와 피격 플래시만 사용한다. Minefield·Balloon Blow는 전용 화면 HUD가 없다.

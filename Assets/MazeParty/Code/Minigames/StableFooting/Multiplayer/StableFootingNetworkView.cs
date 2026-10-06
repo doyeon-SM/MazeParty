@@ -50,6 +50,7 @@ namespace MazeParty.Multiplayer
 
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraConfigured;
+        private StableFootingSafeSymbolPresenter _safeSymbolPresenter;
         private bool _tileViewsCached;
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
@@ -94,6 +95,7 @@ namespace MazeParty.Multiplayer
             safeSymbolCircleRenderer = circle;
             safeSymbolSquareRenderer = square;
             cueAudioSource = audioSource;
+            _safeSymbolPresenter = null;
             _cameraConfigured = false;
             _tileViewsCached = false;
             ResolveSceneReferences();
@@ -400,20 +402,32 @@ namespace MazeParty.Multiplayer
 
         private void RefreshSafeSymbolDisplay()
         {
+            EnsureSafeSymbolPresenter();
+            if (_safeSymbolPresenter == null)
+            {
+                return;
+            }
+
             var visible = state.Phase ==
                           NetworkStableFootingPhase.Running;
-            SetRendererGroupActive(
-                safeSymbolCrossRenderer,
-                visible && state.SafeSymbol ==
-                    StableFootingSymbol.Cross);
-            SetRendererGroupActive(
-                safeSymbolCircleRenderer,
-                visible && state.SafeSymbol ==
-                    StableFootingSymbol.Circle);
-            SetRendererGroupActive(
-                safeSymbolSquareRenderer,
-                visible && state.SafeSymbol ==
-                    StableFootingSymbol.Square);
+            _safeSymbolPresenter.Apply(state.SafeSymbol, visible);
+        }
+
+        private void EnsureSafeSymbolPresenter()
+        {
+            if (_safeSymbolPresenter != null ||
+                safeSymbolCrossRenderer == null ||
+                safeSymbolCircleRenderer == null ||
+                safeSymbolSquareRenderer == null)
+            {
+                return;
+            }
+
+            _safeSymbolPresenter =
+                new StableFootingSafeSymbolPresenter(
+                    safeSymbolCrossRenderer,
+                    safeSymbolCircleRenderer,
+                    safeSymbolSquareRenderer);
         }
 
         private void RefreshCue()
@@ -558,28 +572,6 @@ namespace MazeParty.Multiplayer
                 _subscribedVfxState.PushPresentationRequested -=
                     HandlePushPresentationRequested;
                 _subscribedVfxState = null;
-            }
-        }
-
-        private static void SetRendererGroupActive(
-            Renderer renderer,
-            bool active)
-        {
-            if (renderer == null)
-            {
-                return;
-            }
-
-            var target = renderer.gameObject;
-            var parent = renderer.transform.parent;
-            if (parent != null &&
-                parent.name.EndsWith("Mark", StringComparison.Ordinal))
-            {
-                target = parent.gameObject;
-            }
-            if (target.activeSelf != active)
-            {
-                target.SetActive(active);
             }
         }
 

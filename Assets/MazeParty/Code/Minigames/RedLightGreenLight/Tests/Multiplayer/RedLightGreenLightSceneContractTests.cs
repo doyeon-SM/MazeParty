@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Reflection;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -27,18 +26,8 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(prefabBindings, Is.Not.Null);
             Assert.That(prefabBindings.HasRequiredReferences, Is.True);
             Assert.That(prefabBindings.SignalText, Is.Not.Null);
-
-            var labelBuilder = typeof(RedLightGreenLightNetworkView).GetMethod(
-                "BuildSignalLabel",
-                BindingFlags.Instance | BindingFlags.NonPublic);
-            Assert.That(labelBuilder, Is.Not.Null);
-            Assert.That(
-                labelBuilder.GetParameters()[1].ParameterType,
-                Is.EqualTo(
-                    typeof(RedLightGreenLightHudSignalStyle)
-                        .MakeByRefType()),
-                "The runtime view must select a prefab-owned semantic style, " +
-                "not a hard-coded Color.");
+            Assert.That(prefabBindings.SignalText.supportRichText, Is.True);
+            AssertLightSequence(hudPrefab);
 
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -78,10 +67,6 @@ namespace MazeParty.Multiplayer.Tests
                     "topDownCamera",
                     "runnerRoot",
                     "arenaPresentation",
-                    "greenSignalRenderer",
-                    "redSignalRenderer",
-                    "greenSignalLight",
-                    "redSignalLight",
                     "cueAudioSource",
                     "hud"
                 };
@@ -136,27 +121,20 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     FindDescendant(state.transform, "Observer Placeholder"),
                     Is.Null,
-                    "The game uses the signal tower only; no observer doll " +
-                    "belongs in the arena.");
+                    "The final authored scene uses only the HUD signal.");
                 Assert.That(
                     FindDescendant(state.transform, "Observer Head"),
                     Is.Null);
                 Assert.That(
-                    FindDescendant(state.transform, "Green Signal")
-                        ?.GetComponent<Renderer>(),
-                    Is.Not.Null);
+                    FindDescendant(state.transform, "Signal Tower Placeholder"),
+                    Is.Null,
+                    "The final authored scene uses only the HUD signal.");
                 Assert.That(
-                    FindDescendant(state.transform, "Red Signal")
-                        ?.GetComponent<Renderer>(),
-                    Is.Not.Null);
+                    FindDescendant(state.transform, "Green Signal"),
+                    Is.Null);
                 Assert.That(
-                    FindDescendant(state.transform, "Green Signal Light")
-                        ?.GetComponent<Light>(),
-                    Is.Not.Null);
-                Assert.That(
-                    FindDescendant(state.transform, "Red Signal Light")
-                        ?.GetComponent<Light>(),
-                    Is.Not.Null);
+                    FindDescendant(state.transform, "Red Signal"),
+                    Is.Null);
                 Assert.That(
                     FindDescendant(state.transform, "Signal Audio Anchor")
                         ?.GetComponent<AudioSource>(),
@@ -168,6 +146,50 @@ namespace MazeParty.Multiplayer.Tests
                 {
                     EditorSceneManager.CloseScene(scene, true);
                 }
+            }
+        }
+
+        private static void AssertLightSequence(GameObject hudPrefab)
+        {
+            var instance = Object.Instantiate(hudPrefab);
+            try
+            {
+                var bindings =
+                    instance.GetComponent<RedLightGreenLightHudBindings>();
+                var redTag = "<color=#" +
+                             ColorUtility.ToHtmlStringRGBA(
+                                 bindings.RedSignalColor) + ">";
+                var greenTag = "<color=#" +
+                               ColorUtility.ToHtmlStringRGBA(
+                                   bindings.GreenSignalColor) + ">";
+
+                for (var redCount = 0; redCount <= 3; redCount++)
+                {
+                    bindings.SetSignalLights(redCount);
+                    var lights = System.Text.RegularExpressions.Regex.Matches(
+                            bindings.SignalText.text,
+                            "<color=#[0-9A-Fa-f]{8}>●</color>")
+                        .Cast<System.Text.RegularExpressions.Match>()
+                        .Select(match => match.Value)
+                        .ToArray();
+                    Assert.That(lights, Has.Length.EqualTo(3));
+                    for (var lightIndex = 0;
+                         lightIndex < lights.Length;
+                         lightIndex++)
+                    {
+                        Assert.That(
+                            lights[lightIndex],
+                            Does.StartWith(
+                                lightIndex < redCount
+                                    ? redTag
+                                    : greenTag),
+                            "Lights must turn red from left to right.");
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
             }
         }
 

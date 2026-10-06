@@ -51,6 +51,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         private GameObject _safeCross;
         private GameObject _safeCircle;
         private GameObject _safeSquare;
+        private StableFootingSafeSymbolPresenter _safeSymbolPresenter;
         private Camera _runtimeCamera;
         private Vector3 _facingDirection = Vector3.forward;
         private float _nextPushAt;
@@ -144,6 +145,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 _hud.BindActions(null, null, null);
             }
+            _safeSymbolPresenter?.RestoreAuthoredState();
             RestoreProductionPresentation();
         }
 
@@ -252,6 +254,11 @@ namespace MazeParty.Dev.MinigameSoloTest
             _safeCross = RequireChild(safeDisplay, "Cross Mark");
             _safeCircle = RequireChild(safeDisplay, "Circle Mark");
             _safeSquare = RequireChild(safeDisplay, "Square Mark");
+            _safeSymbolPresenter =
+                new StableFootingSafeSymbolPresenter(
+                    RequireSafeSymbolRenderer(_safeCross),
+                    RequireSafeSymbolRenderer(_safeCircle),
+                    RequireSafeSymbolRenderer(_safeSquare));
         }
 
         private void RestoreProductionPresentation()
@@ -635,18 +642,22 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             var revealSafeSymbol =
                 _session.Phase == StableFootingSoloPhase.Running;
-            SetActive(
-                _safeCross,
-                revealSafeSymbol &&
-                cycle.SafeSymbol == StableFootingSymbol.Cross);
-            SetActive(
-                _safeCircle,
-                revealSafeSymbol &&
-                cycle.SafeSymbol == StableFootingSymbol.Circle);
-            SetActive(
-                _safeSquare,
-                revealSafeSymbol &&
-                cycle.SafeSymbol == StableFootingSymbol.Square);
+            _safeSymbolPresenter.Apply(
+                cycle.SafeSymbol,
+                revealSafeSymbol);
+        }
+
+        private static SpriteRenderer RequireSafeSymbolRenderer(
+            GameObject symbol)
+        {
+            var renderer = symbol.GetComponentInChildren<SpriteRenderer>(true);
+            if (renderer == null)
+            {
+                throw new InvalidOperationException(
+                    symbol.name + " is missing its authored SpriteRenderer.");
+            }
+
+            return renderer;
         }
 
         private void RefreshRunnerPresentation(bool immediate = false)

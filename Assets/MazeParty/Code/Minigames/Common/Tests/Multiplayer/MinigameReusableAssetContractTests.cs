@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
@@ -25,6 +26,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Ignore/MazePartyGenerated/Meshes/";
         private const string CenteredGroundMeshPath =
             GeneratedMeshFolder + "SharedNatureGroundCentered.asset";
+        private const string BasicBlockFolder =
+            "Assets/Ignore/ToyBox/Prefabs/Blocks/BasicBlock/";
         private const string PlayerPresentationPath =
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
 
@@ -248,7 +251,11 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/StableFooting/Tile.prefab",
                 "Tile Surface/Shared Nature Ground Tile",
                 GroundTilePath);
+        }
 
+        [Test]
+        public void WrongWayLanePrefabs_UseVariedCollisionFreeUrpBasicBlocks()
+        {
             var centeredGroundMesh = AssetDatabase.LoadAssetAtPath<Mesh>(
                 CenteredGroundMeshPath);
             Assert.That(
@@ -256,39 +263,84 @@ namespace MazeParty.Multiplayer.Tests
                 Is.Not.Null,
                 CenteredGroundMeshPath);
 
+            var usedBlocks = new HashSet<string>();
             for (var lane = 1; lane <= 4; lane++)
             {
                 var path = "Assets/MazeParty/Prefabs/Minigames/WrongWay/Lane" +
                     lane + ".prefab";
                 var owner = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 Assert.That(owner, Is.Not.Null, path);
-                var surfaces = owner.transform.Cast<Transform>()
+                var platforms = owner.transform.Cast<Transform>()
                     .Where(item => item.name == "Start Platform" ||
-                        item.name == "Finish Platform" ||
-                        item.name.StartsWith("Step "))
+                        item.name == "Finish Platform")
                     .ToArray();
-                Assert.That(surfaces, Has.Length.EqualTo(52), path);
-                foreach (var surface in surfaces)
+                Assert.That(platforms, Has.Length.EqualTo(2), path);
+                foreach (var platform in platforms)
                 {
                     Assert.That(
-                        surface.GetComponent<MeshFilter>()?.sharedMesh,
+                        platform.GetComponent<MeshFilter>()?.sharedMesh,
                         Is.SameAs(centeredGroundMesh),
-                        path + " :: " + surface.name);
-                    var renderer = surface.GetComponent<MeshRenderer>();
+                        path + " :: " + platform.name);
+                    var renderer = platform.GetComponent<MeshRenderer>();
                     Assert.That(
                         renderer,
                         Is.Not.Null,
-                        path + " :: " + surface.name);
+                        path + " :: " + platform.name);
                     Assert.That(
                         renderer.enabled,
                         Is.True,
-                        path + " :: " + surface.name);
+                        path + " :: " + platform.name);
                     Assert.That(
-                        surface.Find("Shared Nature Ground Tile"),
+                        platform.Find("Toy Block Visual"),
                         Is.Null,
-                        path + " :: " + surface.name);
+                        path + " :: " + platform.name);
+                }
+
+                var steps = owner.transform.Cast<Transform>()
+                    .Where(item => item.name.StartsWith("Step "))
+                    .ToArray();
+                Assert.That(steps, Has.Length.EqualTo(50), path);
+                foreach (var step in steps)
+                {
+                    Assert.That(
+                        step.GetComponent<MeshFilter>()?.sharedMesh,
+                        Is.SameAs(centeredGroundMesh),
+                        path + " :: " + step.name +
+                        " must preserve its authored anchor mesh.");
+                    Assert.That(
+                        step.GetComponent<MeshRenderer>()?.enabled,
+                        Is.False,
+                        path + " :: " + step.name);
+
+                    var visual = step.Find("Toy Block Visual");
+                    Assert.That(visual, Is.Not.Null, path + " :: " + step.name);
+                    var sourcePath =
+                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                            visual.gameObject);
+                    Assert.That(
+                        sourcePath,
+                        Does.StartWith(BasicBlockFolder),
+                        path + " :: " + step.name);
+                    usedBlocks.Add(sourcePath);
+                    Assert.That(
+                        step.GetComponentsInChildren<Collider>(true)
+                            .All(collider => !collider.enabled),
+                        Is.True,
+                        path + " :: " + step.name);
+                    Assert.That(
+                        visual.GetComponentsInChildren<Renderer>(true)
+                            .SelectMany(placed => placed.sharedMaterials)
+                            .All(material =>
+                                material != null &&
+                                material.shader != null &&
+                                material.shader.name.StartsWith(
+                                    "Universal Render Pipeline/")),
+                        Is.True,
+                        path + " :: " + step.name);
                 }
             }
+
+            Assert.That(usedBlocks.Count, Is.GreaterThanOrEqualTo(4));
         }
 
         private static void AssertMappedFloorsUseGroundTiles()

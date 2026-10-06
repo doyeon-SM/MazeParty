@@ -17,7 +17,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/WrongWay/WrongWay.unity";
         private const string HudPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab";
-
         [Test]
         public void WrongWayScene_PreservesMinimalHudCourseAndAdditiveContract()
         {
@@ -120,10 +119,6 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         steps.Select(step => step.name).Distinct().Count(),
                         Is.EqualTo(WrongWayRules.StepCount));
-                    Assert.That(
-                        steps.All(step =>
-                            step.GetComponent<Collider>() == null),
-                        Is.True);
                 }
             }
             finally

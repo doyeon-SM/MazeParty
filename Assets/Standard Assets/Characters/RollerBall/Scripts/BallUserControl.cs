@@ -1,3 +1,4 @@
+#if MAZEPARTY_ENABLE_INCOMPLETE_STANDARD_ASSETS
 using System;
 using UnityEngine;
 using UnityStandardAssets.CrossPlatformInput;
@@ -67,3 +68,4 @@ namespace UnityStandardAssets.Vehicles.Ball
         }
     }
 }
+#endif

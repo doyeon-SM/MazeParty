@@ -1,3 +1,5 @@
+using System;
+using System.Text;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -69,6 +71,52 @@ namespace MazeParty.Multiplayer
 
             signalText.text = label ?? string.Empty;
             signalText.color = GetSignalColor(style);
+        }
+
+        public void SetSignalLights(int redLightCount)
+        {
+            if (redLightCount < 0 || redLightCount > 3)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(redLightCount),
+                    redLightCount,
+                    "Red light count must be between zero and three.");
+            }
+            if (signalText == null)
+            {
+                return;
+            }
+
+            signalText.supportRichText = true;
+            signalText.color = Color.white;
+            signalText.text = BuildSignalLightsLabel(redLightCount);
+        }
+
+        internal string BuildSignalLightsLabel(int redLightCount)
+        {
+            if (redLightCount < 0 || redLightCount > 3)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(redLightCount));
+            }
+
+            var builder = new StringBuilder(96);
+            for (var lightIndex = 0; lightIndex < 3; lightIndex++)
+            {
+                if (lightIndex > 0)
+                {
+                    builder.Append("  ");
+                }
+
+                var color = lightIndex < redLightCount
+                    ? redSignalColor
+                    : greenSignalColor;
+                builder.Append("<color=#");
+                builder.Append(ColorUtility.ToHtmlStringRGBA(color));
+                builder.Append(">●</color>");
+            }
+
+            return builder.ToString();
         }
 
         public Color GetSignalColor(RedLightGreenLightHudSignalStyle style)

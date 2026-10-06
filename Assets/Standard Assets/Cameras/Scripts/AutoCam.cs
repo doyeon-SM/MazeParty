@@ -1,3 +1,4 @@
+#if MAZEPARTY_ENABLE_INCOMPLETE_STANDARD_ASSETS
 using System;
 using UnityEngine;
 #if UNITY_EDITOR
@@ -105,3 +106,4 @@ namespace UnityStandardAssets.Cameras
         }
     }
 }
+#endif

@@ -7,7 +7,7 @@ namespace MazeParty.Gameplay.Tests
     public sealed class RedLightGreenLightRulesTests
     {
         [Test]
-        public void SignalSchedule_IsCanonicalBoundedAlternatingAndCoversRound()
+        public void SignalSchedule_CountsLeftToRightThenReturnsAllLightsToGreen()
         {
             const ulong seed = 0x123456789ABCDEF0UL;
             var first = RedLightGreenLightSignalScheduleGenerator.Generate(seed, 1);
@@ -22,23 +22,44 @@ namespace MazeParty.Gameplay.Tests
             for (var index = 0; index < first.Windows.Count; index++)
             {
                 var window = first.Windows[index];
-                Assert.That(window.Phase, Is.EqualTo((RedLightGreenLightSignalPhase)(index % 3)));
+                Assert.That(
+                    window.Phase,
+                    Is.EqualTo(
+                        (RedLightGreenLightSignalPhase)(index % 4)));
+                Assert.That(window.RedLightCount, Is.EqualTo(index % 4));
                 if (index > 0)
                 {
                     Assert.That(window.StartsAtSeconds, Is.EqualTo(first.Windows[index - 1].EndsAtSeconds));
                 }
 
-                if (window.Phase == RedLightGreenLightSignalPhase.Green)
+                if (window.Phase != RedLightGreenLightSignalPhase.Red)
                 {
-                    Assert.That(window.DurationSeconds, Is.InRange(1.5d, 4d));
-                }
-                else if (window.Phase == RedLightGreenLightSignalPhase.TurnWarning)
-                {
-                    Assert.That(window.DurationSeconds, Is.EqualTo(0.35d));
+                    Assert.That(
+                        window.DurationSeconds,
+                        Is.InRange(
+                            RedLightGreenLightRules
+                                .MinimumGreenStepSeconds,
+                            RedLightGreenLightRules
+                                .MaximumGreenStepSeconds));
+                    Assert.That(window.IsMovementForbidden, Is.False);
                 }
                 else
                 {
-                    Assert.That(window.DurationSeconds, Is.InRange(1d, 2.5d));
+                    Assert.That(
+                        window.DurationSeconds,
+                        Is.InRange(
+                            RedLightGreenLightRules.MinimumRedSeconds,
+                            RedLightGreenLightRules.MaximumRedSeconds));
+                    Assert.That(window.IsMovementForbidden, Is.True);
+                    if (index + 1 < first.Windows.Count)
+                    {
+                        Assert.That(
+                            first.Windows[index + 1].Phase,
+                            Is.EqualTo(
+                                RedLightGreenLightSignalPhase.Green),
+                            "All three red lights must return to green " +
+                            "together.");
+                    }
                 }
             }
 
@@ -51,19 +72,28 @@ namespace MazeParty.Gameplay.Tests
         {
             var round = new RedLightGreenLightRoundState(77UL, 1);
             var red = FirstWindow(round, RedLightGreenLightSignalPhase.Red);
-            var warning = FirstWindow(
+            var oneRed = FirstWindow(
                 round,
-                RedLightGreenLightSignalPhase.TurnWarning);
+                RedLightGreenLightSignalPhase.OneRed);
+            var twoRed = FirstWindow(
+                round,
+                RedLightGreenLightSignalPhase.TwoRed);
 
             var justBefore = round.SubmitMovementIntent(0, true, red.RedDetectionStartsAtSeconds - 0.0001d);
             var atBoundary = round.SubmitMovementIntent(0, true, red.RedDetectionStartsAtSeconds);
-            var duringWarning = round.SubmitMovementIntent(
+            var duringOneRed = round.SubmitMovementIntent(
                 1,
                 true,
-                warning.StartsAtSeconds + 0.2d);
-            Assert.That(round.SetForwardProgress(2, 14.5f), Is.True);
-            var externalPush = round.SubmitMovementIntent(
+                oneRed.StartsAtSeconds +
+                oneRed.DurationSeconds * 0.5d);
+            var duringTwoRed = round.SubmitMovementIntent(
                 2,
+                true,
+                twoRed.StartsAtSeconds +
+                twoRed.DurationSeconds * 0.5d);
+            Assert.That(round.SetForwardProgress(3, 14.5f), Is.True);
+            var externalPush = round.SubmitMovementIntent(
+                3,
                 false,
                 red.RedDetectionStartsAtSeconds + 0.01d);
 
@@ -73,16 +103,21 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(atBoundary.WasViolation, Is.True);
             Assert.That(round.GetPlayer(0).ViolationCount, Is.EqualTo(1));
             Assert.That(
-                duringWarning.Status,
+                duringOneRed.Status,
                 Is.EqualTo(
                     RedLightGreenLightMovementIntentStatus.AllowedBySignal));
             Assert.That(round.GetPlayer(1).ViolationCount, Is.Zero);
             Assert.That(
+                duringTwoRed.Status,
+                Is.EqualTo(
+                    RedLightGreenLightMovementIntentStatus.AllowedBySignal));
+            Assert.That(round.GetPlayer(2).ViolationCount, Is.Zero);
+            Assert.That(
                 externalPush.Status,
                 Is.EqualTo(
                     RedLightGreenLightMovementIntentStatus.NoVoluntaryMovement));
-            Assert.That(round.GetPlayer(2).ForwardProgressMeters, Is.EqualTo(14.5f));
-            Assert.That(round.GetPlayer(2).ViolationCount, Is.Zero);
+            Assert.That(round.GetPlayer(3).ForwardProgressMeters, Is.EqualTo(14.5f));
+            Assert.That(round.GetPlayer(3).ViolationCount, Is.Zero);
         }
 
         [Test]

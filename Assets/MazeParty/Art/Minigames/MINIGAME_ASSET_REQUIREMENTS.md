@@ -14,8 +14,8 @@
 
 ## 확정된 예외 사항
 
-- **Red Light / Green Light:** 감시인형은 사용하지 않는다. 씬과 런타임의 Observer
-  참조를 제거하고 신호탑만 상태를 전달한다.
+- **Red Light / Green Light:** 감시인형과 씬 신호탑은 사용하지 않는다. 상단 HUD의
+  빨강·초록 3등만 신호 상태를 전달한다.
 - **Balloon Blow:** 펌프·스테이션은 사용하지 않는다. 풍선은 플레이어 입 위치를
   따라가며 입으로 부는 동안 O자 입 모양으로 표시한다.
 - **Sequence Memory:** 진행 NPC용 새 캐릭터는 만들지 않는다.
@@ -31,10 +31,11 @@
 | `SharedFinishGate` | Polytope `PT_Modular_Gate_Wood_01` | Wrong Way 결승, Race 결승 |
 | `SharedOutdoorFence` | Fantasy Demo `fence` | Red Light / Green Light 4면 경계 |
 | `SharedNatureGroundTile` | Pandazole `TileGround_01` | Stable Footing `Tile Surface`의 nested visual에만 사용 |
-| Stable Footing 심벌 | Modern UI `Heart Filled`, `Star Filled`, `Weather/Sun Filled` | 흰색 SpriteRenderer로 타일과 `Safe Symbol Display`에 공통 적용. 내부 Cross/Circle/Square 순서·바인딩은 유지 |
-| `SharedNatureGroundCentered` | `TileGround_01` centered 파생 메시 | Wrong Way 각 Lane의 `Start Platform`, `Step 01~50`, `Finish Platform` 총 52개 surface anchor에 직접 사용 |
+| Stable Footing 심벌 | Modern UI `Heart Filled`, `Star Filled`, `Weather/Sun Filled` | 원본 SpriteRenderer는 흰색을 유지한다. `Safe Symbol Display`에서는 런타임 정답만 중앙·초록색으로 표시한다 |
+| `SharedNatureGroundCentered` | `TileGround_01` centered 파생 메시 | Wrong Way 각 Lane의 `Start Platform`·`Finish Platform` visual과 `Step 01~50`의 비표시 anchor mesh로 유지 |
+| Wrong Way 계단 | ToyBox `BasicBlock` 12종 | 각 Step 아래 충돌 없는 nested visual로 결정론적으로 혼합하며 Standard 원본 재질은 URP 사본으로 교체 |
 | `NatureGroundGrid_*` 결합 메시 | `TileGround_01` grid 파생 메시 | RLGL·Minefield `4x9`, Wrong Way 배경 `3x9`, Balloon Blow·Sequence Memory `4x2`, Gift Grab·Bomb Passing·Arena Combat·Cliff Barrage `4x4`, Tag Chase `5x4`, Race `3x8` 바닥을 각각 1 Renderer로 구성 |
-| 신호 패널 | SciFi `switch_007` mesh | Red/Green Signal Renderer와 Light 유지 |
+| 신호 패널 | SciFi `switch_007` mesh | RLGL 최종 씬에서는 사용하지 않고 HUD 3등으로 대체 |
 | 신호·경광 표현 | SciFi `object_008` | Minefield 머리 위 경광등 |
 | 크러셔 벽 | SciFi `wall_003` | Minefield Crusher visual, 기존 trigger Collider 유지 |
 | 폭탄 | SciFi `object_016` | Bomb Passing `Bomb` root |
@@ -61,10 +62,10 @@ Collider는 모두 제거한다.
 
 | 공용 분류 | 통합 적용 대상 |
 |---|---|
-| Pandazole ground tile | Stable Footing만 nested 래퍼, Wrong Way 52 surface/lane은 centered 메시 직접 참조, 나머지 광범위 바닥은 grid 결합 메시 1 Renderer |
+| Pandazole ground tile | Stable Footing만 nested 래퍼, Wrong Way 시작·결승은 centered 메시를 사용하고 계단은 ToyBox BasicBlock을 사용, 나머지 광범위 바닥은 grid 결합 메시 1 Renderer |
 | Fantasy/Pandazole 자연물 | RLGL·Race·Wrong Way·Gift Grab 외곽, Snowy Spin·Cliff Barrage 배경 |
 | SciFi `object_017` 구체 | 풍선, Bouncing Balls 공, Snowy Spin 눈덩이, Cliff 투사체 |
-| SciFi signal/beacon | RLGL 신호, Minefield 경광등, 위험 경고등 |
+| SciFi signal/beacon | Minefield 경광등, 위험 경고등 |
 | SciFi platform/ring | NPC 받침, Gift Base, Bomb 중앙대, Arena Spawn, Goal frame |
 | SciFi fence/wall | Minefield·Gift·Territory·Tag·Bouncing·Bomb·Arena 외곽 |
 | SciFi cover/block | Tag Chase 시야 차단물, Bouncing Balls 실드 |
@@ -78,16 +79,18 @@ Collider는 모두 제거한다.
    `NatureGroundGrid_4x9` 바닥을 적용했다. 기존 Crusher trigger와
    `Siren Red Lens/Light`를 유지한다. 외곽 SciFi wall은 후속 맵 장식 범위다.
 2. **Wrong Way** — 각 Lane의 `Start Platform`, `Step 01~50`, `Finish Platform` 총
-   52개 surface anchor는 유지하고 `SharedNatureGroundCentered` 메시를 기존 MeshFilter에
-   직접 적용했다. 배경 바닥은 `NatureGroundGrid_3x9`, 결승은 공용 Polytope gate를
-   사용하며 레일 fence는 후속 장식이다.
+   52개 surface anchor와 플레이 좌표는 유지한다. Step의 기존 Renderer만 끄고 ToyBox
+   `BasicBlock` 12종을 nested visual로 섞었으며 모든 외부 Collider는 비활성이다.
+   Standard 재질 8종은
+   `Assets/MazeParty/Art/Minigames/WrongWay/Materials/ToyBoxBasicBlocks`의 추적 가능한
+   URP/Lit 사본을 사용한다. 배경 바닥과 결승 아치는 기존 최종 디자인을 유지한다.
 3. **Red Light / Green Light** — `NatureGroundGrid_4x9` 바닥, Fantasy fence,
-   SciFi 2등식 신호를 사용한다. Observer는 만들지 않는다.
+   상단 HUD 3등을 사용한다. Observer와 씬 신호탑은 만들지 않는다.
 4. **Stable Footing** — `SharedNatureGroundTile` nested visual을 사용하고, 타일과
-   `Safe Symbol Display`의 심벌은 Modern UI의 흰색 `Heart Filled`, `Star Filled`,
-   `Weather/Sun Filled` 스프라이트를 공통 사용한다. 기존 내부 Cross/Circle/Square 순서와
-   직렬화 바인딩은 각각 Heart/Star/Sun에 대응하도록 유지한다. 공용 바닥 중 유일하게
-   nested tile 래퍼를 유지하며 48개 authority tile root도 그대로 둔다.
+   `Safe Symbol Display`의 심벌은 Modern UI의 `Heart Filled`, `Star Filled`,
+   `Weather/Sun Filled` 스프라이트를 공통 사용한다. authored 3개 슬롯을 유지하면서
+   정답을 항상 중앙·초록색으로, 오답 둘은 양옆·흰색으로 표시한다. 공용 바닥 중
+   유일하게 nested tile 래퍼를 유지하며 48개 authority tile root도 그대로 둔다.
 5. **Balloon Blow** — `object_017` 1개를 4색 풍선에 공유하고 기존 knot와
    `NatureGroundGrid_4x2` 무대 바닥을 유지한다. 펌프·호스·스테이션은 만들지 않는다.
 6. **Gift Grab** — SciFi `box_002`와 기존 ribbon/bow를 선물로 사용하고 `ring`을
@@ -130,8 +133,9 @@ Collider는 모두 제거한다.
 - 광범위 바닥은 `Assets/Ignore/MazePartyGenerated/Meshes`의 `NatureGroundGrid_4x9`,
   `3x9`, `4x2`, `4x4`, `5x4`, `3x8` 결합 메시를 사용해 맵별 1 MeshFilter·1 Renderer로
   구성한다.
-- Wrong Way는 Lane마다 기존 52개 surface anchor를 유지하고 각 anchor의 MeshFilter가
-  `SharedNatureGroundCentered`를 직접 참조한다. nested tile wrapper를 추가하지 않는다.
+- Wrong Way는 Lane마다 기존 52개 surface anchor를 유지한다. Start/Finish는 기존
+  `SharedNatureGroundCentered` Renderer를 사용하고, 50개 Step은 같은 anchor를 유지한 채
+  Collider가 비활성인 ToyBox BasicBlock nested visual을 사용한다.
 - Stable Footing만 `Tile Surface` 아래 `SharedNatureGroundTile` nested visual을 유지한다.
 - Pandazole/Fantasy 원본의 MeshCollider는 래퍼에서 제거한다.
 - Stable Footing의 낙하 타일, Territory Paint의 연속 UV, Tag Chase 장애물 AABB처럼

@@ -78,7 +78,7 @@ namespace MazeParty.Editor
 
             Debug.Log(
                 "Red Light / Green Light rebuilt: 20 x 44 shared arena, " +
-                "replaceable signal anchors, network state, " +
+                "HUD-only signal, network state, " +
                 "and additive-safe personal top-view camera.");
         }
 
@@ -240,21 +240,10 @@ namespace MazeParty.Editor
                 () => CreateEnvironmentTemplate(materials),
                 "Red Light Green Light Environment");
 
-            CreateSignalTower(
-                parent,
-                materials,
-                out var greenSignalRenderer,
-                out var redSignalRenderer,
-                out var greenSignalLight,
-                out var redSignalLight);
-
-            return new PresentationReferences
-            {
-                GreenSignalRenderer = greenSignalRenderer,
-                RedSignalRenderer = redSignalRenderer,
-                GreenSignalLight = greenSignalLight,
-                RedSignalLight = redSignalLight
-            };
+            // The authored scene intentionally has no world-space signal.
+            // Keep these legacy references empty so a setup run cannot
+            // reintroduce the deleted tower; the HUD is the sole signal UI.
+            return new PresentationReferences();
         }
 
         private static void CreateAuthorityColliders(Transform parent)
@@ -761,7 +750,9 @@ namespace MazeParty.Editor
                 34,
                 TextAnchor.MiddleCenter,
                 FontStyle.Bold,
-                "GREEN LIGHT  ·  MOVE");
+                "<color=#38FF59FF>●</color>  " +
+                "<color=#38FF59FF>●</color>  " +
+                "<color=#38FF59FF>●</color>");
             root.GetComponent<RedLightGreenLightHudBindings>().Configure(
                 canvas,
                 signal,
@@ -946,14 +937,23 @@ namespace MazeParty.Editor
                 FindDescendant(root.transform, "Arena Floor") == null ||
                 FindDescendant(root.transform, "Start Line") == null ||
                 FindDescendant(root.transform, "Finish Line") == null ||
-                FindDescendant(root.transform, "Green Signal") == null ||
-                FindDescendant(root.transform, "Red Signal") == null ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 root.GetComponentInChildren<AudioSource>(true) == null)
             {
                 throw new InvalidOperationException(
                     "Generated Red Light / Green Light scene is missing its " +
-                    "network, arena, signal, camera or audio contract.");
+                    "network, arena, camera or audio contract.");
+            }
+
+            if (FindDescendant(
+                    root.transform,
+                    "Signal Tower Placeholder") != null ||
+                FindDescendant(root.transform, "Green Signal") != null ||
+                FindDescendant(root.transform, "Red Signal") != null)
+            {
+                throw new InvalidOperationException(
+                    "Red Light / Green Light must keep its final HUD-only " +
+                    "signal presentation.");
             }
 
             var hud = root.GetComponentInChildren<

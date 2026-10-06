@@ -49,6 +49,66 @@ namespace MazeParty.Multiplayer.Tests
                 StableFootingPrefabFolder + "SafeSymbolDisplay.prefab");
         }
 
+        [TestCase(StableFootingSymbol.Cross)]
+        [TestCase(StableFootingSymbol.Circle)]
+        [TestCase(StableFootingSymbol.Square)]
+        public void SafeSymbolDisplay_ShowsCorrectSymbolGreenAtCenter(
+            StableFootingSymbol safeSymbol)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                StableFootingPrefabFolder + "SafeSymbolDisplay.prefab");
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var renderers = new[]
+                {
+                    FindDescendant(instance.transform, "Cross Mark")
+                        .GetComponent<SpriteRenderer>(),
+                    FindDescendant(instance.transform, "Circle Mark")
+                        .GetComponent<SpriteRenderer>(),
+                    FindDescendant(instance.transform, "Square Mark")
+                        .GetComponent<SpriteRenderer>()
+                };
+                var authoredSlots = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .OrderBy(position => position.x)
+                    .ToArray();
+                var presenter = new StableFootingSafeSymbolPresenter(
+                    renderers[0],
+                    renderers[1],
+                    renderers[2]);
+
+                presenter.Apply(safeSymbol, true);
+
+                var safeIndex = (int)safeSymbol;
+                Assert.That(
+                    renderers[safeIndex].transform.localPosition,
+                    Is.EqualTo(authoredSlots[1]));
+                Assert.That(
+                    renderers[safeIndex].color,
+                    Is.EqualTo(Color.green));
+                Assert.That(
+                    renderers.All(renderer =>
+                        renderer.gameObject.activeInHierarchy),
+                    Is.True);
+
+                var distractors = renderers
+                    .Where((renderer, index) => index != safeIndex)
+                    .ToArray();
+                Assert.That(
+                    distractors.Select(renderer => renderer.color),
+                    Is.All.EqualTo(Color.white));
+                CollectionAssert.AreEquivalent(
+                    new[] { authoredSlots[0], authoredSlots[2] },
+                    distractors.Select(renderer =>
+                        renderer.transform.localPosition).ToArray());
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
         [Test]
         public void Scene_PreservesArenaNetworkSharedCameraAndWorldCueContract()
         {

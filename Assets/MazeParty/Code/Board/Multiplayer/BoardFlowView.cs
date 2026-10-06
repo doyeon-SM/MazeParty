@@ -2702,8 +2702,11 @@ namespace MazeParty.Multiplayer
                         case RedLightGreenLightSignalPhase.Green:
                             return GameText.F("GREEN  {0:0.0}s: move toward the finish.",
                                    remaining);
-                        case RedLightGreenLightSignalPhase.TurnWarning:
-                            return GameText.F("TURNING  {0:0.0}s: movement remains legal until RED begins.",
+                        case RedLightGreenLightSignalPhase.OneRed:
+                            return GameText.F("1 RED / 2 GREEN  {0:0.0}s: movement is still legal.",
+                                   remaining);
+                        case RedLightGreenLightSignalPhase.TwoRed:
+                            return GameText.F("2 RED / 1 GREEN  {0:0.0}s: movement is still legal.",
                                    remaining);
                         case RedLightGreenLightSignalPhase.Red:
                             return GameText.F("RED  {0:0.0}s: freeze; voluntary movement is a violation.",
@@ -2729,8 +2732,10 @@ namespace MazeParty.Multiplayer
             {
                 case RedLightGreenLightSignalPhase.Green:
                     return GameText.T("GREEN");
-                case RedLightGreenLightSignalPhase.TurnWarning:
-                    return GameText.T("TURNING");
+                case RedLightGreenLightSignalPhase.OneRed:
+                    return GameText.T("1 RED");
+                case RedLightGreenLightSignalPhase.TwoRed:
+                    return GameText.T("2 RED");
                 case RedLightGreenLightSignalPhase.Red:
                     return GameText.T("RED");
                 default:

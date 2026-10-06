@@ -18,9 +18,8 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
         public const double CountdownSeconds = 3d;
         public const double RoundSeconds = 60d;
         public const double ResultSeconds = 4d;
-        public const double MinimumGreenSeconds = 1.5d;
-        public const double MaximumGreenSeconds = 4d;
-        public const double TurnWarningSeconds = 0.35d;
+        public const double MinimumGreenStepSeconds = 0.1d;
+        public const double MaximumGreenStepSeconds = 3d;
         public const double MinimumRedSeconds = 1d;
         public const double MaximumRedSeconds = 2.5d;
         public const double RedMovementGraceSeconds = 0.15d;
@@ -79,14 +78,16 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
     public enum RedLightGreenLightSignalPhase : byte
     {
-        Green,
-        TurnWarning,
-        Red
+        Green = 0,
+        OneRed = 1,
+        TwoRed = 2,
+        Red = 3
     }
 
     /// <summary>
-    /// One contiguous server-authored signal window. TurnWarning is still a
-    /// legal movement window; only Red can produce a movement violation.
+    /// One contiguous server-authored signal window. The numeric phase value
+    /// is the number of red HUD lights. OneRed and TwoRed remain legal movement
+    /// windows; only the all-red Red phase can produce a movement violation.
     /// </summary>
     public readonly struct RedLightGreenLightSignalWindow :
         IEquatable<RedLightGreenLightSignalWindow>
@@ -102,12 +103,15 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
         }
 
         public RedLightGreenLightSignalPhase Phase { get; }
+        public int RedLightCount => (int)Phase;
+        public bool IsMovementForbidden =>
+            Phase == RedLightGreenLightSignalPhase.Red;
         public double StartsAtSeconds { get; }
         public double DurationSeconds { get; }
         public double EndsAtSeconds =>
             StartsAtSeconds + DurationSeconds;
         public double RedDetectionStartsAtSeconds =>
-            Phase == RedLightGreenLightSignalPhase.Red
+            IsMovementForbidden
                 ? StartsAtSeconds +
                   RedLightGreenLightRules.RedMovementGraceSeconds
                 : double.PositiveInfinity;
@@ -191,8 +195,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             double runningElapsedSeconds)
         {
             var window = GetWindowAt(runningElapsedSeconds);
-            return window.Phase ==
-                   RedLightGreenLightSignalPhase.Red &&
+            return window.IsMovementForbidden &&
                    runningElapsedSeconds >=
                    window.RedDetectionStartsAtSeconds;
         }
@@ -201,7 +204,9 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     /// <summary>
     /// Creates one canonical signal schedule per server seed and round. Full
     /// windows are kept even when their tail lies beyond the 60 second limit,
-    /// so generated Green and Red durations always remain inside their bounds.
+    /// so generated countdown and Red durations always remain inside their
+    /// bounds. Every cycle advances left-to-right through zero, one, two and
+    /// three red lights; after Red, all three lights return to green together.
     /// </summary>
     public static class RedLightGreenLightSignalScheduleGenerator
     {
@@ -230,22 +235,20 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
             while (cursor < RedLightGreenLightRules.RoundSeconds)
             {
-                var greenDuration = random.NextDouble(
-                    RedLightGreenLightRules.MinimumGreenSeconds,
-                    RedLightGreenLightRules.MaximumGreenSeconds);
-                windows.Add(
-                    new RedLightGreenLightSignalWindow(
-                        RedLightGreenLightSignalPhase.Green,
-                        cursor,
-                        greenDuration));
-                cursor += greenDuration;
-
-                windows.Add(
-                    new RedLightGreenLightSignalWindow(
-                        RedLightGreenLightSignalPhase.TurnWarning,
-                        cursor,
-                        RedLightGreenLightRules.TurnWarningSeconds));
-                cursor += RedLightGreenLightRules.TurnWarningSeconds;
+                for (var redLightCount = 0;
+                     redLightCount < 3;
+                     redLightCount++)
+                {
+                    var greenStepDuration = random.NextDouble(
+                        RedLightGreenLightRules.MinimumGreenStepSeconds,
+                        RedLightGreenLightRules.MaximumGreenStepSeconds);
+                    windows.Add(
+                        new RedLightGreenLightSignalWindow(
+                            (RedLightGreenLightSignalPhase)redLightCount,
+                            cursor,
+                            greenStepDuration));
+                    cursor += greenStepDuration;
+                }
 
                 var redDuration = random.NextDouble(
                     RedLightGreenLightRules.MinimumRedSeconds,
