@@ -412,7 +412,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1 &326353698
 GameObject:
@@ -456,14 +456,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -656,6 +656,10 @@ PrefabInstance:
     - target: {fileID: 115978977738224411, guid: 5bb0ae9ce269b0c4480c402d6abbff4e, type: 3}
       propertyPath: m_Name
       value: Gift Grab Environment
+      objectReference: {fileID: 0}
+    - target: {fileID: 115978977738224411, guid: 5bb0ae9ce269b0c4480c402d6abbff4e, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1523694372174180399, guid: 5bb0ae9ce269b0c4480c402d6abbff4e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1168,7 +1172,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1001 &534922251
 PrefabInstance:
@@ -1303,7 +1307,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1 &564837030
 GameObject:
@@ -1842,7 +1846,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1001 &811703134
 PrefabInstance:
@@ -2008,7 +2012,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1 &858595995
 GameObject:
@@ -2134,7 +2138,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1 &864695064
 GameObject:
@@ -2772,7 +2776,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1001 &1204525251
 PrefabInstance:
@@ -3659,7 +3663,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 282b86c60d4e43e3bb2f6e3d7d7a6f91, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabBaseLabel
 --- !u!1 &1573323002
 GameObject:
@@ -3824,7 +3828,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 4104376191
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -3851,7 +3855,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 43ce9caa4db24374acc35b1582027bdb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.GiftGrabNetworkView
   state: {fileID: 1633743494}
   sharedCamera: {fileID: 326353700}
@@ -3903,7 +3907,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9f4e76da31be4be58b64cc76834292f1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkGiftGrabState
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &1705933691
@@ -3949,7 +3953,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d871aee9eaa244947968127db93e8dd8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.AudioChannelSource
   source: {fileID: 1705933694}
   channel: 0
@@ -4809,6 +4813,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2045862967}
   - component: {fileID: 2045862968}
+  - component: {fileID: 2045862969}
   m_Layer: 0
   m_Name: Gift Grab Directional Light
   m_TagString: Untagged
@@ -4896,6 +4901,35 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &2045862969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2045862966}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &2102785372
 GameObject:
   m_ObjectHideFlags: 0

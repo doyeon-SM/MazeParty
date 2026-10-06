@@ -244,6 +244,7 @@ GameObject:
   m_Component:
   - component: {fileID: 654094146}
   - component: {fileID: 654094147}
+  - component: {fileID: 654094148}
   m_Layer: 0
   m_Name: Red Light Green Light Directional Light
   m_TagString: Untagged
@@ -331,88 +332,35 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
---- !u!1001 &1059107619
-PrefabInstance:
+--- !u!114 &654094148
+MonoBehaviour:
   m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1453220852}
-    m_Modifications:
-    - target: {fileID: 3971615029231322927, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_Name
-      value: Signal Tower Placeholder
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 387.9
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 20.2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
---- !u!4 &1059107620 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 4617717872784552855, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-  m_PrefabInstance: {fileID: 1059107619}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
---- !u!108 &1059107621 stripped
-Light:
-  m_CorrespondingSourceObject: {fileID: 2116946524584525378, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-  m_PrefabInstance: {fileID: 1059107619}
-  m_PrefabAsset: {fileID: 0}
---- !u!108 &1059107622 stripped
-Light:
-  m_CorrespondingSourceObject: {fileID: 8795195866160408912, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-  m_PrefabInstance: {fileID: 1059107619}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &1059107623 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 6168833833389996682, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-  m_PrefabInstance: {fileID: 1059107619}
-  m_PrefabAsset: {fileID: 0}
---- !u!23 &1059107624 stripped
-MeshRenderer:
-  m_CorrespondingSourceObject: {fileID: 1327066270336390213, guid: 71d1a46c7f9c10a4fa03c916bfb3aace, type: 3}
-  m_PrefabInstance: {fileID: 1059107619}
-  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 654094145}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1 &1085740398
 GameObject:
   m_ObjectHideFlags: 0
@@ -456,7 +404,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d871aee9eaa244947968127db93e8dd8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.AudioChannelSource
   source: {fileID: 1085740401}
   channel: 0
@@ -729,7 +677,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81ee239c3be78ce43bae6483fb4b57af, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.RedLightGreenLightHudBindings
 --- !u!224 &1374519814 stripped
 RectTransform:
@@ -803,7 +751,6 @@ Transform:
   m_Children:
   - {fileID: 1416615605}
   - {fileID: 473028414}
-  - {fileID: 1059107620}
   - {fileID: 654094146}
   m_Father: {fileID: 2058619057}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1046,7 +993,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 2843779846
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -1073,16 +1020,16 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a69152838e63574abf37e0259532e95, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.RedLightGreenLightNetworkView
   state: {fileID: 2058619060}
   topDownCamera: {fileID: 2094520805}
   runnerRoot: {fileID: 1850565417}
   arenaPresentation: {fileID: 1453220851}
-  greenSignalRenderer: {fileID: 1059107624}
-  redSignalRenderer: {fileID: 1059107623}
-  greenSignalLight: {fileID: 1059107622}
-  redSignalLight: {fileID: 1059107621}
+  greenSignalRenderer: {fileID: 0}
+  redSignalRenderer: {fileID: 0}
+  greenSignalLight: {fileID: 0}
+  redSignalLight: {fileID: 0}
   cueAudioSource: {fileID: 1085740401}
   greenCue: {fileID: 0}
   turnWarningCue: {fileID: 0}
@@ -1099,7 +1046,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7d357b85ed3f993479b48f138c3bd831, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkRedLightGreenLightState
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &2094520803
@@ -1144,14 +1091,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
