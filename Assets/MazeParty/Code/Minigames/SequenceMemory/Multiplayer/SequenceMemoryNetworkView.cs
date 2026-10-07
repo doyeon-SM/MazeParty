@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.RedLightGreenLight;
@@ -16,6 +17,10 @@ namespace MazeParty.Multiplayer
     {
         public const float ArenaCenterX = 1140f;
         public const float SharedCameraOrthographicSize = 9.5f;
+        // Bell 7 is G5. Pitch it down to a C-major C/E/G triad.
+        private const float DoPitchScale = 0.6674199f;
+        private const float MiPitchScale = 0.8408964f;
+        private const float SolPitchScale = 1f;
 
         private static readonly Color[] FallbackPlayerColors =
         {
@@ -32,16 +37,13 @@ namespace MazeParty.Multiplayer
             new Transform[SequenceMemoryRules.PlayerCount];
         [SerializeField] private Transform npcAnchor;
         [SerializeField] private GameObject arenaPresentation;
-        [SerializeField] private AudioSource npcToneSource;
-        [SerializeField] private AudioSource playerToneSource;
-        [SerializeField] private AudioClip highTone;
-        [SerializeField] private AudioClip middleTone;
-        [SerializeField] private AudioClip lowTone;
         [SerializeField] private SequenceMemoryHudBindings hud;
         [SerializeField] private GameObject tonePulseVfxPrefab;
 
         private readonly PlayerView[] _players =
             new PlayerView[SequenceMemoryRules.PlayerCount];
+        private readonly List<SoundHandle> _toneHandles =
+            new List<SoundHandle>();
         private GameplayCameraDirector _cameraDirector;
         private NetworkSequenceMemoryState _subscribedState;
         private bool _cameraRegistered;
@@ -83,8 +85,7 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(false);
             SetHudActive(false);
             UnregisterCamera();
-            npcToneSource?.Stop();
-            playerToneSource?.Stop();
+            StopToneSounds();
         }
 
         private void Update()
@@ -356,13 +357,19 @@ namespace MazeParty.Multiplayer
             bool fromNpc,
             int actorSlot)
         {
-            var clip = GetToneClip(input);
-            var source = fromNpc ? npcToneSource : playerToneSource;
-            if (source != null && clip != null)
+            if (!_worldVisible)
             {
-                source.PlayOneShot(clip);
+                return;
             }
-            if (!_worldVisible || tonePulseVfxPrefab == null)
+
+            var handle = GameSound.PlayPitched(
+                SoundKeys.MinigameSequenceMemoryTone,
+                GetTonePitchScale(input));
+            if (handle.IsValid)
+            {
+                _toneHandles.Add(handle);
+            }
+            if (tonePulseVfxPrefab == null)
             {
                 return;
             }
@@ -376,7 +383,7 @@ namespace MazeParty.Multiplayer
             {
                 anchor = _players[actorSlot]?.Root;
             }
-            anchor ??= source != null ? source.transform : transform;
+            anchor ??= transform;
             OneShotVfxPool.Play(
                 tonePulseVfxPrefab,
                 anchor.position + Vector3.up * 0.8f,
@@ -384,17 +391,27 @@ namespace MazeParty.Multiplayer
                 fromNpc ? 0.8f : 0.55f);
         }
 
-        private AudioClip GetToneClip(SequenceMemoryInput input)
+        private static float GetTonePitchScale(SequenceMemoryInput input)
         {
             switch (input)
             {
                 case SequenceMemoryInput.A:
-                    return lowTone;
+                    return DoPitchScale;
                 case SequenceMemoryInput.S:
-                    return middleTone;
+                    return MiPitchScale;
                 default:
-                    return highTone;
+                    return SolPitchScale;
             }
+        }
+
+        private void StopToneSounds()
+        {
+            for (var index = 0; index < _toneHandles.Count; index++)
+            {
+                GameSound.Stop(_toneHandles[index], 0f);
+            }
+
+            _toneHandles.Clear();
         }
 
         private void EnsureToneSubscription()
@@ -459,6 +476,11 @@ namespace MazeParty.Multiplayer
             if (_visibilityInitialized && _worldVisible == active)
             {
                 return;
+            }
+
+            if (!active && _worldVisible)
+            {
+                StopToneSounds();
             }
 
             _visibilityInitialized = true;

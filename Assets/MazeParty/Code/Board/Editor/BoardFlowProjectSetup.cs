@@ -60,6 +60,10 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Board/UI/Modules";
         internal const string BoardCanvasPrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string PlayerKeyIconPath =
+            "Assets/Ignore/Icon_NCI/free-icon-door-key-63432.png";
+        private const string PlayerGoldIconPath =
+            "Assets/Ignore/Icon_NCI/free-icon-dollar-coin-7022685.png";
         internal const string BoardFlowTestToolsPrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/Dev/BoardFlowTestTools.prefab";
         private const string TestbedPath =
@@ -1505,7 +1509,6 @@ namespace MazeParty.Editor
             var slotBackgrounds =
                 new Image[GameplayInventory.Capacity];
             var slotIcons = new Image[GameplayInventory.Capacity];
-            var slotLabels = new Text[GameplayInventory.Capacity];
             var choiceButtons = new Button[GameplayInventory.Capacity];
             var choiceLabels = new Text[GameplayInventory.Capacity];
             var choiceHovers =
@@ -1520,9 +1523,6 @@ namespace MazeParty.Editor
                 slotIcons[index] = RequireBoardUiComponent<Image>(
                     root,
                     "BoardInventorySlotIcon" + index);
-                slotLabels[index] = RequireBoardUiComponent<Text>(
-                    root,
-                    "BoardInventorySlotLabel" + index);
                 choiceButtons[index] = RequireBoardUiComponent<Button>(
                     root,
                     "ItemChoiceButton" + index);
@@ -1565,7 +1565,13 @@ namespace MazeParty.Editor
                 new Image[MultiplayerConstants.MaxPlayers];
             var playerHealthTexts =
                 new Text[MultiplayerConstants.MaxPlayers];
-            var playerCurrencyTexts =
+            var playerKeyIcons =
+                new RawImage[MultiplayerConstants.MaxPlayers];
+            var playerKeyTexts =
+                new Text[MultiplayerConstants.MaxPlayers];
+            var playerGoldIcons =
+                new RawImage[MultiplayerConstants.MaxPlayers];
+            var playerGoldTexts =
                 new Text[MultiplayerConstants.MaxPlayers];
             var playerActionIcons =
                 new Text[MultiplayerConstants.MaxPlayers];
@@ -1587,9 +1593,18 @@ namespace MazeParty.Editor
                 playerHealthTexts[index] = RequireBoardUiComponent<Text>(
                     root,
                     "PlayerHealthText" + index);
-                playerCurrencyTexts[index] = RequireBoardUiComponent<Text>(
+                playerKeyIcons[index] = RequireBoardUiComponent<RawImage>(
                     root,
-                    "PlayerCurrency" + index);
+                    "PlayerKeyIcon" + index);
+                playerKeyTexts[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerKeyText" + index);
+                playerGoldIcons[index] = RequireBoardUiComponent<RawImage>(
+                    root,
+                    "PlayerGoldIcon" + index);
+                playerGoldTexts[index] = RequireBoardUiComponent<Text>(
+                    root,
+                    "PlayerGoldText" + index);
                 playerActionIcons[index] = RequireBoardUiComponent<Text>(
                     root,
                     "PlayerActionIcon" + index);
@@ -1697,7 +1712,6 @@ namespace MazeParty.Editor
                     "ItemShopCloseButton"),
                 InventorySlotBackgrounds = slotBackgrounds,
                 InventorySlotIcons = slotIcons,
-                InventorySlotLabels = slotLabels,
                 ItemChoiceButtons = choiceButtons,
                 ItemChoiceLabels = choiceLabels,
                 ItemChoiceHovers = choiceHovers,
@@ -1709,7 +1723,10 @@ namespace MazeParty.Editor
                 PlayerCards = playerCards,
                 PlayerHealthFills = playerHealthFills,
                 PlayerHealthTexts = playerHealthTexts,
-                PlayerCurrencyTexts = playerCurrencyTexts,
+                PlayerKeyIcons = playerKeyIcons,
+                PlayerKeyTexts = playerKeyTexts,
+                PlayerGoldIcons = playerGoldIcons,
+                PlayerGoldTexts = playerGoldTexts,
                 PlayerActionIcons = playerActionIcons,
                 PlayerRankTexts = playerRankTexts
             });
@@ -1809,9 +1826,16 @@ namespace MazeParty.Editor
             var panel = CreatePanel("Player State Panel", canvas, new Vector2(0f, 1f),
                 new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(370f, 420f),
                 new Vector2(0f, 1f), new Color(0.025f, 0.045f, 0.08f, 0.9f));
-            CreateText("Players Title", panel.transform, "ONLINE PLAYERS", font, 19,
-                new Vector2(185f, -20f), new Vector2(330f, 30f), TextAnchor.MiddleCenter,
-                new Vector2(0f, 1f), new Vector2(0f, 1f));
+            var keyIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                PlayerKeyIconPath);
+            var goldIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
+                PlayerGoldIconPath);
+            if (keyIcon == null || goldIcon == null)
+            {
+                throw new InvalidOperationException(
+                    "Board Canvas player currency icons are missing from Icon_NCI.");
+            }
+
             for (var i = 0; i < MultiplayerConstants.MaxPlayers; i++)
             {
                 var card = CreatePanel(
@@ -1878,17 +1902,12 @@ namespace MazeParty.Editor
                     Vector2.zero,
                     new Vector2(214f, 18f),
                     TextAnchor.MiddleCenter);
-                CreateText(
-                    "PlayerCurrency" + i,
+                CreatePlayerCurrency(
                     card.transform,
-                    "KEY  0    GOLD  10",
+                    i,
                     font,
-                    15,
-                    new Vector2(116f, -65f),
-                    new Vector2(220f, 22f),
-                    TextAnchor.MiddleLeft,
-                    new Vector2(0f, 1f),
-                    new Vector2(0f, 1f));
+                    keyIcon,
+                    goldIcon);
                 CreateText(
                     "PlayerActionIcon" + i,
                     card.transform,
@@ -1903,13 +1922,105 @@ namespace MazeParty.Editor
             }
         }
 
+        private static void CreatePlayerCurrency(
+            Transform card,
+            int playerIndex,
+            Font font,
+            Texture keyIcon,
+            Texture goldIcon)
+        {
+            var container = CreateUiObject(
+                "PlayerCurrency" + playerIndex,
+                card);
+            var rect = container.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = new Vector2(116f, -65f);
+            rect.sizeDelta = new Vector2(220f, 22f);
+
+            CreateCurrencyIcon(
+                "PlayerKeyIcon" + playerIndex,
+                container.transform,
+                keyIcon,
+                new Vector2(-99f, 0f),
+                new Color(0.72f, 1f, 0.82f, 0.95f));
+            CreateCurrencyValueText(
+                "PlayerKeyText" + playerIndex,
+                container.transform,
+                "0",
+                font,
+                new Vector2(-65f, 0f),
+                new Vector2(44f, 22f));
+            CreateCurrencyIcon(
+                "PlayerGoldIcon" + playerIndex,
+                container.transform,
+                goldIcon,
+                new Vector2(-22f, 0f),
+                new Color(1f, 0.78f, 0.22f, 0.95f));
+            CreateCurrencyValueText(
+                "PlayerGoldText" + playerIndex,
+                container.transform,
+                "10",
+                font,
+                new Vector2(18f, 0f),
+                new Vector2(60f, 22f));
+        }
+
+        private static void CreateCurrencyIcon(
+            string name,
+            Transform parent,
+            Texture texture,
+            Vector2 position,
+            Color backgroundColor)
+        {
+            var backing = CreatePanel(
+                name + " Background",
+                parent,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                position,
+                new Vector2(22f, 22f),
+                new Vector2(0.5f, 0.5f),
+                backgroundColor);
+            backing.GetComponent<Image>().raycastTarget = false;
+
+            var iconObject = CreateUiObject(name, backing.transform);
+            var iconRect = iconObject.GetComponent<RectTransform>();
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+            iconRect.pivot = new Vector2(0.5f, 0.5f);
+            iconRect.anchoredPosition = Vector2.zero;
+            iconRect.sizeDelta = new Vector2(16f, 16f);
+            var icon = iconObject.AddComponent<RawImage>();
+            icon.texture = texture;
+            icon.raycastTarget = false;
+        }
+
+        private static void CreateCurrencyValueText(
+            string name,
+            Transform parent,
+            string value,
+            Font font,
+            Vector2 position,
+            Vector2 size)
+        {
+            var text = CreateText(
+                name,
+                parent,
+                value,
+                font,
+                22,
+                position,
+                size,
+                TextAnchor.MiddleLeft);
+            text.fontStyle = FontStyle.Bold;
+            text.color = new Color(0.72f, 1f, 0.82f, 1f);
+        }
+
         private static void CreateInventory(Transform canvas, Font font)
         {
             var panel = CreatePanel("Inventory Panel", canvas, new Vector2(0.5f, 0f),
                 new Vector2(0.5f, 0f), new Vector2(0f, 20f), new Vector2(690f, 132f),
                 new Vector2(0.5f, 0f), new Color(0.025f, 0.045f, 0.08f, 0.92f));
-            CreateText("Inventory Title", panel.transform, "ITEM SLOTS", font, 17,
-                new Vector2(0f, 105f), new Vector2(300f, 25f), TextAnchor.MiddleCenter);
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
                 var slot = CreatePanel("BoardInventorySlot" + i, panel.transform, new Vector2(0.5f, 0f),
@@ -1920,8 +2031,6 @@ namespace MazeParty.Editor
                     slot.transform,
                     new Vector2(-62f, 0f),
                     56f);
-                CreateText("BoardInventorySlotLabel" + i, slot.transform, "EMPTY", font, 17,
-                    new Vector2(31f, 0f), new Vector2(112f, 64f), TextAnchor.MiddleCenter);
             }
 
             CreateText("BoardAmmoText", canvas, "CHARGE --", font, 24,

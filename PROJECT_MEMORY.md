@@ -50,6 +50,9 @@
 - 옷장은 색 → 얼굴 → 모자 순서다. Face1~15와 없음·Hat1~30을 사용하며 기존
   Face1~3·Hat1~3 저장 ID를 유지한다. 선택값은 저장·네트워크·모든 캐릭터 표시에 반영한다.
 - 플레이어 이름은 월드 머리 위에 표시하고 최초 카운트다운에는 로컬 위치를 강조한다.
+- `BoardCanvas.prefab`은 사용자가 조정한 현재 배치를 유지한다. 삭제된 Players·Inventory
+  제목과 인벤토리 슬롯 라벨은 런타임 바인딩에서도 제거하며, 각 플레이어 카드의 Key와
+  Gold는 `Assets/Ignore/Icon_NCI`의 아이콘 뒤에 숫자 텍스트를 두는 구성으로 표시한다.
 
 ### 로비 프레젠테이션과 맵 선택
 
@@ -191,10 +194,12 @@
 - Wrong Way는 기존 Lane/Step anchor, 플레이 좌표, 씬 환경 디자인을 유지한다. 네 Lane의
   `Step 01~50`에 ToyBox `BasicBlock` 12종을 충돌 없는 nested visual로 결정론적으로 섞고,
   Standard 셰이더 원본은 Ignore 원본을 수정하지 않은 URP/Lit 파생 재질로 표시한다.
-- 2026-10-07 관련 EditMode 계약 테스트는 16/16 통과했다. 전체 EditMode는 450개 중
-  444개 통과, 기존 최종 디자인과 옛 계약이 충돌하는 6개(Forest TerrainCollider,
-  BombPassing 환경 Collider, 공용 에셋의 옛 Bomb mesh 기대, TagChase 씬 계약,
-  Lobby UI 계약 2개)가 남아 있으며 이번 작업에서는 최종 씬 디자인을 되돌리지 않았다.
+- 2026-10-07 Board UI·Sequence Memory 오디오 표적 EditMode 계약은 8/8 통과했다.
+  전체 EditMode는 450개 중 442개 통과했다. 남은 8개는 현재 최종 디자인과 옛 계약이
+  충돌하는 Forest TerrainCollider, BombPassing 환경 Collider, MinigameResultCanvas,
+  공용 에셋의 옛 Bomb mesh 기대, TagChase 씬, OnlineBootstrap의 LobbyCanvas 활성 override,
+  MinigameCommonHud 루트 scale, Wrong Way 화살표 원본 경로 계약이며 이번 작업 범위에서는
+  해당 디자인을 되돌리지 않았다.
 
 - 게임은 항상 4인 구조이며 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다.
 - Tag Chase·Race·Bomb Passing·Snowy Spin·Cliff Barrage는 공통 HUD만, Arena Combat은
@@ -224,8 +229,9 @@
 
 - 15종의 플레이어 스폰 표시는 숨긴다. Board 단계에서는 Lobby 프레젠테이션을
   비활성화하며 Bomb Passing은 중앙 블록만 숨기고 소환 링은 유지한다.
-- Sequence Memory의 A/S/D는 도/미/솔에 대응한다. 사운드 참조는 사용자 에셋 전달 전까지
-  비워 둔다. Snowy Spin 중앙 원, Bouncing Balls 중앙 원은 시각적으로 숨긴다.
+- Sequence Memory의 A/S/D는 도/미/솔에 대응한다. `Assets/Resources/sound/- Bell 7.mp3`를
+  공용 사운드 큐로 등록하고 원음 G5를 각각 0.6674199·0.8408964·1.0배 피치로 재생한다.
+  Snowy Spin 중앙 원, Bouncing Balls 중앙 원은 시각적으로 숨긴다.
 - Minefield·Wrong Way·Race는 로컬 플레이어 중심 개인 카메라를 사용하고 Minefield와
   Red Light Green Light의 시점을 낮춘다. Bouncing Balls는 슬롯별 화면 축과 측면 방어바
   방향을 보정하되 본인 점수는 별도로 강조하지 않는다.
@@ -237,6 +243,9 @@
 - 직접 BGM은 로비·보드·공용 미니게임만 사용하고 나머지는 fallback을 사용한다.
 - 보너스 준비음은 공개 전 2초만 재생하며 공개·일시정지에서 중지하고 duck하지 않는다.
 - 보드 발소리는 짧은 원샷 11개를 shuffle 재생한다.
+- Sequence Memory 음계는 `minigame.sequence_memory.tone` 큐 하나를 전역 풀 음성으로
+  재생한다. 원본의 선행 무음 0.21초를 큐에서 건너뛰고 동시 재생은 8개로 제한한다.
+  각 음은 독립 피치 요청이라 겹치는 잔향도 서로의 피치를 덮어쓰지 않는다.
 
 ## 현재 검증 상태
 
@@ -287,7 +296,6 @@
 
 - 15종 캡처 피드백 뒤 게임별 에셋 교체, 디자인 변경, 배치·카메라 위치를 조정한다.
   우선 검토 후보는 Bouncing Balls의 하단 골대·방어바 프레이밍과 Race의 하단 여백이다.
-- Sequence Memory의 도/미/솔 사운드 참조는 사용자 에셋 전달 뒤 연결한다.
 - Arena Combat 최종 캡처는 살아 있는 참가자의 1인칭 화면이다. 35° 관전 계산은
   검증했지만 최종 디자인 판단용 실제 관전 화면과 보드 격투 관전 화면은 별도 캡처한다.
 - 자연 진행 QA는 15종 정상 종료를 확인했지만, 모든 게임의 조기 종료·시간 종료·공동

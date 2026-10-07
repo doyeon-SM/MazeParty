@@ -56,8 +56,6 @@ namespace MazeParty.Multiplayer.Tests
                              "playerRoot",
                              "npcAnchor",
                              "arenaPresentation",
-                             "npcToneSource",
-                             "playerToneSource",
                              "hud"
                          })
                 {
@@ -86,37 +84,9 @@ namespace MazeParty.Multiplayer.Tests
                         "playerAnchors[" + slot + "]");
                 }
 
-                foreach (var clipPropertyName in new[]
-                         {
-                             "highTone",
-                             "middleTone",
-                             "lowTone"
-                         })
-                {
-                    var property = serializedView.FindProperty(
-                        clipPropertyName);
-                    Assert.That(property, Is.Not.Null, clipPropertyName);
-                    Assert.That(
-                        property.objectReferenceValue,
-                        Is.Null,
-                        clipPropertyName +
-                        " is intentionally ready for a future AudioClip.");
-                }
-
                 var audioSources = view.GetComponents<AudioSource>();
-                Assert.That(audioSources, Has.Length.EqualTo(2));
-                var npcToneSource = serializedView
-                    .FindProperty("npcToneSource")
-                    .objectReferenceValue as AudioSource;
-                var playerToneSource = serializedView
-                    .FindProperty("playerToneSource")
-                    .objectReferenceValue as AudioSource;
-                Assert.That(npcToneSource, Is.Not.Null);
-                Assert.That(playerToneSource, Is.Not.Null);
-                Assert.That(npcToneSource, Is.Not.SameAs(playerToneSource));
-                Assert.That(audioSources, Does.Contain(npcToneSource));
-                Assert.That(audioSources, Does.Contain(playerToneSource));
-                Assert.That(audioSources.All(source => !source.playOnAwake));
+                Assert.That(audioSources, Is.Empty,
+                    "Sequence tones use independent shared SoundSystem voices.");
 
                 var playerAnchorRoot = FindDescendant(
                     state.transform,

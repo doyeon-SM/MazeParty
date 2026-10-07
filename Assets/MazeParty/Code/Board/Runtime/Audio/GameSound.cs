@@ -21,6 +21,23 @@ namespace MazeParty.Gameplay
         }
 
         /// <summary>
+        /// 2D sound with a caller-selected pitch multiplier. Each play uses an
+        /// independent pooled voice, so overlapping notes keep their pitch.
+        /// </summary>
+        public static SoundHandle PlayPitched(
+            string key,
+            float pitchScale,
+            float volumeScale = 1f)
+        {
+            var system = ActiveSystem;
+            return system != null
+                ? system.Play(
+                    key,
+                    SoundPlayRequest.TwoD(volumeScale, pitchScale))
+                : default;
+        }
+
+        /// <summary>
         /// Sound at a world position; spatial cues fade with distance.
         /// <paramref name="maxDistance"/> above 0 overrides the cue's range.
         /// </summary>

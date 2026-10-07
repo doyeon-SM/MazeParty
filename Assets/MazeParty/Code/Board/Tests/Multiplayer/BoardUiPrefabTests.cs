@@ -17,6 +17,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
+        private const string KeyIconPath =
+            "Assets/Ignore/Icon_NCI/free-icon-door-key-63432.png";
+        private const string GoldIconPath =
+            "Assets/Ignore/Icon_NCI/free-icon-dollar-coin-7022685.png";
 
         private static readonly string[,] NestedModules =
         {
@@ -75,6 +79,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.HasRequiredReferences, Is.True);
             Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
             AssertItemIconBindings(prefab, bindings);
+            AssertPlayerCurrencyBindings(prefab, bindings);
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -115,6 +120,9 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(PrefabPath));
                 Assert.That(sceneBindings.HasRequiredReferences, Is.True);
                 AssertItemIconBindings(sceneBindings.gameObject, sceneBindings);
+                AssertPlayerCurrencyBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings);
                 var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);
                 Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(utility), Is.Not.Null);
@@ -228,6 +236,74 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(expectedParent, Is.Not.Null, expectedParentName);
             Assert.That(icon.transform.IsChildOf(expectedParent), Is.True,
                 expectedParentName);
+        }
+
+        private static void AssertPlayerCurrencyBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(bindings.PlayerKeyIcons.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+            Assert.That(bindings.PlayerKeyTexts.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+            Assert.That(bindings.PlayerGoldIcons.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+            Assert.That(bindings.PlayerGoldTexts.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var card = transforms.SingleOrDefault(candidate =>
+                    candidate.name == "PlayerCard" + slot);
+                Assert.That(card, Is.Not.Null, "PlayerCard" + slot);
+
+                AssertCurrencyIcon(
+                    bindings.PlayerKeyIcons[slot],
+                    card,
+                    "PlayerKeyIcon" + slot,
+                    KeyIconPath);
+                AssertCurrencyText(
+                    bindings.PlayerKeyTexts[slot],
+                    card,
+                    "PlayerKeyText" + slot);
+                AssertCurrencyIcon(
+                    bindings.PlayerGoldIcons[slot],
+                    card,
+                    "PlayerGoldIcon" + slot,
+                    GoldIconPath);
+                AssertCurrencyText(
+                    bindings.PlayerGoldTexts[slot],
+                    card,
+                    "PlayerGoldText" + slot);
+            }
+        }
+
+        private static void AssertCurrencyIcon(
+            RawImage icon,
+            Transform card,
+            string expectedName,
+            string expectedTexturePath)
+        {
+            Assert.That(icon, Is.Not.Null, expectedName);
+            Assert.That(icon.name, Is.EqualTo(expectedName));
+            Assert.That(icon.raycastTarget, Is.False, expectedName);
+            Assert.That(icon.transform.IsChildOf(card), Is.True, expectedName);
+            Assert.That(
+                AssetDatabase.GetAssetPath(icon.texture),
+                Is.EqualTo(expectedTexturePath),
+                expectedName);
+        }
+
+        private static void AssertCurrencyText(
+            Text text,
+            Transform card,
+            string expectedName)
+        {
+            Assert.That(text, Is.Not.Null, expectedName);
+            Assert.That(text.name, Is.EqualTo(expectedName));
+            Assert.That(text.raycastTarget, Is.False, expectedName);
+            Assert.That(text.transform.IsChildOf(card), Is.True, expectedName);
         }
     }
 }

@@ -43,13 +43,17 @@ namespace MazeParty.Gameplay
             Vector3 position,
             Transform follow,
             float volumeScale,
-            float maxDistance)
+            float maxDistance,
+            float pitchScale)
         {
             HasPosition = hasPosition;
             Position = position;
             Follow = follow;
             VolumeScale = volumeScale;
             MaxDistance = maxDistance;
+            PitchScale = float.IsNaN(pitchScale)
+                ? 1f
+                : Mathf.Clamp(pitchScale, 0.01f, 3f);
         }
 
         public bool HasPosition { get; }
@@ -57,25 +61,50 @@ namespace MazeParty.Gameplay
         public Transform Follow { get; }
         public float VolumeScale { get; }
         public float MaxDistance { get; }
+        public float PitchScale { get; }
 
-        public static SoundPlayRequest TwoD(float volumeScale = 1f)
+        public static SoundPlayRequest TwoD(
+            float volumeScale = 1f,
+            float pitchScale = 1f)
         {
-            return new SoundPlayRequest(false, Vector3.zero, null, volumeScale, 0f);
+            return new SoundPlayRequest(
+                false,
+                Vector3.zero,
+                null,
+                volumeScale,
+                0f,
+                pitchScale);
         }
 
         public static SoundPlayRequest At(
             Vector3 position,
             float volumeScale = 1f,
-            float maxDistance = 0f)
+            float maxDistance = 0f,
+            float pitchScale = 1f)
         {
-            return new SoundPlayRequest(true, position, null, volumeScale, maxDistance);
+            return new SoundPlayRequest(
+                true,
+                position,
+                null,
+                volumeScale,
+                maxDistance,
+                pitchScale);
         }
 
-        public static SoundPlayRequest Attached(Transform target, float volumeScale = 1f)
+        public static SoundPlayRequest Attached(
+            Transform target,
+            float volumeScale = 1f,
+            float pitchScale = 1f)
         {
             return target != null
-                ? new SoundPlayRequest(true, target.position, target, volumeScale, 0f)
-                : TwoD(volumeScale);
+                ? new SoundPlayRequest(
+                    true,
+                    target.position,
+                    target,
+                    volumeScale,
+                    0f,
+                    pitchScale)
+                : TwoD(volumeScale, pitchScale);
         }
     }
 
@@ -620,10 +649,19 @@ namespace MazeParty.Gameplay
             source.dopplerLevel = 0f;
             source.priority = 256 - Mathf.RoundToInt(cue.Priority * 2.56f);
             source.volume = RandomVolume(cue) * Mathf.Max(0f, request.VolumeScale);
-            source.pitch = RandomPitch(cue);
+            var pitchScale = request.PitchScale > 0f
+                ? request.PitchScale
+                : 1f;
+            source.pitch = Mathf.Clamp(
+                RandomPitch(cue) * pitchScale,
+                0.01f,
+                3f);
             source.transform.position = request.HasPosition
                 ? request.Position
                 : transform.position;
+            source.time = Mathf.Min(
+                cue.StartOffsetSeconds,
+                Mathf.Max(0f, clip.length - 0.001f));
             source.Play();
         }
 

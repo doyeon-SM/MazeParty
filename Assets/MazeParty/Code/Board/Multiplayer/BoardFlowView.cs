@@ -34,14 +34,14 @@ namespace MazeParty.Multiplayer
 
         private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
         private readonly Image[] _slotIcons = new Image[GameplayInventory.Capacity];
-        private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _playerCards = new Image[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _playerHealthFills = new Image[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerCurrencyTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerKeyTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerGoldTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _minigameReadyPlayerStates =
@@ -431,7 +431,6 @@ namespace MazeParty.Multiplayer
                 uiBindings.InventorySlotBackgrounds,
                 _slotBackgrounds);
             CopyReferences(uiBindings.InventorySlotIcons, _slotIcons);
-            CopyReferences(uiBindings.InventorySlotLabels, _slotLabels);
             CopyReferences(uiBindings.ItemChoiceButtons, _choiceButtons);
             CopyReferences(uiBindings.ItemChoiceLabels, _choiceLabels);
             CopyReferences(uiBindings.ShopOfferButtons, _shopOfferButtons);
@@ -441,9 +440,8 @@ namespace MazeParty.Multiplayer
             CopyReferences(uiBindings.PlayerCards, _playerCards);
             CopyReferences(uiBindings.PlayerHealthFills, _playerHealthFills);
             CopyReferences(uiBindings.PlayerHealthTexts, _playerHealthTexts);
-            CopyReferences(
-                uiBindings.PlayerCurrencyTexts,
-                _playerCurrencyTexts);
+            CopyReferences(uiBindings.PlayerKeyTexts, _playerKeyTexts);
+            CopyReferences(uiBindings.PlayerGoldTexts, _playerGoldTexts);
             CopyReferences(uiBindings.PlayerActionIcons, _playerActionIcons);
             CopyReferences(uiBindings.PlayerRankTexts, _playerRankTexts);
             CopyReferences(
@@ -824,7 +822,6 @@ namespace MazeParty.Multiplayer
                 var label = occupied
                     ? GameText.T(definition.DisplayName)
                     : GameText.T("EMPTY");
-                SetText(_slotLabels[i], label);
                 SetText(_choiceLabels[i], label);
                 SetItemIcon(
                     _slotIcons[i],
@@ -921,9 +918,12 @@ namespace MazeParty.Multiplayer
                         ? _playerHealthTexts[slot].gameObject
                         : null,
                     !match.IsArenaCombatPhase);
-                SetText(_playerCurrencyTexts[slot], avatar != null
-                    ? GameText.F("KEY  {0}    GOLD  {1}", avatar.KeyCount, avatar.Gold)
-                    : GameText.T("KEY  --    GOLD  --"));
+                SetText(_playerKeyTexts[slot], avatar != null
+                    ? avatar.KeyCount.ToString()
+                    : "--");
+                SetText(_playerGoldTexts[slot], avatar != null
+                    ? avatar.Gold.ToString()
+                    : "--");
                 SetText(_playerRankTexts[slot], avatar != null
                     ? GameText.F("RANK {0}", ranks[slot])
                     : GameText.T("RANK --"));

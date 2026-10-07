@@ -55,7 +55,6 @@ namespace MazeParty.Multiplayer
 
             public Image[] InventorySlotBackgrounds;
             public Image[] InventorySlotIcons;
-            public Text[] InventorySlotLabels;
             public Button[] ItemChoiceButtons;
             public Text[] ItemChoiceLabels;
             public BoardItemChoiceButton[] ItemChoiceHovers;
@@ -69,7 +68,10 @@ namespace MazeParty.Multiplayer
             public Image[] PlayerCards;
             public Image[] PlayerHealthFills;
             public Text[] PlayerHealthTexts;
-            public Text[] PlayerCurrencyTexts;
+            public RawImage[] PlayerKeyIcons;
+            public Text[] PlayerKeyTexts;
+            public RawImage[] PlayerGoldIcons;
+            public Text[] PlayerGoldTexts;
             public Text[] PlayerActionIcons;
             public Text[] PlayerRankTexts;
         }
@@ -175,7 +177,6 @@ namespace MazeParty.Multiplayer
         public Image[] InventorySlotBackgrounds =>
             references.InventorySlotBackgrounds;
         public Image[] InventorySlotIcons => references.InventorySlotIcons;
-        public Text[] InventorySlotLabels => references.InventorySlotLabels;
         public Button[] ItemChoiceButtons => references.ItemChoiceButtons;
         public Text[] ItemChoiceLabels => references.ItemChoiceLabels;
         public BoardItemChoiceButton[] ItemChoiceHovers =>
@@ -189,7 +190,10 @@ namespace MazeParty.Multiplayer
         public Image[] PlayerCards => references.PlayerCards;
         public Image[] PlayerHealthFills => references.PlayerHealthFills;
         public Text[] PlayerHealthTexts => references.PlayerHealthTexts;
-        public Text[] PlayerCurrencyTexts => references.PlayerCurrencyTexts;
+        public RawImage[] PlayerKeyIcons => references.PlayerKeyIcons;
+        public Text[] PlayerKeyTexts => references.PlayerKeyTexts;
+        public RawImage[] PlayerGoldIcons => references.PlayerGoldIcons;
+        public Text[] PlayerGoldTexts => references.PlayerGoldTexts;
         public Text[] PlayerActionIcons => references.PlayerActionIcons;
         public Text[] PlayerRankTexts => references.PlayerRankTexts;
 
@@ -251,7 +255,6 @@ namespace MazeParty.Multiplayer
             references.ItemShopCloseButton != null &&
             HasArray(references.InventorySlotBackgrounds, GameplayInventory.Capacity) &&
             HasArray(references.InventorySlotIcons, GameplayInventory.Capacity) &&
-            HasArray(references.InventorySlotLabels, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceButtons, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceLabels, GameplayInventory.Capacity) &&
             HasArray(references.ItemChoiceHovers, GameplayInventory.Capacity) &&
@@ -263,7 +266,10 @@ namespace MazeParty.Multiplayer
             HasArray(references.PlayerCards, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerHealthFills, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerHealthTexts, MultiplayerConstants.MaxPlayers) &&
-            HasArray(references.PlayerCurrencyTexts, MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerKeyIcons, MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerKeyTexts, MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerGoldIcons, MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerGoldTexts, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerActionIcons, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerRankTexts, MultiplayerConstants.MaxPlayers) &&
             statePalette.Players != null &&

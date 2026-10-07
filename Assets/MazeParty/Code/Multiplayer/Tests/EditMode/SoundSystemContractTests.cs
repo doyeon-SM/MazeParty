@@ -19,6 +19,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Resources/" + SoundSystem.ResourcePath + ".prefab";
         private const string AudioRoot = "Assets/MazeParty/Audio";
         private const string UiPrefabRoot = "Assets/MazeParty/Prefabs";
+        private const string SequenceMemoryBellPath =
+            "Assets/Resources/sound/- Bell 7.mp3";
 
         [Test]
         public void SoundSystemPrefab_MixerAndLibrary_CoverEveryKey()
@@ -64,6 +66,23 @@ namespace MazeParty.Multiplayer.Tests
                     problems.Add("channel " + cue.Channel + ": " + key);
                 }
             }
+
+            Assert.That(
+                library.TryGet(
+                    SoundKeys.MinigameSequenceMemoryTone,
+                    out var sequenceTone),
+                Is.True);
+            var sequenceBell = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                SequenceMemoryBellPath);
+            Assert.That(sequenceBell, Is.Not.Null, SequenceMemoryBellPath);
+            Assert.That(sequenceTone.Channel, Is.EqualTo(AudioChannel.Sfx));
+            Assert.That(sequenceTone.Spatial, Is.False);
+            Assert.That(sequenceTone.PitchVariance, Is.Zero);
+            Assert.That(sequenceTone.StartOffsetSeconds,
+                Is.EqualTo(0.21f).Within(0.001f));
+            Assert.That(sequenceTone.MaxInstances, Is.EqualTo(8));
+            Assert.That(sequenceTone.ClipCount, Is.EqualTo(1));
+            Assert.That(sequenceTone.GetClip(0), Is.SameAs(sequenceBell));
 
             var registered = new HashSet<SoundCue>(library.Cues);
             var keys = new HashSet<string>();

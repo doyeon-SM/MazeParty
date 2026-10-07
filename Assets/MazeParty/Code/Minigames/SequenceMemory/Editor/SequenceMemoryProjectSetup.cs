@@ -163,18 +163,6 @@ namespace MazeParty.Editor
             root.AddComponent<NetworkObject>();
             var state = root.AddComponent<NetworkSequenceMemoryState>();
             var view = root.AddComponent<SequenceMemoryNetworkView>();
-            var npcToneSource = root.AddComponent<AudioSource>();
-            ConfigureToneSource(npcToneSource);
-            var playerToneSource = root.AddComponent<AudioSource>();
-            ConfigureToneSource(playerToneSource);
-            root.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
-                npcToneSource,
-                MazeParty.Gameplay.AudioChannel.Sfx,
-                npcToneSource.volume);
-            root.AddComponent<MazeParty.Gameplay.AudioChannelSource>().Configure(
-                playerToneSource,
-                MazeParty.Gameplay.AudioChannel.Sfx,
-                playerToneSource.volume);
 
             var hudObject = PrefabUtility.InstantiatePrefab(
                 hudPrefab,
@@ -197,8 +185,6 @@ namespace MazeParty.Editor
                 arena.PlayerAnchors,
                 arena.NpcAnchor,
                 arenaPresentation,
-                npcToneSource,
-                playerToneSource,
                 hud);
 
             ValidateSceneContract(root);
@@ -415,14 +401,6 @@ namespace MazeParty.Editor
             return camera;
         }
 
-        private static void ConfigureToneSource(AudioSource source)
-        {
-            source.playOnAwake = false;
-            source.loop = false;
-            source.spatialBlend = 0f;
-            source.clip = null;
-        }
-
         private static void CreateArtReplacementAnchors(Transform parent)
         {
             var root = new GameObject("Art Replacement Anchors").transform;
@@ -442,8 +420,6 @@ namespace MazeParty.Editor
             Transform[] playerAnchors,
             Transform npcAnchor,
             GameObject arenaPresentation,
-            AudioSource npcToneSource,
-            AudioSource playerToneSource,
             SequenceMemoryHudBindings hud)
         {
             var serialized = new SerializedObject(view);
@@ -455,26 +431,12 @@ namespace MazeParty.Editor
                 serialized,
                 "arenaPresentation",
                 arenaPresentation);
-            SetRequiredReference(
-                serialized,
-                "npcToneSource",
-                npcToneSource);
-            SetRequiredReference(
-                serialized,
-                "playerToneSource",
-                playerToneSource);
             SetRequiredReference(serialized, "hud", hud);
             SetRequiredReferenceArray(
                 serialized,
                 "playerAnchors",
                 playerAnchors);
 
-            RequireSerializedProperty(serialized, "highTone");
-            RequireSerializedProperty(serialized, "middleTone");
-            RequireSerializedProperty(serialized, "lowTone");
-            serialized.FindProperty("highTone").objectReferenceValue = null;
-            serialized.FindProperty("middleTone").objectReferenceValue = null;
-            serialized.FindProperty("lowTone").objectReferenceValue = null;
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(view);
         }
@@ -902,7 +864,7 @@ namespace MazeParty.Editor
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkSequenceMemoryState>() == null ||
                 root.GetComponent<SequenceMemoryNetworkView>() == null ||
-                root.GetComponents<AudioSource>().Length != 2 ||
+                root.GetComponents<AudioSource>().Length != 0 ||
                 playerAnchors == null ||
                 playerAnchors.childCount != SequenceMemoryRules.PlayerCount ||
                 stations == null ||

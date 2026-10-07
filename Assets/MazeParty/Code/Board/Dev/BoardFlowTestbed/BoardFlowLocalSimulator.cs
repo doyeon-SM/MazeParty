@@ -46,14 +46,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly BoardTraversalState _traversal = new BoardTraversalState();
         private readonly Image[] _slotImages = new Image[GameplayInventory.Capacity];
         private readonly Image[] _slotIcons = new Image[GameplayInventory.Capacity];
-        private readonly Text[] _slotLabels = new Text[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerCards = new Image[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerHealthFills = new Image[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerHealthTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
-        private readonly Text[] _playerCurrencyTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerKeyTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Text[] _playerGoldTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerActionIcons = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerRankTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly PrototypeItemId[] _itemSlots =
@@ -3228,8 +3228,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 }
                 SetText(_playerHealthTexts[playerIndex],
                     shownHealth + "/" + maxHealth);
-                SetText(_playerCurrencyTexts[playerIndex],
-                    "KEY  " + _keys[playerIndex] + "    GOLD  " + _gold[playerIndex]);
+                SetText(_playerKeyTexts[playerIndex],
+                    _keys[playerIndex].ToString());
+                SetText(_playerGoldTexts[playerIndex],
+                    _gold[playerIndex].ToString());
                 var actionState = globallyPaused
                     ? PlayerBoardActionState.Hidden
                     : _actionStates[playerIndex];
@@ -3252,7 +3254,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 var definition = occupied
                     ? PrototypeItemCatalog.Get(_itemSlots[i])
                     : null;
-                SetText(_slotLabels[i], occupied ? ItemName(i) : "EMPTY");
                 SetItemIcon(
                     _slotIcons[i],
                     definition != null ? definition.Icon : null,
@@ -3332,7 +3333,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 boardUiBindings.InventorySlotBackgrounds,
                 _slotImages);
             CopyReferences(boardUiBindings.InventorySlotIcons, _slotIcons);
-            CopyReferences(boardUiBindings.InventorySlotLabels, _slotLabels);
             CopyReferences(boardUiBindings.ItemChoiceButtons, _choiceButtons);
             CopyReferences(boardUiBindings.ItemChoiceLabels, _choiceLabels);
             CopyReferences(boardUiBindings.PlayerRows, _playerRows);
@@ -3343,9 +3343,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             CopyReferences(
                 boardUiBindings.PlayerHealthTexts,
                 _playerHealthTexts);
-            CopyReferences(
-                boardUiBindings.PlayerCurrencyTexts,
-                _playerCurrencyTexts);
+            CopyReferences(boardUiBindings.PlayerKeyTexts, _playerKeyTexts);
+            CopyReferences(boardUiBindings.PlayerGoldTexts, _playerGoldTexts);
             CopyReferences(
                 boardUiBindings.PlayerActionIcons,
                 _playerActionIcons);

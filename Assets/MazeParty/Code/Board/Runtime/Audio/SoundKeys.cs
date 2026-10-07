@@ -63,6 +63,8 @@ namespace MazeParty.Gameplay
         public const string MinigameCountdownTick = "minigame.countdown.tick";
         public const string MinigameCountdownGo = "minigame.countdown.go";
         public const string MinigameFinish = "minigame.finish";
+        public const string MinigameSequenceMemoryTone =
+            "minigame.sequence_memory.tone";
 
         // Award ceremony.
         public const string CeremonyAwardReady = "ceremony.award_ready";
@@ -80,7 +82,8 @@ namespace MazeParty.Gameplay
             BoardGoldGain, BoardGoldLoss, BoardKeyBuy, BoardShopBuy, BoardShopFail,
             BoardFootstep,
             ItemExplosion, ItemBulletImpact,
-            MinigameReveal, MinigameCountdownTick, MinigameCountdownGo, MinigameFinish,
+            MinigameReveal, MinigameCountdownTick, MinigameCountdownGo,
+            MinigameFinish, MinigameSequenceMemoryTone,
             CeremonyAwardReady, CeremonyAward, CeremonyFanfare, CeremonyApplause
         };
 

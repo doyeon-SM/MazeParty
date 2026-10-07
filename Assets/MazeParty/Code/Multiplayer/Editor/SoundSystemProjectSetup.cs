@@ -416,6 +416,7 @@ namespace MazeParty.Editor
             var duck = false;
             var fade = 0.5f;
             var maxDistance = 30f;
+            var startOffsetSeconds = 0f;
 
             if (channel == AudioChannel.Bgm)
             {
@@ -468,6 +469,14 @@ namespace MazeParty.Editor
                 minInterval = 0.05f;
                 priority = 30;
             }
+            else if (key == SoundKeys.MinigameSequenceMemoryTone)
+            {
+                // Four players can strike together; leave transient headroom.
+                volume = 0.65f;
+                maxInstances = 8;
+                priority = 80;
+                startOffsetSeconds = 0.21f;
+            }
             else if (key == SoundKeys.ItemExplosion)
             {
                 spatial = true;
@@ -517,7 +526,8 @@ namespace MazeParty.Editor
                 duck,
                 fade,
                 maxDistance,
-                variationMode);
+                variationMode,
+                startOffsetSeconds);
         }
 
         private static void Bind(

@@ -52,6 +52,8 @@ namespace MazeParty.Gameplay
 
         [Header("Playback")]
         [SerializeField] private bool loop;
+        [Tooltip("Seconds skipped at the start of each clip (for leading silence).")]
+        [SerializeField, Min(0f)] private float startOffsetSeconds;
         [Tooltip("0 = unlimited. At the limit the oldest instance of this cue is replaced.")]
         [SerializeField, Min(0)] private int maxInstances;
         [Tooltip("Plays closer together than this (seconds) are skipped.")]
@@ -74,6 +76,7 @@ namespace MazeParty.Gameplay
         public float MaxDistance => maxDistance;
         public AudioRolloffMode Rolloff => rolloff;
         public bool Loop => loop;
+        public float StartOffsetSeconds => startOffsetSeconds;
         public int MaxInstances => maxInstances;
         public float MinInterval => minInterval;
         public int Priority => priority;
@@ -124,13 +127,15 @@ namespace MazeParty.Gameplay
             bool cueDuckMusic,
             float cueFadeSeconds,
             float cueMaxDistance,
-            SoundVariationMode cueVariationMode = SoundVariationMode.RandomNoRepeat)
+            SoundVariationMode cueVariationMode = SoundVariationMode.RandomNoRepeat,
+            float cueStartOffsetSeconds = 0f)
         {
             key = cueKey ?? string.Empty;
             channel = cueChannel;
             variationMode = cueVariationMode;
             spatial = cueSpatial;
             loop = cueLoop;
+            startOffsetSeconds = Mathf.Max(0f, cueStartOffsetSeconds);
             volume = Mathf.Clamp01(cueVolume);
             volumeVariance = Mathf.Clamp(cueVolumeVariance, 0f, 0.5f);
             pitchVariance = Mathf.Clamp(cuePitchVariance, 0f, 0.5f);
