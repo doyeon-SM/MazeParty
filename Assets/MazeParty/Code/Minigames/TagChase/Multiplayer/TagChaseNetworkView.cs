@@ -40,6 +40,7 @@ namespace MazeParty.Multiplayer
             new PlayerView[TagChaseRules.PlayerCount];
 
         private GameplayCameraDirector _cameraDirector;
+        private MinigameCommonHudView _commonHud;
         private CinemachineCamera _registeredCamera;
         private int _localSlot = -1;
         private bool _worldVisible;
@@ -66,8 +67,10 @@ namespace MazeParty.Multiplayer
 
         public static Quaternion InitialSharedCameraRotation =>
             Quaternion.LookRotation(
-                new Vector3(0f, 0.8f, 0f) -
-                new Vector3(0f, 11f, -13f),
+                new Vector3(
+                    NetworkTagChaseState.ArenaCenterX,
+                    0.8f,
+                    0f) - InitialSharedCameraPosition,
                 Vector3.up);
 
         public void Configure(
@@ -100,6 +103,7 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             SetWorldPresentationActive(false);
+            SetTaggerAimVisible(false);
             UnregisterCamera();
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
@@ -124,6 +128,7 @@ namespace MazeParty.Multiplayer
             if (!shouldShowWorld)
             {
                 SetWorldPresentationActive(false);
+                SetTaggerAimVisible(false);
                 UnregisterCamera();
                 return;
             }
@@ -387,11 +392,16 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                RefreshSharedRunnerCamera(showingStartCountdown);
+                RefreshSharedRunnerCamera();
                 Cursor.lockState =
                     CursorLockMode.Confined;
                 Cursor.visible = true;
             }
+
+            SetTaggerAimVisible(
+                useTaggerCamera &&
+                state.Phase == NetworkTagChasePhase.Running &&
+                !state.IsPaused);
 
             // The common menu and the pause release button need a free pointer.
             LocalInputGate.ApplyPointerOverride();
@@ -434,75 +444,22 @@ namespace MazeParty.Multiplayer
                 Quaternion.Euler(pitch, yaw, 0f));
         }
 
-        private void RefreshSharedRunnerCamera(bool includeTagger)
+        private void RefreshSharedRunnerCamera()
         {
             if (sharedRunnerCamera == null)
             {
                 return;
             }
-
-            var count = 0;
-            var center = Vector3.zero;
-            for (var slot = 0;
-                 slot < TagChaseRules.PlayerCount;
-                 slot++)
-            {
-                if ((!includeTagger && state.IsTagger(slot)) ||
-                    state.IsCaught(slot))
-                {
-                    continue;
-                }
-
-                var position =
-                    state.GetPlayerPosition(slot);
-                center +=
-                    new Vector3(position.x, 0f, position.y);
-                count++;
-            }
-
-            if (count == 0)
-            {
-                center = new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    0f,
-                    0f);
-            }
-            else
-            {
-                center /= count;
-            }
-
-            var radius = 0f;
-            for (var slot = 0;
-                 slot < TagChaseRules.PlayerCount;
-                 slot++)
-            {
-                if ((!includeTagger && state.IsTagger(slot)) ||
-                    state.IsCaught(slot))
-                {
-                    continue;
-                }
-
-                var position =
-                    state.GetPlayerPosition(slot);
-                radius = Mathf.Max(
-                    radius,
-                    Vector2.Distance(
-                        new Vector2(center.x, center.z),
-                        position));
-            }
-
-            var height = 6.5f + radius * 0.45f;
-            var back = 8f + radius * 0.85f;
-            var cameraPosition =
-                center + new Vector3(0f, height, -back);
-            var focus =
-                center + Vector3.up * 0.8f;
             sharedRunnerCamera.ForceCameraPosition(
-                cameraPosition,
-                Quaternion.LookRotation(
-                    focus - cameraPosition,
-                    Vector3.up));
+                InitialSharedCameraPosition,
+                InitialSharedCameraRotation);
+        }
+
+        private void SetTaggerAimVisible(bool visible)
+        {
+            _commonHud ??= FindAnyObjectByType<MinigameCommonHudView>(
+                FindObjectsInactive.Include);
+            _commonHud?.SetTaggerAimVisible(visible);
         }
 
         private void RegisterCamera(

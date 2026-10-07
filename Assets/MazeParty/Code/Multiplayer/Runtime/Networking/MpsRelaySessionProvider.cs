@@ -53,7 +53,9 @@ namespace MazeParty.Multiplayer
                 [MultiplayerConstants.PhaseProperty] =
                     new SessionProperty(MultiplayerConstants.LobbyPhase, VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.BuildVersionProperty] =
-                    new SessionProperty(Application.version, VisibilityPropertyOptions.Member),
+                    new SessionProperty(
+                        BuildVersionCompatibility.CurrentVersion,
+                        VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.BoardMapIdProperty] =
                     new SessionProperty(
                         boardMapSelection.MapId,
@@ -1120,7 +1122,8 @@ namespace MazeParty.Multiplayer
                        MultiplayerConstants.BuildVersionProperty,
                        out var buildProperty) &&
                    buildProperty != null &&
-                   buildProperty.Value == Application.version;
+                   BuildVersionCompatibility.IsCompatibleVersion(
+                       buildProperty.Value);
         }
 
         private static async Task EndSessionWithRetryAsync(ISession session)

@@ -205,6 +205,7 @@ namespace MazeParty.Multiplayer
         private int _displayedBoundaryMoves = int.MinValue;
         private bool _boundaryWallsActive;
         private Vector3 _combatKnockbackVelocity;
+        private float _verticalVelocity;
         private readonly Collider[] _standingClearanceHits = new Collider[16];
         private NetworkWorldDie _cachedLocalWorldDie;
         private int _cachedLocalWorldDieSlot = -1;
@@ -561,6 +562,14 @@ namespace MazeParty.Multiplayer
             {
                 StopServerInputOnServer();
                 _combatKnockbackVelocity = Vector3.zero;
+                if (match != null &&
+                    !match.IsGlobalSimulationPaused &&
+                    IsBoardLoaded())
+                {
+                    MoveControllerWithGrounding(
+                        Vector3.zero,
+                        Time.fixedDeltaTime);
+                }
                 return;
             }
 
@@ -571,6 +580,9 @@ namespace MazeParty.Multiplayer
             if (!canMoveInArenaCombat && !_traversal.IsInitialized)
             {
                 StopServerInputOnServer();
+                MoveControllerWithGrounding(
+                    Vector3.zero,
+                    Time.fixedDeltaTime);
                 return;
             }
 
@@ -607,10 +619,7 @@ namespace MazeParty.Multiplayer
             }
 
             var previousPosition = transform.position;
-            if (velocity.sqrMagnitude > 0.0001f)
-            {
-                _characterController.Move(velocity * Time.fixedDeltaTime);
-            }
+            MoveControllerWithGrounding(velocity, Time.fixedDeltaTime);
             RecordNetworkFootsteps(
                 previousPosition,
                 transform.position,
@@ -1342,10 +1351,7 @@ namespace MazeParty.Multiplayer
             }
 
             var previousPosition = transform.position;
-            if (velocity.sqrMagnitude > 0.0001f)
-            {
-                _characterController.Move(velocity * Time.fixedDeltaTime);
-            }
+            MoveControllerWithGrounding(velocity, Time.fixedDeltaTime);
 
             var radialScale = Mathf.Max(
                 Mathf.Abs(transform.lossyScale.x),
@@ -1355,7 +1361,7 @@ namespace MazeParty.Multiplayer
                 _characterController.radius * radialScale + 0.02f);
             if ((clamped - transform.position).sqrMagnitude > 0.000001f)
             {
-                TeleportController(clamped, transform.rotation);
+                TeleportController(clamped, transform.rotation, false);
             }
 
             RecordNetworkFootsteps(
@@ -1752,7 +1758,10 @@ namespace MazeParty.Multiplayer
             var correction = clampedCenter - center;
             if (correction.sqrMagnitude > 0.000001f)
             {
-                TeleportController(transform.position + correction, transform.rotation);
+                TeleportController(
+                    transform.position + correction,
+                    transform.rotation,
+                    false);
             }
         }
 
@@ -2206,7 +2215,7 @@ namespace MazeParty.Multiplayer
                 Mathf.Clamp(position.z, -safeZ, safeZ));
             if ((clamped - position).sqrMagnitude > 0.000001f)
             {
-                TeleportController(clamped, transform.rotation);
+                TeleportController(clamped, transform.rotation, false);
             }
         }
 
@@ -2303,7 +2312,29 @@ namespace MazeParty.Multiplayer
             eyePivot.localRotation = Quaternion.Euler(_localPitch, localYawOffset, 0f);
         }
 
-        private void TeleportController(Vector3 position, Quaternion rotation)
+        private void MoveControllerWithGrounding(
+            Vector3 velocity,
+            float deltaTime)
+        {
+            if (_characterController == null ||
+                !_characterController.enabled ||
+                deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _verticalVelocity = PlayerGroundingRules.AdvanceVerticalVelocity(
+                _verticalVelocity,
+                _characterController.isGrounded,
+                deltaTime);
+            velocity.y += _verticalVelocity;
+            _characterController.Move(velocity * deltaTime);
+        }
+
+        private void TeleportController(
+            Vector3 position,
+            Quaternion rotation,
+            bool resetVerticalVelocity = true)
         {
             var wasEnabled = _characterController.enabled;
             if (wasEnabled)
@@ -2312,6 +2343,10 @@ namespace MazeParty.Multiplayer
             }
 
             transform.SetPositionAndRotation(position, rotation);
+            if (resetVerticalVelocity)
+            {
+                _verticalVelocity = 0f;
+            }
             if (wasEnabled)
             {
                 _characterController.enabled = true;

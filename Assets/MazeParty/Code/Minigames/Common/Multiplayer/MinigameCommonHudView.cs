@@ -19,30 +19,44 @@ namespace MazeParty.Multiplayer
         [SerializeField] private MinigameTimerDial timerDial;
         [SerializeField] private GameObject roundRoot;
         [SerializeField] private Text roundText;
+        [SerializeField] private GameObject taggerAimRoot;
 
         public Canvas RootCanvas => rootCanvas;
         public MinigameTimerDial TimerDial => timerDial;
         public Text RoundText => roundText;
+        public GameObject TaggerAimRoot => taggerAimRoot;
         public bool HasRequiredReferences =>
             rootCanvas != null && timerDial != null &&
             timerDial.HasRequiredReferences && roundRoot != null &&
-            roundText != null &&
+            roundText != null && taggerAimRoot != null &&
             timerDial.transform.IsChildOf(transform) &&
             roundRoot.transform.IsChildOf(transform) &&
-            roundText.transform.IsChildOf(roundRoot.transform);
+            roundText.transform.IsChildOf(roundRoot.transform) &&
+            taggerAimRoot.transform.IsChildOf(transform);
 
         public void Configure(Canvas canvas, MinigameTimerDial timer,
-            GameObject round, Text label)
+            GameObject round, Text label, GameObject taggerAim)
         {
             rootCanvas = canvas;
             timerDial = timer;
             roundRoot = round;
             roundText = label;
+            taggerAimRoot = taggerAim;
         }
 
         private void Awake()
         {
             HideClock();
+            SetTaggerAimVisible(false);
+        }
+
+        public void SetTaggerAimVisible(bool visible)
+        {
+            if (taggerAimRoot != null &&
+                taggerAimRoot.activeSelf != visible)
+            {
+                taggerAimRoot.SetActive(visible);
+            }
         }
 
         private void Update()

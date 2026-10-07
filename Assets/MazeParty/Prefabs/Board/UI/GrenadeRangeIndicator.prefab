@@ -43,7 +43,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c186c7250bd4b7489a61dcc6dd7cb41, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardGrenadeRangeIndicator
   rangeGraphic: {fileID: 9212087519010228738}
   rangeRoot: {fileID: 8491900110149927362}

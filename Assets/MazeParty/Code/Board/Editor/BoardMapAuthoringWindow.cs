@@ -13,7 +13,7 @@ namespace MazeParty.Editor
     {
         private const string DefaultMapFolder = "Assets/MazeParty/Board/Maps";
         private const string DefaultTileFolder = "Assets/MazeParty/Prefabs/Board/World";
-        private const float DefaultGateWidth = 2.5f;
+        private const float DefaultGateWidth = BoardGate.DefaultWidth;
         private const float StartAnchorHeight = 1f;
         private const float StartAnchorSafeInset = 0.52f;
         private const float StartAnchorHeightTolerance = 0.05f;

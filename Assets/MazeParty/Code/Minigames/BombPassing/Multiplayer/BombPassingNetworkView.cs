@@ -21,8 +21,6 @@ namespace MazeParty.Multiplayer
 
         private const float InterpolationSpeed = 20f;
         private const float ExplosionFlashSeconds = 0.35f;
-        private const float ExplosionShakeSeconds = 0.24f;
-        private const float ExplosionShakePeakOffset = 0.32f;
         private static readonly int BaseColorProperty =
             Shader.PropertyToID("_BaseColor");
         private static readonly int ColorProperty =
@@ -56,9 +54,6 @@ namespace MazeParty.Multiplayer
         private float _baseLightIntensity = 1f;
         private float _explosionPeakIntensity = 4f;
         private float _explosionFlashUntil;
-        private float _explosionShakeStartedAt;
-        private float _explosionShakeUntil;
-        private uint _explosionShakeSequence;
         private uint _lastExplosionSequence;
         private bool _cameraRegistered;
         private bool _visibilityInitialized;
@@ -157,7 +152,6 @@ namespace MazeParty.Multiplayer
             {
                 explosionFlashLight.enabled = false;
             }
-            StopCameraShake();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -185,7 +179,7 @@ namespace MazeParty.Multiplayer
             RefreshExplosionEvent();
             RefreshBomb();
             RefreshExplosionLight();
-            RefreshCameraShake();
+            RefreshFixedCamera();
             RegisterCamera();
             _hadVisibleFrame = true;
         }
@@ -203,9 +197,7 @@ namespace MazeParty.Multiplayer
             lens.NearClipPlane = 0.1f;
             lens.FarClipPlane = 100f;
             sharedCamera.Lens = lens;
-            sharedCamera.ForceCameraPosition(
-                SharedCameraPosition,
-                SharedCameraRotation);
+            RefreshFixedCamera();
             sharedCamera.Priority = 0;
         }
 
@@ -401,10 +393,6 @@ namespace MazeParty.Multiplayer
             }
 
             _lastExplosionSequence = sequence;
-            _explosionShakeSequence = sequence;
-            _explosionShakeStartedAt = Time.unscaledTime;
-            _explosionShakeUntil =
-                _explosionShakeStartedAt + ExplosionShakeSeconds;
             var slot = state.LastExplodedSlot;
             var arena = arenaPresentation != null
                 ? arenaPresentation.transform
@@ -490,87 +478,16 @@ namespace MazeParty.Multiplayer
                    Mathf.Clamp01(normalizedRemaining);
         }
 
-        private void RefreshCameraShake()
+        private void RefreshFixedCamera()
         {
-            if (sharedCamera == null || _explosionShakeUntil <= 0f)
+            if (sharedCamera == null)
             {
                 return;
             }
 
-            var now = Time.unscaledTime;
-            if (now >= _explosionShakeUntil)
-            {
-                StopCameraShake();
-                return;
-            }
-
-            var normalizedElapsed = Mathf.Clamp01(
-                (now - _explosionShakeStartedAt) /
-                ExplosionShakeSeconds);
-            ResolveExplosionCameraPose(
-                _explosionShakeSequence,
-                normalizedElapsed,
-                PresentationAccessibility.ScreenShakeScale,
-                out var position,
-                out var rotation);
-            sharedCamera.ForceCameraPosition(position, rotation);
-        }
-
-        private void StopCameraShake()
-        {
-            _explosionShakeStartedAt = 0f;
-            _explosionShakeUntil = 0f;
-            _explosionShakeSequence = 0U;
-            if (sharedCamera != null)
-            {
-                sharedCamera.ForceCameraPosition(
-                    SharedCameraPosition,
-                    SharedCameraRotation);
-            }
-        }
-
-        internal static void ResolveExplosionCameraPose(
-            uint explosionSequence,
-            float normalizedElapsed,
-            float amplitudeScale,
-            out Vector3 position,
-            out Quaternion rotation)
-        {
-            rotation = SharedCameraRotation;
-            if (float.IsNaN(normalizedElapsed) ||
-                float.IsInfinity(normalizedElapsed) ||
-                float.IsNaN(amplitudeScale) ||
-                float.IsInfinity(amplitudeScale) ||
-                normalizedElapsed >= 1f ||
-                amplitudeScale <= 0f)
-            {
-                position = SharedCameraPosition;
-                return;
-            }
-
-            var elapsed = Mathf.Clamp01(normalizedElapsed);
-            var envelope = 1f - elapsed;
-            envelope *= envelope;
-            var hash = unchecked(
-                explosionSequence * 747796405U + 2891336453U);
-            var phaseX =
-                (hash & 0xffffU) / 65535f * Mathf.PI * 2f;
-            var phaseZ =
-                ((hash >> 16) & 0xffffU) / 65535f * Mathf.PI * 2f;
-            var wave = new Vector3(
-                Mathf.Sin(phaseX + elapsed * Mathf.PI * 10f),
-                0f,
-                Mathf.Sin(phaseZ + elapsed * Mathf.PI * 13f));
-            if (wave.sqrMagnitude > 1f)
-            {
-                wave.Normalize();
-            }
-
-            position = SharedCameraPosition +
-                       wave *
-                       (ExplosionShakePeakOffset *
-                        Mathf.Max(0f, amplitudeScale) *
-                        envelope);
+            sharedCamera.ForceCameraPosition(
+                SharedCameraPosition,
+                SharedCameraRotation);
         }
 
         private void RegisterCamera()
@@ -606,10 +523,6 @@ namespace MazeParty.Multiplayer
             if (_visibilityInitialized && _worldVisible == active)
             {
                 return;
-            }
-            if (!active)
-            {
-                StopCameraShake();
             }
             _visibilityInitialized = true;
             _worldVisible = active;

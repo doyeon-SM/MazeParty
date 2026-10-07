@@ -330,6 +330,64 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void NetworkPlayer_UsesOneBodySizedSolidControllerAndAuthoredTriggerHitZones()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                NetworkPlayerPrefabPath);
+            Assert.That(prefab, Is.Not.Null, NetworkPlayerPrefabPath);
+
+            var movementControllers = prefab.GetComponentsInChildren<
+                CharacterController>(true);
+            Assert.That(
+                movementControllers,
+                Has.Length.EqualTo(1),
+                "Player movement must be blocked only by the root body capsule.");
+            Assert.That(
+                movementControllers[0].transform,
+                Is.SameAs(prefab.transform));
+            Assert.That(movementControllers[0].enabled, Is.True);
+            Assert.That(
+                movementControllers[0].radius,
+                Is.EqualTo(PlayerAvatarVisual.MovementControllerRadius)
+                    .Within(0.0001f));
+            Assert.That(
+                movementControllers[0].height,
+                Is.EqualTo(PlayerAvatarVisual.StandingControllerHeight)
+                    .Within(0.0001f));
+            Assert.That(
+                movementControllers[0].center.y,
+                Is.EqualTo(PlayerAvatarVisual.StandingControllerCenterY)
+                    .Within(0.0001f));
+
+            var hitZones = prefab.GetComponentsInChildren<PlayerHitZone>(true);
+            Assert.That(hitZones, Has.Length.EqualTo(4));
+            Assert.That(
+                hitZones.Count(zone => zone.Region == PlayerHitRegion.Body),
+                Is.EqualTo(1));
+            Assert.That(
+                hitZones.Count(zone => zone.Region == PlayerHitRegion.Head),
+                Is.EqualTo(1));
+            Assert.That(
+                hitZones.Count(zone => zone.Region == PlayerHitRegion.Hand),
+                Is.EqualTo(2));
+
+            var nonControllerColliders = prefab
+                .GetComponentsInChildren<Collider>(true)
+                .Where(collider => collider != movementControllers[0])
+                .ToArray();
+            Assert.That(nonControllerColliders, Has.Length.EqualTo(4));
+            Assert.That(
+                nonControllerColliders.All(collider => collider.isTrigger),
+                Is.True,
+                "Head, hand, and body hit zones must never block movement.");
+            Assert.That(
+                nonControllerColliders.All(
+                    collider => collider.GetComponent<PlayerHitZone>() != null),
+                Is.True,
+                "Every non-movement collider must be an authored PlayerHitZone.");
+        }
+
+        [Test]
         public void GrenadeRangeIndicator_UsesOwnerBoundAuthoredWorldPrefab()
         {
             var indicatorPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -432,6 +490,26 @@ namespace MazeParty.Multiplayer.Tests
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         arenas[0].gameObject),
                     Is.EqualTo(LobbyArenaPrefabPath));
+
+                Assert.That(
+                    scene.GetRootGameObjects().Any(root =>
+                        root.name == "South Iron Gate Left"),
+                    Is.False,
+                    "Lobby decoration roots must not remain visible when " +
+                    "the Board scene hides LobbyArena/Presentation.");
+                var southGate = arenas[0].Bindings.PresentationRoot
+                    .GetComponentsInChildren<Transform>(true)
+                    .Where(transform =>
+                        transform.name == "South Iron Gate Left")
+                    .SingleOrDefault(transform => Vector3.Distance(
+                        transform.localPosition,
+                        new Vector3(12f, 0f, -7.25f)) < 0.001f);
+                Assert.That(southGate, Is.Not.Null);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        southGate.gameObject),
+                    Is.EqualTo(
+                        "Assets/Ignore/Maze/Prefabs/Wall_Door_6M.prefab"));
             }
             finally
             {

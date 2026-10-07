@@ -10,6 +10,9 @@ namespace MazeParty.Gameplay
     [DisallowMultipleComponent]
     public sealed partial class PlayerAvatarVisual : MonoBehaviour
     {
+        // The root CharacterController is the sole solid movement collider.
+        // Authored body, head, and hand colliders remain trigger hit zones.
+        public const float MovementControllerRadius = 0.42f;
         public const float StandingControllerHeight = 2f;
         public const float CrouchingControllerHeight = 1.2f;
         public const float StandingControllerCenterY = 0f;

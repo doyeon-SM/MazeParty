@@ -45,11 +45,26 @@ namespace MazeParty.Multiplayer.Tests
                 var firstPersonCamera = serialized.FindProperty(
                     "firstPersonCamera").objectReferenceValue;
                 var spectatorCamera = serialized.FindProperty(
-                    "spectatorCamera").objectReferenceValue;
+                    "spectatorCamera").objectReferenceValue as Component;
                 Assert.That(firstPersonCamera, Is.Not.Null);
                 Assert.That(spectatorCamera, Is.Not.Null);
                 Assert.That(firstPersonCamera,
                     Is.Not.SameAs(spectatorCamera));
+                Assert.That(Vector3.Distance(
+                        spectatorCamera.transform.position,
+                        ArenaCombatNetworkView
+                            .SharedSpectatorCameraPosition),
+                    Is.LessThan(0.001f));
+                Assert.That(Quaternion.Angle(
+                        spectatorCamera.transform.rotation,
+                        ArenaCombatNetworkView
+                            .SharedSpectatorCameraRotation),
+                    Is.LessThan(0.01f));
+                Assert.That(GetLensValue(
+                        spectatorCamera,
+                        "FieldOfView"),
+                    Is.EqualTo(ArenaCombatNetworkView
+                        .SpectatorFieldOfView).Within(0.001f));
                 for (var slot = 0; slot < 4; slot++)
                 {
                     var spawn = view.GetSpawnMarker(slot);
@@ -96,6 +111,19 @@ namespace MazeParty.Multiplayer.Tests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        private static float GetLensValue(
+            Component camera,
+            string fieldName)
+        {
+            var lensField = camera.GetType().GetField("Lens");
+            Assert.That(lensField, Is.Not.Null);
+            var lens = lensField.GetValue(camera);
+            Assert.That(lens, Is.Not.Null);
+            var field = lens.GetType().GetField(fieldName);
+            Assert.That(field, Is.Not.Null);
+            return (float)field.GetValue(lens);
         }
 
     }

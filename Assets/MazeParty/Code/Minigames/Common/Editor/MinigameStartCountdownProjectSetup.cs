@@ -152,6 +152,14 @@ namespace MazeParty.Editor
                     changed = true;
                 }
 
+                if (view.transform.localScale != Vector3.one)
+                {
+                    view.transform.localScale = Vector3.one;
+                    PrefabUtility.RecordPrefabInstancePropertyModifications(
+                        view.transform);
+                    changed = true;
+                }
+
                 if (changed)
                 {
                     EditorSceneManager.MarkSceneDirty(scene);
@@ -192,12 +200,20 @@ namespace MazeParty.Editor
             var existing = prefab.GetComponent<MinigameCommonHudView>();
             if (existing != null)
             {
-                if (!existing.HasRequiredReferences)
+                if (existing.HasRequiredReferences)
+                {
+                    return;
+                }
+
+                if (!HasCommonHudCoreReferences(existing) ||
+                    existing.TaggerAimRoot != null)
                 {
                     throw new InvalidOperationException(
                         "Repair the shared HUD's serialized bindings " +
                         "on its prefab; setup will not replace its design.");
                 }
+
+                AddMissingTaggerAim();
                 return;
             }
 
@@ -250,9 +266,10 @@ namespace MazeParty.Editor
                 text.raycastTarget = false;
                 text.text = "ROUND 1 / 3";
 
+                var taggerAim = CreateTaggerAim(root.transform, font);
                 var common = root.AddComponent<MinigameCommonHudView>();
                 common.Configure(root.GetComponent<Canvas>(),
-                    timer, round, text);
+                    timer, round, text, taggerAim);
                 round.SetActive(false);
                 timer.gameObject.SetActive(false);
                 SetUiLayer(root);
@@ -262,6 +279,141 @@ namespace MazeParty.Editor
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static bool HasCommonHudCoreReferences(
+            MinigameCommonHudView common)
+        {
+            if (common == null || common.RootCanvas == null ||
+                common.TimerDial == null ||
+                !common.TimerDial.HasRequiredReferences ||
+                common.RoundText == null)
+            {
+                return false;
+            }
+
+            var serialized = new SerializedObject(common);
+            var roundProperty = serialized.FindProperty("roundRoot");
+            var round = roundProperty != null
+                ? roundProperty.objectReferenceValue as GameObject
+                : null;
+            return round != null &&
+                   common.TimerDial.transform.IsChildOf(common.transform) &&
+                   round.transform.IsChildOf(common.transform) &&
+                   common.RoundText.transform.IsChildOf(round.transform);
+        }
+
+        private static void AddMissingTaggerAim()
+        {
+            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                var common = root.GetComponent<MinigameCommonHudView>();
+                if (common == null ||
+                    !HasCommonHudCoreReferences(common))
+                {
+                    throw new InvalidOperationException(
+                        "Shared minigame HUD core bindings are incomplete.");
+                }
+
+                if (common.TaggerAimRoot != null)
+                {
+                    return;
+                }
+
+                var aimTransform = FindDescendant(
+                    root.transform,
+                    "Tagger Aim");
+                var taggerAim = aimTransform != null
+                    ? aimTransform.gameObject
+                    : CreateTaggerAim(
+                        root.transform,
+                        RequireLegacyRuntimeFont());
+                var serialized = new SerializedObject(common);
+                var aimProperty = serialized.FindProperty("taggerAimRoot");
+                if (aimProperty == null)
+                {
+                    throw new InvalidOperationException(
+                        "MinigameCommonHudView has no taggerAimRoot binding.");
+                }
+
+                aimProperty.objectReferenceValue = taggerAim;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                SetUiLayer(taggerAim);
+                root.transform.localScale = Vector3.one;
+                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static GameObject CreateTaggerAim(
+            Transform parent,
+            Font font)
+        {
+            var aim = new GameObject(
+                "Tagger Aim",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Text),
+                typeof(Outline));
+            aim.transform.SetParent(parent, false);
+            var rect = aim.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.sizeDelta = new Vector2(52f, 52f);
+
+            var text = aim.GetComponent<Text>();
+            text.font = font;
+            text.fontSize = 42;
+            text.fontStyle = FontStyle.Bold;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            text.text = "+";
+
+            var outline = aim.GetComponent<Outline>();
+            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            outline.effectDistance = new Vector2(2f, -2f);
+            aim.SetActive(false);
+            return aim;
+        }
+
+        private static Font RequireLegacyRuntimeFont()
+        {
+            var font = Resources.GetBuiltinResource<Font>(
+                "LegacyRuntime.ttf");
+            if (font == null)
+            {
+                throw new InvalidOperationException(
+                    "Unity LegacyRuntime.ttf was not found.");
+            }
+            return font;
+        }
+
+        private static Transform FindDescendant(
+            Transform root,
+            string name)
+        {
+            for (var index = 0; index < root.childCount; index++)
+            {
+                var child = root.GetChild(index);
+                if (child.name == name)
+                {
+                    return child;
+                }
+
+                var nested = FindDescendant(child, name);
+                if (nested != null)
+                {
+                    return nested;
+                }
+            }
+
+            return null;
         }
 
         private static GameObject CreateTemplate()

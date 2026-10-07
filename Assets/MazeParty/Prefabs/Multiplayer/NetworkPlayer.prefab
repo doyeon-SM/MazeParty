@@ -120,7 +120,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 2
-  m_Radius: 0.5
+  m_Radius: 0.42
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.08
@@ -136,7 +136,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 2612904362
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -163,7 +163,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
   NetworkTransformExpanded: 0
@@ -209,7 +209,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual
   bindings: {fileID: 6751514677381147146}
 --- !u!114 &5214929391124953187
@@ -222,7 +222,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b4d1eb44d7affee42908f8bdafbc88c0, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkPlayerAvatar
   ShowTopMostFoldoutHeaderGroup: 1
   grenadeRangeIndicator: {fileID: 273685376955897446}
@@ -239,7 +239,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 10ee628cb1d567e4eae81aea561c063e, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerBoardBoundaryWalls
   playerSlot: -1
   ownerController: {fileID: 0}
@@ -257,7 +257,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 696ac5baf89352f49aabec260cc0d71d, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerHitZoneOwner
 --- !u!114 &1265910084255527688
 MonoBehaviour:
@@ -269,7 +269,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &2687384733472047816
 GameObject:
@@ -368,7 +368,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7c186c7250bd4b7489a61dcc6dd7cb41, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardGrenadeRangeIndicator
 --- !u!4 &4947623026140395914 stripped
 Transform:
@@ -446,5 +446,5 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 709750dba532d70499ff13dddc643864, type: 3}
-  m_Name: ''
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarPresentationBindings

@@ -325,6 +325,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ConfigureBuildVersionApproval();
             _networkManager.OnClientConnectedCallback += OnClientConnected;
             _networkManager.OnClientDisconnectCallback += OnClientDisconnected;
             _networkManager.OnClientStopped += OnClientStopped;
@@ -437,6 +438,7 @@ namespace MazeParty.Multiplayer
 
             if (_networkManager != null)
             {
+                ReleaseBuildVersionApproval();
                 _networkManager.OnClientConnectedCallback -= OnClientConnected;
                 _networkManager.OnClientDisconnectCallback -= OnClientDisconnected;
                 _networkManager.OnClientStopped -= OnClientStopped;
@@ -1171,13 +1173,24 @@ namespace MazeParty.Multiplayer
         {
             ClearPlayingReconnectTicket();
             ResetHostMatchRecoveryChoice();
+            ResetLocalBuildVersionRejection();
             _networkIdentityPublished = false;
-            await _sessions.JoinByCodeAsync(code, displayName);
+            try
+            {
+                await _sessions.JoinByCodeAsync(code, displayName);
+            }
+            catch (Exception exception) when (WasRejectedForBuildVersion())
+            {
+                throw new InvalidOperationException(
+                    GameText.T("The host uses a different game build."),
+                    exception);
+            }
             await PublishLocalNetworkClientIdWhenReadyAsync();
         }
 
         private async Task ReconnectAndPublishAsync(string sessionId, string displayName)
         {
+            ResetLocalBuildVersionRejection();
             _networkIdentityPublished = false;
             try
             {
@@ -1192,9 +1205,16 @@ namespace MazeParty.Multiplayer
 
                 await PublishLocalNetworkClientIdWhenReadyAsync();
             }
-            catch
+            catch (Exception exception)
             {
                 ClearPlayingReconnectTicket();
+                if (WasRejectedForBuildVersion())
+                {
+                    throw new InvalidOperationException(
+                        GameText.T("The host uses a different game build."),
+                        exception);
+                }
+
                 throw;
             }
         }
@@ -2746,6 +2766,11 @@ namespace MazeParty.Multiplayer
 
         private void OnClientDisconnected(ulong clientId)
         {
+            if (IgnoreBuildVersionRejectionDisconnect(clientId))
+            {
+                return;
+            }
+
             ResolveCompletedMatchPendingUnloadClient(clientId);
             if (_applicationQuitting ||
                 LifecycleState == SessionLifecycleState.Leaving ||

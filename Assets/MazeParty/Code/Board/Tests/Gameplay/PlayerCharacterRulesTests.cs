@@ -6,6 +6,32 @@ namespace MazeParty.Gameplay.Tests
     public sealed class PlayerCharacterRulesTests
     {
         [Test]
+        public void Grounding_FallsWithoutInputAndStabilizesOnContact()
+        {
+            const float step = 0.02f;
+            var height = 3f;
+            var verticalVelocity = 0f;
+
+            for (var tick = 0; tick < 25; tick++)
+            {
+                verticalVelocity = PlayerGroundingRules.AdvanceVerticalVelocity(
+                    verticalVelocity,
+                    false,
+                    step);
+                height += verticalVelocity * step;
+            }
+
+            Assert.That(verticalVelocity, Is.EqualTo(-12f).Within(0.0001f));
+            Assert.That(height, Is.LessThan(0f));
+            Assert.That(
+                PlayerGroundingRules.AdvanceVerticalVelocity(
+                    verticalVelocity,
+                    true,
+                    step),
+                Is.EqualTo(PlayerGroundingRules.GroundedVerticalVelocity));
+        }
+
+        [Test]
         public void FirearmDamage_AppliesBodyRegionTable()
         {
             var cases = new[]

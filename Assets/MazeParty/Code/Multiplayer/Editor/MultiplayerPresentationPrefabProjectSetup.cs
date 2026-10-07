@@ -770,6 +770,21 @@ namespace MazeParty.Editor
                         "NetworkPlayer.prefab is missing required runtime components.");
                 }
 
+                var controller = root.GetComponent<CharacterController>();
+                if (controller == null)
+                {
+                    throw new InvalidOperationException(
+                        "NetworkPlayer.prefab is missing its root CharacterController.");
+                }
+                if (!Mathf.Approximately(
+                        controller.radius,
+                        PlayerAvatarVisual.MovementControllerRadius))
+                {
+                    controller.radius =
+                        PlayerAvatarVisual.MovementControllerRadius;
+                    changed = true;
+                }
+
                 var bindings = root.GetComponentInChildren<
                     PlayerAvatarPresentationBindings>(true);
                 if (bindings == null)
@@ -857,7 +872,7 @@ namespace MazeParty.Editor
             var root = new GameObject("NetworkPlayer");
             var controller = root.AddComponent<CharacterController>();
             controller.height = 2f;
-            controller.radius = 0.5f;
+            controller.radius = PlayerAvatarVisual.MovementControllerRadius;
             controller.center = Vector3.zero;
             root.AddComponent<NetworkObject>();
             var networkTransform = root.AddComponent<NetworkTransform>();
@@ -1027,10 +1042,31 @@ namespace MazeParty.Editor
                 : null;
             var grenadeRangeProperty = avatarObject?.FindProperty(
                 "grenadeRangeIndicator");
+            var controller = prefab != null
+                ? prefab.GetComponent<CharacterController>()
+                : null;
+            var movementControllers = prefab != null
+                ? prefab.GetComponentsInChildren<CharacterController>(true)
+                : Array.Empty<CharacterController>();
+            var nonMovementColliders = prefab != null
+                ? prefab.GetComponentsInChildren<Collider>(true)
+                    .Where(collider => collider != controller)
+                    .ToArray()
+                : Array.Empty<Collider>();
             if (prefab == null ||
                 prefab.GetComponent<NetworkObject>() == null ||
                 prefab.GetComponent<NetworkTransform>() == null ||
-                prefab.GetComponent<CharacterController>() == null ||
+                controller == null ||
+                movementControllers.Length != 1 ||
+                movementControllers[0] != controller ||
+                !controller.enabled ||
+                !Mathf.Approximately(
+                    controller.radius,
+                    PlayerAvatarVisual.MovementControllerRadius) ||
+                nonMovementColliders.Length != 4 ||
+                nonMovementColliders.Any(collider =>
+                    !collider.isTrigger ||
+                    collider.GetComponent<PlayerHitZone>() == null) ||
                 prefab.GetComponent<PlayerHitZoneOwner>() == null ||
                 prefab.GetComponent<PlayerBoardBoundaryWalls>() == null ||
                 visual == null || visual.Bindings == null ||

@@ -907,7 +907,6 @@ MonoBehaviour:
   playerOverheadHeight: 8
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10
-  combatSpectatorBackOffset: 14
   combatSpectatorFieldOfView: 55
 --- !u!4 &298887541
 Transform:
@@ -1115,6 +1114,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fd347e9a63562dd4081c2e0fae6fe98e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.PlayerAvatarVisual
+  bindings: {fileID: 0}
 --- !u!143 &401234504
 CharacterController:
   m_ObjectHideFlags: 0
@@ -1134,7 +1134,7 @@ CharacterController:
   m_Enabled: 1
   serializedVersion: 3
   m_Height: 2
-  m_Radius: 0.45
+  m_Radius: 0.42
   m_SlopeLimit: 45
   m_StepOffset: 0.3
   m_SkinWidth: 0.05

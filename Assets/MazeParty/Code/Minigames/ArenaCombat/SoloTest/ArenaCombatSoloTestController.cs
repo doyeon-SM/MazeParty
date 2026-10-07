@@ -418,39 +418,13 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
             else
             {
-                var center = new Vector3(
-                    ArenaCombatRules.ArenaCenterX, 0f, 0f);
-                if (_phase != PracticePhase.Countdown)
-                {
-                    var sum = Vector3.zero;
-                    var count = 0;
-                    foreach (var fighter in _fighters)
-                    {
-                        if (!fighter.IsAlive)
-                        {
-                            continue;
-                        }
-                        sum += fighter.Root.position;
-                        count++;
-                    }
-                    if (count > 0)
-                    {
-                        center = sum / count;
-                        center.y = 0f;
-                    }
-                }
-                center.x = Mathf.Clamp(center.x,
-                    ArenaCombatRules.ArenaCenterX - 3f,
-                    ArenaCombatRules.ArenaCenterX + 3f);
-                center.z = Mathf.Clamp(center.z, -3f, 3f);
-                var position = ArenaCombatNetworkView
-                    .CalculateSpectatorCameraPosition(center);
                 _camera.fieldOfView =
                     ArenaCombatNetworkView.SpectatorFieldOfView;
                 _camera.transform.SetPositionAndRotation(
-                    position,
                     ArenaCombatNetworkView
-                        .CalculateSpectatorCameraRotation(center));
+                        .SharedSpectatorCameraPosition,
+                    ArenaCombatNetworkView
+                        .SharedSpectatorCameraRotation);
                 Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = true;
             }

@@ -111,15 +111,13 @@ namespace MazeParty.Editor
                     new Vector3(CenterX, 1.75f, -4f),
                     Quaternion.identity,
                     ArenaCombatNetworkView.FirstPersonFieldOfView);
-                var spectatorCenter = new Vector3(CenterX, 0f, 0f);
-                var spectatorPosition = ArenaCombatNetworkView
-                    .CalculateSpectatorCameraPosition(spectatorCenter);
                 var spectatorCamera = CreateCamera(
                     "CM_ArenaCombatSpectator",
                     root.transform,
-                    spectatorPosition,
                     ArenaCombatNetworkView
-                        .CalculateSpectatorCameraRotation(spectatorCenter),
+                        .SharedSpectatorCameraPosition,
+                    ArenaCombatNetworkView
+                        .SharedSpectatorCameraRotation,
                     ArenaCombatNetworkView.SpectatorFieldOfView);
                 CreateReplacementAnchors(root.transform);
 

@@ -42,6 +42,7 @@ namespace MazeParty.Multiplayer
 
         [Header("Feedback")]
         [SerializeField] private Text statusText;
+        [SerializeField] private Text buildVersionText;
 
         [Header("Character Customization")]
         [SerializeField] private GameObject customizationPanel;
@@ -125,6 +126,7 @@ namespace MazeParty.Multiplayer
             inviteCodeRevealButton != null &&
             inviteCodeRevealButton.HasRequiredReferences &&
             statusText != null &&
+            buildVersionText != null &&
             customizationPanel != null &&
             customizationButton != null &&
             paletteButtons != null &&
@@ -160,6 +162,7 @@ namespace MazeParty.Multiplayer
             GameObject configuredStartHint,
             GameObject configuredRunningMessage,
             Text configuredStatusText,
+            Text configuredBuildVersionText,
             GameObject configuredCustomizationPanel,
             Button[] configuredPaletteButtons,
             Outline[] configuredPaletteOutlines)
@@ -186,6 +189,7 @@ namespace MazeParty.Multiplayer
             startHint = configuredStartHint;
             runningMessage = configuredRunningMessage;
             statusText = configuredStatusText;
+            buildVersionText = configuredBuildVersionText;
             customizationPanel = configuredCustomizationPanel;
             paletteButtons = configuredPaletteButtons ?? Array.Empty<Button>();
             paletteOutlines = configuredPaletteOutlines ?? Array.Empty<Outline>();
@@ -416,6 +420,7 @@ namespace MazeParty.Multiplayer
             }
 
             BindButtonEvents();
+            buildVersionText.text = BuildVersionCompatibility.DisplayText;
             joinCodeInput.contentType = InputField.ContentType.Custom;
             joinCodeInput.inputType = InputField.InputType.Password;
             joinCodeInput.characterValidation = InputField.CharacterValidation.Alphanumeric;

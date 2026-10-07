@@ -63,7 +63,7 @@ namespace MazeParty.Multiplayer.Tests
                 "TagChase", "Tag Chase Environment",
                 "TagChaseEnvironment.prefab",
                 typeof(NetworkTagChaseState),
-                "Sight Blocker 1", "Tagger Start"),
+                "Tagger Start"),
             EnvironmentCase(
                 "TerritoryPaint", "Territory Paint Environment",
                 "TerritoryPaintEnvironment.prefab",

@@ -38,6 +38,8 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _playerCards = new Image[MultiplayerConstants.MaxPlayers];
+        private readonly Slider[] _playerHealthSliders =
+            new Slider[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _playerHealthFills = new Image[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerKeyTexts = new Text[MultiplayerConstants.MaxPlayers];
@@ -438,6 +440,7 @@ namespace MazeParty.Multiplayer
             CopyReferences(uiBindings.ShopOfferLabels, _shopOfferLabels);
             CopyReferences(uiBindings.PlayerRows, _playerRows);
             CopyReferences(uiBindings.PlayerCards, _playerCards);
+            CopyReferences(uiBindings.PlayerHealthSliders, _playerHealthSliders);
             CopyReferences(uiBindings.PlayerHealthFills, _playerHealthFills);
             CopyReferences(uiBindings.PlayerHealthTexts, _playerHealthTexts);
             CopyReferences(uiBindings.PlayerKeyTexts, _playerKeyTexts);
@@ -899,11 +902,15 @@ namespace MazeParty.Multiplayer
                 var healthRatio = avatar != null
                     ? Mathf.Clamp01(currentHealth / (float)maxHealth)
                     : 0f;
+                if (_playerHealthSliders[slot] != null)
+                {
+                    _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
+                }
+
                 if (_playerHealthFills[slot] != null)
                 {
                     _playerHealthFills[slot].gameObject.SetActive(
                         !match.IsArenaCombatPhase);
-                    _playerHealthFills[slot].fillAmount = healthRatio;
                     _playerHealthFills[slot].color = healthRatio > 0.5f
                         ? uiBindings.HealthyHealthColor
                         : healthRatio > 0.25f

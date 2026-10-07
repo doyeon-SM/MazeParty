@@ -302,19 +302,11 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private bool CanOccupy(int slot, Vector2 candidate)
         {
-            for (var index = 0;
-                 index < NetworkTagChaseState.ObstacleCount;
-                 index++)
+            if (TagChaseArenaCollisionLayout.BlocksCircle(
+                    candidate,
+                    NetworkTagChaseState.PlayerCollisionRadius))
             {
-                var rect = NetworkTagChaseState.GetObstacleRect(index);
-                var radius = NetworkTagChaseState.PlayerCollisionRadius;
-                if (candidate.x >= rect.xMin - radius &&
-                    candidate.x <= rect.xMax + radius &&
-                    candidate.y >= rect.yMin - radius &&
-                    candidate.y <= rect.yMax + radius)
-                {
-                    return false;
-                }
+                return false;
             }
 
             var minimum = NetworkTagChaseState.PlayerCollisionRadius * 2f;

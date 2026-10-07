@@ -1,10 +1,40 @@
+using System.Linq;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace MazeParty.Gameplay.Tests
 {
     public sealed class BoardMapDataContractTests
     {
+        private const string CatalogPath =
+            "Assets/MazeParty/Resources/MazeParty/Board/Maps/BoardMapCatalog.asset";
+
+        [Test]
+        public void AuthoredMaps_UseComfortablePassageWidth()
+        {
+            var catalog = AssetDatabase.LoadAssetAtPath<BoardMapCatalog>(CatalogPath);
+            Assert.That(catalog, Is.Not.Null, CatalogPath);
+
+            foreach (var definition in catalog.Maps)
+            {
+                Assert.That(definition, Is.Not.Null);
+                Assert.That(definition.MapRootPrefab, Is.Not.Null, definition.MapId);
+                var topology = definition.MapRootPrefab.GetComponent<BoardMapRoot>()?.Topology;
+                Assert.That(topology, Is.Not.Null, definition.MapId);
+                topology.RebuildIndex();
+                Assert.That(topology.Gates, Is.Not.Empty, definition.MapId);
+                Assert.That(
+                    topology.Gates.All(gate => gate != null &&
+                                               Mathf.Approximately(
+                                                   gate.GateWidth,
+                                                   BoardGate.DefaultWidth)),
+                    Is.True,
+                    $"{definition.MapId} must use the shared " +
+                    $"{BoardGate.DefaultWidth:0.#}m board passage width.");
+            }
+        }
+
         [Test]
         public void MapId_IsNormalizedToStableKebabCase()
         {

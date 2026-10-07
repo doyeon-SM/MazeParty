@@ -327,7 +327,7 @@ namespace MazeParty.Editor
             networkManager.NetworkConfig.NetworkTransport = transport;
             networkManager.NetworkConfig.PlayerPrefab = playerPrefab;
             networkManager.NetworkConfig.EnableSceneManagement = true;
-            networkManager.NetworkConfig.ConnectionApproval = false;
+            networkManager.NetworkConfig.ConnectionApproval = true;
             networkManager.NetworkConfig.ForceSamePrefabs = true;
 
             var sessionController = runtime.AddComponent<OnlineSessionController>();
@@ -630,6 +630,30 @@ namespace MazeParty.Editor
                 16,
                 TextAnchor.UpperLeft,
                 52f);
+            var buildVersionText = CreateText(
+                "Build Version",
+                canvasObject.transform,
+                BuildVersionCompatibility.DisplayText,
+                font,
+                18,
+                TextAnchor.MiddleLeft,
+                32f);
+            Object.DestroyImmediate(
+                buildVersionText.GetComponent<LayoutElement>());
+            var buildVersionRect = buildVersionText.rectTransform;
+            buildVersionRect.anchorMin = Vector2.zero;
+            buildVersionRect.anchorMax = Vector2.zero;
+            buildVersionRect.pivot = Vector2.zero;
+            buildVersionRect.anchoredPosition = new Vector2(24f, 24f);
+            buildVersionRect.sizeDelta = new Vector2(240f, 32f);
+            buildVersionText.fontStyle = FontStyle.Bold;
+            buildVersionText.color = new Color(0.75f, 0.89f, 1f, 0.92f);
+            var buildVersionShadow =
+                buildVersionText.gameObject.AddComponent<Shadow>();
+            buildVersionShadow.effectColor =
+                new Color(0.015f, 0.025f, 0.06f, 0.85f);
+            buildVersionShadow.effectDistance = new Vector2(1f, -1f);
+            buildVersionShadow.useGraphicAlpha = true;
 
             sessionPanel.SetActive(false);
             joinCodePopup.SetActive(false);
@@ -660,6 +684,7 @@ namespace MazeParty.Editor
                 startHintText.gameObject,
                 runningText.gameObject,
                 statusText,
+                buildVersionText,
                 customizationPanel,
                 paletteButtons,
                 paletteOutlines);

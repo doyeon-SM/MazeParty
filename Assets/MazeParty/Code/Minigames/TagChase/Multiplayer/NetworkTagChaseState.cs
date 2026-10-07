@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.TagChase;
 using Unity.Netcode;
 using UnityEngine;
@@ -59,7 +60,8 @@ namespace MazeParty.Multiplayer
         public const float ArenaCenterX = 1060f;
         public const float ArenaHalfWidth = 12f;
         public const float ArenaHalfDepth = 10f;
-        public const float PlayerCollisionRadius = 0.58f;
+        public const float PlayerCollisionRadius =
+            PlayerAvatarVisual.MovementControllerRadius;
         public const float RunnerMoveSpeed = 2.75f;
         public const float TaggerMoveSpeed = 5f;
         public const float CatchRange = 2.15f;
@@ -69,18 +71,10 @@ namespace MazeParty.Multiplayer
         private const float MaximumSimulationStepSeconds = 0.05f;
         private const byte NoTagger = byte.MaxValue;
 
-        private static readonly Rect[] ObstacleRects =
-        {
-            new Rect(ArenaCenterX - 5.1f, -5.1f, 2.4f, 2.4f),
-            new Rect(ArenaCenterX + 2.7f, -5.1f, 2.4f, 2.4f),
-            new Rect(ArenaCenterX - 5.1f, 2.7f, 2.4f, 2.4f),
-            new Rect(ArenaCenterX + 2.7f, 2.7f, 2.4f, 2.4f)
-        };
-
         private static readonly Vector2[] RunnerStartOffsets =
         {
-            new Vector2(-8.2f, -6.8f),
-            new Vector2(8.2f, -6.8f),
+            new Vector2(-7.5f, -6.5f),
+            new Vector2(8.5f, -7.5f),
             new Vector2(0f, 7.2f)
         };
 
@@ -157,8 +151,6 @@ namespace MazeParty.Multiplayer
             _pausedPhaseRemaining.Value,
             Phase == NetworkTagChasePhase.Inactive ||
             Phase == NetworkTagChasePhase.Complete);
-        public static int ObstacleCount => ObstacleRects.Length;
-
         private double ServerNow =>
             NetworkManager != null && NetworkManager.IsListening
                 ? NetworkManager.ServerTime.Time
@@ -406,16 +398,6 @@ namespace MazeParty.Multiplayer
 
             return (int)(
                 (_finalRanks.Value >> (slot * 8)) & 0xffU);
-        }
-
-        public static Rect GetObstacleRect(int index)
-        {
-            if (index < 0 || index >= ObstacleRects.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(index));
-            }
-
-            return ObstacleRects[index];
         }
 
         public void PauseOnServer(double now)
@@ -770,18 +752,11 @@ namespace MazeParty.Multiplayer
 
         private bool CanPlayerOccupy(int slot, Vector2 position)
         {
-            for (var obstacleIndex = 0;
-                 obstacleIndex < ObstacleRects.Length;
-                 obstacleIndex++)
+            if (TagChaseArenaCollisionLayout.BlocksCircle(
+                    position,
+                    PlayerCollisionRadius))
             {
-                var expanded =
-                    ExpandRect(
-                        ObstacleRects[obstacleIndex],
-                        PlayerCollisionRadius);
-                if (expanded.Contains(position))
-                {
-                    return false;
-                }
+                return false;
             }
 
             var minimumDistance =
@@ -860,15 +835,6 @@ namespace MazeParty.Multiplayer
                 -ArenaHalfDepth + PlayerCollisionRadius,
                 ArenaHalfDepth - PlayerCollisionRadius);
             return position;
-        }
-
-        private static Rect ExpandRect(Rect rect, float amount)
-        {
-            return new Rect(
-                rect.xMin - amount,
-                rect.yMin - amount,
-                rect.width + amount * 2f,
-                rect.height + amount * 2f);
         }
 
         private void SyncPlayerSnapshotsOnServer()

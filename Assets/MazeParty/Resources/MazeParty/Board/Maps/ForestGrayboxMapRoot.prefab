@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4012364010709442700}
   destination: {fileID: 7605931253056864903}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &43538252891854207
@@ -95,7 +95,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5961682229981755268}
   destination: {fileID: 245432759751531367}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &126787449095112776
@@ -304,7 +304,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7908643183674242355}
   destination: {fileID: 7970042860968901752}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &627023615658050715
@@ -353,7 +353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 245432759751531367}
   destination: {fileID: 316934882555808469}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &654353820085970480
@@ -402,7 +402,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7970042860968901752}
   destination: {fileID: 2896629322169733605}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &665205730923206552
@@ -483,7 +483,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8223781844920941352}
   destination: {fileID: 1441673445979904304}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &696285215506398028
@@ -532,7 +532,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6173930479035980039}
   destination: {fileID: 1001207825915810389}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &775314892742375382
@@ -581,7 +581,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7391425956045416756}
   destination: {fileID: 2546269890064042526}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &805521105894613807
@@ -757,7 +757,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6746135411404089389}
   destination: {fileID: 7391425956045416756}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1210367266970244059
@@ -870,7 +870,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6759160917009291848}
   destination: {fileID: 8957978302294363874}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1818865536111498280
@@ -919,7 +919,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7914169396712020269}
   destination: {fileID: 8971316354743273433}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1840041521057626191
@@ -1032,7 +1032,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7744715443128212914}
   destination: {fileID: 6173930479035980039}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1918760026992334635
@@ -1177,7 +1177,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8064587933422018940}
   destination: {fileID: 7914169396712020269}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2160095795309652615
@@ -1226,7 +1226,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8957978302294363874}
   destination: {fileID: 3065095397437508992}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2250427296982156363
@@ -1466,7 +1466,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8971316354743273433}
   destination: {fileID: 245432759751531367}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2727197090408662205
@@ -1579,7 +1579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2143884462958350381}
   destination: {fileID: 578751802576767195}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2847028526566866661
@@ -1628,7 +1628,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2896629322169733605}
   destination: {fileID: 6585231719929655374}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2946572667437548913
@@ -1677,7 +1677,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1441673445979904304}
   destination: {fileID: 9211644660342569760}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2956172754898093157
@@ -1726,7 +1726,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4475193904492447967}
   destination: {fileID: 7605931253056864903}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3063470313686193377
@@ -1839,7 +1839,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6585231719929655374}
   destination: {fileID: 6746135411404089389}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3239047676405977040
@@ -1920,7 +1920,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1441673445979904304}
   destination: {fileID: 7726311244746687380}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3339174991382437815
@@ -2077,7 +2077,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6140313088444722779}
   destination: {fileID: 4012364010709442700}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3752322890395594499
@@ -2126,7 +2126,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5040886686537638108}
   destination: {fileID: 4784506013715636353}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3772999829335331018
@@ -2509,7 +2509,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2546269890064042526}
   destination: {fileID: 5786520638270847631}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4565923986598655951
@@ -2558,7 +2558,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5786520638270847631}
   destination: {fileID: 2235835804854768574}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4663202425788552786
@@ -2703,7 +2703,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3065095397437508992}
   destination: {fileID: 8423873333911410032}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4889978342953133609
@@ -2784,7 +2784,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1195617681463728944}
   destination: {fileID: 1504936659421339641}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4895418850450021872
@@ -2833,7 +2833,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4607442189479671304}
   destination: {fileID: 6585231719929655374}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5015804950893732618
@@ -2914,7 +2914,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4736942701689283782}
   destination: {fileID: 4475193904492447967}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5227182782201484356
@@ -2995,7 +2995,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5040886686537638108}
   destination: {fileID: 8223781844920941352}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5669361483907897085
@@ -3044,7 +3044,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3065095397437508992}
   destination: {fileID: 1195617681463728944}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5895815129220729231
@@ -3359,7 +3359,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1176350832108729187}
   destination: {fileID: 8529449764177688698}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6502530723636186904
@@ -3408,7 +3408,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 9211644660342569760}
   destination: {fileID: 5961682229981755268}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6553953920208666569
@@ -3489,7 +3489,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 316934882555808469}
   destination: {fileID: 7595950078230748464}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6640738870385217977
@@ -3538,7 +3538,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7605931253056864903}
   destination: {fileID: 8366103380800323227}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6748939505155332203
@@ -3651,7 +3651,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 578751802576767195}
   destination: {fileID: 5040886686537638108}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6853184646264725707
@@ -3700,7 +3700,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6585231719929655374}
   destination: {fileID: 7391425956045416756}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6905905745070855682
@@ -3781,7 +3781,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8529449764177688698}
   destination: {fileID: 4736942701689283782}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7663106864923185204
@@ -3830,7 +3830,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1001207825915810389}
   destination: {fileID: 2235835804854768574}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7695131172107407808
@@ -3879,7 +3879,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7726311244746687380}
   destination: {fileID: 4736942701689283782}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7801361874146554409
@@ -3959,7 +3959,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1504936659421339641}
   destination: {fileID: 1176350832108729187}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7960856010311598156
@@ -4008,7 +4008,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7595950078230748464}
   destination: {fileID: 6140313088444722779}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8040041664916253305
@@ -4057,7 +4057,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4736942701689283782}
   destination: {fileID: 8064587933422018940}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8154268899930676390
@@ -4106,7 +4106,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4784506013715636353}
   destination: {fileID: 8223781844920941352}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8168927425964704740
@@ -4155,7 +4155,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8423873333911410032}
   destination: {fileID: 2143884462958350381}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8176956650824407522
@@ -4299,7 +4299,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2235835804854768574}
   destination: {fileID: 6759160917009291848}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8439658386935021743
@@ -4348,7 +4348,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8366103380800323227}
   destination: {fileID: 4607442189479671304}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8541810193590747521
@@ -4461,7 +4461,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 316934882555808469}
   destination: {fileID: 7908643183674242355}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8709695122707325160
@@ -4542,7 +4542,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7605931253056864903}
   destination: {fileID: 7744715443128212914}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8927871843277907277
@@ -5149,7 +5149,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -22.84018
+      value: -23.09018
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -5157,7 +5157,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 16.146374
+      value: 16.896374
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6714,7 +6714,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 15.90982
+      value: 16.40982
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6722,7 +6722,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 21.896372
+      value: 16.396372
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6830,7 +6830,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.1036282
+      value: -1.8536282
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -6906,8 +6906,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0761232, y: 0.9886182, z: 0.9213952}
-  m_Center: {x: -0.07940264, y: 0.5051157, z: -0.02190727}
+  m_Size: {x: 0.82612324, y: 0.98861825, z: 0.83131886}
+  m_Center: {x: 0.045597315, y: 0.5051157, z: 0.023130894}
 --- !u!1001 &2215666646376963691
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -7499,7 +7499,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -0.8401804
+      value: -0.5901804
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -7507,7 +7507,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 19.896372
+      value: 19.146372
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -7583,8 +7583,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0761232, y: 0.9886182, z: 0.9213952}
-  m_Center: {x: -0.07940264, y: 0.5051157, z: -0.02190727}
+  m_Size: {x: 0.88030493, y: 0.98861825, z: 0.9213952}
+  m_Center: {x: 0.018506467, y: 0.5051157, z: -0.02190727}
 --- !u!1001 &3066979707612856539
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -8175,7 +8175,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -25.59018
+      value: -24.59018
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8183,7 +8183,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.8963718
+      value: 3.6463718
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8283,7 +8283,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -14.34018
+      value: -13.84018
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -8291,7 +8291,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 20.146372
+      value: 18.646372
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -8715,7 +8715,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -8.090179
+      value: -8.840179
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -10098,7 +10098,8 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5738494453391320725, guid: c9c039832c2b01e4c9fca9fdc323c948, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -10400,7 +10401,8 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5738494453391320725, guid: c9c039832c2b01e4c9fca9fdc323c948, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -10880,7 +10882,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -18.59018
+      value: -18.84018
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -10888,7 +10890,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 15.146372
+      value: 13.896372
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -11444,7 +11446,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 7.7295995
+      value: 7.729773
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.y
@@ -11452,11 +11454,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -17.15613
+      value: -16.97276
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.3999882
+      value: 0.10940998
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.x
@@ -11464,7 +11466,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.91652024
+      value: 0.99399674
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.z
@@ -11476,7 +11478,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 132.845
+      value: 167.437
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -11745,8 +11747,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0761232, y: 0.9886182, z: 0.9213952}
-  m_Center: {x: -0.07940264, y: 0.5051157, z: -0.02190727}
+  m_Size: {x: 0.8201974, y: 0.9886182, z: 0.9213952}
+  m_Center: {x: 0.04855974, y: 0.5051156, z: -0.021907283}
 --- !u!4 &4430722177637108321 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
@@ -12002,19 +12004,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 29.610903
+      value: 30.673586
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.y
-      value: -0.11706159
+      value: -0.117061615
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 9.248224
+      value: 7.8821783
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0.9005408
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.x
@@ -12022,7 +12024,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0.43477154
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalRotation.z
@@ -12034,7 +12036,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
+      value: 51.542
       objectReference: {fileID: 0}
     - target: {fileID: 9220717999937791003, guid: d47b703f8d498d9498921b1933c19ce0, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
@@ -12332,7 +12334,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -11.090179
+      value: -11.590179
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.y
@@ -12340,7 +12342,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -17.353628
+      value: -17.853628
       objectReference: {fileID: 0}
     - target: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
       propertyPath: m_LocalRotation.w
@@ -12411,8 +12413,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0761232, y: 0.9886182, z: 0.9213952}
-  m_Center: {x: -0.07940264, y: 0.5051157, z: -0.02190727}
+  m_Size: {x: 0.8038571, y: 0.98861825, z: 0.9213952}
+  m_Center: {x: 0.05673039, y: 0.5051157, z: -0.02190727}
 --- !u!4 &4292015347838439829 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}
@@ -12523,8 +12525,8 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1.0761232, y: 0.9886182, z: 0.9213952}
-  m_Center: {x: -0.07940264, y: 0.5051157, z: -0.02190727}
+  m_Size: {x: 0.8876588, y: 0.98861825, z: 0.9213952}
+  m_Center: {x: 0.014829795, y: 0.5051157, z: -0.021907251}
 --- !u!4 &4185901739268604948 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5608621904478738614, guid: b5d1198af13763d458d07e6eba44d247, type: 3}

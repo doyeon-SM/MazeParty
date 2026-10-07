@@ -46,7 +46,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2534730000874397026}
   destination: {fileID: 3331978011855995513}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &53481325555755243
@@ -95,7 +95,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1033689648438106669}
   destination: {fileID: 1823264531808838690}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &91388833980639119
@@ -144,7 +144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8651182708304964255}
   destination: {fileID: 8979072095920916804}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &96112379432780649
@@ -193,7 +193,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1215655869458884080}
   destination: {fileID: 5552266672302716316}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &112329235297613519
@@ -242,7 +242,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3197252386510402609}
   destination: {fileID: 2394001361852993102}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &262274791320966748
@@ -291,7 +291,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 41112277348234546}
   destination: {fileID: 2394001361852993102}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &309580698185315917
@@ -372,7 +372,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3808826208443968376}
   destination: {fileID: 1976455512865441331}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &423492007478217810
@@ -549,7 +549,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 525323589027309270}
   destination: {fileID: 2588504621062189518}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &617430126600425856
@@ -884,7 +884,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6134128216489213193}
   destination: {fileID: 4120875980855042125}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1007586897242795340
@@ -933,7 +933,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5394469979280960927}
   destination: {fileID: 8857283126072331825}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1031991981917109237
@@ -1014,7 +1014,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3331978011855995513}
   destination: {fileID: 7013183723840812557}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1075404587959758986
@@ -1127,7 +1127,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2394001361852993102}
   destination: {fileID: 798976684722206595}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1237925486655835129
@@ -1240,7 +1240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2829625554364279491}
   destination: {fileID: 3517674417044785498}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1646684162546864262
@@ -1353,7 +1353,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1215655869458884080}
   destination: {fileID: 4120875980855042125}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1814675889827348296
@@ -1434,7 +1434,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6134128216489213193}
   destination: {fileID: 8872769749459055820}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1882545202077914258
@@ -1483,7 +1483,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1705063219400569805}
   destination: {fileID: 2196547960617183325}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1913397286108100123
@@ -1532,7 +1532,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3517674417044785498}
   destination: {fileID: 2809729753972368562}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &1950345302273274373
@@ -1613,7 +1613,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3501601550025220792}
   destination: {fileID: 1705063219400569805}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2127418912591018910
@@ -1662,7 +1662,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2922239962507482563}
   destination: {fileID: 7294886420776119447}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2144897531216906629
@@ -1743,7 +1743,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 193794448012036781}
   destination: {fileID: 41112277348234546}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2283698544116008264
@@ -1824,7 +1824,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2196547960617183325}
   destination: {fileID: 5699529983068932459}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2368671748810380522
@@ -2097,7 +2097,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2501949042246183300}
   destination: {fileID: 4469394137855495137}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2496191311132704311
@@ -2146,7 +2146,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5354301408314895154}
   destination: {fileID: 193794448012036781}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2521449308639193979
@@ -2227,7 +2227,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7354499884179468548}
   destination: {fileID: 2829625554364279491}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2539202432307833187
@@ -2308,7 +2308,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 910372278258720103}
   destination: {fileID: 525323589027309270}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2581941884654052197
@@ -2389,7 +2389,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8872769749459055820}
   destination: {fileID: 8627971417196939609}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2594587443699024779
@@ -2502,7 +2502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1889436447986105429}
   destination: {fileID: 2534730000874397026}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2721540476254883020
@@ -2583,7 +2583,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1791666418605778514}
   destination: {fileID: 571111397552852919}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &2917564986865432221
@@ -2664,7 +2664,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2922239962507482563}
   destination: {fileID: 8627971417196939609}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3173177852105926737
@@ -2745,7 +2745,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7354499884179468548}
   destination: {fileID: 3220854661435074031}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3194734540862910077
@@ -2890,7 +2890,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5183359856824430102}
   destination: {fileID: 180841512525679129}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3324956824775109286
@@ -2971,7 +2971,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5337402976258676287}
   destination: {fileID: 1889436447986105429}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3395728832583739375
@@ -3180,7 +3180,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2588504621062189518}
   destination: {fileID: 5354301408314895154}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3618773602963142001
@@ -3421,7 +3421,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1823264531808838690}
   destination: {fileID: 8651182708304964255}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &3852043465383547920
@@ -3566,7 +3566,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5498489327292815878}
   destination: {fileID: 3888525106993086174}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4003238339413522120
@@ -3647,7 +3647,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1250375560463333726}
   destination: {fileID: 7354499884179468548}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4122010884429901467
@@ -3823,7 +3823,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 571111397552852919}
   destination: {fileID: 2922239962507482563}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4646214162929039698
@@ -3904,7 +3904,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1301194812866907765}
   destination: {fileID: 7163770268552624929}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4729733292249240299
@@ -3953,7 +3953,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3888525106993086174}
   destination: {fileID: 2251434351451225225}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4758401722369890698
@@ -4034,7 +4034,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2809729753972368562}
   destination: {fileID: 2875137613894513685}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &4845277483085951838
@@ -4147,7 +4147,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5552266672302716316}
   destination: {fileID: 2875137613894513685}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5029286221633334366
@@ -4228,7 +4228,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2829625554364279491}
   destination: {fileID: 1392486928478404220}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5173289278905696020
@@ -4277,7 +4277,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5354301408314895154}
   destination: {fileID: 2880583336588622929}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5180960426782378915
@@ -4358,7 +4358,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 9205974293206340998}
   destination: {fileID: 3735834278751883144}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5298366926411664240
@@ -4439,7 +4439,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7163770268552624929}
   destination: {fileID: 180841512525679129}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5360975012281105351
@@ -4488,7 +4488,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1976455512865441331}
   destination: {fileID: 3331978011855995513}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5396689868373943609
@@ -4569,7 +4569,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 798976684722206595}
   destination: {fileID: 3808826208443968376}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5560106932725725407
@@ -4650,7 +4650,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 180841512525679129}
   destination: {fileID: 5699529983068932459}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5604243031406990768
@@ -4699,7 +4699,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7294886420776119447}
   destination: {fileID: 5314171086374437004}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5637379120471357808
@@ -4821,7 +4821,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5681392752292598087}
   destination: {fileID: 6787141311010177765}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &5878173699364314920
@@ -4870,7 +4870,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2251434351451225225}
   destination: {fileID: 5337402976258676287}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6105521894661873167
@@ -4919,7 +4919,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3220854661435074031}
   destination: {fileID: 1033689648438106669}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6173982117863295097
@@ -5095,7 +5095,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2534730000874397026}
   destination: {fileID: 1301194812866907765}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6271040793718664093
@@ -5144,7 +5144,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2849000405175074795}
   destination: {fileID: 1791666418605778514}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6275789928125283004
@@ -5260,7 +5260,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2251434351451225225}
   destination: {fileID: 5183359856824430102}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6553953920208666569
@@ -5341,7 +5341,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2880583336588622929}
   destination: {fileID: 5996689160285439071}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6694330623983364540
@@ -5390,7 +5390,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5699529983068932459}
   destination: {fileID: 2239585909174786479}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6768507236816266675
@@ -5503,7 +5503,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8979072095920916804}
   destination: {fileID: 2849000405175074795}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6853854393439460123
@@ -5552,7 +5552,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5314171086374437004}
   destination: {fileID: 9205974293206340998}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6860868053963363572
@@ -5633,7 +5633,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1976455512865441331}
   destination: {fileID: 836160935002615328}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6967064447613986545
@@ -5682,7 +5682,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3501601550025220792}
   destination: {fileID: 5552266672302716316}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &6975420560925737886
@@ -5731,7 +5731,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 7013183723840812557}
   destination: {fileID: 5681392752292598087}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7039888570279942378
@@ -5812,7 +5812,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5533924765881075506}
   destination: {fileID: 2588504621062189518}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7152821628133969040
@@ -5893,7 +5893,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8857283126072331825}
   destination: {fileID: 3197252386510402609}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7375229802545944903
@@ -5942,7 +5942,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5498489327292815878}
   destination: {fileID: 1250375560463333726}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7544194373678164115
@@ -5991,7 +5991,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1705063219400569805}
   destination: {fileID: 910372278258720103}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7588484955130102670
@@ -6040,7 +6040,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 836160935002615328}
   destination: {fileID: 7163770268552624929}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7612966260611263200
@@ -6121,7 +6121,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8627971417196939609}
   destination: {fileID: 5533924765881075506}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7729564070578046424
@@ -6202,7 +6202,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 8651182708304964255}
   destination: {fileID: 3735834278751883144}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7845646124269181259
@@ -6251,7 +6251,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6134128216489213193}
   destination: {fileID: 1705063219400569805}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7879588921468464860
@@ -6411,7 +6411,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4120875980855042125}
   destination: {fileID: 3501601550025220792}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &7939269296416809074
@@ -6492,7 +6492,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 3735834278751883144}
   destination: {fileID: 1215655869458884080}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8039688734211562115
@@ -6541,7 +6541,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2239585909174786479}
   destination: {fileID: 5394469979280960927}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8100011194923698919
@@ -6590,7 +6590,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 910372278258720103}
   destination: {fileID: 8872769749459055820}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8129430287740195585
@@ -6639,7 +6639,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 1392486928478404220}
   destination: {fileID: 2809729753972368562}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8232936483428644018
@@ -6719,7 +6719,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 2875137613894513685}
   destination: {fileID: 5183359856824430102}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8254585952854389426
@@ -6864,7 +6864,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 6787141311010177765}
   destination: {fileID: 2501949042246183300}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8610085654770462449
@@ -6945,7 +6945,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5996689160285439071}
   destination: {fileID: 2196547960617183325}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8671412320012420758
@@ -7121,7 +7121,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 5314171086374437004}
   destination: {fileID: 6134128216489213193}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &8828874871041252435
@@ -7170,7 +7170,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 4469394137855495137}
   destination: {fileID: 5498489327292815878}
-  gateWidth: 2.5
+  gateWidth: 4
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
 --- !u!1 &9022140582947167759

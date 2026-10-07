@@ -80,6 +80,8 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
             AssertItemIconBindings(prefab, bindings);
             AssertPlayerCurrencyBindings(prefab, bindings);
+            AssertPlayerHealthSliderBindings(prefab, bindings);
+
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -123,6 +125,10 @@ namespace MazeParty.Multiplayer.Tests
                 AssertPlayerCurrencyBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
+                AssertPlayerHealthSliderBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings);
+
                 var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);
                 Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(utility), Is.Not.Null);
@@ -236,6 +242,54 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(expectedParent, Is.Not.Null, expectedParentName);
             Assert.That(icon.transform.IsChildOf(expectedParent), Is.True,
                 expectedParentName);
+        }
+
+        private static void AssertPlayerHealthSliderBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(bindings.PlayerHealthSliders.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+            Assert.That(bindings.PlayerHealthFills.Length,
+                Is.EqualTo(MultiplayerConstants.MaxPlayers));
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var card = transforms.SingleOrDefault(candidate =>
+                    candidate.name == "PlayerCard" + slot);
+                Assert.That(card, Is.Not.Null, "PlayerCard" + slot);
+
+                var slider = bindings.PlayerHealthSliders[slot];
+                var fill = bindings.PlayerHealthFills[slot];
+                Assert.That(slider, Is.Not.Null, "PlayerHealthBar" + slot);
+                Assert.That(slider.name,
+                    Is.EqualTo("PlayerHealthBar" + slot));
+                Assert.That(slider.transform.IsChildOf(card), Is.True);
+                Assert.That(slider.direction,
+                    Is.EqualTo(Slider.Direction.LeftToRight));
+                Assert.That(slider.minValue, Is.EqualTo(0f));
+                Assert.That(slider.maxValue, Is.EqualTo(1f));
+                Assert.That(slider.wholeNumbers, Is.False);
+                Assert.That(slider.interactable, Is.False);
+                Assert.That(slider.transition,
+                    Is.EqualTo(Selectable.Transition.None));
+                Assert.That(slider.navigation.mode,
+                    Is.EqualTo(Navigation.Mode.None));
+                Assert.That(slider.handleRect, Is.Null);
+                Assert.That(fill, Is.Not.Null, "PlayerHealthFill" + slot);
+                Assert.That(fill.type, Is.EqualTo(Image.Type.Simple));
+                Assert.That(slider.fillRect, Is.SameAs(fill.rectTransform));
+
+                foreach (var graphic in
+                         slider.GetComponentsInChildren<Graphic>(true))
+                {
+                    Assert.That(
+                        graphic.raycastTarget,
+                        Is.False,
+                        graphic.name);
+                }
+            }
         }
 
         private static void AssertPlayerCurrencyBindings(

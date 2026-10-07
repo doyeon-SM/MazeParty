@@ -326,7 +326,7 @@ namespace MazeParty.Editor
             var controller = localPlayerObject.AddComponent<CharacterController>();
             controller.center = Vector3.zero;
             controller.height = 2f;
-            controller.radius = 0.5f;
+            controller.radius = PlayerAvatarVisual.MovementControllerRadius;
             localPlayerObject.AddComponent<PlayerAvatarVisual>();
             var localBoundaryWalls = localPlayerObject.AddComponent<PlayerBoardBoundaryWalls>();
             localBoundaryWalls.Configure(0, controller, topology);
@@ -359,7 +359,8 @@ namespace MazeParty.Editor
                 var remoteController = marker.AddComponent<CharacterController>();
                 remoteController.center = Vector3.zero;
                 remoteController.height = 2f;
-                remoteController.radius = 0.5f;
+                remoteController.radius =
+                    PlayerAvatarVisual.MovementControllerRadius;
                 marker.AddComponent<PlayerAvatarVisual>();
                 remoteController.enabled = false;
                 var remoteWalls = marker.AddComponent<PlayerBoardBoundaryWalls>();
@@ -1561,6 +1562,8 @@ namespace MazeParty.Editor
 
             var playerRows = new Text[MultiplayerConstants.MaxPlayers];
             var playerCards = new Image[MultiplayerConstants.MaxPlayers];
+            var playerHealthSliders =
+                new Slider[MultiplayerConstants.MaxPlayers];
             var playerHealthFills =
                 new Image[MultiplayerConstants.MaxPlayers];
             var playerHealthTexts =
@@ -1587,6 +1590,9 @@ namespace MazeParty.Editor
                 playerCards[index] = RequireBoardUiComponent<Image>(
                     root,
                     "PlayerCard" + index);
+                playerHealthSliders[index] = RequireBoardUiComponent<Slider>(
+                    root,
+                    "PlayerHealthBar" + index);
                 playerHealthFills[index] = RequireBoardUiComponent<Image>(
                     root,
                     "PlayerHealthFill" + index);
@@ -1721,6 +1727,7 @@ namespace MazeParty.Editor
                 ShopOfferHovers = shopHovers,
                 PlayerRows = playerRows,
                 PlayerCards = playerCards,
+                PlayerHealthSliders = playerHealthSliders,
                 PlayerHealthFills = playerHealthFills,
                 PlayerHealthTexts = playerHealthTexts,
                 PlayerKeyIcons = playerKeyIcons,
@@ -1879,6 +1886,14 @@ namespace MazeParty.Editor
                     new Vector2(220f, 18f),
                     new Vector2(0f, 1f),
                     new Color(0.12f, 0.14f, 0.18f, 1f));
+                var healthBarImage = healthBar.GetComponent<Image>();
+                healthBarImage.raycastTarget = false;
+                var healthOutline = healthBar.AddComponent<Outline>();
+                healthOutline.effectColor =
+                    new Color(0.02f, 0.03f, 0.05f, 0.95f);
+                healthOutline.effectDistance = new Vector2(1f, -1f);
+                healthOutline.useGraphicAlpha = true;
+
                 var healthFill = CreatePanel(
                     "PlayerHealthFill" + i,
                     healthBar.transform,
@@ -1889,10 +1904,57 @@ namespace MazeParty.Editor
                     new Vector2(0.5f, 0.5f),
                     new Color(0.2f, 0.82f, 0.38f, 1f));
                 var fillImage = healthFill.GetComponent<Image>();
-                fillImage.type = Image.Type.Filled;
-                fillImage.fillMethod = Image.FillMethod.Horizontal;
-                fillImage.fillOrigin = 0;
-                fillImage.fillAmount = 1f;
+                fillImage.type = Image.Type.Simple;
+                fillImage.raycastTarget = false;
+
+                var healthSoundEmitter =
+                    healthBar.AddComponent<UiSoundEmitter>();
+                healthSoundEmitter.Configure(string.Empty, string.Empty);
+
+                var healthSlider = healthBar.AddComponent<Slider>();
+                healthSlider.fillRect =
+                    healthFill.GetComponent<RectTransform>();
+                healthSlider.handleRect = null;
+                healthSlider.targetGraphic = null;
+                healthSlider.direction = Slider.Direction.LeftToRight;
+                healthSlider.minValue = 0f;
+                healthSlider.maxValue = 1f;
+                healthSlider.wholeNumbers = false;
+                healthSlider.interactable = false;
+                healthSlider.transition = Selectable.Transition.None;
+                healthSlider.navigation = new Navigation
+                {
+                    mode = Navigation.Mode.None
+                };
+                healthSlider.SetValueWithoutNotify(1f);
+
+                var fillHighlight = CreatePanel(
+                    "PlayerHealthFillHighlight" + i,
+                    healthFill.transform,
+                    new Vector2(0f, 0.58f),
+                    new Vector2(1f, 0.9f),
+                    Vector2.zero,
+                    new Vector2(-4f, 0f),
+                    new Vector2(0.5f, 0.5f),
+                    new Color(1f, 1f, 1f, 0.16f));
+                fillHighlight.GetComponent<Image>().raycastTarget = false;
+
+                for (var tickIndex = 1; tickIndex < 4; tickIndex++)
+                {
+                    var tickAnchor =
+                        new Vector2(tickIndex * 0.25f, 0.5f);
+                    var tick = CreatePanel(
+                        "PlayerHealthTick" + (tickIndex * 25) + "_" + i,
+                        healthBar.transform,
+                        tickAnchor,
+                        tickAnchor,
+                        Vector2.zero,
+                        new Vector2(1f, 10f),
+                        new Vector2(0.5f, 0.5f),
+                        new Color(0.02f, 0.03f, 0.05f, 0.42f));
+                    tick.GetComponent<Image>().raycastTarget = false;
+                }
+
                 CreateText(
                     "PlayerHealthText" + i,
                     healthBar.transform,

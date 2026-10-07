@@ -12,6 +12,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -282,6 +283,9 @@ namespace MazeParty.Multiplayer.Tests
                     manager.NetworkConfig.EnableSceneManagement,
                     Is.True);
                 Assert.That(
+                    manager.NetworkConfig.ConnectionApproval,
+                    Is.True);
+                Assert.That(
                     manager.NetworkConfig.PlayerPrefab,
                     Is.SameAs(playerPrefab));
 
@@ -298,6 +302,25 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     lobby.PlayerRowCount,
                     Is.EqualTo(MultiplayerConstants.MaxPlayers));
+                var serializedLobby = new SerializedObject(lobby);
+                var buildVersionText = serializedLobby
+                    .FindProperty("buildVersionText")
+                    ?.objectReferenceValue as Text;
+                Assert.That(buildVersionText, Is.Not.Null);
+                Assert.That(
+                    buildVersionText.transform.parent,
+                    Is.SameAs(lobby.transform));
+                Assert.That(
+                    buildVersionText.rectTransform.anchorMin,
+                    Is.EqualTo(Vector2.zero));
+                Assert.That(
+                    buildVersionText.rectTransform.anchorMax,
+                    Is.EqualTo(Vector2.zero));
+                Assert.That(buildVersionText.raycastTarget, Is.False);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        buildVersionText.gameObject),
+                    Is.EqualTo(LobbyCanvasPrefabPath));
 
                 var tower = roots
                     .SelectMany(root => root.GetComponentsInChildren<

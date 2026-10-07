@@ -324,7 +324,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             var character = playerObject.AddComponent<CharacterController>();
             character.center = new Vector3(0f, 1f, 0f);
             character.height = 2f;
-            character.radius = 0.5f;
+            character.radius = PlayerAvatarVisual.MovementControllerRadius;
             character.stepOffset = 0.3f;
             character.slopeLimit = 60f;
 

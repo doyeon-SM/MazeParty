@@ -26,6 +26,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private TagChaseSoloSession _session;
         private MinigameSoloHudView _hud;
+        private MinigameCommonHudView _commonHud;
         private NetworkTagChaseState _productionState;
         private TagChaseNetworkView _productionView;
         private GameObject _arenaPresentation;
@@ -66,6 +67,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 RestartMatch,
                 StartNextSeed,
                 StopSoloTest);
+            _commonHud = FindAnyObjectByType<MinigameCommonHudView>(
+                FindObjectsInactive.Include);
             ResolveAndDisableProduction();
             CreateRuntimePresentation();
             _session = new TagChaseSoloSession();
@@ -107,6 +110,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void OnDestroy()
         {
+            _commonHud?.SetTaggerAimVisible(false);
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             if (_runtimeRoot != null)
@@ -242,57 +246,18 @@ namespace MazeParty.Dev.MinigameSoloTest
                     Quaternion.Euler(_viewPitch, _viewYaw, 0f));
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
+                _commonHud?.SetTaggerAimVisible(
+                    _session.Phase == TagChaseSoloPhase.Running);
                 return;
             }
-
-            var count = 0;
-            var center = Vector3.zero;
-            for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
-            {
-                if (_session.IsTagger(slot) || _session.IsCaught(slot))
-                {
-                    continue;
-                }
-                var position = _session.GetPlayerPosition(slot);
-                center += new Vector3(position.x, 0f, position.y);
-                count++;
-            }
-            center = count > 0
-                ? center / count
-                : new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    0f,
-                    0f);
-
-            var radius = 0f;
-            for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
-            {
-                if (_session.IsTagger(slot) || _session.IsCaught(slot))
-                {
-                    continue;
-                }
-                var position = _session.GetPlayerPosition(slot);
-                radius = Mathf.Max(
-                    radius,
-                    Vector2.Distance(
-                        new Vector2(center.x, center.z),
-                        position));
-            }
-
-            var cameraPosition =
-                center + new Vector3(
-                    0f,
-                    6.5f + radius * 0.45f,
-                    -8f - radius * 0.85f);
             _runtimeCamera.fieldOfView =
                 TagChaseNetworkView.SharedFieldOfView;
             _runtimeCamera.transform.SetPositionAndRotation(
-                cameraPosition,
-                Quaternion.LookRotation(
-                    center + Vector3.up * 0.8f - cameraPosition,
-                    Vector3.up));
+                TagChaseNetworkView.InitialSharedCameraPosition,
+                TagChaseNetworkView.InitialSharedCameraRotation);
             Cursor.lockState = CursorLockMode.Confined;
             Cursor.visible = true;
+            _commonHud?.SetTaggerAimVisible(false);
         }
 
         private void RefreshHud(bool localIsTagger)

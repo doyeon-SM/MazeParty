@@ -24,12 +24,13 @@ namespace MazeParty.Gameplay
     public sealed class BoardGate : MonoBehaviour
     {
         public const float MinimumTraversalRadius = 0.5f;
+        public const float DefaultWidth = 4f;
 
         private const float CorridorEpsilon = 0.001f;
 
         [SerializeField] private BoardTile source;
         [SerializeField] private BoardTile destination;
-        [SerializeField, Min(0.1f)] private float gateWidth = 2.5f;
+        [SerializeField, Min(0.1f)] private float gateWidth = DefaultWidth;
         [SerializeField, Min(0f)] private float crossingEpsilon = 0.001f;
         [SerializeField] private bool drawDebugBoundary = true;
 
@@ -43,7 +44,7 @@ namespace MazeParty.Gameplay
         public void Configure(
             BoardTile sourceTile,
             BoardTile destinationTile,
-            float width = 2.5f)
+            float width = DefaultWidth)
         {
             source = sourceTile;
             destination = destinationTile;

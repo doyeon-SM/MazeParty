@@ -215,7 +215,7 @@ namespace MazeParty.Editor
             var controller = player.AddComponent<CharacterController>();
             controller.center = Vector3.zero;
             controller.height = 2f;
-            controller.radius = 0.45f;
+            controller.radius = PlayerAvatarVisual.MovementControllerRadius;
             controller.skinWidth = 0.05f;
             controller.stepOffset = 0.3f;
             player.AddComponent<PlayerAvatarVisual>();

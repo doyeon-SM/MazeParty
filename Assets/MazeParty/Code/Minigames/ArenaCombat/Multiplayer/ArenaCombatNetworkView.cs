@@ -42,6 +42,15 @@ namespace MazeParty.Multiplayer
         public GameObject ArenaPresentation => arenaPresentation;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
 
+        public static Vector3 SharedSpectatorCenter =>
+            new Vector3(ArenaCenterX, 0f, 0f);
+
+        public static Vector3 SharedSpectatorCameraPosition =>
+            CalculateSpectatorCameraPosition(SharedSpectatorCenter);
+
+        public static Quaternion SharedSpectatorCameraRotation =>
+            CalculateSpectatorCameraRotation(SharedSpectatorCenter);
+
         public static Vector3 CalculateSpectatorCameraPosition(
             Vector3 center)
         {
@@ -142,7 +151,7 @@ namespace MazeParty.Multiplayer
             }
             else
             {
-                RefreshSpectatorCamera(match, showingCountdown);
+                RefreshStaticSpectatorCamera();
                 Cursor.lockState = CursorLockMode.Confined;
                 Cursor.visible = true;
             }
@@ -217,58 +226,6 @@ namespace MazeParty.Multiplayer
                 eye.rotation);
         }
 
-        private void RefreshSpectatorCamera(
-            NetworkMatchState match,
-            bool showingCountdown)
-        {
-            if (spectatorCamera == null)
-            {
-                return;
-            }
-
-            // The pre-start overview deliberately includes the owner so the
-            // shared two-second white outline remains visible. After a death,
-            // follow the living group without leaking hidden health values.
-            var center = new Vector3(ArenaCenterX, 0f, 0f);
-            if (!showingCountdown)
-            {
-                var sum = Vector3.zero;
-                var count = 0;
-                for (var slot = 0; slot < 4; slot++)
-                {
-                    if (state.IsEliminated(slot))
-                    {
-                        continue;
-                    }
-
-                    var avatar = match.GetAvatarForSlot(slot);
-                    if (avatar == null)
-                    {
-                        continue;
-                    }
-
-                    sum += avatar.transform.position;
-                    count++;
-                }
-
-                if (count > 0)
-                {
-                    center = sum / count;
-                    center.y = 0f;
-                }
-            }
-
-            center.x = Mathf.Clamp(
-                center.x,
-                ArenaCenterX - 3f,
-                ArenaCenterX + 3f);
-            center.z = Mathf.Clamp(center.z, -3f, 3f);
-            var cameraPosition = CalculateSpectatorCameraPosition(center);
-            spectatorCamera.ForceCameraPosition(
-                cameraPosition,
-                CalculateSpectatorCameraRotation(center));
-        }
-
         private void RefreshStaticSpectatorCamera()
         {
             if (spectatorCamera == null)
@@ -276,11 +233,9 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var center = new Vector3(ArenaCenterX, 0f, 0f);
-            var cameraPosition = CalculateSpectatorCameraPosition(center);
             spectatorCamera.ForceCameraPosition(
-                cameraPosition,
-                CalculateSpectatorCameraRotation(center));
+                SharedSpectatorCameraPosition,
+                SharedSpectatorCameraRotation);
         }
 
         private void RefreshHitVfx(NetworkMatchState match)

@@ -76,15 +76,9 @@ namespace MazeParty.Editor
                     "TagChaseWall",
                     new Color(0.22f, 0.28f, 0.34f),
                     0.25f);
-            var obstacleMaterial =
-                CreateOrLoadMaterial(
-                    "TagChaseObstacle",
-                    new Color(0.58f, 0.13f, 0.18f),
-                    0.2f);
             BuildScene(
                 floorMaterial,
-                wallMaterial,
-                obstacleMaterial);
+                wallMaterial);
             MinigameVfxProjectSetup.InstallScene(
                 TagChaseScenePath);
             AssetDatabase.SaveAssets();
@@ -92,8 +86,7 @@ namespace MazeParty.Editor
 
         private static void BuildScene(
             Material floorMaterial,
-            Material wallMaterial,
-            Material obstacleMaterial)
+            Material wallMaterial)
         {
             var previousActive =
                 SceneManager.GetActiveScene();
@@ -143,8 +136,7 @@ namespace MazeParty.Editor
             CreateArena(
                 arenaPresentation.transform,
                 floorMaterial,
-                wallMaterial,
-                obstacleMaterial);
+                wallMaterial);
             CreateLighting(
                 arenaPresentation.transform);
             var sharedCamera =
@@ -221,8 +213,7 @@ namespace MazeParty.Editor
         private static void CreateArena(
             Transform parent,
             Material floorMaterial,
-            Material wallMaterial,
-            Material obstacleMaterial)
+            Material wallMaterial)
         {
             CreateAuthorityColliders(parent);
             MinigameCorePrefabUtility.InstantiateOrSeed(
@@ -232,36 +223,6 @@ namespace MazeParty.Editor
                     floorMaterial,
                     wallMaterial),
                 "Tag Chase Environment");
-
-            for (var index = 0; index < NetworkTagChaseState.ObstacleCount; index++)
-            {
-                var obstacle =
-                    NetworkTagChaseState
-                        .GetObstacleRect(index);
-                var sightBlocker = CreatePrimitive(
-                    "Sight Blocker " + (index + 1),
-                    PrimitiveType.Cube,
-                    parent,
-                    new Vector3(
-                        obstacle.center.x,
-                        1.65f,
-                        obstacle.center.y),
-                    new Vector3(
-                        obstacle.width,
-                        3.3f,
-                        obstacle.height),
-                    obstacleMaterial,
-                    true);
-                sightBlocker = MinigameCorePrefabUtility.Connect(
-                    sightBlocker,
-                    SightBlockerPrefabFolder + "/SightBlocker" +
-                    (index + 1) + ".prefab");
-                if (sightBlocker.GetComponent<Collider>() == null)
-                {
-                    throw new InvalidOperationException(
-                        "Tag Chase sight blocker prefabs must retain a collider.");
-                }
-            }
 
             CreateSpawnMarker(
                 "Tagger Start",
@@ -637,18 +598,6 @@ namespace MazeParty.Editor
                     "Generated Tag Chase scene is missing its network " +
                     "state, arena, two cameras, light or art anchors; " +
                     "it must not contain a dedicated Canvas.");
-            }
-
-            for (var index = 0; index < 4; index++)
-            {
-                if (FindDescendant(
-                        root.transform,
-                        "Sight Blocker " + (index + 1)) == null)
-                {
-                    throw new InvalidOperationException(
-                        "Generated Tag Chase scene is missing a " +
-                        "logical sight blocker.");
-                }
             }
 
         }

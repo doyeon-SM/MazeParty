@@ -50,6 +50,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
         private readonly Text[] _playerRows = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerCards = new Image[BoardFlowStateMachine.RequiredPlayerCount];
+        private readonly Slider[] _playerHealthSliders =
+            new Slider[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Image[] _playerHealthFills = new Image[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerHealthTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
         private readonly Text[] _playerKeyTexts = new Text[BoardFlowStateMachine.RequiredPlayerCount];
@@ -180,6 +182,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private readonly Collider[] _standingClearanceHits = new Collider[16];
         private readonly FootstepCadenceTracker _localFootstepCadence =
             new FootstepCadenceTracker();
+        private float _verticalVelocity;
 
         public void Configure(
             CharacterController localPlayer,
@@ -348,6 +351,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
             HandleEditorPointerToggle();
             HandleInput();
+            ApplyPlayerGrounding(unscaledDeltaTime);
             PreserveLocalWorldDieTimersDuringPause(
                 worldDieTimersWereSuspended,
                 unscaledDeltaTime);
@@ -886,7 +890,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             var correction = clampedCenter - center;
             if (correction.sqrMagnitude > 0.000001f)
             {
-                Teleport(player.transform.position + correction);
+                Teleport(player.transform.position + correction, false);
             }
         }
 
@@ -3217,9 +3221,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     ? _combatHealth[playerIndex]
                     : _currentHealth[playerIndex];
                 var healthRatio = Mathf.Clamp01(shownHealth / (float)maxHealth);
+                if (_playerHealthSliders[playerIndex] != null)
+                {
+                    _playerHealthSliders[playerIndex].SetValueWithoutNotify(
+                        healthRatio);
+                }
+
                 if (_playerHealthFills[playerIndex] != null)
                 {
-                    _playerHealthFills[playerIndex].fillAmount = healthRatio;
                     _playerHealthFills[playerIndex].color = healthRatio > 0.5f
                         ? boardUiBindings.HealthyHealthColor
                         : healthRatio > 0.25f
@@ -3337,6 +3346,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             CopyReferences(boardUiBindings.ItemChoiceLabels, _choiceLabels);
             CopyReferences(boardUiBindings.PlayerRows, _playerRows);
             CopyReferences(boardUiBindings.PlayerCards, _playerCards);
+            CopyReferences(
+                boardUiBindings.PlayerHealthSliders,
+                _playerHealthSliders);
             CopyReferences(
                 boardUiBindings.PlayerHealthFills,
                 _playerHealthFills);
@@ -3491,7 +3503,25 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             return true;
         }
 
-        private void Teleport(Vector3 target)
+        private void ApplyPlayerGrounding(float deltaTime)
+        {
+            if (_paused || _keyShopRevealActive || player == null ||
+                !player.enabled || !player.gameObject.activeInHierarchy ||
+                deltaTime <= 0f)
+            {
+                return;
+            }
+
+            _verticalVelocity = PlayerGroundingRules.AdvanceVerticalVelocity(
+                _verticalVelocity,
+                player.isGrounded,
+                deltaTime);
+            player.Move(Vector3.up * (_verticalVelocity * deltaTime));
+        }
+
+        private void Teleport(
+            Vector3 target,
+            bool resetVerticalVelocity = true)
         {
             var wasEnabled = player.enabled;
             if (wasEnabled)
@@ -3499,6 +3529,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 player.enabled = false;
             }
             player.transform.position = target;
+            if (resetVerticalVelocity)
+            {
+                _verticalVelocity = 0f;
+            }
             if (wasEnabled)
             {
                 player.enabled = true;

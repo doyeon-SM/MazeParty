@@ -121,6 +121,19 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(cameras, Has.Length.EqualTo(1));
                 Assert.That(cameras[0].name,
                     Is.EqualTo("CM_BombPassingShared"));
+                Assert.That(Vector3.Distance(
+                        cameras[0].transform.position,
+                        BombPassingNetworkView.SharedCameraPosition),
+                    Is.LessThan(0.001f));
+                Assert.That(Quaternion.Angle(
+                        cameras[0].transform.rotation,
+                        BombPassingNetworkView.SharedCameraRotation),
+                    Is.LessThan(0.01f));
+                Assert.That(GetLensValue(
+                        cameras[0],
+                        "OrthographicSize"),
+                    Is.EqualTo(BombPassingNetworkView
+                        .SharedCameraOrthographicSize).Within(0.001f));
                 Assert.That(roots.SelectMany(root =>
                     root.GetComponentsInChildren<Camera>(true)), Is.Empty);
                 Assert.That(roots.SelectMany(root =>
@@ -156,59 +169,17 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void ExplosionShake_IsDeterministicReducedAndReturnsToExactAuthoredPose()
+        private static float GetLensValue(
+            Component camera,
+            string fieldName)
         {
-            const uint sequence = 17U;
-            const float elapsed = 0.25f;
-            BombPassingNetworkView.ResolveExplosionCameraPose(
-                sequence, elapsed, 1f,
-                out var fullPosition, out var fullRotation);
-            BombPassingNetworkView.ResolveExplosionCameraPose(
-                sequence, elapsed, 1f,
-                out var repeatedPosition, out var repeatedRotation);
-            PresentationAccessibility.Apply(true, false);
-            Vector3 reducedPosition;
-            Quaternion reducedRotation;
-            try
-            {
-                BombPassingNetworkView.ResolveExplosionCameraPose(
-                    sequence, elapsed,
-                    PresentationAccessibility.ScreenShakeScale,
-                    out reducedPosition, out reducedRotation);
-            }
-            finally
-            {
-                PresentationAccessibility.Apply(false, false);
-            }
-            BombPassingNetworkView.ResolveExplosionCameraPose(
-                sequence, 1f, 1f,
-                out var finishedPosition, out var finishedRotation);
-
-            Assert.That(repeatedPosition, Is.EqualTo(fullPosition));
-            Assert.That(repeatedRotation, Is.EqualTo(fullRotation));
-            Assert.That(fullPosition,
-                Is.Not.EqualTo(BombPassingNetworkView.SharedCameraPosition));
-            var fullOffset =
-                fullPosition - BombPassingNetworkView.SharedCameraPosition;
-            var reducedOffset =
-                reducedPosition - BombPassingNetworkView.SharedCameraPosition;
-            Assert.That(reducedOffset.x,
-                Is.EqualTo(
-                    fullOffset.x *
-                    PresentationAccessibility.ReducedScreenShakeScale)
-                .Within(0.001f));
-            Assert.That(reducedOffset.z,
-                Is.EqualTo(
-                    fullOffset.z *
-                    PresentationAccessibility.ReducedScreenShakeScale)
-                .Within(0.001f));
-            Assert.That(reducedRotation,
-                Is.EqualTo(BombPassingNetworkView.SharedCameraRotation));
-            Assert.That(finishedPosition,
-                Is.EqualTo(BombPassingNetworkView.SharedCameraPosition));
-            Assert.That(finishedRotation,
-                Is.EqualTo(BombPassingNetworkView.SharedCameraRotation));
+            var lensField = camera.GetType().GetField("Lens");
+            Assert.That(lensField, Is.Not.Null);
+            var lens = lensField.GetValue(camera);
+            Assert.That(lens, Is.Not.Null);
+            var field = lens.GetType().GetField(fieldName);
+            Assert.That(field, Is.Not.Null);
+            return (float)field.GetValue(lens);
         }
 
         private static Transform FindDescendant(Transform root, string name)

@@ -53,6 +53,25 @@
 - `BoardCanvas.prefab`은 사용자가 조정한 현재 배치를 유지한다. 삭제된 Players·Inventory
   제목과 인벤토리 슬롯 라벨은 런타임 바인딩에서도 제거하며, 각 플레이어 카드의 Key와
   Gold는 `Assets/Ignore/Icon_NCI`의 아이콘 뒤에 숫자 텍스트를 두는 구성으로 표시한다.
+- 네 플레이어 카드의 체력은 기존 Bar·Fill·Text 배치를 유지한 표시 전용 `Slider`로
+  구성한다. 채움은 좌측에서 우측으로 진행하고 런타임은 값·상태색·텍스트만 갱신하며,
+  외곽선·상단 하이라이트·구간 눈금은 `BoardCanvas.prefab`에 직접 제작한다.
+- 술래잡기 술래의 1인칭 화면에는 공용 `MinigameCommonHud.prefab`에 authored된 중앙
+  `Tagger Aim`을 표시한다. 에임은 입력을 막지 않으며 술래의 실제 Running 단계에서만
+  켜고 카운트다운·일시정지·도망자 화면에서는 숨긴다.
+
+### 빌드 버전 및 방 접속
+
+- 현재 기획 버전은 `v0.52`이며 Unity `PlayerSettings.bundleVersion`은 접두사 없는
+  `0.52`로 관리한다. 런타임의 단일 버전 출처는 `Application.version`이다.
+- `LobbyCanvas.prefab` 왼쪽 아래에는 `v` 접두사를 붙인 현재 빌드 버전을 표시한다.
+  버전 라벨은 프리팹에 authored하고 런타임은 표시 문자열만 갱신한다.
+- 방 생성 시 현재 버전을 MPS 세션 속성과 NGO connection payload에 함께 기록한다.
+  참가·재접속은 호스트와 정확히 같은 버전만 승인하며 누락·공백·접미사 차이도 거부한다.
+  NGO 승인 검사를 플레이어 생성 전에 수행하고 기존 MPS 세션 속성 검사는 2차 방어로 유지한다.
+- 승인 거절된 pending client의 disconnect는 실제 참가자 이탈로 처리하지 않는다. 따라서
+  잘못된 버전의 접속 시도가 진행 중 경기의 재접속 일시정지나 로비 좌석 정리를 일으키지 않는다.
+- 서로 호환되지 않는 변경을 배포할 때는 기획 버전과 `bundleVersion`을 함께 올린다.
 
 ### 로비 프레젠테이션과 맵 선택
 
@@ -64,6 +83,9 @@
   지시한 현재 상태이며, 관련 EditMode 계약 2건은 알려진 비차단 예외다.
 - 플레이어 장막은 대기방에서 표시와 판정을 모두 끄고 보드 단계부터 활성화한다. 남은
   보드 상태와 관계없이 세션 단계가 대기방이면 서버와 클라이언트 모두 즉시 제거한다.
+- `OnlineBootstrap`의 남쪽 철문 조각은 최상위 씬 오브젝트로 두지 않고
+  `LobbyArena/Presentation` 하위에 둔다. 로비 외벽은 유지하되 보드가 additive 로드될 때
+  다른 대기실 프레젠테이션과 함께 표시·충돌이 꺼져 보드에 남지 않게 한다.
 - 준비 영역에는 현재 보드 맵의 현지화된 이름을 항상 표시한다. 호스트만 프로덕션
   `BoardMapCatalog.Maps` 순서로 맵을 순환 선택하고, 다른 플레이어는 동기화된 이름만 본다.
 - 맵 표시 이름은 영어 `Forest`·`Maze`, 한국어 `숲`·`미로`, 일본어 `森`·`迷路`,
@@ -77,6 +99,23 @@
 - 기존 손 앵커, 주먹 애니메이션, 독립 SphereCollider 히트박스와 직렬화 바인딩을 유지하며
   SimpleHands 모델에는 Collider를 추가하지 않는다.
 - 제스처 또는 손에 든 아이템이 활성화되면 기본 주먹을 숨긴다.
+
+### 플레이어 충돌·피격 영역
+
+- 이동과 장애물 차단에는 플레이어 루트의 `CharacterController` 하나만 사용한다.
+  반경은 몸 시각에 맞춘 `0.42m`이며 기존 높이·중심·앉기 전환은 접지 안정성을 위해
+  유지한다.
+- 몸·머리·왼손·오른손의 네 `PlayerHitZone` Collider는 모두 trigger로 유지해 피격에만
+  사용한다. 손·머리 Collider와 장착 장식은 이동을 막거나 장애물에 걸리지 않는다.
+
+### 보드 플레이어 접지
+
+- 보드 플레이어는 점프 없이 `CharacterController`를 사용한다. 전역 일시정지를 제외하고
+  입력이 없거나 단계상 이동 입력이 잠긴 상태에서도 서버가 매 물리 틱 중력 `-24`와 접지
+  유지 속도 `-2`를 적용해, 언덕·장식·밀림으로 높아진 Y 위치가 공중에 고정되지 않고 충돌
+  지면으로 자연스럽게 내려오게 한다.
+- BoardFlowTestbed도 같은 접지 규칙을 사용한다. 복구·스왑·리스폰 텔레포트는 수직 속도를
+  초기화하되 수평 경계 보정은 진행 중인 낙하 속도를 보존한다.
 
 ### Forest Graybox
 
@@ -104,6 +143,8 @@
 - `ForestGrayboxMapRoot.prefab`의 현재 Terrain 조형·식생과 `Environment` 오브젝트 배치는
   사용자가 완료하고 저장한 최종 authored 디자인이다. 사용자가 다시 요청하기 전에는
   setup·authoring 도구로 이를 재생성·정규화하거나 덮어쓰지 않는다.
+- 칸 사이 논리 통로 폭은 공용 `BoardGate.DefaultWidth=4m`를 사용한다. Forest의 49개와
+  Maze의 80개 authored gate 및 새 맵 authoring 기본값을 모두 같은 폭으로 유지한다.
 
 ### 보드 상점
 
@@ -194,12 +235,11 @@
 - Wrong Way는 기존 Lane/Step anchor, 플레이 좌표, 씬 환경 디자인을 유지한다. 네 Lane의
   `Step 01~50`에 ToyBox `BasicBlock` 12종을 충돌 없는 nested visual로 결정론적으로 섞고,
   Standard 셰이더 원본은 Ignore 원본을 수정하지 않은 URP/Lit 파생 재질로 표시한다.
-- 2026-10-07 Board UI·Sequence Memory 오디오 표적 EditMode 계약은 8/8 통과했다.
-  전체 EditMode는 450개 중 442개 통과했다. 남은 8개는 현재 최종 디자인과 옛 계약이
-  충돌하는 Forest TerrainCollider, BombPassing 환경 Collider, MinigameResultCanvas,
-  공용 에셋의 옛 Bomb mesh 기대, TagChase 씬, OnlineBootstrap의 LobbyCanvas 활성 override,
-  MinigameCommonHud 루트 scale, Wrong Way 화살표 원본 경로 계약이며 이번 작업 범위에서는
-  해당 디자인을 되돌리지 않았다.
+- 2026-10-08 전체 EditMode는 457개 중 450개가 통과했다. 이번 Tag Chase 충돌·카메라,
+  공통 HUD 에임, 플레이어 충돌 캡슐, 보드 통로 폭, 빌드 버전 접속 계약은 모두 통과했다. 남은 7개는
+  현재 authored 상태와 옛 계약이 충돌하는 Forest TerrainCollider, Bomb Passing 환경
+  Collider, MinigameResultCanvas, 공용 에셋의 옛 Bomb mesh 기대, OnlineBootstrap의
+  LobbyCanvas 활성 override, BoardCanvas 루트 scale, Wrong Way 화살표 원본 경로다.
 
 - 게임은 항상 4인 구조이며 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다.
 - Tag Chase·Race·Bomb Passing·Snowy Spin·Cliff Barrage는 공통 HUD만, Arena Combat은
@@ -224,11 +264,20 @@
   `SharedCameraFraming`의 정탑 기준 35°를 사용한다. Arena는 높이 12m·FOV 58,
   보드 격투는 높이 10m·FOV 55이며 뒤쪽 거리는 35°에서 자동 계산한다. 살아 있는
   격투 참가자는 기존 1인칭 시점을 유지한다.
+- 여러 참가자가 함께 보는 공용 카메라는 플레이 중 위치·회전·줌을 바꾸지 않는다.
+  Tag Chase 도망자 카메라와 Arena Combat 관전 카메라는 각 경기장 중앙의 시작 포즈에
+  고정하고, Bomb Passing은 폭발 VFX·조명은 유지하되 카메라 shake를 사용하지 않는다.
+  기존 공용 카메라들도 authored 포즈와 lens에서 런타임 reframe을 하지 않는다. Race·Minefield·
+  Wrong Way처럼 로컬 플레이어를 따라가는 개인 카메라는 이 고정 규칙에서 제외한다.
 
 ### 미니게임 시각 피드백
 
 - 15종의 플레이어 스폰 표시는 숨긴다. Board 단계에서는 Lobby 프레젠테이션을
   비활성화하며 Bomb Passing은 중앙 블록만 숨기고 소환 링은 유지한다.
+- Tag Chase 서버·Solo 이동 충돌은 기존 네 개의 보이지 않는 임시 사각형 대신 authored
+  환경의 내부 벽 16개와 기둥 14개의 XZ bounds를 사용한다. 외곽 경계는 기존 arena clamp를
+  유지하며, 환경 프리팹과 결정론적 collision layout의 30개 bounds 일치를 EditMode에서
+  검증한다.
 - Sequence Memory의 A/S/D는 도/미/솔에 대응한다. `Assets/Resources/sound/- Bell 7.mp3`를
   공용 사운드 큐로 등록하고 원음 G5를 각각 0.6674199·0.8408964·1.0배 피치로 재생한다.
   Snowy Spin 중앙 원, Bouncing Balls 중앙 원은 시각적으로 숨긴다.
@@ -249,6 +298,9 @@
 
 ## 현재 검증 상태
 
+- 2026-10-08 Unity 컴파일 오류는 0건이다. 빌드 버전 payload·거절 상태·로비 프리팹·
+  `OnlineBootstrap` 연결 승인 표적 계약은 4/4 통과했다. 전체 EditMode는 457개 중
+  450개 통과·7개 기존 authored 계약 불일치이며 이번 변경으로 새로 남은 실패는 없다.
 - 2026-10-06 기준 Unity 컴파일 오류는 0건이며 Windows Development Mono x64 빌드가
   성공했다. 전체 EditMode 445개 중 443개가 통과했다. 남은 2개는 사용자가 보존한
   `LobbyCanvas.prefab` 비표시와 `OnlineBootstrap` 활성 override를 검사하는 알려진 예외다.

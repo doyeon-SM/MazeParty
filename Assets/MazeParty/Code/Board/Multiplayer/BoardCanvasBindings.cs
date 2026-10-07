@@ -66,6 +66,7 @@ namespace MazeParty.Multiplayer
 
             public Text[] PlayerRows;
             public Image[] PlayerCards;
+            public Slider[] PlayerHealthSliders;
             public Image[] PlayerHealthFills;
             public Text[] PlayerHealthTexts;
             public RawImage[] PlayerKeyIcons;
@@ -188,6 +189,7 @@ namespace MazeParty.Multiplayer
             references.ShopOfferHovers;
         public Text[] PlayerRows => references.PlayerRows;
         public Image[] PlayerCards => references.PlayerCards;
+        public Slider[] PlayerHealthSliders => references.PlayerHealthSliders;
         public Image[] PlayerHealthFills => references.PlayerHealthFills;
         public Text[] PlayerHealthTexts => references.PlayerHealthTexts;
         public RawImage[] PlayerKeyIcons => references.PlayerKeyIcons;
@@ -264,6 +266,7 @@ namespace MazeParty.Multiplayer
             HasArray(references.ShopOfferHovers, ItemShopRules.OfferCount) &&
             HasArray(references.PlayerRows, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerCards, MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerHealthSliders, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerHealthFills, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerHealthTexts, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerKeyIcons, MultiplayerConstants.MaxPlayers) &&

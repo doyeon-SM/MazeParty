@@ -23,7 +23,7 @@ namespace MazeParty.Editor
         internal const int TileCount = 42;
 
         private const string TilePrefabFolder = "Assets/MazeParty/Prefabs/Board/World";
-        private const float GateWidth = 2.5f;
+        private const float GateWidth = BoardGate.DefaultWidth;
         private const float SpawnHeight = 1f;
         private const float RequiredSafeInset = 0.52f;
 

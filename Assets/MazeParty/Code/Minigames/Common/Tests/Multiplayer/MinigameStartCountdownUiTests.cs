@@ -32,6 +32,14 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(common.RootCanvas, Is.SameAs(canvas));
             Assert.That(common.TimerDial, Is.Not.Null);
             Assert.That(common.RoundText, Is.Not.Null);
+            Assert.That(common.TaggerAimRoot, Is.Not.Null);
+            Assert.That(common.TaggerAimRoot.transform.IsChildOf(
+                prefab.transform), Is.True);
+            var aimGraphics = common.TaggerAimRoot
+                .GetComponentsInChildren<Graphic>(true);
+            Assert.That(aimGraphics, Is.Not.Empty);
+            Assert.That(aimGraphics.All(graphic => !graphic.raycastTarget),
+                Is.True);
             Assert.That(canvas, Is.Not.Null);
             Assert.That(canvas.renderMode, Is.EqualTo(RenderMode.ScreenSpaceOverlay));
             Assert.That(canvas.sortingOrder, Is.GreaterThanOrEqualTo(500));
@@ -43,8 +51,15 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 var runtimeView = instance.GetComponent<MinigameStartCountdownView>();
+                var runtimeCommon = instance.GetComponent<
+                    MinigameCommonHudView>();
                 var runtimeNumeral = instance.GetComponentsInChildren<Text>(true)
                     .Single(text => text.gameObject.name == "Numeral");
+                Assert.That(runtimeCommon.TaggerAimRoot.activeSelf, Is.False);
+                runtimeCommon.SetTaggerAimVisible(true);
+                Assert.That(runtimeCommon.TaggerAimRoot.activeSelf, Is.True);
+                runtimeCommon.SetTaggerAimVisible(false);
+                Assert.That(runtimeCommon.TaggerAimRoot.activeSelf, Is.False);
                 runtimeView.SetCountdown(3, true);
                 Assert.That(runtimeView.IsVisible, Is.True);
                 Assert.That(runtimeNumeral.text, Is.EqualTo("3"));
@@ -85,6 +100,10 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(views, Has.Length.EqualTo(1));
                 var view = views[0];
                 Assert.That(view.transform.parent, Is.Null);
+                Assert.That(
+                    view.transform.localScale,
+                    Is.EqualTo(Vector3.one),
+                    "The standalone HUD must not retain a zero-scale scene override.");
                 Assert.That(view.HasRequiredReferences, Is.True);
                 Assert.That(view.GetComponent<MinigameCommonHudView>()
                     .HasRequiredReferences, Is.True);

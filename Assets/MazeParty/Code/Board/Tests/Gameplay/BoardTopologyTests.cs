@@ -140,6 +140,7 @@ namespace MazeParty.Gameplay.Tests
             destination.gameObject.AddComponent<BoardTileFootprint>().Configure(
                 SquareFootprint(2f));
             var gate = CreateGate(source, destination);
+            gate.Configure(source, destination, 2.5f);
             var topology = CreateTopology(source, destination, gate);
 
             var validation = topology.ValidateTopology();
