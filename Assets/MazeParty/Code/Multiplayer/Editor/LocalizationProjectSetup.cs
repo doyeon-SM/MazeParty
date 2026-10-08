@@ -234,14 +234,24 @@ namespace MazeParty.Editor
                     "Localized font does not use TrueTypeFontImporter: " + path);
             }
 
-            if (importer.fontReferences != null &&
-                importer.fontReferences.SequenceEqual(fallbacks))
+            var changed = false;
+            if (importer.fontReferences == null ||
+                !importer.fontReferences.SequenceEqual(fallbacks))
             {
-                return;
+                importer.fontReferences = fallbacks;
+                changed = true;
             }
 
-            importer.fontReferences = fallbacks;
-            importer.SaveAndReimport();
+            if (importer.fontRenderingMode != FontRenderingMode.HintedSmooth)
+            {
+                importer.fontRenderingMode = FontRenderingMode.HintedSmooth;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
         }
 
         private static HashSet<Object> CollectReferencedObjects(GameObject root)

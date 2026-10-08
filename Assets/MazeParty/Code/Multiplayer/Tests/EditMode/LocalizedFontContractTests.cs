@@ -72,6 +72,21 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void LanguageFonts_UseHintedSmoothRendering()
+        {
+            foreach (var assetPath in ExpectedAssetPaths.Values.Distinct())
+            {
+                var importer =
+                    AssetImporter.GetAtPath(assetPath) as TrueTypeFontImporter;
+                Assert.That(importer, Is.Not.Null, assetPath);
+                Assert.That(
+                    importer.fontRenderingMode,
+                    Is.EqualTo(FontRenderingMode.HintedSmooth),
+                    assetPath);
+            }
+        }
+
+        [Test]
         public void FontScope_AppliesUiTextAndTextMeshMaterialForCurrentLanguage()
         {
             var root = new GameObject("Font Scope");

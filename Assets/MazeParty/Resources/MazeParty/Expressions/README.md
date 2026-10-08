@@ -34,6 +34,20 @@ T를 누른 채 마우스를 끌고 T를 놓으면 발동합니다. 중앙에서
 아이템 장착·사망·격투·미니게임·위치변환 시전·전역 정지 중에는 사용할 수 없습니다.
 연타로 지속시간을 늘릴 수 없고 은신 시 상대에게 손을 노출하지 않습니다.
 
+## 손 각도 조절
+
+1. `Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab`을
+   Prefab Mode로 엽니다.
+2. 루트 `PlayerAvatarPresentation`을 선택하고 Inspector에서
+   `Player Avatar Presentation Bindings > Hand Emote Rotations`를 펼칩니다.
+3. 원하는 감정표현에서 `World Left/Right Euler`는 다른 플레이어에게 보이는 손,
+   `First Person Left/Right Euler`는 본인 1인칭 손의 XYZ 각도를 조절합니다.
+4. 인사의 `Greeting Wave Degrees`는 오른손을 흔드는 폭이며 기본값은 22도입니다.
+   Edit Mode에서 5~10도씩 조절하고 저장한 뒤 Play Mode에서 확인합니다.
+
+손 Anchor Transform을 직접 회전하면 런타임 포즈 갱신에 덮어씌워지므로 위 설정을
+사용합니다. 이 설정은 손 전체 방향만 바꾸며 손가락 관절 모양은 변경하지 않습니다.
+
 `MazeParty/Player/Upgrade Expressions`는 정확히 일치하는 기존 4종 표정 카탈로그 또는
 FREE/유료 팩의 3개 얼굴·3개 모자 카탈로그만 유료 팩의 15개 얼굴·30개 모자로 한 번 이전한다.
 기존 3칸 휠은 8칸 구조로 한 번 이전하고, 완성된 8칸 휠과 선택 바인딩은 다시 만들지 않습니다.

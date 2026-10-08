@@ -1379,6 +1379,49 @@ MonoBehaviour:
   firstPersonRightHand: {fileID: 5240730252211661689}
   firstPersonItemRoot: {fileID: 6495760615208276344}
   firstPersonGestureRoot: {fileID: 8043166058105758192}
+  handEmoteRotations:
+    schemaVersion: 1
+    greeting:
+      worldLeftEuler: {x: 0, y: 0, z: 0}
+      worldRightEuler: {x: 0, y: 0, z: 0}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
+      firstPersonRightEuler: {x: 0, y: 0, z: 0}
+    greetingWaveDegrees: 22
+    salute:
+      worldLeftEuler: {x: 0, y: 0, z: 0}
+      worldRightEuler: {x: 0, y: 0, z: -32}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
+      firstPersonRightEuler: {x: 0, y: 0, z: -32}
+    insult:
+      worldLeftEuler: {x: 0, y: 0, z: 0}
+      worldRightEuler: {x: 0, y: 0, z: 0}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
+      firstPersonRightEuler: {x: 0, y: 0, z: 0}
+    heart:
+      worldLeftEuler: {x: 0, y: 0, z: -42}
+      worldRightEuler: {x: 0, y: 0, z: 42}
+      firstPersonLeftEuler: {x: 0, y: 0, z: -42}
+      firstPersonRightEuler: {x: 0, y: 0, z: 42}
+    surprise:
+      worldLeftEuler: {x: 0, y: 0, z: 18}
+      worldRightEuler: {x: 0, y: 0, z: -18}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 18}
+      firstPersonRightEuler: {x: 0, y: 0, z: -18}
+    surrender:
+      worldLeftEuler: {x: 0, y: 0, z: 10}
+      worldRightEuler: {x: 0, y: 0, z: -10}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 10}
+      firstPersonRightEuler: {x: 0, y: 0, z: -10}
+    pleading:
+      worldLeftEuler: {x: 0, y: 0, z: -82}
+      worldRightEuler: {x: 0, y: 0, z: 82}
+      firstPersonLeftEuler: {x: 0, y: 0, z: -82}
+      firstPersonRightEuler: {x: 0, y: 0, z: 82}
+    eyesCover:
+      worldLeftEuler: {x: 0, y: 0, z: 8}
+      worldRightEuler: {x: 0, y: 0, z: -8}
+      firstPersonLeftEuler: {x: 0, y: 0, z: 8}
+      firstPersonRightEuler: {x: 0, y: 0, z: -8}
   bodyHitbox: {fileID: 5860220839409240717}
   headHitbox: {fileID: 2216382201012399365}
   leftHandHitbox: {fileID: 2648129941403236258}

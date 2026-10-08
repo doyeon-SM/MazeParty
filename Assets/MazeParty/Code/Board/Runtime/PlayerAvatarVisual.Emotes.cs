@@ -112,6 +112,12 @@ namespace MazeParty.Gameplay
                 0f,
                 1f,
                 Mathf.Min(progress / 0.12f, (1f - progress) / 0.12f));
+            HandEmoteRotationPose authoredRotations = null;
+            var greetingWaveDegrees = 22f;
+            bindings?.TryGetHandEmoteRotation(
+                (HandEmoteId)_gesture,
+                out authoredRotations,
+                out greetingWaveDegrees);
             ApplyGestureToHands(
                 _leftHand,
                 _rightHand,
@@ -120,7 +126,9 @@ namespace MazeParty.Gameplay
                 false,
                 (HandEmoteId)_gesture,
                 progress,
-                blend);
+                blend,
+                authoredRotations,
+                greetingWaveDegrees);
             ApplyGestureToHands(
                 _firstPersonLeftHand,
                 _firstPersonRightHand,
@@ -129,7 +137,9 @@ namespace MazeParty.Gameplay
                 true,
                 (HandEmoteId)_gesture,
                 progress,
-                blend);
+                blend,
+                authoredRotations,
+                greetingWaveDegrees);
         }
 
         private static void ApplyGestureToHands(
@@ -140,7 +150,9 @@ namespace MazeParty.Gameplay
             bool firstPerson,
             HandEmoteId gesture,
             float progress,
-            float blend)
+            float blend,
+            HandEmoteRotationPose authoredRotations,
+            float greetingWaveDegrees)
         {
             if (left == null || right == null) return;
             var leftPosition = left.localPosition;
@@ -239,6 +251,23 @@ namespace MazeParty.Gameplay
                     leftFingerPose = HandFingerPose.OpenPalm;
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
+            }
+
+            if (authoredRotations != null)
+            {
+                var leftEuler = firstPerson
+                    ? authoredRotations.FirstPersonLeftEuler
+                    : authoredRotations.WorldLeftEuler;
+                var rightEuler = firstPerson
+                    ? authoredRotations.FirstPersonRightEuler
+                    : authoredRotations.WorldRightEuler;
+                if (gesture == HandEmoteId.Greeting)
+                {
+                    rightEuler.z += Mathf.Sin(
+                        progress * Mathf.PI * 4f) * greetingWaveDegrees;
+                }
+                leftRotation = Quaternion.Euler(leftEuler);
+                rightRotation = Quaternion.Euler(rightEuler);
             }
 
             left.localPosition = Vector3.Lerp(left.localPosition, leftPosition, blend);

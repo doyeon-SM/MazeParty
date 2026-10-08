@@ -103,6 +103,21 @@ namespace MazeParty.Editor
                 "Water Shield protection and round-location highlight bindings are ready.");
         }
 
+        [MenuItem("MazeParty/Multiplayer/Upgrade Hand Emote Rotations")]
+        public static void UpgradeHandEmoteRotations()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Hand emote rotation migration requires Edit Mode.");
+            }
+
+            UpgradePlayerPresentationHandEmoteRotations();
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Hand emote rotation settings are authored on the shared player presentation.");
+        }
+
         internal static GameObject LoadOrCreatePlayerPrefab()
         {
             var presentation = EnsurePlayerPresentationAssets();
@@ -221,6 +236,7 @@ namespace MazeParty.Editor
                 RepairPresentationHitZoneScripts();
                 UpgradePlayerPresentationLobbyNameplate();
                 UpgradePlayerPresentationShieldVfx(waterShield);
+                UpgradePlayerPresentationHandEmoteRotations();
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     PlayerPresentationPrefabPath);
             }
@@ -630,6 +646,35 @@ namespace MazeParty.Editor
                         root,
                         PlayerPresentationPrefabPath);
                 }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void UpgradePlayerPresentationHandEmoteRotations()
+        {
+            var root = PrefabUtility.LoadPrefabContents(
+                PlayerPresentationPrefabPath);
+            try
+            {
+                var bindings = root.GetComponent<
+                    PlayerAvatarPresentationBindings>();
+                if (bindings == null)
+                {
+                    throw new InvalidOperationException(
+                        "PlayerAvatarPresentation.prefab has no bindings.");
+                }
+
+                if (!bindings.EnsureHandEmoteRotationSettings())
+                {
+                    return;
+                }
+                EditorUtility.SetDirty(bindings);
+                PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    PlayerPresentationPrefabPath);
             }
             finally
             {

@@ -3,6 +3,124 @@ using UnityEngine;
 
 namespace MazeParty.Gameplay
 {
+    [Serializable]
+    public sealed class HandEmoteRotationPose
+    {
+        [SerializeField] private Vector3 worldLeftEuler;
+        [SerializeField] private Vector3 worldRightEuler;
+        [SerializeField] private Vector3 firstPersonLeftEuler;
+        [SerializeField] private Vector3 firstPersonRightEuler;
+
+        public Vector3 WorldLeftEuler => worldLeftEuler;
+        public Vector3 WorldRightEuler => worldRightEuler;
+        public Vector3 FirstPersonLeftEuler => firstPersonLeftEuler;
+        public Vector3 FirstPersonRightEuler => firstPersonRightEuler;
+
+        internal static HandEmoteRotationPose Create(
+            Vector3 worldLeft,
+            Vector3 worldRight,
+            Vector3 firstPersonLeft,
+            Vector3 firstPersonRight)
+        {
+            return new HandEmoteRotationPose
+            {
+                worldLeftEuler = worldLeft,
+                worldRightEuler = worldRight,
+                firstPersonLeftEuler = firstPersonLeft,
+                firstPersonRightEuler = firstPersonRight
+            };
+        }
+    }
+
+    [Serializable]
+    public sealed class HandEmoteRotationSettings
+    {
+        public const int CurrentSchemaVersion = 1;
+
+        [SerializeField, HideInInspector] private int schemaVersion;
+        [SerializeField] private HandEmoteRotationPose greeting;
+        [SerializeField] private float greetingWaveDegrees;
+        [SerializeField] private HandEmoteRotationPose salute;
+        [SerializeField] private HandEmoteRotationPose insult;
+        [SerializeField] private HandEmoteRotationPose heart;
+        [SerializeField] private HandEmoteRotationPose surprise;
+        [SerializeField] private HandEmoteRotationPose surrender;
+        [SerializeField] private HandEmoteRotationPose pleading;
+        [SerializeField] private HandEmoteRotationPose eyesCover;
+
+        public int SchemaVersion => schemaVersion;
+        public float GreetingWaveDegrees => greetingWaveDegrees;
+
+        public bool TryGet(
+            HandEmoteId id,
+            out HandEmoteRotationPose pose)
+        {
+            pose = null;
+            if (schemaVersion < CurrentSchemaVersion)
+            {
+                return false;
+            }
+
+            switch (id)
+            {
+                case HandEmoteId.Greeting: pose = greeting; break;
+                case HandEmoteId.Salute: pose = salute; break;
+                case HandEmoteId.Insult: pose = insult; break;
+                case HandEmoteId.Heart: pose = heart; break;
+                case HandEmoteId.Surprise: pose = surprise; break;
+                case HandEmoteId.Surrender: pose = surrender; break;
+                case HandEmoteId.Pleading: pose = pleading; break;
+                case HandEmoteId.EyesCover: pose = eyesCover; break;
+            }
+            return pose != null;
+        }
+
+        public bool EnsureDefaults()
+        {
+            if (schemaVersion >= CurrentSchemaVersion)
+            {
+                return false;
+            }
+
+            var zero = Vector3.zero;
+            greeting = HandEmoteRotationPose.Create(zero, zero, zero, zero);
+            greetingWaveDegrees = 22f;
+            salute = HandEmoteRotationPose.Create(
+                zero,
+                new Vector3(0f, 0f, -32f),
+                zero,
+                new Vector3(0f, 0f, -32f));
+            insult = HandEmoteRotationPose.Create(zero, zero, zero, zero);
+            heart = HandEmoteRotationPose.Create(
+                new Vector3(0f, 0f, -42f),
+                new Vector3(0f, 0f, 42f),
+                new Vector3(0f, 0f, -42f),
+                new Vector3(0f, 0f, 42f));
+            surprise = HandEmoteRotationPose.Create(
+                new Vector3(0f, 0f, 18f),
+                new Vector3(0f, 0f, -18f),
+                new Vector3(0f, 0f, 18f),
+                new Vector3(0f, 0f, -18f));
+            surrender = HandEmoteRotationPose.Create(
+                new Vector3(0f, 0f, 10f),
+                new Vector3(0f, 0f, -10f),
+                new Vector3(0f, 0f, 10f),
+                new Vector3(0f, 0f, -10f));
+            pleading = HandEmoteRotationPose.Create(
+                new Vector3(0f, 0f, -82f),
+                new Vector3(0f, 0f, 82f),
+                new Vector3(0f, 0f, -82f),
+                new Vector3(0f, 0f, 82f));
+            eyesCover = HandEmoteRotationPose.Create(
+                new Vector3(0f, 0f, 8f),
+                new Vector3(0f, 0f, -8f),
+                new Vector3(0f, 0f, 8f),
+                new Vector3(0f, 0f, -8f));
+            schemaVersion = CurrentSchemaVersion;
+            return true;
+        }
+    }
+
     /// <summary>
     /// Authored hierarchy used by <see cref="PlayerAvatarVisual"/>. Pose anchors may
     /// move at runtime, while their visual children remain designer-owned.
@@ -40,6 +158,11 @@ namespace MazeParty.Gameplay
         [SerializeField] private Transform firstPersonItemRoot;
         [SerializeField] private Transform firstPersonGestureRoot;
 
+        [Header("Hand Emote Rotations")]
+        [Tooltip("Adjust the world and first-person hand Euler angles for each emote. These values are initialized once and are never replaced by project setup.")]
+        [SerializeField] private HandEmoteRotationSettings handEmoteRotations =
+            new HandEmoteRotationSettings();
+
         [Header("Hit regions")]
         [SerializeField] private CapsuleCollider bodyHitbox;
         [SerializeField] private SphereCollider headHitbox;
@@ -75,6 +198,8 @@ namespace MazeParty.Gameplay
         public Transform FirstPersonRightHand => firstPersonRightHand;
         public Transform FirstPersonItemRoot => firstPersonItemRoot;
         public Transform FirstPersonGestureRoot => firstPersonGestureRoot;
+        public HandEmoteRotationSettings HandEmoteRotations =>
+            handEmoteRotations;
         public CapsuleCollider BodyHitbox => bodyHitbox;
         public SphereCollider HeadHitbox => headHitbox;
         public SphereCollider LeftHandHitbox => leftHandHitbox;
@@ -173,6 +298,44 @@ namespace MazeParty.Gameplay
             leftHandHitbox = leftHandZone;
             rightHandHitbox = rightHandZone;
             bodyTintRenderers = tintRenderers ?? Array.Empty<Renderer>();
+            EnsureHandEmoteRotationSettings();
+        }
+
+        public bool EnsureHandEmoteRotationSettings()
+        {
+            if (handEmoteRotations == null)
+            {
+                handEmoteRotations = new HandEmoteRotationSettings();
+            }
+            return handEmoteRotations.EnsureDefaults();
+        }
+
+        public bool TryGetHandEmoteRotation(
+            HandEmoteId id,
+            out HandEmoteRotationPose pose,
+            out float greetingWaveDegrees)
+        {
+            greetingWaveDegrees = 22f;
+            if (handEmoteRotations == null ||
+                !handEmoteRotations.TryGet(id, out pose))
+            {
+                pose = null;
+                return false;
+            }
+
+            greetingWaveDegrees = handEmoteRotations.GreetingWaveDegrees;
+            return true;
+        }
+
+        private void OnValidate()
+        {
+            // Project setup owns the one-time schema migration. Validation only
+            // repairs the container so loading or inspecting an already-authored
+            // prefab can never replace designer-tuned rotation values.
+            if (handEmoteRotations == null)
+            {
+                handEmoteRotations = new HandEmoteRotationSettings();
+            }
         }
 
         private static bool HasAssignedRenderers(Renderer[] renderers)

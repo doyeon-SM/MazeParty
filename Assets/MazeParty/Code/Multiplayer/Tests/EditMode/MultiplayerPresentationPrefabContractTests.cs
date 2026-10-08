@@ -76,6 +76,24 @@ namespace MazeParty.Multiplayer.Tests
                 Is.Not.Null,
                 "Opponent nameplates must use normal scene depth occlusion.");
             Assert.That(bindings.BodyTintRenderers, Is.Not.Empty);
+            Assert.That(bindings.HandEmoteRotations, Is.Not.Null);
+            Assert.That(
+                bindings.HandEmoteRotations.SchemaVersion,
+                Is.EqualTo(HandEmoteRotationSettings.CurrentSchemaVersion));
+            for (var gesture = 1;
+                 gesture <= HandEmoteRules.GestureCount;
+                 gesture++)
+            {
+                Assert.That(
+                    bindings.TryGetHandEmoteRotation(
+                        (HandEmoteId)gesture,
+                        out var pose,
+                        out _),
+                    Is.True,
+                    ((HandEmoteId)gesture) +
+                    " must have authored hand rotations.");
+                Assert.That(pose, Is.Not.Null);
+            }
             Assert.That(bindings.HatAnchor.childCount, Is.Zero,
                 "Hat models must come from the appearance catalog, not placeholder geometry.");
             Assert.That(
@@ -488,6 +506,140 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void HandEmoteRotations_ApplyAuthoredWorldAndFirstPersonValues()
+        {
+            var root = new GameObject("Hand Emote Rotation Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                Assert.That(visual.Bindings, Is.Not.Null);
+
+                var serialized = new SerializedObject(visual.Bindings);
+                var settings = serialized.FindProperty("handEmoteRotations");
+                Assert.That(settings, Is.Not.Null);
+                settings.FindPropertyRelative("greetingWaveDegrees")
+                    .floatValue = 0f;
+
+                var names = new[]
+                {
+                    "greeting", "salute", "insult", "heart",
+                    "surprise", "surrender", "pleading", "eyesCover"
+                };
+                var expected = new Vector3[names.Length, 4];
+                for (var index = 0; index < names.Length; index++)
+                {
+                    var entry = settings.FindPropertyRelative(names[index]);
+                    Assert.That(entry, Is.Not.Null, names[index]);
+                    expected[index, 0] = new Vector3(
+                        index + 1f,
+                        index + 2f,
+                        index + 3f);
+                    expected[index, 1] = new Vector3(
+                        index + 11f,
+                        index + 12f,
+                        index + 13f);
+                    expected[index, 2] = new Vector3(
+                        index + 21f,
+                        index + 22f,
+                        index + 23f);
+                    expected[index, 3] = new Vector3(
+                        index + 31f,
+                        index + 32f,
+                        index + 33f);
+                    entry.FindPropertyRelative("worldLeftEuler")
+                        .vector3Value = expected[index, 0];
+                    entry.FindPropertyRelative("worldRightEuler")
+                        .vector3Value = expected[index, 1];
+                    entry.FindPropertyRelative("firstPersonLeftEuler")
+                        .vector3Value = expected[index, 2];
+                    entry.FindPropertyRelative("firstPersonRightEuler")
+                        .vector3Value = expected[index, 3];
+                }
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                var updatePose = typeof(PlayerAvatarVisual).GetMethod(
+                    "UpdatePose",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                var gestureStartedAt = typeof(PlayerAvatarVisual).GetField(
+                    "_gestureStartedAt",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(updatePose, Is.Not.Null);
+                Assert.That(gestureStartedAt, Is.Not.Null);
+
+                for (var index = 0; index < names.Length; index++)
+                {
+                    visual.SetHandGesture((byte)(index + 1), 0);
+                    gestureStartedAt.SetValue(
+                        visual,
+                        Time.time - (float)HandEmoteRules.Duration * 0.5f);
+                    updatePose.Invoke(visual, new object[] { false });
+
+                    AssertRotation(
+                        visual.Bindings.LeftHandAnchor,
+                        expected[index, 0]);
+                    AssertRotation(
+                        visual.Bindings.RightHandAnchor,
+                        expected[index, 1]);
+                    AssertRotation(
+                        visual.Bindings.FirstPersonLeftHand,
+                        expected[index, 2]);
+                    AssertRotation(
+                        visual.Bindings.FirstPersonRightHand,
+                        expected[index, 3]);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void HandEmoteRotationMigration_ReentryAndValidationPreserveAuthoredValues()
+        {
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                PlayerPresentationPrefabPath);
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            try
+            {
+                var bindings = instance.GetComponent<
+                    PlayerAvatarPresentationBindings>();
+                Assert.That(bindings, Is.Not.Null);
+                var serialized = new SerializedObject(bindings);
+                var custom = new Vector3(17f, -29f, 43f);
+                serialized.FindProperty("handEmoteRotations")
+                    .FindPropertyRelative("salute")
+                    .FindPropertyRelative("firstPersonRightEuler")
+                    .vector3Value = custom;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+
+                Assert.That(
+                    bindings.EnsureHandEmoteRotationSettings(),
+                    Is.False,
+                    "A completed schema must not be initialized again.");
+                var onValidate = typeof(PlayerAvatarPresentationBindings)
+                    .GetMethod(
+                        "OnValidate",
+                        BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(onValidate, Is.Not.Null);
+                onValidate.Invoke(bindings, null);
+
+                Assert.That(
+                    bindings.TryGetHandEmoteRotation(
+                        HandEmoteId.Salute,
+                        out var pose,
+                        out _),
+                    Is.True);
+                Assert.That(pose.FirstPersonRightEuler, Is.EqualTo(custom));
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
         public void NetworkPlayer_UsesOneBodySizedSolidControllerAndAuthoredTriggerHitZones()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -707,6 +859,18 @@ namespace MazeParty.Multiplayer.Tests
                 Quaternion.Angle(actual.localRotation, authored.localRotation),
                 Is.LessThan(0.01f),
                 actual.name + " local rotation was not restored.");
+        }
+
+        private static void AssertRotation(
+            Transform actual,
+            Vector3 expectedEuler)
+        {
+            Assert.That(
+                Quaternion.Angle(
+                    actual.localRotation,
+                    Quaternion.Euler(expectedEuler)),
+                Is.LessThan(0.05f),
+                actual.name + " did not use the authored emote rotation.");
         }
     }
 }
