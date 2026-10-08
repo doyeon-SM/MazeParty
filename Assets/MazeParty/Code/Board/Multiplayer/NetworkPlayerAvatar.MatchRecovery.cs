@@ -88,6 +88,7 @@ namespace MazeParty.Multiplayer
             _swapSeconds.Value = 0f;
             _itemCooldownRemaining = 0d;
             _privateRoll.Value = 0;
+            ResetBoardTravelPreviewOnServer();
             _remainingMoves.Value = 0;
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _selectedItemSlot.Value = -1;

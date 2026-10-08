@@ -36,6 +36,7 @@ namespace MazeParty.Multiplayer
             _firstDieResult.Value = 0;
             _secondDieResult.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
+            ResetBoardTravelPreviewOnServer();
 
             _boardReady.Value = false;
             _boardPositionInitialized = false;

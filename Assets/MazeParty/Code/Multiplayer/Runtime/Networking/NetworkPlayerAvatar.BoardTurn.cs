@@ -56,6 +56,7 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _privateRoll.Value = 0;
+            ResetBoardTravelPreviewOnServer();
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
@@ -83,6 +84,7 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _privateRoll.Value = 0;
+            ResetBoardTravelPreviewOnServer();
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
@@ -126,6 +128,7 @@ namespace MazeParty.Multiplayer
 
             _choiceResolution.Value = (byte)ItemChoiceResolution.NotStarted;
             _privateRoll.Value = 0;
+            ResetBoardTravelPreviewOnServer();
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
@@ -204,17 +207,28 @@ namespace MazeParty.Multiplayer
                 roll,
                 0,
                 WorldDieAuthorityModel.MaximumFace * 2);
-            _privateRoll.Value = safeRoll;
+            EnsureTraversalInitialized();
+            var hasTurnRouteOrigin = safeRoll > 0 &&
+                                     _traversal.IsInitialized &&
+                                     _traversal.CurrentTile != null;
+            _turnRouteOrigin.Value = hasTurnRouteOrigin
+                ? _traversal.CurrentTile.Coordinate
+                : default;
+            _turnRouteStepOffset.Value = 0;
+            _hasTurnRouteOrigin.Value = hasTurnRouteOrigin;
+            _boardRouteChoices.Clear();
             _remainingMoves.Value = safeRoll;
             _actionState.Value = safeRoll > 0
                 ? (byte)PlayerBoardActionState.Moving
                 : (byte)PlayerBoardActionState.Dice;
-            EnsureTraversalInitialized();
             if (_traversal.IsInitialized)
             {
                 _traversal.ResetMoves(safeRoll);
             }
             RefreshBoundaryWallsOnServer();
+            // The roll activates the map labels, so publish it only after their
+            // authoritative origin and empty per-turn choice set are ready.
+            _privateRoll.Value = safeRoll;
         }
 
         public void MarkArrivedOnServer()
@@ -256,6 +270,9 @@ namespace MazeParty.Multiplayer
                     break;
                 }
 
+                RecordBoardRouteChoiceOnServer(
+                    gate.Source,
+                    gate.Destination);
                 beforeDestination = destination;
                 destination = gate.Destination;
             }
@@ -279,6 +296,55 @@ namespace MazeParty.Multiplayer
             SyncLogicalTileOnServer();
             RefreshBoundaryWallsOnServer();
             return true;
+        }
+
+        private void RecordBoardRouteChoiceOnServer(
+            BoardTile source,
+            BoardTile destination)
+        {
+            if (!IsServer || source == null || destination == null)
+                return;
+
+            ResolveTopology();
+            if (_topology == null || _privateRoll.Value <= 0)
+                return;
+
+            var choice = new BoardRouteChoice(
+                source.Coordinate,
+                destination.Coordinate);
+            if (!BoardTravelRouteStatePolicy.IsValidForkChoice(
+                    _topology,
+                    choice))
+                return;
+
+            _boardRouteChoices.Add(choice);
+        }
+
+        private void ResetBoardTravelPreviewOnServer()
+        {
+            if (!IsServer)
+                return;
+
+            _hasTurnRouteOrigin.Value = false;
+            _turnRouteOrigin.Value = default;
+            _turnRouteStepOffset.Value = 0;
+            _boardRouteChoices.Clear();
+        }
+
+        private void RebaseBoardTravelPreviewAfterRelocationOnServer(
+            BoardTile relocatedTile)
+        {
+            if (!IsServer || _privateRoll.Value <= 0 || relocatedTile == null)
+                return;
+
+            _hasTurnRouteOrigin.Value = false;
+            _turnRouteOrigin.Value = relocatedTile.Coordinate;
+            _turnRouteStepOffset.Value =
+                BoardTravelRouteStatePolicy.GetStartingStepAfterRelocation(
+                    _privateRoll.Value,
+                    _remainingMoves.Value);
+            _boardRouteChoices.Clear();
+            _hasTurnRouteOrigin.Value = true;
         }
 
         public void StopServerInputOnServer()

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Arikan;
 using MazeParty.Gameplay;
 using UnityEngine;
@@ -42,6 +43,12 @@ namespace MazeParty.Multiplayer
         [SerializeField, Min(0f)] private float radiusInTiles = 2f;
         [SerializeField] private bool followHeading = true;
         [SerializeField] private bool localPlayerOnly;
+        [SerializeField] private bool showKeyShopDetails = true;
+        [SerializeField] private bool showTravelCounts;
+        [SerializeField] private Color primaryTravelCountColor =
+            new Color(1f, 0.84f, 0.22f);
+        [SerializeField] private Color branchTravelCountColor =
+            new Color(0.42f, 0.84f, 1f);
         private Vector3 _mapCenter;
         private float _visibleWorldRadius;
         [SerializeField] private Room[] rooms = Array.Empty<Room>();
@@ -75,6 +82,19 @@ namespace MazeParty.Multiplayer
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
         private readonly List<BoardTile> _orderedTiles = new List<BoardTile>(MaxRoomCount);
         private readonly List<Vector3> _footprintVertices = new List<Vector3>(BoardTileFootprint.MaxVertexCount);
+        private readonly List<BoardRouteChoice> _travelChoices =
+            new List<BoardRouteChoice>();
+        private readonly List<BoardTravelRouteStep> _travelSteps =
+            new List<BoardTravelRouteStep>();
+        private readonly Dictionary<Vector2Int, string> _travelLabels =
+            new Dictionary<Vector2Int, string>();
+        private readonly StringBuilder _travelLabelBuilder = new StringBuilder();
+        private BoardTravelRoutePreview _travelPreview;
+        private BoardTopology _travelTopology;
+        private BoardTile _travelStart;
+        private int _travelStartingStep;
+        private int _travelMaximumStep;
+        private int _travelChoiceSignature = int.MinValue;
         private BoardTopology _distanceTopology;
         private Vector2Int? _distanceSource, _distanceShop;
         private bool _hasDistance;
@@ -83,7 +103,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private string[] compassPoints = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
         [SerializeField] private Color floorColor = new Color(0.12f, 0.2f, 0.28f);
         [SerializeField] private Color localFloorColor = new Color(0.13f, 0.43f, 0.4f);
-        [SerializeField] private Color shopColor = new Color(0.6f, 0.39f, 0.08f);
+        [SerializeField] private Color shopColor = new Color(1f, 0.82f, 0.12f);
         [SerializeField] private Color startFloorColor = new Color(0.18f, 0.4f, 0.35f);
         [SerializeField] private Color respawnFloorColor = new Color(0.22f, 0.33f, 0.44f);
         [SerializeField] private Color exitColor = new Color(0.35f, 0.8f, 1f);
@@ -113,12 +133,15 @@ namespace MazeParty.Multiplayer
                     landingEffectLayer == null ||
                     landingEffectLayer.parent != projection.otherDotCanvas ||
                     projection.miniMapBounds == null || projection.miniMapBounds.topRight == null ||
-                    projection.miniMapBounds.bottomLeft == null || currentTile == null || heading == null ||
+                    projection.miniMapBounds.bottomLeft == null ||
                     rooms == null || players == null || localHighlights == null || tileNames == null ||
                     effectNames == null || compassPoints == null ||
-                    shopDistanceIcon == null || shopDistanceText == null || typeIconColors == null ||
+                    typeIconColors == null ||
                     effectIconColors == null || typeIconColors.Length != 4 || effectIconColors.Length != LandingEffectCount ||
-                    (radiusInTiles > 0f && (circularMask == null || !circularMask.enabled ||
+                    (showKeyShopDetails &&
+                        (shopDistanceIcon == null || shopDistanceText == null)) ||
+                    (radiusInTiles > 0f && (currentTile == null || heading == null ||
+                        circularMask == null || !circularMask.enabled ||
                         circularMask.GetComponent<BoardMapCircleGraphic>() == null)) ||
                     rooms.Length != MaxRoomCount || players.Length != MultiplayerConstants.MaxPlayers ||
                     localHighlights.Length != players.Length || tileNames.Length != 4 ||
@@ -168,6 +191,7 @@ namespace MazeParty.Multiplayer
                 local != null && match.IsActionPhase ? local.LocalRemainingMoves : 0,
                 match.KeyShopHasLocation ? match.KeyShopLocation : (Vector2Int?)null,
                 local != null ? local.transform.position : (Vector3?)null);
+            RefreshTravelCounts(topology, match, local);
             for (var slot = 0; slot < players.Length; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
@@ -207,8 +231,11 @@ namespace MazeParty.Multiplayer
                 room.EffectIcon.rectTransform.localRotation = upright;
             }
             foreach (var dot in players) dot.rectTransform.localRotation = upright;
-            heading.text = GameText.F(headingFormat,
-                compassPoints[Mathf.RoundToInt(Mathf.Repeat(yaw, 360f) / 45f) % 8]);
+            if (heading != null)
+            {
+                heading.text = GameText.F(headingFormat,
+                    compassPoints[Mathf.RoundToInt(Mathf.Repeat(yaw, 360f) / 45f) % 8]);
+            }
         }
 
         // Also used by the editor preview; network authority remains in Refresh's source data.
@@ -267,8 +294,18 @@ namespace MazeParty.Multiplayer
             _mineBounds = bounds;
             projection.miniMapBounds.bottomLeft.position = bounds.min;
             projection.miniMapBounds.topRight.position = bounds.max;
-            currentTile.text = GameText.T(unknownTileText);
-            RefreshShopDistance(topology, localCoordinate, keyShop);
+            if (currentTile != null)
+                currentTile.text = GameText.T(unknownTileText);
+            if (showKeyShopDetails)
+            {
+                RefreshShopDistance(topology, localCoordinate, keyShop);
+            }
+            else
+            {
+                _shopRoute.Clear();
+                if (shopDistanceText != null)
+                    shopDistanceText.text = string.Empty;
+            }
             shopRouteGraphic.Present(_shopRoute, bounds);
 
             if (freeform)
@@ -332,12 +369,18 @@ namespace MazeParty.Multiplayer
                 var isShop = keyShop.HasValue && coordinate == keyShop.Value;
                 room.Floor.color = isShop ? shopColor : isLocal ? localFloorColor : floorColor;
                 room.Floor.enabled = !freeform;
-                room.Symbol.text = BoardMapView.GetPlayerStartLabel(mapRoot, tile);
+                room.Symbol.text = showTravelCounts
+                    ? string.Empty
+                    : BoardMapView.GetPlayerStartLabel(mapRoot, tile);
                 var displayedType = isShop ? BoardTileType.KeyShop : tile.TileType;
-                room.TypeIcon.SetIcon(displayedType == BoardTileType.Start ? BoardMapIconKind.Start :
-                    displayedType == BoardTileType.Respawn ? BoardMapIconKind.Respawn :
-                    displayedType == BoardTileType.KeyShop ? BoardMapIconKind.Key : BoardMapIconKind.Room);
-                room.TypeIcon.color = typeIconColors[(int)displayedType];
+                room.TypeIcon.enabled = !isShop || showKeyShopDetails;
+                if (room.TypeIcon.enabled)
+                {
+                    room.TypeIcon.SetIcon(displayedType == BoardTileType.Start ? BoardMapIconKind.Start :
+                        displayedType == BoardTileType.Respawn ? BoardMapIconKind.Respawn :
+                        displayedType == BoardTileType.KeyShop ? BoardMapIconKind.Key : BoardMapIconKind.Room);
+                    room.TypeIcon.color = typeIconColors[(int)displayedType];
+                }
                 var effect = tile.LandingEffect;
                 room.EffectIcon.enabled = effect != BoardLandingEffectType.None;
                 room.EffectIcon.SetIcon(GetEffectIcon(effect));
@@ -357,7 +400,7 @@ namespace MazeParty.Multiplayer
                         isLocal,
                         remainingMoves);
                 }
-                if (isLocal)
+                if (isLocal && currentTile != null)
                 {
                     var type = isShop ? BoardTileType.KeyShop : tile.TileType;
                     currentTile.text = GameText.F(tileFormat, coordinate.x, coordinate.y,
@@ -446,8 +489,11 @@ namespace MazeParty.Multiplayer
                 _distanceTopology = topology; _distanceSource = source; _distanceShop = shop;
                 _shopDistance = GetMinimumShopDistance(topology, source, shop);
             }
-            shopDistanceText.text = !shop.HasValue ? GameText.T(shopUnavailableText) : !source.HasValue ? shopUnknownText :
-                _shopDistance < 0 ? GameText.T(shopUnreachableText) : GameText.F(shopDistanceFormat, _shopDistance);
+            if (shopDistanceText != null)
+            {
+                shopDistanceText.text = !shop.HasValue ? GameText.T(shopUnavailableText) : !source.HasValue ? shopUnknownText :
+                    _shopDistance < 0 ? GameText.T(shopUnreachableText) : GameText.F(shopDistanceFormat, _shopDistance);
+            }
         }
 
         public int GetMinimumShopDistance(BoardTopology topology, Vector2Int? source, Vector2Int? shop)
@@ -605,6 +651,146 @@ namespace MazeParty.Multiplayer
                 room.Walls[side].enabled = visible;
                 room.Exits[side].enabled = visible;
                 room.ProgressArrows[side].enabled = visible;
+            }
+        }
+
+        private void RefreshTravelCounts(
+            BoardTopology topology,
+            NetworkMatchState match,
+            NetworkPlayerAvatar local)
+        {
+            if (!showTravelCounts)
+                return;
+
+            var turnRoll = local != null ? local.LocalTurnRoll : 0;
+            var startingStep = local != null
+                ? Mathf.Clamp(local.LocalTurnRouteStepOffset, 0, turnRoll)
+                : 0;
+            BoardTile start = null;
+            var hasValidOrigin = local != null && local.IsOwner &&
+                                 local.HasLocalTurnRouteOrigin &&
+                                 turnRoll > 0 &&
+                                 topology.TryGetTile(
+                                     local.LocalTurnRouteOrigin,
+                                     out start) &&
+                                 start != null;
+            if (!BoardTravelRoutePreview.ShouldDisplayForTurn(
+                    match != null && match.IsActionPhase,
+                    turnRoll,
+                    hasValidOrigin))
+            {
+                start = null;
+                startingStep = 0;
+                turnRoll = 0;
+            }
+
+            var signature = ComputeTravelChoiceSignature(local);
+            if (_travelPreview == null || _travelTopology != topology ||
+                _travelStart != start ||
+                _travelStartingStep != startingStep ||
+                _travelMaximumStep != turnRoll)
+            {
+                _travelTopology = topology;
+                _travelStart = start;
+                _travelStartingStep = startingStep;
+                _travelMaximumStep = turnRoll;
+                _travelPreview = start != null && turnRoll > 0
+                    ? new BoardTravelRoutePreview(
+                        topology,
+                        start,
+                        startingStep,
+                        turnRoll)
+                    : null;
+                _travelChoiceSignature = int.MinValue;
+            }
+
+            if (_travelChoiceSignature != signature)
+            {
+                _travelChoiceSignature = signature;
+                RebuildTravelLabels(local);
+            }
+
+            var freeform = UsesFreeformProjection(topology);
+            for (var index = 0; index < rooms.Length; index++)
+            {
+                Vector2Int coordinate;
+                if (freeform)
+                {
+                    if (index >= _orderedTiles.Count)
+                        continue;
+                    coordinate = _orderedTiles[index].Coordinate;
+                }
+                else
+                {
+                    coordinate = new Vector2Int(
+                        index % BoardMapView.GridSize,
+                        index / BoardMapView.GridSize);
+                }
+
+                rooms[index].Symbol.text = _travelLabels.TryGetValue(
+                    coordinate,
+                    out var label)
+                    ? label
+                    : string.Empty;
+            }
+        }
+
+        private int ComputeTravelChoiceSignature(NetworkPlayerAvatar local)
+        {
+            unchecked
+            {
+                var hash = local != null ? local.AssignedSlot : -1;
+                if (local == null || !local.IsOwner)
+                    return hash;
+
+                var choices = local.LocalBoardRouteChoices;
+                hash = hash * 31 + choices.Count;
+                for (var index = 0; index < choices.Count; index++)
+                    hash = hash * 31 + choices[index].GetHashCode();
+                return hash;
+            }
+        }
+
+        private void RebuildTravelLabels(NetworkPlayerAvatar local)
+        {
+            _travelLabels.Clear();
+            _travelChoices.Clear();
+            _travelSteps.Clear();
+            if (_travelPreview == null || local == null || !local.IsOwner)
+                return;
+
+            var choices = local.LocalBoardRouteChoices;
+            for (var index = 0; index < choices.Count; index++)
+                _travelChoices.Add(choices[index]);
+            _travelPreview.GetVisibleSteps(_travelChoices, _travelSteps);
+
+            var primaryHex = ColorUtility.ToHtmlStringRGB(
+                primaryTravelCountColor);
+            var branchHex = ColorUtility.ToHtmlStringRGB(
+                branchTravelCountColor);
+            var stepIndex = 0;
+            while (stepIndex < _travelSteps.Count)
+            {
+                var coordinate = _travelSteps[stepIndex].Coordinate;
+                _travelLabelBuilder.Clear();
+                while (stepIndex < _travelSteps.Count &&
+                       _travelSteps[stepIndex].Coordinate == coordinate)
+                {
+                    if (_travelLabelBuilder.Length > 0)
+                        _travelLabelBuilder.Append(' ');
+                    var step = _travelSteps[stepIndex];
+                    _travelLabelBuilder.Append("<color=#");
+                    _travelLabelBuilder.Append(step.IsBranch
+                        ? branchHex
+                        : primaryHex);
+                    _travelLabelBuilder.Append('>');
+                    _travelLabelBuilder.Append(step.Step);
+                    _travelLabelBuilder.Append("</color>");
+                    stepIndex++;
+                }
+                _travelLabels.Add(
+                    coordinate,
+                    _travelLabelBuilder.ToString());
             }
         }
 

@@ -263,6 +263,7 @@ namespace MazeParty.Multiplayer
             StopServerInputOnServer();
             _combatKnockbackVelocity = Vector3.zero;
             _traversal.Relocate(tile, _remainingMoves.Value);
+            RebaseBoardTravelPreviewAfterRelocationOnServer(tile);
             TeleportController(position, rotation);
             _serverYaw = rotation.eulerAngles.y;
             _serverPitch = 0f;

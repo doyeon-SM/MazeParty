@@ -87,6 +87,54 @@ namespace MazeParty.Multiplayer.Tests
             foreach (var itemMap in maps)
             {
                 var data = new SerializedObject(itemMap);
+                var isFullMap = Mathf.Approximately(
+                    data.FindProperty("radiusInTiles").floatValue,
+                    0f);
+                if (isFullMap)
+                {
+                    Assert.That(data.FindProperty("currentTile").objectReferenceValue,
+                        Is.Null);
+                    Assert.That(data.FindProperty("heading").objectReferenceValue,
+                        Is.Null);
+                    Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
+                        Is.Null);
+                    Assert.That(data.FindProperty("shopDistanceText").objectReferenceValue,
+                        Is.Null);
+                    Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
+                        Is.False,
+                        "The full map presents the key shop through its yellow tile only.");
+                    Assert.That(data.FindProperty("showTravelCounts").boolValue,
+                        Is.True);
+                    var rooms = data.FindProperty("rooms");
+                    for (var roomIndex = 0;
+                         roomIndex < rooms.arraySize;
+                         roomIndex++)
+                    {
+                        var symbol = rooms.GetArrayElementAtIndex(roomIndex)
+                            .FindPropertyRelative("Symbol")
+                            .objectReferenceValue as UnityEngine.UI.Text;
+                        Assert.That(symbol, Is.Not.Null);
+                        Assert.That(symbol.alignment,
+                            Is.EqualTo(TextAnchor.UpperLeft));
+                    }
+                }
+                else
+                {
+                    Assert.That(data.FindProperty("currentTile").objectReferenceValue,
+                        Is.Not.Null);
+                    Assert.That(data.FindProperty("heading").objectReferenceValue,
+                        Is.Not.Null);
+                    Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
+                        Is.Not.Null);
+                    Assert.That(data.FindProperty("shopDistanceText").objectReferenceValue,
+                        Is.Not.Null);
+                    Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
+                        Is.True,
+                        "The live minimap keeps its existing key-shop details.");
+                    Assert.That(data.FindProperty("showTravelCounts").boolValue,
+                        Is.False,
+                        "The live minimap must not receive route-count labels.");
+                }
                 var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
                 var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
                 Assert.That(mines, Is.Not.Null);
@@ -114,6 +162,11 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(effectLayer.GetSiblingIndex(),
                         Is.GreaterThan(marker.transform.GetSiblingIndex()));
                 }
+
+                var shopColor = data.FindProperty("shopColor").colorValue;
+                Assert.That(shopColor.r, Is.EqualTo(1f).Within(0.001f));
+                Assert.That(shopColor.g, Is.EqualTo(0.82f).Within(0.001f));
+                Assert.That(shopColor.b, Is.EqualTo(0.12f).Within(0.001f));
             }
             Assert.That(badges, Is.Not.Null);
             Assert.That(badges.HasRequiredReferences, Is.True);

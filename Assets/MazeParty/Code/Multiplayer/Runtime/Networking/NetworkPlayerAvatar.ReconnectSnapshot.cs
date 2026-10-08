@@ -60,7 +60,12 @@ namespace MazeParty.Multiplayer
                 LogicalCurrentTileCoordinate = logicalTile != null
                     ? logicalTile.Coordinate
                     : default,
-                TraversalHistory = _traversal.CaptureHistoryCoordinates()
+                TraversalHistory = _traversal.CaptureHistoryCoordinates(),
+                HasTurnRouteOrigin = _privateRoll.Value > 0 &&
+                                     _hasTurnRouteOrigin.Value,
+                TurnRouteOrigin = _turnRouteOrigin.Value,
+                TurnRouteStepOffset = _turnRouteStepOffset.Value,
+                BoardRouteChoices = CaptureBoardRouteChoicesOnServer()
             };
         }
 
@@ -85,10 +90,26 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _privateRoll.Value = Mathf.Clamp(
+            var restoredRoll = Mathf.Clamp(
                 snapshot.Roll,
                 0,
                 WorldDieAuthorityModel.MaximumFace * 2);
+            _privateRoll.Value = 0;
+            var restoredTurnRoute = BoardTravelRouteStatePolicy.Restore(
+                _topology,
+                restoredRoll,
+                snapshot.RemainingMoves,
+                snapshot.HasTurnRouteOrigin,
+                snapshot.TurnRouteOrigin,
+                snapshot.TurnRouteStepOffset,
+                snapshot.BoardRouteChoices);
+            _turnRouteOrigin.Value = restoredTurnRoute.Active
+                ? restoredTurnRoute.Origin
+                : default;
+            _turnRouteStepOffset.Value = restoredTurnRoute.Active
+                ? restoredTurnRoute.StartingStep
+                : 0;
+            _hasTurnRouteOrigin.Value = restoredTurnRoute.Active;
             _remainingMoves.Value = Mathf.Max(0, snapshot.RemainingMoves);
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
@@ -168,9 +189,34 @@ namespace MazeParty.Multiplayer
                 EnsureTraversalInitialized();
             }
 
+            ApplyRestoredBoardRouteChoicesOnServer(
+                restoredTurnRoute.Choices);
+            // Publish the roll only after its validated origin and ordered fork
+            // choices have been restored for the reconnecting owner.
+            _privateRoll.Value = restoredRoll;
+
             RefreshBoundaryWallsOnServer();
             ApplyCombatColliderState(CombatState);
             return _traversal.IsInitialized;
+        }
+
+        private BoardRouteChoice[] CaptureBoardRouteChoicesOnServer()
+        {
+            var result = new BoardRouteChoice[_boardRouteChoices.Count];
+            for (var index = 0; index < result.Length; index++)
+                result[index] = _boardRouteChoices[index];
+            return result;
+        }
+
+        private void ApplyRestoredBoardRouteChoicesOnServer(
+            BoardRouteChoice[] choices)
+        {
+            _boardRouteChoices.Clear();
+            if (!IsServer || choices == null)
+                return;
+
+            for (var choiceIndex = 0; choiceIndex < choices.Length; choiceIndex++)
+                _boardRouteChoices.Add(choices[choiceIndex]);
         }
     }
 }

@@ -644,6 +644,27 @@ namespace MazeParty.Multiplayer
                 "RemainingMoves",
                 before.RemainingMoves,
                 after.RemainingMoves);
+            AddDifference(differences, "Roll", before.Roll, after.Roll);
+            AddDifference(
+                differences,
+                "HasTurnRouteOrigin",
+                before.HasTurnRouteOrigin,
+                after.HasTurnRouteOrigin);
+            AddDifference(
+                differences,
+                "TurnRouteOrigin",
+                before.TurnRouteOrigin,
+                after.TurnRouteOrigin);
+            AddDifference(
+                differences,
+                "TurnRouteStepOffset",
+                before.TurnRouteStepOffset,
+                after.TurnRouteStepOffset);
+            AddSequenceDifference(
+                differences,
+                "BoardRouteChoices",
+                before.BoardRouteChoices,
+                after.BoardRouteChoices);
             AddDifference(
                 differences,
                 "CurrentHealth",
@@ -692,6 +713,37 @@ namespace MazeParty.Multiplayer
             {
                 differences.Add(
                     field + " expected=" + expected + ", actual=" + actual);
+            }
+        }
+
+        private static void AddSequenceDifference<T>(
+            ICollection<string> differences,
+            string field,
+            IReadOnlyList<T> expected,
+            IReadOnlyList<T> actual)
+        {
+            var expectedCount = expected?.Count ?? 0;
+            var actualCount = actual?.Count ?? 0;
+            if (expectedCount != actualCount)
+            {
+                differences.Add(
+                    field + " count expected=" + expectedCount +
+                    ", actual=" + actualCount);
+                return;
+            }
+
+            for (var index = 0; index < expectedCount; index++)
+            {
+                if (EqualityComparer<T>.Default.Equals(
+                        expected[index],
+                        actual[index]))
+                {
+                    continue;
+                }
+
+                differences.Add(
+                    field + "[" + index + "] expected=" + expected[index] +
+                    ", actual=" + actual[index]);
             }
         }
 

@@ -224,9 +224,25 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1022955042257233876, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 1036333830362665305, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
       propertyPath: m_Enabled
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1337846851166589906, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 1575254895792416145, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3087339842974395529, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3787087094808003405, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
       propertyPath: scalingMode
@@ -279,6 +295,10 @@ PrefabInstance:
     - target: {fileID: 5764751439397037764, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
       propertyPath: InitialModule.startSize.scalar
       value: 0.72
+      objectReference: {fileID: 0}
+    - target: {fileID: 6319124881639623308, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
+      propertyPath: m_Materials.Array.size
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6504916684355420165, guid: 76557be7663b50b4b9e3239617c76343, type: 3}
       propertyPath: scalingMode

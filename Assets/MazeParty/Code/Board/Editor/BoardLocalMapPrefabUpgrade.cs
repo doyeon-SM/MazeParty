@@ -67,11 +67,28 @@ namespace MazeParty.Editor
                     label.rectTransform.sizeDelta = new Vector2(32f, 20f);
                 }
                 var fullView = full.AddComponent<BoardMinimapView>();
-                fullView.Configure(full.GetComponentInChildren<MiniMapView>(true), rooms, players, highlights, description, title);
+                // The current authored full-map design intentionally has no copied
+                // title, legend, current-tile description or key-shop distance row.
+                // They are optional bindings, not placeholders for setup to repair.
+                Object.DestroyImmediate(title.gameObject);
+                Object.DestroyImmediate(description.gameObject);
+                Object.DestroyImmediate(legend.gameObject);
+                var distance = full.transform.Find("Key Shop Distance");
+                if (distance != null)
+                    Object.DestroyImmediate(distance.gameObject);
+                fullView.Configure(
+                    full.GetComponentInChildren<MiniMapView>(true),
+                    rooms,
+                    players,
+                    highlights,
+                    null,
+                    null);
                 var fullData = new SerializedObject(fullView);
                 fullData.FindProperty("radiusInTiles").floatValue = 0f;
                 fullData.FindProperty("followHeading").boolValue = false;
                 fullData.FindProperty("localPlayerOnly").boolValue = true;
+                fullData.FindProperty("showKeyShopDetails").boolValue = false;
+                fullData.FindProperty("showTravelCounts").boolValue = true;
                 fullData.FindProperty("headingFormat").stringValue = "FULL MAP / NORTH ^";
                 fullData.ApplyModifiedPropertiesWithoutUndo();
                 full.SetActive(false);

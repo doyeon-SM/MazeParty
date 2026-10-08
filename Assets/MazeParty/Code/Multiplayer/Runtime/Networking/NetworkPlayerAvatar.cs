@@ -37,6 +37,26 @@ namespace MazeParty.Multiplayer
             0,
             NetworkVariableReadPermission.Owner,
             NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<Vector2Int> _turnRouteOrigin =
+            new NetworkVariable<Vector2Int>(
+                default,
+                NetworkVariableReadPermission.Owner,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<bool> _hasTurnRouteOrigin =
+            new NetworkVariable<bool>(
+                false,
+                NetworkVariableReadPermission.Owner,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<int> _turnRouteStepOffset =
+            new NetworkVariable<int>(
+                0,
+                NetworkVariableReadPermission.Owner,
+                NetworkVariableWritePermission.Server);
+        private readonly NetworkList<BoardRouteChoice> _boardRouteChoices =
+            new NetworkList<BoardRouteChoice>(
+                default,
+                NetworkVariableReadPermission.Owner,
+                NetworkVariableWritePermission.Server);
         private readonly NetworkVariable<byte> _choiceResolution = new NetworkVariable<byte>(
             (byte)ItemChoiceResolution.NotStarted,
             NetworkVariableReadPermission.Owner,
@@ -270,6 +290,17 @@ namespace MazeParty.Multiplayer
             }
         }
         public int LocalRemainingMoves => IsOwner ? _remainingMoves.Value : 0;
+        public int LocalTurnRoll => IsOwner ? _privateRoll.Value : 0;
+        public Vector2Int LocalTurnRouteOrigin => IsOwner
+            ? _turnRouteOrigin.Value
+            : default;
+        public bool HasLocalTurnRouteOrigin =>
+            IsOwner && _hasTurnRouteOrigin.Value;
+        public int LocalTurnRouteStepOffset => IsOwner
+            ? _turnRouteStepOffset.Value
+            : 0;
+        public NetworkList<BoardRouteChoice> LocalBoardRouteChoices =>
+            _boardRouteChoices;
         public int LocalSelectedItemSlot => IsOwner ? _selectedItemSlot.Value : -1;
         public byte LocalOccupiedItemMask => IsOwner ? _occupiedItemMask.Value : (byte)0;
         public ItemChoiceResolution LocalChoiceResolution => IsOwner
@@ -932,6 +963,7 @@ namespace MazeParty.Multiplayer
                 var moves = _remainingMoves.Value;
                 EnsureTraversalInitialized();
                 _traversal.Relocate(respawn, moves);
+                RebaseBoardTravelPreviewAfterRelocationOnServer(respawn);
                 TeleportController(respawn.GetRecoveryCenter(1f), transform.rotation);
                 SyncLogicalTileOnServer();
             }
@@ -1538,6 +1570,9 @@ namespace MazeParty.Multiplayer
                     1f);
                 if (outcome == BoardGateTraversalOutcome.Committed)
                 {
+                    RecordBoardRouteChoiceOnServer(
+                        currentTile,
+                        _traversal.CurrentTile);
                     _remainingMoves.Value = _traversal.RemainingMoves;
                     SyncLogicalTileOnServer();
                     RefreshBoundaryWallsOnServer();

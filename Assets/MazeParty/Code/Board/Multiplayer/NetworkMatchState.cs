@@ -2361,5 +2361,9 @@ namespace MazeParty.Multiplayer
         public bool HasLogicalCurrentTile;
         public Vector2Int LogicalCurrentTileCoordinate;
         public Vector2Int[] TraversalHistory;
+        public bool HasTurnRouteOrigin;
+        public Vector2Int TurnRouteOrigin;
+        public int TurnRouteStepOffset;
+        public BoardRouteChoice[] BoardRouteChoices;
     }
 }

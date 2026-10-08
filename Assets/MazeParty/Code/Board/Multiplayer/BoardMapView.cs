@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using MazeParty.Gameplay;
 using Unity.Netcode;
 using UnityEngine;
@@ -39,13 +38,10 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Color roomColor = new Color(0.15f, 0.23f, 0.31f, 1f);
         [SerializeField] private Color startColor = new Color(0.18f, 0.4f, 0.35f, 1f);
         [SerializeField] private Color respawnColor = new Color(0.22f, 0.33f, 0.44f, 1f);
-        [SerializeField] private Color routeColor = new Color(0.16f, 0.58f, 0.88f, 1f);
-        [SerializeField] private Color shopColor = new Color(0.88f, 0.58f, 0.12f, 1f);
+        [SerializeField] private Color shopColor = new Color(1f, 0.82f, 0.12f, 1f);
         [SerializeField] private Color localColor = new Color(0.22f, 0.85f, 0.72f, 1f);
 
         private BoardTopology _topology;
-        private readonly List<BoardTile> _route = new List<BoardTile>();
-        private readonly HashSet<BoardTile> _routeTiles = new HashSet<BoardTile>();
         private int _lastSignature = int.MinValue;
 
         public bool HasRequiredReferences =>
@@ -144,24 +140,9 @@ namespace MazeParty.Multiplayer
             var signature = ComputeSignature(match, localAvatar, overview);
             if (signature == _lastSignature)
             {
-                if (overview) PulseRoute();
                 return;
             }
             _lastSignature = signature;
-
-            _route.Clear();
-            _routeTiles.Clear();
-            if (overview && localAvatar != null && localAvatar.HasLogicalBoardTile &&
-                match.KeyShopHasLocation &&
-                _topology.TryGetTile(localAvatar.LogicalBoardTileCoordinate, out var source) &&
-                _topology.TryGetTile(match.KeyShopLocation, out var shop) &&
-                BoardMapRoute.TryFind(_topology, source, shop, _route))
-            {
-                for (var index = 0; index < _route.Count; index++)
-                {
-                    _routeTiles.Add(_route[index]);
-                }
-            }
 
             var cells = overview ? overviewCells : minimapCells;
             var mapRoot = overview
@@ -175,7 +156,6 @@ namespace MazeParty.Multiplayer
                         match, localAvatar, overview, mapRoot);
                 }
             }
-            if (overview) PulseRoute();
         }
 
         public void UpdateFullMapState(bool boardAvailable, bool toggleRequested)
@@ -220,10 +200,6 @@ namespace MazeParty.Multiplayer
                 : tile.TileType == BoardTileType.Respawn
                     ? respawnColor
                     : roomColor;
-            if (overview && _routeTiles.Contains(tile))
-            {
-                color = routeColor;
-            }
             var isShop = match.KeyShopHasLocation &&
                          match.KeyShopLocation == coordinate;
             if (localAvatar != null && localAvatar.HasLogicalBoardTile &&
@@ -234,7 +210,7 @@ namespace MazeParty.Multiplayer
             if (isShop) color = shopColor;
             cell.Background.color = color;
 
-            var marker = isShop ? "K" : string.Empty;
+            var marker = string.Empty;
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
@@ -248,7 +224,7 @@ namespace MazeParty.Multiplayer
             if (overview)
                 marker = ResolveOverviewMarker(
                     marker,
-                    RouteArrow(tile),
+                    string.Empty,
                     mapRoot,
                     tile);
             cell.Marker.text = marker;
@@ -288,27 +264,6 @@ namespace MazeParty.Multiplayer
             return label;
         }
 
-        private void PulseRoute()
-        {
-            var pulse = 0.78f + 0.22f *
-                (0.5f + 0.5f * Mathf.Sin(Time.unscaledTime * 5f));
-            foreach (var tile in _routeTiles)
-            {
-                var coordinate = tile.Coordinate;
-                if (coordinate.x < 0 || coordinate.x >= GridSize ||
-                    coordinate.y < 0 || coordinate.y >= GridSize ||
-                    _route.Count > 0 &&
-                    (tile == _route[0] || tile == _route[_route.Count - 1]))
-                {
-                    continue;
-                }
-                var color = routeColor;
-                color.a = pulse;
-                overviewCells[coordinate.y * GridSize + coordinate.x]
-                    .Background.color = color;
-            }
-        }
-
         private static bool TryGetVisiblePosition(NetworkMatchState match,
             NetworkPlayerAvatar localAvatar, NetworkPlayerAvatar avatar,
             int slot, bool overview, out Vector2Int coordinate)
@@ -326,23 +281,6 @@ namespace MazeParty.Multiplayer
             }
             coordinate = default;
             return false;
-        }
-
-        private string RouteArrow(BoardTile tile)
-        {
-            for (var index = 0; index + 1 < _route.Count; index++)
-            {
-                if (_route[index] != tile)
-                {
-                    continue;
-                }
-                var delta = _route[index + 1].Coordinate - tile.Coordinate;
-                if (delta.x > 0) return ">";
-                if (delta.x < 0) return "<";
-                if (delta.y > 0) return "^";
-                if (delta.y < 0) return "v";
-            }
-            return string.Empty;
         }
 
         private int ComputeSignature(NetworkMatchState match,

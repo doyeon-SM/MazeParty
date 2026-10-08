@@ -21,38 +21,63 @@ namespace MazeParty.Editor
             var data = new SerializedObject(view);
             var rooms = data.FindProperty("rooms");
             EnsureLandingEffectLayer(data, rooms);
-            if (data.FindProperty("shopDistanceText").objectReferenceValue != null)
-            {
-                data.ApplyModifiedPropertiesWithoutUndo();
-                return;
-            }
             for (var index = 0; index < rooms.arraySize; index++)
             {
                 var room = rooms.GetArrayElementAtIndex(index);
                 var floor = (Image)room.FindPropertyRelative("Floor").objectReferenceValue;
-                var type = Icon("Tile Type", floor.transform, BoardMapIconKind.Room, new Vector2(.28f, .72f), 20f);
-                var effect = Icon("Landing Effect", floor.transform, BoardMapIconKind.GoldGain, new Vector2(.72f, .72f), 20f);
-                room.FindPropertyRelative("TypeIcon").objectReferenceValue = type;
-                room.FindPropertyRelative("EffectIcon").objectReferenceValue = effect;
+                var typeProperty = room.FindPropertyRelative("TypeIcon");
+                if (typeProperty.objectReferenceValue == null)
+                {
+                    typeProperty.objectReferenceValue = Icon(
+                        "Tile Type",
+                        floor.transform,
+                        BoardMapIconKind.Room,
+                        new Vector2(.28f, .72f),
+                        20f);
+                }
+                var effectProperty = room.FindPropertyRelative("EffectIcon");
+                if (effectProperty.objectReferenceValue == null)
+                {
+                    effectProperty.objectReferenceValue = Icon(
+                        "Landing Effect",
+                        floor.transform,
+                        BoardMapIconKind.GoldGain,
+                        new Vector2(.72f, .72f),
+                        20f);
+                }
                 var arrows = room.FindPropertyRelative("ProgressArrows");
-                arrows.arraySize = 4;
+                if (arrows.arraySize != 4)
+                    arrows.arraySize = 4;
                 for (var side = 0; side < 4; side++)
                 {
+                    var arrowProperty = arrows.GetArrayElementAtIndex(side);
+                    if (arrowProperty.objectReferenceValue != null)
+                        continue;
                     var position = side == 0 ? new Vector2(.5f, .9f) : side == 1 ? new Vector2(.9f, .5f) :
                         side == 2 ? new Vector2(.5f, .1f) : new Vector2(.1f, .5f);
                     var arrow = Icon("Available Next Tile " + side, floor.transform, BoardMapIconKind.Arrow, position, 19f);
                     arrow.rectTransform.localRotation = Quaternion.Euler(0f, 0f, -90f * side);
                     arrow.color = new Color(.35f, 1f, .65f);
-                    arrows.GetArrayElementAtIndex(side).objectReferenceValue = arrow;
+                    arrowProperty.objectReferenceValue = arrow;
                 }
             }
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EnsureLandingEffectLayer(data, rooms);
+            data.ApplyModifiedPropertiesWithoutUndo();
+
+            // The authored full-map design deliberately omits its title, legend,
+            // current-tile copy and key-shop distance row. Setup must never infer
+            // that their null bindings are an incomplete migration and recreate them.
+            if (full || data.FindProperty("shopDistanceText").objectReferenceValue != null)
+                return;
+
             var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x, full ? 770f : 450f);
+            panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x, 450f);
             var line = new GameObject("Key Shop Distance", typeof(RectTransform));
             line.layer = LayerMask.NameToLayer("UI");
             line.transform.SetParent(panel.transform, false);
             var rect = (RectTransform)line.transform;
-            Place(rect, new Vector2(full ? 320f : 162f, full ? -640f : -347f), new Vector2(220f, 28f));
+            Place(rect, new Vector2(162f, -347f), new Vector2(220f, 28f));
             var key = Icon("Key Icon", line.transform, BoardMapIconKind.Key, new Vector2(0f, .5f), 24f);
             key.rectTransform.anchoredPosition = new Vector2(12f, 0f);
             key.color = new Color(1f, .8f, .2f);
@@ -74,15 +99,13 @@ namespace MazeParty.Editor
             data.FindProperty("shopDistanceIcon").objectReferenceValue = key;
             data.FindProperty("shopDistanceText").objectReferenceValue = label;
             data.ApplyModifiedPropertiesWithoutUndo();
-            EnsureLandingEffectLayer(data, rooms);
-            data.ApplyModifiedPropertiesWithoutUndo();
             var description = panel.transform.Find("Current Tile").GetComponent<Text>();
-            Place(description.rectTransform, new Vector2(full ? 320f : 162f, full ? -684f : -387f),
-                new Vector2(full ? 600f : 300f, 44f));
+            Place(description.rectTransform, new Vector2(162f, -387f),
+                new Vector2(300f, 44f));
             var legend = panel.transform.Find("Minimap Legend").GetComponent<Text>();
-            Place(legend.rectTransform, new Vector2(full ? 320f : 162f, full ? -742f : -430f),
-                new Vector2(full ? 600f : 300f, 26f));
-            legend.text = full ? "ARROW: NEXT AVAILABLE TILE  /  M CLOSE" : "ARROW: NEXT AVAILABLE TILE\nRADIUS 2 TILES  /  M FULL MAP";
+            Place(legend.rectTransform, new Vector2(162f, -430f),
+                new Vector2(300f, 26f));
+            legend.text = "ARROW: NEXT AVAILABLE TILE\nRADIUS 2 TILES  /  M FULL MAP";
         }
 
         private static BoardMapIcon Icon(string name, Transform parent, BoardMapIconKind kind, Vector2 anchor, float size)

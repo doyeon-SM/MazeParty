@@ -164,7 +164,7 @@ namespace MazeParty.Multiplayer.Tests
 
 
         [Test]
-        public void RouteDots_FollowLocalProjectionAndClearWhenShopIsUnavailable()
+        public void RouteDots_FollowLiveMinimapProjection_ClearWhenUnavailable_AndStayHiddenOnFullMap()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
@@ -189,10 +189,19 @@ namespace MazeParty.Multiplayer.Tests
                     var data = new SerializedObject(view);
                     var graphic = (BoardMapRouteGraphic)data.FindProperty("shopRouteGraphic").objectReferenceValue;
                     var projection = (MiniMapView)data.FindProperty("projection").objectReferenceValue;
+                    var showKeyShopDetails = data.FindProperty("showKeyShopDetails").boolValue;
                     Assert.That(graphic.transform.parent, Is.EqualTo(projection.otherDotCanvas));
                     var mask = (Mask)data.FindProperty("circularMask").objectReferenceValue;
                     if (mask != null) Assert.That(graphic.transform.IsChildOf(mask.transform), Is.True);
                     view.PrepareMap(topology, tiles[0].Coordinate, 0, tiles[2].Coordinate, tiles[0].WorldCenter);
+                    if (!showKeyShopDetails)
+                    {
+                        Assert.That(
+                            graphic.PointCount,
+                            Is.Zero,
+                            "The full map identifies the key shop through its yellow tile only.");
+                        continue;
+                    }
                     Assert.That(graphic.PointCount, Is.GreaterThan(2), "The route is independent of the dice result.");
                     var firstPoint = graphic.ProjectPoint(0);
                     var endPoint = graphic.ProjectPoint(graphic.PointCount - 1);
@@ -535,10 +544,17 @@ namespace MazeParty.Multiplayer.Tests
                         .FindPropertyRelative("Floor").objectReferenceValue;
                     var secondFloor = (Image)rooms.GetArrayElementAtIndex(1)
                         .FindPropertyRelative("Floor").objectReferenceValue;
+                    var secondTypeIcon = (BoardMapIcon)rooms.GetArrayElementAtIndex(1)
+                        .FindPropertyRelative("TypeIcon").objectReferenceValue;
                     Assert.That(firstFloor.gameObject.activeSelf, Is.True);
                     Assert.That(secondFloor.gameObject.activeSelf, Is.True);
                     Assert.That(firstFloor.enabled, Is.False,
                         "The aggregate polygon graphic replaces square floor images.");
+                    var isFullMap = Mathf.Approximately(
+                        data.FindProperty("radiusInTiles").floatValue,
+                        0f);
+                    Assert.That(secondTypeIcon.enabled, Is.EqualTo(!isFullMap),
+                        "The full map marks a key shop only by coloring its tile; the live minimap keeps its existing detail icon.");
 
                     var projection = (MiniMapView)data.FindProperty("projection")
                         .objectReferenceValue;
@@ -654,11 +670,17 @@ namespace MazeParty.Multiplayer.Tests
                             .FindPropertyRelative("Symbol").objectReferenceValue;
                         var secondSymbol = (Text)rooms.GetArrayElementAtIndex(1)
                             .FindPropertyRelative("Symbol").objectReferenceValue;
+                        var isFullMap = Mathf.Approximately(
+                            new SerializedObject(view)
+                                .FindProperty("radiusInTiles").floatValue,
+                            0f);
                         Assert.That(first.TileType, Is.EqualTo(BoardTileType.Normal));
                         Assert.That(second.TileType, Is.EqualTo(BoardTileType.Normal));
-                        Assert.That(firstSymbol.text, Is.EqualTo("P1/P2"));
-                        Assert.That(secondSymbol.text, Is.EqualTo("P3/P4"),
-                            "P4 must use the resolved fallback start tile.");
+                        Assert.That(firstSymbol.text,
+                            Is.EqualTo(isFullMap ? string.Empty : "P1/P2"));
+                        Assert.That(secondSymbol.text,
+                            Is.EqualTo(isFullMap ? string.Empty : "P3/P4"),
+                            "The full map reserves Symbol for travel numbers; the live minimap keeps authored player starts.");
                     }
 
                     if (!freeform)

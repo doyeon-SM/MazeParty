@@ -116,6 +116,7 @@ namespace MazeParty.Multiplayer
         {
             StopServerInputOnServer();
             _traversal.Relocate(tile, _remainingMoves.Value);
+            RebaseBoardTravelPreviewAfterRelocationOnServer(tile);
             TeleportController(position, transform.rotation);
             var networkTransform = GetComponent<NetworkTransform>();
             if (networkTransform != null) networkTransform.Teleport(position, transform.rotation, transform.localScale);
