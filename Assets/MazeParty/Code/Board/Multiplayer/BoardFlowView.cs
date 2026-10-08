@@ -549,7 +549,8 @@ namespace MazeParty.Multiplayer
                 match.FlowState,
                 match.IsGlobalSimulationPaused,
                 match.LastLandingEffectType,
-                landingEffectMessage);
+                landingEffectMessage,
+                match.ResourceTransferPresentationPhase);
             SetText(
                 _boardEventPopupMessage,
                 showBoardEventPopup ? landingEffectMessage : string.Empty);
@@ -3266,10 +3267,28 @@ namespace MazeParty.Multiplayer
             BoardLandingEffectType effectType,
             string message)
         {
+            return ShouldShowBoardEventPopup(
+                state,
+                isGlobalSimulationPaused,
+                effectType,
+                message,
+                BoardResourceTransferPhase.None);
+        }
+
+        internal static bool ShouldShowBoardEventPopup(
+            BoardFlowState state,
+            bool isGlobalSimulationPaused,
+            BoardLandingEffectType effectType,
+            string message,
+            BoardResourceTransferPhase transferPhase)
+        {
             return state == BoardFlowState.LandingEffectResolve &&
                    !isGlobalSimulationPaused &&
                    effectType == BoardLandingEffectType.SpecialEvent &&
-                   !string.IsNullOrEmpty(message);
+                   !string.IsNullOrEmpty(message) &&
+                   transferPhase != BoardResourceTransferPhase.Source &&
+                   transferPhase != BoardResourceTransferPhase.Destination &&
+                   transferPhase != BoardResourceTransferPhase.Complete;
         }
 
         private static void SetItemIcon(Image target, Sprite sprite, Color color)

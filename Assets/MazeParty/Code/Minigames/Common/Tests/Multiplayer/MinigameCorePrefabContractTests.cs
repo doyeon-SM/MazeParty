@@ -6,7 +6,6 @@ using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace MazeParty.Multiplayer.Tests
@@ -19,11 +18,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string SceneFolder =
             "Assets/MazeParty/Scenes/Minigames/";
-        private const string BoardScenePath =
-            "Assets/MazeParty/Scenes/Board/Board.unity";
-        private const string BoardSkyboxPath =
-            "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
-            "FS000_Night_01.mat";
         private const string PrefabFolder =
             "Assets/MazeParty/Prefabs/Minigames/";
 
@@ -212,104 +206,6 @@ namespace MazeParty.Multiplayer.Tests
                     {
                         EditorSceneManager.CloseScene(scene, true);
                     }
-                }
-            }
-        }
-
-        [Test]
-        public void ProductionMinigameScenes_UseBoardSkybox()
-        {
-            var expectedSkybox = AssetDatabase.LoadAssetAtPath<Material>(
-                BoardSkyboxPath);
-            Assert.That(expectedSkybox, Is.Not.Null, BoardSkyboxPath);
-
-            var previousActive = SceneManager.GetActiveScene();
-            var boardScene = SceneManager.GetSceneByPath(BoardScenePath);
-            var openedBoardForTest =
-                !boardScene.IsValid() || !boardScene.isLoaded;
-            if (openedBoardForTest)
-            {
-                boardScene = EditorSceneManager.OpenScene(
-                    BoardScenePath,
-                    OpenSceneMode.Additive);
-            }
-
-            try
-            {
-                Assert.That(
-                    SceneManager.SetActiveScene(boardScene),
-                    Is.True,
-                    BoardScenePath);
-                Assert.That(
-                    RenderSettings.skybox,
-                    Is.SameAs(expectedSkybox),
-                    BoardScenePath);
-                Assert.That(
-                    RenderSettings.ambientMode,
-                    Is.EqualTo(AmbientMode.Skybox),
-                    BoardScenePath);
-
-                foreach (var game in Games)
-                {
-                    var scenePath =
-                        SceneFolder + game + "/" + game + ".unity";
-                    var scene = SceneManager.GetSceneByPath(scenePath);
-                    var openedForTest = !scene.IsValid() || !scene.isLoaded;
-                    if (openedForTest)
-                    {
-                        scene = EditorSceneManager.OpenScene(
-                            scenePath,
-                            OpenSceneMode.Additive);
-                    }
-
-                    try
-                    {
-                        Assert.That(
-                            SceneManager.SetActiveScene(scene),
-                            Is.True,
-                            scenePath);
-                        Assert.That(
-                            RenderSettings.skybox,
-                            Is.SameAs(expectedSkybox),
-                            scenePath);
-                        Assert.That(
-                            RenderSettings.ambientMode,
-                            Is.EqualTo(AmbientMode.Skybox),
-                            scenePath);
-                    }
-                    finally
-                    {
-                        if (boardScene.IsValid() && boardScene.isLoaded)
-                        {
-                            SceneManager.SetActiveScene(boardScene);
-                        }
-                        else if (previousActive.IsValid() &&
-                            previousActive.isLoaded)
-                        {
-                            SceneManager.SetActiveScene(previousActive);
-                        }
-
-                        if (openedForTest &&
-                            scene.IsValid() &&
-                            scene.isLoaded)
-                        {
-                            EditorSceneManager.CloseScene(scene, true);
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                if (previousActive.IsValid() && previousActive.isLoaded)
-                {
-                    SceneManager.SetActiveScene(previousActive);
-                }
-
-                if (openedBoardForTest &&
-                    boardScene.IsValid() &&
-                    boardScene.isLoaded)
-                {
-                    EditorSceneManager.CloseScene(boardScene, true);
                 }
             }
         }

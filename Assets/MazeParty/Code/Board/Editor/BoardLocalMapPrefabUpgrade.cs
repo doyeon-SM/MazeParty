@@ -54,8 +54,15 @@ namespace MazeParty.Editor
                 Place(title.rectTransform, new Vector2(320f, -25f), new Vector2(600f, 32f));
                 title.text = "FULL MAP / NORTH ^";
                 title.fontSize = 20;
-                var description = full.transform.Find("Current Tile").GetComponent<Text>();
-                Place(description.rectTransform, new Vector2(320f, -650f), new Vector2(600f, 50f));
+                var descriptionTransform = full.transform.Find("Current Tile");
+                var description = descriptionTransform != null
+                    ? descriptionTransform.GetComponent<Text>()
+                    : null;
+                if (description != null)
+                {
+                    Place(description.rectTransform, new Vector2(320f, -650f),
+                        new Vector2(600f, 50f));
+                }
                 var legend = full.transform.Find("Minimap Legend").GetComponent<Text>();
                 Place(legend.rectTransform, new Vector2(320f, -696f), new Vector2(600f, 24f));
                 legend.fontSize = 14;
@@ -96,7 +103,8 @@ namespace MazeParty.Editor
                 // title, legend, current-tile description or key-shop distance row.
                 // They are optional bindings, not placeholders for setup to repair.
                 Object.DestroyImmediate(title.gameObject);
-                Object.DestroyImmediate(description.gameObject);
+                if (description != null)
+                    Object.DestroyImmediate(description.gameObject);
                 Object.DestroyImmediate(legend.gameObject);
                 var distance = full.transform.Find("Key Shop Distance");
                 if (distance != null)

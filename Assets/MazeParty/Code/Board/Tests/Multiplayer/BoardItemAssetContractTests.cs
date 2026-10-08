@@ -2,6 +2,7 @@ using System.Linq;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
 using NUnit.Framework;
+using Unity.Netcode;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -127,6 +128,73 @@ namespace MazeParty.Multiplayer.Tests
                 found.Add(id);
             }
             Assert.That(found.Count, Is.EqualTo(9));
+        }
+
+        [Test]
+        public void MinePresentation_KeepsDynamiteInHand_AndUsesRedHelpIconInWorld()
+        {
+            const string heldPrefabPath =
+                "Assets/MazeParty/Prefabs/Board/Items/Mine.prefab";
+            const string dynamiteModelPath =
+                "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)Dynamite.fbx";
+            const string worldPrefabPath =
+                "Assets/MazeParty/Prefabs/Board/Items/MineWorldIcon.prefab";
+            const string helpFilledPath =
+                "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Help Filled.png";
+
+            var mine = Resources.LoadAll<BoardItemDefinition>(
+                    "MazeParty/Items")
+                .Single(definition =>
+                    definition.Id == PrototypeItemId.Mine);
+
+            Assert.That(mine.HeldPrefab, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(mine.HeldPrefab),
+                Is.EqualTo(heldPrefabPath));
+            var heldMeshPaths = mine.HeldPrefab
+                .GetComponentsInChildren<MeshFilter>(true)
+                .Select(filter => filter.sharedMesh)
+                .Concat(mine.HeldPrefab
+                    .GetComponentsInChildren<SkinnedMeshRenderer>(true)
+                    .Select(renderer => renderer.sharedMesh))
+                .Where(mesh => mesh != null)
+                .Select(AssetDatabase.GetAssetPath)
+                .Distinct()
+                .ToArray();
+            Assert.That(heldMeshPaths, Does.Contain(dynamiteModelPath));
+
+            Assert.That(mine.WorldPrefab, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(mine.WorldPrefab),
+                Is.EqualTo(worldPrefabPath));
+            Assert.That(mine.WorldPrefab, Is.Not.SameAs(mine.HeldPrefab));
+
+            var markers = mine.WorldPrefab
+                .GetComponentsInChildren<BoardWorldMineIcon>(true);
+            Assert.That(markers, Has.Length.EqualTo(1));
+            var marker = markers[0];
+            var renderers = mine.WorldPrefab
+                .GetComponentsInChildren<SpriteRenderer>(true);
+            Assert.That(renderers, Has.Length.EqualTo(1));
+            var renderer = marker.IconRenderer;
+            Assert.That(marker.HasRequiredReferences, Is.True);
+            Assert.That(renderer, Is.SameAs(renderers[0]));
+            Assert.That(
+                AssetDatabase.GetAssetPath(renderer.sprite),
+                Is.EqualTo(helpFilledPath));
+            Assert.That(renderer.color.r, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(renderer.color.g, Is.EqualTo(0.2f).Within(0.001f));
+            Assert.That(renderer.color.b, Is.EqualTo(0.18f).Within(0.001f));
+            Assert.That(renderer.color.a, Is.EqualTo(1f).Within(0.001f));
+            Assert.That(
+                mine.WorldPrefab.GetComponentsInChildren<Collider>(true),
+                Is.Empty);
+            Assert.That(
+                mine.WorldPrefab.GetComponentsInChildren<Collider2D>(true),
+                Is.Empty);
+            Assert.That(
+                mine.WorldPrefab.GetComponentsInChildren<NetworkObject>(true),
+                Is.Empty);
         }
 
     }

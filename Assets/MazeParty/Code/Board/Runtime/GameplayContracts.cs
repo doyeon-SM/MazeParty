@@ -7,7 +7,8 @@ namespace MazeParty.Gameplay
         FirstPerson,
         BoardTopDown,
         CombatSpectator,
-        Minigame
+        Minigame,
+        BoardResourceEvent
     }
 
     public enum DamageKind

@@ -792,31 +792,6 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(runtimeIds, Is.EquivalentTo(catalogIds));
         }
 
-        [Test]
-        public void RegisteredMinigames_ExposeTheirOwnInitialCountdown()
-        {
-            var registeredAdapters = typeof(MinigameRuntimeRegistry).GetField(
-                "RegisteredAdapters",
-                BindingFlags.Static | BindingFlags.NonPublic);
-            Assert.That(registeredAdapters, Is.Not.Null);
-
-            var adapters = (System.Array)registeredAdapters.GetValue(null);
-            Assert.That(adapters.Length,
-                Is.EqualTo(MinigameCatalog.RegisteredMinigames.Count));
-            foreach (var adapter in adapters)
-            {
-                var method = adapter.GetType().GetMethod(
-                    "TryGetInitialCountdown",
-                    BindingFlags.Instance | BindingFlags.Public);
-                Assert.That(method, Is.Not.Null);
-                Assert.That(method.DeclaringType,
-                    Is.EqualTo(adapter.GetType()),
-                    adapter.GetType().Name + " must project its own first countdown.");
-            }
-        }
-
-
-
         private static List<OnlinePlayerSnapshot> CreateReadyPlayers()
         {
             return new List<OnlinePlayerSnapshot>

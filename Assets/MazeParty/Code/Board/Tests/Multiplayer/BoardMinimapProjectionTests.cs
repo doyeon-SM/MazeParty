@@ -51,6 +51,105 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void AuthoredMapIcons_MatchTileAndLandingEffectDesign()
+        {
+            var instance = Object.Instantiate(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+            var board = new GameObject("Map icon contract board");
+            try
+            {
+                var tile = board.AddComponent<BoardTile>();
+                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(new[] { tile }, new BoardGate[0]);
+                var view = instance.GetComponent<BoardMinimapView>();
+                var data = new SerializedObject(view);
+                var room = data.FindProperty("rooms").GetArrayElementAtIndex(0);
+                var typeIcon = (BoardMapIcon)room.FindPropertyRelative("TypeIcon")
+                    .objectReferenceValue;
+                var effectIcon = (BoardMapIcon)room.FindPropertyRelative("EffectIcon")
+                    .objectReferenceValue;
+
+                view.PrepareMap(topology, null, 0, null);
+                var normalColor = typeIcon.color;
+                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Room));
+                Assert.That(typeIcon.IconSprite, Is.Null);
+
+                tile.Configure(Vector2Int.zero, BoardTileType.Start);
+                view.PrepareMap(topology, null, 0, null);
+                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Room),
+                    "Start uses the normal tile icon.");
+                Assert.That(typeIcon.IconSprite, Is.Null);
+                Assert.That(typeIcon.color, Is.EqualTo(normalColor),
+                    "Start uses the normal tile color.");
+
+                tile.Configure(Vector2Int.zero, BoardTileType.Respawn);
+                view.PrepareMap(topology, null, 0, null);
+                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Respawn));
+                Assert.That(AssetDatabase.GetAssetPath(typeIcon.IconSprite),
+                    Is.EqualTo(
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Home Filled.png"));
+
+                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
+                var cases = new[]
+                {
+                    (BoardLandingEffectType.GoldGain,
+                        BoardMapIconKind.GoldGain,
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png",
+                        new Color(1f, .82f, .12f, 1f)),
+                    (BoardLandingEffectType.GoldLoss,
+                        BoardMapIconKind.GoldLoss,
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png",
+                        new Color(1f, .2f, .18f, 1f)),
+                    (BoardLandingEffectType.ItemReward,
+                        BoardMapIconKind.Item,
+                        (string)null,
+                        Color.white),
+                    (BoardLandingEffectType.Healing20,
+                        BoardMapIconKind.Healing,
+                        (string)null,
+                        new Color(.35f, 1f, .5f, 1f)),
+                    (BoardLandingEffectType.Healing10,
+                        BoardMapIconKind.Healing,
+                        (string)null,
+                        new Color(.35f, 1f, .5f, 1f)),
+                    (BoardLandingEffectType.Damage40,
+                        BoardMapIconKind.Damage,
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png",
+                        new Color(1f, .2f, .18f, 1f)),
+                    (BoardLandingEffectType.Damage20,
+                        BoardMapIconKind.Damage,
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png",
+                        new Color(1f, .2f, .18f, 1f)),
+                    (BoardLandingEffectType.SpecialEvent,
+                        BoardMapIconKind.SpecialEvent,
+                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Warning Filled.png",
+                        new Color(1f, .2f, .18f, 1f))
+                };
+
+                foreach (var iconCase in cases)
+                {
+                    tile.ApplyLandingEffectPresentation(iconCase.Item1);
+                    view.PrepareMap(topology, null, 0, null);
+                    Assert.That(effectIcon.Kind, Is.EqualTo(iconCase.Item2),
+                        iconCase.Item1.ToString());
+                    Assert.That(effectIcon.IconSprite != null
+                            ? AssetDatabase.GetAssetPath(effectIcon.IconSprite)
+                            : null,
+                        Is.EqualTo(iconCase.Item3), iconCase.Item1.ToString());
+                    Assert.That(effectIcon.color, Is.EqualTo(iconCase.Item4),
+                        iconCase.Item1.ToString());
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(board);
+                Object.DestroyImmediate(instance);
+            }
+        }
+
 [Test]
         public void PlayerAndEffectMarkers_AreCenteredOnTileWithEffectAbovePlayer()
         {
@@ -116,8 +215,8 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         AssetDatabase.GetAssetPath(player.sprite),
                         Is.EqualTo(
-                            "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png"),
-                        "The player marker must use the authored circular sprite.");
+                            "Assets/Ignore/Modern UI Pack/Textures/Icon/Map/Location Mark Filled.png"),
+                        "The player marker must use the authored location sprite.");
                     Assert.That(player.preserveAspect, Is.True);
                     Assert.That(player.color, Is.EqualTo(Color.magenta));
                     Assert.That(effect.gameObject.activeSelf, Is.True);
@@ -129,7 +228,7 @@ namespace MazeParty.Multiplayer.Tests
                             player.rectTransform.anchoredPosition,
                             floor.rectTransform.anchoredPosition),
                         Is.LessThan(0.001f),
-                        "The player color circle must use the tile center.");
+                        "The player location marker must use the tile center.");
                     Assert.That(
                         Vector2.Distance(
                             effect.rectTransform.anchoredPosition,
@@ -147,7 +246,7 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         effectLayer.GetSiblingIndex(),
                         Is.GreaterThan(player.rectTransform.GetSiblingIndex()),
-                        "The landing-effect icon must render above the player circle.");
+                        "The landing-effect icon must render above the player marker.");
                     Assert.That(
                         effect.rectTransform.anchorMin,
                         Is.EqualTo(Vector2.one * 0.5f));
@@ -220,25 +319,34 @@ namespace MazeParty.Multiplayer.Tests
             finally { Object.DestroyImmediate(instance); Object.DestroyImmediate(board); }
         }
         [Test]
-        public void TileInformation_UsesDirectedDistanceAndOnlyImmediateAvailableExits()
+        public void DirectedShopRoute_UsesDistanceAndOnlyImmediateAvailableExits()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
             var board = new GameObject("Directed board");
             try
             {
-                var tiles = new BoardTile[3];
-                var gates = new BoardGate[2];
+                var tiles = new BoardTile[4];
+                var gates = new BoardGate[3];
                 for (var i = 0; i < tiles.Length; i++)
                 {
                     var obj = new GameObject("Tile " + i);
                     obj.transform.SetParent(board.transform, false);
-                    obj.transform.position = Vector3.right * i * BoardTile.RoomSize;
+                    obj.transform.position = i < 3
+                        ? Vector3.right * i * BoardTile.RoomSize
+                        : Vector3.forward * BoardTile.RoomSize;
                     tiles[i] = obj.AddComponent<BoardTile>();
-                    tiles[i].Configure(new Vector2Int(i, 0), BoardTileType.Normal);
+                    tiles[i].Configure(i < 3
+                            ? new Vector2Int(i, 0)
+                            : new Vector2Int(0, 1),
+                        BoardTileType.Normal);
                     if (i == 0) continue;
-                    gates[i - 1] = obj.AddComponent<BoardGate>();
-                    gates[i - 1].Configure(tiles[i - 1], tiles[i], BoardTile.RoomSize);
+                    var gateIndex = i - 1;
+                    gates[gateIndex] = obj.AddComponent<BoardGate>();
+                    gates[gateIndex].Configure(
+                        i < 3 ? tiles[i - 1] : tiles[0],
+                        tiles[i],
+                        BoardTile.RoomSize);
                 }
                 var topology = board.AddComponent<BoardTopology>();
                 topology.Configure(tiles, gates);
@@ -249,23 +357,28 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(view.GetMinimumShopDistance(topology, Vector2Int.zero, null), Is.EqualTo(-1));
                 var data = new SerializedObject(view);
                 var rooms = data.FindProperty("rooms");
+                var north = (BoardMapIcon)rooms.GetArrayElementAtIndex(0).FindPropertyRelative("ProgressArrows").GetArrayElementAtIndex(0).objectReferenceValue;
                 var east = (BoardMapIcon)rooms.GetArrayElementAtIndex(0).FindPropertyRelative("ProgressArrows").GetArrayElementAtIndex(1).objectReferenceValue;
                 var laterEast = (BoardMapIcon)rooms.GetArrayElementAtIndex(1).FindPropertyRelative("ProgressArrows").GetArrayElementAtIndex(1).objectReferenceValue;
-                var label = (Text)data.FindProperty("shopDistanceText").objectReferenceValue;
                 view.PrepareMap(topology, Vector2Int.zero, 2, new Vector2Int(2, 0));
                 Assert.That(east.enabled, Is.True);
+                Assert.That(north.enabled, Is.True,
+                    "Direction icons appear for each choice at a branch.");
                 Assert.That(laterEast.enabled, Is.False, "Future steps must not be advertised as immediate exits.");
-                var oldDistanceText = label.text;
                 view.PrepareMap(topology, Vector2Int.zero, 0, Vector2Int.right);
                 Assert.That(east.enabled, Is.False);
-                Assert.That(label.text, Is.Not.EqualTo(oldDistanceText), "Shop relocation must refresh the cached distance.");
                 Assert.That(view.GetMinimumShopDistance(topology, Vector2Int.zero, Vector2Int.right), Is.EqualTo(1));
                 view.PrepareMap(topology, Vector2Int.right, 1, Vector2Int.right);
-                Assert.That(label.text, Is.EqualTo(string.Format(data.FindProperty("shopDistanceFormat").stringValue, 0)));
+                Assert.That(laterEast.enabled, Is.False,
+                    "A tile with only one exit does not show a direction icon.");
+                Assert.That(view.GetMinimumShopDistance(topology,
+                    Vector2Int.right, Vector2Int.right), Is.Zero);
                 view.PrepareMap(topology, Vector2Int.right, 1, Vector2Int.zero);
-                Assert.That(label.text, Is.EqualTo(data.FindProperty("shopUnreachableText").stringValue));
+                Assert.That(view.GetMinimumShopDistance(topology,
+                    Vector2Int.right, Vector2Int.zero), Is.EqualTo(-1));
                 view.PrepareMap(topology, Vector2Int.right, 1, null);
-                Assert.That(label.text, Is.EqualTo(data.FindProperty("shopUnavailableText").stringValue));
+                Assert.That(view.GetMinimumShopDistance(topology,
+                    Vector2Int.right, null), Is.EqualTo(-1));
             }
             finally { Object.DestroyImmediate(board); Object.DestroyImmediate(instance); }
         }
@@ -336,8 +449,8 @@ namespace MazeParty.Multiplayer.Tests
                             view.PresentPlayer(slot, player.transform, Color.white, isLocal);
                             var marker = (Image)markers.GetArrayElementAtIndex(slot).objectReferenceValue;
                             var highlight = (GameObject)highlights.GetArrayElementAtIndex(slot).objectReferenceValue;
-                            Assert.That(marker.gameObject.activeSelf, Is.EqualTo(view == local || isLocal),
-                                "HUD shows nearby players; full map shows only the current local seat.");
+                            Assert.That(marker.gameObject.activeSelf, Is.True,
+                                "Knowledge filtering happens before a marker position is presented.");
                             Assert.That(highlight.activeSelf, Is.EqualTo(isLocal));
                         }
                     }
@@ -364,7 +477,7 @@ namespace MazeParty.Multiplayer.Tests
                         ((Image)fullMarkers.GetArrayElementAtIndex(slot)
                             .objectReferenceValue).gameObject.activeSelf,
                         Is.True,
-                        "The freeform turn overview must show every player.");
+                        "The turn overview must show every visible or last-known player.");
                     Assert.That(
                         ((GameObject)fullHighlights.GetArrayElementAtIndex(slot)
                             .objectReferenceValue).activeSelf,
@@ -374,8 +487,8 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     ((Image)fullMarkers.GetArrayElementAtIndex(0)
                         .objectReferenceValue).gameObject.activeSelf,
-                    Is.False,
-                    "Standard full-map refreshes must still honor localPlayerOnly.");
+                    Is.True,
+                    "A supplied last-known position is shown on the full map.");
                 full.PrepareMap(topology, Vector2Int.zero, 2, null, player.transform.position);
                 full.SetHeading(270f);
                 var fullProjection = full.GetComponentInChildren<MiniMapView>(true);
@@ -403,7 +516,7 @@ namespace MazeParty.Multiplayer.Tests
                     "The automatic turn-overview map is not a dismissible popup.");
                 controller.UpdateFullMapState(true, false, true);
                 Assert.That(panel.activeSelf, Is.True,
-                    "Repeated freeform overview refreshes keep the authored panel active.");
+                    "Repeated turn-overview refreshes keep the authored panel active.");
                 controller.UpdateFullMapState(true, false, false);
                 Assert.That(panel.activeSelf, Is.False);
                 controller.UpdateFullMapState(true, true);
@@ -418,6 +531,53 @@ namespace MazeParty.Multiplayer.Tests
                 Object.DestroyImmediate(player);
                 Object.DestroyImmediate(board);
                 Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
+        public void DirectPlayerSight_RequiresViewportAndClearWorldLine()
+        {
+            var cameraObject = new GameObject("Map sight camera");
+            var obstacle = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            try
+            {
+                var outputCamera = cameraObject.AddComponent<Camera>();
+                outputCamera.enabled = false;
+                outputCamera.transform.position =
+                    new Vector3(10000f, 10000f, 10000f);
+                outputCamera.transform.rotation = Quaternion.identity;
+                var target = outputCamera.transform.position +
+                             Vector3.forward * 10f;
+                var hits = new RaycastHit[8];
+
+                obstacle.SetActive(false);
+                Physics.SyncTransforms();
+                Assert.That(BoardMapView.IsPointDirectlyVisible(
+                    outputCamera, target, hits), Is.True);
+
+                obstacle.transform.position = Vector3.Lerp(
+                    outputCamera.transform.position,
+                    target,
+                    .5f);
+                obstacle.transform.localScale = new Vector3(2f, 2f, .5f);
+                obstacle.SetActive(true);
+                Physics.SyncTransforms();
+                Assert.That(BoardMapView.IsPointDirectlyVisible(
+                    outputCamera, target, hits), Is.False,
+                    "A wall or obstacle must prevent a map observation.");
+
+                obstacle.SetActive(false);
+                Physics.SyncTransforms();
+                Assert.That(BoardMapView.IsPointDirectlyVisible(
+                    outputCamera,
+                    outputCamera.transform.position - Vector3.forward * 10f,
+                    hits), Is.False,
+                    "A player behind the camera is not directly observed.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(obstacle);
+                Object.DestroyImmediate(cameraObject);
             }
         }
 
@@ -563,11 +723,8 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(secondFloor.gameObject.activeSelf, Is.True);
                     Assert.That(firstFloor.enabled, Is.False,
                         "The aggregate polygon graphic replaces square floor images.");
-                    var isFullMap = Mathf.Approximately(
-                        data.FindProperty("radiusInTiles").floatValue,
-                        0f);
-                    Assert.That(secondTypeIcon.enabled, Is.EqualTo(!isFullMap),
-                        "The full map marks a key shop only by coloring its tile; the live minimap keeps its existing detail icon.");
+                    Assert.That(secondTypeIcon.enabled, Is.False,
+                        "Both maps mark a key shop only by coloring its tile.");
 
                     var projection = (MiniMapView)data.FindProperty("projection")
                         .objectReferenceValue;
@@ -613,7 +770,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void AuthoredPlayerStarts_LabelNormalRoomsForLegacyAndFreeformMaps()
+        public void StartTiles_UseNormalDesignWithoutPersistentPlayerLabels()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
@@ -683,17 +840,11 @@ namespace MazeParty.Multiplayer.Tests
                             .FindPropertyRelative("Symbol").objectReferenceValue;
                         var secondSymbol = (Text)rooms.GetArrayElementAtIndex(1)
                             .FindPropertyRelative("Symbol").objectReferenceValue;
-                        var isFullMap = Mathf.Approximately(
-                            new SerializedObject(view)
-                                .FindProperty("radiusInTiles").floatValue,
-                            0f);
                         Assert.That(first.TileType, Is.EqualTo(BoardTileType.Normal));
                         Assert.That(second.TileType, Is.EqualTo(BoardTileType.Normal));
-                        Assert.That(firstSymbol.text,
-                            Is.EqualTo(isFullMap ? string.Empty : "P1/P2"));
-                        Assert.That(secondSymbol.text,
-                            Is.EqualTo(isFullMap ? string.Empty : "P3/P4"),
-                            "The full map reserves Symbol for travel numbers; the live minimap keeps authored player starts.");
+                        Assert.That(firstSymbol.text, Is.Empty);
+                        Assert.That(secondSymbol.text, Is.Empty,
+                            "Start tiles must use the normal-room design without persistent player labels.");
                     }
 
                     if (!freeform)
@@ -701,26 +852,20 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(
                             BoardMapView.ResolveOverviewMarker(
                                 string.Empty,
-                                string.Empty,
-                                mapRoot,
-                                first),
-                            Is.EqualTo("P1/P2"));
+                                string.Empty),
+                            Is.Empty);
                         Assert.That(
                             BoardMapView.ResolveOverviewMarker(
                                 string.Empty,
-                                ">",
-                                mapRoot,
-                                first),
+                                ">"),
                             Is.EqualTo(">"),
-                            "Route arrows keep precedence over authored starts.");
+                            "Route arrows remain visible when the tile is unoccupied.");
                         Assert.That(
                             BoardMapView.ResolveOverviewMarker(
                                 "K1",
-                                ">",
-                                mapRoot,
-                                first),
+                                ">"),
                             Is.EqualTo("K1"),
-                            "Shop/player markers keep precedence over routes and starts.");
+                            "Shop/player markers keep precedence over routes.");
                     }
                 }
                 finally
@@ -731,27 +876,5 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void PlayerRevealPolicy_PreservesCloakExceptDuringTurnOverview()
-        {
-            var cases = new[]
-            {
-                (false, false, BoardMinimapDisplayContext.Standard, true),
-                (true, true, BoardMinimapDisplayContext.Standard, true),
-                (true, false, BoardMinimapDisplayContext.Standard, false),
-                (true, false, BoardMinimapDisplayContext.TurnOverview, true)
-            };
-
-            foreach (var testCase in cases)
-            {
-                Assert.That(
-                    BoardMinimapView.ShouldRevealPlayer(
-                        testCase.Item1,
-                        testCase.Item2,
-                        testCase.Item3),
-                    Is.EqualTo(testCase.Item4),
-                    testCase.ToString());
-            }
-        }
     }
 }

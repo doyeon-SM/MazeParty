@@ -311,14 +311,9 @@ namespace MazeParty.Multiplayer
                 Mathf.Clamp(_projectileLimit, 0, ProjectilePoolSize),
                 Mathf.Clamp(_laserLimit, 0, LaserPoolSize));
             _matchActive.Value = true;
-            _roundNumber.Value = (byte)_serverMatch.RoundNumber;
             CacheAndFreezeBoardAvatarsOnServer();
-            SyncSnapshotOnServer();
             var now = ServerNow;
-            _phaseStartedAt = now;
-            _phase.Value = (byte)NetworkCliffBarragePhase.Countdown;
-            _phaseEndsAt.Value = now +
-                CliffBarrageRules.CountdownSeconds;
+            BeginRoundCountdownOnServer(now);
             Debug.Log("[CliffBarrage] Three-round match started.");
         }
 
@@ -513,6 +508,21 @@ namespace MazeParty.Multiplayer
             ClearLocalRuntime();
         }
 
+        private void BeginRoundCountdownOnServer(double now)
+        {
+            if (_serverMatch == null)
+            {
+                return;
+            }
+            StopAllMovementOnServer();
+            _roundNumber.Value = (byte)_serverMatch.RoundNumber;
+            _phaseStartedAt = now;
+            _phase.Value = (byte)NetworkCliffBarragePhase.Countdown;
+            _phaseEndsAt.Value = now +
+                CliffBarrageRules.CountdownSeconds;
+            SyncSnapshotOnServer();
+        }
+
         private void BeginPlayingOnServer(double now)
         {
             if (_serverMatch == null)
@@ -647,9 +657,7 @@ namespace MazeParty.Multiplayer
                 _deliveredHitCounts,
                 0,
                 _deliveredHitCounts.Length);
-            // The shared three-second countdown belongs to game start only.
-            // Later rounds begin as soon as the result display ends.
-            BeginPlayingOnServer(now);
+            BeginRoundCountdownOnServer(now);
         }
 
         private void CompleteMatchOnServer()

@@ -440,6 +440,33 @@ namespace MazeParty.Gameplay
             return true;
         }
 
+        public bool TryShortenLandingEffectResolve(
+            double synchronizedNow,
+            double reductionSeconds)
+        {
+            ValidateTimestamp(synchronizedNow);
+            ValidateDuration(reductionSeconds, nameof(reductionSeconds));
+            if (!IsStarted || IsPaused ||
+                State != BoardFlowState.LandingEffectResolve ||
+                reductionSeconds <= 0d)
+            {
+                return false;
+            }
+
+            var logicalNow = ToFlowTime(synchronizedNow);
+            var elapsed = Math.Max(0d, logicalNow - _stateStartedAt);
+            var shortenedDuration = Math.Max(
+                elapsed,
+                _landingEffectResolveDurationSeconds - reductionSeconds);
+            if (shortenedDuration >= _landingEffectResolveDurationSeconds)
+            {
+                return false;
+            }
+
+            _landingEffectResolveDurationSeconds = shortenedDuration;
+            return true;
+        }
+
         public bool Pause(
             double synchronizedNow,
             bool deferExpiredAction = false,

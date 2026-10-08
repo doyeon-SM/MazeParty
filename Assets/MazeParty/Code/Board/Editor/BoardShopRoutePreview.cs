@@ -47,6 +47,11 @@ namespace MazeParty.Editor
                 topology.TryGetTile(new Vector2Int(1, 1), out var source);
                 topology.TryGetTile(new Vector2Int(5, 2), out var shop);
                 view.PresentRouteForPhase(topology, source, shop, BoardFlowState.TurnOverview);
+                foreach (var particles in guide.GetComponentsInChildren<
+                             ParticleSystem>(true))
+                {
+                    particles.Simulate(.7f, true, true, true);
+                }
                 var lightObject = new GameObject("Preview Light", typeof(Light));
                 SceneManager.MoveGameObjectToScene(lightObject, preview);
                 var light = lightObject.GetComponent<Light>();

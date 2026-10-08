@@ -13,6 +13,10 @@ namespace MazeParty.Multiplayer
         private const int NameplateOcclusionHitCapacity = 64;
 
         [SerializeField] private GameplayCameraDirector cameraDirector;
+        [SerializeField] private GameObject resourceTransferCoinPrefab;
+        [SerializeField] private GameObject resourceTransferKeyPrefab;
+        [SerializeField, Min(0f)] private float resourceTransferHeadOffset = 0.3f;
+        [SerializeField, Min(0.1f)] private float resourceTransferTravelHeight = 1.5f;
 
         private readonly RaycastHit[] _nameplateOcclusionHits =
             new RaycastHit[NameplateOcclusionHitCapacity];
@@ -25,10 +29,21 @@ namespace MazeParty.Multiplayer
         private int _observedRevision = -1;
         private bool _wasReconnectPaused;
         private bool _hasObservedState;
+        private GameObject _resourceTransferVisual;
+        private int _resourceTransferVisualRevision = -1;
+        private BoardResourceTransferPhase _resourceTransferVisualPhase;
 
         public void Configure(GameplayCameraDirector director)
         {
             cameraDirector = director;
+        }
+
+        public void ConfigureResourceTransferAssets(
+            GameObject coinPrefab,
+            GameObject keyPrefab)
+        {
+            resourceTransferCoinPrefab = coinPrefab;
+            resourceTransferKeyPrefab = keyPrefab;
         }
 
         private void OnDisable()
@@ -42,6 +57,7 @@ namespace MazeParty.Multiplayer
                 _localAvatar.AvatarVisual?.SetTopViewHighlight(false);
             }
             ClearNameplateOcclusion();
+            ClearResourceTransferVisual();
             BoardFlowView.Instance?.SetTopViewShopHighlights(false);
         }
 
@@ -57,6 +73,7 @@ namespace MazeParty.Multiplayer
             if (cameraDirector == null || match == null || !match.IsSpawned || !match.GameplayEnabled)
             {
                 ClearNameplateOcclusion();
+                ClearResourceTransferVisual();
                 return;
             }
 
@@ -75,9 +92,14 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshCombatSpectatorFocus(match);
+            var resourceTransferPhase =
+                RefreshResourceTransferPresentation(match);
             var targetMode = match.IsKeyShopRevealActive
                 ? GameplayMode.BoardTopDown
-                : ModeFor(match, _localAvatar);
+                : (resourceTransferPhase == BoardResourceTransferPhase.Source ||
+                   resourceTransferPhase == BoardResourceTransferPhase.Destination)
+                    ? GameplayMode.BoardResourceEvent
+                    : ModeFor(match, _localAvatar);
             if (!_hasObservedState || _wasReconnectPaused)
             {
                 cameraDirector.SnapTo(targetMode, _localAvatar != null ? _localAvatar.EyePivot : null);
@@ -86,7 +108,8 @@ namespace MazeParty.Multiplayer
                 _wasReconnectPaused = false;
                 ApplyLocalBodyVisibility(targetMode);
             }
-            else if (_observedRevision != match.StateRevision)
+            else if (_observedRevision != match.StateRevision ||
+                     cameraDirector.ActiveMode != targetMode)
             {
                 _observedRevision = match.StateRevision;
                 if (cameraDirector.ActiveMode != targetMode)
@@ -99,6 +122,149 @@ namespace MazeParty.Multiplayer
             // Camera movement and obstacle visibility change continuously even
             // while the replicated flow revision remains unchanged.
             RefreshOpponentNameplateOcclusion(match, targetMode);
+        }
+
+        private BoardResourceTransferPhase RefreshResourceTransferPresentation(
+            NetworkMatchState match)
+        {
+            if (match.FlowState != BoardFlowState.LandingEffectResolve ||
+                match.IsGlobalSimulationPaused)
+            {
+                ClearResourceTransferVisual();
+                return BoardResourceTransferPhase.None;
+            }
+
+            var phase = match.GetResourceTransferPresentationPhase(
+                out _,
+                out var motionProgress);
+            if (phase != BoardResourceTransferPhase.Source &&
+                phase != BoardResourceTransferPhase.Destination)
+            {
+                ClearResourceTransferVisual();
+                return phase;
+            }
+
+            var snapshot = match.ResourceTransferPresentation;
+            var focusSlot = phase == BoardResourceTransferPhase.Source
+                ? snapshot.SourceSlot
+                : snapshot.DestinationSlot;
+            var avatar = match.GetAvatarForSlot(focusSlot);
+            if (avatar == null)
+            {
+                ClearResourceTransferVisual();
+                return BoardResourceTransferPhase.None;
+            }
+
+            var head = ResolveHeadAnchor(avatar);
+            cameraDirector.SetBoardResourceEventFocus(
+                avatar.transform,
+                head,
+                resourceTransferHeadOffset +
+                resourceTransferTravelHeight * 0.5f);
+            RefreshResourceTransferVisual(
+                snapshot,
+                phase,
+                motionProgress,
+                avatar.transform,
+                head);
+            return phase;
+        }
+
+        private void RefreshResourceTransferVisual(
+            BoardResourceTransferSnapshot snapshot,
+            BoardResourceTransferPhase phase,
+            float motionProgress,
+            Transform avatarRoot,
+            Transform head)
+        {
+            if (_resourceTransferVisual == null ||
+                _resourceTransferVisualRevision != snapshot.Revision ||
+                _resourceTransferVisualPhase != phase)
+            {
+                ClearResourceTransferVisual();
+                var prefab = snapshot.ResourceKind ==
+                             BoardSpecialEventResource.Key
+                    ? resourceTransferKeyPrefab
+                    : resourceTransferCoinPrefab;
+                if (prefab == null)
+                {
+                    return;
+                }
+
+                _resourceTransferVisual = Instantiate(prefab);
+                _resourceTransferVisual.name =
+                    "Board Resource Transfer " + snapshot.ResourceKind;
+                DisableResourceVisualBehaviours(_resourceTransferVisual);
+                _resourceTransferVisualRevision = snapshot.Revision;
+                _resourceTransferVisualPhase = phase;
+            }
+
+            var headPosition = head != null
+                ? head.position
+                : avatarRoot.position +
+                  Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            var eased = motionProgress * motionProgress *
+                        (3f - 2f * motionProgress);
+            var height = phase == BoardResourceTransferPhase.Source
+                ? Mathf.Lerp(0f, resourceTransferTravelHeight, eased)
+                : Mathf.Lerp(resourceTransferTravelHeight, 0f, eased);
+            var visualTransform = _resourceTransferVisual.transform;
+            visualTransform.position = headPosition +
+                                       Vector3.up *
+                                       (resourceTransferHeadOffset + height);
+            visualTransform.rotation = Quaternion.Euler(
+                0f,
+                eased * 240f,
+                0f);
+            var disappear = phase == BoardResourceTransferPhase.Source
+                ? Mathf.InverseLerp(0.72f, 1f, motionProgress)
+                : Mathf.InverseLerp(0.82f, 1f, motionProgress);
+            visualTransform.localScale = Vector3.one *
+                                         Mathf.Lerp(1f, 0.2f, disappear);
+        }
+
+        private void ClearResourceTransferVisual()
+        {
+            if (_resourceTransferVisual != null)
+            {
+                if (Application.isPlaying)
+                {
+                    Destroy(_resourceTransferVisual);
+                }
+                else
+                {
+                    DestroyImmediate(_resourceTransferVisual);
+                }
+            }
+
+            _resourceTransferVisual = null;
+            _resourceTransferVisualRevision = -1;
+            _resourceTransferVisualPhase = BoardResourceTransferPhase.None;
+        }
+
+        private static Transform ResolveHeadAnchor(NetworkPlayerAvatar avatar)
+        {
+            var bindings = avatar.AvatarVisual != null
+                ? avatar.AvatarVisual.Bindings
+                : null;
+            return bindings != null && bindings.HeadAnchor != null
+                ? bindings.HeadAnchor
+                : avatar.EyePivot;
+        }
+
+        private static void DisableResourceVisualBehaviours(GameObject visual)
+        {
+            var behaviours = visual.GetComponentsInChildren<MonoBehaviour>(true);
+            for (var index = 0; index < behaviours.Length; index++)
+            {
+                behaviours[index].enabled = false;
+            }
+
+            var colliders = visual.GetComponentsInChildren<Collider>(true);
+            for (var index = 0; index < colliders.Length; index++)
+            {
+                colliders[index].enabled = false;
+            }
         }
 
         private void RefreshOpponentNameplateOcclusion(

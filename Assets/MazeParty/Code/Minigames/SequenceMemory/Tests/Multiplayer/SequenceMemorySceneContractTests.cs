@@ -228,6 +228,70 @@ namespace MazeParty.Multiplayer.Tests
                 "Shared tone presentation must identify the authoritative actor.");
         }
 
+        [Test]
+        public void CompletedReveal_EntersSecondRoundCountdownForExactDuration()
+        {
+            var match = new SequenceMemoryMatchState(20261009UL);
+            match.BeginMatch();
+            match.OpenInputWindow();
+            Assert.That(
+                match.TryEndInputForTimeout(
+                    SequenceMemoryRules.InputWindowSeconds),
+                Is.True);
+            Assert.That(
+                match.Phase,
+                Is.EqualTo(SequenceMemoryMatchPhase.RevealingAnswer));
+
+            var root = new GameObject("SequenceMemory Round Countdown Test");
+            try
+            {
+                var state = root.AddComponent<NetworkSequenceMemoryState>();
+                NetworkCountdownTestAccess.SetPrivateField(
+                    state,
+                    "_serverMatch",
+                    match);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    state,
+                    "_matchActive",
+                    true);
+                NetworkCountdownTestAccess.SetRoundNumber(state, 1);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    state,
+                    "_phase",
+                    (byte)NetworkSequenceMemoryPhase.RevealingAnswer);
+
+                const double transitionAt = 120d;
+                NetworkCountdownTestAccess.InvokePrivate(
+                    state,
+                    "CompleteRevealOnServer",
+                    transitionAt);
+
+                Assert.That(match.CurrentRoundNumber, Is.EqualTo(2));
+                Assert.That(
+                    match.Phase,
+                    Is.EqualTo(SequenceMemoryMatchPhase.PresentingProblem));
+                Assert.That(
+                    state.Phase,
+                    Is.EqualTo(NetworkSequenceMemoryPhase.Countdown));
+                Assert.That(state.RoundNumber, Is.EqualTo(2));
+                Assert.That(
+                    state.ProblemLength,
+                    Is.EqualTo(match.CurrentProblem.Length));
+                Assert.That(
+                    NetworkCountdownTestAccess.GetNetworkValue<double>(
+                        state,
+                        "_phaseEndsAt"),
+                    Is.EqualTo(
+                        transitionAt +
+                        SequenceMemoryRules.CountdownSeconds)
+                        .Within(0.000001d));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
         private static Transform FindDescendant(
             Transform root,
             string childName)

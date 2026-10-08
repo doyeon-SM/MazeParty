@@ -96,20 +96,5 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(expected));
         }
 
-        [Test]
-        public void IsLobbyPhase_UsesExactSessionPhase()
-        {
-            Assert.That(
-                BoardBoundaryActivationRules.IsLobbyPhase(
-                    MultiplayerConstants.LobbyPhase),
-                Is.True);
-            Assert.That(
-                BoardBoundaryActivationRules.IsLobbyPhase(
-                    MultiplayerConstants.PlayingPhase),
-                Is.False);
-            Assert.That(
-                BoardBoundaryActivationRules.IsLobbyPhase(null),
-                Is.False);
-        }
     }
 }

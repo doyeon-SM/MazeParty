@@ -163,7 +163,7 @@ namespace MazeParty.Multiplayer
                 : -1;
             var isAlive = localSlot >= 0 && localSlot < 4 &&
                           !state.IsEliminated(localSlot);
-            var showingCountdown = match.IsMinigameStartCountdown ||
+            var showingCountdown = match.IsMinigameRoundCountdown ||
                                    state.Phase == NetworkArenaCombatPhase.Countdown;
             var playing = match.FlowState ==
                           BoardFlowState.MinigamePlaying;

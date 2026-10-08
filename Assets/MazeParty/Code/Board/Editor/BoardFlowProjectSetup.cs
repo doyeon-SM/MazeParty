@@ -25,6 +25,14 @@ namespace MazeParty.Editor
             "Runtime Terrain Resources (Build Placeholder)";
         internal const string BoardSkyboxPath =
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
+        internal const string ResourceTransferCoinSourcePath =
+            "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Coin.prefab";
+        internal const string ResourceTransferKeySourcePath =
+            "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Key.prefab";
+        internal const string ResourceTransferCoinPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/World/BoardEventCoin.prefab";
+        internal const string ResourceTransferKeyPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/World/BoardEventKey.prefab";
 
         private const string DiceArtFolder = Root + "/Art/Dice";
         private const string D12ArtFolder = DiceArtFolder + "/D12";
@@ -173,8 +181,8 @@ namespace MazeParty.Editor
 
             MigrateObsoleteBoardHudTexts(prefab);
             Debug.Log(
-                "BoardCanvas.prefab no longer contains the obsolete choice " +
-                "and shield status texts; its remaining design was preserved.");
+                "BoardCanvas.prefab no longer contains the obsolete choice, " +
+                "shield, or board status texts; its remaining design was preserved.");
         }
 
         [MenuItem("MazeParty/Gameplay/Rebuild D12 Dice Assets")]
@@ -214,6 +222,7 @@ namespace MazeParty.Editor
             }
 
             var materials = CreateMaterials();
+            EnsureBoardResourceTransferPrefabs();
             ConfigureBoardEnvironment();
             CreateLighting();
             CreateBoardBackdrop(materials.Backdrop);
@@ -1042,7 +1051,90 @@ namespace MazeParty.Editor
             director.SetBoardFramingAnchor(framing);
             var presenter = root.AddComponent<BoardFlowCameraPresenter>();
             presenter.Configure(director);
+            presenter.ConfigureResourceTransferAssets(
+                RequireBoardResourceTransferPrefab(
+                    ResourceTransferCoinPrefabPath),
+                RequireBoardResourceTransferPrefab(
+                    ResourceTransferKeyPrefabPath));
             return director;
+        }
+
+        private static GameObject RequireBoardResourceTransferPrefab(
+            string assetPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException(
+                    "Required board resource-transfer prefab is missing: '" +
+                    assetPath + "'.");
+            }
+
+            return prefab;
+        }
+
+        private static void EnsureBoardResourceTransferPrefabs()
+        {
+            EnsureFolder("Assets/MazeParty/Prefabs/Board/World");
+            EnsureBoardResourceTransferPrefab(
+                ResourceTransferCoinPrefabPath,
+                ResourceTransferCoinSourcePath,
+                "BoardEventCoin",
+                0.32f);
+            EnsureBoardResourceTransferPrefab(
+                ResourceTransferKeyPrefabPath,
+                ResourceTransferKeySourcePath,
+                "BoardEventKey",
+                0.5f);
+        }
+
+        private static void EnsureBoardResourceTransferPrefab(
+            string assetPath,
+            string sourcePath,
+            string objectName,
+            float visualScale)
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(assetPath) != null)
+            {
+                return;
+            }
+
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(sourcePath);
+            if (source == null)
+            {
+                throw new InvalidOperationException(
+                    "Required BTM resource model is missing: '" +
+                    sourcePath + "'.");
+            }
+
+            var root = new GameObject(objectName);
+            try
+            {
+                var visual = PrefabUtility.InstantiatePrefab(source) as GameObject;
+                if (visual == null)
+                {
+                    throw new InvalidOperationException(
+                        "Could not instantiate BTM resource model: '" +
+                        sourcePath + "'.");
+                }
+
+                visual.name = "Visual";
+                visual.transform.SetParent(root.transform, false);
+                visual.transform.localPosition = Vector3.zero;
+                visual.transform.localRotation = Quaternion.identity;
+                visual.transform.localScale = Vector3.one * visualScale;
+                var behaviours = visual.GetComponentsInChildren<MonoBehaviour>(true);
+                for (var index = 0; index < behaviours.Length; index++)
+                {
+                    behaviours[index].enabled = false;
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(root, assetPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void ConfigureBoardEnvironment()
@@ -1111,7 +1203,6 @@ namespace MazeParty.Editor
             CreateHeader(root.transform, font);
             CreatePlayerPanel(root.transform, font);
             CreateInventory(root.transform, font);
-            CreateStatus(root.transform, font);
             CreateSelectionPanel(root.transform, font);
             CreateItemShopPanel(root.transform, font);
             CreateReadyPanel(root.transform, font);
@@ -1234,7 +1325,8 @@ namespace MazeParty.Editor
                 (FindDescendant(
                      prefab.transform,
                      "BoardChoiceTimerText") == null &&
-                 FindDescendant(prefab.transform, "BoardShieldText") == null))
+                 FindDescendant(prefab.transform, "BoardShieldText") == null &&
+                 FindDescendant(prefab.transform, "BoardStatusText") == null))
             {
                 return prefab;
             }
@@ -1257,6 +1349,14 @@ namespace MazeParty.Editor
                 if (shieldText != null)
                 {
                     UnityEngine.Object.DestroyImmediate(shieldText);
+                }
+
+                var statusText = FindDescendant(
+                    contents.transform,
+                    "BoardStatusText");
+                if (statusText != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(statusText);
                 }
 
                 if (PrefabUtility.SaveAsPrefabAsset(
@@ -1752,9 +1852,6 @@ namespace MazeParty.Editor
                 AmmoText = RequireBoardUiComponent<Text>(
                     root,
                     "BoardAmmoText"),
-                StatusText = RequireBoardUiComponent<Text>(
-                    root,
-                    "BoardStatusText"),
                 TooltipText = RequireBoardUiComponent<Text>(
                     root,
                     "BoardTooltipText"),
@@ -2183,13 +2280,6 @@ namespace MazeParty.Editor
                 new Vector2(0f, 0f), new Vector2(0f, 0f));
         }
 
-        private static void CreateStatus(Transform canvas, Font font)
-        {
-            CreateText("BoardStatusText", canvas, "Waiting for the board flow.", font, 18,
-                new Vector2(0f, 164f), new Vector2(900f, 38f), TextAnchor.MiddleCenter,
-                new Vector2(0.5f, 0f), new Vector2(0.5f, 0f));
-        }
-
         private static void CreateSelectionPanel(Transform canvas, Font font)
         {
             var panel = CreatePanel("ItemSelectionPanel", canvas, new Vector2(0.5f, 0.5f),
@@ -2575,6 +2665,7 @@ namespace MazeParty.Editor
             EnsureFolder(D12TextureFolder);
             EnsureFolder(D12MaterialFolder);
             EnsureFolder(D12PrefabFolder);
+            EnsureFolder("Assets/MazeParty/Prefabs/Board/World");
         }
 
         private static void EnsureFolder(string path)

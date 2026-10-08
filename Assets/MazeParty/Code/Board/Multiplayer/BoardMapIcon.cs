@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Sprites;
 using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
@@ -23,6 +24,13 @@ namespace MazeParty.Multiplayer
     public sealed class BoardMapIcon : MaskableGraphic
     {
         [SerializeField] private BoardMapIconKind kind;
+        [SerializeField] private Sprite iconSprite;
+
+        public BoardMapIconKind Kind => kind;
+        public Sprite IconSprite => iconSprite;
+        public override Texture mainTexture =>
+            iconSprite != null ? iconSprite.texture : base.mainTexture;
+
         public void SetIcon(BoardMapIconKind value)
         {
             if (kind == value) return;
@@ -30,9 +38,35 @@ namespace MazeParty.Multiplayer
             SetVerticesDirty();
         }
 
+        public void SetIcon(BoardMapIconKind value, Sprite sprite)
+        {
+            var kindChanged = kind != value;
+            var spriteChanged = iconSprite != sprite;
+            if (!kindChanged && !spriteChanged) return;
+
+            kind = value;
+            iconSprite = sprite;
+            SetVerticesDirty();
+            if (spriteChanged) SetMaterialDirty();
+        }
+
+        public void SetSprite(Sprite sprite)
+        {
+            if (iconSprite == sprite) return;
+            iconSprite = sprite;
+            SetVerticesDirty();
+            SetMaterialDirty();
+        }
+
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
             mesh.Clear();
+            if (iconSprite != null)
+            {
+                AddSprite(mesh);
+                return;
+            }
+
             switch (kind)
             {
                 case BoardMapIconKind.Room:
@@ -70,6 +104,23 @@ namespace MazeParty.Multiplayer
                     Line(mesh, new Vector2(-.5f, -.5f), new Vector2(.5f, .5f), .14f);
                     Line(mesh, new Vector2(-.5f, .5f), new Vector2(.5f, -.5f), .14f); break;
             }
+        }
+
+        private void AddSprite(VertexHelper mesh)
+        {
+            var rect = GetPixelAdjustedRect();
+            var uv = DataUtility.GetOuterUV(iconSprite);
+            var start = mesh.currentVertCount;
+            mesh.AddVert(new Vector2(rect.xMin, rect.yMin), color,
+                new Vector2(uv.x, uv.y));
+            mesh.AddVert(new Vector2(rect.xMin, rect.yMax), color,
+                new Vector2(uv.x, uv.w));
+            mesh.AddVert(new Vector2(rect.xMax, rect.yMax), color,
+                new Vector2(uv.z, uv.w));
+            mesh.AddVert(new Vector2(rect.xMax, rect.yMin), color,
+                new Vector2(uv.z, uv.y));
+            mesh.AddTriangle(start, start + 1, start + 2);
+            mesh.AddTriangle(start, start + 2, start + 3);
         }
 
         private Vector2 Point(Vector2 p)

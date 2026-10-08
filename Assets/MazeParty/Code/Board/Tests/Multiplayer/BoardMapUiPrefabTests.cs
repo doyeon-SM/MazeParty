@@ -12,6 +12,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
+        private const string ModernIconRoot =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/";
 
         [Test]
         public void BoardMapIconKinds_KeepSerializedIdsWhenNewKindsAreAppended()
@@ -73,6 +75,87 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void MineHelpIcons_StayUprightWhileHeadingRotatesMap()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var view = instance.GetComponent<BoardMinimapView>();
+                Assert.That(view, Is.Not.Null);
+                var data = new SerializedObject(view);
+                var projection = data.FindProperty("projection")
+                    .objectReferenceValue as Arikan.MiniMapView;
+                var mines = data.FindProperty("mineGraphic")
+                    .objectReferenceValue as BoardMapMineGraphic;
+                Assert.That(projection, Is.Not.Null);
+                Assert.That(mines, Is.Not.Null);
+                Assert.That(mines.IconSprite, Is.Not.Null);
+
+                mines.Present(
+                    new[] { new Vector3(5f, 0f, 0f) },
+                    new Bounds(Vector3.zero, new Vector3(20f, 1f, 20f)),
+                    0f);
+                var populateMesh = typeof(BoardMapMineGraphic).GetMethod(
+                    "OnPopulateMesh",
+                    System.Reflection.BindingFlags.Instance |
+                    System.Reflection.BindingFlags.NonPublic,
+                    null,
+                    new[] { typeof(UnityEngine.UI.VertexHelper) },
+                    null);
+                Assert.That(populateMesh, Is.Not.Null);
+                var initialGraphicRotation = mines.rectTransform.localRotation;
+                var initialCenter = Vector3.zero;
+
+                foreach (var yaw in new[] { 0f, 90f, 180f, 270f, 315f })
+                {
+                    view.SetHeading(yaw);
+                    using (var vertices = new UnityEngine.UI.VertexHelper())
+                    {
+                        populateMesh.Invoke(mines, new object[] { vertices });
+                        Assert.That(vertices.currentVertCount, Is.EqualTo(4));
+                        var bottomLeft = new UIVertex();
+                        var topLeft = new UIVertex();
+                        var topRight = new UIVertex();
+                        vertices.PopulateUIVertex(ref bottomLeft, 0);
+                        vertices.PopulateUIVertex(ref topLeft, 1);
+                        vertices.PopulateUIVertex(ref topRight, 2);
+
+                        var center =
+                            (bottomLeft.position + topRight.position) * 0.5f;
+                        if (Mathf.Approximately(yaw, 0f)) initialCenter = center;
+                        var mapRotation =
+                            projection.otherDotCanvas.localRotation;
+                        var displayedRotation = mapRotation *
+                                                mines.rectTransform.localRotation;
+                        var displayedUp = displayedRotation *
+                                          (topLeft.position -
+                                           bottomLeft.position);
+                        Assert.That(displayedUp.x,
+                            Is.EqualTo(0f).Within(0.001f),
+                            "Mine help icons must remain screen-upright at heading " +
+                            yaw + ".");
+                        Assert.That(displayedUp.y, Is.GreaterThan(0f));
+
+                        var displayedCenter = displayedRotation * center;
+                        var expectedCenter = mapRotation *
+                                             initialGraphicRotation *
+                                             initialCenter;
+                        Assert.That(
+                            Vector3.Distance(displayedCenter, expectedCenter),
+                            Is.LessThan(0.001f),
+                            "Counter-rotation must not move a mine marker at heading " +
+                            yaw + ".");
+                    }
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+
         private static void AssertBound(GameObject root)
         {
             var map = root.GetComponent<BoardMapView>();
@@ -100,19 +183,33 @@ namespace MazeParty.Multiplayer.Tests
                 var isFullMap = Mathf.Approximately(
                     data.FindProperty("radiusInTiles").floatValue,
                     0f);
+                Assert.That(data.FindProperty("currentTile").objectReferenceValue,
+                    Is.Null);
+                Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
+                    Is.Null);
+                Assert.That(data.FindProperty("shopDistanceText").objectReferenceValue,
+                    Is.Null);
+                Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
+                    Is.False,
+                    "Deleted map copy and key-shop details must remain optional.");
+                AssertSpritePath(data, "homeFilledIcon",
+                    ModernIconRoot + "Navigation/Home Filled.png");
+                AssertSpritePath(data, "moneyFilledIcon",
+                    ModernIconRoot + "Business & Commerce/Money Filled.png");
+                AssertSpritePath(data, "damageIcon",
+                    ModernIconRoot + "Navigation/Add.png", "Add");
+                AssertSpritePath(data, "warningFilledIcon",
+                    ModernIconRoot + "Navigation/Warning Filled.png");
+                AssertSpritePath(data, "arrowUpIcon",
+                    ModernIconRoot + "Navigation/Arrow Up.png");
+                AssertSpritePath(data, "locationMarkFilledIcon",
+                    ModernIconRoot + "Map/Location Mark Filled.png");
+                AssertSpritePath(data, "helpFilledIcon",
+                    ModernIconRoot + "Navigation/Help Filled.png");
                 if (isFullMap)
                 {
-                    Assert.That(data.FindProperty("currentTile").objectReferenceValue,
-                        Is.Null);
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Null);
-                    Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
-                        Is.Null);
-                    Assert.That(data.FindProperty("shopDistanceText").objectReferenceValue,
-                        Is.Null);
-                    Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
-                        Is.False,
-                        "The full map must not restore the removed key-shop text and icon details.");
                     Assert.That(data.FindProperty("showTravelCounts").boolValue,
                         Is.True);
                     var rooms = data.FindProperty("rooms");
@@ -130,17 +227,8 @@ namespace MazeParty.Multiplayer.Tests
                 }
                 else
                 {
-                    Assert.That(data.FindProperty("currentTile").objectReferenceValue,
-                        Is.Not.Null);
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Not.Null);
-                    Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
-                        Is.Not.Null);
-                    Assert.That(data.FindProperty("shopDistanceText").objectReferenceValue,
-                        Is.Not.Null);
-                    Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
-                        Is.True,
-                        "The live minimap keeps its existing key-shop details.");
                     Assert.That(data.FindProperty("showTravelCounts").boolValue,
                         Is.False,
                         "The live minimap must not receive route-count labels.");
@@ -148,6 +236,11 @@ namespace MazeParty.Multiplayer.Tests
                 var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
                 var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
                 Assert.That(mines, Is.Not.Null);
+                Assert.That(AssetDatabase.GetAssetPath(mines.IconSprite),
+                    Is.EqualTo(
+                        ModernIconRoot + "Navigation/Help Filled.png"));
+                Assert.That(mines.color,
+                    Is.EqualTo(new Color(1f, .2f, .18f, 1f)));
                 Assert.That(mines.transform.parent,
                     Is.EqualTo(route.transform.parent));
 
@@ -167,7 +260,8 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         AssetDatabase.GetAssetPath(marker.sprite),
                         Is.EqualTo(
-                            "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png"));
+                            ModernIconRoot +
+                            "Map/Location Mark Filled.png"));
                     Assert.That(marker.preserveAspect, Is.True);
                     Assert.That(effectLayer.GetSiblingIndex(),
                         Is.GreaterThan(marker.transform.GetSiblingIndex()));
@@ -177,9 +271,41 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(shopColor.r, Is.EqualTo(1f).Within(0.001f));
                 Assert.That(shopColor.g, Is.EqualTo(0.82f).Within(0.001f));
                 Assert.That(shopColor.b, Is.EqualTo(0.12f).Within(0.001f));
+
+                var typeColors = data.FindProperty("typeIconColors");
+                Assert.That(typeColors.GetArrayElementAtIndex(0).colorValue,
+                    Is.EqualTo(typeColors.GetArrayElementAtIndex(1).colorValue),
+                    "Start tiles use the normal-tile design.");
+                var effectColors = data.FindProperty("effectIconColors");
+                Assert.That(effectColors.GetArrayElementAtIndex(3).colorValue,
+                    Is.EqualTo(Color.white), "Item reward stays white.");
+                Assert.That(effectColors.GetArrayElementAtIndex(4).colorValue,
+                    Is.EqualTo(effectColors.GetArrayElementAtIndex(5).colorValue),
+                    "Both healing strengths use green.");
+                Assert.That(effectColors.GetArrayElementAtIndex(6).colorValue,
+                    Is.EqualTo(effectColors.GetArrayElementAtIndex(7).colorValue),
+                    "Both damage strengths use red.");
+                Assert.That(effectColors.GetArrayElementAtIndex(7).colorValue,
+                    Is.EqualTo(effectColors.GetArrayElementAtIndex(8).colorValue),
+                    "Damage and special events use the requested red.");
             }
             Assert.That(badges, Is.Not.Null);
             Assert.That(badges.HasRequiredReferences, Is.True);
+        }
+
+        private static void AssertSpritePath(
+            SerializedObject data,
+            string propertyName,
+            string expectedPath,
+            string expectedName = null)
+        {
+            var sprite = data.FindProperty(propertyName)
+                .objectReferenceValue as Sprite;
+            Assert.That(sprite, Is.Not.Null, propertyName);
+            Assert.That(AssetDatabase.GetAssetPath(sprite),
+                Is.EqualTo(expectedPath), propertyName);
+            if (!string.IsNullOrEmpty(expectedName))
+                Assert.That(sprite.name, Is.EqualTo(expectedName), propertyName);
         }
     }
 }

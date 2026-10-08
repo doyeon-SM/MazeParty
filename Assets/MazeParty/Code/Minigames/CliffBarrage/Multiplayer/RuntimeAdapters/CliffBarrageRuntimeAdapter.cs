@@ -16,12 +16,11 @@ namespace MazeParty.Multiplayer
         protected override NetworkCliffBarrageState CurrentState =>
             NetworkCliffBarrageState.Instance;
 
-        public override bool TryGetInitialCountdown(
+        public override bool TryGetRoundCountdown(
             out double remainingSeconds)
         {
             var state = CurrentState;
             remainingSeconds = state != null &&
-                state.RoundNumber == 1 &&
                 state.Phase == NetworkCliffBarragePhase.Countdown
                     ? state.Remaining : 0d;
             return remainingSeconds > 0d;

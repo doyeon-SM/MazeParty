@@ -130,9 +130,9 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void LandingEffectDeltasAndDurations_MatchTheBoardContract()
+        public void AuthoritativeEffectPlan_AppliesHealthDeltasAndExactDuration()
         {
-            var effects = new[]
+            var healthEffects = new[]
             {
                 BoardLandingEffectType.Healing20,
                 BoardLandingEffectType.Healing10,
@@ -140,10 +140,11 @@ namespace MazeParty.Gameplay.Tests
                 BoardLandingEffectType.Damage20
             };
             var expectedHealthDeltas = new[] { 20, 10, -40, -20 };
-            for (var index = 0; index < effects.Length; index++)
+            for (var index = 0; index < healthEffects.Length; index++)
             {
                 Assert.That(
-                    BoardLandingEffectLayout.GetHealthDelta(effects[index]),
+                    BoardLandingEffectLayout.GetHealthDelta(
+                        healthEffects[index]),
                     Is.EqualTo(expectedHealthDeltas[index]));
             }
 
@@ -154,14 +155,34 @@ namespace MazeParty.Gameplay.Tests
                 BoardLandingEffectType.Damage20,
                 BoardLandingEffectType.None
             };
-            Assert.That(
-                BoardLandingEffectLayout.GetTotalDurationSeconds(turnEffects),
-                Is.EqualTo(7d));
+            var duration = BoardLandingEffectLayout
+                .GetTotalDurationSeconds(turnEffects);
+            Assert.That(duration, Is.EqualTo(7d));
             Assert.That(
                 BoardLandingEffectLayout.GetTotalDurationSeconds(
                     turnEffects.Length,
                     index => turnEffects[index]),
-                Is.EqualTo(7d));
+                Is.EqualTo(duration));
+
+            var flow = new BoardFlowStateMachine();
+            flow.Start(0d);
+            flow.Tick(6d);
+            Assert.That(flow.TryReportPlayerArrived(0, 9.7d), Is.True);
+            Assert.That(flow.TryReportPlayerArrived(1, 9.8d), Is.True);
+            Assert.That(flow.TryReportPlayerArrived(2, 9.9d), Is.True);
+            Assert.That(flow.TryReportPlayerArrived(3, 10d), Is.True);
+            flow.Tick(15d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
+            Assert.That(flow.TryCompleteCombat(15d, duration), Is.True);
+
+            flow.Tick(21.999d);
+            Assert.That(
+                flow.State,
+                Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            flow.Tick(22d);
+            Assert.That(
+                flow.State,
+                Is.EqualTo(BoardFlowState.MinigameIntroReady));
         }
 
         private BoardTile CreateTile(Vector2Int coordinate, BoardTileType type)

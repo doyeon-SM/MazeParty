@@ -257,8 +257,8 @@ namespace MazeParty.Multiplayer
         {
             var localIsTagger =
                 state.IsTagger(_localSlot);
-            var showingStartCountdown =
-                match.IsMinigameStartCountdown;
+            var showingRoundCountdown =
+                match.IsMinigameRoundCountdown;
             for (var slot = 0;
                  slot < _players.Length;
                  slot++)
@@ -332,11 +332,11 @@ namespace MazeParty.Multiplayer
                     state.IsCaught(slot));
                 player.Visual.SetOwnerFirstPerson(
                     localIsTagger &&
-                    !showingStartCountdown &&
+                    !showingRoundCountdown &&
                     slot == _localSlot);
                 var hideAuraFromFirstPersonOwner =
                     localIsTagger &&
-                    !showingStartCountdown &&
+                    !showingRoundCountdown &&
                     slot == _localSlot;
                 player.SetTaggerAura(
                     state.IsTagger(slot) &&
@@ -382,12 +382,12 @@ namespace MazeParty.Multiplayer
             var localIsTagger =
                 state.IsTagger(_localSlot);
             // The tagger must see their own player and countdown overlay
-            // before play starts. Switch back to the original owner-only
+            // before each round starts. Switch back to the original owner-only
             // first-person camera as soon as the shared countdown ends.
-            var showingStartCountdown =
-                match.IsMinigameStartCountdown;
+            var showingRoundCountdown =
+                match.IsMinigameRoundCountdown;
             var useTaggerCamera =
-                localIsTagger && !showingStartCountdown;
+                localIsTagger && !showingRoundCountdown;
             var desiredCamera =
                 useTaggerCamera
                     ? taggerCamera

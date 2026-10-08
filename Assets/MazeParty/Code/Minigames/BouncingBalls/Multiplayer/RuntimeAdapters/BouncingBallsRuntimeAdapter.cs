@@ -14,10 +14,10 @@ namespace MazeParty.Multiplayer
         protected override NetworkBouncingBallsState CurrentState =>
             NetworkBouncingBallsState.Instance;
 
-        public override bool TryGetInitialCountdown(out double remainingSeconds)
+        public override bool TryGetRoundCountdown(out double remainingSeconds)
         {
             var state = CurrentState;
-            remainingSeconds = state != null && state.RoundNumber == 1 &&
+            remainingSeconds = state != null &&
                                state.Phase == NetworkBouncingBallsPhase.Countdown
                 ? state.Remaining
                 : 0d;

@@ -99,8 +99,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var highlightVisible = match.IsMinigameStartCountdown &&
-                                   match.MinigameStartCountdownRemaining > 0d;
+            var highlightVisible = match.IsMinigameRoundCountdown &&
+                                   match.MinigameRoundCountdownRemaining > 0d;
             var locationHighlightVisible =
                 RefreshRoundLocationHighlight(match.CurrentMinigame);
             if (UsesWorldIndicator(match.CurrentMinigame))

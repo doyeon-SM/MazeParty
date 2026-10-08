@@ -15,6 +15,8 @@ namespace MazeParty.Multiplayer
             new BoardTile[MultiplayerConstants.MaxPlayers];
         private readonly BoardSpecialEventRules.Resolution[] _specialEventPlan =
             new BoardSpecialEventRules.Resolution[MultiplayerConstants.MaxPlayers];
+        private readonly double[] _landingEffectDurations =
+            new double[MultiplayerConstants.MaxPlayers];
         private bool _landingEffectPlanReady;
         private byte _landingEffectAppliedMask;
         private double _landingEffectSlotStartsAt;
@@ -23,6 +25,7 @@ namespace MazeParty.Multiplayer
         private double PrepareLandingEffectPlanOnServer()
         {
             var hasLayout = IsServer && EnsureBoardLandingEffectLayout();
+            var totalDuration = 0d;
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 var avatar = GetAvatarForSlot(slot);
@@ -43,11 +46,18 @@ namespace MazeParty.Multiplayer
                         tile != null ? tile.Coordinate : default,
                         MultiplayerConstants.MaxPlayers)
                     : default;
+                var isTransfer = effect == BoardLandingEffectType.SpecialEvent &&
+                                 _specialEventPlan[slot].Family ==
+                                     BoardSpecialEventFamily.Transfer;
+                _landingEffectDurations[slot] = isTransfer
+                    ? BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
+                      BoardResourceTransferPresentationRules.TotalDurationSeconds
+                    : BoardLandingEffectLayout.GetDurationSeconds(effect);
+                totalDuration += _landingEffectDurations[slot];
             }
 
             _landingEffectPlanReady = true;
-            return BoardLandingEffectLayout.GetTotalDurationSeconds(
-                _landingEffectPlan);
+            return totalDuration;
         }
 
         private void BeginLandingEffectsOnServer()
@@ -67,6 +77,7 @@ namespace MazeParty.Multiplayer
             _landingEffectSlotStartsAt = 0d;
             _lastLandingEffectPreviewKey = -1;
             ClearLandingEffectPresentationOnServer();
+            ClearResourceTransferPresentationOnServer();
             AdvanceLandingEffectResolutionOnServer(ServerNow);
         }
 
@@ -96,7 +107,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 var effect = _landingEffectPlan[slot];
-                var duration = BoardLandingEffectLayout.GetDurationSeconds(effect);
+                var duration = _landingEffectDurations[slot];
                 var wasApplied =
                     (_landingEffectAppliedMask & (1 << slot)) != 0;
                 if (effect == BoardLandingEffectType.SpecialEvent)
@@ -122,8 +133,7 @@ namespace MazeParty.Multiplayer
                 {
                     var expectedApplyOffset =
                         effect == BoardLandingEffectType.SpecialEvent
-                            ? duration -
-                              BoardLandingEffectLayout.SpecialEventResultDurationSeconds
+                            ? BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds
                             : 0d;
                     if (stageElapsed > expectedApplyOffset)
                     {
@@ -140,6 +150,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
+                ClearResourceTransferPresentationOnServer();
                 _landingEffectSlotStartsAt += duration;
                 _nextLandingEffectSlot++;
                 _lastLandingEffectPreviewKey = -1;
@@ -473,6 +484,18 @@ namespace MazeParty.Multiplayer
             var destinationSlot = opponentGives
                 ? actorSlot
                 : resolution.OpponentSlot;
+            if (transferred > 0)
+            {
+                PublishResourceTransferPresentationOnServer(
+                    sourceSlot,
+                    destinationSlot,
+                    resolution.Resource,
+                    transferred);
+            }
+            else
+            {
+                ShortenEmptyTransferPresentationOnServer(actorSlot);
+            }
             var detailFormat = resolution.Resource == BoardSpecialEventResource.Gold
                 ? opponentGives
                     ? GameText.N("EVENT RESULT: P{0} GIVES P{1} {2} GOLD")
@@ -504,6 +527,25 @@ namespace MazeParty.Multiplayer
             return resource == BoardSpecialEventResource.Gold
                 ? avatar.Gold
                 : avatar.KeyCount;
+        }
+
+        private void ShortenEmptyTransferPresentationOnServer(int actorSlot)
+        {
+            var resultOnlyDuration =
+                BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
+                BoardResourceTransferPresentationRules.ResultDurationSeconds;
+            var reduction = Math.Max(
+                0d,
+                _landingEffectDurations[actorSlot] - resultOnlyDuration);
+            _landingEffectDurations[actorSlot] = resultOnlyDuration;
+            var now = ServerNow;
+            if (reduction <= 0d ||
+                !_flow.TryShortenLandingEffectResolve(now, reduction))
+            {
+                return;
+            }
+
+            SyncFlowSnapshot(now);
         }
 
         private static int ApplySpecialEventResourceDeltaOnServer(
@@ -644,6 +686,9 @@ namespace MazeParty.Multiplayer
             Array.Clear(_landingEffectPlan, 0, _landingEffectPlan.Length);
             Array.Clear(_landingEffectTiles, 0, _landingEffectTiles.Length);
             Array.Clear(_specialEventPlan, 0, _specialEventPlan.Length);
+            Array.Clear(_landingEffectDurations, 0, _landingEffectDurations.Length);
+            _pausedResourceTransferPresentationRemaining = 0d;
+            ClearResourceTransferPresentationOnServer();
             if (clearMessage)
             {
                 ClearLandingEffectPresentationOnServer();
@@ -659,6 +704,71 @@ namespace MazeParty.Multiplayer
 
             _lastLandingEffectMessage.Value = default;
             _lastLandingEffectRevision.Value++;
+        }
+
+        private void PublishResourceTransferPresentationOnServer(
+            int sourceSlot,
+            int destinationSlot,
+            BoardSpecialEventResource resource,
+            int amount)
+        {
+            var current = _resourceTransferPresentation.Value;
+            _resourceTransferPresentation.Value =
+                new BoardResourceTransferSnapshot
+                {
+                    Active = true,
+                    Revision = current.Revision + 1,
+                    SourceSlot = sourceSlot,
+                    DestinationSlot = destinationSlot,
+                    Resource = (byte)resource,
+                    Amount = Math.Max(0, amount),
+                    StartedAt = ServerNow
+                };
+            _pausedResourceTransferPresentationRemaining = 0d;
+        }
+
+        private void ClearResourceTransferPresentationOnServer()
+        {
+            var current = _resourceTransferPresentation.Value;
+            if (!current.Active)
+            {
+                return;
+            }
+
+            _resourceTransferPresentation.Value =
+                new BoardResourceTransferSnapshot
+                {
+                    Revision = current.Revision + 1,
+                    SourceSlot = -1,
+                    DestinationSlot = -1
+                };
+            _pausedResourceTransferPresentationRemaining = 0d;
+        }
+
+        private void PauseResourceTransferPresentationOnServer(double now)
+        {
+            _pausedResourceTransferPresentationRemaining =
+                BoardResourceTransferPresentationRules.GetRemainingSeconds(
+                    _resourceTransferPresentation.Value,
+                    now);
+        }
+
+        private void ResumeResourceTransferPresentationOnServer(double now)
+        {
+            var snapshot = _resourceTransferPresentation.Value;
+            if (!snapshot.Active ||
+                _pausedResourceTransferPresentationRemaining <= 0d)
+            {
+                _pausedResourceTransferPresentationRemaining = 0d;
+                return;
+            }
+
+            var elapsed =
+                BoardResourceTransferPresentationRules.TotalDurationSeconds -
+                _pausedResourceTransferPresentationRemaining;
+            snapshot.StartedAt = now - Math.Max(0d, elapsed);
+            _resourceTransferPresentation.Value = snapshot;
+            _pausedResourceTransferPresentationRemaining = 0d;
         }
     }
 }

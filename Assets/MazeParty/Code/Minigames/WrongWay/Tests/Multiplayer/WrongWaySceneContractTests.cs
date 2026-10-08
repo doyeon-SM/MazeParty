@@ -50,17 +50,18 @@ namespace MazeParty.Multiplayer.Tests
                     Is.Empty,
                     "WrongWay gameplay shows the local direction icon alone.");
                 Assert.That(hud.DirectionIcon, Is.Not.Null);
+                var directionSprites = new[]
+                {
+                    hud.UpIcon,
+                    hud.DownIcon,
+                    hud.LeftIcon,
+                    hud.RightIcon
+                };
+                Assert.That(directionSprites, Is.All.Not.Null);
                 Assert.That(
-                    new[]
-                    {
-                        hud.UpIcon,
-                        hud.DownIcon,
-                        hud.LeftIcon,
-                        hud.RightIcon
-                    }.Select(AssetDatabase.GetAssetPath),
-                    Is.All.StartsWith(
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/" +
-                        "Navigation/Arrow Simple "));
+                    directionSprites.Distinct().Count(),
+                    Is.EqualTo(directionSprites.Length),
+                    "Each direction must retain a distinct authored sprite.");
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         hud.gameObject),

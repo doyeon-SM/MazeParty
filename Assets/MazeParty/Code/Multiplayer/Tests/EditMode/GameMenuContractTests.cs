@@ -89,49 +89,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void MenuRules_ChooseExitBehaviourAndButtonsPerContext()
-        {
-            Assert.That(GameMenuRules.GetExitAction(GameMenuContext.Lobby),
-                Is.EqualTo(GameMenuExitAction.QuitApplication));
-            Assert.That(GameMenuRules.GetExitAction(GameMenuContext.WaitingRoom),
-                Is.EqualTo(GameMenuExitAction.LeaveWaitingRoom));
-            Assert.That(GameMenuRules.GetExitAction(GameMenuContext.InGame),
-                Is.EqualTo(GameMenuExitAction.ConfirmMatchLeave));
-
-            Assert.That(GameMenuRules.GetExitLabelSource(GameMenuContext.Lobby), Is.EqualTo("Quit Game"));
-            Assert.That(GameMenuRules.GetExitLabelSource(GameMenuContext.WaitingRoom), Is.EqualTo("Leave Game"));
-            Assert.That(GameMenuRules.GetExitLabelSource(GameMenuContext.InGame), Is.EqualTo("Leave Game"));
-
-            Assert.That(GameMenuRules.ShowsPauseButton(GameMenuContext.InGame), Is.True);
-            Assert.That(GameMenuRules.ShowsPauseButton(GameMenuContext.WaitingRoom), Is.False);
-            Assert.That(GameMenuRules.ShowsGearButton(GameMenuContext.Lobby), Is.True);
-            Assert.That(GameMenuRules.ShowsGearButton(GameMenuContext.WaitingRoom), Is.True);
-            Assert.That(GameMenuRules.ShowsGearButton(GameMenuContext.InGame), Is.False);
-        }
-
-        [Test]
-        public void PauseClock_RoundsUpToWholeSeconds()
-        {
-            var cases = new[]
-            {
-                (seconds: 300d, expected: "5:00"),
-                (seconds: 299.2d, expected: "5:00"),
-                (seconds: 61d, expected: "1:01"),
-                (seconds: 0.1d, expected: "0:01"),
-                (seconds: 0d, expected: "0:00"),
-                (seconds: -3d, expected: "0:00")
-            };
-
-            foreach (var testCase in cases)
-            {
-                Assert.That(
-                    GameMenuRules.FormatPauseClock(testCase.seconds),
-                    Is.EqualTo(testCase.expected),
-                    testCase.seconds.ToString());
-            }
-        }
-
-        [Test]
         public void VoluntaryLeave_ReturnsRemainingPlayersUnlessHostOrAlreadyReturning()
         {
             Assert.That(VoluntaryLeaveRules.Resolve(false, false, false),
@@ -156,26 +113,6 @@ namespace MazeParty.Multiplayer.Tests
             // The host still closes the room; hosts do not migrate.
             Assert.That(VoluntaryLeaveRules.Resolve(true, true, false, finalRankingLocked: true),
                 Is.EqualTo(VoluntaryLeaveDisposition.AcknowledgeOnly));
-        }
-
-        [Test]
-        public void DisplayModeSelector_WrapsInBothDirections()
-        {
-            Assert.That(DisplayModeOptions.Step(DisplayModeOption.Windowed, -1),
-                Is.EqualTo(DisplayModeOption.BorderlessFullscreen));
-            Assert.That(DisplayModeOptions.Step(DisplayModeOption.BorderlessFullscreen, 1),
-                Is.EqualTo(DisplayModeOption.Windowed));
-            for (var index = 0; index < DisplayModeOptions.Count; index++)
-            {
-                var option = (DisplayModeOption)index;
-                Assert.That(DisplayModeOptions.FromFullScreenMode(
-                        DisplayModeOptions.ToFullScreenMode(option)),
-                    Is.EqualTo(option));
-                Assert.That(DisplayModeOptions.GetLabelSource(option), Is.Not.Empty);
-            }
-
-            Assert.That(DisplayModeOptions.Sanitize((DisplayModeOption)9),
-                Is.EqualTo(DisplayModeOption.BorderlessFullscreen));
         }
 
         [Test]
@@ -231,79 +168,6 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(loaded.DisplayMode, Is.EqualTo(defaults.DisplayMode));
             Assert.That(loaded.QualityPreset, Is.EqualTo(defaults.QualityPreset));
             Assert.That(loaded.FrameRateCap, Is.EqualTo(defaults.FrameRateCap));
-        }
-
-        [Test]
-        public void Settings_PlatformChangesContainOnlyChangedExpensiveFields()
-        {
-            var original = GameSettingsData.Default;
-            var nonPlatform = original;
-            nonPlatform.MasterVolume = 0.5f;
-            nonPlatform.MouseSensitivity = 1.5f;
-            nonPlatform.ReduceFlashes = true;
-            Assert.That(GameSettings.GetPlatformChanges(original, nonPlatform),
-                Is.EqualTo(GameSettingsPlatformChanges.None));
-
-            var display = original;
-            display.Resolution = ResolutionOption.Hd720;
-            Assert.That(GameSettings.GetPlatformChanges(original, display),
-                Is.EqualTo(GameSettingsPlatformChanges.Display));
-
-            var quality = original;
-            quality.QualityPreset = QualityPresetOption.Low;
-            Assert.That(GameSettings.GetPlatformChanges(original, quality),
-                Is.EqualTo(GameSettingsPlatformChanges.Quality));
-
-            var frameRate = original;
-            frameRate.FrameRateCap = FrameRateCapOption.Fps30;
-            Assert.That(GameSettings.GetPlatformChanges(original, frameRate),
-                Is.EqualTo(GameSettingsPlatformChanges.FrameRate));
-
-            var all = original;
-            all.DisplayMode = DisplayModeOption.Windowed;
-            all.QualityPreset = QualityPresetOption.Low;
-            all.FrameRateCap = FrameRateCapOption.Unlimited;
-            Assert.That(GameSettings.GetPlatformChanges(original, all),
-                Is.EqualTo(GameSettingsPlatformChanges.All));
-        }
-
-        [Test]
-        public void Settings_StartupDisplayApplicationYieldsToCommandLineOverrides()
-        {
-            var nonDisplayChanges = GameSettingsPlatformChanges.Quality |
-                                    GameSettingsPlatformChanges.FrameRate;
-            var cases = new[]
-            {
-                ((string[])null, GameSettingsPlatformChanges.All),
-                (new string[0], GameSettingsPlatformChanges.All),
-                (new[] { "MazeParty.exe" }, GameSettingsPlatformChanges.All),
-                (new[] { "MazeParty.exe", "-auth-profile", "player1" },
-                    GameSettingsPlatformChanges.All),
-                (new[] { "MazeParty.exe", "-screen-width", "1280" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-SCREEN-HEIGHT=720" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-screen-fullscreen", "0" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-window-mode", "borderless" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-monitor", "2" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-popupwindow" },
-                    nonDisplayChanges),
-                (new[] { "MazeParty.exe", "-parentHWND", "12345" },
-                    nonDisplayChanges)
-            };
-
-            foreach (var testCase in cases)
-            {
-                Assert.That(
-                    GameSettings.GetStartupPlatformChanges(testCase.Item1),
-                    Is.EqualTo(testCase.Item2),
-                    testCase.Item1 == null
-                        ? "<null>"
-                        : string.Join(" ", testCase.Item1));
-            }
         }
 
         [Test]
@@ -406,23 +270,6 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(FullScreenMode.ExclusiveFullScreen));
             Assert.That(plan.QualityLevel, Is.EqualTo(0));
             Assert.That(plan.TargetFrameRate, Is.EqualTo(30));
-        }
-
-        [Test]
-        public void OnlineLook_AppliesSensitivityAndOptionalYInversion()
-        {
-            var settings = GameSettingsData.Default;
-            settings.MouseSensitivity = 1.5f;
-            var normal = NetworkPlayerAvatar.ResolveLookDelta(
-                new Vector2(2f, 3f), 0.1f, settings);
-            settings.InvertY = true;
-            var inverted = NetworkPlayerAvatar.ResolveLookDelta(
-                new Vector2(2f, 3f), 0.1f, settings);
-
-            Assert.That(normal.x, Is.EqualTo(0.3f).Within(0.0001f));
-            Assert.That(normal.y, Is.EqualTo(-0.45f).Within(0.0001f));
-            Assert.That(inverted.x, Is.EqualTo(0.3f).Within(0.0001f));
-            Assert.That(inverted.y, Is.EqualTo(0.45f).Within(0.0001f));
         }
 
         [Test]

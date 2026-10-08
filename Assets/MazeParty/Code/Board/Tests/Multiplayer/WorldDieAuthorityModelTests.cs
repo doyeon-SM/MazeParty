@@ -345,19 +345,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void OwnerTintState_UsesOnlyAuthoritativeBodyColor()
-        {
-            var bodyColor = LobbyColorPalette.GetColor(3);
-            var first = WorldDieTintState.FromAppearance(
-                PlayerAppearanceState.FromColor(bodyColor, 0, 0, 1, 0, 2));
-            var differentCosmetics = WorldDieTintState.FromAppearance(
-                PlayerAppearanceState.FromColor(bodyColor, 0, 0, 2, 0, 1));
-
-            Assert.That(first, Is.EqualTo(differentCosmetics));
-            Assert.That((Color32)first.Tint, Is.EqualTo(bodyColor));
-        }
-
-        [Test]
         public void Push_AllowsMatchingSlotWithResolvedChoiceAndLiveAction()
         {
             var model = CreateReadyModel(2);

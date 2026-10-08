@@ -236,7 +236,6 @@ namespace MazeParty.Multiplayer
             references.DiceText != null &&
             references.MovesText != null &&
             references.AmmoText != null &&
-            references.StatusText != null &&
             references.TooltipText != null &&
             references.ReconnectText != null &&
             references.ItemShopTitle != null &&

@@ -55,13 +55,13 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance != null
                 ? NetworkMatchState.Instance
                 : matchState;
-            if (match == null || !match.IsMinigameStartCountdown)
+            if (match == null || !match.IsMinigameRoundCountdown)
             {
                 SetCountdown(0, false);
                 return;
             }
 
-            var remaining = match.MinigameStartCountdownRemaining;
+            var remaining = match.MinigameRoundCountdownRemaining;
             var numeral = Mathf.CeilToInt((float)remaining);
             SetCountdown(Mathf.Clamp(numeral, 1, 3), remaining > 0d);
         }
@@ -84,7 +84,7 @@ namespace MazeParty.Multiplayer
             }
             else if (!show && _visible && _displayedNumeral == 1 && Application.isPlaying)
             {
-                // The countdown ran out after "1": the minigame starts.
+                // The countdown ran out after "1": the round starts.
                 GameSound.Play(SoundKeys.MinigameCountdownGo);
             }
 

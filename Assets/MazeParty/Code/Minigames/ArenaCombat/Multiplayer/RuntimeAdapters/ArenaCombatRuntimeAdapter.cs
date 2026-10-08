@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
         protected override NetworkArenaCombatState CurrentState =>
             NetworkArenaCombatState.Instance;
 
-        public override bool TryGetInitialCountdown(
+        public override bool TryGetRoundCountdown(
             out double remainingSeconds)
         {
             var state = CurrentState;

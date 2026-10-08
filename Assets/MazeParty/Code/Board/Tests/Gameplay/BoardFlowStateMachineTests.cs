@@ -94,6 +94,53 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void MinigameResult_UsesExactBoundaryForNextAndFinalTurns()
+        {
+            var cases = new[]
+            {
+                (
+                    TotalTurns: BoardFlowStateMachine.DefaultTotalTurns,
+                    ExpectedState: BoardFlowState.TurnOverview,
+                    ExpectedTurn: 2),
+                (
+                    TotalTurns: 1,
+                    ExpectedState: BoardFlowState.MatchComplete,
+                    ExpectedTurn: 1)
+            };
+
+            foreach (var testCase in cases)
+            {
+                var flow = new BoardFlowStateMachine(
+                    totalTurns: testCase.TotalTurns);
+                flow.Start(0d);
+                flow.Tick(6d);
+                ReportAllPlayersArrived(flow, 10d);
+                flow.Tick(15d);
+                Assert.That(flow.TryCompleteCombat(15d), Is.True);
+                flow.Tick(19d);
+                Assert.That(
+                    flow.State,
+                    Is.EqualTo(BoardFlowState.MinigameIntroReady));
+
+                Assert.That(flow.TryBeginMinigameLoading(20d), Is.True);
+                Assert.That(flow.TryBeginMinigame(21d), Is.True);
+                Assert.That(flow.TryCompleteMinigame(22d), Is.True);
+                Assert.That(
+                    flow.GetStateRemaining(22d),
+                    Is.EqualTo(3d));
+
+                flow.Tick(24.999d);
+                Assert.That(
+                    flow.State,
+                    Is.EqualTo(BoardFlowState.MinigameResult));
+
+                flow.Tick(25d);
+                Assert.That(flow.State, Is.EqualTo(testCase.ExpectedState));
+                Assert.That(flow.CurrentTurn, Is.EqualTo(testCase.ExpectedTurn));
+            }
+        }
+
+        [Test]
         public void AscendingResolve_WaitsForDeathPresentationAndPreservesPauseTime()
         {
             var flow = StartInAction();
@@ -130,6 +177,28 @@ namespace MazeParty.Gameplay.Tests
             flow.Tick(17.5d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
             Assert.That(flow.StateStartedAt, Is.EqualTo(17.5d));
+        }
+
+        [Test]
+        public void LandingEffectResolve_CanShortenZeroTransferToResultBoundary()
+        {
+            var flow = StartInCombat();
+            Assert.That(flow.TryCompleteCombat(15d, 9d), Is.True);
+
+            Assert.That(
+                flow.TryShortenLandingEffectResolve(18d, 4d),
+                Is.True);
+            Assert.That(flow.GetStateRemaining(18d), Is.EqualTo(2d));
+
+            flow.Tick(19.999d);
+            Assert.That(
+                flow.State,
+                Is.EqualTo(BoardFlowState.LandingEffectResolve));
+            flow.Tick(20d);
+            Assert.That(
+                flow.State,
+                Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(20d));
         }
 
         [Test]
@@ -198,9 +267,21 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.GetStateRemaining(242d), Is.EqualTo(60d));
             Assert.That(flow.Pause(250d), Is.True);
             Assert.That(flow.GetStateRemaining(280d), Is.EqualTo(52d));
+            Assert.That(flow.TryBeginMinigame(280d), Is.False);
+            flow.Tick(280d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameLoading));
             Assert.That(flow.Resume(280d), Is.True);
             Assert.That(flow.GetStateRemaining(331.999d), Is.GreaterThan(0d));
             Assert.That(flow.GetStateRemaining(332d), Is.Zero);
+            Assert.That(flow.TryBeginMinigame(332d), Is.True);
+
+            Assert.That(flow.Pause(333d), Is.True);
+            Assert.That(flow.TryCompleteMinigame(400d), Is.False);
+            flow.Tick(400d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
+            Assert.That(flow.Resume(400d), Is.True);
+            Assert.That(flow.TryCompleteMinigame(400d), Is.True);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameResult));
         }
 
         [Test]

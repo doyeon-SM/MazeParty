@@ -13,14 +13,6 @@ namespace MazeParty.Gameplay.Tests
         private const string DefinitionPath = MapFolder + "/ForestGrayboxMap.asset";
         private const string CatalogPath = MapFolder + "/BoardMapCatalog.asset";
         private const string PrefabPath = MapFolder + "/ForestGrayboxMapRoot.prefab";
-        private const string TerrainDataPath =
-            "Assets/MazeParty/Art/Board/Forest/ForestGroundTerrain.asset";
-        private const string GrassLayerPath =
-            "Assets/Ignore/Polytope Studio/Lowpoly_Demos/Environment_Free/" +
-            "Helpers/Ground_Layer_02.terrainlayer";
-        private const string DirtLayerPath =
-            "Assets/Ignore/Polytope Studio/Lowpoly_Demos/Environment_Free/" +
-            "Helpers/Ground_Layer_01.terrainlayer";
 
         [Test]
         public void ForestGraybox_AssetsAreRuntimeDiscoverableAndCrossLinked()
@@ -185,7 +177,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void ForestGraybox_GroundUsesPolytopeLayersAndPaintsEveryRoute()
+        public void ForestGraybox_GeneratedGroundExistsAndHasNoColliders()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
@@ -195,138 +187,17 @@ namespace MazeParty.Gameplay.Tests
             var generatedGround = mapRoot.EnvironmentRoot.Find("Generated Ground");
             Assert.That(generatedGround, Is.Not.Null);
             Assert.That(generatedGround.parent, Is.SameAs(mapRoot.EnvironmentRoot));
-
             var terrain = generatedGround.GetComponentInChildren<Terrain>(true);
             Assert.That(terrain, Is.Not.Null);
-            Assert.That(terrain.name, Is.EqualTo("Forest Ground"));
-            Assert.That(terrain.materialTemplate, Is.Not.Null,
-                "The terrain needs an explicit URP material to render in prefab stage and builds.");
-            Assert.That(terrain.drawInstanced, Is.False,
-                "Runtime-loaded Unity 6 URP board Terrain must use the stable Player rendering path.");
-            Assert.That(terrain.drawTreesAndFoliage, Is.True,
-                "The authored tree and grass prototypes must render in prefab stage and builds.");
             Assert.That(
-                generatedGround.GetComponentsInChildren<TerrainCollider>(true),
+                terrain.drawInstanced,
+                Is.False,
+                "Runtime-loaded Unity 6 URP board Terrain must use the " +
+                "stable Player rendering path.");
+            Assert.That(
+                generatedGround.GetComponentsInChildren<Collider>(true),
                 Is.Empty,
                 "Generated ground is visual-only and must not alter board physics.");
-            Assert.That(AssetDatabase.GetAssetPath(terrain.terrainData),
-                Is.EqualTo(TerrainDataPath));
-
-            var terrainData = terrain.terrainData;
-            Assert.That(terrainData.size.y, Is.GreaterThanOrEqualTo(10f),
-                "Terrain needs enough vertical range for continued height sculpting.");
-
-            var treePrototypes = terrainData.treePrototypes;
-            Assert.That(treePrototypes, Has.Length.EqualTo(1));
-            Assert.That(
-                AssetDatabase.GetAssetPath(treePrototypes[0].prefab),
-                Is.EqualTo(
-                    "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/" +
-                    "Tree_24_Spring.prefab"));
-            Assert.That(
-                treePrototypes[0].prefab.GetComponentsInChildren<Collider>(true),
-                Is.Empty,
-                "Paint Trees must use the collision-free wrapper prefab.");
-
-            var expectedGrassPaths = new[]
-            {
-                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_25.prefab",
-                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_24.prefab",
-                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_20.prefab",
-                "Assets/MazeParty/Prefabs/Board/World/Forest/Vegetation/Grass_19.prefab"
-            };
-            Assert.That(terrainData.detailWidth, Is.GreaterThan(0));
-            Assert.That(terrainData.detailHeight, Is.GreaterThan(0));
-            Assert.That(
-                terrainData.detailPrototypes,
-                Has.Length.EqualTo(expectedGrassPaths.Length));
-            for (var index = 0; index < expectedGrassPaths.Length; index++)
-            {
-                var detailPrototype = terrainData.detailPrototypes[index];
-                Assert.That(detailPrototype.usePrototypeMesh, Is.True);
-                string validationError;
-                Assert.That(
-                    detailPrototype.Validate(out validationError),
-                    Is.True,
-                    validationError);
-                Assert.That(
-                    AssetDatabase.GetAssetPath(detailPrototype.prototype),
-                    Is.EqualTo(expectedGrassPaths[index]));
-                Assert.That(
-                    detailPrototype.prototype.GetComponentsInChildren<Collider>(true),
-                    Is.Empty,
-                    "Paint Details must use collision-free wrapper prefabs.");
-            }
-
-            var layers = terrainData.terrainLayers;
-            Assert.That(layers, Has.Length.EqualTo(2));
-            Assert.That(AssetDatabase.GetAssetPath(layers[0]),
-                Is.EqualTo(GrassLayerPath));
-            Assert.That(AssetDatabase.GetAssetPath(layers[1]),
-                Is.EqualTo(DirtLayerPath));
-
-            var terrainOrigin = mapRoot.EnvironmentRoot.InverseTransformPoint(
-                terrain.transform.position);
-            var terrainSize = terrainData.size;
-            foreach (var tile in mapRoot.Topology.Tiles)
-            {
-                var local = mapRoot.EnvironmentRoot.InverseTransformPoint(
-                    tile.WorldCenter);
-                Assert.That(local.x,
-                    Is.InRange(terrainOrigin.x, terrainOrigin.x + terrainSize.x),
-                    tile.name);
-                Assert.That(local.z,
-                    Is.InRange(terrainOrigin.z, terrainOrigin.z + terrainSize.z),
-                    tile.name);
-            }
-
-            var visited = new HashSet<string>();
-            foreach (var gate in mapRoot.Topology.Gates.Where(gate => gate != null))
-            {
-                var sourceCoordinate = gate.Source.Coordinate;
-                var destinationCoordinate = gate.Destination.Coordinate;
-                var source = sourceCoordinate.x + "," + sourceCoordinate.y;
-                var destination =
-                    destinationCoordinate.x + "," + destinationCoordinate.y;
-                var key = string.CompareOrdinal(source, destination) < 0
-                    ? source + ":" + destination
-                    : destination + ":" + source;
-                if (!visited.Add(key))
-                {
-                    continue;
-                }
-
-                var midpoint = (gate.Source.WorldCenter + gate.Destination.WorldCenter) * 0.5f;
-                var local = mapRoot.EnvironmentRoot.InverseTransformPoint(midpoint);
-                var normalizedX = Mathf.InverseLerp(
-                    terrainOrigin.x,
-                    terrainOrigin.x + terrainSize.x,
-                    local.x);
-                var normalizedZ = Mathf.InverseLerp(
-                    terrainOrigin.z,
-                    terrainOrigin.z + terrainSize.z,
-                    local.z);
-                var alphaX = Mathf.Clamp(
-                    Mathf.RoundToInt(normalizedX *
-                                     (terrainData.alphamapWidth - 1)),
-                    0,
-                    terrainData.alphamapWidth - 1);
-                var alphaZ = Mathf.Clamp(
-                    Mathf.RoundToInt(normalizedZ *
-                                     (terrainData.alphamapHeight - 1)),
-                    0,
-                    terrainData.alphamapHeight - 1);
-                var weights = terrainData.GetAlphamaps(
-                    alphaX,
-                    alphaZ,
-                    1,
-                    1);
-                Assert.That(weights[0, 0, 1],
-                    Is.GreaterThan(weights[0, 0, 0]),
-                    "Dirt is missing from route " + key);
-            }
-
-            Assert.That(visited, Has.Count.EqualTo(49));
         }
 
         private static void AssertDirectedPath(

@@ -5,16 +5,19 @@ namespace MazeParty.Multiplayer.Tests
 {
     public sealed class BoardItemPresentationRulesTests
     {
-        [TestCase(PrototypeItemId.Pistol, true)]
-        [TestCase(PrototypeItemId.Sniper, true)]
-        [TestCase(PrototypeItemId.Grenade, false)]
-        [TestCase(PrototypeItemId.None, false)]
-        public void IsFirearm_MatchesHitscanWeapons(
-            PrototypeItemId item,
-            bool expected)
+        [TestCase(0b0000_0000, ItemChoiceResolution.DoNotUse)]
+        [TestCase(0b0000_0001, ItemChoiceResolution.Pending)]
+        [TestCase(0b0000_0010, ItemChoiceResolution.Pending)]
+        [TestCase(0b0000_0100, ItemChoiceResolution.Pending)]
+        [TestCase(0b1111_1000, ItemChoiceResolution.DoNotUse)]
+        [TestCase(0b1111_1111, ItemChoiceResolution.Pending)]
+        public void InitialItemChoice_SkipsOnlyWhenNoValidInventorySlotIsOccupied(
+            int occupiedItemMask,
+            ItemChoiceResolution expected)
         {
             Assert.That(
-                BoardItemPresentationRules.IsFirearm(item),
+                NetworkPlayerAvatar.GetInitialItemChoiceResolution(
+                    (byte)occupiedItemMask),
                 Is.EqualTo(expected));
         }
 

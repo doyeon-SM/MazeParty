@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer
         bool IsSpawned { get; }
 
         bool CanAcceptInputForSlot(int slot);
-        bool TryGetInitialCountdown(out double remainingSeconds);
+        bool TryGetRoundCountdown(out double remainingSeconds);
         void BeginMatchOnServer(ulong matchSeed);
         void PauseOnServer(double now);
         void ResumeOnServer(double now);
@@ -42,7 +42,7 @@ namespace MazeParty.Multiplayer
 
         public abstract bool CanAcceptInputForSlot(int slot);
 
-        public abstract bool TryGetInitialCountdown(
+        public abstract bool TryGetRoundCountdown(
             out double remainingSeconds);
 
         public abstract void BeginMatchOnServer(ulong matchSeed);

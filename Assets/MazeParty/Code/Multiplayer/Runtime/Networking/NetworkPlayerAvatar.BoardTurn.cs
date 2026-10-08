@@ -91,7 +91,8 @@ namespace MazeParty.Multiplayer
             _firstDieResult.Value = 0;
             _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
-            _choiceResolution.Value = (byte)ItemChoiceResolution.Pending;
+            _choiceResolution.Value = (byte)GetInitialItemChoiceResolution(
+                _occupiedItemMask.Value);
             _selectedItemSlot.Value = -1;
             _equippedItem.Value = 0;
             _itemCharges.Value = 0;
@@ -111,6 +112,15 @@ namespace MazeParty.Multiplayer
                 _traversal.ResetMoves(0);
             }
             RefreshBoundaryWallsOnServer();
+        }
+
+        internal static ItemChoiceResolution GetInitialItemChoiceResolution(
+            byte occupiedItemMask)
+        {
+            var validItemSlotMask = (1 << GameplayInventory.Capacity) - 1;
+            return (occupiedItemMask & validItemSlotMask) == 0
+                ? ItemChoiceResolution.DoNotUse
+                : ItemChoiceResolution.Pending;
         }
 
         public void EndActionOnServer()

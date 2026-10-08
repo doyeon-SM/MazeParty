@@ -32,6 +32,6 @@ MonoBehaviour:
   CastDuration: 2
   Icon: {fileID: 21300000, guid: b2f5daeab2d4a9f47b683a5b34ea3de9, type: 3}
   HeldPrefab: {fileID: 1515649895069432567, guid: 1e3bb049d88ccf84c8db024aef98a536, type: 3}
-  WorldPrefab: {fileID: 1515649895069432567, guid: 1e3bb049d88ccf84c8db024aef98a536, type: 3}
+  WorldPrefab: {fileID: 3417510713148289036, guid: eb5ba8fdd16ec7c4bbc594d0106c17b5, type: 3}
   ExplosionPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
   ImpactPrefab: {fileID: 0}

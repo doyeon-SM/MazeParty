@@ -81,6 +81,10 @@ namespace MazeParty.Multiplayer.Tests
             var bindings = prefab.GetComponent<BoardCanvasBindings>();
             Assert.That(bindings, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
+            Assert.That(bindings.StatusText, Is.Null,
+                "BoardStatusText was intentionally removed from the authored HUD.");
+            Assert.That(prefab.GetComponentsInChildren<Text>(true)
+                .Any(text => text.name == "BoardStatusText"), Is.False);
             Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
             AssertItemIconBindings(prefab, bindings);
             AssertPlayerCurrencyBindings(prefab, bindings);
@@ -126,6 +130,9 @@ namespace MazeParty.Multiplayer.Tests
                         sceneBindings.gameObject),
                     Is.EqualTo(PrefabPath));
                 Assert.That(sceneBindings.HasRequiredReferences, Is.True);
+                Assert.That(sceneBindings.StatusText, Is.Null);
+                Assert.That(sceneBindings.GetComponentsInChildren<Text>(true)
+                    .Any(text => text.name == "BoardStatusText"), Is.False);
                 AssertItemIconBindings(sceneBindings.gameObject, sceneBindings);
                 AssertPlayerCurrencyBindings(
                     sceneBindings.gameObject,
@@ -371,6 +378,32 @@ namespace MazeParty.Multiplayer.Tests
                     effectType,
                     message),
                 Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void BoardEventPopup_HidesBeforeTheWorldTransferShots()
+        {
+            var cases = new[]
+            {
+                (BoardResourceTransferPhase.None, true),
+                (BoardResourceTransferPhase.Result, true),
+                (BoardResourceTransferPhase.Source, false),
+                (BoardResourceTransferPhase.Destination, false),
+                (BoardResourceTransferPhase.Complete, false)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    BoardFlowView.ShouldShowBoardEventPopup(
+                        BoardFlowState.LandingEffectResolve,
+                        false,
+                        BoardLandingEffectType.SpecialEvent,
+                        "P1 gives P2 one key.",
+                        testCase.Item1),
+                    Is.EqualTo(testCase.Item2),
+                    testCase.Item1.ToString());
+            }
         }
 
         private static void AssertPlayerCurrencyBindings(

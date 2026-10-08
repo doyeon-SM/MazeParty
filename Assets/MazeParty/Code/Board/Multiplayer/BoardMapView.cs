@@ -47,6 +47,12 @@ namespace MazeParty.Multiplayer
 
         private BoardTopology _topology;
         private int _lastSignature = int.MinValue;
+        private readonly BoardPlayerMapKnowledge _playerKnowledge =
+            new BoardPlayerMapKnowledge();
+        private readonly RaycastHit[] _playerSightHits = new RaycastHit[32];
+        private NetworkMatchState _knowledgeMatch;
+        private BoardTopology _knowledgeTopology;
+        private GameplayCameraDirector _cameraDirector;
 
         public bool HasRequiredReferences =>
             overviewPanel != null && minimapPanel != null &&
@@ -125,12 +131,13 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var freeformOverview = overview && UsesFreeformMap(_topology);
             UpdateFullMapState(
                 true,
                 toggleRequested,
-                freeformOverview);
-            SetActive(overviewPanel, overview && !_fullMapOpen && !freeformOverview);
+                overview);
+            // Every topology now uses the authored full-map presentation during
+            // turn overview so Modern UI tile and player icons stay consistent.
+            SetActive(overviewPanel, false);
             SetActive(minimapPanel, action && !_fullMapOpen);
 
             var manager = NetworkManager.Singleton;
@@ -140,17 +147,19 @@ namespace MazeParty.Multiplayer
             var localAvatar = localObject != null
                 ? localObject.GetComponent<NetworkPlayerAvatar>()
                 : null;
-            if (_fullMapOpen || freeformOverview || action)
+            RefreshPlayerKnowledge(match, localAvatar);
+            if (_fullMapOpen || overview || action)
             {
-                if (_fullMapOpen || freeformOverview)
+                if (_fullMapOpen || overview)
                 {
                     fullMap.Refresh(
                         _topology,
                         match,
                         localAvatar,
-                        freeformOverview
+                        overview
                             ? BoardMinimapDisplayContext.TurnOverview
-                            : BoardMinimapDisplayContext.Standard);
+                            : BoardMinimapDisplayContext.FullMap,
+                        _playerKnowledge);
                 }
                 else
                 {
@@ -158,7 +167,8 @@ namespace MazeParty.Multiplayer
                         _topology,
                         match,
                         localAvatar,
-                        BoardMinimapDisplayContext.Standard);
+                        BoardMinimapDisplayContext.Minimap,
+                        _playerKnowledge);
                 }
                 return;
             }
@@ -170,15 +180,12 @@ namespace MazeParty.Multiplayer
             _lastSignature = signature;
 
             var cells = overview ? overviewCells : minimapCells;
-            var mapRoot = overview
-                ? BoardMapRuntimeLoader.ResolveActiveMapRoot(_topology)
-                : null;
             for (var y = 0; y < GridSize; y++)
             {
                 for (var x = 0; x < GridSize; x++)
                 {
                     RefreshCell(cells[y * GridSize + x], new Vector2Int(x, y),
-                        match, localAvatar, overview, mapRoot);
+                        match, localAvatar, overview);
                 }
             }
         }
@@ -285,7 +292,7 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCell(Cell cell, Vector2Int coordinate,
             NetworkMatchState match, NetworkPlayerAvatar localAvatar,
-            bool overview, BoardMapRoot mapRoot)
+            bool overview)
         {
             if (!_topology.TryGetTile(coordinate, out var tile))
             {
@@ -294,9 +301,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var color = tile.TileType == BoardTileType.Start
-                ? startColor
-                : tile.TileType == BoardTileType.Respawn
+            var color = tile.TileType == BoardTileType.Respawn
                     ? respawnColor
                     : roomColor;
             var isShop = match.KeyShopHasLocation &&
@@ -312,9 +317,8 @@ namespace MazeParty.Multiplayer
             var marker = string.Empty;
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
-                var avatar = match.GetAvatarForSlot(slot);
-                if (TryGetVisiblePosition(match, localAvatar, avatar,
-                        slot, overview, out var visibleCoordinate) &&
+                if (TryGetVisiblePosition(match, localAvatar,
+                        slot, out var visibleCoordinate) &&
                     visibleCoordinate == coordinate)
                 {
                     marker += (slot + 1).ToString();
@@ -323,63 +327,45 @@ namespace MazeParty.Multiplayer
             if (overview)
                 marker = ResolveOverviewMarker(
                     marker,
-                    string.Empty,
-                    mapRoot,
-                    tile);
+                    string.Empty);
             cell.Marker.text = marker;
         }
 
         internal static string ResolveOverviewMarker(
             string occupiedMarker,
-            string routeMarker,
-            BoardMapRoot mapRoot,
-            BoardTile tile)
+            string routeMarker)
         {
             if (!string.IsNullOrEmpty(occupiedMarker))
                 return occupiedMarker;
             if (!string.IsNullOrEmpty(routeMarker))
                 return routeMarker;
-            return GetPlayerStartLabel(mapRoot, tile);
+            return string.Empty;
         }
 
-        internal static string GetPlayerStartLabel(
-            BoardMapRoot mapRoot,
-            BoardTile tile)
+        private bool TryGetVisiblePosition(
+            NetworkMatchState match,
+            NetworkPlayerAvatar localAvatar,
+            int slot,
+            out Vector2Int coordinate)
         {
-            if (mapRoot == null || tile == null)
-                return string.Empty;
-
-            var label = string.Empty;
-            for (var slot = 0; slot < PlayerSlotRules.Count; slot++)
+            if (localAvatar != null &&
+                slot == localAvatar.AssignedSlot &&
+                localAvatar.HasLogicalBoardTile)
             {
-                if (mapRoot.GetStartTile(slot) != tile)
-                    continue;
-
-                if (label.Length > 0)
-                    label += "/";
-                label += "P" + (slot + 1);
-            }
-
-            return label;
-        }
-
-        private static bool TryGetVisiblePosition(NetworkMatchState match,
-            NetworkPlayerAvatar localAvatar, NetworkPlayerAvatar avatar,
-            int slot, bool overview, out Vector2Int coordinate)
-        {
-            if (avatar != null && avatar.HasLogicalBoardTile &&
-                (overview || localAvatar != null &&
-                    slot == localAvatar.AssignedSlot))
-            {
-                coordinate = avatar.LogicalBoardTileCoordinate;
+                coordinate = localAvatar.LogicalBoardTileCoordinate;
                 return true;
             }
-            if (!overview)
+
+            var remoteAvatar = match != null
+                ? match.GetAvatarForSlot(slot)
+                : null;
+            if (remoteAvatar == null || !remoteAvatar.IsSpawned)
             {
-                return match.TryGetOverviewEndTile(slot, out coordinate);
+                coordinate = default;
+                return false;
             }
-            coordinate = default;
-            return false;
+
+            return _playerKnowledge.TryGetLastKnown(slot, out coordinate);
         }
 
         private int ComputeSignature(NetworkMatchState match,
@@ -394,14 +380,167 @@ namespace MazeParty.Multiplayer
                     ? localAvatar.LogicalBoardTileCoordinate.GetHashCode() : -1);
                 for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 {
-                    var avatar = match.GetAvatarForSlot(slot);
-                    hash = hash * 31 + (TryGetVisiblePosition(match,
-                            localAvatar, avatar, slot, overview,
+                    hash = hash * 31 + (TryGetVisiblePosition(
+                            match, localAvatar, slot,
                             out var visibleCoordinate)
                         ? visibleCoordinate.GetHashCode() : -1);
                 }
+                hash = hash * 31 + _playerKnowledge.Revision;
                 return hash;
             }
+        }
+
+        private void RefreshPlayerKnowledge(
+            NetworkMatchState match,
+            NetworkPlayerAvatar localAvatar)
+        {
+            if (_knowledgeMatch != match || _knowledgeTopology != _topology)
+            {
+                _knowledgeMatch = match;
+                _knowledgeTopology = _topology;
+                _playerKnowledge.Reset();
+            }
+            SeedInitialPlayerPositions();
+
+            _playerKnowledge.BeginObservationFrame();
+            if (localAvatar != null && localAvatar.HasLogicalBoardTile)
+            {
+                _playerKnowledge.Observe(
+                    localAvatar.AssignedSlot,
+                    localAvatar.LogicalBoardTileCoordinate);
+            }
+
+            if (_fullMapOpen || localAvatar == null)
+            {
+                _playerKnowledge.EndObservationFrame();
+                return;
+            }
+
+            if (_cameraDirector == null)
+                _cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            if (_cameraDirector == null ||
+                _cameraDirector.ActiveMode != GameplayMode.FirstPerson ||
+                _cameraDirector.CompletedMode != GameplayMode.FirstPerson ||
+                _cameraDirector.IsTransitioning ||
+                _cameraDirector.OutputCamera == null)
+            {
+                _playerKnowledge.EndObservationFrame();
+                return;
+            }
+
+            var outputCamera = _cameraDirector.OutputCamera;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if (slot == localAvatar.AssignedSlot ||
+                    !match.IsPlayerPresent(slot))
+                {
+                    continue;
+                }
+
+                var target = match.GetAvatarForSlot(slot);
+                if (target == null || !target.IsSpawned ||
+                    !target.HasLogicalBoardTile || target.IsCloaked ||
+                    !IsDirectlyVisible(outputCamera, target))
+                {
+                    continue;
+                }
+
+                _playerKnowledge.Observe(
+                    slot,
+                    target.LogicalBoardTileCoordinate);
+            }
+
+            _playerKnowledge.EndObservationFrame();
+
+        }
+
+        private void SeedInitialPlayerPositions()
+        {
+            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(_topology);
+            if (mapRoot == null)
+                return;
+
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var avatar = _knowledgeMatch != null
+                    ? _knowledgeMatch.GetAvatarForSlot(slot)
+                    : null;
+                if (avatar == null || !avatar.IsSpawned)
+                    continue;
+
+                var start = mapRoot.GetStartTile(slot);
+                if (start != null)
+                    _playerKnowledge.SeedIfUnknown(slot, start.Coordinate);
+            }
+        }
+
+        private bool IsDirectlyVisible(
+            Camera outputCamera,
+            NetworkPlayerAvatar target)
+        {
+            var visual = target.AvatarVisual;
+            var bindings = visual != null ? visual.Bindings : null;
+            var targetPoint = bindings != null && bindings.HeadAnchor != null
+                ? bindings.HeadAnchor.position
+                : target.EyePivot != null
+                    ? target.EyePivot.position
+                    : target.transform.position + Vector3.up * 0.75f;
+            return IsPointDirectlyVisible(
+                outputCamera,
+                targetPoint,
+                _playerSightHits);
+        }
+
+        internal static bool IsPointDirectlyVisible(
+            Camera outputCamera,
+            Vector3 targetPoint,
+            RaycastHit[] sightHits)
+        {
+            if (outputCamera == null || sightHits == null ||
+                sightHits.Length == 0)
+            {
+                return false;
+            }
+
+            var viewport = outputCamera.WorldToViewportPoint(targetPoint);
+            if (viewport.z <= outputCamera.nearClipPlane ||
+                viewport.x < 0f || viewport.x > 1f ||
+                viewport.y < 0f || viewport.y > 1f)
+            {
+                return false;
+            }
+
+            var origin = outputCamera.transform.position;
+            var offset = targetPoint - origin;
+            var distance = offset.magnitude;
+            if (distance <= 0.001f)
+                return true;
+
+            var hitCount = Physics.RaycastNonAlloc(
+                origin,
+                offset / distance,
+                sightHits,
+                distance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            for (var index = 0; index < hitCount; index++)
+            {
+                var collider = sightHits[index].collider;
+                if (collider == null ||
+                    collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
+                {
+                    continue;
+                }
+
+                var boundaryWall =
+                    collider.GetComponentInParent<BoardBoundaryWallVisual>();
+                if (boundaryWall != null && !boundaryWall.IsVisible)
+                    continue;
+
+                return false;
+            }
+
+            return hitCount < sightHits.Length;
         }
 
         private static bool HasCells(Cell[] cells)
@@ -416,34 +555,6 @@ namespace MazeParty.Multiplayer
                 }
             }
             return true;
-        }
-
-        private static bool UsesFreeformMap(BoardTopology topology)
-        {
-            if (topology == null)
-                return false;
-
-            for (var index = 0; index < topology.Tiles.Count; index++)
-            {
-                var tile = topology.Tiles[index];
-                if (tile != null && tile.HasCustomFootprint)
-                    return true;
-            }
-
-            for (var index = 0; index < topology.Gates.Count; index++)
-            {
-                var gate = topology.Gates[index];
-                if (gate == null || gate.Source == null || gate.Destination == null)
-                    continue;
-
-                if (!BoardBoundaryWallPolicy.TryGetSide(
-                        gate.Source.Coordinate,
-                        gate.Destination.Coordinate,
-                        out _))
-                    return true;
-            }
-
-            return false;
         }
 
         private static void SetActive(GameObject target, bool active)

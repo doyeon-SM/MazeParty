@@ -96,10 +96,12 @@ namespace MazeParty.Gameplay
         public const double SpecialEventResourceDurationSeconds = 1d;
         public const double SpecialEventOperationDurationSeconds = 1d;
         public const double SpecialEventResultDurationSeconds = 1d;
-        public const double SpecialEventDurationSeconds =
+        public const double SpecialEventRouletteDurationSeconds =
             SpecialEventTargetDurationSeconds +
             SpecialEventResourceDurationSeconds +
-            SpecialEventOperationDurationSeconds +
+            SpecialEventOperationDurationSeconds;
+        public const double SpecialEventDurationSeconds =
+            SpecialEventRouletteDurationSeconds +
             SpecialEventResultDurationSeconds;
 
         private static readonly BoardLandingEffectType[] AssignableEffects =

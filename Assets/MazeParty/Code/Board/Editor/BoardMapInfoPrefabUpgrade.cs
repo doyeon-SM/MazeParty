@@ -7,18 +7,66 @@ namespace MazeParty.Editor
 {
     public static class BoardMapInfoPrefabUpgrade
     {
+        private const string HomeFilledPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Home Filled.png";
+        private const string MoneyFilledPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png";
+        private const string AddPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png";
+        private const string WarningFilledPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Warning Filled.png";
+        private const string ArrowUpPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Arrow Up.png";
+        private const string LocationMarkFilledPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Map/Location Mark Filled.png";
+        private const string HelpFilledPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Help Filled.png";
+
         public static void Ensure(GameObject root)
         {
             var map = new SerializedObject(root.GetComponent<BoardMapView>());
-            Upgrade(root.GetComponent<BoardMinimapView>(),
-                (GameObject)map.FindProperty("minimapPanel").objectReferenceValue, false);
-            Upgrade((BoardMinimapView)map.FindProperty("fullMap").objectReferenceValue,
-                (GameObject)map.FindProperty("fullMapPanel").objectReferenceValue, true);
+            Upgrade(root.GetComponent<BoardMinimapView>());
+            Upgrade((BoardMinimapView)map.FindProperty("fullMap")
+                .objectReferenceValue);
         }
 
-        private static void Upgrade(BoardMinimapView view, GameObject panel, bool full)
+        private static void Upgrade(BoardMinimapView view)
         {
             var data = new SerializedObject(view);
+            var home = RequireSprite(HomeFilledPath);
+            var money = RequireSprite(MoneyFilledPath);
+            var damage = RequireSprite(AddPath, "Add");
+            var warning = RequireSprite(WarningFilledPath);
+            var arrowUp = RequireSprite(ArrowUpPath);
+            var location = RequireSprite(LocationMarkFilledPath);
+            var help = RequireSprite(HelpFilledPath);
+            data.FindProperty("homeFilledIcon").objectReferenceValue = home;
+            data.FindProperty("moneyFilledIcon").objectReferenceValue = money;
+            data.FindProperty("damageIcon").objectReferenceValue = damage;
+            data.FindProperty("warningFilledIcon").objectReferenceValue = warning;
+            data.FindProperty("arrowUpIcon").objectReferenceValue = arrowUp;
+            data.FindProperty("locationMarkFilledIcon").objectReferenceValue =
+                location;
+            data.FindProperty("helpFilledIcon").objectReferenceValue = help;
+            SetColorArray(
+                data.FindProperty("typeIconColors"),
+                Color.gray,
+                Color.gray,
+                new Color(1f, .82f, .12f, 1f),
+                Color.white);
+            SetColorArray(
+                data.FindProperty("effectIconColors"),
+                Color.white,
+                new Color(1f, .82f, .12f, 1f),
+                new Color(1f, .2f, .18f, 1f),
+                Color.white,
+                new Color(.35f, 1f, .5f, 1f),
+                new Color(.35f, 1f, .5f, 1f),
+                new Color(1f, .2f, .18f, 1f),
+                new Color(1f, .2f, .18f, 1f),
+                new Color(1f, .2f, .18f, 1f));
+            data.FindProperty("startFloorColor").colorValue =
+                data.FindProperty("floorColor").colorValue;
             var rooms = data.FindProperty("rooms");
             EnsureLandingEffectLayer(data, rooms);
             for (var index = 0; index < rooms.arraySize; index++)
@@ -60,52 +108,33 @@ namespace MazeParty.Editor
                     arrow.color = new Color(.35f, 1f, .65f);
                     arrowProperty.objectReferenceValue = arrow;
                 }
+
+                for (var side = 0; side < 4; side++)
+                {
+                    var arrow = arrows.GetArrayElementAtIndex(side)
+                        .objectReferenceValue as BoardMapIcon;
+                    if (arrow != null)
+                        arrow.SetIcon(BoardMapIconKind.Arrow, arrowUp);
+                }
+            }
+            // Current-tile and key-shop distance copy were deliberately removed
+            // from both authored maps. Keep the bindings empty so setup never
+            // interprets that design choice as a missing migration.
+            data.FindProperty("currentTile").objectReferenceValue = null;
+            data.FindProperty("shopDistanceIcon").objectReferenceValue = null;
+            data.FindProperty("shopDistanceText").objectReferenceValue = null;
+            data.FindProperty("showKeyShopDetails").boolValue = false;
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EnsureLandingEffectLayer(data, rooms, location);
+            var mine = data.FindProperty("mineGraphic")
+                .objectReferenceValue as BoardMapMineGraphic;
+            if (mine != null)
+            {
+                mine.SetIcon(help);
+                mine.color = new Color(1f, .2f, .18f, 1f);
+                EditorUtility.SetDirty(mine);
             }
             data.ApplyModifiedPropertiesWithoutUndo();
-            EnsureLandingEffectLayer(data, rooms);
-            data.ApplyModifiedPropertiesWithoutUndo();
-
-            // The authored full-map design deliberately omits its title, legend,
-            // current-tile copy and key-shop distance row. Setup must never infer
-            // that their null bindings are an incomplete migration and recreate them.
-            if (full || data.FindProperty("shopDistanceText").objectReferenceValue != null)
-                return;
-
-            var panelRect = panel.GetComponent<RectTransform>();
-            panelRect.sizeDelta = new Vector2(panelRect.sizeDelta.x, 450f);
-            var line = new GameObject("Key Shop Distance", typeof(RectTransform));
-            line.layer = LayerMask.NameToLayer("UI");
-            line.transform.SetParent(panel.transform, false);
-            var rect = (RectTransform)line.transform;
-            Place(rect, new Vector2(162f, -347f), new Vector2(220f, 28f));
-            var key = Icon("Key Icon", line.transform, BoardMapIconKind.Key, new Vector2(0f, .5f), 24f);
-            key.rectTransform.anchoredPosition = new Vector2(12f, 0f);
-            key.color = new Color(1f, .8f, .2f);
-            var labelObject = new GameObject("Distance", typeof(RectTransform), typeof(Text));
-            labelObject.layer = LayerMask.NameToLayer("UI");
-            labelObject.transform.SetParent(line.transform, false);
-            var label = labelObject.GetComponent<Text>();
-            label.font = panel.transform.Find("Minimap Title").GetComponent<Text>().font;
-            label.fontSize = 16;
-            label.fontStyle = FontStyle.Bold;
-            label.color = key.color;
-            label.alignment = TextAnchor.MiddleLeft;
-            label.raycastTarget = false;
-            label.text = ": --";
-            label.rectTransform.anchorMin = Vector2.zero;
-            label.rectTransform.anchorMax = Vector2.one;
-            label.rectTransform.offsetMin = new Vector2(34f, 0f);
-            label.rectTransform.offsetMax = Vector2.zero;
-            data.FindProperty("shopDistanceIcon").objectReferenceValue = key;
-            data.FindProperty("shopDistanceText").objectReferenceValue = label;
-            data.ApplyModifiedPropertiesWithoutUndo();
-            var description = panel.transform.Find("Current Tile").GetComponent<Text>();
-            Place(description.rectTransform, new Vector2(162f, -387f),
-                new Vector2(300f, 44f));
-            var legend = panel.transform.Find("Minimap Legend").GetComponent<Text>();
-            Place(legend.rectTransform, new Vector2(162f, -430f),
-                new Vector2(300f, 26f));
-            legend.text = "ARROW: NEXT AVAILABLE TILE\nRADIUS 2 TILES  /  M FULL MAP";
         }
 
         private static BoardMapIcon Icon(string name, Transform parent, BoardMapIconKind kind, Vector2 anchor, float size)
@@ -122,17 +151,10 @@ namespace MazeParty.Editor
             return icon;
         }
 
-        private static void Place(RectTransform rect, Vector2 position, Vector2 size)
-        {
-            rect.anchorMin = rect.anchorMax = new Vector2(0f, 1f);
-            rect.pivot = Vector2.one * .5f;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-        }
-
         private static void EnsureLandingEffectLayer(
             SerializedObject data,
-            SerializedProperty rooms)
+            SerializedProperty rooms,
+            Sprite markerSprite = null)
         {
             var projection = data.FindProperty("projection")
                 .objectReferenceValue as Arikan.MiniMapView;
@@ -159,20 +181,9 @@ namespace MazeParty.Editor
             layer.localScale = Vector3.one;
             data.FindProperty("landingEffectLayer").objectReferenceValue = layer;
 
-            var markerSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png");
             if (markerSprite == null)
             {
-                var markerAssets = AssetDatabase.LoadAllAssetsAtPath(
-                    "Assets/MazeParty/Resources/MazeParty/Expressions/WheelDot.png");
-                for (var index = 0; index < markerAssets.Length; index++)
-                {
-                    if (markerAssets[index] is Sprite sprite)
-                    {
-                        markerSprite = sprite;
-                        break;
-                    }
-                }
+                markerSprite = RequireSprite(LocationMarkFilledPath);
             }
 
             var players = data.FindProperty("players");
@@ -183,8 +194,7 @@ namespace MazeParty.Editor
                 if (marker == null)
                     continue;
 
-                if (marker.sprite == null)
-                    marker.sprite = markerSprite;
+                marker.sprite = markerSprite;
                 marker.type = Image.Type.Simple;
                 marker.preserveAspect = true;
                 marker.raycastTarget = false;
@@ -212,6 +222,42 @@ namespace MazeParty.Editor
             }
 
             layer.SetAsLastSibling();
+        }
+
+        private static Sprite RequireSprite(
+            string path,
+            string spriteName = null)
+        {
+            if (!string.IsNullOrEmpty(spriteName))
+            {
+                var assets = AssetDatabase.LoadAllAssetsAtPath(path);
+                for (var index = 0; index < assets.Length; index++)
+                {
+                    if (assets[index] is Sprite sprite &&
+                        sprite.name == spriteName)
+                    {
+                        return sprite;
+                    }
+                }
+            }
+
+            var result = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+            if (result == null)
+            {
+                throw new System.InvalidOperationException(
+                    "ModernUIPack map icon is missing or not imported as a " +
+                    "Sprite: " + path);
+            }
+            return result;
+        }
+
+        private static void SetColorArray(
+            SerializedProperty property,
+            params Color[] colors)
+        {
+            property.arraySize = colors.Length;
+            for (var index = 0; index < colors.Length; index++)
+                property.GetArrayElementAtIndex(index).colorValue = colors[index];
         }
     }
 }

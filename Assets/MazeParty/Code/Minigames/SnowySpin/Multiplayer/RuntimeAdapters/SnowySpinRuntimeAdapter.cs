@@ -15,10 +15,10 @@ namespace MazeParty.Multiplayer
         protected override NetworkSnowySpinState CurrentState =>
             NetworkSnowySpinState.Instance;
 
-        public override bool TryGetInitialCountdown(out double remainingSeconds)
+        public override bool TryGetRoundCountdown(out double remainingSeconds)
         {
             var state = CurrentState;
-            remainingSeconds = state != null && state.RoundNumber == 1 &&
+            remainingSeconds = state != null &&
                                state.Phase == NetworkSnowySpinPhase.Countdown
                 ? state.Remaining
                 : 0d;

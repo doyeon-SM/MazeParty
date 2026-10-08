@@ -10,8 +10,10 @@ namespace MazeParty.Multiplayer
 {
     public enum BoardMinimapDisplayContext
     {
-        Standard,
-        TurnOverview
+        Minimap = 0,
+        FullMap = 1,
+        TurnOverview = 2,
+        Standard = FullMap
     }
 
     /// <summary>Heading-up board projection using UnitySimpleMiniMap and authored UI only.</summary>
@@ -43,7 +45,7 @@ namespace MazeParty.Multiplayer
         [SerializeField, Min(0f)] private float radiusInTiles = 2f;
         [SerializeField] private bool followHeading = true;
         [SerializeField] private bool localPlayerOnly;
-        [SerializeField] private bool showKeyShopDetails = true;
+        [SerializeField] private bool showKeyShopDetails;
         [SerializeField] private bool showTravelCounts;
         [SerializeField] private Color primaryTravelCountColor =
             new Color(1f, 0.84f, 0.22f);
@@ -63,21 +65,35 @@ namespace MazeParty.Multiplayer
         [SerializeField] private string shopUnavailableText = GameText.N(": NOT SPAWNED");
         [SerializeField] private string shopUnreachableText = GameText.N(": NO ROUTE");
         [SerializeField] private string shopUnknownText = ": --";
-        [SerializeField] private Color[] typeIconColors = { Color.gray, Color.white, new Color(1f, .8f, .2f), new Color(.4f, .85f, 1f) };
+        [SerializeField] private Color[] typeIconColors =
+        {
+            Color.gray,
+            Color.gray,
+            new Color(1f, .82f, .12f),
+            Color.white
+        };
         [SerializeField] private Color[] effectIconColors =
         {
             Color.white,
-            new Color(1f, .8f, .2f),
-            new Color(1f, .3f, .3f),
-            new Color(.85f, .5f, 1f),
-            new Color(.35f, 1f, .5f),
-            new Color(.35f, .85f, .95f),
+            new Color(1f, .82f, .12f),
             new Color(1f, .2f, .18f),
-            new Color(1f, .5f, .2f),
-            new Color(1f, .25f, .85f)
+            Color.white,
+            new Color(.35f, 1f, .5f),
+            new Color(.35f, 1f, .5f),
+            new Color(1f, .2f, .18f),
+            new Color(1f, .2f, .18f),
+            new Color(1f, .2f, .18f)
         };
         [SerializeField] private BoardMapRouteGraphic shopRouteGraphic;
         [SerializeField] private BoardMapMineGraphic mineGraphic;
+        [Header("Modern UI Pack icons")]
+        [SerializeField] private Sprite homeFilledIcon;
+        [SerializeField] private Sprite moneyFilledIcon;
+        [SerializeField] private Sprite damageIcon;
+        [SerializeField] private Sprite warningFilledIcon;
+        [SerializeField] private Sprite arrowUpIcon;
+        [SerializeField] private Sprite locationMarkFilledIcon;
+        [SerializeField] private Sprite helpFilledIcon;
         private Bounds _mineBounds;
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
         private readonly List<BoardTile> _orderedTiles = new List<BoardTile>(MaxRoomCount);
@@ -130,6 +146,10 @@ namespace MazeParty.Multiplayer
             get
             {
                 if (mineGraphic == null || shopRouteGraphic == null || topologyGraphic == null ||
+                    homeFilledIcon == null || moneyFilledIcon == null ||
+                    damageIcon == null || warningFilledIcon == null ||
+                    arrowUpIcon == null || locationMarkFilledIcon == null ||
+                    helpFilledIcon == null ||
                     projection == null || projection.otherDotCanvas == null ||
                     landingEffectLayer == null ||
                     landingEffectLayer.parent != projection.otherDotCanvas ||
@@ -141,7 +161,7 @@ namespace MazeParty.Multiplayer
                     effectIconColors == null || typeIconColors.Length != 4 || effectIconColors.Length != LandingEffectCount ||
                     (showKeyShopDetails &&
                         (shopDistanceIcon == null || shopDistanceText == null)) ||
-                    (radiusInTiles > 0f && (currentTile == null || heading == null ||
+                    (radiusInTiles > 0f && (heading == null ||
                         circularMask == null || !circularMask.enabled ||
                         circularMask.GetComponent<BoardMapCircleGraphic>() == null)) ||
                     rooms.Length != MaxRoomCount || players.Length != MultiplayerConstants.MaxPlayers ||
@@ -184,7 +204,8 @@ namespace MazeParty.Multiplayer
             NetworkMatchState match,
             NetworkPlayerAvatar local,
             BoardMinimapDisplayContext displayContext =
-                BoardMinimapDisplayContext.Standard)
+                BoardMinimapDisplayContext.FullMap,
+            BoardPlayerMapKnowledge knowledge = null)
         {
             if (!HasRequiredReferences || topology == null) return;
             PrepareMap(topology, local != null && local.HasLogicalBoardTile
@@ -198,13 +219,15 @@ namespace MazeParty.Multiplayer
                 var avatar = match.GetAvatarForSlot(slot);
                 var isLocal = avatar != null && avatar == local;
                 BoardTile markerTile = null;
-                if (avatar != null && avatar.IsSpawned &&
-                    avatar.HasLogicalBoardTile &&
-                    ShouldRevealPlayer(avatar.IsCloaked, isLocal, displayContext))
+                if (TryGetPlayerCoordinate(
+                        avatar,
+                        local,
+                        slot,
+                        displayContext,
+                        knowledge,
+                        out var coordinate))
                 {
-                    topology.TryGetTile(
-                        avatar.LogicalBoardTileCoordinate,
-                        out markerTile);
+                    topology.TryGetTile(coordinate, out markerTile);
                 }
 
                 PresentPlayerAtTile(
@@ -225,6 +248,7 @@ namespace MazeParty.Multiplayer
             if (!followHeading) yaw = 0f;
             projection.otherDotCanvas.localRotation = Quaternion.Euler(0f, 0f, yaw);
             var upright = Quaternion.Euler(0f, 0f, -yaw);
+            mineGraphic.SetIconRotation(upright);
             foreach (var room in rooms)
             {
                 room.Symbol.rectTransform.localRotation = upright;
@@ -275,7 +299,6 @@ namespace MazeParty.Multiplayer
 
             _orderedTiles.Sort(CompareTiles);
             var freeform = UsesFreeformProjection(topology);
-            var mapRoot = BoardMapRuntimeLoader.ResolveActiveMapRoot(topology);
             var referenceTileSize = GetReferenceTileSize(topology, localCoordinate);
             var extent = Mathf.Max(0.1f, Mathf.Max(bounds.size.x, bounds.size.z));
             if (radiusInTiles > 0f)
@@ -313,7 +336,7 @@ namespace MazeParty.Multiplayer
                     floorColor,
                     localFloorColor,
                     shopColor,
-                    startFloorColor,
+                    floorColor,
                     respawnFloorColor);
             }
             else
@@ -363,26 +386,36 @@ namespace MazeParty.Multiplayer
                 var isShop = keyShop.HasValue && coordinate == keyShop.Value;
                 room.Floor.color = isShop ? shopColor : isLocal ? localFloorColor : floorColor;
                 room.Floor.enabled = !freeform;
-                room.Symbol.text = showTravelCounts
-                    ? string.Empty
-                    : BoardMapView.GetPlayerStartLabel(mapRoot, tile);
+                // Start tiles intentionally share the normal-room design. Travel
+                // counts are populated separately when the full map is active.
+                room.Symbol.text = string.Empty;
                 var displayedType = isShop ? BoardTileType.KeyShop : tile.TileType;
                 room.TypeIcon.enabled = !isShop || showKeyShopDetails;
                 if (room.TypeIcon.enabled)
                 {
-                    room.TypeIcon.SetIcon(displayedType == BoardTileType.Start ? BoardMapIconKind.Start :
-                        displayedType == BoardTileType.Respawn ? BoardMapIconKind.Respawn :
-                        displayedType == BoardTileType.KeyShop ? BoardMapIconKind.Key : BoardMapIconKind.Room);
+                    var typeKind = displayedType == BoardTileType.Respawn
+                        ? BoardMapIconKind.Respawn
+                        : displayedType == BoardTileType.KeyShop
+                            ? BoardMapIconKind.Key
+                            : BoardMapIconKind.Room;
+                    room.TypeIcon.SetIcon(typeKind, GetSprite(typeKind));
                     room.TypeIcon.color = typeIconColors[(int)displayedType];
                 }
                 var effect = tile.LandingEffect;
                 room.EffectIcon.enabled = effect != BoardLandingEffectType.None;
-                room.EffectIcon.SetIcon(GetEffectIcon(effect));
+                var effectKind = GetEffectIcon(effect);
+                room.EffectIcon.SetIcon(effectKind, GetSprite(effectKind));
                 room.EffectIcon.color = effectIconColors[(int)effect];
                 PlaceEffectIcon(room);
                 if (freeform)
                 {
                     SetLegacyEdgesVisible(room, false);
+                    PresentFreeformBranchArrows(
+                        topology,
+                        tile,
+                        room,
+                        isLocal,
+                        remainingMoves);
                 }
                 else
                 {
@@ -444,8 +477,6 @@ namespace MazeParty.Multiplayer
         {
             var dot = players[slot];
             var visible = worldPosition.HasValue &&
-                          (displayContext == BoardMinimapDisplayContext.TurnOverview ||
-                           !localPlayerOnly || isLocal) &&
                           IsPositionVisible(worldPosition.Value);
             dot.gameObject.SetActive(visible);
             localHighlights[slot].SetActive(visible && isLocal);
@@ -465,14 +496,47 @@ namespace MazeParty.Multiplayer
             return offset.sqrMagnitude <= _visibleWorldRadius * _visibleWorldRadius;
         }
 
-        internal static bool ShouldRevealPlayer(
-            bool isCloaked,
-            bool isLocal,
-            BoardMinimapDisplayContext displayContext)
+        private static bool TryGetPlayerCoordinate(
+            NetworkPlayerAvatar avatar,
+            NetworkPlayerAvatar local,
+            int slot,
+            BoardMinimapDisplayContext displayContext,
+            BoardPlayerMapKnowledge knowledge,
+            out Vector2Int coordinate)
         {
-            return displayContext == BoardMinimapDisplayContext.TurnOverview ||
-                   !isCloaked ||
-                   isLocal;
+            var isLocal = avatar != null && avatar == local;
+            if (isLocal && avatar.IsSpawned && avatar.HasLogicalBoardTile)
+            {
+                coordinate = avatar.LogicalBoardTileCoordinate;
+                return true;
+            }
+
+            if (knowledge == null)
+            {
+                coordinate = default;
+                return false;
+            }
+
+            if (displayContext == BoardMinimapDisplayContext.Minimap)
+            {
+                if (!knowledge.IsCurrentlyVisible(slot) || avatar == null ||
+                    !avatar.IsSpawned || !avatar.HasLogicalBoardTile)
+                {
+                    coordinate = default;
+                    return false;
+                }
+
+                coordinate = avatar.LogicalBoardTileCoordinate;
+                return true;
+            }
+
+            if (avatar == null || !avatar.IsSpawned)
+            {
+                coordinate = default;
+                return false;
+            }
+
+            return knowledge.TryGetLastKnown(slot, out coordinate);
         }
 
         private void RefreshShopDistance(BoardTopology topology, Vector2Int? source, Vector2Int? shop)
@@ -600,6 +664,9 @@ namespace MazeParty.Multiplayer
         {
             byte connected = 0;
             byte outgoing = 0;
+            var hasFirstDestination = false;
+            var firstDestination = default(Vector2Int);
+            var hasBranch = false;
             foreach (var gate in topology.GetOutgoingGates(tile))
             {
                 if (gate != null && gate.Destination != null &&
@@ -609,6 +676,15 @@ namespace MazeParty.Multiplayer
                         out var side))
                 {
                     outgoing |= (byte)(1 << (int)side);
+                    if (!hasFirstDestination)
+                    {
+                        firstDestination = gate.Destination.Coordinate;
+                        hasFirstDestination = true;
+                    }
+                    else if (gate.Destination.Coordinate != firstDestination)
+                    {
+                        hasBranch = true;
+                    }
                 }
             }
 
@@ -632,10 +708,118 @@ namespace MazeParty.Multiplayer
                 var blocked = isLocal && (!canExit || remainingMoves <= 0);
                 room.Walls[side].enabled = (connected & mask) == 0 || blocked;
                 room.Exits[side].enabled = false;
+                room.ProgressArrows[side].SetIcon(
+                    BoardMapIconKind.Arrow,
+                    arrowUpIcon);
+                PlaceLegacyArrow(room.ProgressArrows[side], side);
                 room.ProgressArrows[side].enabled =
-                    isLocal && canExit && remainingMoves > 0;
+                    isLocal && hasBranch && canExit &&
+                    remainingMoves > 0;
                 room.Exits[side].color = blocked ? blockedExitColor : exitColor;
             }
+        }
+
+        private void PresentFreeformBranchArrows(
+            BoardTopology topology,
+            BoardTile tile,
+            Room room,
+            bool isLocal,
+            int remainingMoves)
+        {
+            var outgoing = topology.GetOutgoingGates(tile);
+            var destinationCount = 0;
+            for (var index = 0; index < outgoing.Count; index++)
+            {
+                if (outgoing[index] != null &&
+                    outgoing[index].Destination != null &&
+                    IsFirstGateToDestination(outgoing, index))
+                {
+                    destinationCount++;
+                }
+            }
+
+            var show = isLocal && remainingMoves > 0 &&
+                       destinationCount > 1;
+            var arrowIndex = 0;
+            if (show)
+            {
+                for (var index = 0;
+                     index < outgoing.Count &&
+                     arrowIndex < room.ProgressArrows.Length;
+                     index++)
+                {
+                    var gate = outgoing[index];
+                    if (gate == null || gate.Destination == null)
+                        continue;
+                    if (!IsFirstGateToDestination(outgoing, index))
+                        continue;
+
+                    var worldDirection =
+                        gate.Destination.GetRecoveryCenter() -
+                        tile.GetRecoveryCenter();
+                    var direction = new Vector2(
+                        worldDirection.x,
+                        worldDirection.z).normalized;
+                    if (direction.sqrMagnitude <= 0.0001f)
+                        continue;
+
+                    var arrow = room.ProgressArrows[arrowIndex++];
+                    arrow.SetIcon(BoardMapIconKind.Arrow, arrowUpIcon);
+                    var rect = arrow.rectTransform;
+                    rect.anchorMin = rect.anchorMax = rect.pivot =
+                        Vector2.one * 0.5f;
+                    rect.anchoredPosition = new Vector2(
+                        direction.x * room.Floor.rectTransform.rect.width * 0.36f,
+                        direction.y * room.Floor.rectTransform.rect.height * 0.36f);
+                    rect.localRotation = Quaternion.Euler(
+                        0f,
+                        0f,
+                        Vector2.SignedAngle(Vector2.up, direction));
+                    arrow.enabled = true;
+                }
+            }
+
+            for (; arrowIndex < room.ProgressArrows.Length; arrowIndex++)
+                room.ProgressArrows[arrowIndex].enabled = false;
+        }
+
+        private static void PlaceLegacyArrow(
+            BoardMapIcon arrow,
+            int side)
+        {
+            var position = side == 0
+                ? new Vector2(.5f, .9f)
+                : side == 1
+                    ? new Vector2(.9f, .5f)
+                    : side == 2
+                        ? new Vector2(.5f, .1f)
+                        : new Vector2(.1f, .5f);
+            var rect = arrow.rectTransform;
+            rect.anchorMin = rect.anchorMax = position;
+            rect.pivot = Vector2.one * .5f;
+            rect.anchoredPosition = Vector2.zero;
+            rect.localRotation = Quaternion.Euler(0f, 0f, -90f * side);
+        }
+
+        private static bool IsFirstGateToDestination(
+            IReadOnlyList<BoardGate> gates,
+            int index)
+        {
+            var gate = gates[index];
+            if (gate == null || gate.Destination == null)
+                return false;
+
+            var coordinate = gate.Destination.Coordinate;
+            for (var previous = 0; previous < index; previous++)
+            {
+                var candidate = gates[previous];
+                if (candidate != null && candidate.Destination != null &&
+                    candidate.Destination.Coordinate == coordinate)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static void SetLegacyEdgesVisible(Room room, bool visible)
@@ -736,6 +920,26 @@ namespace MazeParty.Multiplayer
                     out var label)
                     ? label
                     : string.Empty;
+            }
+        }
+
+        private Sprite GetSprite(BoardMapIconKind kind)
+        {
+            switch (kind)
+            {
+                case BoardMapIconKind.Respawn:
+                    return homeFilledIcon;
+                case BoardMapIconKind.GoldGain:
+                case BoardMapIconKind.GoldLoss:
+                    return moneyFilledIcon;
+                case BoardMapIconKind.Damage:
+                    return damageIcon;
+                case BoardMapIconKind.SpecialEvent:
+                    return warningFilledIcon;
+                case BoardMapIconKind.Arrow:
+                    return arrowUpIcon;
+                default:
+                    return null;
             }
         }
 

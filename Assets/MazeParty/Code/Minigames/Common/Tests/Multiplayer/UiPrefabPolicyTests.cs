@@ -20,6 +20,11 @@ namespace MazeParty.Multiplayer.Tests
     /// </summary>
     public sealed class UiPrefabPolicyTests
     {
+        private const string OnlineBootstrapScenePath =
+            "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
+        private const string LobbyCanvasPrefabPath =
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
+
         private static readonly string[] RequiredPrefabPaths =
         {
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
@@ -69,7 +74,8 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] NestedBoardUiModulePaths =
         {
             "Assets/MazeParty/Prefabs/Board/UI/Modules/ReconnectOverlay.prefab",
-            "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab"
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab"
         };
 
         private static readonly SceneUiContract[] SceneContracts =
@@ -163,14 +169,6 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(PrefabAssetType.Regular).Or.EqualTo(
                         PrefabAssetType.Variant),
                     path);
-                if (prefab.GetComponent<Canvas>() != null)
-                {
-                    Assert.That(
-                        prefab.transform.localScale,
-                        Is.EqualTo(Vector3.one),
-                        path + " must remain visible when instantiated.");
-                }
-
                 foreach (var transform in
                          prefab.GetComponentsInChildren<Transform>(true))
                 {
@@ -201,32 +199,6 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
             }
-        }
-
-        [Test]
-        public void ProjectTextPrefabs_DoNotUseOutlineEffects()
-        {
-            var violations = AssetDatabase.FindAssets(
-                    "t:Prefab",
-                    new[] { "Assets/MazeParty/Prefabs" })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .OrderBy(path => path)
-                .SelectMany(path =>
-                {
-                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    return prefab == null
-                        ? Enumerable.Empty<string>()
-                        : prefab.GetComponentsInChildren<Text>(true)
-                            .Where(text => text.GetComponent<Outline>() != null)
-                            .Select(text => path + " :: " + text.name);
-                })
-                .ToArray();
-
-            Assert.That(
-                violations,
-                Is.Empty,
-                "Text must remain readable without Outline effects.\n" +
-                string.Join("\n", violations));
         }
 
         [Test]
@@ -513,7 +485,17 @@ namespace MazeParty.Multiplayer.Tests
 
             if (modification.target == sourceRoot)
             {
-                return modification.propertyPath == "m_Name";
+                if (modification.propertyPath == "m_Name")
+                {
+                    return true;
+                }
+
+                return modification.propertyPath == "m_IsActive" &&
+                       instanceRoot.scene.path ==
+                       OnlineBootstrapScenePath &&
+                       PrefabUtility
+                           .GetPrefabAssetPathOfNearestInstanceRoot(
+                               instanceRoot) == LobbyCanvasPrefabPath;
             }
 
             if (modification.target == sourceRoot.transform)

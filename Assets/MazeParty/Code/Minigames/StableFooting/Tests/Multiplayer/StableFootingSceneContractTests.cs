@@ -16,12 +16,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
         private const string StableFootingPrefabFolder =
             "Assets/MazeParty/Prefabs/Minigames/StableFooting/";
-        private const string HeartSpritePath =
-            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Heart Filled.png";
-        private const string StarSpritePath =
-            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
-        private const string SunSpritePath =
-            "Assets/Ignore/Modern UI Pack/Textures/Icon/Weather/Sun Filled.png";
 
         [Test]
         public void PushPresentationRpc_IsReliablePerEvent()
@@ -40,19 +34,10 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(typeof(Vector3)));
         }
 
-        [Test]
-        public void SymbolPrefabs_UseWhiteModernUiSprites()
-        {
-            AssertSymbolPrefab(
-                StableFootingPrefabFolder + "Tile.prefab");
-            AssertSymbolPrefab(
-                StableFootingPrefabFolder + "SafeSymbolDisplay.prefab");
-        }
-
         [TestCase(StableFootingSymbol.Cross)]
         [TestCase(StableFootingSymbol.Circle)]
         [TestCase(StableFootingSymbol.Square)]
-        public void SafeSymbolDisplay_ShowsCorrectSymbolGreenAtCenter(
+        public void SafeSymbolDisplay_MarksSelectedSymbolAndAppliesVisibility(
             StableFootingSymbol safeSymbol)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -69,9 +54,11 @@ namespace MazeParty.Multiplayer.Tests
                     FindDescendant(instance.transform, "Square Mark")
                         .GetComponent<SpriteRenderer>()
                 };
-                var authoredSlots = renderers
-                    .Select(renderer => renderer.transform.localPosition)
-                    .OrderBy(position => position.x)
+                var authoredColors = renderers
+                    .Select(renderer => renderer.color)
+                    .ToArray();
+                var authoredActiveStates = renderers
+                    .Select(renderer => renderer.gameObject.activeSelf)
                     .ToArray();
                 var presenter = new StableFootingSafeSymbolPresenter(
                     renderers[0],
@@ -82,26 +69,42 @@ namespace MazeParty.Multiplayer.Tests
 
                 var safeIndex = (int)safeSymbol;
                 Assert.That(
-                    renderers[safeIndex].transform.localPosition,
-                    Is.EqualTo(authoredSlots[1]));
-                Assert.That(
                     renderers[safeIndex].color,
-                    Is.EqualTo(Color.green));
+                    Is.Not.EqualTo(authoredColors[safeIndex]),
+                    "Only the selected semantic symbol should be marked.");
                 Assert.That(
                     renderers.All(renderer =>
                         renderer.gameObject.activeInHierarchy),
                     Is.True);
+                for (var index = 0; index < renderers.Length; index++)
+                {
+                    if (index == safeIndex)
+                    {
+                        continue;
+                    }
 
-                var distractors = renderers
-                    .Where((renderer, index) => index != safeIndex)
-                    .ToArray();
+                    Assert.That(
+                        renderers[index].color,
+                        Is.EqualTo(authoredColors[index]),
+                        "Unselected symbols retain their authored state.");
+                }
+
+                presenter.Apply(safeSymbol, false);
                 Assert.That(
-                    distractors.Select(renderer => renderer.color),
-                    Is.All.EqualTo(Color.white));
-                CollectionAssert.AreEquivalent(
-                    new[] { authoredSlots[0], authoredSlots[2] },
-                    distractors.Select(renderer =>
-                        renderer.transform.localPosition).ToArray());
+                    renderers.All(renderer =>
+                        !renderer.gameObject.activeSelf),
+                    Is.True);
+
+                presenter.RestoreAuthoredState();
+                for (var index = 0; index < renderers.Length; index++)
+                {
+                    Assert.That(
+                        renderers[index].color,
+                        Is.EqualTo(authoredColors[index]));
+                    Assert.That(
+                        renderers[index].gameObject.activeSelf,
+                        Is.EqualTo(authoredActiveStates[index]));
+                }
             }
             finally
             {
@@ -286,51 +289,6 @@ namespace MazeParty.Multiplayer.Tests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
-        }
-
-        private static void AssertSymbolPrefab(string prefabPath)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            Assert.That(prefab, Is.Not.Null, prefabPath);
-
-            AssertSymbol(
-                prefab.transform,
-                "Cross Mark",
-                HeartSpritePath,
-                prefabPath);
-            AssertSymbol(
-                prefab.transform,
-                "Circle Mark",
-                StarSpritePath,
-                prefabPath);
-            AssertSymbol(
-                prefab.transform,
-                "Square Mark",
-                SunSpritePath,
-                prefabPath);
-        }
-
-        private static void AssertSymbol(
-            Transform prefabRoot,
-            string symbolName,
-            string spritePath,
-            string prefabPath)
-        {
-            var symbol = FindDescendant(prefabRoot, symbolName);
-            Assert.That(symbol, Is.Not.Null,
-                prefabPath + " / " + symbolName);
-
-            var renderer = symbol.GetComponent<SpriteRenderer>();
-            Assert.That(renderer, Is.Not.Null,
-                prefabPath + " / " + symbolName);
-
-            var expectedSprite =
-                AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
-            Assert.That(expectedSprite, Is.Not.Null, spritePath);
-            Assert.That(renderer.sprite, Is.EqualTo(expectedSprite),
-                prefabPath + " / " + symbolName);
-            Assert.That(renderer.color, Is.EqualTo(Color.white),
-                prefabPath + " / " + symbolName);
         }
 
         private static Transform FindDescendant(

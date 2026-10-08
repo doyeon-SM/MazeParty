@@ -17,6 +17,8 @@ namespace MazeParty.Gameplay
         private const string RuntimeOverheadCameraName = "CM_PlayerOverhead (Runtime)";
         private const string RuntimeCombatSpectatorCameraName =
             "CM_CombatSpectator (Runtime)";
+        private const string RuntimeBoardResourceEventCameraName =
+            "CM_BoardResourceEvent (Runtime)";
 
         [Header("Output")]
         [SerializeField] private Camera outputCamera;
@@ -27,6 +29,7 @@ namespace MazeParty.Gameplay
         [SerializeField] private CinemachineCamera minigameCamera;
         [SerializeField] private CinemachineCamera playerOverheadCamera;
         [SerializeField] private CinemachineCamera combatSpectatorCamera;
+        [SerializeField] private CinemachineCamera boardResourceEventCamera;
         [SerializeField] private Transform localPlayerEye;
         [SerializeField] private GameplayMode activeMode = GameplayMode.BoardTopDown;
 
@@ -50,6 +53,12 @@ namespace MazeParty.Gameplay
         [SerializeField, Min(1f)] private float combatSpectatorHeight = 10f;
         [SerializeField, Range(10f, 120f)] private float combatSpectatorFieldOfView = 55f;
 
+        [Header("Board Resource Event")]
+        [SerializeField, Min(0.5f)] private float boardResourceEventDistance = 3.4f;
+        [SerializeField] private float boardResourceEventHeightOffset = 0.15f;
+        [SerializeField, Range(10f, 120f)]
+        private float boardResourceEventFieldOfView = 60f;
+
         private CinemachineBrain _brain;
         private Coroutine _transitionCoroutine;
         private CinemachineBlendDefinition _savedDefaultBlend;
@@ -62,6 +71,9 @@ namespace MazeParty.Gameplay
         private GameplayMode _transitionFrom;
         private GameplayMode _transitionTarget;
         private Vector3 _combatSpectatorFocus;
+        private Transform _boardResourceEventFacing;
+        private Transform _boardResourceEventHead;
+        private float _boardResourceEventFocusHeight;
 
         public event Action<GameplayMode, GameplayMode> TransitionStarted;
         public event Action<GameplayMode, GameplayMode> TransitionCompleted;
@@ -137,6 +149,21 @@ namespace MazeParty.Gameplay
             {
                 EnsureRuntimeCameraSystem();
                 PrepareCombatSpectatorPose();
+            }
+        }
+
+        public void SetBoardResourceEventFocus(
+            Transform facing,
+            Transform head,
+            float focusHeight)
+        {
+            _boardResourceEventFacing = facing;
+            _boardResourceEventHead = head;
+            _boardResourceEventFocusHeight = Mathf.Max(0f, focusHeight);
+            if (Application.isPlaying)
+            {
+                EnsureRuntimeCameraSystem();
+                PrepareBoardResourceEventPose();
             }
         }
 
@@ -286,6 +313,8 @@ namespace MazeParty.Gameplay
                 PrepareFirstPersonPose();
             else if (!_isTransitioning && activeMode == GameplayMode.CombatSpectator)
                 PrepareCombatSpectatorPose();
+            else if (!_isTransitioning && activeMode == GameplayMode.BoardResourceEvent)
+                PrepareBoardResourceEventPose();
 
             if (!_isTransitioning)
                 return;
@@ -450,6 +479,20 @@ namespace MazeParty.Gameplay
                 combatSpectatorCamera.Priority = StandbyPriority;
                 PrepareCombatSpectatorPose();
             }
+
+            if (boardResourceEventCamera == null)
+            {
+                var eventCameraObject = new GameObject(
+                    RuntimeBoardResourceEventCameraName)
+                {
+                    hideFlags = HideFlags.DontSave
+                };
+                eventCameraObject.transform.SetParent(transform, false);
+                boardResourceEventCamera =
+                    eventCameraObject.AddComponent<CinemachineCamera>();
+                boardResourceEventCamera.Priority = StandbyPriority;
+                PrepareBoardResourceEventPose();
+            }
         }
 
         private void PrepareModePose(GameplayMode mode)
@@ -464,6 +507,9 @@ namespace MazeParty.Gameplay
                     break;
                 case GameplayMode.CombatSpectator:
                     PrepareCombatSpectatorPose();
+                    break;
+                case GameplayMode.BoardResourceEvent:
+                    PrepareBoardResourceEventPose();
                     break;
             }
         }
@@ -557,6 +603,46 @@ namespace MazeParty.Gameplay
                 SharedCameraFraming.Rotation);
         }
 
+        private void PrepareBoardResourceEventPose()
+        {
+            if (boardResourceEventCamera == null ||
+                _boardResourceEventFacing == null)
+            {
+                return;
+            }
+
+            var focus = _boardResourceEventHead != null
+                ? _boardResourceEventHead.position
+                : _boardResourceEventFacing.position +
+                  Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            focus += Vector3.up * _boardResourceEventFocusHeight;
+            var forward = Vector3.ProjectOnPlane(
+                _boardResourceEventFacing.forward,
+                Vector3.up);
+            if (forward.sqrMagnitude < 0.0001f)
+            {
+                forward = Vector3.forward;
+            }
+
+            var position = focus +
+                           forward.normalized * Mathf.Max(
+                               0.5f,
+                               boardResourceEventDistance) +
+                           Vector3.up * boardResourceEventHeightOffset;
+            var direction = focus - position;
+            var rotation = direction.sqrMagnitude > 0.0001f
+                ? Quaternion.LookRotation(direction.normalized, Vector3.up)
+                : Quaternion.identity;
+            var lens = boardResourceEventCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = Mathf.Clamp(
+                boardResourceEventFieldOfView,
+                10f,
+                120f);
+            boardResourceEventCamera.Lens = lens;
+            boardResourceEventCamera.ForceCameraPosition(position, rotation);
+        }
+
         private float GetOutputAspect()
         {
             if (outputCamera != null && outputCamera.aspect > 0.1f)
@@ -592,6 +678,8 @@ namespace MazeParty.Gameplay
                     return combatSpectatorCamera;
                 case GameplayMode.Minigame:
                     return minigameCamera;
+                case GameplayMode.BoardResourceEvent:
+                    return boardResourceEventCamera;
                 default:
                     return null;
             }
@@ -604,6 +692,7 @@ namespace MazeParty.Gameplay
             SetPriority(minigameCamera, StandbyPriority);
             SetPriority(playerOverheadCamera, StandbyPriority);
             SetPriority(combatSpectatorCamera, StandbyPriority);
+            SetPriority(boardResourceEventCamera, StandbyPriority);
             SetPriority(incoming, LivePriority);
         }
 
@@ -703,6 +792,13 @@ namespace MazeParty.Gameplay
             combatSpectatorHeight = Mathf.Max(1f, combatSpectatorHeight);
             combatSpectatorFieldOfView = Mathf.Clamp(
                 combatSpectatorFieldOfView,
+                10f,
+                120f);
+            boardResourceEventDistance = Mathf.Max(
+                0.5f,
+                boardResourceEventDistance);
+            boardResourceEventFieldOfView = Mathf.Clamp(
+                boardResourceEventFieldOfView,
                 10f,
                 120f);
             fallbackBoardFraming =

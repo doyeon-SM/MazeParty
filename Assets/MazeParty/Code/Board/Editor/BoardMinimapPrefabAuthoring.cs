@@ -118,9 +118,6 @@ namespace MazeParty.Editor
                 dots[slot] = dot;
                 dot.gameObject.SetActive(false);
             }
-            var description = Label("Current Tile", panel.transform, font, "CURRENT TILE  --", 14);
-            Place(description.rectTransform, new Vector2(162f, -338f), new Vector2(300f, 50f));
-
             // Disabled data-only bounds avoid the vendor's automatic target creation.
             var boundsRoot = new GameObject("Minimap World Bounds");
             boundsRoot.SetActive(false);
@@ -139,7 +136,7 @@ namespace MazeParty.Editor
             projection.centeredDotCanvas = surface;
             projection.miniMapBounds = bounds;
             var view = root.AddComponent<BoardMinimapView>();
-            view.Configure(projection, rooms, dots, highlights, description, title);
+            view.Configure(projection, rooms, dots, highlights, null, title);
             serialized.Update();
             serialized.FindProperty("liveMinimap").objectReferenceValue = view;
             serialized.ApplyModifiedPropertiesWithoutUndo();

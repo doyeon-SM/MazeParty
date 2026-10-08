@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using MazeParty.Gameplay;
 using Unity.Netcode;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 namespace MazeParty.Multiplayer
 {
@@ -9,7 +10,8 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class BoardShopRouteView : MonoBehaviour
     {
-        [SerializeField] private GameObject hemispherePrefab;
+        [FormerlySerializedAs("hemispherePrefab")]
+        [SerializeField] private GameObject routeMarkerPrefab;
         [SerializeField, Min(.1f)] private float dotSpacing = .8f;
         [SerializeField, Min(0f)] private float surfaceOffset = .012f;
         private readonly List<BoardTile> _route = new List<BoardTile>();
@@ -21,14 +23,36 @@ namespace MazeParty.Multiplayer
         private bool _hasRoute, _visible;
         private int _dotCount;
 
-        public bool HasRequiredReferences => hemispherePrefab != null &&
-            hemispherePrefab.GetComponent<MeshFilter>()?.sharedMesh != null &&
-            hemispherePrefab.GetComponent<MeshRenderer>()?.sharedMaterial != null &&
-            hemispherePrefab.GetComponentInChildren<Collider>() == null &&
-            hemispherePrefab.GetComponentInChildren<NetworkObject>() == null;
+        public bool HasRequiredReferences
+        {
+            get
+            {
+                if (routeMarkerPrefab == null ||
+                    routeMarkerPrefab.GetComponentInChildren<Collider>(true) != null ||
+                    routeMarkerPrefab.GetComponentInChildren<Collider2D>(true) != null ||
+                    routeMarkerPrefab.GetComponentInChildren<NetworkObject>(true) != null)
+                {
+                    return false;
+                }
+
+                var particles = routeMarkerPrefab.GetComponentsInChildren<
+                    ParticleSystem>(true);
+                var renderer = particles.Length == 1
+                    ? particles[0].GetComponent<ParticleSystemRenderer>()
+                    : null;
+                if (renderer == null || renderer.sharedMaterial == null ||
+                    renderer.sharedMaterial.shader == null)
+                {
+                    return false;
+                }
+
+                var main = particles[0].main;
+                return main.loop && main.playOnAwake;
+            }
+        }
 
 #if UNITY_EDITOR
-        public void Configure(GameObject prefab) { hemispherePrefab = prefab; }
+        public void Configure(GameObject prefab) { routeMarkerPrefab = prefab; }
 #endif
 
         private void LateUpdate()
@@ -66,7 +90,7 @@ namespace MazeParty.Multiplayer
         }
         public void PresentRoute(BoardTopology topology, BoardTile source, BoardTile shop)
         {
-            if (hemispherePrefab == null) return;
+            if (routeMarkerPrefab == null) return;
             if (!_hasRoute || topology != _lastTopology || source != _lastSource || shop != _lastShop)
             {
                 _hasRoute = true;
@@ -77,8 +101,8 @@ namespace MazeParty.Multiplayer
                 _dotCount = _points.Count;
                 while (_dots.Count < _dotCount)
                 {
-                    var dot = Instantiate(hemispherePrefab, transform);
-                    dot.name = "Local route dot " + _dots.Count;
+                    var dot = Instantiate(routeMarkerPrefab, transform);
+                    dot.name = "Local key shop route glow " + _dots.Count;
                     _dots.Add(dot);
                 }
                 for (var index = 0; index < _dots.Count; index++)

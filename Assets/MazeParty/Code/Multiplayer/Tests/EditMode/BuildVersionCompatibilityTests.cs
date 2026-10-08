@@ -51,14 +51,8 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void VersionPresentationAndRejectionReason_AreStable()
+        public void RejectionState_RecognizesMismatchAndConsumesAttemptScopedSignalsOnce()
         {
-            Assert.That(
-                BuildVersionCompatibility.FormatDisplayText("0.52"),
-                Is.EqualTo("v0.52"));
-            Assert.That(
-                BuildVersionCompatibility.FormatDisplayText("v0.52"),
-                Is.EqualTo("v0.52"));
             Assert.That(
                 BuildVersionCompatibility.IsMismatchDisconnectReason(
                     "Connection denied: " +
@@ -68,11 +62,7 @@ namespace MazeParty.Multiplayer.Tests
                 BuildVersionCompatibility.IsMismatchDisconnectReason(
                     "Relay timed out."),
                 Is.False);
-        }
 
-        [Test]
-        public void RejectionState_IsAttemptScopedAndConsumesPendingClientsOnce()
-        {
             var state = new BuildVersionRejectionState();
 
             state.RecordServerRejectedClient(42);

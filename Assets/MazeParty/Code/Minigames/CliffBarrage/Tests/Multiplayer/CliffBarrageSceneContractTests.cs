@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using MazeParty.Gameplay.Minigames.CliffBarrage;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -42,6 +43,62 @@ namespace MazeParty.Multiplayer.Tests
             var parameters = rpc.GetParameters();
             Assert.That(parameters, Has.Length.EqualTo(1));
             Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+        }
+
+        [Test]
+        public void CompletedRound_EntersSecondRoundCountdownForExactDuration()
+        {
+            var match = new CliffBarrageMatchState(
+                20261009,
+                projectileLimit: 0,
+                laserLimit: 0);
+            match.AdvanceTo(CliffBarrageRules.RoundDurationSeconds);
+            Assert.That(match.IsRoundComplete, Is.True);
+            Assert.That(match.IsComplete, Is.False);
+
+            var root = new GameObject("CliffBarrage Round Countdown Test");
+            try
+            {
+                var state = root.AddComponent<NetworkCliffBarrageState>();
+                NetworkCountdownTestAccess.SetPrivateField(
+                    state,
+                    "_serverMatch",
+                    match);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    state,
+                    "_matchActive",
+                    true);
+                NetworkCountdownTestAccess.SetRoundNumber(state, 1);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    state,
+                    "_phase",
+                    (byte)NetworkCliffBarragePhase.RoundResult);
+
+                const double transitionAt = 240d;
+                NetworkCountdownTestAccess.InvokePrivate(
+                    state,
+                    "BeginNextRoundOnServer",
+                    transitionAt);
+
+                Assert.That(match.RoundNumber, Is.EqualTo(2));
+                Assert.That(match.IsRoundComplete, Is.False);
+                Assert.That(
+                    state.Phase,
+                    Is.EqualTo(NetworkCliffBarragePhase.Countdown));
+                Assert.That(state.RoundNumber, Is.EqualTo(2));
+                Assert.That(
+                    NetworkCountdownTestAccess.GetNetworkValue<double>(
+                        state,
+                        "_phaseEndsAt"),
+                    Is.EqualTo(
+                        transitionAt +
+                        CliffBarrageRules.CountdownSeconds)
+                        .Within(0.000001d));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]

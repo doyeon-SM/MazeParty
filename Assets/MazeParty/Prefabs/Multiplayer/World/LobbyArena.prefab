@@ -327,6 +327,7 @@ Transform:
   - {fileID: 8676815760532366640}
   - {fileID: 552586884247219652}
   - {fileID: 4515232074639425295}
+  - {fileID: 3584801232457976284}
   - {fileID: 1540979790715655765}
   - {fileID: 2043458358213521657}
   - {fileID: 6880727660126334291}
@@ -1749,6 +1750,72 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 1419127409856356102}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1428734299233367093
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 440281421513125484}
+    m_Modifications:
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -7.2500005
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: -0.00000004371139
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3112337297566670072, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_Name
+      value: South Iron Gate Right (1)
+      objectReference: {fileID: 0}
+    - target: {fileID: 6038573933271284404, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 2651074547141585059, guid: baf57603f98cbdd4e8007a7276476d51, type: 3}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+--- !u!4 &3584801232457976284 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+  m_PrefabInstance: {fileID: 1428734299233367093}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1441164210020934820
 PrefabInstance:

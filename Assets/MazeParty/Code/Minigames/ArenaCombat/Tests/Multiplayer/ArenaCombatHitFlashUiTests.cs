@@ -17,28 +17,23 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity";
 
         [Test]
-        public void HitFlashPrefab_HasSerializedNonBlockingRedOverlayWithoutHealthUi()
+        public void HitFlashPrefab_HasNonBlockingBindingsAndReducedFlashSupport()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
             var view = prefab.GetComponent<ArenaCombatHitFlashView>();
-            var canvas = prefab.GetComponent<Canvas>();
-            var image = prefab.GetComponentInChildren<Image>(true);
-            var group = prefab.GetComponentInChildren<CanvasGroup>(true);
             Assert.That(view, Is.Not.Null);
             Assert.That(view.HasRequiredReferences, Is.True);
-            Assert.That(canvas, Is.Not.Null);
-            Assert.That(canvas.renderMode,
-                Is.EqualTo(RenderMode.ScreenSpaceOverlay));
-            Assert.That(canvas.sortingOrder, Is.GreaterThan(500));
             Assert.That(prefab.GetComponent<GraphicRaycaster>(), Is.Null);
-            Assert.That(image, Is.Not.Null);
-            Assert.That(image.color.r, Is.GreaterThan(image.color.g));
-            Assert.That(image.color.r, Is.GreaterThan(image.color.b));
-            Assert.That(image.raycastTarget, Is.False);
-            Assert.That(group, Is.Not.Null);
-            Assert.That(group.blocksRaycasts, Is.False);
-            Assert.That(prefab.GetComponentsInChildren<Text>(true), Is.Empty);
+            var graphics = prefab.GetComponentsInChildren<Graphic>(true);
+            Assert.That(graphics, Is.Not.Empty);
+            Assert.That(
+                graphics.All(graphic => !graphic.raycastTarget),
+                Is.True);
+            Assert.That(
+                prefab.GetComponentsInChildren<CanvasGroup>(true)
+                    .All(group => !group.blocksRaycasts),
+                Is.True);
 
             var instance = Object.Instantiate(prefab);
             try

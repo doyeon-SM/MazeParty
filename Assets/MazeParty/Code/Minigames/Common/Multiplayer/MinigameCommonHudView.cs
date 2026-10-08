@@ -64,7 +64,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
-                match.IsMinigameStartCountdown ||
+                match.IsMinigameRoundCountdown ||
                 !MinigameCatalog.TryGetDefinition(
                     match.CurrentMinigame, out var definition))
             {

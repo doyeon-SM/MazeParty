@@ -14,7 +14,11 @@ namespace MazeParty.Editor
     {
         public const string DataFolder = "Assets/MazeParty/Resources/MazeParty/Items";
         public const string VisualFolder = "Assets/MazeParty/Prefabs/Board/Items";
+        public const string MineWorldIconPrefabPath =
+            VisualFolder + "/MineWorldIcon.prefab";
         private const string IconFolder = "Assets/Ignore/AIImage/Icons";
+        private const string HelpFilledIconPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Help Filled.png";
         [MenuItem("MazeParty/Board/Upgrade Board Items")]
         public static void Upgrade()
         {
@@ -73,20 +77,34 @@ namespace MazeParty.Editor
         {
             EnsureReticleBinding(canvas);
             EnsureUtilityUi(canvas);
+            var helpIcon = AssetDatabase.LoadAssetAtPath<Sprite>(
+                HelpFilledIconPath);
+            if (helpIcon == null)
+            {
+                throw new InvalidOperationException(
+                    "ModernUIPack Help Filled icon must be imported at '" +
+                    HelpFilledIconPath + "'.");
+            }
             foreach (var map in canvas.GetComponentsInChildren<BoardMinimapView>(true))
             {
                 var data = new SerializedObject(map);
-                if (data.FindProperty("mineGraphic").objectReferenceValue != null) continue;
-                var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
-                if (route == null) continue;
-                var go = new GameObject("Own Mines", typeof(RectTransform), typeof(CanvasRenderer), typeof(BoardMapMineGraphic));
-                go.layer = route.gameObject.layer;
-                go.transform.SetParent(route.transform.parent, false);
-                var rect = (RectTransform)go.transform;
-                rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
-                rect.offsetMin = rect.offsetMax = Vector2.zero;
-                var graphic = go.GetComponent<BoardMapMineGraphic>();
-                graphic.color = new Color(1f, .3f, .16f);
+                var graphic = data.FindProperty("mineGraphic")
+                    .objectReferenceValue as BoardMapMineGraphic;
+                if (graphic == null)
+                {
+                    var route = data.FindProperty("shopRouteGraphic")
+                        .objectReferenceValue as BoardMapRouteGraphic;
+                    if (route == null) continue;
+                    var go = new GameObject("Own Mines", typeof(RectTransform), typeof(CanvasRenderer), typeof(BoardMapMineGraphic));
+                    go.layer = route.gameObject.layer;
+                    go.transform.SetParent(route.transform.parent, false);
+                    var rect = (RectTransform)go.transform;
+                    rect.anchorMin = Vector2.zero; rect.anchorMax = Vector2.one;
+                    rect.offsetMin = rect.offsetMax = Vector2.zero;
+                    graphic = go.GetComponent<BoardMapMineGraphic>();
+                }
+                graphic.SetIcon(helpIcon);
+                graphic.color = new Color(1f, .2f, .18f);
                 graphic.raycastTarget = false;
                 data.FindProperty("mineGraphic").objectReferenceValue = graphic;
                 data.ApplyModifiedPropertiesWithoutUndo();
@@ -166,6 +184,7 @@ namespace MazeParty.Editor
             if (existing != null)
             {
                 EnsureIcon(existing, id);
+                EnsurePresentation(existing, id);
                 return;
             }
             var item = ScriptableObject.CreateInstance<BoardItemDefinition>();
@@ -174,7 +193,9 @@ namespace MazeParty.Editor
             item.BlastRadius = blast; item.TriggerRadius = trigger; item.ArmingDelay = delay;
             item.DiceMinimum = diceMinimum; item.DiceMaximum = diceMaximum;
             item.HeldPrefab = RequiresHeldModel(id) ? EnsureModel(id) : null;
-            item.WorldPrefab = item.HeldPrefab;
+            item.WorldPrefab = id == PrototypeItemId.Mine
+                ? EnsureMineWorldIconPrefab()
+                : item.HeldPrefab;
             item.ExplosionPrefab = explosion;
             item.Icon = RequireIcon(id);
             AssetDatabase.CreateAsset(item, path);
@@ -200,6 +221,92 @@ namespace MazeParty.Editor
             item.Icon = RequireIcon(id);
             EditorUtility.SetDirty(item);
         }
+
+        private static void EnsurePresentation(
+            BoardItemDefinition item,
+            PrototypeItemId id)
+        {
+            if (id != PrototypeItemId.Mine)
+                return;
+
+            if (item.HeldPrefab == null)
+                item.HeldPrefab = EnsureModel(id);
+            var worldIcon = EnsureMineWorldIconPrefab();
+            if (item.WorldPrefab == worldIcon)
+                return;
+
+            item.WorldPrefab = worldIcon;
+            EditorUtility.SetDirty(item);
+        }
+
+        private static GameObject EnsureMineWorldIconPrefab()
+        {
+            var icon = AssetDatabase.LoadAssetAtPath<Sprite>(
+                HelpFilledIconPath);
+            if (icon == null)
+            {
+                throw new InvalidOperationException(
+                    "ModernUIPack Help Filled icon must be imported at '" +
+                    HelpFilledIconPath + "'.");
+            }
+
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                MineWorldIconPrefabPath);
+            var root = existing != null
+                ? PrefabUtility.LoadPrefabContents(MineWorldIconPrefabPath)
+                : new GameObject("MineWorldIcon");
+            try
+            {
+                root.name = "MineWorldIcon";
+                var markerTransform = root.transform.Find("Help Filled");
+                GameObject markerObject;
+                if (markerTransform == null)
+                {
+                    markerObject = new GameObject(
+                        "Help Filled",
+                        typeof(SpriteRenderer),
+                        typeof(BoardWorldMineIcon));
+                    markerObject.transform.SetParent(root.transform, false);
+                }
+                else
+                {
+                    markerObject = markerTransform.gameObject;
+                    if (markerObject.GetComponent<SpriteRenderer>() == null)
+                        markerObject.AddComponent<SpriteRenderer>();
+                    if (markerObject.GetComponent<BoardWorldMineIcon>() == null)
+                        markerObject.AddComponent<BoardWorldMineIcon>();
+                }
+
+                markerObject.transform.localPosition =
+                    new Vector3(0f, 0.42f, 0f);
+                markerObject.transform.localRotation = Quaternion.identity;
+                markerObject.transform.localScale = Vector3.one * 0.28f;
+                var renderer = markerObject.GetComponent<SpriteRenderer>();
+                renderer.sprite = icon;
+                renderer.color = new Color(1f, 0.2f, 0.18f, 1f);
+                renderer.sortingOrder = 20;
+                renderer.shadowCastingMode =
+                    UnityEngine.Rendering.ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                markerObject.GetComponent<BoardWorldMineIcon>()
+                    .Configure(renderer);
+
+                PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    MineWorldIconPrefabPath);
+            }
+            finally
+            {
+                if (existing != null)
+                    PrefabUtility.UnloadPrefabContents(root);
+                else
+                    UnityEngine.Object.DestroyImmediate(root);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(
+                MineWorldIconPrefabPath);
+        }
+
         private static Sprite RequireIcon(PrototypeItemId id)
         {
             var path = IconFolder + "/" + id + ".png";

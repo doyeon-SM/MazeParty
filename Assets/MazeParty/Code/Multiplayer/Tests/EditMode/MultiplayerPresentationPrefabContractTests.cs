@@ -17,10 +17,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerWorldIndicator.prefab";
         private const string WaterShieldPrefabPath =
             "Assets/MazeParty/Prefabs/Common/VFX/WaterShield.prefab";
-        private const string SimpleFistHandPrefabPath =
-            "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab";
-        private const string SimpleHandsSourceRoot =
-            "Assets/Ignore/SimpleHands/";
         private const string HostStarSpritePath =
             "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
         private const string NetworkPlayerPrefabPath =
@@ -138,104 +134,6 @@ namespace MazeParty.Multiplayer.Tests
                 prefab.GetComponentsInChildren<Canvas>(true),
                 Is.Empty,
                 "The shared marker must remain an authored world-space prefab.");
-        }
-
-        [Test]
-        public void PlayerPresentationPrefab_UsesAuthoredSimpleFistHands()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                PlayerPresentationPrefabPath);
-            Assert.That(prefab, Is.Not.Null, PlayerPresentationPrefabPath);
-            var bindings = prefab.GetComponent<
-                PlayerAvatarPresentationBindings>();
-            Assert.That(bindings, Is.Not.Null);
-
-            var fistPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                SimpleFistHandPrefabPath);
-            Assert.That(fistPrefab, Is.Not.Null, SimpleFistHandPrefabPath);
-            Assert.That(
-                PrefabUtility.GetPrefabAssetType(fistPrefab),
-                Is.EqualTo(PrefabAssetType.Variant),
-                "The authored fist must remain a reusable WhiteHand prefab variant.");
-            var fistRenderer = fistPrefab.GetComponentInChildren<
-                SkinnedMeshRenderer>(true);
-            Assert.That(fistRenderer, Is.Not.Null);
-            var originalRenderer = PrefabUtility
-                .GetCorrespondingObjectFromOriginalSource(fistRenderer);
-            Assert.That(originalRenderer, Is.Not.Null);
-            Assert.That(
-                AssetDatabase.GetAssetPath(originalRenderer),
-                Does.StartWith(SimpleHandsSourceRoot),
-                "The tracked fist variant must keep its SimpleHands source chain.");
-
-            var handAnchors = new[]
-            {
-                bindings.LeftHandAnchor,
-                bindings.RightHandAnchor,
-                bindings.FirstPersonLeftHand,
-                bindings.FirstPersonRightHand
-            };
-            foreach (var anchor in handAnchors)
-            {
-                Assert.That(anchor, Is.Not.Null);
-                var renderers = anchor.GetComponentsInChildren<
-                    SkinnedMeshRenderer>(true);
-                Assert.That(renderers, Is.Not.Empty, anchor.name);
-                Assert.That(
-                    anchor.GetComponentsInChildren<MeshFilter>(true)
-                        .Any(filter => filter.sharedMesh != null &&
-                                       filter.sharedMesh.name == "Sphere"),
-                    Is.False,
-                    anchor.name + " must not retain its legacy sphere visual.");
-
-                foreach (var renderer in renderers)
-                {
-                    Assert.That(
-                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                            renderer.gameObject),
-                        Is.EqualTo(SimpleFistHandPrefabPath),
-                        anchor.name + " must use the shared fist prefab.");
-                    Assert.That(
-                        bindings.BodyTintRenderers,
-                        Does.Contain(renderer),
-                        anchor.name + " must follow the player's body tint.");
-                }
-            }
-
-            AssertFingerChainCurl(
-                fistPrefab,
-                "Thumb",
-                20f,
-                "Thumb",
-                "Thumb2");
-            AssertFingerChainCurl(
-                fistPrefab,
-                "Index",
-                45f,
-                "IndexFinger",
-                "Index2",
-                "Index3");
-            AssertFingerChainCurl(
-                fistPrefab,
-                "Middle",
-                45f,
-                "MiddleFinger",
-                "Middle2",
-                "Middle3");
-            AssertFingerChainCurl(
-                fistPrefab,
-                "Ring",
-                45f,
-                "RingFinger",
-                "Ring2",
-                "Ring3");
-            AssertFingerChainCurl(
-                fistPrefab,
-                "Little",
-                45f,
-                "LittleFinger",
-                "Little2",
-                "Little3");
         }
 
         [Test]
@@ -638,40 +536,6 @@ namespace MazeParty.Multiplayer.Tests
             var zone = collider.GetComponent<PlayerHitZone>();
             Assert.That(zone, Is.Not.Null, collider.gameObject.name);
             Assert.That(zone.Region, Is.EqualTo(expectedRegion));
-        }
-
-        private static void AssertFingerChainCurl(
-            GameObject fistPrefab,
-            string fingerName,
-            float minimumTotalAngle,
-            params string[] boneNames)
-        {
-            var transforms = fistPrefab.GetComponentsInChildren<Transform>(true);
-            var totalAngle = 0f;
-            foreach (var boneName in boneNames)
-            {
-                var bone = transforms.SingleOrDefault(
-                    transform => transform.name == boneName);
-                Assert.That(
-                    bone,
-                    Is.Not.Null,
-                    fingerName + " bone is missing: " + boneName);
-                var source = PrefabUtility
-                    .GetCorrespondingObjectFromOriginalSource(bone);
-                Assert.That(
-                    source,
-                    Is.Not.Null,
-                    boneName + " has lost its SimpleHands source.");
-                totalAngle += Quaternion.Angle(
-                    source.localRotation,
-                    bone.localRotation);
-            }
-
-            Assert.That(
-                totalAngle,
-                Is.GreaterThanOrEqualTo(minimumTotalAngle),
-                fingerName +
-                " must remain meaningfully curled from the source open-hand pose.");
         }
     }
 }

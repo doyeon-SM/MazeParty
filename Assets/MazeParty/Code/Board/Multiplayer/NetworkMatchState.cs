@@ -99,6 +99,9 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<FixedString128Bytes>();
         private readonly NetworkVariable<int> _lastLandingEffectRevision =
             new NetworkVariable<int>();
+        private readonly NetworkVariable<BoardResourceTransferSnapshot>
+            _resourceTransferPresentation =
+                new NetworkVariable<BoardResourceTransferSnapshot>();
         private readonly NetworkVariable<bool> _combatActive = new NetworkVariable<bool>();
         private readonly NetworkVariable<Vector2Int> _combatTile =
             new NetworkVariable<Vector2Int>();
@@ -163,6 +166,7 @@ namespace MazeParty.Multiplayer
         private double _scheduledSkipAt;
         private bool _scheduledSkipPaused;
         private double _pausedScheduledSkipRemaining;
+        private double _pausedResourceTransferPresentationRemaining;
         private HostMinigameSchedule _minigameSchedule;
         private HostMinigameScheduleSession _minigameScheduleSession;
         private readonly NetworkPlayerAvatar[] _avatarLookupCache =
@@ -181,10 +185,10 @@ namespace MazeParty.Multiplayer
         public int RemainingMinigameSlots => _remainingMinigameSlots.Value;
         public int MinigameRevealRevision => _minigameRevealRevision.Value;
         public ulong CurrentMinigameSeed => _currentMinigameSeed.Value;
-        public bool IsMinigameStartCountdown =>
-            TryGetMinigameStartCountdown(out _);
-        public double MinigameStartCountdownRemaining =>
-            TryGetMinigameStartCountdown(out var remainingSeconds)
+        public bool IsMinigameRoundCountdown =>
+            TryGetMinigameRoundCountdown(out _);
+        public double MinigameRoundCountdownRemaining =>
+            TryGetMinigameRoundCountdown(out var remainingSeconds)
                 ? remainingSeconds
                 : 0d;
         public bool IsReconnectPaused => _reconnectPaused.Value;
@@ -238,6 +242,10 @@ namespace MazeParty.Multiplayer
             LandingEffectMessage.GetEffectType(
                 _lastLandingEffectMessage.Value.ToString());
         public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
+        public BoardResourceTransferSnapshot ResourceTransferPresentation =>
+            _resourceTransferPresentation.Value;
+        public BoardResourceTransferPhase ResourceTransferPresentationPhase =>
+            GetResourceTransferPresentationPhase(out _, out _);
         public bool IsCombatActive => _combatActive.Value;
         public Vector2Int CombatTile => _combatTile.Value;
         public byte CombatParticipantMask => _combatParticipantMask.Value;
@@ -402,7 +410,18 @@ namespace MazeParty.Multiplayer
             : 0d;
         public double SynchronizedNow => ServerNow;
 
-        private bool TryGetMinigameStartCountdown(
+        public BoardResourceTransferPhase GetResourceTransferPresentationPhase(
+            out float phaseProgress,
+            out float motionProgress)
+        {
+            return BoardResourceTransferPresentationRules.GetPhase(
+                _resourceTransferPresentation.Value,
+                ServerNow,
+                out phaseProgress,
+                out motionProgress);
+        }
+
+        private bool TryGetMinigameRoundCountdown(
             out double remainingSeconds)
         {
             remainingSeconds = 0d;
@@ -410,7 +429,7 @@ namespace MazeParty.Multiplayer
                    FlowState == BoardFlowState.MinigamePlaying &&
                    TryGetCurrentMinigameRuntime(out var runtime) &&
                    runtime != null &&
-                   runtime.TryGetInitialCountdown(out remainingSeconds) &&
+                   runtime.TryGetRoundCountdown(out remainingSeconds) &&
                    remainingSeconds > 0d;
         }
 
@@ -915,6 +934,7 @@ namespace MazeParty.Multiplayer
         /// </summary>
         private void SuspendSimulationOnServer(double now)
         {
+            PauseResourceTransferPresentationOnServer(now);
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
                 CurrentMinigame == ScheduledMinigameId.Skip &&
                 _scheduledSkipAt > 0d)
@@ -1363,6 +1383,7 @@ namespace MazeParty.Multiplayer
         /// <summary>Restores every clock frozen by <see cref="SuspendSimulationOnServer"/>.</summary>
         private void ResumeSimulationOnServer(double now)
         {
+            ResumeResourceTransferPresentationOnServer(now);
             if (_keyShopRevealActive.Value)
             {
                 _keyShopRevealEndsAt.Value = now +

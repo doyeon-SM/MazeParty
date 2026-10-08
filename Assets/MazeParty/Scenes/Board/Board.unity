@@ -259,15 +259,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 447291779409806131, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 447291779409806131, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 447291779409806131, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 447291779409806131, guid: 0ac484fb44083cb42bb355e7907c079e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -5128,6 +5128,7 @@ MonoBehaviour:
   minigameCamera: {fileID: 82821977}
   playerOverheadCamera: {fileID: 0}
   combatSpectatorCamera: {fileID: 0}
+  boardResourceEventCamera: {fileID: 0}
   localPlayerEye: {fileID: 0}
   activeMode: 1
   boardFramingAnchor: {fileID: 236498970}
@@ -5146,6 +5147,9 @@ MonoBehaviour:
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10
   combatSpectatorFieldOfView: 55
+  boardResourceEventDistance: 3.4
+  boardResourceEventHeightOffset: 0.15
+  boardResourceEventFieldOfView: 60
 --- !u!4 &1548230741
 Transform:
   m_ObjectHideFlags: 0
@@ -5179,6 +5183,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardFlowCameraPresenter
   cameraDirector: {fileID: 1548230740}
+  resourceTransferCoinPrefab: {fileID: 5484315453847271486, guid: 0446cb893022762499dfef9bd8a80f17, type: 3}
+  resourceTransferKeyPrefab: {fileID: 5763527392341924887, guid: 97909a6d33d76194c949ebeeac5f92f4, type: 3}
+  resourceTransferHeadOffset: 0.3
+  resourceTransferTravelHeight: 1.5
 --- !u!1001 &1552949734
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5969,7 +5977,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe98f8ee61ff5bc45a547c5ee04c1707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardShopRouteView
-  hemispherePrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
+  routeMarkerPrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
   dotSpacing: 0.8
   surfaceOffset: 0.012
 --- !u!114 &1732981729
@@ -6010,7 +6018,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 824e25e41ce4485ea0dcf96980ec900a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.KeyShopWorldMarker
-  verticalOffset: 0.12
   worldPrefabs: {fileID: 11400000, guid: eb5de4341874cd147b5b08fe901f25b1, type: 2}
 --- !u!114 &1732981732
 MonoBehaviour:

@@ -539,7 +539,16 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     SetAllActionStates(PlayerBoardActionState.Dice);
                     InitializeTraversal();
                     RefreshBoundaryWalls();
-                    SetStatus("Choose an item within 30 seconds; shield and action clocks started together.");
+                    var validItemSlotMask =
+                        (1 << GameplayInventory.Capacity) - 1;
+                    if ((_occupiedMask & validItemSlotMask) == 0)
+                    {
+                        ChooseNoItem();
+                    }
+                    else
+                    {
+                        SetStatus("Choose an item within 30 seconds; shield and action clocks started together.");
+                    }
                     break;
                 case BoardFlowState.AscendingResolve:
                     EndSelectedItemUse();

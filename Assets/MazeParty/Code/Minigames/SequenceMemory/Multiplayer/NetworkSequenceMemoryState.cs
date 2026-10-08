@@ -182,15 +182,10 @@ namespace MazeParty.Multiplayer
             _serverMatch.BeginMatch();
             _matchActive.Value = true;
             _paused.Value = false;
-            _roundNumber.Value = 1;
-            _problemLength.Value = (byte)_serverMatch.CurrentProblem.Length;
             CacheAndFreezeBoardAvatarsOnServer();
 
             var now = ServerNow;
-            _phaseStartedAt = now;
-            _phase.Value = (byte)NetworkSequenceMemoryPhase.Countdown;
-            _phaseEndsAt.Value = now + SequenceMemoryRules.CountdownSeconds;
-            SyncPlayerStateOnServer();
+            BeginRoundCountdownOnServer(now);
             Debug.Log(
                 "[SequenceMemory] Match started. Seed " + matchSeed +
                 "; ten A/S/D problems, no per-problem score.");
@@ -385,6 +380,30 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void BeginRoundCountdownOnServer(double now)
+        {
+            if (_serverMatch?.CurrentProblem == null ||
+                _serverMatch.Phase !=
+                    SequenceMemoryMatchPhase.PresentingProblem)
+            {
+                return;
+            }
+
+            _roundNumber.Value =
+                (byte)_serverMatch.CurrentRoundNumber;
+            _problemLength.Value =
+                (byte)_serverMatch.CurrentProblem.Length;
+            _visibleProblem.Value = default;
+            _presentedSymbolCount = 0;
+            _nextProblemSymbolAt = 0d;
+            _phaseStartedAt = now;
+            _phase.Value =
+                (byte)NetworkSequenceMemoryPhase.Countdown;
+            _phaseEndsAt.Value = now +
+                SequenceMemoryRules.CountdownSeconds;
+            SyncPlayerStateOnServer();
+        }
+
         private void BeginProblemPresentationOnServer(double now)
         {
             if (_serverMatch == null ||
@@ -529,7 +548,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            BeginProblemPresentationOnServer(now);
+            BeginRoundCountdownOnServer(now);
         }
 
         private void BeginFinalResultOnServer(double now)
