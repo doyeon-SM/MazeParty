@@ -38,6 +38,7 @@ namespace MazeParty.Gameplay
         private Transform _outfit;
         private Transform _nameplate;
         private TextMesh _nameText;
+        private Renderer _nameRenderer;
         private Transform _firstPersonHands;
         private Transform _firstPersonPresentation;
         private Transform _firstPersonLeftHand;
@@ -70,6 +71,7 @@ namespace MazeParty.Gameplay
         private bool _ownerFirstPerson;
         private bool _hiddenFromViewer;
         private bool _nameplateAllowed = true;
+        private bool _nameplateOccluded;
         private bool _missingPresentationReported;
         public void SetHiddenFromViewer(bool hidden)
         {
@@ -86,6 +88,11 @@ namespace MazeParty.Gameplay
         public bool IsCrouching => _crouching;
         public Color BodyColor => _bodyColor;
         public bool IsUsingItem => _itemUseTimer > 0f || _equippedItemId != PrototypeItemId.None;
+        public Vector3 NameplateOcclusionTarget => _nameplate != null
+            ? _nameplate.position
+            : _head != null
+                ? _head.position
+                : transform.position + Vector3.up * StandingEyeHeight;
 
         public void SetMouthBlowing(bool blowing)
         {
@@ -168,6 +175,16 @@ namespace MazeParty.Gameplay
             }
         }
 
+        public void SetNameplateOccluded(bool occluded)
+        {
+            EnsureBuilt();
+            _nameplateOccluded = occluded;
+            if (_nameRenderer != null)
+            {
+                _nameRenderer.forceRenderingOff = occluded;
+            }
+        }
+
         private bool TryInitializeAuthoredPresentation()
         {
             if (bindings == null)
@@ -208,6 +225,13 @@ namespace MazeParty.Gameplay
             _outfit = bindings.OutfitAnchor;
             _nameplate = bindings.NameplateAnchor;
             _nameText = bindings.NameText;
+            _nameRenderer = _nameText != null
+                ? _nameText.GetComponent<Renderer>()
+                : null;
+            if (_nameRenderer != null)
+            {
+                _nameRenderer.forceRenderingOff = _nameplateOccluded;
+            }
             _worldItemRoot = bindings.WorldItemRoot;
             _firstPersonPresentation = bindings.FirstPersonPresentation;
             _firstPersonHands = bindings.FirstPersonHands;

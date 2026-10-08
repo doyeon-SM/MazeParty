@@ -125,6 +125,55 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void FontScope_PreservesDepthTestedWorldTextAcrossLanguageChanges()
+        {
+            var root = new GameObject("Occluded Font Scope");
+            LocalizedFontScope scope = null;
+            try
+            {
+                var meshObject = new GameObject(
+                    "Occluded World Text",
+                    typeof(TextMesh),
+                    typeof(WorldTextOcclusion));
+                meshObject.transform.SetParent(root.transform, false);
+                var textMesh = meshObject.GetComponent<TextMesh>();
+                var meshRenderer = meshObject.GetComponent<MeshRenderer>();
+                scope = root.AddComponent<LocalizedFontScope>();
+
+                // MonoBehaviour lifetime methods do not run automatically in
+                // EditMode, so invoke the authored enable/disable contract.
+                InvokeLifecycle(scope, "OnDisable");
+                InvokeLifecycle(scope, "OnEnable");
+
+                AssertOccludedFontMaterial(
+                    textMesh,
+                    meshRenderer,
+                    GameFonts.Get(GameLanguage.English));
+
+                GameText.SetLanguage(GameLanguage.Japanese);
+                AssertOccludedFontMaterial(
+                    textMesh,
+                    meshRenderer,
+                    GameFonts.Get(GameLanguage.Japanese));
+
+                GameText.SetLanguage(GameLanguage.ChineseSimplified);
+                AssertOccludedFontMaterial(
+                    textMesh,
+                    meshRenderer,
+                    GameFonts.Get(GameLanguage.ChineseSimplified));
+            }
+            finally
+            {
+                if (scope != null)
+                {
+                    InvokeLifecycle(scope, "OnDisable");
+                }
+
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void EveryPlayerFacingTextPrefab_HasRootFontScope()
         {
             var paths = AssetDatabase.FindAssets(
@@ -181,6 +230,22 @@ namespace MazeParty.Multiplayer.Tests
                     Is.True,
                     font.name + " could not render '" + character + "'.");
             }
+        }
+
+        private static void AssertOccludedFontMaterial(
+            TextMesh textMesh,
+            MeshRenderer renderer,
+            Font expectedFont)
+        {
+            var expectedShader = Resources.Load<Shader>(
+                WorldTextOcclusion.TextShaderResource);
+            Assert.That(expectedShader, Is.Not.Null);
+            Assert.That(textMesh.font, Is.SameAs(expectedFont));
+            Assert.That(renderer.sharedMaterial, Is.Not.Null);
+            Assert.That(renderer.sharedMaterial.shader,
+                Is.SameAs(expectedShader));
+            Assert.That(renderer.sharedMaterial.mainTexture,
+                Is.SameAs(expectedFont.material.mainTexture));
         }
 
         private static void InvokeLifecycle(LocalizedFontScope scope, string methodName)

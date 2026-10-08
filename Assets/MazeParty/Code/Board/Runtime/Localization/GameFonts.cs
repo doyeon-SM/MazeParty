@@ -79,7 +79,17 @@ namespace MazeParty.Gameplay
             var renderer = textMesh.GetComponent<MeshRenderer>();
             if (renderer != null)
             {
-                renderer.sharedMaterial = font.material;
+                var occlusion = textMesh.GetComponent<WorldTextOcclusion>();
+                if (occlusion != null)
+                {
+                    // Keep authored world labels on their depth-tested shader
+                    // while still replacing the atlas for the active language.
+                    occlusion.RefreshMaterial();
+                }
+                else
+                {
+                    renderer.sharedMaterial = font.material;
+                }
             }
         }
 

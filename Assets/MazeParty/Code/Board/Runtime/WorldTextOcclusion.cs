@@ -42,11 +42,6 @@ namespace MazeParty.Gameplay
 
         public void RefreshMaterial()
         {
-            if (_runtimeMaterial != null)
-            {
-                return;
-            }
-
             var textMesh = GetComponent<TextMesh>();
             var renderer = GetComponent<MeshRenderer>();
             var shader = Resources.Load<Shader>(TextShaderResource);
@@ -55,11 +50,14 @@ namespace MazeParty.Gameplay
                 return;
             }
 
-            _runtimeMaterial = new Material(shader)
+            if (_runtimeMaterial == null)
             {
-                name = gameObject.name + " Occluded Text (Runtime)",
-                hideFlags = HideFlags.HideAndDontSave
-            };
+                _runtimeMaterial = new Material(shader)
+                {
+                    name = gameObject.name + " Occluded Text (Runtime)",
+                    hideFlags = HideFlags.HideAndDontSave
+                };
+            }
             if (textMesh.font != null && textMesh.font.material != null)
             {
                 _runtimeMaterial.mainTexture = textMesh.font.material.mainTexture;

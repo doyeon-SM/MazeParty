@@ -35,6 +35,7 @@ namespace MazeParty.Gameplay
         public float FlameTopHeight => flameTopHeight;
         public float PassableEmissionDensity => passableEmissionDensity;
         public float BlockedEmissionDensity => blockedEmissionDensity;
+        public bool IsVisible => _visible;
         public bool HasStateDensityContrast =>
             passableEmissionDensity > 0f &&
             blockedEmissionDensity > passableEmissionDensity;

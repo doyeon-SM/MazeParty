@@ -40,6 +40,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.HasRequiredReferences, Is.True);
             Assert.That(bindings.NameplateAnchor.gameObject.activeSelf, Is.True);
             Assert.That(bindings.NameText, Is.Not.Null);
+            Assert.That(
+                bindings.NameText.GetComponent<WorldTextOcclusion>(),
+                Is.Not.Null,
+                "Opponent nameplates must use normal scene depth occlusion.");
             Assert.That(bindings.BodyTintRenderers, Is.Not.Empty);
             Assert.That(bindings.HatAnchor.childCount, Is.Zero,
                 "Hat models must come from the appearance catalog, not placeholder geometry.");
@@ -216,6 +220,15 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     visual.Bindings.gameObject.name,
                     Is.EqualTo(assets.PresentationPrefab.gameObject.name));
+
+                var nameRenderer = visual.Bindings.NameText
+                    .GetComponent<Renderer>();
+                Assert.That(nameRenderer, Is.Not.Null);
+                visual.SetNameplateOccluded(true);
+                Assert.That(nameRenderer.forceRenderingOff, Is.True);
+                Assert.That(visual.Bindings.WorldModel.gameObject.activeSelf, Is.True);
+                visual.SetNameplateOccluded(false);
+                Assert.That(nameRenderer.forceRenderingOff, Is.False);
 
                 var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
                 visual.SetEquippedItem(PrototypeItemId.Pistol);
