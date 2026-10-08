@@ -86,8 +86,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
-        private Text _choiceText;
-        private Text _shieldText;
         private Text _diceText;
         private Text _movesText;
         private Text _ammoText;
@@ -3152,16 +3150,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _flow.State == BoardFlowState.MinigameIntroReady && !_keyShopRevealActive
                     ? "--:--"
                     : FormatClock(remaining));
-            SetText(_choiceText, _flow.ActionClock.IsChoicePending
-                ? "CHOOSE  " + FormatClock(_flow.GetChoiceRemaining(_simulationNow))
-                : "CHOICE  " + _flow.ActionClock.ChoiceResolution.ToString().ToUpperInvariant());
-            var shield = Math.Max(
-                _flow.GetOpeningProtectionRemaining(_simulationNow),
-                Math.Max(
-                    0d,
-                    _personalProtectionEndsAtFlowTime -
-                    _flow.ToFlowTime(_simulationNow)));
-            SetText(_shieldText, shield > 0d ? "SHIELD  " + shield.ToString("0.0") + "s" : "SHIELD  OFF");
             SetText(_diceText, ResolveLocalWorldDieHudLabel());
             var movementLabel = _flow.State == BoardFlowState.CombatResolve
                 ? IsLocalCombatAlive(0) ? "WASD  MOVE" : "INPUT  LOCKED"
@@ -3316,8 +3304,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _turnText = boardUiBindings.TurnText;
             _phaseText = boardUiBindings.PhaseText;
             _phaseTimerText = boardUiBindings.PhaseTimerText;
-            _choiceText = boardUiBindings.ChoiceTimerText;
-            _shieldText = boardUiBindings.ShieldText;
             _diceText = boardUiBindings.DiceText;
             _movesText = boardUiBindings.MovesText;
             _ammoText = boardUiBindings.AmmoText;

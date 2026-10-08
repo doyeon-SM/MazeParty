@@ -13,7 +13,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private GameObject connectionPanel;
         [SerializeField] private GameObject joinCodePopup;
-        [SerializeField] private GameObject sessionPanel;
 
         [Header("Connection")]
         [SerializeField] private InputField displayNameInput;
@@ -30,14 +29,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button readyButton;
         [SerializeField] private Button startButton;
         [SerializeField] private Text inviteCodeText;
-        [SerializeField] private Text sessionSummaryText;
         [SerializeField] private Text readyButtonText;
         [SerializeField] private Text startButtonText;
-        [SerializeField] private Text[] playerRows = Array.Empty<Text>();
-        [SerializeField] private Image[] playerHostIcons = Array.Empty<Image>();
-        [SerializeField] private Color readyPlayerNameColor =
-            new Color32(72, 216, 108, 255);
-        [SerializeField] private Color waitingPlayerNameColor = Color.white;
         [SerializeField] private GameObject boardSettingsPanel;
         [SerializeField] private Button boardSettingsButton;
         [SerializeField] private Button closeBoardSettingsButton;
@@ -56,6 +49,7 @@ namespace MazeParty.Multiplayer
         [Header("Character Customization")]
         [SerializeField] private GameObject customizationPanel;
         [SerializeField] private Button customizationButton;
+        [SerializeField] private Button closeCustomizationButton;
         [SerializeField] private Button[] paletteButtons = Array.Empty<Button>();
         [SerializeField] private Outline[] paletteOutlines = Array.Empty<Outline>();
 
@@ -110,7 +104,6 @@ namespace MazeParty.Multiplayer
             canvasGroup != null &&
             connectionPanel != null &&
             joinCodePopup != null &&
-            sessionPanel != null &&
             displayNameInput != null &&
             joinCodeInput != null &&
             createButton != null &&
@@ -123,15 +116,8 @@ namespace MazeParty.Multiplayer
             sessionHeaderRoot != null &&
             sessionActionsRoot != null &&
             inviteCodeText != null &&
-            sessionSummaryText != null &&
             readyButtonText != null &&
             startButtonText != null &&
-            playerRows != null &&
-            playerRows.Length == MultiplayerConstants.MaxPlayers &&
-            Array.TrueForAll(playerRows, row => row != null) &&
-            playerHostIcons != null &&
-            playerHostIcons.Length == MultiplayerConstants.MaxPlayers &&
-            Array.TrueForAll(playerHostIcons, icon => icon != null) &&
             boardSettingsPanel != null &&
             boardSettingsButton != null &&
             closeBoardSettingsButton != null &&
@@ -147,6 +133,7 @@ namespace MazeParty.Multiplayer
             buildVersionText != null &&
             customizationPanel != null &&
             customizationButton != null &&
+            closeCustomizationButton != null &&
             paletteButtons != null &&
             paletteButtons.Length == LobbyColorPalette.Count &&
             Array.TrueForAll(paletteButtons, button => button != null) &&
@@ -154,13 +141,11 @@ namespace MazeParty.Multiplayer
             paletteOutlines.Length == LobbyColorPalette.Count &&
             Array.TrueForAll(paletteOutlines, outline => outline != null);
 
-        public int PlayerRowCount => playerRows != null ? playerRows.Length : 0;
         public bool PresentationVisible => _presentationVisible;
 
         public void Configure(
             CanvasGroup configuredCanvasGroup,
             GameObject configuredConnectionPanel,
-            GameObject configuredSessionPanel,
             InputField configuredDisplayNameInput,
             InputField configuredJoinCodeInput,
             Button configuredCreateButton,
@@ -169,10 +154,8 @@ namespace MazeParty.Multiplayer
             Button configuredReadyButton,
             Button configuredStartButton,
             Text configuredInviteCodeText,
-            Text configuredSessionSummaryText,
             Text configuredReadyButtonText,
             Text configuredStartButtonText,
-            Text[] configuredPlayerRows,
             GameObject configuredBoardMapSelectionRoot,
             Button configuredPreviousBoardMapButton,
             Button configuredNextBoardMapButton,
@@ -187,7 +170,6 @@ namespace MazeParty.Multiplayer
         {
             canvasGroup = configuredCanvasGroup;
             connectionPanel = configuredConnectionPanel;
-            sessionPanel = configuredSessionPanel;
             displayNameInput = configuredDisplayNameInput;
             joinCodeInput = configuredJoinCodeInput;
             createButton = configuredCreateButton;
@@ -196,10 +178,8 @@ namespace MazeParty.Multiplayer
             readyButton = configuredReadyButton;
             startButton = configuredStartButton;
             inviteCodeText = configuredInviteCodeText;
-            sessionSummaryText = configuredSessionSummaryText;
             readyButtonText = configuredReadyButtonText;
             startButtonText = configuredStartButtonText;
-            playerRows = configuredPlayerRows ?? Array.Empty<Text>();
             boardMapSelectionRoot = configuredBoardMapSelectionRoot;
             previousBoardMapButton = configuredPreviousBoardMapButton;
             nextBoardMapButton = configuredNextBoardMapButton;
@@ -216,14 +196,12 @@ namespace MazeParty.Multiplayer
         public void ConfigureLobbyPresentation(
             GameObject configuredSessionHeaderRoot,
             GameObject configuredSessionActionsRoot,
-            Image[] configuredPlayerHostIcons,
             GameObject configuredBoardSettingsPanel,
             Button configuredBoardSettingsButton,
             Button configuredCloseBoardSettingsButton)
         {
             sessionHeaderRoot = configuredSessionHeaderRoot;
             sessionActionsRoot = configuredSessionActionsRoot;
-            playerHostIcons = configuredPlayerHostIcons ?? Array.Empty<Image>();
             boardSettingsPanel = configuredBoardSettingsPanel;
             boardSettingsButton = configuredBoardSettingsButton;
             closeBoardSettingsButton = configuredCloseBoardSettingsButton;
@@ -234,13 +212,21 @@ namespace MazeParty.Multiplayer
             Button configuredOpenJoinPopupButton,
             Button configuredCancelJoinButton,
             HoldToRevealButton configuredInviteCodeRevealButton,
-            Button configuredCustomizationButton)
+            Button configuredCustomizationButton,
+            Button configuredCloseCustomizationButton)
         {
             joinCodePopup = configuredJoinCodePopup;
             openJoinPopupButton = configuredOpenJoinPopupButton;
             cancelJoinButton = configuredCancelJoinButton;
             inviteCodeRevealButton = configuredInviteCodeRevealButton;
             customizationButton = configuredCustomizationButton;
+            closeCustomizationButton = configuredCloseCustomizationButton;
+        }
+
+        public void ConfigureCustomizationCloseButton(
+            Button configuredCloseCustomizationButton)
+        {
+            closeCustomizationButton = configuredCloseCustomizationButton;
         }
 
         public void SetDisplayName(string displayName)
@@ -273,6 +259,8 @@ namespace MazeParty.Multiplayer
             if (!visible)
             {
                 SetInviteCodeRevealed(false);
+                CloseJoinPopup(true);
+                SetCustomizationOpen(false);
                 SetBoardSettingsOpen(false);
             }
             ApplyPresentationState();
@@ -306,12 +294,7 @@ namespace MazeParty.Multiplayer
 
             if (visible)
             {
-                _customizationOpen = false;
-                if (customizationPanel != null)
-                {
-                    customizationPanel.SetActive(false);
-                }
-
+                SetCustomizationOpen(false);
                 SetBoardSettingsOpen(false);
             }
 
@@ -356,7 +339,7 @@ namespace MazeParty.Multiplayer
                 }
                 else
                 {
-                    _customizationOpen = false;
+                    SetCustomizationOpen(false);
                     SetBoardSettingsOpen(false);
                     SetInviteCodeRevealed(false);
                     _currentInviteCode = string.Empty;
@@ -368,7 +351,6 @@ namespace MazeParty.Multiplayer
 
             connectionPanel.SetActive(!isInSession);
             joinCodePopup.SetActive(!isInSession && _joinPopupOpen);
-            sessionPanel.SetActive(isInSession);
             sessionHeaderRoot.SetActive(isInSession);
             SetLocalizedLogoVisible(!isInSession);
             statusText.text = busy ? GameText.T("Working...") : status ?? string.Empty;
@@ -378,11 +360,13 @@ namespace MazeParty.Multiplayer
                 _recoveryChoicePresented = false;
                 RestoreActionLabelsAfterRecovery();
                 sessionActionsRoot.SetActive(false);
+                startHint.SetActive(false);
+                runningMessage.SetActive(false);
                 boardSettingsButton.gameObject.SetActive(false);
                 SetBoardSettingsOpen(false);
                 boardMapSelectionRoot.SetActive(false);
                 customizationButton.gameObject.SetActive(false);
-                customizationPanel.SetActive(false);
+                SetCustomizationOpen(false);
                 return;
             }
 
@@ -390,31 +374,6 @@ namespace MazeParty.Multiplayer
                 ? string.Empty
                 : snapshot.Code.Trim();
             RefreshInviteCodeText();
-            sessionSummaryText.text = GameText.F(
-                "Players: {0}/{1}   Phase: {2}",
-                snapshot.Players.Count,
-                MultiplayerConstants.MaxPlayers,
-                FormatPhase(snapshot.Phase));
-
-            for (var index = 0; index < playerRows.Length; index++)
-            {
-                var playerRow = playerRows[index];
-                var hostIcon = playerHostIcons[index];
-                if (index >= snapshot.Players.Count)
-                {
-                    playerRow.text = GameText.T("- Waiting for player...");
-                    playerRow.color = waitingPlayerNameColor;
-                    hostIcon.gameObject.SetActive(false);
-                    continue;
-                }
-
-                var player = snapshot.Players[index];
-                playerRow.text = player.DisplayName ?? string.Empty;
-                playerRow.color = player.IsReady
-                    ? readyPlayerNameColor
-                    : waitingPlayerNameColor;
-                hostIcon.gameObject.SetActive(player.IsHost);
-            }
 
             var isLobby = snapshot.Phase == MultiplayerConstants.LobbyPhase;
             sessionActionsRoot.SetActive(isLobby);
@@ -422,7 +381,7 @@ namespace MazeParty.Multiplayer
                 _recoveryChoiceVisible && isLobby && snapshot.IsHost;
             if (!isLobby || _recoveryChoiceVisible)
             {
-                _customizationOpen = false;
+                SetCustomizationOpen(false);
                 SetBoardSettingsOpen(false);
             }
 
@@ -448,9 +407,8 @@ namespace MazeParty.Multiplayer
 
                 startHint.SetActive(false);
                 runningMessage.SetActive(false);
-                _customizationOpen = false;
+                SetCustomizationOpen(false);
                 customizationButton.gameObject.SetActive(false);
-                customizationPanel.SetActive(false);
                 return;
             }
 
@@ -462,11 +420,11 @@ namespace MazeParty.Multiplayer
             startButton.gameObject.SetActive(isLobby && snapshot.IsHost);
             startButton.interactable = !busy && snapshot.CanStart;
 
-            startHint.SetActive(isLobby && snapshot.IsHost && !snapshot.CanStart);
+            startHint.SetActive(isLobby && !snapshot.CanStart);
             runningMessage.SetActive(!isLobby);
             if (!isLobby)
             {
-                _customizationOpen = false;
+                SetCustomizationOpen(false);
             }
 
             customizationButton.gameObject.SetActive(
@@ -516,9 +474,37 @@ namespace MazeParty.Multiplayer
             RefreshPaletteAvailability();
         }
 
+        private void OnDisable()
+        {
+            _joinPopupOpen = false;
+            _customizationOpen = false;
+            _boardSettingsOpen = false;
+
+            if (joinCodePopup != null)
+            {
+                joinCodePopup.SetActive(false);
+                UiPopupStack.Remove(joinCodePopup);
+            }
+
+            if (customizationPanel != null)
+            {
+                customizationPanel.SetActive(false);
+                UiPopupStack.Remove(customizationPanel);
+            }
+
+            if (boardSettingsPanel != null)
+            {
+                boardSettingsPanel.SetActive(false);
+                UiPopupStack.Remove(boardSettingsPanel);
+            }
+        }
+
         private void OnDestroy()
         {
             UnbindButtonEvents();
+            UiPopupStack.Remove(joinCodePopup);
+            UiPopupStack.Remove(boardSettingsPanel);
+            UiPopupStack.Remove(customizationPanel);
         }
 
         private void ApplyPresentationState()
@@ -572,6 +558,7 @@ namespace MazeParty.Multiplayer
             boardSettingsButton.onClick.AddListener(OnBoardSettingsClicked);
             closeBoardSettingsButton.onClick.AddListener(OnCloseBoardSettingsClicked);
             customizationButton.onClick.AddListener(OnCustomizationClicked);
+            closeCustomizationButton.onClick.AddListener(OnCloseCustomizationClicked);
             inviteCodeRevealButton.HoldChanged += OnInviteCodeRevealChanged;
             _paletteButtonActions = new UnityAction[paletteButtons.Length];
             for (var index = 0; index < paletteButtons.Length; index++)
@@ -604,6 +591,7 @@ namespace MazeParty.Multiplayer
             boardSettingsButton.onClick.RemoveListener(OnBoardSettingsClicked);
             closeBoardSettingsButton.onClick.RemoveListener(OnCloseBoardSettingsClicked);
             customizationButton.onClick.RemoveListener(OnCustomizationClicked);
+            closeCustomizationButton.onClick.RemoveListener(OnCloseCustomizationClicked);
             inviteCodeRevealButton.HoldChanged -= OnInviteCodeRevealChanged;
             for (var index = 0; index < paletteButtons.Length; index++)
             {
@@ -693,6 +681,7 @@ namespace MazeParty.Multiplayer
         {
             _joinPopupOpen = true;
             joinCodePopup.SetActive(true);
+            UiPopupStack.Push(joinCodePopup, OnCancelJoinClicked);
             joinCodeInput.Select();
             joinCodeInput.ActivateInputField();
         }
@@ -767,8 +756,7 @@ namespace MazeParty.Multiplayer
             var open = !_boardSettingsOpen;
             if (open)
             {
-                _customizationOpen = false;
-                customizationPanel.SetActive(false);
+                SetCustomizationOpen(false);
             }
 
             SetBoardSettingsOpen(open);
@@ -786,13 +774,39 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _customizationOpen = !_customizationOpen;
-            if (_customizationOpen)
+            var open = !_customizationOpen;
+            if (open)
             {
                 SetBoardSettingsOpen(false);
             }
 
-            customizationPanel.SetActive(_customizationOpen);
+            SetCustomizationOpen(open);
+        }
+
+        private void OnCloseCustomizationClicked()
+        {
+            SetCustomizationOpen(false);
+        }
+
+        private void SetCustomizationOpen(bool open)
+        {
+            _customizationOpen = open;
+            if (customizationPanel == null)
+            {
+                return;
+            }
+
+            customizationPanel.SetActive(open);
+            if (open)
+            {
+                UiPopupStack.Push(
+                    customizationPanel,
+                    OnCloseCustomizationClicked);
+            }
+            else
+            {
+                UiPopupStack.Remove(customizationPanel);
+            }
         }
 
         private void SetBoardSettingsOpen(bool open)
@@ -801,6 +815,16 @@ namespace MazeParty.Multiplayer
             if (boardSettingsPanel != null)
             {
                 boardSettingsPanel.SetActive(open);
+                if (open)
+                {
+                    UiPopupStack.Push(
+                        boardSettingsPanel,
+                        OnCloseBoardSettingsClicked);
+                }
+                else
+                {
+                    UiPopupStack.Remove(boardSettingsPanel);
+                }
             }
 
             if (boardMapSelectionRoot != null)
@@ -812,7 +836,7 @@ namespace MazeParty.Multiplayer
         private void OnInviteCodeRevealChanged(bool held)
         {
             SetInviteCodeRevealed(
-                held && sessionPanel.activeInHierarchy &&
+                held && sessionHeaderRoot.activeInHierarchy &&
                 !string.IsNullOrEmpty(_currentInviteCode));
         }
 
@@ -890,6 +914,7 @@ namespace MazeParty.Multiplayer
         {
             _joinPopupOpen = false;
             joinCodePopup.SetActive(false);
+            UiPopupStack.Remove(joinCodePopup);
             if (clearInput)
             {
                 joinCodeInput.SetTextWithoutNotify(string.Empty);
@@ -934,25 +959,5 @@ namespace MazeParty.Multiplayer
             return displayName;
         }
 
-        private static string FormatPhase(string phase)
-        {
-            if (string.IsNullOrWhiteSpace(phase))
-            {
-                return GameText.T("Unknown");
-            }
-
-            // Known session phases get a translated label; the phase string itself is unchanged.
-            if (phase == MultiplayerConstants.LobbyPhase)
-            {
-                return GameText.T("Lobby");
-            }
-
-            if (phase == MultiplayerConstants.PlayingPhase)
-            {
-                return GameText.T("Playing");
-            }
-
-            return char.ToUpperInvariant(phase[0]) + phase.Substring(1);
-        }
     }
 }

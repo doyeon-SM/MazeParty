@@ -299,10 +299,15 @@ namespace MazeParty.Multiplayer.Tests
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         lobby.gameObject),
                     Is.EqualTo(LobbyCanvasPrefabPath));
-                Assert.That(
-                    lobby.PlayerRowCount,
-                    Is.EqualTo(MultiplayerConstants.MaxPlayers));
                 var serializedLobby = new SerializedObject(lobby);
+                var readyGuidance = serializedLobby
+                    .FindProperty("startHint")
+                    ?.objectReferenceValue as GameObject;
+                Assert.That(readyGuidance, Is.Not.Null);
+                Assert.That(
+                    readyGuidance.transform.parent,
+                    Is.SameAs(lobby.transform),
+                    "The lobby readiness guidance must be a root-level prefab binding.");
                 var buildVersionText = serializedLobby
                     .FindProperty("buildVersionText")
                     ?.objectReferenceValue as Text;

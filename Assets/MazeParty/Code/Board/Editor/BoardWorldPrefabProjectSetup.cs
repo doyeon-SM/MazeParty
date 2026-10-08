@@ -97,6 +97,22 @@ namespace MazeParty.Editor
                 "Boundary flame VFX installed. Existing authored flame design was preserved when already configured.");
         }
 
+        [MenuItem("MazeParty/Board/Upgrade Shop Location Highlights")]
+        public static void UpgradeShopLocationHighlights()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Stop Play Mode before upgrading shop location highlights.");
+            }
+
+            EnsureShopPrefabsAndLocationHighlights();
+
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Shop location highlights now use authored WaterShield prefab instances.");
+        }
+
         private static void Convert(GameObject instance, GameObject prefab)
         {
             if (PrefabUtility.IsPartOfPrefabInstance(instance)) return;
@@ -133,6 +149,7 @@ namespace MazeParty.Editor
         {
             EnsureFolder(Folder);
             EnsureFolder("Assets/MazeParty/Resources/MazeParty/Board");
+            EnsureShopPrefabsAndLocationHighlights();
             var assets = AssetDatabase.LoadAssetAtPath<BoardWorldPrefabs>(CatalogPath);
             if (assets == null)
             {
@@ -264,16 +281,216 @@ namespace MazeParty.Editor
                     renderer.sharedMaterial = EnsureMaterial("ShopHighlight", Color.white);
                 }
                 outline.SetActive(false);
+                var locationHighlight = CreateShopLocationHighlight(
+                    root,
+                    SharedVfxProjectSetup.EnsureWaterShieldPrefab());
                 var binding = root.AddComponent<BoardShopVisual>();
                 var so = new SerializedObject(binding);
                 so.FindProperty("label").objectReferenceValue = label;
                 so.FindProperty("topViewHighlight").objectReferenceValue = outline;
+                so.FindProperty("locationHighlightVfx").objectReferenceValue =
+                    locationHighlight;
                 var targets = so.FindProperty("interactionColliders");
                 targets.arraySize = colliders.Count;
                 for (var i = 0; i < colliders.Count; i++) targets.GetArrayElementAtIndex(i).objectReferenceValue = colliders[i];
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return root;
             });
+        }
+
+        private static void UpgradeShopLocationHighlight(
+            string prefabPath,
+            GameObject waterShield)
+        {
+            var root = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                var visual = root.GetComponent<BoardShopVisual>();
+                if (visual == null)
+                {
+                    throw new InvalidOperationException(
+                        prefabPath + " is missing BoardShopVisual.");
+                }
+
+                var serialized = new SerializedObject(visual);
+                var property = serialized.FindProperty(
+                    "locationHighlightVfx");
+                if (property == null)
+                {
+                    throw new InvalidOperationException(
+                        "BoardShopVisual has no location highlight binding. " +
+                        "Wait for scripts to compile and retry.");
+                }
+
+                var current = property.objectReferenceValue as GameObject;
+                if (current != null)
+                {
+                    if (!IsWaterShieldInstance(current))
+                    {
+                        throw new InvalidOperationException(
+                            prefabPath + " has a custom location highlight. " +
+                            "Repair it explicitly instead of overwriting authored design.");
+                    }
+
+                    if (current.activeSelf)
+                    {
+                        current.SetActive(false);
+                        PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                    }
+                    return;
+                }
+
+                property.objectReferenceValue = CreateShopLocationHighlight(
+                    root,
+                    waterShield);
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void EnsureShopPrefabsAndLocationHighlights()
+        {
+            EnsureShop(-1);
+            EnsureShop(0);
+            EnsureShop(1);
+
+            var waterShield = SharedVfxProjectSetup.EnsureWaterShieldPrefab();
+            foreach (var prefabName in new[]
+                     {
+                         "KeyShop",
+                         "ItemShop1",
+                         "ItemShop2"
+                     })
+            {
+                UpgradeShopLocationHighlight(
+                    Folder + "/" + prefabName + ".prefab",
+                    waterShield);
+            }
+        }
+
+        private static GameObject CreateShopLocationHighlight(
+            GameObject shopRoot,
+            GameObject waterShield)
+        {
+            if (shopRoot == null)
+                throw new ArgumentNullException(nameof(shopRoot));
+            if (waterShield == null)
+            {
+                throw new InvalidOperationException(
+                    "The shared WaterShield prefab is required.");
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(
+                waterShield,
+                shopRoot.transform) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not instantiate the shared WaterShield prefab.");
+            }
+
+            instance.name = "Shop Location Highlight VFX";
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+
+            var visualRoot = shopRoot.transform.Find("Visuals");
+            if (visualRoot == null)
+            {
+                Object.DestroyImmediate(instance);
+                throw new InvalidOperationException(
+                    shopRoot.name + " is missing its authored Visuals root.");
+            }
+
+            var shopBounds = CalculateRenderedBounds(
+                visualRoot,
+                shopRoot.transform,
+                shopRoot.name + " Visuals");
+            var shieldBounds = CalculateRenderedBounds(
+                instance.transform,
+                instance.transform,
+                "WaterShield");
+            // Match the two authored renderer envelopes instead of baking the
+            // current house height or the toolkit prefab's native scale.
+            var shopDiameter = MaximumComponent(shopBounds.size);
+            var shieldDiameter = MaximumComponent(shieldBounds.size);
+            if (shopDiameter <= Mathf.Epsilon)
+            {
+                Object.DestroyImmediate(instance);
+                throw new InvalidOperationException(
+                    shopRoot.name + " has no measurable renderer envelope.");
+            }
+            if (shieldDiameter <= Mathf.Epsilon)
+            {
+                Object.DestroyImmediate(instance);
+                throw new InvalidOperationException(
+                    "WaterShield has no measurable renderer envelope.");
+            }
+
+            var scale = shopDiameter / shieldDiameter;
+            instance.transform.localScale = Vector3.one * scale;
+            instance.transform.localPosition =
+                shopBounds.center - shieldBounds.center * scale;
+            instance.SetActive(false);
+            return instance;
+        }
+
+        private static Bounds CalculateRenderedBounds(
+            Transform renderedRoot,
+            Transform relativeTo,
+            string context)
+        {
+            var renderers = renderedRoot.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    context + " has no authored renderers.");
+            }
+
+            var initialized = false;
+            var localBounds = new Bounds();
+            foreach (var renderer in renderers)
+            {
+                var bounds = renderer.bounds;
+                for (var x = -1; x <= 1; x += 2)
+                for (var y = -1; y <= 1; y += 2)
+                for (var z = -1; z <= 1; z += 2)
+                {
+                    var corner = bounds.center + Vector3.Scale(
+                        bounds.extents,
+                        new Vector3(x, y, z));
+                    var point = relativeTo.InverseTransformPoint(corner);
+                    if (!initialized)
+                    {
+                        localBounds = new Bounds(point, Vector3.zero);
+                        initialized = true;
+                    }
+                    else
+                    {
+                        localBounds.Encapsulate(point);
+                    }
+                }
+            }
+
+            return localBounds;
+        }
+
+        private static float MaximumComponent(Vector3 value)
+        {
+            return Mathf.Max(value.x, value.y, value.z);
+        }
+
+        private static bool IsWaterShieldInstance(GameObject candidate)
+        {
+            return candidate != null && string.Equals(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    candidate),
+                SharedVfxProjectSetup.WaterShieldPrefabPath,
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static GameObject EnsureWall()

@@ -8,6 +8,31 @@ namespace MazeParty.Editor
 {
     public static class BoardLocalMapPrefabUpgrade
     {
+        private const string BoardCanvasPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+
+        [MenuItem("MazeParty/Board/Add Full Map Close Control")]
+        public static void AddFullMapCloseControl()
+        {
+            var root = PrefabUtility.LoadPrefabContents(
+                BoardCanvasPrefabPath);
+            try
+            {
+                Ensure(root);
+                PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    BoardCanvasPrefabPath);
+                AssetDatabase.SaveAssets();
+                Debug.Log(
+                    "Board full-map close control was added without " +
+                    "rebuilding the existing map UI.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
         public static void Ensure(GameObject root)
         {
             var map = new SerializedObject(root.GetComponent<BoardMapView>());
@@ -97,6 +122,8 @@ namespace MazeParty.Editor
                 map.ApplyModifiedPropertiesWithoutUndo();
             }
 
+            EnsureFullMapCloseButton(root, map);
+
             if (localData.FindProperty("circularMask").objectReferenceValue is Mask existingMask)
             {
                 if (existingMask.GetComponent<CanvasRenderer>() == null)
@@ -126,6 +153,70 @@ namespace MazeParty.Editor
         {
             var component = (T)property.objectReferenceValue;
             return destination.Find(AnimationUtility.CalculateTransformPath(component.transform, source)).GetComponent<T>();
+        }
+
+        private static void EnsureFullMapCloseButton(
+            GameObject root,
+            SerializedObject map)
+        {
+            var closeProperty = map.FindProperty("fullMapCloseButton");
+            if (closeProperty.objectReferenceValue != null)
+            {
+                return;
+            }
+
+            var fullMapPanel =
+                (GameObject)map.FindProperty("fullMapPanel").objectReferenceValue;
+            var existing = fullMapPanel.transform.Find("Full Map Close Button");
+            Button closeButton;
+            if (existing != null)
+            {
+                closeButton = existing.GetComponent<Button>();
+            }
+            else
+            {
+                var template = root.GetComponentsInChildren<Button>(true);
+                Button source = null;
+                foreach (var candidate in template)
+                {
+                    if (candidate.name == "ItemShopCloseButton")
+                    {
+                        source = candidate;
+                        break;
+                    }
+                }
+
+                if (source == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "BoardCanvas.prefab requires ItemShopCloseButton as " +
+                        "the authored source for the full-map close control.");
+                }
+
+                var closeObject = Object.Instantiate(
+                    source.gameObject,
+                    fullMapPanel.transform,
+                    false);
+                closeObject.name = "Full Map Close Button";
+                closeButton = closeObject.GetComponent<Button>();
+                var rect = closeObject.GetComponent<RectTransform>();
+                rect.anchorMin = Vector2.one;
+                rect.anchorMax = Vector2.one;
+                rect.pivot = Vector2.one;
+                rect.anchoredPosition = new Vector2(-16f, -16f);
+                rect.sizeDelta = new Vector2(120f, 44f);
+                closeObject.transform.SetAsLastSibling();
+            }
+
+            if (closeButton == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Full Map Close Button must have a Button component.");
+            }
+
+            closeButton.gameObject.SetActive(false);
+            closeProperty.objectReferenceValue = closeButton;
+            map.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void Place(RectTransform rect, Vector2 position, Vector2 size)

@@ -49,6 +49,8 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Board/Materials/RoomNormalB.mat";
         private const string GrenadeRangeIndicatorMaterialPath =
             "Assets/MazeParty/Board/Materials/GrenadeRangeIndicator.mat";
+        private const string HostStarSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
 
         [MenuItem("MazeParty/Multiplayer/Install Player And Lobby Prefabs")]
         public static void Install()
@@ -84,6 +86,21 @@ namespace MazeParty.Editor
             AssetDatabase.SaveAssets();
             Debug.Log(
                 "Authored shared player world indicator prefab is ready.");
+        }
+
+        [MenuItem("MazeParty/Multiplayer/Upgrade Shield And Round Highlights")]
+        public static void UpgradeShieldAndRoundHighlights()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Shield/highlight migration requires Edit Mode.");
+            }
+
+            EnsurePlayerPresentationAssets();
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Water Shield protection and round-location highlight bindings are ready.");
         }
 
         internal static GameObject LoadOrCreatePlayerPrefab()
@@ -125,6 +142,15 @@ namespace MazeParty.Editor
             return prefab;
         }
 
+        [MenuItem("MazeParty/Multiplayer/Upgrade Lobby Nameplates")]
+        public static void UpgradeLobbyNameplates()
+        {
+            UpgradePlayerPresentationLobbyNameplate();
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Lobby ready color and host star are authored on the shared player nameplate.");
+        }
+
         internal static GameObject LoadOrCreateLobbyArenaPrefab()
         {
             EnsureFolder("Assets/MazeParty/Prefabs/Multiplayer/World");
@@ -161,7 +187,10 @@ namespace MazeParty.Editor
             EnsureFolder(PlayerAssetFolder);
             EnsureFolder("Assets/MazeParty/Resources/MazeParty/Player");
 
-            var worldIndicator = EnsurePlayerWorldIndicatorPrefab();
+            var waterShield = SharedVfxProjectSetup
+                .EnsureWaterShieldPrefab();
+            var worldIndicator = EnsurePlayerWorldIndicatorPrefab(
+                waterShield);
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PlayerPresentationPrefabPath);
@@ -174,7 +203,8 @@ namespace MazeParty.Editor
                         "An incompatible asset exists at " +
                         PlayerPresentationPrefabPath + ".");
                 }
-                var template = CreatePlayerPresentationTemplate();
+                var template = CreatePlayerPresentationTemplate(
+                    waterShield);
                 try
                 {
                     prefab = PrefabUtility.SaveAsPrefabAsset(
@@ -189,6 +219,8 @@ namespace MazeParty.Editor
             else
             {
                 RepairPresentationHitZoneScripts();
+                UpgradePlayerPresentationLobbyNameplate();
+                UpgradePlayerPresentationShieldVfx(waterShield);
                 prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     PlayerPresentationPrefabPath);
             }
@@ -202,6 +234,7 @@ namespace MazeParty.Editor
                     "PlayerAvatarPresentation.prefab has incomplete bindings. " +
                     "Repair the prefab instead of recreating it.");
             }
+            ValidateShieldVfxInstance(bindings.ShieldVfx);
             ValidateHitZone(bindings.BodyHitbox, PlayerHitRegion.Body);
             ValidateHitZone(bindings.HeadHitbox, PlayerHitRegion.Head);
             ValidateHitZone(bindings.LeftHandHitbox, PlayerHitRegion.Hand);
@@ -230,7 +263,8 @@ namespace MazeParty.Editor
             return bindings;
         }
 
-        private static PlayerWorldIndicator EnsurePlayerWorldIndicatorPrefab()
+        private static PlayerWorldIndicator EnsurePlayerWorldIndicatorPrefab(
+            GameObject waterShield)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PlayerWorldIndicatorPrefabPath);
@@ -244,7 +278,8 @@ namespace MazeParty.Editor
                         PlayerWorldIndicatorPrefabPath + ".");
                 }
 
-                var template = CreatePlayerWorldIndicatorTemplate();
+                var template = CreatePlayerWorldIndicatorTemplate(
+                    waterShield);
                 try
                 {
                     prefab = PrefabUtility.SaveAsPrefabAsset(
@@ -256,6 +291,12 @@ namespace MazeParty.Editor
                     Object.DestroyImmediate(template);
                 }
             }
+            else
+            {
+                UpgradePlayerWorldIndicatorShieldVfx(waterShield);
+                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    PlayerWorldIndicatorPrefabPath);
+            }
 
             var indicator = prefab != null
                 ? prefab.GetComponent<PlayerWorldIndicator>()
@@ -266,6 +307,7 @@ namespace MazeParty.Editor
                     "PlayerWorldIndicator.prefab has incomplete bindings. " +
                     "Repair the prefab instead of recreating it.");
             }
+            ValidateShieldVfxInstance(indicator.LocalStartHighlight);
 
             return indicator;
         }
@@ -303,7 +345,6 @@ namespace MazeParty.Editor
                     Object.DestroyImmediate(template);
                 }
             }
-
             var indicator = prefab != null
                 ? prefab.GetComponent<BoardGrenadeRangeIndicator>()
                 : null;
@@ -451,6 +492,245 @@ namespace MazeParty.Editor
             return collider.gameObject;
         }
 
+        private static void UpgradePlayerPresentationLobbyNameplate()
+        {
+            var root = PrefabUtility.LoadPrefabContents(
+                PlayerPresentationPrefabPath);
+            try
+            {
+                var bindings = root.GetComponent<
+                    PlayerAvatarPresentationBindings>();
+                if (bindings == null || bindings.NameplateAnchor == null)
+                {
+                    throw new InvalidOperationException(
+                        "PlayerAvatarPresentation.prefab has no authored nameplate binding.");
+                }
+
+                var changed = false;
+                var hostIcon = bindings.LobbyHostIcon;
+                if (hostIcon == null)
+                {
+                    var existing = bindings.NameplateAnchor.Find(
+                        "Lobby Host Icon");
+                    hostIcon = existing != null
+                        ? existing.GetComponent<SpriteRenderer>()
+                        : null;
+                    if (existing != null && hostIcon == null)
+                    {
+                        throw new InvalidOperationException(
+                            "The authored Lobby Host Icon has no SpriteRenderer.");
+                    }
+
+                    if (hostIcon == null)
+                    {
+                        hostIcon = CreateLobbyHostIcon(
+                            bindings.NameplateAnchor);
+                    }
+
+                    var serializedBindings = new SerializedObject(bindings);
+                    serializedBindings.FindProperty("lobbyHostIcon")
+                        .objectReferenceValue = hostIcon;
+                    var readyColor = serializedBindings.FindProperty(
+                        "lobbyReadyNameColor");
+                    if (readyColor.colorValue.g <= readyColor.colorValue.r ||
+                        readyColor.colorValue.g <= readyColor.colorValue.b)
+                    {
+                        readyColor.colorValue =
+                            new Color32(88, 220, 112, 255);
+                    }
+                    serializedBindings.ApplyModifiedPropertiesWithoutUndo();
+                    changed = true;
+                }
+
+                if (hostIcon.transform.parent != bindings.NameplateAnchor)
+                {
+                    throw new InvalidOperationException(
+                        "The lobby host icon must remain directly under NameplateAnchor.");
+                }
+
+                var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                    HostStarSpritePath);
+                if (starSprite == null)
+                {
+                    throw new InvalidOperationException(
+                        "Modern UI host star is missing at " +
+                        HostStarSpritePath + ".");
+                }
+                if (hostIcon.sprite == null)
+                {
+                    hostIcon.sprite = starSprite;
+                    changed = true;
+                }
+                if (hostIcon.gameObject.activeSelf)
+                {
+                    hostIcon.gameObject.SetActive(false);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(
+                        root,
+                        PlayerPresentationPrefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void UpgradePlayerPresentationShieldVfx(
+            GameObject waterShield)
+        {
+            var root = PrefabUtility.LoadPrefabContents(
+                PlayerPresentationPrefabPath);
+            try
+            {
+                var bindings = root.GetComponent<
+                    PlayerAvatarPresentationBindings>();
+                if (bindings == null)
+                {
+                    throw new InvalidOperationException(
+                        "PlayerAvatarPresentation.prefab has no bindings.");
+                }
+
+                var changed = false;
+                var shieldVfx = bindings.ShieldVfx;
+                if (shieldVfx == null)
+                {
+                    var existing = root.transform.Find("Water Shield VFX");
+                    shieldVfx = existing != null
+                        ? existing.gameObject
+                        : CreateShieldVfx(root.transform, waterShield);
+                    var serialized = new SerializedObject(bindings);
+                    var property = serialized.FindProperty("shieldVfx");
+                    if (property == null)
+                    {
+                        throw new InvalidOperationException(
+                            "PlayerAvatarPresentationBindings has no " +
+                            "shield VFX field. Wait for scripts to compile " +
+                            "and retry.");
+                    }
+                    property.objectReferenceValue = shieldVfx;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    changed = true;
+                }
+
+                ValidateShieldVfxInstance(shieldVfx);
+                if (shieldVfx.activeSelf)
+                {
+                    shieldVfx.SetActive(false);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(
+                        root,
+                        PlayerPresentationPrefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static void UpgradePlayerWorldIndicatorShieldVfx(
+            GameObject waterShield)
+        {
+            var root = PrefabUtility.LoadPrefabContents(
+                PlayerWorldIndicatorPrefabPath);
+            try
+            {
+                var indicator = root.GetComponent<PlayerWorldIndicator>();
+                if (indicator == null)
+                {
+                    throw new InvalidOperationException(
+                        "PlayerWorldIndicator.prefab has no bindings.");
+                }
+
+                var changed = false;
+                var previousHighlight = indicator.LocalStartHighlight;
+                var shieldVfx = previousHighlight;
+                if (!IsShieldVfxInstance(shieldVfx))
+                {
+                    var existing = root.transform.Find("Water Shield VFX");
+                    shieldVfx = existing != null &&
+                                IsShieldVfxInstance(existing.gameObject)
+                        ? existing.gameObject
+                        : CreateShieldVfx(root.transform, waterShield);
+
+                    var serialized = new SerializedObject(indicator);
+                    var property = serialized.FindProperty(
+                        "localStartHighlight");
+                    if (property == null)
+                    {
+                        throw new InvalidOperationException(
+                            "PlayerWorldIndicator has no local location " +
+                            "highlight field. Wait for scripts to compile " +
+                            "and retry.");
+                    }
+                    property.objectReferenceValue = shieldVfx;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    if (previousHighlight != null &&
+                        previousHighlight != shieldVfx &&
+                        previousHighlight.name ==
+                            "Local Player Start Highlight")
+                    {
+                        Object.DestroyImmediate(previousHighlight);
+                    }
+                    changed = true;
+                }
+
+                ValidateShieldVfxInstance(shieldVfx);
+                if (shieldVfx.activeSelf)
+                {
+                    shieldVfx.SetActive(false);
+                    changed = true;
+                }
+
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(
+                        root,
+                        PlayerWorldIndicatorPrefabPath);
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        private static SpriteRenderer CreateLobbyHostIcon(Transform nameplate)
+        {
+            var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                HostStarSpritePath);
+            if (starSprite == null)
+            {
+                throw new InvalidOperationException(
+                    "Modern UI host star is missing at " +
+                    HostStarSpritePath + ".");
+            }
+
+            var iconObject = new GameObject(
+                "Lobby Host Icon",
+                typeof(SpriteRenderer));
+            iconObject.transform.SetParent(nameplate, false);
+            iconObject.transform.localPosition = new Vector3(-0.95f, 0f, 0f);
+            iconObject.transform.localScale = Vector3.one * 0.28f;
+            var hostIcon = iconObject.GetComponent<SpriteRenderer>();
+            hostIcon.sprite = starSprite;
+            hostIcon.color = new Color32(255, 214, 86, 255);
+            hostIcon.sortingOrder = 1;
+            hostIcon.shadowCastingMode = ShadowCastingMode.Off;
+            hostIcon.receiveShadows = false;
+            iconObject.SetActive(false);
+            return hostIcon;
+        }
+
         private static bool RepairHitZone(
             GameObject hitbox,
             PlayerHitRegion expectedRegion)
@@ -519,7 +799,8 @@ namespace MazeParty.Editor
             return path;
         }
 
-        private static GameObject CreatePlayerPresentationTemplate()
+        private static GameObject CreatePlayerPresentationTemplate(
+            GameObject waterShield)
         {
             var bodyMaterial = EnsureMaterial(
                 BodyMaterialPath,
@@ -615,6 +896,8 @@ namespace MazeParty.Editor
             }
             WorldTextOcclusion.Apply(nameText);
 
+            var hostIcon = CreateLobbyHostIcon(nameplate);
+
             var hitboxRoot = CreateAnchor(root.transform, "HitboxRoot");
             var bodyHitbox = CreateHitbox<CapsuleCollider>(
                 hitboxRoot,
@@ -673,6 +956,9 @@ namespace MazeParty.Editor
             var highlight = CreateHighlight(
                 root.transform,
                 highlightMaterial);
+            var shieldVfx = CreateShieldVfx(
+                root.transform,
+                waterShield);
 
             root.GetComponent<PlayerAvatarPresentationBindings>().Configure(
                 world,
@@ -690,7 +976,9 @@ namespace MazeParty.Editor
                 face,
                 nameplate,
                 nameText,
+                hostIcon,
                 highlight,
+                shieldVfx,
                 firstPersonRoot,
                 firstPersonHands,
                 firstPersonLeft,
@@ -711,15 +999,13 @@ namespace MazeParty.Editor
                     firstPersonRightRenderer
                 });
             highlight.SetActive(false);
+            shieldVfx.SetActive(false);
             return root;
         }
 
-        private static GameObject CreatePlayerWorldIndicatorTemplate()
+        private static GameObject CreatePlayerWorldIndicatorTemplate(
+            GameObject waterShield)
         {
-            var highlightMaterial = EnsureMaterial(
-                HighlightMaterialPath,
-                Color.white,
-                0.05f);
             var root = new GameObject(
                 "Player World Indicator",
                 typeof(PlayerWorldIndicator));
@@ -743,9 +1029,9 @@ namespace MazeParty.Editor
             }
             WorldTextOcclusion.Apply(nameText);
 
-            var highlight = CreateCameraPlaneHighlight(
+            var highlight = CreateShieldVfx(
                 root.transform,
-                highlightMaterial);
+                waterShield);
             highlight.SetActive(false);
             root.GetComponent<PlayerWorldIndicator>().Configure(
                 nameplate,
@@ -1195,6 +1481,54 @@ namespace MazeParty.Editor
             return collider;
         }
 
+        private static GameObject CreateShieldVfx(
+            Transform parent,
+            GameObject waterShield)
+        {
+            if (waterShield == null)
+            {
+                throw new InvalidOperationException(
+                    "The shared Water Shield wrapper is required.");
+            }
+
+            var instance = PrefabUtility.InstantiatePrefab(
+                waterShield,
+                parent) as GameObject;
+            if (instance == null)
+            {
+                throw new InvalidOperationException(
+                    "Could not instantiate the shared Water Shield wrapper.");
+            }
+
+            instance.name = "Water Shield VFX";
+            instance.transform.localPosition = Vector3.zero;
+            instance.transform.localRotation = Quaternion.identity;
+            instance.transform.localScale = Vector3.one;
+            instance.SetActive(false);
+            return instance;
+        }
+
+        private static bool IsShieldVfxInstance(GameObject candidate)
+        {
+            return candidate != null && string.Equals(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    candidate),
+                SharedVfxProjectSetup.WaterShieldPrefabPath,
+                StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static void ValidateShieldVfxInstance(GameObject candidate)
+        {
+            if (!IsShieldVfxInstance(candidate) ||
+                candidate.GetComponentsInChildren<Collider>(true).Length > 0 ||
+                candidate.GetComponentsInChildren<NetworkObject>(true).Length > 0)
+            {
+                throw new InvalidOperationException(
+                    "Player presentation shield must use the shared, " +
+                    "presentation-only WaterShield.prefab wrapper.");
+            }
+        }
+
         private static GameObject CreateHighlight(
             Transform parent,
             Material material)
@@ -1232,60 +1566,6 @@ namespace MazeParty.Editor
         }
 
         private static void CreateHighlightLine(
-            Transform parent,
-            string name,
-            Vector3 position,
-            Vector3 scale,
-            Material material)
-        {
-            var line = CreatePrimitive(
-                name,
-                PrimitiveType.Cube,
-                parent,
-                material);
-            line.transform.localPosition = position;
-            line.transform.localScale = scale;
-            var renderer = line.GetComponent<Renderer>();
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-        }
-
-        private static GameObject CreateCameraPlaneHighlight(
-            Transform parent,
-            Material material)
-        {
-            var root = new GameObject("Local Player Start Highlight");
-            root.transform.SetParent(parent, false);
-            const float extent = 0.72f;
-            const float width = 0.09f;
-            CreateCameraPlaneHighlightLine(
-                root.transform,
-                "North",
-                new Vector3(0f, extent, 0f),
-                new Vector3(extent * 2f + width, width, 0.025f),
-                material);
-            CreateCameraPlaneHighlightLine(
-                root.transform,
-                "South",
-                new Vector3(0f, -extent, 0f),
-                new Vector3(extent * 2f + width, width, 0.025f),
-                material);
-            CreateCameraPlaneHighlightLine(
-                root.transform,
-                "East",
-                new Vector3(extent, 0f, 0f),
-                new Vector3(width, extent * 2f + width, 0.025f),
-                material);
-            CreateCameraPlaneHighlightLine(
-                root.transform,
-                "West",
-                new Vector3(-extent, 0f, 0f),
-                new Vector3(width, extent * 2f + width, 0.025f),
-                material);
-            return root;
-        }
-
-        private static void CreateCameraPlaneHighlightLine(
             Transform parent,
             string name,
             Vector3 position,

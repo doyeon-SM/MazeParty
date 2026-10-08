@@ -31,6 +31,10 @@ namespace MazeParty.Multiplayer.Tests
             {
                 "MinigameReadyPanel",
                 "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab"
+            },
+            {
+                "BoardEventPopupPanel",
+                "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab"
             }
         };
 
@@ -81,6 +85,7 @@ namespace MazeParty.Multiplayer.Tests
             AssertItemIconBindings(prefab, bindings);
             AssertPlayerCurrencyBindings(prefab, bindings);
             AssertPlayerHealthSliderBindings(prefab, bindings);
+            AssertBoardEventPopupBindings(prefab, bindings);
 
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
@@ -126,6 +131,9 @@ namespace MazeParty.Multiplayer.Tests
                     sceneBindings.gameObject,
                     sceneBindings);
                 AssertPlayerHealthSliderBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings);
+                AssertBoardEventPopupBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
 
@@ -199,6 +207,33 @@ namespace MazeParty.Multiplayer.Tests
             }
 
             Assert.That(uniqueCards.Count, Is.EqualTo(MinigameCatalog.RegisteredCount));
+        }
+
+        private static void AssertBoardEventPopupBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            var panel = bindings.BoardEventPopupPanel;
+            var message = bindings.BoardEventPopupMessage;
+            Assert.That(panel, Is.Not.Null);
+            Assert.That(message, Is.Not.Null);
+            Assert.That(panel.name, Is.EqualTo("BoardEventPopupPanel"));
+            Assert.That(message.name, Is.EqualTo("BoardEventPopupMessage"));
+            Assert.That(message.transform.IsChildOf(panel.transform), Is.True);
+            Assert.That(panel.activeSelf, Is.False,
+                "The server-owned event popup must start hidden.");
+            Assert.That(message.raycastTarget, Is.False);
+
+            var background = panel.GetComponent<Image>();
+            Assert.That(background, Is.Not.Null);
+            Assert.That(background.raycastTarget, Is.False,
+                "The automatic event popup must not intercept player input.");
+            Assert.That(panel.GetComponentsInChildren<Button>(true), Is.Empty,
+                "The server-timed event popup is not user-dismissible.");
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            Assert.That(transforms.Count(candidate =>
+                candidate.name == "BoardEventPopupPanel"), Is.EqualTo(1));
         }
 
         private static void AssertItemIconBindings(
@@ -290,6 +325,52 @@ namespace MazeParty.Multiplayer.Tests
                         graphic.name);
                 }
             }
+        }
+
+        [TestCase(
+            BoardFlowState.LandingEffectResolve,
+            false,
+            BoardLandingEffectType.SpecialEvent,
+            "P1 gives P2 one key.",
+            true)]
+        [TestCase(
+            BoardFlowState.LandingEffectResolve,
+            true,
+            BoardLandingEffectType.SpecialEvent,
+            "P1 gives P2 one key.",
+            false)]
+        [TestCase(
+            BoardFlowState.LandingEffectResolve,
+            false,
+            BoardLandingEffectType.SpecialEvent,
+            "",
+            false)]
+        [TestCase(
+            BoardFlowState.LandingEffectResolve,
+            false,
+            BoardLandingEffectType.ItemReward,
+            "P1 receives an item.",
+            false)]
+        [TestCase(
+            BoardFlowState.Action,
+            false,
+            BoardLandingEffectType.SpecialEvent,
+            "P1 gives P2 one key.",
+            false)]
+        public void BoardEventPopup_OnlyShowsDuringActiveLandingResolution(
+            BoardFlowState state,
+            bool isGlobalSimulationPaused,
+            BoardLandingEffectType effectType,
+            string message,
+            bool expected)
+        {
+            Assert.That(
+                BoardFlowView.ShouldShowBoardEventPopup(
+                    state,
+                    isGlobalSimulationPaused,
+                    effectType,
+                    message),
+                Is.EqualTo(expected));
         }
 
         private static void AssertPlayerCurrencyBindings(

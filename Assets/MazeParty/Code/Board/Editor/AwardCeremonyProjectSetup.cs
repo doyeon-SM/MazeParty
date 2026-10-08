@@ -699,9 +699,6 @@ namespace MazeParty.Editor
             text.alignment = alignment;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;
-            var outline = rect.gameObject.AddComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.72f);
-            outline.effectDistance = new Vector2(2f, -2f);
             return text;
         }
 

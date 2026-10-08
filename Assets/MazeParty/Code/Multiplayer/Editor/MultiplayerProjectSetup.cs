@@ -24,8 +24,6 @@ namespace MazeParty.Editor
         private const string RoundedPanelSpritePath =
             "Assets/Ignore/Modern UI Pack/Textures/Border/Rounded/1024px/" +
             "Rounded Filled 1024px.png";
-        private const string HostStarSpritePath =
-            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
         private const string BoardSettingsIconPath =
             "Assets/Ignore/Modern UI Pack/Textures/Icon/System/Settings.png";
         private const string MatchSkyboxPath =
@@ -119,9 +117,6 @@ namespace MazeParty.Editor
 
                 var font = LoadLobbyFont();
                 var serializedView = new SerializedObject(view);
-                var sessionPanel = FindRequiredChild(
-                    contents.transform,
-                    "Session Panel");
                 var lobbyWindow = FindRequiredChild(
                     contents.transform,
                     "Lobby Window");
@@ -143,17 +138,19 @@ namespace MazeParty.Editor
                 var wardrobeButton = GetRequiredReference<Button>(
                     serializedView,
                     "customizationButton");
+                var customizationPanel = GetRequiredReference<GameObject>(
+                    serializedView,
+                    "customizationPanel");
                 var boardMapSelection = GetRequiredReference<GameObject>(
                     serializedView,
                     "boardMapSelectionRoot");
-                var playerRows = GetRequiredReferenceArray<Text>(
+                var startHint = GetRequiredReference<GameObject>(
                     serializedView,
-                    "playerRows",
-                    MultiplayerConstants.MaxPlayers);
+                    "startHint");
+                var runningMessage = GetRequiredReference<GameObject>(
+                    serializedView,
+                    "runningMessage");
 
-                var hadLobbyPresentationBindings =
-                    serializedView.FindProperty("sessionHeaderRoot")
-                        ?.objectReferenceValue != null;
                 var sessionHeader = AuthorLobbySessionHeader(
                     contents.transform,
                     inviteCodeText,
@@ -163,9 +160,10 @@ namespace MazeParty.Editor
                     contents.transform,
                     readyButton,
                     startButton);
-                var playerHostIcons = AuthorLobbyPlayerRows(
-                    sessionPanel,
-                    playerRows);
+                AuthorLobbyGuidance(
+                    contents.transform,
+                    startHint,
+                    runningMessage);
                 AuthorBoardSettings(
                     contents.transform,
                     lobbyWindow,
@@ -175,24 +173,27 @@ namespace MazeParty.Editor
                     out var boardSettingsPanel,
                     out var boardSettingsButton,
                     out var closeBoardSettingsButton);
+                var closeCustomizationButton =
+                    AuthorCustomizationCloseButton(
+                        customizationPanel,
+                        font);
 
                 view.ConfigureLobbyPresentation(
                     sessionHeader,
                     sessionActions,
-                    playerHostIcons,
                     boardSettingsPanel,
                     boardSettingsButton,
                     closeBoardSettingsButton);
+                view.ConfigureCustomizationCloseButton(
+                    closeCustomizationButton);
                 EditorUtility.SetDirty(view);
 
-                if (!hadLobbyPresentationBindings)
+                var obsoleteSessionPanel = FindChild(
+                    contents.transform,
+                    "Session Panel");
+                if (obsoleteSessionPanel != null)
                 {
-                    serializedView.Update();
-                    serializedView.FindProperty("readyPlayerNameColor").colorValue =
-                        new Color32(88, 220, 112, 255);
-                    serializedView.FindProperty("waitingPlayerNameColor").colorValue =
-                        new Color32(235, 242, 255, 255);
-                    serializedView.ApplyModifiedPropertiesWithoutUndo();
+                    Object.DestroyImmediate(obsoleteSessionPanel);
                 }
 
                 if (!view.HasRequiredReferences)
@@ -203,10 +204,57 @@ namespace MazeParty.Editor
 
                 PrefabUtility.SaveAsPrefabAsset(contents, LobbyCanvasPrefabPath);
                 AssetDatabase.SaveAssets();
-                RevertLobbySessionHeaderSceneLayoutOverrides();
+                RevertObsoleteLobbySceneLayoutOverrides();
                 Debug.Log(
-                    "Lobby session header, player states, action stack, and board settings " +
-                    "popup were authored and bound in LobbyCanvas.prefab.");
+                    "Lobby roster panel was removed; session header, action stack, " +
+                    "lower-right guidance, and board settings remain prefab-authored.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+        }
+
+        [MenuItem("MazeParty/Setup/Add Lobby Popup Close Control")]
+        public static void AddLobbyPopupCloseControl()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LobbyCanvasPrefabPath);
+            if (prefab == null)
+            {
+                throw new System.InvalidOperationException(
+                    "LobbyCanvas.prefab is missing at " +
+                    LobbyCanvasPrefabPath + ".");
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                LobbyCanvasPrefabPath);
+            try
+            {
+                var view = contents.GetComponent<OnlineLobbyView>();
+                if (view == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "LobbyCanvas.prefab has no OnlineLobbyView component.");
+                }
+
+                var serializedView = new SerializedObject(view);
+                var customizationPanel = GetRequiredReference<GameObject>(
+                    serializedView,
+                    "customizationPanel");
+                var closeButton = AuthorCustomizationCloseButton(
+                    customizationPanel,
+                    LoadLobbyFont());
+                view.ConfigureCustomizationCloseButton(closeButton);
+                EditorUtility.SetDirty(view);
+
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    LobbyCanvasPrefabPath);
+                AssetDatabase.SaveAssets();
+                Debug.Log(
+                    "Lobby wardrobe close control was added without changing " +
+                    "the existing popup layout.");
             }
             finally
             {
@@ -278,7 +326,7 @@ namespace MazeParty.Editor
             return header;
         }
 
-        private static void RevertLobbySessionHeaderSceneLayoutOverrides()
+        private static void RevertObsoleteLobbySceneLayoutOverrides()
         {
             var scene = SceneManager.GetSceneByPath(BootstrapPath);
             var openedForUpgrade = !scene.IsValid() || !scene.isLoaded;
@@ -312,7 +360,7 @@ namespace MazeParty.Editor
                     System.Array.Empty<PropertyModification>();
                 var retained = modifications
                     .Where(modification =>
-                        !IsLobbySessionHeaderLayoutOverride(modification))
+                        !IsObsoleteLobbySceneLayoutOverride(modification))
                     .ToArray();
                 if (retained.Length == modifications.Length)
                 {
@@ -332,11 +380,18 @@ namespace MazeParty.Editor
             }
         }
 
-        private static bool IsLobbySessionHeaderLayoutOverride(
+        private static bool IsObsoleteLobbySceneLayoutOverride(
             PropertyModification modification)
         {
+            if (modification.target == null)
+            {
+                return true;
+            }
+
             if (!(modification.target is RectTransform rectTransform) ||
-                rectTransform.name != "Session Header")
+                (rectTransform.name != "Session Header" &&
+                 rectTransform.name != "Start Hint" &&
+                 rectTransform.name != "Running Message"))
             {
                 return false;
             }
@@ -396,79 +451,59 @@ namespace MazeParty.Editor
             return actions;
         }
 
-        private static Image[] AuthorLobbyPlayerRows(
-            Transform sessionPanel,
-            IReadOnlyList<Text> playerRows)
+        private static void AuthorLobbyGuidance(
+            Transform canvasRoot,
+            GameObject startHint,
+            GameObject runningMessage)
         {
-            var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
-                HostStarSpritePath);
-            if (starSprite == null)
+            ConfigureLobbyGuidanceObject(
+                canvasRoot,
+                startHint,
+                "Exactly four ready players are required.");
+            ConfigureLobbyGuidanceObject(
+                canvasRoot,
+                runningMessage,
+                "The board game is running.");
+        }
+
+        private static void ConfigureLobbyGuidanceObject(
+            Transform canvasRoot,
+            GameObject guidance,
+            string localizationKey)
+        {
+            if (guidance == null)
             {
                 throw new System.InvalidOperationException(
-                    "Modern UI host star is missing at " +
-                    HostStarSpritePath + ".");
+                    "Lobby guidance binding is missing for '" +
+                    localizationKey + "'.");
             }
 
-            var icons = new Image[playerRows.Count];
-            for (var index = 0; index < playerRows.Count; index++)
+            var needsDefaultLayout = guidance.transform.parent != canvasRoot;
+            if (needsDefaultLayout)
             {
-                var playerRow = playerRows[index];
-                var slotName = "Player Slot " + (index + 1);
-                var slot = playerRow.transform.parent != null &&
-                           playerRow.transform.parent.name == slotName
-                    ? playerRow.transform.parent.gameObject
-                    : FindDirectChild(sessionPanel, slotName);
-                var createdSlot = slot == null;
-                if (slot == null)
-                {
-                    var originalIndex = playerRow.transform.GetSiblingIndex();
-                    slot = CreateUiObject(slotName, sessionPanel);
-                    slot.transform.SetSiblingIndex(originalIndex);
-                    var slotLayout = slot.AddComponent<HorizontalLayoutGroup>();
-                    slotLayout.spacing = 8f;
-                    slotLayout.childAlignment = TextAnchor.MiddleLeft;
-                    slotLayout.childControlWidth = true;
-                    slotLayout.childControlHeight = true;
-                    slotLayout.childForceExpandWidth = false;
-                    slotLayout.childForceExpandHeight = false;
-                    var slotSize = slot.AddComponent<LayoutElement>();
-                    slotSize.preferredHeight = 29f;
-                }
-
-                var iconObject = FindDirectChild(slot.transform, "Host Star Icon");
-                var createdIcon = iconObject == null;
-                if (iconObject == null)
-                {
-                    iconObject = CreateUiObject(
-                        "Host Star Icon",
-                        slot.transform);
-                    var iconSize = iconObject.AddComponent<LayoutElement>();
-                    iconSize.preferredWidth = 22f;
-                    iconSize.preferredHeight = 22f;
-                    iconSize.flexibleWidth = 0f;
-                    iconSize.flexibleHeight = 0f;
-                }
-
-                var icon = GetOrAddComponent<Image>(iconObject);
-                icon.sprite = starSprite;
-                icon.preserveAspect = true;
-                icon.raycastTarget = false;
-                iconObject.transform.SetSiblingIndex(0);
-                iconObject.SetActive(false);
-
-                playerRow.transform.SetParent(slot.transform, false);
-                playerRow.transform.SetSiblingIndex(1);
-                if (createdSlot || createdIcon)
-                {
-                    playerRow.alignment = TextAnchor.MiddleLeft;
-                    var rowLayout = GetOrAddComponent<LayoutElement>(
-                        playerRow.gameObject);
-                    rowLayout.flexibleWidth = 1f;
-                }
-                icons[index] = icon;
+                guidance.transform.SetParent(canvasRoot, false);
             }
 
-            return icons;
+            if (needsDefaultLayout)
+            {
+                var layoutElement = guidance.GetComponent<LayoutElement>();
+                if (layoutElement != null)
+                {
+                    Object.DestroyImmediate(layoutElement);
+                }
+
+                var rect = guidance.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(1f, 0f);
+                rect.anchorMax = new Vector2(1f, 0f);
+                rect.pivot = new Vector2(1f, 0f);
+                rect.anchoredPosition = new Vector2(-32f, 32f);
+                rect.sizeDelta = new Vector2(640f, 52f);
+
+                var text = guidance.GetComponent<Text>();
+                text.alignment = TextAnchor.MiddleRight;
+            }
+
+            guidance.SetActive(false);
         }
 
         private static void AuthorBoardSettings(
@@ -707,37 +742,6 @@ namespace MazeParty.Editor
             }
 
             return value;
-        }
-
-        private static T[] GetRequiredReferenceArray<T>(
-            SerializedObject serializedObject,
-            string propertyName,
-            int expectedSize)
-            where T : Object
-        {
-            var property = serializedObject.FindProperty(propertyName);
-            if (property == null || !property.isArray ||
-                property.arraySize != expectedSize)
-            {
-                throw new System.InvalidOperationException(
-                    "OnlineLobbyView binding '" + propertyName +
-                    "' must contain " + expectedSize + " entries.");
-            }
-
-            var values = new T[expectedSize];
-            for (var index = 0; index < expectedSize; index++)
-            {
-                values[index] = property.GetArrayElementAtIndex(index)
-                    .objectReferenceValue as T;
-                if (values[index] == null)
-                {
-                    throw new System.InvalidOperationException(
-                        "OnlineLobbyView binding '" + propertyName +
-                        "' contains an empty entry at index " + index + ".");
-                }
-            }
-
-            return values;
         }
 
         private static T GetOrAddComponent<T>(GameObject gameObject)
@@ -1051,13 +1055,9 @@ namespace MazeParty.Editor
                 TextAnchor.MiddleLeft,
                 36f);
 
-            var sessionPanel = CreateVerticalContainer(
-                "Session Panel",
-                window.transform,
-                700f);
             var inviteCodeText = CreateText(
                 "Invite Code",
-                sessionPanel.transform,
+                window.transform,
                 "Invite Code: -",
                 font,
                 20,
@@ -1065,7 +1065,7 @@ namespace MazeParty.Editor
                 30f);
             var revealCodeButton = CreateButton(
                 "View Code Button",
-                sessionPanel.transform,
+                window.transform,
                 "View Code",
                 font,
                 out _);
@@ -1074,34 +1074,13 @@ namespace MazeParty.Editor
             revealControl.Configure(revealCodeButton);
             var copyButton = CreateButton(
                 "Copy Code Button",
-                sessionPanel.transform,
+                window.transform,
                 "Copy Code",
                 font,
                 out _);
-            var sessionSummaryText = CreateText(
-                "Session Summary",
-                sessionPanel.transform,
-                "Players: 0/4   Phase: Lobby",
-                font,
-                18,
-                TextAnchor.MiddleLeft,
-                30f);
-
-            var playerRows = new Text[MultiplayerConstants.MaxPlayers];
-            for (var index = 0; index < playerRows.Length; index++)
-            {
-                playerRows[index] = CreateText(
-                    "Player Row " + (index + 1),
-                    sessionPanel.transform,
-                    "- Waiting for player...",
-                    font,
-                    18,
-                    TextAnchor.MiddleLeft,
-                    28f);
-            }
 
             var boardMapSelectionRoot = CreateBoardMapSelectionRow(
-                sessionPanel.transform,
+                window.transform,
                 font,
                 out var previousBoardMapButton,
                 out var nextBoardMapButton,
@@ -1109,19 +1088,19 @@ namespace MazeParty.Editor
 
             var readyButton = CreateButton(
                 "Ready Button",
-                sessionPanel.transform,
+                window.transform,
                 "Ready",
                 font,
                 out var readyButtonText);
             var startButton = CreateButton(
                 "Start Game Button",
-                sessionPanel.transform,
+                window.transform,
                 "Start 4-Player Game",
                 font,
                 out var startButtonText);
             var startHintText = CreateText(
                 "Start Hint",
-                sessionPanel.transform,
+                window.transform,
                 "Exactly four ready players are required.",
                 font,
                 16,
@@ -1129,7 +1108,7 @@ namespace MazeParty.Editor
                 36f);
             var runningText = CreateText(
                 "Running Message",
-                sessionPanel.transform,
+                window.transform,
                 "The board game is running.",
                 font,
                 16,
@@ -1137,16 +1116,18 @@ namespace MazeParty.Editor
                 36f);
             var customizationButton = CreateButton(
                 "Wardrobe Button",
-                sessionPanel.transform,
+                window.transform,
                 "Wardrobe",
                 font,
                 out _);
-            customizationButton.transform.SetParent(window.transform, false);
             var customizationPanel = CreateLobbyCustomization(
                 canvasObject.transform,
                 font,
                 out var paletteButtons,
                 out var paletteOutlines);
+            var closeCustomizationButton = AuthorCustomizationCloseButton(
+                customizationPanel,
+                font);
 
             var sessionHeader = AuthorLobbySessionHeader(
                 canvasObject.transform,
@@ -1157,9 +1138,10 @@ namespace MazeParty.Editor
                 canvasObject.transform,
                 readyButton,
                 startButton);
-            var playerHostIcons = AuthorLobbyPlayerRows(
-                sessionPanel.transform,
-                playerRows);
+            AuthorLobbyGuidance(
+                canvasObject.transform,
+                startHintText.gameObject,
+                runningText.gameObject);
             AuthorBoardSettings(
                 canvasObject.transform,
                 window.transform,
@@ -1203,7 +1185,6 @@ namespace MazeParty.Editor
             buildVersionShadow.effectDistance = new Vector2(1f, -1f);
             buildVersionShadow.useGraphicAlpha = true;
 
-            sessionPanel.SetActive(false);
             joinCodePopup.SetActive(false);
             customizationPanel.SetActive(false);
             runningText.gameObject.SetActive(false);
@@ -1212,7 +1193,6 @@ namespace MazeParty.Editor
             lobbyView.Configure(
                 canvasGroup,
                 connectionPanel,
-                sessionPanel,
                 displayNameInput,
                 joinCodeInput,
                 createButton,
@@ -1221,10 +1201,8 @@ namespace MazeParty.Editor
                 readyButton,
                 startButton,
                 inviteCodeText,
-                sessionSummaryText,
                 readyButtonText,
                 startButtonText,
-                playerRows,
                 boardMapSelectionRoot,
                 previousBoardMapButton,
                 nextBoardMapButton,
@@ -1241,11 +1219,11 @@ namespace MazeParty.Editor
                 openJoinPopupButton,
                 cancelJoinButton,
                 revealControl,
-                customizationButton);
+                customizationButton,
+                closeCustomizationButton);
             lobbyView.ConfigureLobbyPresentation(
                 sessionHeader,
                 sessionActions,
-                playerHostIcons,
                 boardSettingsPanel,
                 boardSettingsButton,
                 closeBoardSettingsButton);
@@ -1367,6 +1345,46 @@ namespace MazeParty.Editor
             footerSize.preferredHeight = 176f;
 
             return customizationPanel;
+        }
+
+        private static Button AuthorCustomizationCloseButton(
+            GameObject customizationPanel,
+            Font font)
+        {
+            var existing = FindDirectChild(
+                customizationPanel.transform,
+                "Close Customization Button");
+            if (existing != null)
+            {
+                var existingButton = existing.GetComponent<Button>();
+                if (existingButton == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Close Customization Button must have a Button component.");
+                }
+
+                return existingButton;
+            }
+
+            var closeButton = CreateButton(
+                "Close Customization Button",
+                customizationPanel.transform,
+                "×",
+                font,
+                out var label);
+            var layout = closeButton.GetComponent<LayoutElement>();
+            layout.ignoreLayout = true;
+            var rect = closeButton.GetComponent<RectTransform>();
+            rect.anchorMin = Vector2.one;
+            rect.anchorMax = Vector2.one;
+            rect.pivot = Vector2.one;
+            rect.anchoredPosition = new Vector2(-12f, -12f);
+            rect.sizeDelta = new Vector2(42f, 42f);
+            label.fontSize = 26;
+            label.fontStyle = FontStyle.Bold;
+            GetOrAddComponent<UiSoundEmitter>(closeButton.gameObject);
+            closeButton.transform.SetAsLastSibling();
+            return closeButton;
         }
 
         private static GameObject LoadOrCreateScheduleTowerPrefab()

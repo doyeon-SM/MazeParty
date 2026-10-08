@@ -204,6 +204,32 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void ProjectTextPrefabs_DoNotUseOutlineEffects()
+        {
+            var violations = AssetDatabase.FindAssets(
+                    "t:Prefab",
+                    new[] { "Assets/MazeParty/Prefabs" })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .OrderBy(path => path)
+                .SelectMany(path =>
+                {
+                    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    return prefab == null
+                        ? Enumerable.Empty<string>()
+                        : prefab.GetComponentsInChildren<Text>(true)
+                            .Where(text => text.GetComponent<Outline>() != null)
+                            .Select(text => path + " :: " + text.name);
+                })
+                .ToArray();
+
+            Assert.That(
+                violations,
+                Is.Empty,
+                "Text must remain readable without Outline effects.\n" +
+                string.Join("\n", violations));
+        }
+
+        [Test]
         public void GeneratedScenes_UseOnlyRegisteredCanvasPrefabInstances()
         {
             foreach (var contract in SceneContracts)

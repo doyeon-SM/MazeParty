@@ -11,8 +11,8 @@ namespace MazeParty.Multiplayer
     /// Common menu shared by the lobby, the waiting room and the match.
     /// Sound sliders preview immediately; language and screen mode apply only
     /// with the Apply button; closing without Apply restores the saved values.
-    /// Runs late so gameplay overlays (emote wheel, item target picker, item
-    /// shop) consume Escape before the menu toggles.
+    /// Runs late so the hold-to-open emote wheel can consume Escape first;
+    /// dismissible menus and gameplay popups otherwise share UiPopupStack.
     /// </summary>
     [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
@@ -81,12 +81,21 @@ namespace MazeParty.Multiplayer
             _menuOpen = false;
             _confirmOpen = false;
             _noticeOpen = false;
-            LocalInputGate.SetMenuOpen(false);
+            if (bindings != null)
+            {
+                bindings.NoticeRoot?.SetActive(false);
+                bindings.ConfirmRoot?.SetActive(false);
+                bindings.MenuRoot?.SetActive(false);
+            }
+            UiPopupStack.Remove(bindings != null ? bindings.NoticeRoot : null);
+            UiPopupStack.Remove(bindings != null ? bindings.ConfirmRoot : null);
+            UiPopupStack.Remove(bindings != null ? bindings.MenuRoot : null);
             LocalInputGate.SetPausePointerRequested(false);
         }
 
         private void Update()
         {
+            UiPopupStack.Refresh();
             var controller = OnlineSessionController.Instance;
             var context = controller != null
                 ? controller.MenuContext
@@ -117,7 +126,6 @@ namespace MazeParty.Multiplayer
                 RefreshMenu(context, controller);
             }
 
-            LocalInputGate.SetMenuOpen(_menuOpen || _confirmOpen || _noticeOpen);
         }
 
         private void LateUpdate()
@@ -143,6 +151,7 @@ namespace MazeParty.Multiplayer
             _draft = GameSettings.Applied;
             _menuOpen = true;
             bindings.MenuRoot.SetActive(true);
+            UiPopupStack.Push(bindings.MenuRoot, CloseMenu);
             GameSound.Play(SoundKeys.UiPopupOpen);
             PushDraftToControls();
             ClearSelection();
@@ -150,7 +159,6 @@ namespace MazeParty.Multiplayer
             RefreshMenu(
                 controller != null ? controller.MenuContext : GameMenuContext.Lobby,
                 controller);
-            LocalInputGate.SetMenuOpen(true);
         }
 
         /// <summary>Closes the menu; unapplied changes are discarded.</summary>
@@ -158,6 +166,7 @@ namespace MazeParty.Multiplayer
         {
             if (!_menuOpen)
             {
+                UiPopupStack.Remove(bindings != null ? bindings.MenuRoot : null);
                 return;
             }
 
@@ -170,44 +179,35 @@ namespace MazeParty.Multiplayer
             }
 
             bindings.MenuRoot.SetActive(false);
+            UiPopupStack.Remove(bindings.MenuRoot);
             ClearSelection();
-            LocalInputGate.SetMenuOpen(_noticeOpen);
         }
 
         private void HandleEscape()
         {
-            if (_noticeOpen)
-            {
-                DismissNotice();
-                return;
-            }
-
-            if (_confirmOpen)
-            {
-                SetConfirmOpen(false);
-                return;
-            }
-
-            if (_menuOpen)
+            if (_menuOpen && UiPopupStack.IsTop(bindings.MenuRoot))
             {
                 if (_dropdownExpandedLastFrame)
                 {
                     // The dropdown list closes itself on Cancel.
                     return;
                 }
-
-                CloseMenu();
-                return;
             }
 
-            // Escape first closes a gameplay overlay; the menu opens on the next press.
-            if (BoardFlowView.IsItemShopOpen)
+            if (UiPopupStack.TryCloseTop())
             {
-                BoardFlowView.Instance.CloseItemShop();
                 return;
             }
 
+            // The hold-to-open emote wheel consumes Escape before the menu opens.
             if (_gameplayOverlayOpenLastFrame || HandEmoteWheelView.BlocksPointerInput)
+            {
+                return;
+            }
+
+            // A gameplay state or close button may have removed the final popup
+            // earlier this frame. Do not replay that same Escape as menu-open.
+            if (LocalInputGate.BlocksGameplayInput)
             {
                 return;
             }
@@ -482,10 +482,15 @@ namespace MazeParty.Multiplayer
             bindings.ConfirmRoot.SetActive(open);
             if (open)
             {
+                UiPopupStack.Push(bindings.ConfirmRoot, OnConfirmCancel);
                 GameSound.Play(SoundKeys.UiPopupOpen);
                 bindings.ConfirmRoot.transform.SetAsLastSibling();
                 bindings.NoticeRoot.transform.SetAsLastSibling();
                 ClearSelection();
+            }
+            else
+            {
+                UiPopupStack.Remove(bindings.ConfirmRoot);
             }
         }
 
@@ -494,6 +499,7 @@ namespace MazeParty.Multiplayer
             _noticeOpen = true;
             bindings.NoticeMessageText.text = message;
             bindings.NoticeRoot.SetActive(true);
+            UiPopupStack.Push(bindings.NoticeRoot, DismissNotice);
             GameSound.Play(SoundKeys.UiNotice);
             bindings.NoticeRoot.transform.SetAsLastSibling();
             ClearSelection();
@@ -503,6 +509,7 @@ namespace MazeParty.Multiplayer
         {
             _noticeOpen = false;
             bindings.NoticeRoot.SetActive(false);
+            UiPopupStack.Remove(bindings.NoticeRoot);
             ClearSelection();
         }
 

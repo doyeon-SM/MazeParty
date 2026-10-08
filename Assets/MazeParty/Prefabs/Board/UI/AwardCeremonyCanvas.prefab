@@ -11,7 +11,6 @@ GameObject:
   - component: {fileID: 4501590756441948182}
   - component: {fileID: 9082241289577314922}
   - component: {fileID: 4414646367651178997}
-  - component: {fileID: 7071718525470038988}
   m_Layer: 5
   m_Name: Final Rank 4
   m_TagString: Untagged
@@ -80,21 +79,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: '#4  PLAYER 4'
---- !u!114 &7071718525470038988
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 871298876102089412}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &1051558766607428744
 GameObject:
   m_ObjectHideFlags: 0
@@ -106,7 +90,6 @@ GameObject:
   - component: {fileID: 3027269920567818577}
   - component: {fileID: 3392362017266749185}
   - component: {fileID: 5631990778638909603}
-  - component: {fileID: 301108589881022825}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -175,21 +158,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: CLEAN UP BOARD
---- !u!114 &301108589881022825
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1051558766607428744}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &2637546223556716983
 GameObject:
   m_ObjectHideFlags: 0
@@ -201,7 +169,6 @@ GameObject:
   - component: {fileID: 1859573285996514883}
   - component: {fileID: 7953136855465685880}
   - component: {fileID: 5582802823650149548}
-  - component: {fileID: 4990376171908123091}
   m_Layer: 5
   m_Name: Input Lock
   m_TagString: Untagged
@@ -270,21 +237,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: WINNER REVEAL  -  CONTROLS UNLOCK IN 5
---- !u!114 &4990376171908123091
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2637546223556716983}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &2815602402790077733
 GameObject:
   m_ObjectHideFlags: 0
@@ -296,7 +248,6 @@ GameObject:
   - component: {fileID: 2113568546809778613}
   - component: {fileID: 1593855753293593703}
   - component: {fileID: 6058257416526915211}
-  - component: {fileID: 6273539615033687115}
   m_Layer: 5
   m_Name: Final Rank 2
   m_TagString: Untagged
@@ -365,21 +316,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: '#2  PLAYER 2'
---- !u!114 &6273539615033687115
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2815602402790077733}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &2884942763302483967
 GameObject:
   m_ObjectHideFlags: 0
@@ -779,7 +715,6 @@ GameObject:
   - component: {fileID: 1725174352828934418}
   - component: {fileID: 5965219326547714492}
   - component: {fileID: 5305805421690716916}
-  - component: {fileID: 8706216755380193957}
   m_Layer: 5
   m_Name: Return Status
   m_TagString: Untagged
@@ -848,21 +783,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: The first-place podium is in the spotlight.
---- !u!114 &8706216755380193957
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3711901954943460241}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &3822192315243582281
 GameObject:
   m_ObjectHideFlags: 0
@@ -874,7 +794,6 @@ GameObject:
   - component: {fileID: 6525681251789939620}
   - component: {fileID: 5622733277928369330}
   - component: {fileID: 1485750075363795046}
-  - component: {fileID: 3086913884380170118}
   m_Layer: 5
   m_Name: Award Category
   m_TagString: Untagged
@@ -943,21 +862,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: MOST GOLD HELD
---- !u!114 &3086913884380170118
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3822192315243582281}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &4040426086339774979
 GameObject:
   m_ObjectHideFlags: 0
@@ -1162,7 +1066,6 @@ GameObject:
   - component: {fileID: 1261584911582733461}
   - component: {fileID: 8371965950330744906}
   - component: {fileID: 6684629891300737401}
-  - component: {fileID: 2362045892349950731}
   m_Layer: 5
   m_Name: Final Rank 3
   m_TagString: Untagged
@@ -1231,21 +1134,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: '#3  PLAYER 3'
---- !u!114 &2362045892349950731
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4627765185321237336}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &5364342196143234995
 GameObject:
   m_ObjectHideFlags: 0
@@ -1298,7 +1186,6 @@ GameObject:
   - component: {fileID: 1900655731971320700}
   - component: {fileID: 5133612448208805053}
   - component: {fileID: 1123992083718736988}
-  - component: {fileID: 7307622365243554934}
   m_Layer: 5
   m_Name: Final Rank 1
   m_TagString: Untagged
@@ -1367,21 +1254,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: '#1  PLAYER 1'
---- !u!114 &7307622365243554934
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5422220118114330720}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &7340295787121657693
 GameObject:
   m_ObjectHideFlags: 0
@@ -1393,7 +1265,6 @@ GameObject:
   - component: {fileID: 2458643451309975580}
   - component: {fileID: 4809006374688569076}
   - component: {fileID: 6446114700597512976}
-  - component: {fileID: 7255523978072655849}
   m_Layer: 5
   m_Name: Final Title
   m_TagString: Untagged
@@ -1462,21 +1333,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: FINAL RANKING
---- !u!114 &7255523978072655849
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7340295787121657693}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &7924714383451942946
 GameObject:
   m_ObjectHideFlags: 0
@@ -1652,7 +1508,6 @@ GameObject:
   - component: {fileID: 3858175285456360251}
   - component: {fileID: 3246921371620730013}
   - component: {fileID: 4257237972108995507}
-  - component: {fileID: 7893486477252393473}
   m_Layer: 5
   m_Name: Award Step
   m_TagString: Untagged
@@ -1721,21 +1576,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: BONUS KEY AWARD 1 / 2
---- !u!114 &7893486477252393473
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8172575798888007836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &8277417406066150422
 GameObject:
   m_ObjectHideFlags: 0
@@ -1747,7 +1587,6 @@ GameObject:
   - component: {fileID: 569265510109642939}
   - component: {fileID: 2916778505972209277}
   - component: {fileID: 4961425565458637883}
-  - component: {fileID: 2585395006356018480}
   m_Layer: 5
   m_Name: Award Winner
   m_TagString: Untagged
@@ -1816,21 +1655,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: PLAYER 1
---- !u!114 &2585395006356018480
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8277417406066150422}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &9048626999672657957
 GameObject:
   m_ObjectHideFlags: 0
@@ -1842,7 +1666,6 @@ GameObject:
   - component: {fileID: 3381256600271003854}
   - component: {fileID: 9015216908627914229}
   - component: {fileID: 5254667679882777321}
-  - component: {fileID: 486680724654833570}
   m_Layer: 5
   m_Name: Award Reward
   m_TagString: Untagged
@@ -1911,21 +1734,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: +1 KEY EACH
---- !u!114 &486680724654833570
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9048626999672657957}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1
 --- !u!1 &9062480376529746093
 GameObject:
   m_ObjectHideFlags: 0
@@ -1937,7 +1745,6 @@ GameObject:
   - component: {fileID: 3897036878181572759}
   - component: {fileID: 7974080649877321970}
   - component: {fileID: 6645264591350772600}
-  - component: {fileID: 3349389136165962233}
   m_Layer: 5
   m_Name: Award Value
   m_TagString: Untagged
@@ -2006,18 +1813,3 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: 100 GOLD
---- !u!114 &3349389136165962233
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9062480376529746093}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.72}
-  m_EffectDistance: {x: 2, y: -2}
-  m_UseGraphicAlpha: 1

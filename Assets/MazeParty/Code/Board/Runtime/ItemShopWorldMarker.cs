@@ -14,6 +14,9 @@ namespace MazeParty.Gameplay
         private readonly GameObject[] _markers = new GameObject[ItemShopRules.ShopCount];
 
         private readonly int[] _revisions = { -1, -1 };
+        private readonly int[] _lastHighlightedRevisions = { -1, -1 };
+        private readonly Vector2Int[] _lastHighlightedCoordinates =
+            new Vector2Int[ItemShopRules.ShopCount];
         private readonly GameObject[] _topViewHighlights =
             new GameObject[ItemShopRules.ShopCount];
         private bool _topViewHighlightRequested;
@@ -60,6 +63,7 @@ namespace MazeParty.Gameplay
             _markers[shopIndex].transform.position = tile.WorldCenter;
             _visuals[shopIndex].SetItemState(shopIndex, soldOut);
             _markers[shopIndex].SetActive(true);
+            PlayLocationHighlightOnce(shopIndex, revision, coordinate);
             return true;
         }
 
@@ -81,9 +85,31 @@ namespace MazeParty.Gameplay
             root.SetActive(false);
         }
 
+        private void PlayLocationHighlightOnce(
+            int shopIndex,
+            int revision,
+            Vector2Int coordinate)
+        {
+            if (_visuals[shopIndex] == null ||
+                (_lastHighlightedRevisions[shopIndex] == revision &&
+                 _lastHighlightedCoordinates[shopIndex] == coordinate))
+            {
+                return;
+            }
+
+            _lastHighlightedRevisions[shopIndex] = revision;
+            _lastHighlightedCoordinates[shopIndex] = coordinate;
+            _visuals[shopIndex].PlayLocationHighlight();
+        }
+
         private void SetVisible(int shopIndex, bool visible)
         {
-            if (_markers[shopIndex] != null && _markers[shopIndex].activeSelf != visible)
+            if (_markers[shopIndex] == null)
+                return;
+
+            if (!visible)
+                _visuals[shopIndex]?.StopLocationHighlight();
+            if (_markers[shopIndex].activeSelf != visible)
             {
                 _markers[shopIndex].SetActive(visible);
             }

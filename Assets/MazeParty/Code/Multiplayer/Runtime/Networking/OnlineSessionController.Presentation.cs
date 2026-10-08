@@ -7,6 +7,8 @@ namespace MazeParty.Multiplayer
 {
     public sealed partial class OnlineSessionController
     {
+        private bool _lobbyRenderingEnabled = true;
+
         private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             if (scene.name == MultiplayerConstants.BoardScene)
@@ -30,7 +32,16 @@ namespace MazeParty.Multiplayer
 
         private void SetLobbyRendering(bool enabled)
         {
+            _lobbyRenderingEnabled = enabled;
             lobbyView?.SetPresentationVisible(enabled);
+            if (enabled)
+            {
+                RefreshLobbyWorldNameplates();
+            }
+            else
+            {
+                RefreshLobbyWorldNameplates(SessionSnapshot.Empty, false);
+            }
 
             var arena = LobbyArena.Instance;
             if (arena == null)
@@ -101,11 +112,6 @@ namespace MazeParty.Multiplayer
 
         private void RenderLobby()
         {
-            if (lobbyView == null)
-            {
-                return;
-            }
-
             if (_statusUsesLocalization)
             {
                 _status = _localizedStatus.Resolve();
@@ -113,8 +119,94 @@ namespace MazeParty.Multiplayer
 
             var inSession = _sessions != null && _sessions.IsInSession;
             var snapshot = inSession ? _sessions.Current : SessionSnapshot.Empty;
+            RefreshLobbyWorldNameplates(
+                snapshot,
+                inSession && _lobbyRenderingEnabled);
+            if (lobbyView == null)
+            {
+                return;
+            }
+
             ApplyMatchRecoveryPresentation();
             lobbyView.Render(snapshot, inSession, IsBusy, _status);
+        }
+
+        public void RefreshLobbyWorldNameplates()
+        {
+            var inSession = _sessions != null && _sessions.IsInSession;
+            RefreshLobbyWorldNameplates(
+                inSession ? _sessions.Current : SessionSnapshot.Empty,
+                inSession && _lobbyRenderingEnabled);
+        }
+
+        private static void RefreshLobbyWorldNameplates(
+            SessionSnapshot snapshot,
+            bool lobbyPresentationEnabled)
+        {
+            var showLobbyState = ShouldShowLobbyWorldIdentity(
+                snapshot,
+                lobbyPresentationEnabled);
+            var avatars = FindObjectsByType<NetworkPlayerAvatar>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (var avatarIndex = 0; avatarIndex < avatars.Length; avatarIndex++)
+            {
+                var avatar = avatars[avatarIndex];
+                var ready = false;
+                var host = false;
+                if (avatar != null)
+                {
+                    TryResolveLobbyWorldIdentity(
+                        snapshot,
+                        showLobbyState,
+                        avatar.AssignedSlot,
+                        out ready,
+                        out host);
+                }
+
+                avatar?.AvatarVisual?.SetLobbyIdentityState(ready, host);
+            }
+        }
+
+        internal static bool ShouldShowLobbyWorldIdentity(
+            SessionSnapshot snapshot,
+            bool lobbyPresentationEnabled)
+        {
+            return lobbyPresentationEnabled &&
+                   snapshot != null &&
+                   snapshot.Phase == MultiplayerConstants.LobbyPhase;
+        }
+
+        internal static bool TryResolveLobbyWorldIdentity(
+            SessionSnapshot snapshot,
+            bool showLobbyState,
+            int assignedSlot,
+            out bool ready,
+            out bool host)
+        {
+            ready = false;
+            host = false;
+            if (!showLobbyState || snapshot == null || assignedSlot < 0)
+            {
+                return false;
+            }
+
+            for (var playerIndex = 0;
+                 playerIndex < snapshot.Players.Count;
+                 playerIndex++)
+            {
+                var player = snapshot.Players[playerIndex];
+                if (player.Slot != assignedSlot)
+                {
+                    continue;
+                }
+
+                ready = player.IsReady;
+                host = player.IsHost;
+                return true;
+            }
+
+            return false;
         }
     }
 }

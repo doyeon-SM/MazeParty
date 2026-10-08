@@ -6,6 +6,31 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
+    /// Consumes the arena's claim exactly once when presentation ownership is
+    /// handed back to the board camera flow.
+    /// </summary>
+    internal sealed class ArenaCombatPresentationOwnership
+    {
+        private bool _claimed;
+
+        public void Claim()
+        {
+            _claimed = true;
+        }
+
+        public bool TryRelease()
+        {
+            if (!_claimed)
+            {
+                return false;
+            }
+
+            _claimed = false;
+            return true;
+        }
+    }
+
+    /// <summary>
     /// Presents the existing network avatars in the arena. The owner gets an
     /// eye-level camera while alive; elimination hands the camera to an arena
     /// spectator view without spawning a duplicate player representation.
@@ -31,6 +56,10 @@ namespace MazeParty.Multiplayer
         private GameplayCameraDirector _cameraDirector;
         private CinemachineCamera _registeredCamera;
         private NetworkPlayerAvatar _localAvatar;
+        private readonly ArenaCombatPresentationOwnership
+            _ownerPresentationOwnership =
+                new ArenaCombatPresentationOwnership();
+        private PlayerAvatarVisual _ownedOwnerPresentation;
         private bool _worldVisible;
         private bool _visibilityInitialized;
         private readonly PresentationEventRevisionGate[] _hitVfxGates =
@@ -99,8 +128,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
-            if (_localAvatar != null && _localAvatar.AvatarVisual != null)
-                _localAvatar.AvatarVisual.SetOwnerFirstPerson(false);
+            ReleaseOwnerPresentation();
             ResetHitVfxGates();
             _worldVisible = false;
             _visibilityInitialized = false;
@@ -120,8 +148,10 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(showWorld);
             if (!showWorld)
             {
-                if (_localAvatar != null && _localAvatar.AvatarVisual != null)
-                _localAvatar.AvatarVisual.SetOwnerFirstPerson(false);
+                // Additively loaded minigame scenes remain enabled between
+                // turns. Release once instead of overwriting the board's local
+                // first-person visibility on every dormant frame.
+                ReleaseOwnerPresentation();
                 UnregisterCamera();
                 return;
             }
@@ -139,7 +169,7 @@ namespace MazeParty.Multiplayer
                           BoardFlowState.MinigamePlaying;
             var useFirstPerson = isAlive && playing && !showingCountdown;
 
-            _localAvatar?.AvatarVisual?.SetOwnerFirstPerson(useFirstPerson);
+            ClaimOwnerPresentation(useFirstPerson);
             RegisterCamera(useFirstPerson
                 ? firstPersonCamera
                 : spectatorCamera);
@@ -185,6 +215,42 @@ namespace MazeParty.Multiplayer
                     _localAvatar = candidate;
                     return;
                 }
+            }
+        }
+
+        private void ClaimOwnerPresentation(bool firstPerson)
+        {
+            var visual = _localAvatar != null
+                ? _localAvatar.AvatarVisual
+                : null;
+            if (visual == null)
+            {
+                ReleaseOwnerPresentation();
+                return;
+            }
+
+            if (_ownedOwnerPresentation != visual)
+            {
+                ReleaseOwnerPresentation();
+                _ownedOwnerPresentation = visual;
+            }
+
+            _ownerPresentationOwnership.Claim();
+            visual.SetOwnerFirstPerson(firstPerson);
+        }
+
+        private void ReleaseOwnerPresentation()
+        {
+            var visual = _ownedOwnerPresentation;
+            _ownedOwnerPresentation = null;
+            if (!_ownerPresentationOwnership.TryRelease())
+            {
+                return;
+            }
+
+            if (visual != null)
+            {
+                visual.SetOwnerFirstPerson(false);
             }
         }
 

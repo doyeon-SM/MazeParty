@@ -21,6 +21,8 @@ namespace MazeParty.Editor
             VfxFolder + "/CartoonExplosion.prefab";
         public const string HitSparkPrefabPath =
             VfxFolder + "/HitSpark.prefab";
+        public const string WaterShieldPrefabPath =
+            VfxFolder + "/WaterShield.prefab";
 
         private const string ToolkitPrefabFolder =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs";
@@ -31,6 +33,8 @@ namespace MazeParty.Editor
             ToolkitPrefabFolder + "/Toon Explosion.prefab";
         private const string HitSparkSourcePath =
             ToolkitPrefabFolder + "/Blue Impact.prefab";
+        private const string WaterShieldSourcePath =
+            ToolkitPrefabFolder + "/Water Shield.prefab";
         private const string BombPassingScenePath =
             "Assets/MazeParty/Scenes/Minigames/BombPassing/" +
             "BombPassing.unity";
@@ -41,6 +45,7 @@ namespace MazeParty.Editor
             EnsureFolder(VfxFolder);
             var explosion = EnsureCartoonExplosionPrefab();
             var impact = EnsureHitSparkPrefab();
+            EnsureWaterShieldPrefab();
             EnsureBoardItemBindings(explosion, impact);
             EnsureBombPassingBinding(explosion);
             AssetDatabase.SaveAssets();
@@ -74,6 +79,69 @@ namespace MazeParty.Editor
                 1.2f,
                 3f,
                 0.32f);
+        }
+
+        /// <summary>
+        /// Creates a tracked presentation-only wrapper while preserving the
+        /// toolkit prefab as the nested visual source. Unlike the pooled impact
+        /// wrappers, this effect remains active for as long as its owner asks.
+        /// </summary>
+        public static GameObject EnsureWaterShieldPrefab()
+        {
+            EnsureFolder(VfxFolder);
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(
+                WaterShieldPrefabPath);
+            if (existing != null)
+            {
+                ValidateWaterShieldWrapper(existing);
+                return existing;
+            }
+            if (AssetDatabase.LoadMainAssetAtPath(
+                    WaterShieldPrefabPath) != null)
+            {
+                throw new InvalidOperationException(
+                    "An incompatible asset exists at " +
+                    WaterShieldPrefabPath + ".");
+            }
+
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                WaterShieldSourcePath);
+            if (source == null)
+            {
+                throw new InvalidOperationException(
+                    "Required All In 1 VFX Toolkit prefab is missing: " +
+                    WaterShieldSourcePath + ". Keep toolkit v2.32 installed " +
+                    "under Assets/Ignore before running VFX setup.");
+            }
+
+            var root = new GameObject("Water Shield");
+            try
+            {
+                var vendor = PrefabUtility.InstantiatePrefab(
+                    source,
+                    root.transform) as GameObject;
+                if (vendor == null)
+                {
+                    throw new InvalidOperationException(
+                        "Could not instantiate VFX source prefab: " +
+                        WaterShieldSourcePath);
+                }
+
+                vendor.name = "AllIn1 Water Shield";
+                vendor.transform.localPosition = Vector3.zero;
+                vendor.transform.localRotation = Quaternion.identity;
+                vendor.transform.localScale = Vector3.one * 0.25f;
+
+                var result = PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    WaterShieldPrefabPath);
+                ValidateWaterShieldWrapper(result);
+                return result;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         public static void EnsureBoardItemBindings(
@@ -434,6 +502,32 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Shared VFX wrapper contract is invalid: " + path);
+            }
+        }
+
+        private static void ValidateWaterShieldWrapper(GameObject prefab)
+        {
+            var dependencies = AssetDatabase.GetDependencies(
+                    WaterShieldPrefabPath,
+                    true)
+                .Select(item => item.Replace('\\', '/'));
+            if (prefab == null ||
+                prefab.GetComponentsInChildren<Renderer>(true).Length == 0 ||
+                prefab.GetComponentsInChildren<Animator>(true).Length == 0 ||
+                prefab.GetComponentsInChildren<Collider>(true).Length > 0 ||
+                prefab.GetComponentsInChildren<Transform>(true).Any(item =>
+                    GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(
+                        item.gameObject) > 0) ||
+                prefab.GetComponentsInChildren<MonoBehaviour>(true)
+                    .Any(item => item != null) ||
+                !dependencies.Any(item => string.Equals(
+                    item,
+                    WaterShieldSourcePath,
+                    StringComparison.OrdinalIgnoreCase)))
+            {
+                throw new InvalidOperationException(
+                    "Shared Water Shield wrapper contract is invalid: " +
+                    WaterShieldPrefabPath);
             }
         }
 

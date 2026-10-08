@@ -234,6 +234,9 @@ namespace MazeParty.Multiplayer
         /// <summary>The last landing-effect line, formatted in the local language.</summary>
         public string LastLandingEffectMessage =>
             LandingEffectMessage.Format(_lastLandingEffectMessage.Value.ToString());
+        public BoardLandingEffectType LastLandingEffectType =>
+            LandingEffectMessage.GetEffectType(
+                _lastLandingEffectMessage.Value.ToString());
         public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
         public bool IsCombatActive => _combatActive.Value;
         public Vector2Int CombatTile => _combatTile.Value;
@@ -1175,6 +1178,12 @@ namespace MazeParty.Multiplayer
                 !_activeMatchVoidGate.AllowsRecoveryWrite)
             {
                 return;
+            }
+
+            if (transition.Previous == BoardFlowState.LandingEffectResolve &&
+                transition.Current != BoardFlowState.LandingEffectResolve)
+            {
+                ClearLandingEffectPresentationOnServer();
             }
 
             switch (transition.Current)
@@ -2243,12 +2252,14 @@ namespace MazeParty.Multiplayer
         }
 
         /// <summary>
-        /// Replicates the English source format and arguments so every client
-        /// formats the landing-effect line in its own language.
+        /// Replicates the authoritative effect type, English source format and
+        /// arguments so every client derives the same presentation kind while
+        /// formatting the landing-effect line in its own language.
         /// </summary>
         private void PublishLandingEffectOnServer(
             int slot,
             BoardTile tile,
+            BoardLandingEffectType effectType,
             string detailFormat,
             params string[] args)
         {
@@ -2258,6 +2269,7 @@ namespace MazeParty.Multiplayer
                     tile != null,
                     tile != null ? tile.Coordinate.x : 0,
                     tile != null ? tile.Coordinate.y : 0,
+                    effectType,
                     detailFormat,
                     args));
             _lastLandingEffectRevision.Value++;

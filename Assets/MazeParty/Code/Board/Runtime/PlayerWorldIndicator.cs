@@ -3,7 +3,7 @@ using UnityEngine;
 namespace MazeParty.Gameplay
 {
     /// <summary>
-    /// Authored world-space nameplate and local-player start marker used by
+    /// Authored world-space nameplate and local-player location marker used by
     /// gameplay representations that do not use <see cref="PlayerAvatarVisual"/>.
     /// Runtime code only updates its text, visibility and pose.
     /// </summary>
@@ -66,7 +66,7 @@ namespace MazeParty.Gameplay
             Transform target,
             Camera viewingCamera,
             float nameOffset,
-            Vector2 highlightScale)
+            float highlightScale)
         {
             if (target == null || viewingCamera == null ||
                 !HasRequiredReferences)
@@ -91,15 +91,9 @@ namespace MazeParty.Gameplay
             }
 
             var highlightTransform = localStartHighlight.transform;
-            highlightTransform.position =
-                target.position - cameraTransform.forward * 0.04f;
-            highlightTransform.rotation = Quaternion.LookRotation(
-                cameraTransform.forward,
-                cameraTransform.up);
-            highlightTransform.localScale = new Vector3(
-                highlightScale.x,
-                highlightScale.y,
-                1f);
+            highlightTransform.position = target.position;
+            highlightTransform.rotation = Quaternion.identity;
+            highlightTransform.localScale = Vector3.one * highlightScale;
         }
     }
 }

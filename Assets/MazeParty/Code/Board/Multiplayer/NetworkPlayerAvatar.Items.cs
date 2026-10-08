@@ -85,7 +85,18 @@ namespace MazeParty.Multiplayer
             if (IsServer && match != null && match.IsActionPhase && !match.IsGlobalSimulationPaused)
                 _itemCooldownRemaining = Math.Max(0d, _itemCooldownRemaining - Time.unscaledDeltaTime);
             var equippedItem = (PrototypeItemId)_equippedItem.Value;
-            if (_avatarVisual != null) _avatarVisual.SetEquippedItem(equippedItem);
+            if (_avatarVisual != null)
+            {
+                _avatarVisual.SetEquippedItem(equippedItem);
+                var boardProtectionVisible =
+                    match != null &&
+                    match.GameplayEnabled &&
+                    match.FlowState <= BoardFlowState.LandingEffectResolve &&
+                    (match.IsOpeningProtectionActive ||
+                     PersonalItemProtectionRemaining > 0d);
+                _avatarVisual.SetBoardProtectionVisible(
+                    boardProtectionVisible);
+            }
             if (!IsOwner)
             {
                 grenadeRangeIndicator?.Hide();
@@ -221,6 +232,7 @@ namespace MazeParty.Multiplayer
         {
             _grenadeRangeUseState.Clear();
             grenadeRangeIndicator?.Hide();
+            _avatarVisual?.SetBoardProtectionVisible(false);
             foreach (var view in _mineViews) if (view != null) Destroy(view);
             _mineViews.Clear();
             _localMines = Array.Empty<Vector3>();

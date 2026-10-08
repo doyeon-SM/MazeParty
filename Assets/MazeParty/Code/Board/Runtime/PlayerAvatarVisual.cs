@@ -39,6 +39,8 @@ namespace MazeParty.Gameplay
         private Transform _nameplate;
         private TextMesh _nameText;
         private Renderer _nameRenderer;
+        private SpriteRenderer _lobbyHostIcon;
+        private Color _defaultNameColor = Color.white;
         private Transform _firstPersonHands;
         private Transform _firstPersonPresentation;
         private Transform _firstPersonLeftHand;
@@ -46,6 +48,7 @@ namespace MazeParty.Gameplay
         private Transform _worldItemRoot;
         private Transform _firstPersonItemRoot;
         private GameObject _topViewHighlight;
+        private GameObject _shieldVfx;
         private readonly Transform[] _worldItemModels = new Transform[13];
         private readonly Transform[] _firstPersonItemModels = new Transform[13];
         private CapsuleCollider _bodyHitbox;
@@ -72,6 +75,8 @@ namespace MazeParty.Gameplay
         private bool _hiddenFromViewer;
         private bool _nameplateAllowed = true;
         private bool _nameplateOccluded;
+        private bool _boardProtectionVisible;
+        private bool _locationHighlightVisible;
         private bool _missingPresentationReported;
         public void SetHiddenFromViewer(bool hidden)
         {
@@ -183,6 +188,10 @@ namespace MazeParty.Gameplay
             {
                 _nameRenderer.forceRenderingOff = occluded;
             }
+            if (_lobbyHostIcon != null)
+            {
+                _lobbyHostIcon.forceRenderingOff = occluded;
+            }
         }
 
         private bool TryInitializeAuthoredPresentation()
@@ -228,9 +237,18 @@ namespace MazeParty.Gameplay
             _nameRenderer = _nameText != null
                 ? _nameText.GetComponent<Renderer>()
                 : null;
+            _lobbyHostIcon = bindings.LobbyHostIcon;
+            _defaultNameColor = _nameText != null
+                ? _nameText.color
+                : Color.white;
             if (_nameRenderer != null)
             {
                 _nameRenderer.forceRenderingOff = _nameplateOccluded;
+            }
+            if (_lobbyHostIcon != null)
+            {
+                _lobbyHostIcon.gameObject.SetActive(false);
+                _lobbyHostIcon.forceRenderingOff = _nameplateOccluded;
             }
             _worldItemRoot = bindings.WorldItemRoot;
             _firstPersonPresentation = bindings.FirstPersonPresentation;
@@ -239,6 +257,8 @@ namespace MazeParty.Gameplay
             _firstPersonRightHand = bindings.FirstPersonRightHand;
             _firstPersonItemRoot = bindings.FirstPersonItemRoot;
             _topViewHighlight = bindings.TopViewHighlight;
+            _shieldVfx = bindings.ShieldVfx;
+            _shieldVfx.SetActive(false);
             _bodyHitbox = bindings.BodyHitbox;
             _headHitbox = bindings.HeadHitbox;
             _leftHandHitbox = bindings.LeftHandHitbox;
@@ -311,6 +331,23 @@ namespace MazeParty.Gameplay
                 return;
             }
             _nameText.text = string.IsNullOrWhiteSpace(value) ? GameText.T("Player") : value.Trim();
+            RefreshLobbyNameplateLayout();
+        }
+
+        public void SetLobbyIdentityState(bool isReady, bool isHost)
+        {
+            EnsureBuilt();
+            if (!IsBuilt)
+            {
+                return;
+            }
+
+            _nameText.color = isReady
+                ? bindings.LobbyReadyNameColor
+                : _defaultNameColor;
+            _lobbyHostIcon.gameObject.SetActive(isHost);
+            _lobbyHostIcon.forceRenderingOff = _nameplateOccluded;
+            RefreshLobbyNameplateLayout();
         }
 
         public void SetCrouching(bool crouching)
@@ -344,6 +381,36 @@ namespace MazeParty.Gameplay
                 _topViewHighlight.activeSelf != highlighted)
             {
                 _topViewHighlight.SetActive(highlighted);
+            }
+        }
+
+        public void SetBoardProtectionVisible(bool visible)
+        {
+            EnsureBuilt();
+            _boardProtectionVisible = visible;
+            RefreshShieldVfx();
+        }
+
+        public void SetLocationHighlightVisible(bool visible)
+        {
+            EnsureBuilt();
+            _locationHighlightVisible = visible;
+            RefreshShieldVfx();
+        }
+
+        private void RefreshShieldVfx()
+        {
+            if (_shieldVfx == null)
+            {
+                return;
+            }
+
+            var visible = (_boardProtectionVisible ||
+                           _locationHighlightVisible) &&
+                          !_hiddenFromViewer;
+            if (_shieldVfx.activeSelf != visible)
+            {
+                _shieldVfx.SetActive(visible);
             }
         }
 
@@ -462,6 +529,23 @@ namespace MazeParty.Gameplay
             {
                 _nameplate.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
             }
+
+            RefreshLobbyNameplateLayout();
+        }
+
+        private void RefreshLobbyNameplateLayout()
+        {
+            if (_lobbyHostIcon == null || !_lobbyHostIcon.gameObject.activeSelf ||
+                _nameRenderer == null)
+            {
+                return;
+            }
+
+            var nameBounds = _nameRenderer.localBounds;
+            var localPosition = _lobbyHostIcon.transform.localPosition;
+            localPosition.x = nameBounds.min.x - 0.22f;
+            localPosition.y = nameBounds.center.y;
+            _lobbyHostIcon.transform.localPosition = localPosition;
         }
 
         private void UpdatePose(bool immediate)
@@ -624,6 +708,7 @@ namespace MazeParty.Gameplay
                 _firstPersonItemRoot.gameObject.SetActive(_ownerFirstPerson && showingItem && !_hiddenFromViewer);
                 SetItemModelVisibility(_firstPersonItemModels, _activeItemId);
             }
+            RefreshShieldVfx();
         }
 
         private static void SetItemModelVisibility(

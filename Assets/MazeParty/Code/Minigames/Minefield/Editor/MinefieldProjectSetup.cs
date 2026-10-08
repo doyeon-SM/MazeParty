@@ -14,6 +14,8 @@ namespace MazeParty.Editor
     public static class MinefieldProjectSetup
     {
         private const string MenuPath = "MazeParty/Minigames/Rebuild Minefield";
+        private const string SonarGeometryMenuPath =
+            "MazeParty/Minigames/Sync Minefield Sonar Pulse Geometry";
         private const string Root = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/Minefield";
         private const string UiFolder = "Assets/MazeParty/Prefabs/Minigames/Minefield";
@@ -80,6 +82,7 @@ namespace MazeParty.Editor
             var sonarPulsePrefab = LoadOrCreateCorePrefab(
                 SonarPulsePrefabPath,
                 () => CreateSonarPulseTemplate(materials));
+            SynchronizeSonarPulsePrefabGeometry();
             var mineMarkerPrefab = LoadOrCreateCorePrefab(
                 MineMarkerPrefabPath,
                 () => CreateMineMarkerTemplate(materials));
@@ -90,6 +93,52 @@ namespace MazeParty.Editor
                 mineMarkerPrefab);
             MinigameVfxProjectSetup.InstallScene(MinefieldScenePath);
             AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem(SonarGeometryMenuPath)]
+        public static void SynchronizeSonarPulsePrefabGeometry()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                SonarPulsePrefabPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException(
+                    "Minefield SonarPulse prefab is missing: " +
+                    SonarPulsePrefabPath);
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                SonarPulsePrefabPath);
+            try
+            {
+                var pulse = contents.GetComponent<LineRenderer>();
+                if (pulse == null)
+                {
+                    throw new InvalidOperationException(
+                        "Minefield SonarPulse prefab must have a LineRenderer " +
+                        "on its root.");
+                }
+
+                ConfigureSonarPulseGeometry(pulse);
+                PrefabUtility.SaveAsPrefabAsset(
+                    contents,
+                    SonarPulsePrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log(
+                "Minefield SonarPulse authored geometry synchronized to radius " +
+                NetworkMinefieldState.SonarRadius + ".");
+        }
+
+        [MenuItem(SonarGeometryMenuPath, true)]
+        private static bool CanSynchronizeSonarPulsePrefabGeometry()
+        {
+            return !EditorApplication.isPlayingOrWillChangePlaymode;
         }
 
         private static void BuildMinefieldScene(
@@ -391,16 +440,25 @@ namespace MazeParty.Editor
             pulse.startColor = new Color(1f, 0.2f, 0.15f, 0.9f);
             pulse.endColor = pulse.startColor;
             pulse.sharedMaterial = materials.SonarPulse;
+            ConfigureSonarPulseGeometry(pulse);
+            pulse.enabled = false;
+            return pulseObject;
+        }
+
+        private static void ConfigureSonarPulseGeometry(LineRenderer pulse)
+        {
+            const int positionCount = 65;
+            pulse.loop = true;
+            pulse.useWorldSpace = false;
+            pulse.positionCount = positionCount;
             for (var point = 0; point < pulse.positionCount; point++)
             {
-                var angle = point / 64f * Mathf.PI * 2f;
+                var angle = point / (positionCount - 1f) * Mathf.PI * 2f;
                 pulse.SetPosition(point, new Vector3(
                     Mathf.Cos(angle) * NetworkMinefieldState.SonarRadius,
                     0f,
                     Mathf.Sin(angle) * NetworkMinefieldState.SonarRadius));
             }
-            pulse.enabled = false;
-            return pulseObject;
         }
 
         private static GameObject CreateMineMarkerTemplate(

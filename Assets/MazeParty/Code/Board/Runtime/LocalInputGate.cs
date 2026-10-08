@@ -4,10 +4,10 @@ using UnityEngine;
 namespace MazeParty.Gameplay
 {
     /// <summary>
-    /// Local-only gate between screen UI and gameplay input. While the common
-    /// menu is open the local player sends neutral movement and no actions, and
-    /// every cursor policy keeps the pointer free. Other players and the server
-    /// simulation are unaffected.
+    /// Local-only gate between modal screen UI and gameplay input. While any
+    /// dismissible popup is open the local player sends neutral movement and no
+    /// actions, and every cursor policy keeps the pointer free. Other players
+    /// and the server simulation are unaffected.
     /// </summary>
     public static class LocalInputGate
     {
@@ -18,7 +18,7 @@ namespace MazeParty.Gameplay
 
         /// <summary>
         /// True while local gameplay input must be ignored, including the frame
-        /// the menu closed so the closing key or click is not replayed as an action.
+        /// the final popup closed so its key or click is not replayed as an action.
         /// </summary>
         public static bool BlocksGameplayInput =>
             IsMenuOpen || _menuClosedFrame == Time.frameCount;

@@ -26,6 +26,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         [SerializeField] private bool inputAuthority;
         [SerializeField] private bool localPrediction = true;
         [SerializeField] private bool movementEnabled = true;
+        [SerializeField] private bool movementInputLocked;
 
         private CharacterController _controller;
         private MinefieldPlayerActor _subscribedActor;
@@ -38,6 +39,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         public bool HasInputAuthority => inputAuthority;
         public bool LocalPrediction => localPrediction;
         public bool MovementEnabled => movementEnabled;
+        public bool MovementInputLocked => movementInputLocked;
         public Vector2 LastMoveIntent { get; private set; }
         public Vector3 PlanarVelocity => _planarVelocity;
         public float PlanarSpeed => _planarVelocity.magnitude;
@@ -87,7 +89,10 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             }
 
             var frame = input.ReadFrame();
-            var acceptedMove = movementEnabled ? frame.Move : Vector2.zero;
+            var acceptedMove = FilterMovementInput(
+                frame.Move,
+                movementEnabled,
+                movementInputLocked);
             var acceptedFrame = new MinefieldInputFrame(
                 frame.Sequence,
                 acceptedMove,
@@ -157,6 +162,15 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             }
         }
 
+        public void SetMovementInputLocked(bool locked)
+        {
+            movementInputLocked = locked;
+            if (locked)
+            {
+                LastMoveIntent = Vector2.zero;
+            }
+        }
+
         public void SetMovementFrame(Transform frame)
         {
             movementFrame = frame;
@@ -164,9 +178,10 @@ namespace MazeParty.Gameplay.Minigames.Minefield
 
         public void SimulateAuthoritativeMovement(Vector2 moveIntent, float deltaTime)
         {
-            LastMoveIntent = movementEnabled
-                ? Vector2.ClampMagnitude(moveIntent, 1f)
-                : Vector2.zero;
+            LastMoveIntent = FilterMovementInput(
+                moveIntent,
+                movementEnabled,
+                movementInputLocked);
 
             if (_controller == null)
             {
@@ -264,6 +279,16 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             return playerState == MinefieldPlayerState.Healthy
                 ? healthyMoveSpeed
                 : 0f;
+        }
+
+        public static Vector2 FilterMovementInput(
+            Vector2 moveIntent,
+            bool inputEnabled,
+            bool inputLocked)
+        {
+            return inputEnabled && !inputLocked
+                ? Vector2.ClampMagnitude(moveIntent, 1f)
+                : Vector2.zero;
         }
 
         private Vector3 ResolveWorldDirection(Vector2 moveIntent)

@@ -7,19 +7,20 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Keeps player names on every minigame representation and shows the local
-    /// player's authored locator only during the shared start countdown.
-    /// Avatar games reuse PlayerAvatarPresentation; ball/shield games use the
-    /// shared PlayerWorldIndicator prefab from PlayerAvatarPresentationAssets.
+    /// Keeps player names on every minigame representation and briefly
+    /// surrounds the local player whenever a replicated round number changes.
+    /// The board-only top-view marker remains a separate presentation.
+    /// Avatar games reuse PlayerAvatarPresentation; ball/shield games use the shared
+    /// PlayerWorldIndicator prefab from PlayerAvatarPresentationAssets.
     /// </summary>
     [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class MinigameLocalPlayerHighlight : MonoBehaviour
     {
+        private const float RoundLocationHighlightSeconds = 3f;
         private const float SnowySpinNameOffset = 1.15f;
         private const float BouncingBallsNameOffset = 1.05f;
-        private static readonly Vector2 SnowySpinHighlightScale =
-            new Vector2(1.2f, 1.2f);
+        private const float SnowySpinHighlightScale = 1.2f;
 
         private readonly List<PlayerAvatarVisual> _standardVisuals =
             new List<PlayerAvatarVisual>(4);
@@ -29,6 +30,10 @@ namespace MazeParty.Multiplayer
         private PlayerAvatarVisual _localVisual;
         private Scene _standardVisualScene;
         private bool _missingIndicatorReported;
+        private bool _hasTrackedMinigame;
+        private ScheduledMinigameId _trackedMinigame;
+        private int _trackedRoundNumber;
+        private float _roundLocationHighlightEndsAt;
 
         public static void EnsureInstalled(GameObject host)
         {
@@ -50,6 +55,7 @@ namespace MazeParty.Multiplayer
             ClearStandardHighlight();
             HideSpecialIndicators();
             ResetStandardVisualCache();
+            ResetRoundTracking();
         }
 
         private void OnDestroy()
@@ -95,6 +101,8 @@ namespace MazeParty.Multiplayer
 
             var highlightVisible = match.IsMinigameStartCountdown &&
                                    match.MinigameStartCountdownRemaining > 0d;
+            var locationHighlightVisible =
+                RefreshRoundLocationHighlight(match.CurrentMinigame);
             if (UsesWorldIndicator(match.CurrentMinigame))
             {
                 ClearStandardHighlight();
@@ -102,7 +110,7 @@ namespace MazeParty.Multiplayer
                     match,
                     scene,
                     localSlot,
-                    highlightVisible);
+                    highlightVisible || locationHighlightVisible);
                 return;
             }
 
@@ -124,7 +132,95 @@ namespace MazeParty.Multiplayer
             }
 
             _localVisual.SetNameplateVisible(true);
-            _localVisual.SetTopViewHighlight(highlightVisible);
+            _localVisual.SetTopViewHighlight(false);
+            _localVisual.SetLocationHighlightVisible(
+                highlightVisible || locationHighlightVisible);
+        }
+
+        private bool RefreshRoundLocationHighlight(
+            ScheduledMinigameId minigame)
+        {
+            if (!_hasTrackedMinigame || _trackedMinigame != minigame)
+            {
+                _hasTrackedMinigame = true;
+                _trackedMinigame = minigame;
+                _trackedRoundNumber = 0;
+                _roundLocationHighlightEndsAt = 0f;
+            }
+
+            if (TryGetRoundNumber(minigame, out var roundNumber) &&
+                roundNumber != _trackedRoundNumber)
+            {
+                _trackedRoundNumber = roundNumber;
+                _roundLocationHighlightEndsAt =
+                    Time.unscaledTime + RoundLocationHighlightSeconds;
+            }
+
+            return Time.unscaledTime < _roundLocationHighlightEndsAt;
+        }
+
+        private static bool TryGetRoundNumber(
+            ScheduledMinigameId minigame,
+            out int roundNumber)
+        {
+            roundNumber = 0;
+            switch (minigame)
+            {
+                case ScheduledMinigameId.Minefield:
+                    roundNumber = NetworkMinefieldState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.WrongWay:
+                    roundNumber = NetworkWrongWayState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.RedLightGreenLight:
+                    roundNumber = NetworkRedLightGreenLightState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.StableFooting:
+                    roundNumber = NetworkStableFootingState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.BalloonBlow:
+                    roundNumber = NetworkBalloonBlowState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.GiftGrab:
+                    roundNumber = NetworkGiftGrabState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.TerritoryPaint:
+                    roundNumber = NetworkTerritoryPaintState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.TagChase:
+                    roundNumber = NetworkTagChaseState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.Race:
+                    roundNumber = NetworkRaceState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.SequenceMemory:
+                    roundNumber = NetworkSequenceMemoryState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.BouncingBalls:
+                    roundNumber = NetworkBouncingBallsState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.BombPassing:
+                    roundNumber = NetworkBombPassingState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.SnowySpin:
+                    roundNumber = NetworkSnowySpinState.Instance?.RoundNumber ?? 0;
+                    break;
+                case ScheduledMinigameId.ArenaCombat:
+                {
+                    var arena = NetworkArenaCombatState.Instance;
+                    roundNumber = arena != null &&
+                                  arena.Phase !=
+                                  NetworkArenaCombatPhase.Inactive
+                        ? 1
+                        : 0;
+                    break;
+                }
+                case ScheduledMinigameId.CliffBarrage:
+                    roundNumber = NetworkCliffBarrageState.Instance?.RoundNumber ?? 0;
+                    break;
+            }
+
+            return roundNumber > 0;
         }
 
         private static bool TryGetLocalSlot(
@@ -258,8 +354,7 @@ namespace MazeParty.Multiplayer
                             ? SnowySpinNameOffset
                             : BouncingBallsNameOffset,
                     GetSpecialHighlightScale(
-                        match.CurrentMinigame,
-                        slot));
+                        match.CurrentMinigame));
                 indicator.SetLocalStartHighlight(
                     slot == localSlot && highlightVisible);
             }
@@ -343,18 +438,12 @@ namespace MazeParty.Multiplayer
             return null;
         }
 
-        private static Vector2 GetSpecialHighlightScale(
-            ScheduledMinigameId minigame,
-            int slot)
+        private static float GetSpecialHighlightScale(
+            ScheduledMinigameId minigame)
         {
-            if (minigame == ScheduledMinigameId.SnowySpin)
-            {
-                return SnowySpinHighlightScale;
-            }
-
-            return slot == 1 || slot == 3
-                ? new Vector2(0.39f, 1.86f)
-                : new Vector2(1.86f, 0.39f);
+            return minigame == ScheduledMinigameId.SnowySpin
+                ? SnowySpinHighlightScale
+                : 1f;
         }
 
         private static string GetAvatarRootName(
@@ -406,6 +495,7 @@ namespace MazeParty.Multiplayer
             ClearStandardHighlight();
             HideSpecialIndicators();
             ResetStandardVisualCache();
+            ResetRoundTracking();
         }
 
         private void ClearStandardHighlight()
@@ -413,6 +503,7 @@ namespace MazeParty.Multiplayer
             if (_localVisual != null)
             {
                 _localVisual.SetTopViewHighlight(false);
+                _localVisual.SetLocationHighlightVisible(false);
                 _localVisual = null;
             }
         }
@@ -429,6 +520,14 @@ namespace MazeParty.Multiplayer
         {
             _standardVisualScene = default;
             _standardVisuals.Clear();
+        }
+
+        private void ResetRoundTracking()
+        {
+            _hasTrackedMinigame = false;
+            _trackedMinigame = default;
+            _trackedRoundNumber = 0;
+            _roundLocationHighlightEndsAt = 0f;
         }
     }
 }

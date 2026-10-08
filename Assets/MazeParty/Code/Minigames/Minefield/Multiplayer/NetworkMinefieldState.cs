@@ -42,7 +42,8 @@ namespace MazeParty.Multiplayer
         public const float ArenaMinZ = -22f;
         public const float ArenaMaxZ = 22f;
         public const float RunnerSpeed = 5f;
-        public const float SonarRadius = 6f;
+        public const float SonarRadius = 3f;
+        public const double SonarDetectionSeconds = 0.75d;
         public const float MineSafeZoneDepth =
             (ArenaMaxZ - ArenaMinZ) / GridHeight;
         public const float MineSpawnHorizontalPadding = 0.75f;
@@ -56,7 +57,6 @@ namespace MazeParty.Multiplayer
         private const float CrusherStartOffset = 2.5f;
         private const float CrusherCatchPadding = 0.2f;
         private const float CrusherSpeed = 1.1625f;
-        private const double SonarDurationSeconds = 0.75d;
         private const float StationaryInputThreshold = 0.0001f;
 
         private readonly NetworkVariable<bool> _matchActive =
@@ -411,7 +411,7 @@ namespace MazeParty.Multiplayer
             _serverInputs[slot] = Vector2.ClampMagnitude(currentInput, 1f);
             _avatars[slot] = avatar;
             avatar.StopServerInputOnServer();
-            _sonarEndsAt[slot] = ServerNow + SonarDurationSeconds;
+            _sonarEndsAt[slot] = ServerNow + SonarDetectionSeconds;
             _sonarMask.Value = SetMaskBit(_sonarMask.Value, slot, true);
             RefreshSensorReplicationOnServer();
             return true;
@@ -663,10 +663,14 @@ namespace MazeParty.Multiplayer
             var speedMultiplier = state == MinefieldPlayerState.Crippled
                 ? FootstepRules.WalkSpeedMultiplier
                 : 1f;
+            var movementInput = MinefieldPlayerMotor.FilterMovementInput(
+                _serverInputs[slot],
+                true,
+                IsSonarActive(slot));
             var movement = new Vector3(
-                _serverInputs[slot].x,
+                movementInput.x,
                 0f,
-                _serverInputs[slot].y);
+                movementInput.y);
             if (movement.sqrMagnitude > 1f)
             {
                 movement.Normalize();

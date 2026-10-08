@@ -12,6 +12,11 @@ namespace MazeParty.Gameplay.Tests
             "Assets/MazeParty/Prefabs/Common/VFX/CartoonExplosion.prefab";
         private const string HitSparkPath =
             "Assets/MazeParty/Prefabs/Common/VFX/HitSpark.prefab";
+        private const string WaterShieldPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/WaterShield.prefab";
+        private const string WaterShieldSourcePath =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/" +
+            "Water Shield.prefab";
 
         [Test]
         public void SharedOneShots_AreAuthoredPooledAndPresentationOnly()
@@ -123,6 +128,39 @@ namespace MazeParty.Gameplay.Tests
                     Is.Null,
                     id.ToString());
             }
+        }
+
+        [Test]
+        public void SharedWaterShield_IsTrackedPersistentPresentationWrapper()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                WaterShieldPath);
+            Assert.That(prefab, Is.Not.Null, WaterShieldPath);
+            Assert.That(prefab.GetComponent<PooledOneShotVfx>(), Is.Null,
+                "The shield lifetime is owned by presentation state, not a one-shot timer.");
+            Assert.That(
+                prefab.GetComponentsInChildren<Renderer>(true),
+                Is.Not.Empty);
+            Assert.That(
+                prefab.GetComponentsInChildren<Animator>(true),
+                Is.Not.Empty);
+            Assert.That(
+                prefab.GetComponentsInChildren<Collider>(true),
+                Is.Empty,
+                "The shared shield must never participate in gameplay physics.");
+            var behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(
+                true);
+            Assert.That(behaviours.Any(item => item == null), Is.False,
+                "The tracked wrapper must not contain missing scripts.");
+            Assert.That(
+                behaviours.Where(item => item != null),
+                Is.Empty,
+                "The tracked wrapper must not import vendor or gameplay scripts.");
+            Assert.That(
+                AssetDatabase.GetDependencies(WaterShieldPath, true)
+                    .Select(item => item.Replace('\\', '/')),
+                Does.Contain(WaterShieldSourcePath),
+                "The tracked wrapper must keep the requested toolkit source prefab.");
         }
     }
 }

@@ -15,10 +15,14 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerAvatarPresentation.prefab";
         private const string PlayerWorldIndicatorPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/PlayerWorldIndicator.prefab";
+        private const string WaterShieldPrefabPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/WaterShield.prefab";
         private const string SimpleFistHandPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab";
         private const string SimpleHandsSourceRoot =
             "Assets/Ignore/SimpleHands/";
+        private const string HostStarSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
         private const string NetworkPlayerPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
         private const string GrenadeRangeIndicatorPrefabPath =
@@ -40,6 +44,36 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.HasRequiredReferences, Is.True);
             Assert.That(bindings.NameplateAnchor.gameObject.activeSelf, Is.True);
             Assert.That(bindings.NameText, Is.Not.Null);
+            Assert.That(bindings.LobbyHostIcon, Is.Not.Null);
+            Assert.That(
+                bindings.LobbyHostIcon.transform.parent,
+                Is.SameAs(bindings.NameplateAnchor),
+                "The lobby host icon must be authored as part of the world nameplate.");
+            Assert.That(
+                bindings.LobbyHostIcon.transform.localPosition.x,
+                Is.LessThan(bindings.NameText.transform.localPosition.x),
+                "The host star must appear to the left of the nickname.");
+            Assert.That(bindings.LobbyHostIcon.sprite, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(bindings.LobbyHostIcon.sprite),
+                Is.EqualTo(HostStarSpritePath));
+            Assert.That(bindings.LobbyHostIcon.gameObject.activeSelf, Is.False);
+            Assert.That(bindings.ShieldVfx, Is.Not.Null);
+            Assert.That(bindings.ShieldVfx.activeSelf, Is.False);
+            Assert.That(bindings.ShieldVfx, Is.Not.SameAs(
+                bindings.TopViewHighlight));
+            Assert.That(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    bindings.ShieldVfx),
+                Is.EqualTo(WaterShieldPrefabPath));
+            Assert.That(
+                bindings.LobbyReadyNameColor.g,
+                Is.GreaterThan(bindings.LobbyReadyNameColor.r),
+                "The authored ready-name color must read as green.");
+            Assert.That(
+                bindings.LobbyReadyNameColor.g,
+                Is.GreaterThan(bindings.LobbyReadyNameColor.b),
+                "The authored ready-name color must read as green.");
             Assert.That(
                 bindings.NameText.GetComponent<WorldTextOcclusion>(),
                 Is.Not.Null,
@@ -95,6 +129,11 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(indicator.NameText, Is.Not.Null);
             Assert.That(indicator.LocalStartHighlight, Is.Not.Null);
             Assert.That(indicator.LocalStartHighlight.activeSelf, Is.False);
+            Assert.That(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    indicator.LocalStartHighlight),
+                Is.EqualTo(WaterShieldPrefabPath),
+                "Special minigame representations must use the shared 3D shield marker.");
             Assert.That(
                 prefab.GetComponentsInChildren<Canvas>(true),
                 Is.Empty,
@@ -224,11 +263,48 @@ namespace MazeParty.Multiplayer.Tests
                 var nameRenderer = visual.Bindings.NameText
                     .GetComponent<Renderer>();
                 Assert.That(nameRenderer, Is.Not.Null);
+                var hostIcon = visual.Bindings.LobbyHostIcon;
+                var defaultNameColor = visual.Bindings.NameText.color;
+                var identityObjectCount = root
+                    .GetComponentsInChildren<Transform>(true)
+                    .Length;
+
+                visual.SetLobbyIdentityState(true, false);
+                Assert.That(
+                    visual.Bindings.NameText.color,
+                    Is.EqualTo(visual.Bindings.LobbyReadyNameColor));
+                Assert.That(hostIcon.gameObject.activeSelf, Is.False);
+
+                visual.SetLobbyIdentityState(false, true);
+                Assert.That(
+                    visual.Bindings.NameText.color,
+                    Is.EqualTo(defaultNameColor));
+                Assert.That(hostIcon.gameObject.activeSelf, Is.True);
+
+                visual.SetLobbyIdentityState(true, true);
+                Assert.That(
+                    visual.Bindings.NameText.color,
+                    Is.EqualTo(visual.Bindings.LobbyReadyNameColor));
+                Assert.That(hostIcon.gameObject.activeSelf, Is.True);
+                Assert.That(
+                    root.GetComponentsInChildren<Transform>(true).Length,
+                    Is.EqualTo(identityObjectCount),
+                    "Lobby identity changes must not create runtime presentation objects.");
+
                 visual.SetNameplateOccluded(true);
                 Assert.That(nameRenderer.forceRenderingOff, Is.True);
+                Assert.That(hostIcon.forceRenderingOff, Is.True);
                 Assert.That(visual.Bindings.WorldModel.gameObject.activeSelf, Is.True);
                 visual.SetNameplateOccluded(false);
                 Assert.That(nameRenderer.forceRenderingOff, Is.False);
+                Assert.That(hostIcon.forceRenderingOff, Is.False);
+
+                visual.SetLobbyIdentityState(false, false);
+                Assert.That(
+                    visual.Bindings.NameText.color,
+                    Is.EqualTo(defaultNameColor));
+                Assert.That(hostIcon.gameObject.activeSelf, Is.False,
+                    "Leaving the lobby must clear the host marker.");
 
                 var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
                 visual.SetEquippedItem(PrototypeItemId.Pistol);
@@ -307,6 +383,26 @@ namespace MazeParty.Multiplayer.Tests
                     "Highlight toggling must not create runtime geometry.");
                 visual.SetTopViewHighlight(false);
                 Assert.That(authoredHighlight.activeSelf, Is.False);
+
+                var authoredShield = visual.Bindings.ShieldVfx;
+                visual.SetBoardProtectionVisible(true);
+                Assert.That(authoredShield.activeSelf, Is.True);
+                visual.SetLocationHighlightVisible(true);
+                visual.SetBoardProtectionVisible(false);
+                Assert.That(authoredShield.activeSelf, Is.True,
+                    "The round-location request must survive board protection ending.");
+                visual.SetHiddenFromViewer(true);
+                Assert.That(authoredShield.activeSelf, Is.False,
+                    "A hidden avatar must not leave its shield presentation behind.");
+                visual.SetHiddenFromViewer(false);
+                Assert.That(authoredShield.activeSelf, Is.True,
+                    "The active location request must resume with avatar visibility.");
+                visual.SetLocationHighlightVisible(false);
+                Assert.That(authoredShield.activeSelf, Is.False);
+                Assert.That(
+                    root.GetComponentsInChildren<Transform>(true).Length,
+                    Is.EqualTo(authoredObjectCount),
+                    "Shield state changes must not create runtime geometry.");
             }
             finally
             {

@@ -8,6 +8,97 @@ namespace MazeParty.Multiplayer.Tests
 {
     public sealed class SessionLifecycleTests
     {
+        [TestCase(true, MultiplayerConstants.LobbyPhase, true)]
+        [TestCase(false, MultiplayerConstants.LobbyPhase, false)]
+        [TestCase(true, MultiplayerConstants.PlayingPhase, false)]
+        public void LobbyWorldIdentity_RequiresVisibleLobbyPresentation(
+            bool presentationVisible,
+            string phase,
+            bool expected)
+        {
+            var snapshot = new SessionSnapshot(
+                "ABCD",
+                true,
+                phase,
+                "host",
+                Array.Empty<OnlinePlayerSnapshot>());
+
+            Assert.That(
+                OnlineSessionController.ShouldShowLobbyWorldIdentity(
+                    snapshot,
+                    presentationVisible),
+                Is.EqualTo(expected));
+        }
+
+        [Test]
+        public void LobbyWorldIdentity_MapsByAssignedSlotAndClearsUnmatchedState()
+        {
+            var snapshot = new SessionSnapshot(
+                "ABCD",
+                true,
+                MultiplayerConstants.LobbyPhase,
+                "host",
+                new[]
+                {
+                    new OnlinePlayerSnapshot(
+                        "guest",
+                        "Guest",
+                        2,
+                        true,
+                        false),
+                    new OnlinePlayerSnapshot(
+                        "host",
+                        "Host",
+                        0,
+                        false,
+                        true)
+                });
+
+            Assert.That(
+                OnlineSessionController.TryResolveLobbyWorldIdentity(
+                    snapshot,
+                    true,
+                    2,
+                    out var ready,
+                    out var host),
+                Is.True);
+            Assert.That(ready, Is.True);
+            Assert.That(host, Is.False);
+
+            Assert.That(
+                OnlineSessionController.TryResolveLobbyWorldIdentity(
+                    snapshot,
+                    true,
+                    1,
+                    out ready,
+                    out host),
+                Is.False);
+            Assert.That(ready, Is.False);
+            Assert.That(host, Is.False);
+
+            Assert.That(
+                OnlineSessionController.TryResolveLobbyWorldIdentity(
+                    snapshot,
+                    true,
+                    -1,
+                    out ready,
+                    out host),
+                Is.False);
+            Assert.That(ready, Is.False);
+            Assert.That(host, Is.False);
+
+            Assert.That(
+                OnlineSessionController.TryResolveLobbyWorldIdentity(
+                    snapshot,
+                    false,
+                    0,
+                    out ready,
+                    out host),
+                Is.False);
+            Assert.That(ready, Is.False);
+            Assert.That(host, Is.False);
+        }
+
         [Test]
         public void Rules_AllowExpectedStableAndTerminalTransitions()
         {

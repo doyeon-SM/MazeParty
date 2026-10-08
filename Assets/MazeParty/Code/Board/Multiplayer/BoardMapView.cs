@@ -29,7 +29,11 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardMinimapView liveMinimap;
         [SerializeField] private GameObject fullMapPanel;
         [SerializeField] private BoardMinimapView fullMap;
+        [SerializeField] private Button fullMapCloseButton;
         private bool _fullMapOpen;
+        private bool _fullMapBoardAvailable;
+        private bool _turnOverviewUsesFullMap;
+        private bool _fullMapCloseButtonWired;
         public bool FullMapOpen => _fullMapOpen;
         [SerializeField] private Cell[] overviewCells = Array.Empty<Cell>();
         [SerializeField] private Cell[] minimapCells = Array.Empty<Cell>();
@@ -48,7 +52,8 @@ namespace MazeParty.Multiplayer
             overviewPanel != null && minimapPanel != null &&
             HasCells(overviewCells) && HasCells(minimapCells) &&
             liveMinimap != null && liveMinimap.HasRequiredReferences &&
-            fullMapPanel != null && fullMap != null && fullMap.HasRequiredReferences;
+            fullMapPanel != null && fullMap != null && fullMap.HasRequiredReferences &&
+            fullMapCloseButton != null;
 
         public void Configure(GameObject overview, GameObject minimap,
             Cell[] overviewMapCells, Cell[] minimapMapCells)
@@ -58,6 +63,11 @@ namespace MazeParty.Multiplayer
             overviewCells = overviewMapCells;
             minimapCells = minimapMapCells;
             _lastSignature = int.MinValue;
+        }
+
+        private void OnEnable()
+        {
+            WireFullMapCloseButton(true);
         }
 
         private void LateUpdate()
@@ -78,8 +88,23 @@ namespace MazeParty.Multiplayer
             var keyboard = Keyboard.current;
             var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
-            var toggleRequested = !typing && keyboard != null &&
-                                  keyboard.mKey.wasPressedThisFrame;
+            var rawToggleRequested = !typing && keyboard != null &&
+                                     keyboard.mKey.wasPressedThisFrame;
+            var toggleRequested = rawToggleRequested &&
+                (!LocalInputGate.BlocksGameplayInput ||
+                 (_fullMapOpen && UiPopupStack.IsTop(fullMapPanel)));
+            if (!typing && _fullMapOpen &&
+                UiPopupStack.IsTop(fullMapPanel) &&
+                keyboard != null &&
+                keyboard.escapeKey.wasPressedThisFrame)
+            {
+                var menu = FindAnyObjectByType<GameMenuView>();
+                if (menu == null || !menu.isActiveAndEnabled)
+                {
+                    CloseFullMap();
+                    toggleRequested = false;
+                }
+            }
             if (!overview && !action)
             {
                 UpdateFullMapState(false, toggleRequested);
@@ -168,20 +193,94 @@ namespace MazeParty.Multiplayer
             bool toggleRequested,
             bool turnOverviewUsesFullMap)
         {
-            if (!boardAvailable) _fullMapOpen = false;
-            else if (toggleRequested) _fullMapOpen = !_fullMapOpen;
+            _fullMapBoardAvailable = boardAvailable;
+            _turnOverviewUsesFullMap = turnOverviewUsesFullMap;
+            if (!boardAvailable)
+            {
+                SetFullMapOpen(false);
+            }
+            else if (toggleRequested)
+            {
+                SetFullMapOpen(!_fullMapOpen);
+            }
+
+            RefreshFullMapVisibility();
+        }
+
+        public void CloseFullMap()
+        {
+            SetFullMapOpen(false);
+            RefreshFullMapVisibility();
+        }
+
+        private void SetFullMapOpen(bool open)
+        {
+            if (_fullMapOpen == open)
+            {
+                if (!open)
+                {
+                    UiPopupStack.Remove(fullMapPanel);
+                }
+                return;
+            }
+
+            _fullMapOpen = open;
+            if (open)
+            {
+                if (fullMapPanel != null)
+                {
+                    fullMapPanel.SetActive(true);
+                    UiPopupStack.Push(fullMapPanel, CloseFullMap);
+                }
+            }
+            else
+            {
+                UiPopupStack.Remove(fullMapPanel);
+            }
+        }
+
+        private void RefreshFullMapVisibility()
+        {
             if (fullMapPanel != null)
             {
                 SetActive(
                     fullMapPanel,
-                    boardAvailable &&
-                    (_fullMapOpen || turnOverviewUsesFullMap));
+                    _fullMapBoardAvailable &&
+                    (_fullMapOpen || _turnOverviewUsesFullMap));
+            }
+
+            if (fullMapCloseButton != null)
+            {
+                fullMapCloseButton.gameObject.SetActive(
+                    _fullMapBoardAvailable && _fullMapOpen);
             }
         }
 
         private void OnDisable()
         {
-            UpdateFullMapState(false, false);
+            WireFullMapCloseButton(false);
+            _fullMapBoardAvailable = false;
+            _turnOverviewUsesFullMap = false;
+            CloseFullMap();
+        }
+
+        private void WireFullMapCloseButton(bool subscribe)
+        {
+            if (fullMapCloseButton == null ||
+                subscribe == _fullMapCloseButtonWired)
+            {
+                return;
+            }
+
+            _fullMapCloseButtonWired = subscribe;
+            if (subscribe)
+            {
+                fullMapCloseButton.onClick.AddListener(CloseFullMap);
+            }
+            else
+            {
+                fullMapCloseButton.onClick.RemoveListener(CloseFullMap);
+            }
         }
 
         private void RefreshCell(Cell cell, Vector2Int coordinate,

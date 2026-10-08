@@ -127,4 +127,24 @@ namespace MazeParty.Multiplayer.Tests
         }
 
     }
+
+    public sealed class ArenaCombatPresentationOwnershipTests
+    {
+        [Test]
+        public void DormantFrames_ReleaseClaimOnlyOnceUntilReacquired()
+        {
+            var ownership = new ArenaCombatPresentationOwnership();
+
+            Assert.That(ownership.TryRelease(), Is.False);
+
+            ownership.Claim();
+            ownership.Claim();
+            Assert.That(ownership.TryRelease(), Is.True);
+            Assert.That(ownership.TryRelease(), Is.False);
+
+            ownership.Claim();
+            Assert.That(ownership.TryRelease(), Is.True);
+            Assert.That(ownership.TryRelease(), Is.False);
+        }
+    }
 }

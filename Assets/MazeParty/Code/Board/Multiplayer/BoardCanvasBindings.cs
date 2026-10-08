@@ -25,13 +25,12 @@ namespace MazeParty.Multiplayer
             public GameObject ReconnectOverlay;
             public GameObject Reticle;
             public GameObject ItemShopPanel;
+            public GameObject BoardEventPopupPanel;
 
             public Text ReticleText;
             public Text TurnText;
             public Text PhaseText;
             public Text PhaseTimerText;
-            public Text ChoiceTimerText;
-            public Text ShieldText;
             public Text DiceText;
             public Text MovesText;
             public Text AmmoText;
@@ -41,6 +40,7 @@ namespace MazeParty.Multiplayer
             public Text ItemShopTitle;
             public Text ItemShopTooltip;
             public Text ItemShopStatus;
+            public Text BoardEventPopupMessage;
             public Text MinigameReadyTitle;
             public Text MinigameReadyNote;
             public Text MinigameReadyStatus;
@@ -80,8 +80,6 @@ namespace MazeParty.Multiplayer
         [Serializable]
         public sealed class StatePalette
         {
-            public Color ShieldActive = new Color(0.25f, 1f, 0.75f);
-            public Color ShieldInactive = new Color(1f, 0.45f, 0.45f);
             public Color InventorySelected =
                 new Color(1f, 0.72f, 0.15f, 0.97f);
             public Color InventoryOccupied =
@@ -138,12 +136,12 @@ namespace MazeParty.Multiplayer
         public GameObject ReconnectOverlay => references.ReconnectOverlay;
         public GameObject Reticle => references.Reticle;
         public GameObject ItemShopPanel => references.ItemShopPanel;
+        public GameObject BoardEventPopupPanel =>
+            references.BoardEventPopupPanel;
         public Text ReticleText => references.ReticleText;
         public Text TurnText => references.TurnText;
         public Text PhaseText => references.PhaseText;
         public Text PhaseTimerText => references.PhaseTimerText;
-        public Text ChoiceTimerText => references.ChoiceTimerText;
-        public Text ShieldText => references.ShieldText;
         public Text DiceText => references.DiceText;
         public Text MovesText => references.MovesText;
         public Text AmmoText => references.AmmoText;
@@ -153,6 +151,8 @@ namespace MazeParty.Multiplayer
         public Text ItemShopTitle => references.ItemShopTitle;
         public Text ItemShopTooltip => references.ItemShopTooltip;
         public Text ItemShopStatus => references.ItemShopStatus;
+        public Text BoardEventPopupMessage =>
+            references.BoardEventPopupMessage;
         public Text MinigameReadyTitle => references.MinigameReadyTitle;
         public Text MinigameReadyNote => references.MinigameReadyNote;
         public Text MinigameReadyStatus => references.MinigameReadyStatus;
@@ -199,8 +199,6 @@ namespace MazeParty.Multiplayer
         public Text[] PlayerActionIcons => references.PlayerActionIcons;
         public Text[] PlayerRankTexts => references.PlayerRankTexts;
 
-        public Color ShieldActiveColor => statePalette.ShieldActive;
-        public Color ShieldInactiveColor => statePalette.ShieldInactive;
         public Color InventorySelectedColor => statePalette.InventorySelected;
         public Color InventoryOccupiedColor => statePalette.InventoryOccupied;
         public Color InventoryEmptyColor => statePalette.InventoryEmpty;
@@ -230,12 +228,11 @@ namespace MazeParty.Multiplayer
             references.ReconnectOverlay != null &&
             references.Reticle != null &&
             references.ItemShopPanel != null &&
+            references.BoardEventPopupPanel != null &&
             references.ReticleText != null &&
             references.TurnText != null &&
             references.PhaseText != null &&
             references.PhaseTimerText != null &&
-            references.ChoiceTimerText != null &&
-            references.ShieldText != null &&
             references.DiceText != null &&
             references.MovesText != null &&
             references.AmmoText != null &&
@@ -245,6 +242,7 @@ namespace MazeParty.Multiplayer
             references.ItemShopTitle != null &&
             references.ItemShopTooltip != null &&
             references.ItemShopStatus != null &&
+            references.BoardEventPopupMessage != null &&
             references.MinigameReadyTitle != null &&
             references.MinigameReadyNote != null &&
             references.MinigameReadyStatus != null &&

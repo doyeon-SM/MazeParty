@@ -77,7 +77,10 @@ namespace MazeParty.Editor
                 BoardCanvasModuleFolder + "/ReconnectOverlay.prefab"),
             new BoardCanvasModuleSpec(
                 "MinigameReadyPanel",
-                BoardCanvasModuleFolder + "/MinigameReadyPanel.prefab")
+                BoardCanvasModuleFolder + "/MinigameReadyPanel.prefab"),
+            new BoardCanvasModuleSpec(
+                BoardEventPopupProjectSetup.ModuleObjectName,
+                BoardEventPopupProjectSetup.ModulePrefabPath)
         };
 
         private static readonly Vector2Int[] MainLoop =
@@ -149,6 +152,29 @@ namespace MazeParty.Editor
             Selection.activeObject = prefab;
             EditorGUIUtility.PingObject(prefab);
             AssetDatabase.OpenAsset(prefab);
+        }
+
+        [MenuItem("MazeParty/UI/Remove Obsolete Board HUD Texts")]
+        public static void RemoveObsoleteBoardHudTexts()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                throw new InvalidOperationException(
+                    "Board HUD migration requires Edit Mode.");
+            }
+
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+            if (prefab == null)
+            {
+                throw new InvalidOperationException(
+                    "BoardCanvas.prefab is required before HUD migration.");
+            }
+
+            MigrateObsoleteBoardHudTexts(prefab);
+            Debug.Log(
+                "BoardCanvas.prefab no longer contains the obsolete choice " +
+                "and shield status texts; its remaining design was preserved.");
         }
 
         [MenuItem("MazeParty/Gameplay/Rebuild D12 Dice Assets")]
@@ -1090,6 +1116,8 @@ namespace MazeParty.Editor
             CreateItemShopPanel(root.transform, font);
             CreateReadyPanel(root.transform, font);
             CreateReticle(root.transform, font);
+            BoardEventPopupProjectSetup.EnsureTemplateInstance(
+                root.transform);
             CreateReconnectOverlay(root.transform, font);
             BoardMapPrefabAuthoring.Ensure(root, font);
             var bindings = root.GetComponent<BoardCanvasBindings>();
@@ -1152,6 +1180,8 @@ namespace MazeParty.Editor
                 prefab = MigrateBoardCanvasBindingsIfMissing(prefab);
             }
 
+            prefab = MigrateObsoleteBoardHudTexts(prefab);
+            prefab = BoardEventPopupProjectSetup.EnsureInstalled(prefab);
             prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
             prefab = MigrateBoardCanvasModulesIfMissing(prefab);
             MinigameResultCanvasProjectSetup.EnsurePrefabMigrated();
@@ -1173,6 +1203,8 @@ namespace MazeParty.Editor
                 BoardCanvasPrefabPath);
             try
             {
+                BoardEventPopupProjectSetup.EnsureTemplateInstance(
+                    contents.transform);
                 var bindings = contents.AddComponent<BoardCanvasBindings>();
                 ConfigureBoardCanvasBindings(contents, bindings);
                 var view = contents.GetComponent<BoardFlowView>();
@@ -1185,6 +1217,55 @@ namespace MazeParty.Editor
                 PrefabUtility.SaveAsPrefabAsset(
                     contents,
                     BoardCanvasPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardCanvasPrefabPath);
+        }
+
+        private static GameObject MigrateObsoleteBoardHudTexts(
+            GameObject prefab)
+        {
+            if (prefab == null ||
+                (FindDescendant(
+                     prefab.transform,
+                     "BoardChoiceTimerText") == null &&
+                 FindDescendant(prefab.transform, "BoardShieldText") == null))
+            {
+                return prefab;
+            }
+
+            var contents = PrefabUtility.LoadPrefabContents(
+                BoardCanvasPrefabPath);
+            try
+            {
+                var choiceText = FindDescendant(
+                    contents.transform,
+                    "BoardChoiceTimerText");
+                if (choiceText != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(choiceText);
+                }
+
+                var shieldText = FindDescendant(
+                    contents.transform,
+                    "BoardShieldText");
+                if (shieldText != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(shieldText);
+                }
+
+                if (PrefabUtility.SaveAsPrefabAsset(
+                        contents,
+                        BoardCanvasPrefabPath) == null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to migrate BoardCanvas.prefab HUD texts.");
+                }
             }
             finally
             {
@@ -1655,6 +1736,9 @@ namespace MazeParty.Editor
                 ItemShopPanel = RequireBoardUiObject(
                     root,
                     "ItemShopPanel"),
+                BoardEventPopupPanel = RequireBoardUiObject(
+                    root,
+                    BoardEventPopupProjectSetup.ModuleObjectName),
                 ReticleText = RequireBoardUiComponent<Text>(
                     root,
                     "BoardReticle"),
@@ -1663,12 +1747,6 @@ namespace MazeParty.Editor
                 PhaseTimerText = RequireBoardUiComponent<Text>(
                     root,
                     "PhaseTimerText"),
-                ChoiceTimerText = RequireBoardUiComponent<Text>(
-                    root,
-                    "BoardChoiceTimerText"),
-                ShieldText = RequireBoardUiComponent<Text>(
-                    root,
-                    "BoardShieldText"),
                 DiceText = RequireBoardUiComponent<Text>(root, "DiceText"),
                 MovesText = RequireBoardUiComponent<Text>(root, "MovesText"),
                 AmmoText = RequireBoardUiComponent<Text>(
@@ -1692,6 +1770,9 @@ namespace MazeParty.Editor
                 ItemShopStatus = RequireBoardUiComponent<Text>(
                     root,
                     "ItemShopStatus"),
+                BoardEventPopupMessage = RequireBoardUiComponent<Text>(
+                    root,
+                    BoardEventPopupProjectSetup.MessageObjectName),
                 MinigameReadyTitle = RequireBoardUiComponent<Text>(
                     root,
                     "Ready Title"),
@@ -1822,10 +1903,6 @@ namespace MazeParty.Editor
                 new Vector2(0f, -30f), new Vector2(420f, 42f), TextAnchor.MiddleCenter);
             CreateText("PhaseTimerText", panel.transform, "--:--", font, 30,
                 new Vector2(305f, -30f), new Vector2(170f, 42f), TextAnchor.MiddleCenter);
-            CreateText("BoardChoiceTimerText", panel.transform, "CHOICE --", font, 17,
-                new Vector2(-205f, -74f), new Vector2(250f, 30f), TextAnchor.MiddleCenter);
-            CreateText("BoardShieldText", panel.transform, "SHIELD OFF", font, 17,
-                new Vector2(90f, -74f), new Vector2(220f, 30f), TextAnchor.MiddleCenter);
         }
 
         private static void CreatePlayerPanel(Transform canvas, Font font)

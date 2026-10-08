@@ -42,6 +42,7 @@ namespace MazeParty.Gameplay
         [SerializeField] private BoardWorldPrefabs worldPrefabs;
 
 
+        private BoardShopVisual _visual;
         private GameObject _markerObject;
         private TextMesh _worldText;
         private GameObject _topViewHighlight;
@@ -54,6 +55,8 @@ namespace MazeParty.Gameplay
         private KeyShopLifecycleState _lastRaisedState = KeyShopLifecycleState.Inactive;
         private Vector2Int _lastRaisedCoordinate;
         private int _lastRaisedRevision = -1;
+        private Vector2Int _lastHighlightedCoordinate;
+        private int _lastHighlightedRevision = -1;
 
         public event Action<KeyShopWorldMarkerEvent> StateApplied;
         public event Action<KeyShopWorldMarkerEvent> Preparing;
@@ -121,6 +124,7 @@ namespace MazeParty.Gameplay
                 EnsureMarker();
                 _markerObject.transform.position = resolvedTile.WorldCenter;
                 _markerObject.SetActive(true);
+                PlayLocationHighlightOnce(revision, coordinate);
                 locationResolved = true;
             }
             else
@@ -195,6 +199,7 @@ namespace MazeParty.Gameplay
 
             if (worldPrefabs == null) worldPrefabs = BoardWorldPrefabs.LoadRequired();
             var visual = Instantiate(worldPrefabs.KeyShop, transform, false);
+            _visual = visual;
             _markerObject = visual.gameObject;
             _worldText = visual.Label;
             _topViewHighlight = visual.TopViewHighlight;
@@ -202,9 +207,30 @@ namespace MazeParty.Gameplay
             _markerObject.SetActive(false);
         }
 
+        private void PlayLocationHighlightOnce(
+            int revision,
+            Vector2Int coordinate)
+        {
+            if (_visual == null ||
+                (_lastHighlightedRevision == revision &&
+                 _lastHighlightedCoordinate == coordinate))
+            {
+                return;
+            }
+
+            _lastHighlightedRevision = revision;
+            _lastHighlightedCoordinate = coordinate;
+            _visual.PlayLocationHighlight();
+        }
+
         private void SetMarkerVisible(bool visible)
         {
-            if (_markerObject != null && _markerObject.activeSelf != visible)
+            if (_markerObject == null)
+                return;
+
+            if (!visible)
+                _visual?.StopLocationHighlight();
+            if (_markerObject.activeSelf != visible)
                 _markerObject.SetActive(visible);
         }
 

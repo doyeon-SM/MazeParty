@@ -1,4 +1,3 @@
-using System;
 using System.Text;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
@@ -58,14 +57,13 @@ namespace MazeParty.Multiplayer
         private GameObject _reconnectOverlay;
         private GameObject _reticle;
         private GameObject _itemShopPanel;
+        private GameObject _boardEventPopupPanel;
         private Canvas _boardCanvas;
         private GraphicRaycaster _boardRaycaster;
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
-        private Text _choiceTimerText;
         private Text _reticleText;
-        private Text _shieldText;
         private Text _diceText;
         private Text _movesText;
         private Text _ammoText;
@@ -75,6 +73,7 @@ namespace MazeParty.Multiplayer
         private Text _itemShopTitle;
         private Text _itemShopTooltip;
         private Text _itemShopStatus;
+        private Text _boardEventPopupMessage;
         private Text _minigameReadyTitle;
         private Text _minigameReadyNote;
         private Text _minigameReadyStatus;
@@ -95,7 +94,6 @@ namespace MazeParty.Multiplayer
         private int _lastRevision = -1;
         private bool _lastLocalBoardDeath;
         private int _lastBoardEffectRevision = -1;
-        private int _lastLandingEffectRevision = -1;
         private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
         private NetworkMinefieldPhase _lastMinefieldPhase = NetworkMinefieldPhase.Inactive;
         private int _lastMinefieldRound = -1;
@@ -176,6 +174,11 @@ namespace MazeParty.Multiplayer
 
         public void SetBoardUiVisible(bool visible)
         {
+            if (!visible && _openItemShopIndex >= 0)
+            {
+                CloseItemShop();
+            }
+
             if (_boardCanvas == null && uiBindings != null)
             {
                 _boardCanvas = uiBindings.RootCanvas;
@@ -205,10 +208,18 @@ namespace MazeParty.Multiplayer
         private void OnDestroy()
         {
             UnwireButtons();
+            UiPopupStack.Remove(_itemShopPanel);
             if (Instance == this)
             {
                 Instance = null;
             }
+        }
+
+        private void OnDisable()
+        {
+            CloseItemShop();
+            SetActive(_boardEventPopupPanel, false);
+            SetText(_boardEventPopupMessage, string.Empty);
         }
 
         private void Update()
@@ -287,6 +298,7 @@ namespace MazeParty.Multiplayer
 
             _openItemShopIndex = shopIndex;
             SetActive(_itemShopPanel, true);
+            UiPopupStack.Push(_itemShopPanel, CloseItemShop);
             HideShopItemTooltip();
             SetText(_itemShopStatus, _localAvatar.HasFreeItemSlot
                 ? GameText.T("Select an available item to buy it immediately.")
@@ -297,6 +309,7 @@ namespace MazeParty.Multiplayer
         {
             _openItemShopIndex = -1;
             SetActive(_itemShopPanel, false);
+            UiPopupStack.Remove(_itemShopPanel);
             HideShopItemTooltip();
         }
 
@@ -403,12 +416,11 @@ namespace MazeParty.Multiplayer
             _reconnectOverlay = uiBindings.ReconnectOverlay;
             _reticle = uiBindings.Reticle;
             _itemShopPanel = uiBindings.ItemShopPanel;
+            _boardEventPopupPanel = uiBindings.BoardEventPopupPanel;
             _reticleText = uiBindings.ReticleText;
             _turnText = uiBindings.TurnText;
             _phaseText = uiBindings.PhaseText;
             _phaseTimerText = uiBindings.PhaseTimerText;
-            _choiceTimerText = uiBindings.ChoiceTimerText;
-            _shieldText = uiBindings.ShieldText;
             _diceText = uiBindings.DiceText;
             _movesText = uiBindings.MovesText;
             _ammoText = uiBindings.AmmoText;
@@ -418,6 +430,7 @@ namespace MazeParty.Multiplayer
             _itemShopTitle = uiBindings.ItemShopTitle;
             _itemShopTooltip = uiBindings.ItemShopTooltip;
             _itemShopStatus = uiBindings.ItemShopStatus;
+            _boardEventPopupMessage = uiBindings.BoardEventPopupMessage;
             _minigameReadyTitle = uiBindings.MinigameReadyTitle;
             _minigameReadyNote = uiBindings.MinigameReadyNote;
             _minigameReadyStatus = uiBindings.MinigameReadyStatus;
@@ -531,6 +544,16 @@ namespace MazeParty.Multiplayer
                 match.FlowState == BoardFlowState.MinigameResult &&
                 !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
+            var landingEffectMessage = match.LastLandingEffectMessage;
+            var showBoardEventPopup = ShouldShowBoardEventPopup(
+                match.FlowState,
+                match.IsGlobalSimulationPaused,
+                match.LastLandingEffectType,
+                landingEffectMessage);
+            SetText(
+                _boardEventPopupMessage,
+                showBoardEventPopup ? landingEffectMessage : string.Empty);
+            SetActive(_boardEventPopupPanel, showBoardEventPopup);
             var showReticle =
                 ((match.FlowState == BoardFlowState.Action && !choicePending &&
                   !IsItemShopOpen) ||
@@ -730,29 +753,6 @@ namespace MazeParty.Multiplayer
                 timerLabel = MinigameDisplayFormatter.FormatClock(remaining);
             }
             SetText(_phaseTimerText, timerLabel);
-
-            SetText(_choiceTimerText,
-                match.FlowState == BoardFlowState.Action && _localAvatar != null &&
-                _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending
-                    ? GameText.F("CHOOSE  {0}",
-                      MinigameDisplayFormatter.FormatClock(
-                          match.ChoiceRemaining))
-                    : GameText.F("CHOICE  {0}", ChoiceLabel(_localAvatar)));
-
-            if (_shieldText != null)
-            {
-                var shieldRemaining = Math.Max(
-                    match.ShieldRemaining,
-                    _localAvatar != null
-                        ? _localAvatar.PersonalItemProtectionRemaining
-                        : 0d);
-                _shieldText.text = shieldRemaining > 0d
-                    ? GameText.F("SHIELD  {0:0.0}s", shieldRemaining)
-                    : GameText.T("SHIELD  OFF");
-                _shieldText.color = shieldRemaining > 0d
-                    ? uiBindings.ShieldActiveColor
-                    : uiBindings.ShieldInactiveColor;
-            }
         }
 
         private void RefreshLocalPlayer(NetworkMatchState match)
@@ -1186,7 +1186,6 @@ namespace MazeParty.Multiplayer
                 ? bouncingBalls.RoundNumber
                 : -1;
             var revealPending = IsMinigameRevealPending(match);
-            var landingEffectRevision = match.LastLandingEffectRevision;
             var localBoardDeath = _localAvatar != null &&
                                   _localAvatar.CurrentHealth <= 0;
             if (_lastRevision == match.StateRevision &&
@@ -1217,8 +1216,7 @@ namespace MazeParty.Multiplayer
                 _lastSequenceMemoryRound == sequenceMemoryRound &&
                 _lastBouncingBallsPhase == bouncingBallsPhase &&
                 _lastBouncingBallsRound == bouncingBallsRound &&
-                _lastMinigameRevealPending == revealPending &&
-                _lastLandingEffectRevision == landingEffectRevision)
+                _lastMinigameRevealPending == revealPending)
             {
                 return;
             }
@@ -1249,7 +1247,6 @@ namespace MazeParty.Multiplayer
             _lastBouncingBallsPhase = bouncingBallsPhase;
             _lastBouncingBallsRound = bouncingBallsRound;
             _lastMinigameRevealPending = revealPending;
-            _lastLandingEffectRevision = landingEffectRevision;
             if (match.IsKeyShopRevealActive)
             {
                 SetText(_statusText,
@@ -1264,12 +1261,6 @@ namespace MazeParty.Multiplayer
                     GameText.T("KNOCKED OUT: respawning at the nearest marked room. Input is locked."));
                 return;
             }
-            if (choice == ItemChoiceResolution.TimedOut)
-            {
-                SetText(_statusText, GameText.T("Choice timed out. DO NOT USE selected automatically."));
-                return;
-            }
-
             switch (match.FlowState)
             {
                 case BoardFlowState.TurnOverview:
@@ -1282,7 +1273,7 @@ namespace MazeParty.Multiplayer
                     SetText(_statusText, match.IsArrivalGraceActive
                         ? GameText.T("All players arrived. Top view opens when the countdown ends.")
                         : choice == ItemChoiceResolution.Pending
-                        ? GameText.T("Choose an item or DO NOT USE. Your personal limit is 30 seconds.")
+                        ? string.Empty
                         : GameText.T("WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item."));
                     break;
                 case BoardFlowState.AscendingResolve:
@@ -1297,10 +1288,9 @@ namespace MazeParty.Multiplayer
                         : GameText.T("SPECTATING: the camera follows the current fight room. Input is locked."));
                     break;
                 case BoardFlowState.LandingEffectResolve:
-                    SetText(_statusText,
-                        string.IsNullOrEmpty(match.LastLandingEffectMessage)
-                            ? GameText.T("Applying final landing effects in player order.")
-                            : match.LastLandingEffectMessage);
+                    SetText(
+                        _statusText,
+                        GameText.T("Applying final landing effects in player order."));
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     SetText(
@@ -3228,6 +3218,8 @@ namespace MazeParty.Multiplayer
             SetActive(_readyPanel, false);
             SetActive(_resultPanel, false);
             SetActive(_reconnectOverlay, false);
+            SetActive(_boardEventPopupPanel, false);
+            SetText(_boardEventPopupMessage, string.Empty);
             SetActive(_reticle, false);
             RefreshReticleColor(false);
             CloseItemShop();
@@ -3266,6 +3258,18 @@ namespace MazeParty.Multiplayer
             {
                 target.text = value;
             }
+        }
+
+        internal static bool ShouldShowBoardEventPopup(
+            BoardFlowState state,
+            bool isGlobalSimulationPaused,
+            BoardLandingEffectType effectType,
+            string message)
+        {
+            return state == BoardFlowState.LandingEffectResolve &&
+                   !isGlobalSimulationPaused &&
+                   effectType == BoardLandingEffectType.SpecialEvent &&
+                   !string.IsNullOrEmpty(message);
         }
 
         private static void SetItemIcon(Image target, Sprite sprite, Color color)
@@ -3318,23 +3322,6 @@ namespace MazeParty.Multiplayer
                    match.FlowState == BoardFlowState.MinigameIntroReady &&
                    Time.unscaledTime - _minigameRevealObservedAt <
                    MinigameScheduleTowerView.RevealDelaySeconds;
-        }
-
-        private static string ChoiceLabel(NetworkPlayerAvatar avatar)
-        {
-            if (avatar == null)
-            {
-                return "--";
-            }
-
-            switch (avatar.LocalChoiceResolution)
-            {
-                case ItemChoiceResolution.ItemSelected: return GameText.T("ITEM ACTIVE");
-                case ItemChoiceResolution.DoNotUse: return GameText.T("DO NOT USE");
-                case ItemChoiceResolution.TimedOut: return GameText.T("TIMEOUT / NO ITEM");
-                case ItemChoiceResolution.Pending: return GameText.T("PENDING");
-                default: return "--";
-            }
         }
 
         private static string ActionIconLabel(PlayerBoardActionState state)

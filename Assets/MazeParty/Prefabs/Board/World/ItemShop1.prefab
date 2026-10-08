@@ -443,6 +443,7 @@ Transform:
   - {fileID: 8424178685193302551}
   - {fileID: 2473489889917035791}
   - {fileID: 5805755350547180526}
+  - {fileID: 8731583423084436002}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &7674607633808116207
@@ -459,6 +460,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardShopVisual
   label: {fileID: 1086894049353031313}
   topViewHighlight: {fileID: 8846469436455002934}
+  locationHighlightVfx: {fileID: 563892465860992293}
   interactionColliders:
   - {fileID: 944220954722749538}
   availableText: 'ITEM SHOP {0}
@@ -733,4 +735,87 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 9210279802341734680, guid: 134d62d33db21b84eb10c6fed8037b92, type: 3}
   m_PrefabInstance: {fileID: 3191162632273654059}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8282708262319832350
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7019814352469301982}
+    m_Modifications:
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 2.7350008
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 2.7350008
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 2.7350008
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.00000023841858
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.01401
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.0000009536743
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8440113428989599803, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_Name
+      value: Shop Location Highlight VFX
+      objectReference: {fileID: 0}
+    - target: {fileID: 8440113428989599803, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+--- !u!1 &563892465860992293 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8440113428989599803, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+  m_PrefabInstance: {fileID: 8282708262319832350}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8731583423084436002 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 855340449565976380, guid: c3794ae3aadbe8844a37731245881e50, type: 3}
+  m_PrefabInstance: {fileID: 8282708262319832350}
   m_PrefabAsset: {fileID: 0}

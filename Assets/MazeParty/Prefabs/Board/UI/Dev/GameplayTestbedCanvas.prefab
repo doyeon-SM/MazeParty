@@ -687,7 +687,6 @@ GameObject:
   - component: {fileID: 4916982961251729227}
   - component: {fileID: 612857819488103873}
   - component: {fileID: 3889620819425337493}
-  - component: {fileID: 8519550670077705105}
   m_Layer: 0
   m_Name: Reticle
   m_TagString: Untagged
@@ -756,21 +755,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: +
---- !u!114 &8519550670077705105
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1807250696304076726}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 1}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &1889364303761036507
 GameObject:
   m_ObjectHideFlags: 0
@@ -4535,7 +4519,6 @@ GameObject:
   - component: {fileID: 7381993634587646552}
   - component: {fileID: 7858247954694292156}
   - component: {fileID: 4510932811744889007}
-  - component: {fileID: 1473101947834747386}
   m_Layer: 0
   m_Name: TooltipText
   m_TagString: Untagged
@@ -4604,21 +4587,6 @@ MonoBehaviour:
     m_VerticalOverflow: 0
     m_LineSpacing: 1
   m_Text: Hover an item for details.
---- !u!114 &1473101947834747386
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9042795422696005884}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
-  m_EffectColor: {r: 0, g: 0, b: 0, a: 0.7}
-  m_EffectDistance: {x: 1, y: -1}
-  m_UseGraphicAlpha: 1
 --- !u!1 &9202211069506663706
 GameObject:
   m_ObjectHideFlags: 0

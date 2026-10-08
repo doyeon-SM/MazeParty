@@ -390,6 +390,7 @@ namespace MazeParty.Multiplayer
             ApplyCrouchPresentation(_isCrouching.Value);
             ApplyCombatColliderState(CombatState);
             ApplyBoardDeathPresentation();
+            OnlineSessionController.Instance?.RefreshLobbyWorldNameplates();
             _localYaw = transform.eulerAngles.y;
             _serverYaw = _localYaw;
             _serverPitch = 0f;
@@ -2057,6 +2058,7 @@ namespace MazeParty.Multiplayer
         {
             ClearLocalWorldDieCache();
             ApplySlotVisual(current);
+            OnlineSessionController.Instance?.RefreshLobbyWorldNameplates();
             if (IsServer && _boardReady.Value)
             {
                 NetworkMatchState.Instance?.TryRestoreAvatarOnServer(this);

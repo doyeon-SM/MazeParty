@@ -15,6 +15,18 @@ namespace MazeParty.Multiplayer.Tests
         private const string LobbyPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
 
+        [SetUp]
+        public void SetUpPopupStack()
+        {
+            UiPopupStack.ClearForTests();
+        }
+
+        [TearDown]
+        public void TearDownPopupStack()
+        {
+            UiPopupStack.ClearForTests();
+        }
+
         [Test]
         public void PreLobbyGameplayBackground_IsAuthoredAndFollowsSessionVisibility()
         {
@@ -25,7 +37,9 @@ namespace MazeParty.Multiplayer.Tests
                 var connectionPanel = GetField<GameObject>(
                     view,
                     "connectionPanel");
-                var sessionPanel = GetField<GameObject>(view, "sessionPanel");
+                var sessionHeader = GetField<GameObject>(
+                    view,
+                    "sessionHeaderRoot");
                 var background = connectionPanel.transform.Find(
                     "Pre-Lobby Gameplay Background");
 
@@ -49,7 +63,7 @@ namespace MazeParty.Multiplayer.Tests
                     false,
                     string.Empty);
                 Assert.That(connectionPanel.activeSelf, Is.True);
-                Assert.That(sessionPanel.activeSelf, Is.False);
+                Assert.That(sessionHeader.activeSelf, Is.False);
                 Assert.That(background.gameObject.activeInHierarchy, Is.True,
                     "The gameplay background must be visible before joining a session.");
 
@@ -59,9 +73,9 @@ namespace MazeParty.Multiplayer.Tests
                     false,
                     string.Empty);
                 Assert.That(connectionPanel.activeSelf, Is.False);
-                Assert.That(sessionPanel.activeSelf, Is.True);
+                Assert.That(sessionHeader.activeSelf, Is.True);
                 Assert.That(background.gameObject.activeInHierarchy, Is.False,
-                    "The gameplay background must be hidden once the session panel is active.");
+                    "The gameplay background must be hidden once the session UI is active.");
             }
             finally
             {
@@ -152,10 +166,12 @@ namespace MazeParty.Multiplayer.Tests
                 view.Render(SessionSnapshot.Empty, false, false, string.Empty);
                 openButton.onClick.Invoke();
                 Assert.That(joinPopup.activeSelf, Is.True);
+                Assert.That(UiPopupStack.IsTop(joinPopup), Is.True);
 
                 joinCodeInput.SetTextWithoutNotify("secret");
                 cancelButton.onClick.Invoke();
                 Assert.That(joinPopup.activeSelf, Is.False);
+                Assert.That(UiPopupStack.Count, Is.Zero);
                 Assert.That(joinCodeInput.text, Is.Empty,
                     "Closing the popup must not retain a room code.");
             }
@@ -231,55 +247,59 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void PlayerRows_UseReadyNameColorAndModernUiHostStar()
+        public void ReadyGuidance_IsBottomRightWithoutLegacyRosterPanel()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
             {
                 var view = GetLobbyView(root);
-                var playerRows = GetField<Text[]>(view, "playerRows");
-                var hostIcons = GetField<Image[]>(view, "playerHostIcons");
-                var readyColor = GetField<Color>(view, "readyPlayerNameColor");
-                var waitingColor = GetField<Color>(view, "waitingPlayerNameColor");
+                var readyGuidance = GetField<GameObject>(view, "startHint");
+                var guidanceText = readyGuidance.GetComponent<Text>();
+                Assert.That(guidanceText, Is.Not.Null);
+                Assert.That(
+                    guidanceText.text,
+                    Is.EqualTo(GameText.T(
+                        "Exactly four ready players are required.")));
+                Assert.That(
+                    readyGuidance.transform.parent,
+                    Is.SameAs(root.transform),
+                    "The readiness guidance must be authored directly on the lobby canvas.");
+                AssertBottomRight((RectTransform)readyGuidance.transform);
 
-                Assert.That(readyColor.g, Is.GreaterThan(readyColor.r),
-                    "The authored ready-name color must read as green.");
-                Assert.That(readyColor.g, Is.GreaterThan(readyColor.b),
-                    "The authored ready-name color must read as green.");
-                Assert.That(waitingColor, Is.Not.EqualTo(readyColor));
-                Assert.That(hostIcons, Has.Length.EqualTo(playerRows.Length));
-
-                for (var index = 0; index < playerRows.Length; index++)
-                {
-                    Assert.That(hostIcons[index].transform.parent,
-                        Is.SameAs(playerRows[index].transform.parent));
-                    Assert.That(hostIcons[index].transform.GetSiblingIndex(),
-                        Is.LessThan(playerRows[index].transform.GetSiblingIndex()),
-                        "The host star must be authored to the left of the nickname.");
-                    Assert.That(hostIcons[index].sprite, Is.Not.Null);
-                    Assert.That(AssetDatabase.GetAssetPath(hostIcons[index].sprite),
-                        Is.EqualTo(
-                            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png"));
-                }
+                var authoredNames = root
+                    .GetComponentsInChildren<Transform>(true)
+                    .Select(transform => transform.name)
+                    .ToArray();
+                Assert.That(authoredNames, Does.Not.Contain("Session Panel"));
+                Assert.That(
+                    authoredNames.Any(name =>
+                        name.StartsWith("Player Row") ||
+                        name.StartsWith("Player Slot") ||
+                        name == "Host Star Icon"),
+                    Is.False,
+                    "Readiness and host state belong on world nameplates, not a lobby roster panel.");
 
                 view.Render(CreateSnapshotWithMixedReadiness(),
                     true,
                     false,
                     string.Empty);
+                Assert.That(readyGuidance.activeSelf, Is.True);
 
-                Assert.That(playerRows[0].text, Is.EqualTo("Host"),
-                    "Readiness and host status must be visual, not text suffixes.");
-                Assert.That(playerRows[0].color, Is.EqualTo(waitingColor));
-                Assert.That(hostIcons[0].gameObject.activeSelf, Is.True);
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        false),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(readyGuidance.activeSelf, Is.True,
+                    "Every player should see the readiness guidance while the room cannot start.");
 
-                Assert.That(playerRows[1].text, Is.EqualTo("Guest"));
-                Assert.That(playerRows[1].color, Is.EqualTo(readyColor));
-                Assert.That(hostIcons[1].gameObject.activeSelf, Is.False);
-                Assert.That(hostIcons.Skip(2).All(icon => !icon.gameObject.activeSelf),
-                    Is.True);
-                Assert.That(playerRows.Skip(2).All(row => row.color == waitingColor),
-                    Is.True,
-                    "Empty slots must restore the default nickname color.");
+                view.Render(CreateFourReadySnapshot(),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(readyGuidance.activeSelf, Is.False,
+                    "The guidance must clear once the host can start with four ready players.");
             }
             finally
             {
@@ -300,6 +320,12 @@ namespace MazeParty.Multiplayer.Tests
                 var wardrobeButton = GetField<Button>(
                     view,
                     "customizationButton");
+                var closeWardrobeButton = GetField<Button>(
+                    view,
+                    "closeCustomizationButton");
+
+                Assert.That(closeWardrobeButton.transform.IsChildOf(
+                    wardrobePanel.transform), Is.True);
 
                 BindButtonEvents(view);
                 view.Render(CreateSnapshot(MultiplayerConstants.LobbyPhase),
@@ -311,8 +337,10 @@ namespace MazeParty.Multiplayer.Tests
 
                 wardrobeButton.onClick.Invoke();
                 Assert.That(wardrobePanel.activeSelf, Is.True);
-                wardrobeButton.onClick.Invoke();
+                Assert.That(UiPopupStack.IsTop(wardrobePanel), Is.True);
+                closeWardrobeButton.onClick.Invoke();
                 Assert.That(wardrobePanel.activeSelf, Is.False);
+                Assert.That(UiPopupStack.Count, Is.Zero);
 
                 wardrobeButton.onClick.Invoke();
                 view.Render(CreateSnapshot(MultiplayerConstants.PlayingPhase),
@@ -425,6 +453,7 @@ namespace MazeParty.Multiplayer.Tests
 
                 boardSettingsButton.onClick.Invoke();
                 Assert.That(boardSettingsPanel.activeSelf, Is.True);
+                Assert.That(UiPopupStack.IsTop(boardSettingsPanel), Is.True);
                 Assert.That(selector.activeInHierarchy, Is.True);
                 Assert.That(mapName.text,
                     Is.EqualTo(GameText.F(
@@ -458,6 +487,7 @@ namespace MazeParty.Multiplayer.Tests
                     "Opening Board Settings must close Wardrobe.");
                 closeBoardSettingsButton.onClick.Invoke();
                 Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                Assert.That(UiPopupStack.Count, Is.Zero);
 
                 view.Render(CreateSnapshot(
                         MultiplayerConstants.LobbyPhase,
@@ -594,6 +624,23 @@ namespace MazeParty.Multiplayer.Tests
                 new BoardMapSelection("forest-graybox", 4));
         }
 
+        private static SessionSnapshot CreateFourReadySnapshot()
+        {
+            return new SessionSnapshot(
+                "ABCD",
+                true,
+                MultiplayerConstants.LobbyPhase,
+                "host",
+                new[]
+                {
+                    new OnlinePlayerSnapshot("host", "Host", 0, true, true),
+                    new OnlinePlayerSnapshot("guest-1", "Guest 1", 1, true, false),
+                    new OnlinePlayerSnapshot("guest-2", "Guest 2", 2, true, false),
+                    new OnlinePlayerSnapshot("guest-3", "Guest 3", 3, true, false)
+                },
+                new BoardMapSelection("forest-graybox", 4));
+        }
+
         private static T GetField<T>(OnlineLobbyView view, string name)
         {
             var field = typeof(OnlineLobbyView).GetField(
@@ -642,6 +689,22 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(rectTransform.anchorMin.y,
                 Is.EqualTo(0f).Within(0.001f));
             Assert.That(rectTransform.anchorMax.y,
+                Is.EqualTo(0f).Within(0.001f));
+        }
+
+        private static void AssertBottomRight(RectTransform rectTransform)
+        {
+            Assert.That(rectTransform.anchorMin.x,
+                Is.EqualTo(1f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.x,
+                Is.EqualTo(1f).Within(0.001f));
+            Assert.That(rectTransform.anchorMin.y,
+                Is.EqualTo(0f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.y,
+                Is.EqualTo(0f).Within(0.001f));
+            Assert.That(rectTransform.pivot.x,
+                Is.EqualTo(1f).Within(0.001f));
+            Assert.That(rectTransform.pivot.y,
                 Is.EqualTo(0f).Within(0.001f));
         }
 

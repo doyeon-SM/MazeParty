@@ -26,7 +26,11 @@ namespace MazeParty.Gameplay
         [SerializeField] private SpriteRenderer faceSprite;
         [SerializeField] private Transform nameplateAnchor;
         [SerializeField] private TextMesh nameText;
+        [SerializeField] private SpriteRenderer lobbyHostIcon;
+        [SerializeField] private Color lobbyReadyNameColor =
+            new Color32(88, 220, 112, 255);
         [SerializeField] private GameObject topViewHighlight;
+        [SerializeField] private GameObject shieldVfx;
 
         [Header("First-person presentation")]
         [SerializeField] private Transform firstPersonPresentation;
@@ -61,7 +65,10 @@ namespace MazeParty.Gameplay
         public SpriteRenderer FaceSprite => faceSprite;
         public Transform NameplateAnchor => nameplateAnchor;
         public TextMesh NameText => nameText;
+        public SpriteRenderer LobbyHostIcon => lobbyHostIcon;
+        public Color LobbyReadyNameColor => lobbyReadyNameColor;
         public GameObject TopViewHighlight => topViewHighlight;
+        public GameObject ShieldVfx => shieldVfx;
         public Transform FirstPersonPresentation => firstPersonPresentation;
         public Transform FirstPersonHands => firstPersonHands;
         public Transform FirstPersonLeftHand => firstPersonLeftHand;
@@ -90,7 +97,9 @@ namespace MazeParty.Gameplay
             faceSprite != null &&
             nameplateAnchor != null &&
             nameText != null &&
+            lobbyHostIcon != null &&
             topViewHighlight != null &&
+            shieldVfx != null &&
             firstPersonPresentation != null &&
             firstPersonHands != null &&
             firstPersonLeftHand != null &&
@@ -120,7 +129,9 @@ namespace MazeParty.Gameplay
             SpriteRenderer face,
             Transform nameplate,
             TextMesh displayName,
+            SpriteRenderer hostIcon,
             GameObject highlight,
+            GameObject shield,
             Transform firstPersonRoot,
             Transform firstPersonHandRoot,
             Transform firstPersonLeft,
@@ -148,7 +159,9 @@ namespace MazeParty.Gameplay
             faceSprite = face;
             nameplateAnchor = nameplate;
             nameText = displayName;
+            lobbyHostIcon = hostIcon;
             topViewHighlight = highlight;
+            shieldVfx = shield;
             firstPersonPresentation = firstPersonRoot;
             firstPersonHands = firstPersonHandRoot;
             firstPersonLeftHand = firstPersonLeft;

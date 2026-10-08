@@ -357,8 +357,7 @@ namespace MazeParty.Editor
                 "Tagger Aim",
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
-                typeof(Text),
-                typeof(Outline));
+                typeof(Text));
             aim.transform.SetParent(parent, false);
             var rect = aim.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
@@ -375,9 +374,6 @@ namespace MazeParty.Editor
             text.raycastTarget = false;
             text.text = "+";
 
-            var outline = aim.GetComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.9f);
-            outline.effectDistance = new Vector2(2f, -2f);
             aim.SetActive(false);
             return aim;
         }
@@ -471,8 +467,7 @@ namespace MazeParty.Editor
                 "Numeral",
                 typeof(RectTransform),
                 typeof(CanvasRenderer),
-                typeof(Text),
-                typeof(Outline));
+                typeof(Text));
             numeralObject.transform.SetParent(content.transform, false);
             var numeralRect = numeralObject.GetComponent<RectTransform>();
             numeralRect.anchorMin = Vector2.zero;
@@ -487,9 +482,6 @@ namespace MazeParty.Editor
             numeral.color = Color.white;
             numeral.raycastTarget = false;
             numeral.text = "3";
-            var outline = numeralObject.GetComponent<Outline>();
-            outline.effectColor = new Color(0f, 0f, 0f, 0.85f);
-            outline.effectDistance = new Vector2(3f, -3f);
 
             root.GetComponent<MinigameStartCountdownView>()
                 .ConfigureUiBindings(canvas, content, numeral);

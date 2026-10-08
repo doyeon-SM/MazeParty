@@ -66,7 +66,7 @@ namespace MazeParty.Multiplayer
             _landingEffectAppliedMask = 0;
             _landingEffectSlotStartsAt = 0d;
             _lastLandingEffectPreviewKey = -1;
-            _lastLandingEffectMessage.Value = default;
+            ClearLandingEffectPresentationOnServer();
             AdvanceLandingEffectResolutionOnServer(ServerNow);
         }
 
@@ -226,6 +226,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        BoardLandingEffectType.SpecialEvent,
                         GameText.N("SPECIAL EVENT  TARGET > {0}"),
                         GetPreviewTargetLabel(resolution, slot, previewTick));
                     break;
@@ -233,6 +234,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        BoardLandingEffectType.SpecialEvent,
                         GameText.N("SPECIAL EVENT  {0}  RESOURCE > {1}"),
                         GetSpecialEventTargetLabel(resolution, slot),
                         GetPreviewResourceLabel(previewTick));
@@ -241,6 +243,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        BoardLandingEffectType.SpecialEvent,
                         GameText.N("SPECIAL EVENT  {0}  {1}  ACTION > {2}"),
                         GetSpecialEventTargetLabel(resolution, slot),
                         GetSpecialEventResourceLabel(resolution),
@@ -276,6 +279,7 @@ namespace MazeParty.Multiplayer
                 PublishLandingEffectOnServer(
                     slot,
                     tile,
+                    effect,
                     GameText.N("NO EFFECT (0 change)"));
                 return;
             }
@@ -289,6 +293,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        effect,
                         effect == BoardLandingEffectType.GoldGain
                             ? GameText.N("GOLD GAIN {0} GOLD")
                             : GameText.N("GOLD LOSS {0} GOLD"),
@@ -302,6 +307,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        effect,
                         GameText.N("HEALING +{0} HP"),
                         healed.ToString(CultureInfo.InvariantCulture));
                     break;
@@ -316,6 +322,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        effect,
                         GameText.N("DAMAGE -{0} HP"),
                         damage.ToString(CultureInfo.InvariantCulture));
                     break;
@@ -332,6 +339,7 @@ namespace MazeParty.Multiplayer
                     PublishLandingEffectOnServer(
                         slot,
                         tile,
+                        effect,
                         GameText.N("NO EFFECT (0 change)"));
                     break;
             }
@@ -351,6 +359,7 @@ namespace MazeParty.Multiplayer
                 PublishLandingEffectOnServer(
                     slot,
                     tile,
+                    BoardLandingEffectType.ItemReward,
                     GameText.N("ITEM REWARD +1 {0}"),
                     PrototypeItemCatalog.Get(reward).DisplayName);
                 return;
@@ -359,6 +368,7 @@ namespace MazeParty.Multiplayer
             PublishLandingEffectOnServer(
                 slot,
                 tile,
+                BoardLandingEffectType.ItemReward,
                 GameText.N("ITEM REWARD +0 (INVENTORY FULL)"));
         }
 
@@ -399,6 +409,7 @@ namespace MazeParty.Multiplayer
             PublishLandingEffectOnServer(
                 actorSlot,
                 tile,
+                BoardLandingEffectType.SpecialEvent,
                 resolution.Operation == BoardSpecialEventOperation.Gain
                     ? GameText.N("EVENT RESULT: {0} RECEIVES UP TO {1}")
                     : GameText.N("EVENT RESULT: {0} LOSES UP TO {1}"),
@@ -472,6 +483,7 @@ namespace MazeParty.Multiplayer
             PublishLandingEffectOnServer(
                 actorSlot,
                 tile,
+                BoardLandingEffectType.SpecialEvent,
                 detailFormat,
                 ((opponentGives ? sourceSlot : destinationSlot) + 1)
                     .ToString(CultureInfo.InvariantCulture),
@@ -634,9 +646,19 @@ namespace MazeParty.Multiplayer
             Array.Clear(_specialEventPlan, 0, _specialEventPlan.Length);
             if (clearMessage)
             {
-                _lastLandingEffectMessage.Value = default;
-                _lastLandingEffectRevision.Value++;
+                ClearLandingEffectPresentationOnServer();
             }
+        }
+
+        private void ClearLandingEffectPresentationOnServer()
+        {
+            if (_lastLandingEffectMessage.Value.Length == 0)
+            {
+                return;
+            }
+
+            _lastLandingEffectMessage.Value = default;
+            _lastLandingEffectRevision.Value++;
         }
     }
 }

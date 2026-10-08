@@ -381,7 +381,7 @@ namespace MazeParty.Multiplayer
         {
             var localIsTagger =
                 state.IsTagger(_localSlot);
-            // The tagger must see their own player and countdown outline
+            // The tagger must see their own player and countdown overlay
             // before play starts. Switch back to the original owner-only
             // first-person camera as soon as the shared countdown ends.
             var showingStartCountdown =

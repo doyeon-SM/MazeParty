@@ -143,6 +143,46 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void DetectionMovementLock_FiltersInputWithoutBlockingHazardsOrFinish()
+        {
+            Assert.That(
+                MinefieldPlayerMotor.FilterMovementInput(
+                    new Vector2(2f, 0f),
+                    true,
+                    false),
+                Is.EqualTo(Vector2.right));
+            Assert.That(
+                MinefieldPlayerMotor.FilterMovementInput(
+                    Vector2.one,
+                    true,
+                    true),
+                Is.EqualTo(Vector2.zero));
+
+            var playerObject = CreateObject("Detection Locked Player");
+            playerObject.AddComponent<CharacterController>();
+            var actor = playerObject.AddComponent<MinefieldPlayerActor>();
+            actor.ConfigurePlayerSlot(0);
+            var motor = playerObject.AddComponent<MinefieldPlayerMotor>();
+            motor.Configure(null, actor, null);
+            motor.SetMovementInputLocked(true);
+
+            Assert.That(motor.MovementInputLocked, Is.True);
+            Assert.That(actor.CanReceiveHazards, Is.True);
+
+            var mineObject = CreateObject("Detection Lock Mine");
+            mineObject.AddComponent<BoxCollider>();
+            var mine = mineObject.AddComponent<MinefieldMine>();
+            var hit = mine.ResolveContactAuthoritatively(actor);
+
+            Assert.That(hit.WasApplied, Is.True);
+            Assert.That(actor.State, Is.EqualTo(MinefieldPlayerState.Crippled));
+
+            actor.ResetForRoundAuthoritatively(0);
+            Assert.That(actor.ApplyAuthoritativeFinish(), Is.True);
+            Assert.That(actor.State, Is.EqualTo(MinefieldPlayerState.Finished));
+        }
+
+        [Test]
         public void Crusher_AdvancesByProgressAndEliminatesContact()
         {
             var crusherObject = CreateObject("Crusher");

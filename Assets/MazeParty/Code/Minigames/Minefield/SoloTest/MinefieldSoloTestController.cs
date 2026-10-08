@@ -23,7 +23,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         private const float CrusherStartOffset = 2.5f;
         private const float CrusherEndOffset = 1f;
         private const float MineTriggerRadius = 1.05f;
-        private const float SonarVisualSeconds = 0.75f;
+        private const float SonarVisualSeconds =
+            (float)NetworkMinefieldState.SonarDetectionSeconds;
 
         private MinefieldSoloSession _session;
         private NetworkMinefieldState _networkState;
@@ -154,6 +155,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _session.Tick(Time.unscaledDeltaTime);
             ApplySessionTransition(previousPhase, previousRound);
+            RefreshSonarMovementLock();
 
             if (_sonarPulse != null)
             {
@@ -182,6 +184,17 @@ namespace MazeParty.Dev.MinigameSoloTest
             if (_sonar != null)
             {
                 _sonar.PulseResolved -= HandleSonarResolved;
+            }
+            if (_mineRegistry != null)
+            {
+                var mines = _mineRegistry.Mines;
+                for (var index = 0; index < mines.Count; index++)
+                {
+                    if (mines[index] != null)
+                    {
+                        mines[index].ContactResolved -= HandleMineContactResolved;
+                    }
+                }
             }
             if (_sonarPulseMaterial != null)
             {
@@ -368,6 +381,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             _playerMotor.SetLocalPrediction(true);
             _playerMotor.SetInputAuthority(true);
             _playerMotor.SetMovementEnabled(false);
+            _playerMotor.SetMovementInputLocked(false);
         }
 
         private void CreatePlayerSiren(PlayerAvatarVisual avatarVisual)
@@ -490,6 +504,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 GetRunnerStartPosition(),
                 Quaternion.identity);
             _playerMotor.SetMovementEnabled(false);
+            _playerMotor.SetMovementInputLocked(false);
             _sonar.SetSonarEnabled(false);
             _sonarPulseUntil = float.NegativeInfinity;
             if (_sonarPulse != null)
@@ -513,6 +528,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 var mine = child.GetComponent<MinefieldMine>();
                 if (mine != null)
                 {
+                    mine.ContactResolved -= HandleMineContactResolved;
                     mine.ArmForRoundAuthoritatively(false);
                 }
 
@@ -534,6 +550,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 var mine = mineObject.AddComponent<MinefieldMine>();
                 mine.ConfigureRegistry(_mineRegistry);
                 mine.SetAutoResolveContacts(true);
+                mine.ContactResolved += HandleMineContactResolved;
 
                 var visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
                 visual.name = "Sonar Revealed Visual";
@@ -601,6 +618,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             _playerActor.SetHazardsEnabledAuthoritatively(true);
             _playerMotor.SetMovementEnabled(true);
+            _playerMotor.SetMovementInputLocked(false);
             _sonar.SetSonarEnabled(true);
             _crusher.BeginSweepAuthoritatively();
         }
@@ -615,6 +633,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
 
             _playerMotor.SetMovementEnabled(false);
+            _playerMotor.SetMovementInputLocked(false);
             _sonar.SetSonarEnabled(false);
             _crusher.StopSweepAuthoritatively();
         }
@@ -622,6 +641,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         private void EnterComplete()
         {
             _playerMotor.SetMovementEnabled(false);
+            _playerMotor.SetMovementInputLocked(false);
             _sonar.SetSonarEnabled(false);
             _crusher.StopSweepAuthoritatively();
             Debug.Log(
@@ -671,6 +691,39 @@ namespace MazeParty.Dev.MinigameSoloTest
             MinefieldSonarResult result)
         {
             _sonarPulseUntil = Time.unscaledTime + SonarVisualSeconds;
+            _playerMotor?.SetMovementInputLocked(true);
+        }
+
+        private void RefreshSonarMovementLock()
+        {
+            if (_playerMotor == null || _session == null)
+            {
+                return;
+            }
+
+            _playerMotor.SetMovementInputLocked(
+                _session.Phase == MinefieldSoloPhase.Running &&
+                Time.unscaledTime < _sonarPulseUntil);
+        }
+
+        private void HandleMineContactResolved(
+            MinefieldMine mine,
+            MinefieldPlayerActor _,
+            MinefieldHitResolution resolution)
+        {
+            var explosionPrefab = _networkView != null
+                ? _networkView.MineExplosionVfxPrefab
+                : null;
+            if (!resolution.WasApplied || mine == null || explosionPrefab == null)
+            {
+                return;
+            }
+
+            OneShotVfxPool.Play(
+                explosionPrefab,
+                mine.transform.position + Vector3.up * 0.35f,
+                Quaternion.identity,
+                0.7f);
         }
 
         private string GetPhaseLabel()

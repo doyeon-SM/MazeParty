@@ -436,11 +436,27 @@ namespace MazeParty.Multiplayer.Tests
                     LandingEffectMessage.Encode(3, false, 0, 0, "NO EFFECT (0 change)")),
                 Is.EqualTo("P4: NO EFFECT (0 change)"));
 
+            var legacy = string.Join(
+                LandingEffectMessage.Separator.ToString(),
+                "1",
+                "0",
+                "0",
+                "0",
+                "LEGACY EFFECT {0}",
+                "READY");
+            Assert.That(
+                LandingEffectMessage.Format(legacy),
+                Is.EqualTo("P2: LEGACY EFFECT READY"));
+            Assert.That(
+                LandingEffectMessage.GetEffectType(legacy),
+                Is.EqualTo(BoardLandingEffectType.None));
+
             var roulette = LandingEffectMessage.Encode(
                 3,
                 true,
                 -12,
                 34,
+                BoardLandingEffectType.SpecialEvent,
                 "SPECIAL EVENT  {0}  {1}  ACTION > {2}",
                 "EVERYONE ELSE",
                 "30 GOLD",
@@ -454,6 +470,7 @@ namespace MazeParty.Multiplayer.Tests
                 true,
                 -12,
                 34,
+                BoardLandingEffectType.SpecialEvent,
                 "EVENT RESULT: P{0} STEALS {2} GOLD FROM P{1}",
                 "4",
                 "1",
@@ -471,6 +488,58 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(LandingEffectMessage.Format(encoded),
                 Is.EqualTo("P1 (3,4): 아이템 보상 +1 지뢰"));
             Assert.That(LandingEffectMessage.Format(string.Empty), Is.Empty);
+        }
+
+        [Test]
+        public void LandingEffectMessage_TypeMarkerDoesNotLeaveAStaleSpecialEvent()
+        {
+            var specialEvent = LandingEffectMessage.Encode(
+                0,
+                true,
+                1,
+                2,
+                BoardLandingEffectType.SpecialEvent,
+                "SPECIAL EVENT  TARGET > {0}",
+                "P2");
+            var standardEvent = LandingEffectMessage.Encode(
+                1,
+                true,
+                2,
+                3,
+                BoardLandingEffectType.GoldGain,
+                "GOLD GAIN {0} GOLD",
+                "+3");
+
+            Assert.That(
+                LandingEffectMessage.GetEffectType(specialEvent),
+                Is.EqualTo(BoardLandingEffectType.SpecialEvent),
+                "A new special-event roulette must carry the popup type.");
+            Assert.That(
+                LandingEffectMessage.GetEffectType(standardEvent),
+                Is.EqualTo(BoardLandingEffectType.GoldGain),
+                "A later standard event must replace the special-event type.");
+            Assert.That(
+                LandingEffectMessage.GetEffectType(string.Empty),
+                Is.EqualTo(BoardLandingEffectType.None),
+                "Clearing the phase payload must clear the popup type atomically.");
+
+            var futureType = (BoardLandingEffectType)200;
+            var futurePayload = LandingEffectMessage.Encode(
+                2,
+                false,
+                0,
+                0,
+                futureType,
+                "FUTURE EFFECT {0}",
+                "READY");
+            Assert.That(
+                LandingEffectMessage.GetEffectType(futurePayload),
+                Is.EqualTo(futureType),
+                "Appended effect types must retain the typed payload header.");
+            Assert.That(
+                LandingEffectMessage.Format(futurePayload),
+                Is.EqualTo("P3: FUTURE EFFECT READY"),
+                "Unknown future types must not shift the detail field index.");
         }
 
         private sealed class MemorySettingsStore : IGameSettingsStore

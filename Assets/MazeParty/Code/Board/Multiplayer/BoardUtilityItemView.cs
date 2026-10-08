@@ -33,15 +33,36 @@ namespace MazeParty.Multiplayer
             cancelButton.onClick.AddListener(Close);
             Close();
         }
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+        private void OnDestroy()
+        {
+            UiPopupStack.Remove(targetPanel);
+            if (Instance == this) Instance = null;
+        }
+
+        private void OnDisable()
+        {
+            Close();
+        }
+
         public void Open(NetworkPlayerAvatar local)
         {
             var match = NetworkMatchState.Instance;
             if (!HasRequiredReferences || local == null || local.IsSwapping || match == null || !match.CanAcceptActionInput ||
                 local.LocalEquippedItem != PrototypeItemId.PositionSwapper) return;
-            _local = local; _awaitOpeningRelease = true; targetPanel.SetActive(true); RefreshTargets(match);
+            _local = local;
+            _awaitOpeningRelease = true;
+            targetPanel.SetActive(true);
+            UiPopupStack.Push(targetPanel, Close);
+            RefreshTargets(match);
         }
-        public void Close() { if (targetPanel != null) targetPanel.SetActive(false); }
+        public void Close()
+        {
+            if (targetPanel != null)
+            {
+                targetPanel.SetActive(false);
+                UiPopupStack.Remove(targetPanel);
+            }
+        }
         private void Select(int slot) { if (_local != null) _local.ChooseSwapTarget(slot); Close(); }
         private void Update()
         {
@@ -52,8 +73,19 @@ namespace MazeParty.Multiplayer
             bool board = match != null && match.IsSpawned && match.GameplayEnabled && match.FlowState <= BoardFlowState.LandingEffectResolve;
             if (!board || _local == null)
             { Close(); statusText.text = ""; noticeText.text = ""; return; }
-            if (!match.CanAcceptActionInput || _local.IsSwapping || _local.LocalEquippedItem != PrototypeItemId.PositionSwapper ||
-                Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame) Close();
+            if (!match.CanAcceptActionInput || _local.IsSwapping ||
+                _local.LocalEquippedItem != PrototypeItemId.PositionSwapper) Close();
+            if (targetPanel.activeSelf &&
+                UiPopupStack.IsTop(targetPanel) &&
+                Keyboard.current != null &&
+                Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                var menu = FindAnyObjectByType<GameMenuView>();
+                if (menu == null || !menu.isActiveAndEnabled)
+                {
+                    Close();
+                }
+            }
             if (Mouse.current == null || !Mouse.current.leftButton.isPressed) _awaitOpeningRelease = false;
             if (targetPanel.activeSelf) RefreshTargets(match);
             statusText.text = _local.IsSwapping ? GameText.F(castingFormat, _local.LocalSwapRemaining) : _local.IsCloaked ? GameText.T(cloakText) : "";

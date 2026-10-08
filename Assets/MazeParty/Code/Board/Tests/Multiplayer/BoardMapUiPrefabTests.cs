@@ -79,6 +79,16 @@ namespace MazeParty.Multiplayer.Tests
             var badges = root.GetComponent<BoardPlayerStatusBadges>();
             Assert.That(map, Is.Not.Null);
             Assert.That(map.HasRequiredReferences, Is.True);
+            var mapData = new SerializedObject(map);
+            var fullMapPanel = mapData.FindProperty("fullMapPanel")
+                .objectReferenceValue as GameObject;
+            var fullMapCloseButton = mapData.FindProperty("fullMapCloseButton")
+                .objectReferenceValue as UnityEngine.UI.Button;
+            Assert.That(fullMapPanel, Is.Not.Null);
+            Assert.That(fullMapCloseButton, Is.Not.Null);
+            Assert.That(fullMapCloseButton.transform.IsChildOf(
+                fullMapPanel.transform), Is.True,
+                "The full-map close control must be authored inside the popup prefab.");
             var minimap = root.GetComponent<BoardMinimapView>();
             Assert.That(minimap, Is.Not.Null);
             Assert.That(minimap.HasRequiredReferences, Is.True);

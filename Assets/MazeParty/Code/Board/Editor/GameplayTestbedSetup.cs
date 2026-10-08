@@ -681,9 +681,8 @@ namespace MazeParty.Editor
                 hover.Configure(i);
             }
 
-            var tooltip = CreateText(panel.transform, "TooltipText", "Hover an item for details.", 18, TextAnchor.MiddleCenter,
+            CreateText(panel.transform, "TooltipText", "Hover an item for details.", 18, TextAnchor.MiddleCenter,
                 new Vector2(0f, -67f), new Vector2(700f, 62f), new Color(1f, 0.86f, 0.42f));
-            tooltip.gameObject.AddComponent<Outline>().effectColor = new Color(0f, 0f, 0f, 0.7f);
 
             CreateButton(panel.transform, "NoItemButton", "DO NOT USE", new Vector2(0f, -142f), new Vector2(300f, 54f), new Color(0.42f, 0.2f, 0.23f));
         }
@@ -707,7 +706,6 @@ namespace MazeParty.Editor
             var reticle = CreateText(canvas, "Reticle", "+", 32, TextAnchor.MiddleCenter,
                 Vector2.zero, new Vector2(50f, 50f), Color.white);
             reticle.raycastTarget = false;
-            reticle.gameObject.AddComponent<Outline>().effectColor = Color.black;
         }
 
         private static GameObject CreateTarget(

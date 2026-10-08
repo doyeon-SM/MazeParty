@@ -1,4 +1,5 @@
 using Arikan;
+using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
@@ -272,6 +273,7 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void LocalRadiusAndFullMap_AreBoundToPlayerPositionAndBoardLifecycle()
         {
+            UiPopupStack.ClearForTests();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
             var instance = Object.Instantiate(prefab);
@@ -308,9 +310,15 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(dot.gameObject.activeSelf, Is.False);
                 }
                 var controller = instance.GetComponent<BoardMapView>();
+                typeof(BoardMapView).GetMethod(
+                        "WireFullMapCloseButton",
+                        BindingFlags.Instance | BindingFlags.NonPublic)
+                    ?.Invoke(controller, new object[] { true });
                 var controllerData = new SerializedObject(controller);
                 var full = (BoardMinimapView)controllerData.FindProperty("fullMap").objectReferenceValue;
                 var panel = (GameObject)controllerData.FindProperty("fullMapPanel").objectReferenceValue;
+                var closeButton = (Button)controllerData
+                    .FindProperty("fullMapCloseButton").objectReferenceValue;
                 Assert.That(full.HasRequiredReferences, Is.True);
                 // Check the actual prefab policy for every possible local seat, including ownership changes.
                 foreach (var view in new[] { local, full })
@@ -375,6 +383,14 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(full.IsPositionVisible(Vector3.one * 1000f), Is.True);
                 controller.UpdateFullMapState(true, true);
                 Assert.That(controller.FullMapOpen && panel.activeSelf, Is.True);
+                Assert.That(UiPopupStack.IsTop(panel), Is.True);
+                closeButton.onClick.Invoke();
+                Assert.That(controller.FullMapOpen, Is.False,
+                    "The authored close button must clear the user-open latch.");
+                Assert.That(panel.activeSelf, Is.False,
+                    "The authored close button must hide a non-forced full map.");
+                Assert.That(UiPopupStack.Count, Is.Zero);
+                controller.UpdateFullMapState(true, true);
                 controller.UpdateFullMapState(true, false);
                 Assert.That(controller.FullMapOpen, Is.True, "Opening does not require holding M.");
                 controller.UpdateFullMapState(true, true);
@@ -383,6 +399,8 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(controller.FullMapOpen, Is.False,
                     "A forced turn overview must not mutate the M-key latch.");
                 Assert.That(panel.activeSelf, Is.True);
+                Assert.That(UiPopupStack.Count, Is.Zero,
+                    "The automatic turn-overview map is not a dismissible popup.");
                 controller.UpdateFullMapState(true, false, true);
                 Assert.That(panel.activeSelf, Is.True,
                     "Repeated freeform overview refreshes keep the authored panel active.");
@@ -396,6 +414,7 @@ namespace MazeParty.Multiplayer.Tests
             }
             finally
             {
+                UiPopupStack.ClearForTests();
                 Object.DestroyImmediate(player);
                 Object.DestroyImmediate(board);
                 Object.DestroyImmediate(instance);
