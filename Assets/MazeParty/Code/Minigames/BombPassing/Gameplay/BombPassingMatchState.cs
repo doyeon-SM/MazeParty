@@ -302,17 +302,24 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             _players[slot].FacingZ = z / magnitude;
         }
 
-        public BombPassingInteraction TryAttack(int slot)
+        public bool CanStartAttack(int slot)
         {
             ValidateSlot(slot);
             var actor = _players[slot];
-            if (IsComplete || actor.IsEliminated ||
-                actor.StunnedUntil > MatchElapsedSeconds + TimeEpsilon ||
-                actor.NextAttackAt > MatchElapsedSeconds + TimeEpsilon)
+            return !IsComplete &&
+                !actor.IsEliminated &&
+                actor.StunnedUntil <= MatchElapsedSeconds + TimeEpsilon &&
+                actor.NextAttackAt <= MatchElapsedSeconds + TimeEpsilon;
+        }
+
+        public BombPassingInteraction TryAttack(int slot)
+        {
+            if (!CanStartAttack(slot))
             {
                 return NoInteraction(slot);
             }
 
+            var actor = _players[slot];
             actor.NextAttackAt =
                 MatchElapsedSeconds +
                 BombPassingRules.AttackCooldownSeconds;

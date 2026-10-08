@@ -24,6 +24,10 @@ namespace MazeParty.Editor
         private const string RoundedPanelSpritePath =
             "Assets/Ignore/Modern UI Pack/Textures/Border/Rounded/1024px/" +
             "Rounded Filled 1024px.png";
+        private const string HostStarSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png";
+        private const string BoardSettingsIconPath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/System/Settings.png";
         private const string MatchSkyboxPath =
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/" +
             "FS000_Night_01.mat";
@@ -92,8 +96,8 @@ namespace MazeParty.Editor
                 "NetworkPlayer prefab, and the 32-room Board flow vertical slice.");
         }
 
-        [MenuItem("MazeParty/Setup/Upgrade Lobby Map Selector")]
-        public static void UpgradeLobbyMapSelector()
+        [MenuItem("MazeParty/Setup/Upgrade Lobby Session UI")]
+        public static void UpgradeLobbySessionUi()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 LobbyCanvasPrefabPath);
@@ -113,126 +117,647 @@ namespace MazeParty.Editor
                         "LobbyCanvas.prefab has no OnlineLobbyView component.");
                 }
 
+                var font = LoadLobbyFont();
                 var serializedView = new SerializedObject(view);
-                var rootProperty = serializedView.FindProperty(
+                var sessionPanel = FindRequiredChild(
+                    contents.transform,
+                    "Session Panel");
+                var lobbyWindow = FindRequiredChild(
+                    contents.transform,
+                    "Lobby Window");
+                var inviteCodeText = GetRequiredReference<Text>(
+                    serializedView,
+                    "inviteCodeText");
+                var revealControl = GetRequiredReference<HoldToRevealButton>(
+                    serializedView,
+                    "inviteCodeRevealButton");
+                var copyButton = GetRequiredReference<Button>(
+                    serializedView,
+                    "copyButton");
+                var readyButton = GetRequiredReference<Button>(
+                    serializedView,
+                    "readyButton");
+                var startButton = GetRequiredReference<Button>(
+                    serializedView,
+                    "startButton");
+                var wardrobeButton = GetRequiredReference<Button>(
+                    serializedView,
+                    "customizationButton");
+                var boardMapSelection = GetRequiredReference<GameObject>(
+                    serializedView,
                     "boardMapSelectionRoot");
-                var previousProperty = serializedView.FindProperty(
-                    "previousBoardMapButton");
-                var nextProperty = serializedView.FindProperty(
-                    "nextBoardMapButton");
-                var nameProperty = serializedView.FindProperty("boardMapNameText");
-                if (rootProperty == null || previousProperty == null ||
-                    nextProperty == null || nameProperty == null)
+                var playerRows = GetRequiredReferenceArray<Text>(
+                    serializedView,
+                    "playerRows",
+                    MultiplayerConstants.MaxPlayers);
+
+                var hadLobbyPresentationBindings =
+                    serializedView.FindProperty("sessionHeaderRoot")
+                        ?.objectReferenceValue != null;
+                var sessionHeader = AuthorLobbySessionHeader(
+                    contents.transform,
+                    inviteCodeText,
+                    revealControl.GetComponent<Button>(),
+                    copyButton);
+                var sessionActions = AuthorLobbySessionActions(
+                    contents.transform,
+                    readyButton,
+                    startButton);
+                var playerHostIcons = AuthorLobbyPlayerRows(
+                    sessionPanel,
+                    playerRows);
+                AuthorBoardSettings(
+                    contents.transform,
+                    lobbyWindow,
+                    boardMapSelection,
+                    wardrobeButton,
+                    font,
+                    out var boardSettingsPanel,
+                    out var boardSettingsButton,
+                    out var closeBoardSettingsButton);
+
+                view.ConfigureLobbyPresentation(
+                    sessionHeader,
+                    sessionActions,
+                    playerHostIcons,
+                    boardSettingsPanel,
+                    boardSettingsButton,
+                    closeBoardSettingsButton);
+                EditorUtility.SetDirty(view);
+
+                if (!hadLobbyPresentationBindings)
                 {
-                    throw new System.InvalidOperationException(
-                        "OnlineLobbyView map-selector fields are unavailable. " +
-                        "Wait for scripts to compile, then run this command again.");
+                    serializedView.Update();
+                    serializedView.FindProperty("readyPlayerNameColor").colorValue =
+                        new Color32(88, 220, 112, 255);
+                    serializedView.FindProperty("waitingPlayerNameColor").colorValue =
+                        new Color32(235, 242, 255, 255);
+                    serializedView.ApplyModifiedPropertiesWithoutUndo();
                 }
 
-                var row = rootProperty.objectReferenceValue as GameObject;
-                var created = false;
-                if (row == null)
-                {
-                    var sessionPanel = FindRequiredChild(
-                        contents.transform,
-                        "Session Panel");
-                    var readyButton = FindRequiredChild(
-                        sessionPanel,
-                        "Ready Button");
-                    row = FindChild(sessionPanel, "Board Map Selection");
-                    if (row == null)
-                    {
-                        var font = Resources.Load<Font>(
-                            "MazeParty/Fonts/PlayerNameFont");
-                        if (font == null)
-                        {
-                            font = Resources.GetBuiltinResource<Font>(
-                                "LegacyRuntime.ttf");
-                        }
-
-                        if (font == null)
-                        {
-                            throw new System.InvalidOperationException(
-                                "A font is required to author the lobby map selector.");
-                        }
-
-                        row = CreateBoardMapSelectionRow(
-                            sessionPanel,
-                            font,
-                            out var previous,
-                            out var next,
-                            out var mapName);
-                        row.transform.SetSiblingIndex(
-                            readyButton.GetSiblingIndex());
-
-                        var panelRect = sessionPanel.GetComponent<RectTransform>();
-                        panelRect.sizeDelta = new Vector2(680f, 640f);
-                        panelRect.anchoredPosition = new Vector2(-205f, -130f);
-                        previousProperty.objectReferenceValue = previous;
-                        nextProperty.objectReferenceValue = next;
-                        nameProperty.objectReferenceValue = mapName;
-                        created = true;
-                    }
-                }
-
-                var previousButton = previousProperty.objectReferenceValue as Button;
-                if (previousButton == null)
-                {
-                    previousButton = FindRequiredChild(
-                            row.transform,
-                            "Previous Map Button")
-                        .GetComponent<Button>();
-                    previousProperty.objectReferenceValue = previousButton;
-                }
-
-                var nextButton = nextProperty.objectReferenceValue as Button;
-                if (nextButton == null)
-                {
-                    nextButton = FindRequiredChild(
-                            row.transform,
-                            "Next Map Button")
-                        .GetComponent<Button>();
-                    nextProperty.objectReferenceValue = nextButton;
-                }
-
-                var mapNameText = nameProperty.objectReferenceValue as Text;
-                if (mapNameText == null)
-                {
-                    mapNameText = FindRequiredChild(row.transform, "Map Name")
-                        .GetComponent<Text>();
-                    nameProperty.objectReferenceValue = mapNameText;
-                }
-
-                if (previousButton == null || nextButton == null ||
-                    mapNameText == null)
-                {
-                    throw new System.InvalidOperationException(
-                        "The existing lobby map selector is incomplete. " +
-                        "Repair its authored bindings without recreating it.");
-                }
-
-                rootProperty.objectReferenceValue = row;
-                var bindingsChanged = serializedView.ApplyModifiedPropertiesWithoutUndo();
                 if (!view.HasRequiredReferences)
                 {
                     throw new System.InvalidOperationException(
                         "LobbyCanvas.prefab is still missing required OnlineLobbyView bindings.");
                 }
 
-                if (created || bindingsChanged)
-                {
-                    PrefabUtility.SaveAsPrefabAsset(contents, LobbyCanvasPrefabPath);
-                    AssetDatabase.SaveAssets();
-                }
-
-                Debug.Log(created
-                    ? "Lobby map selector authored and bound in LobbyCanvas.prefab."
-                    : "Lobby map selector bindings validated; authored design was preserved.");
+                PrefabUtility.SaveAsPrefabAsset(contents, LobbyCanvasPrefabPath);
+                AssetDatabase.SaveAssets();
+                RevertLobbySessionHeaderSceneLayoutOverrides();
+                Debug.Log(
+                    "Lobby session header, player states, action stack, and board settings " +
+                    "popup were authored and bound in LobbyCanvas.prefab.");
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(contents);
             }
+        }
+
+        private static GameObject AuthorLobbySessionHeader(
+            Transform canvasRoot,
+            Text inviteCodeText,
+            Button revealButton,
+            Button copyButton)
+        {
+            var header = FindChild(canvasRoot, "Session Header");
+            var needsDefaultLayout = header == null;
+            if (header == null)
+            {
+                header = FindChild(canvasRoot, "Code Actions") ??
+                         CreateUiObject("Session Header", canvasRoot);
+                header.name = "Session Header";
+            }
+
+            if (header.transform.parent != canvasRoot)
+            {
+                header.transform.SetParent(canvasRoot, false);
+                needsDefaultLayout = true;
+            }
+
+            if (needsDefaultLayout)
+            {
+                var rect = header.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 1f);
+                rect.anchorMax = new Vector2(0.5f, 1f);
+                rect.pivot = new Vector2(0.5f, 1f);
+                rect.anchoredPosition = new Vector2(0f, -24f);
+                rect.sizeDelta = new Vector2(520f, 52f);
+            }
+
+            var layout = GetOrAddComponent<HorizontalLayoutGroup>(header);
+            if (needsDefaultLayout)
+            {
+                layout.spacing = 12f;
+                layout.childAlignment = TextAnchor.MiddleCenter;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = false;
+                layout.childForceExpandHeight = false;
+            }
+
+            inviteCodeText.transform.SetParent(header.transform, false);
+            revealButton.transform.SetParent(header.transform, false);
+            copyButton.transform.SetParent(header.transform, false);
+            inviteCodeText.transform.SetSiblingIndex(0);
+            revealButton.transform.SetSiblingIndex(1);
+            copyButton.transform.SetSiblingIndex(2);
+
+            var inviteLayout = GetOrAddComponent<LayoutElement>(
+                inviteCodeText.gameObject);
+            if (needsDefaultLayout)
+            {
+                inviteLayout.preferredWidth = 320f;
+                inviteLayout.preferredHeight = 48f;
+                inviteLayout.flexibleWidth = 0f;
+            }
+
+            ConfigureIconOnlyButton(revealButton, 48f, needsDefaultLayout);
+            ConfigureIconOnlyButton(copyButton, 48f, needsDefaultLayout);
+            header.SetActive(false);
+            return header;
+        }
+
+        private static void RevertLobbySessionHeaderSceneLayoutOverrides()
+        {
+            var scene = SceneManager.GetSceneByPath(BootstrapPath);
+            var openedForUpgrade = !scene.IsValid() || !scene.isLoaded;
+            if (openedForUpgrade)
+            {
+                scene = EditorSceneManager.OpenScene(
+                    BootstrapPath,
+                    OpenSceneMode.Additive);
+            }
+            else if (scene.isDirty)
+            {
+                throw new System.InvalidOperationException(
+                    "OnlineBootstrap has unsaved changes. Save or discard them before " +
+                    "upgrading the lobby UI so authored scene work is not overwritten.");
+            }
+
+            try
+            {
+                var instanceRoot = scene.GetRootGameObjects()
+                    .FirstOrDefault(root =>
+                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root) ==
+                        LobbyCanvasPrefabPath);
+                if (instanceRoot == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "OnlineBootstrap is missing its LobbyCanvas prefab instance.");
+                }
+
+                var modifications = PrefabUtility
+                    .GetPropertyModifications(instanceRoot) ??
+                    System.Array.Empty<PropertyModification>();
+                var retained = modifications
+                    .Where(modification =>
+                        !IsLobbySessionHeaderLayoutOverride(modification))
+                    .ToArray();
+                if (retained.Length == modifications.Length)
+                {
+                    return;
+                }
+
+                PrefabUtility.SetPropertyModifications(instanceRoot, retained);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene, BootstrapPath);
+            }
+            finally
+            {
+                if (openedForUpgrade)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+            }
+        }
+
+        private static bool IsLobbySessionHeaderLayoutOverride(
+            PropertyModification modification)
+        {
+            if (!(modification.target is RectTransform rectTransform) ||
+                rectTransform.name != "Session Header")
+            {
+                return false;
+            }
+
+            var path = modification.propertyPath;
+            return path.StartsWith("m_AnchorMin", System.StringComparison.Ordinal) ||
+                   path.StartsWith("m_AnchorMax", System.StringComparison.Ordinal) ||
+                   path.StartsWith("m_AnchoredPosition", System.StringComparison.Ordinal) ||
+                   path.StartsWith("m_SizeDelta", System.StringComparison.Ordinal) ||
+                   path.StartsWith("m_Pivot", System.StringComparison.Ordinal);
+        }
+
+        private static GameObject AuthorLobbySessionActions(
+            Transform canvasRoot,
+            Button readyButton,
+            Button startButton)
+        {
+            var actions = FindChild(canvasRoot, "Session Actions");
+            var needsDefaultLayout = actions == null;
+            if (actions == null)
+            {
+                actions = CreateUiObject("Session Actions", canvasRoot);
+            }
+
+            if (actions.transform.parent != canvasRoot)
+            {
+                actions.transform.SetParent(canvasRoot, false);
+                needsDefaultLayout = true;
+            }
+
+            if (needsDefaultLayout)
+            {
+                var rect = actions.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0f);
+                rect.anchorMax = new Vector2(0.5f, 0f);
+                rect.pivot = new Vector2(0.5f, 0f);
+                rect.anchoredPosition = new Vector2(0f, 24f);
+                rect.sizeDelta = new Vector2(360f, 112f);
+            }
+
+            var layout = GetOrAddComponent<VerticalLayoutGroup>(actions);
+            if (needsDefaultLayout)
+            {
+                layout.spacing = 8f;
+                layout.childAlignment = TextAnchor.LowerCenter;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = true;
+                layout.childForceExpandHeight = false;
+            }
+
+            readyButton.transform.SetParent(actions.transform, false);
+            startButton.transform.SetParent(actions.transform, false);
+            readyButton.transform.SetSiblingIndex(0);
+            startButton.transform.SetSiblingIndex(1);
+            actions.SetActive(false);
+            return actions;
+        }
+
+        private static Image[] AuthorLobbyPlayerRows(
+            Transform sessionPanel,
+            IReadOnlyList<Text> playerRows)
+        {
+            var starSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                HostStarSpritePath);
+            if (starSprite == null)
+            {
+                throw new System.InvalidOperationException(
+                    "Modern UI host star is missing at " +
+                    HostStarSpritePath + ".");
+            }
+
+            var icons = new Image[playerRows.Count];
+            for (var index = 0; index < playerRows.Count; index++)
+            {
+                var playerRow = playerRows[index];
+                var slotName = "Player Slot " + (index + 1);
+                var slot = playerRow.transform.parent != null &&
+                           playerRow.transform.parent.name == slotName
+                    ? playerRow.transform.parent.gameObject
+                    : FindDirectChild(sessionPanel, slotName);
+                var createdSlot = slot == null;
+                if (slot == null)
+                {
+                    var originalIndex = playerRow.transform.GetSiblingIndex();
+                    slot = CreateUiObject(slotName, sessionPanel);
+                    slot.transform.SetSiblingIndex(originalIndex);
+                    var slotLayout = slot.AddComponent<HorizontalLayoutGroup>();
+                    slotLayout.spacing = 8f;
+                    slotLayout.childAlignment = TextAnchor.MiddleLeft;
+                    slotLayout.childControlWidth = true;
+                    slotLayout.childControlHeight = true;
+                    slotLayout.childForceExpandWidth = false;
+                    slotLayout.childForceExpandHeight = false;
+                    var slotSize = slot.AddComponent<LayoutElement>();
+                    slotSize.preferredHeight = 29f;
+                }
+
+                var iconObject = FindDirectChild(slot.transform, "Host Star Icon");
+                var createdIcon = iconObject == null;
+                if (iconObject == null)
+                {
+                    iconObject = CreateUiObject(
+                        "Host Star Icon",
+                        slot.transform);
+                    var iconSize = iconObject.AddComponent<LayoutElement>();
+                    iconSize.preferredWidth = 22f;
+                    iconSize.preferredHeight = 22f;
+                    iconSize.flexibleWidth = 0f;
+                    iconSize.flexibleHeight = 0f;
+                }
+
+                var icon = GetOrAddComponent<Image>(iconObject);
+                icon.sprite = starSprite;
+                icon.preserveAspect = true;
+                icon.raycastTarget = false;
+                iconObject.transform.SetSiblingIndex(0);
+                iconObject.SetActive(false);
+
+                playerRow.transform.SetParent(slot.transform, false);
+                playerRow.transform.SetSiblingIndex(1);
+                if (createdSlot || createdIcon)
+                {
+                    playerRow.alignment = TextAnchor.MiddleLeft;
+                    var rowLayout = GetOrAddComponent<LayoutElement>(
+                        playerRow.gameObject);
+                    rowLayout.flexibleWidth = 1f;
+                }
+                icons[index] = icon;
+            }
+
+            return icons;
+        }
+
+        private static void AuthorBoardSettings(
+            Transform canvasRoot,
+            Transform lobbyWindow,
+            GameObject boardMapSelection,
+            Button wardrobeButton,
+            Font font,
+            out GameObject panel,
+            out Button settingsButton,
+            out Button closeButton)
+        {
+            panel = FindChild(canvasRoot, "Board Settings Popup");
+            var needsDefaultLayout = panel == null;
+            if (panel == null)
+            {
+                panel = CreateUiObject("Board Settings Popup", canvasRoot);
+            }
+
+            if (panel.transform.parent != canvasRoot)
+            {
+                panel.transform.SetParent(canvasRoot, false);
+                needsDefaultLayout = true;
+            }
+
+            if (needsDefaultLayout)
+            {
+                var rect = panel.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0.5f, 0.5f);
+                rect.anchorMax = new Vector2(0.5f, 0.5f);
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = new Vector2(560f, 220f);
+
+                var panelSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                    RoundedPanelSpritePath);
+                if (panelSprite == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Board settings panel sprite is missing at " +
+                        RoundedPanelSpritePath + ".");
+                }
+
+                var background = panel.AddComponent<Image>();
+                background.sprite = panelSprite;
+                background.type = Image.Type.Sliced;
+                background.color = new Color(0.045f, 0.035f, 0.14f, 0.98f);
+                background.raycastTarget = true;
+                var layout = panel.AddComponent<VerticalLayoutGroup>();
+                layout.padding = new RectOffset(24, 24, 22, 22);
+                layout.spacing = 12f;
+                layout.childAlignment = TextAnchor.UpperCenter;
+                layout.childControlWidth = true;
+                layout.childControlHeight = true;
+                layout.childForceExpandWidth = true;
+                layout.childForceExpandHeight = false;
+            }
+
+            var titleObject = FindDirectChild(panel.transform, "Title");
+            if (titleObject == null)
+            {
+                var title = CreateText(
+                    "Title",
+                    panel.transform,
+                    "Board Settings",
+                    font,
+                    22,
+                    TextAnchor.MiddleCenter,
+                    34f);
+                title.fontStyle = FontStyle.Bold;
+                title.gameObject.AddComponent<LocalizedText>()
+                    .Configure("Board Settings");
+                titleObject = title.gameObject;
+            }
+
+            boardMapSelection.transform.SetParent(panel.transform, false);
+            titleObject.transform.SetSiblingIndex(0);
+            boardMapSelection.transform.SetSiblingIndex(1);
+
+            var closeObject = FindDirectChild(
+                panel.transform,
+                "Close Board Settings Button");
+            if (closeObject == null)
+            {
+                closeButton = CreateButton(
+                    "Close Board Settings Button",
+                    panel.transform,
+                    "Close",
+                    font,
+                    out var closeLabel);
+                closeLabel.gameObject.AddComponent<LocalizedText>()
+                    .Configure("Close");
+            }
+            else
+            {
+                closeButton = closeObject.GetComponent<Button>();
+            }
+
+            GetOrAddComponent<UiSoundEmitter>(closeButton.gameObject);
+            closeButton.transform.SetAsLastSibling();
+            panel.SetActive(false);
+
+            var settingsObject = FindDirectChild(
+                lobbyWindow,
+                "Board Settings Button");
+            if (settingsObject == null)
+            {
+                settingsObject = Object.Instantiate(
+                    wardrobeButton.gameObject,
+                    lobbyWindow,
+                    false);
+                settingsObject.name = "Board Settings Button";
+                var label = FindChild(settingsObject.transform, "Label")
+                    ?.GetComponent<Text>();
+                if (label != null)
+                {
+                    label.text = "Board Settings";
+                    var localized = label.GetComponent<LocalizedText>() ??
+                                    label.gameObject.AddComponent<LocalizedText>();
+                    localized.Configure("Board Settings");
+                }
+
+                var settingsIcon = AssetDatabase.LoadAssetAtPath<Sprite>(
+                    BoardSettingsIconPath);
+                var actionIcon = FindChild(
+                        settingsObject.transform,
+                        "Action Icon")
+                    ?.GetComponent<Image>();
+                if (actionIcon != null && settingsIcon != null)
+                {
+                    actionIcon.sprite = settingsIcon;
+                    actionIcon.preserveAspect = true;
+                }
+            }
+
+            settingsButton = settingsObject.GetComponent<Button>();
+            if (settingsButton == null || closeButton == null)
+            {
+                throw new System.InvalidOperationException(
+                    "The authored board settings controls are incomplete.");
+            }
+
+            var settingsRect = settingsButton.GetComponent<RectTransform>();
+            var wardrobeRect = wardrobeButton.GetComponent<RectTransform>();
+            if (settingsRect.anchoredPosition == wardrobeRect.anchoredPosition)
+            {
+                var verticalGap =
+                    (settingsRect.sizeDelta.y + wardrobeRect.sizeDelta.y) * 0.5f +
+                    16f;
+                settingsRect.anchoredPosition = wardrobeRect.anchoredPosition +
+                                                new Vector2(0f, verticalGap);
+            }
+
+            var wardrobeIndex = wardrobeButton.transform.GetSiblingIndex();
+            if (settingsButton.transform.GetSiblingIndex() < wardrobeIndex)
+            {
+                wardrobeIndex--;
+            }
+
+            settingsButton.transform.SetSiblingIndex(wardrobeIndex);
+            settingsButton.gameObject.SetActive(false);
+        }
+
+        private static void ConfigureIconOnlyButton(
+            Button button,
+            float size,
+            bool applyDefaultLayout)
+        {
+            var label = FindChild(button.transform, "Label");
+            if (label != null)
+            {
+                label.SetActive(false);
+            }
+
+            var actionIcon = FindChild(button.transform, "Action Icon");
+            if (actionIcon != null)
+            {
+                actionIcon.SetActive(true);
+                if (applyDefaultLayout)
+                {
+                    var iconRect = actionIcon.GetComponent<RectTransform>();
+                    iconRect.anchorMin = new Vector2(0.5f, 0.5f);
+                    iconRect.anchorMax = new Vector2(0.5f, 0.5f);
+                    iconRect.pivot = new Vector2(0.5f, 0.5f);
+                    iconRect.anchoredPosition = Vector2.zero;
+                    iconRect.sizeDelta = new Vector2(24f, 24f);
+                }
+
+                var image = actionIcon.GetComponent<Image>();
+                if (image != null)
+                {
+                    image.preserveAspect = true;
+                    image.raycastTarget = false;
+                }
+            }
+
+            if (applyDefaultLayout)
+            {
+                var layout = GetOrAddComponent<LayoutElement>(button.gameObject);
+                layout.preferredWidth = size;
+                layout.preferredHeight = size;
+                layout.flexibleWidth = 0f;
+                layout.flexibleHeight = 0f;
+            }
+        }
+
+        private static Font LoadLobbyFont()
+        {
+            var font = Resources.Load<Font>("MazeParty/Fonts/PlayerNameFont");
+            if (font == null)
+            {
+                font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            }
+
+            if (font == null)
+            {
+                throw new System.InvalidOperationException(
+                    "A font is required to author the lobby UI.");
+            }
+
+            return font;
+        }
+
+        private static T GetRequiredReference<T>(
+            SerializedObject serializedObject,
+            string propertyName)
+            where T : Object
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            var value = property?.objectReferenceValue as T;
+            if (value == null)
+            {
+                throw new System.InvalidOperationException(
+                    "OnlineLobbyView is missing required binding '" +
+                    propertyName + "'.");
+            }
+
+            return value;
+        }
+
+        private static T[] GetRequiredReferenceArray<T>(
+            SerializedObject serializedObject,
+            string propertyName,
+            int expectedSize)
+            where T : Object
+        {
+            var property = serializedObject.FindProperty(propertyName);
+            if (property == null || !property.isArray ||
+                property.arraySize != expectedSize)
+            {
+                throw new System.InvalidOperationException(
+                    "OnlineLobbyView binding '" + propertyName +
+                    "' must contain " + expectedSize + " entries.");
+            }
+
+            var values = new T[expectedSize];
+            for (var index = 0; index < expectedSize; index++)
+            {
+                values[index] = property.GetArrayElementAtIndex(index)
+                    .objectReferenceValue as T;
+                if (values[index] == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "OnlineLobbyView binding '" + propertyName +
+                        "' contains an empty entry at index " + index + ".");
+                }
+            }
+
+            return values;
+        }
+
+        private static T GetOrAddComponent<T>(GameObject gameObject)
+            where T : Component
+        {
+            return gameObject.GetComponent<T>() ?? gameObject.AddComponent<T>();
+        }
+
+        private static GameObject FindDirectChild(Transform parent, string name)
+        {
+            for (var index = 0; index < parent.childCount; index++)
+            {
+                var child = parent.GetChild(index);
+                if (child.name == name)
+                {
+                    return child.gameObject;
+                }
+            }
+
+            return null;
         }
 
 
@@ -616,11 +1141,34 @@ namespace MazeParty.Editor
                 "Wardrobe",
                 font,
                 out _);
+            customizationButton.transform.SetParent(window.transform, false);
             var customizationPanel = CreateLobbyCustomization(
                 canvasObject.transform,
                 font,
                 out var paletteButtons,
                 out var paletteOutlines);
+
+            var sessionHeader = AuthorLobbySessionHeader(
+                canvasObject.transform,
+                inviteCodeText,
+                revealCodeButton,
+                copyButton);
+            var sessionActions = AuthorLobbySessionActions(
+                canvasObject.transform,
+                readyButton,
+                startButton);
+            var playerHostIcons = AuthorLobbyPlayerRows(
+                sessionPanel.transform,
+                playerRows);
+            AuthorBoardSettings(
+                canvasObject.transform,
+                window.transform,
+                boardMapSelectionRoot,
+                customizationButton,
+                font,
+                out var boardSettingsPanel,
+                out var boardSettingsButton,
+                out var closeBoardSettingsButton);
 
             var statusText = CreateText(
                 "Status",
@@ -694,6 +1242,13 @@ namespace MazeParty.Editor
                 cancelJoinButton,
                 revealControl,
                 customizationButton);
+            lobbyView.ConfigureLobbyPresentation(
+                sessionHeader,
+                sessionActions,
+                playerHostIcons,
+                boardSettingsPanel,
+                boardSettingsButton,
+                closeBoardSettingsButton);
             PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
             return lobbyView;
         }

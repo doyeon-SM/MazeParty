@@ -152,7 +152,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 MinigameSoloTestId.Race,
                 "Race",
                 RaceScenePath,
-                "Alternate A / D · first to 500 · " +
+                "Alternate A / D · first to 200 · " +
                 "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.SequenceMemory,

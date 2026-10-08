@@ -160,7 +160,8 @@ namespace MazeParty.Multiplayer
             BeginRoundCountdownOnServer(ServerNow, 1);
             Debug.Log(
                 "[Race] Match started. Seed " + matchSeed +
-                "; 500 alternating A/D steps per round.");
+                "; " + RaceRules.RequiredSteps +
+                " alternating A/D steps per round.");
         }
 
         public bool CanAcceptInputForSlot(int slot)
@@ -201,7 +202,8 @@ namespace MazeParty.Multiplayer
             {
                 Debug.Log(
                     "[Race] P" + (slot + 1) +
-                    " reached 500 steps first in round " +
+                    " reached " + RaceRules.RequiredSteps +
+                    " steps first in round " +
                     _roundNumber.Value + ".");
                 CompleteRoundOnServer(ServerNow);
             }
@@ -338,7 +340,8 @@ namespace MazeParty.Multiplayer
             _phaseEndsAt.Value = now + RaceRules.RoundSeconds;
             Debug.Log(
                 "[Race] Round " + _roundNumber.Value +
-                " started. Alternate A and D; first to 500 wins.");
+                " started. Alternate A and D; first to " +
+                RaceRules.RequiredSteps + " wins.");
         }
 
         private void CompleteRoundOnServer(double now)

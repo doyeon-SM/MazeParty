@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay.Minigames.TagChase;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -19,6 +20,20 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/TagChase/" +
             "TagChaseEnvironment.prefab";
         private const float GeometryTolerance = 0.001f;
+
+        [Test]
+        public void AttackPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkTagChaseState).GetMethod(
+                "PlayAttackPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(1));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+        }
 
         [Test]
         public void Scene_PreservesArenaAndRoleCameras()

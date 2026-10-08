@@ -1036,6 +1036,7 @@ MonoBehaviour:
   redCue: {fileID: 0}
   hud: {fileID: 1374519813}
   signalPulseVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  finishVfxPrefab: {fileID: 6809623227728566479, guid: 85473b9fd0e62a845a128ec2f6219fb1, type: 3}
 --- !u!114 &2058619060
 MonoBehaviour:
   m_ObjectHideFlags: 0

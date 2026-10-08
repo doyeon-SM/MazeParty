@@ -65,7 +65,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             RefreshPresentation(true);
             Debug.Log(
                 "[Minigame Solo Test] Race started: three rounds, " +
-                "500 alternating A/D steps.");
+                RaceRules.RequiredSteps +
+                " alternating A/D steps.");
         }
 
         private void Update()
@@ -221,10 +222,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                   _session.Phase.ToString().ToUpperInvariant() +
                   " · " + _session.Remaining.ToString("0.0") + "s";
             var progress =
-                "P1 " + _session.GetProgress(0) + "/500  ·  P2 " +
-                _session.GetProgress(1) + "/500  ·  P3 " +
-                _session.GetProgress(2) + "/500  ·  P4 " +
-                _session.GetProgress(3) + "/500";
+                "P1 " + _session.GetProgress(0) + "/" +
+                RaceRules.RequiredSteps + "  ·  P2 " +
+                _session.GetProgress(1) + "/" +
+                RaceRules.RequiredSteps + "  ·  P3 " +
+                _session.GetProgress(2) + "/" +
+                RaceRules.RequiredSteps + "  ·  P4 " +
+                _session.GetProgress(3) + "/" +
+                RaceRules.RequiredSteps;
             var scores =
                 "SCORE  " + _session.GetTotalPoints(0) + " / " +
                 _session.GetTotalPoints(1) + " / " +
@@ -235,7 +240,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 stateLabel,
                 progress,
                 scores,
-                "ALTERNATE A / D · FIRST TO 500",
+                "ALTERNATE A / D · FIRST TO " +
+                RaceRules.RequiredSteps,
                 "R RESTART  ·  N NEXT SEED  ·  ESC STOP",
                 MinigameSoloFeedbackStyle.Neutral);
         }

@@ -86,6 +86,7 @@ namespace MazeParty.Multiplayer
         private bool _completionReported;
 
         public static NetworkBombPassingState Instance { get; private set; }
+        public event Action<int> AttackPresentationRequested;
 
         public NetworkBombPassingPhase Phase =>
             (NetworkBombPassingPhase)_phase.Value;
@@ -263,9 +264,25 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            var attackApproved = _serverMatch.CanStartAttack(slot);
             _serverMatch.TryAttack(slot);
+            if (attackApproved)
+            {
+                PlayAttackPresentationRpc((byte)slot);
+            }
             SyncSnapshotOnServer();
             return true;
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayAttackPresentationRpc(byte attackerSlot)
+        {
+            if (BombPassingRules.IsValidPlayerSlot(attackerSlot))
+            {
+                AttackPresentationRequested?.Invoke(attackerSlot);
+            }
         }
 
         public Vector2 GetPlayerPosition(int slot)

@@ -27,10 +27,46 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         public const double LaserHalfWidth = 0.32d;
         public const double LaserWarningSeconds = 1d;
         public const double LaserFiringSeconds = 0.5d;
+        public const double HazardFrequencyStepSeconds = 10d;
+        public const double HazardFrequencyIncreasePerStep = 0.2d;
+        public const int MaximumHazardFrequencyStep = 5;
 
         public static bool IsValidSlot(int slot)
         {
             return slot >= 0 && slot < PlayerCount;
+        }
+
+        public static int GetHazardFrequencyStep(
+            double roundElapsedSeconds)
+        {
+            if (roundElapsedSeconds < 0d ||
+                double.IsNaN(roundElapsedSeconds) ||
+                double.IsInfinity(roundElapsedSeconds))
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(roundElapsedSeconds));
+            }
+
+            var rawStep = Math.Floor(
+                roundElapsedSeconds /
+                HazardFrequencyStepSeconds);
+            return rawStep >= MaximumHazardFrequencyStep
+                ? MaximumHazardFrequencyStep
+                : (int)rawStep;
+        }
+
+        public static double GetHazardIntervalScale(int frequencyStep)
+        {
+            if (frequencyStep < 0 ||
+                frequencyStep > MaximumHazardFrequencyStep)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(frequencyStep));
+            }
+
+            return 1d /
+                (1d + frequencyStep *
+                    HazardFrequencyIncreasePerStep);
         }
 
         /// <summary>

@@ -56,6 +56,19 @@ namespace MazeParty.Multiplayer
         }
     }
 
+    public static class WorldDiePreparedRelocationPolicy
+    {
+        public static bool ShouldRelocate(
+            bool avatarHasRolled,
+            bool dieHasRecordedResult,
+            WorldDiePhase phase)
+        {
+            return !avatarHasRolled &&
+                   !dieHasRecordedResult &&
+                   phase == WorldDiePhase.Ready;
+        }
+    }
+
     public static class WorldDieRollPresentationPolicy
     {
         public const double TotalSeconds = 1d;

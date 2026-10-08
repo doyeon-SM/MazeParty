@@ -42,7 +42,7 @@ namespace MazeParty.Gameplay.Minigames.Race
     {
         public const int PlayerCount = 4;
         public const int RoundCount = 3;
-        public const int RequiredSteps = 500;
+        public const int RequiredSteps = 200;
         public const double RoundSeconds = 60d;
 
         public static bool IsValidPlayerSlot(int slot)

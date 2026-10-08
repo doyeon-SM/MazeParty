@@ -314,6 +314,50 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void PreparedRelocation_OnlyMovesVisibleReadyUnrolledDice()
+        {
+            var cases = new[]
+            {
+                (AvatarRolled: false, HasResult: false,
+                    Phase: WorldDiePhase.Ready, Expected: true),
+                (AvatarRolled: false, HasResult: false,
+                    Phase: WorldDiePhase.Hidden, Expected: false),
+                (AvatarRolled: true, HasResult: false,
+                    Phase: WorldDiePhase.Ready, Expected: false),
+                (AvatarRolled: false, HasResult: true,
+                    Phase: WorldDiePhase.Ready, Expected: false),
+                (AvatarRolled: false, HasResult: false,
+                    Phase: WorldDiePhase.Rolling, Expected: false),
+                (AvatarRolled: false, HasResult: false,
+                    Phase: WorldDiePhase.Settled, Expected: false)
+            };
+
+            foreach (var testCase in cases)
+            {
+                Assert.That(
+                    WorldDiePreparedRelocationPolicy.ShouldRelocate(
+                        testCase.AvatarRolled,
+                        testCase.HasResult,
+                        testCase.Phase),
+                    Is.EqualTo(testCase.Expected),
+                    testCase.ToString());
+            }
+        }
+
+        [Test]
+        public void OwnerTintState_UsesOnlyAuthoritativeBodyColor()
+        {
+            var bodyColor = LobbyColorPalette.GetColor(3);
+            var first = WorldDieTintState.FromAppearance(
+                PlayerAppearanceState.FromColor(bodyColor, 0, 0, 1, 0, 2));
+            var differentCosmetics = WorldDieTintState.FromAppearance(
+                PlayerAppearanceState.FromColor(bodyColor, 0, 0, 2, 0, 1));
+
+            Assert.That(first, Is.EqualTo(differentCosmetics));
+            Assert.That((Color32)first.Tint, Is.EqualTo(bodyColor));
+        }
+
+        [Test]
         public void Push_AllowsMatchingSlotWithResolvedChoiceAndLiveAction()
         {
             var model = CreateReadyModel(2);

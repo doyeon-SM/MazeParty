@@ -57,6 +57,7 @@ namespace MazeParty.Gameplay
         private float _crouchBlend;
         private float _leftPunchTimer;
         private float _rightPunchTimer;
+        private float _pushTimer;
         private float _bodyHitTimer;
         private float _headHitTimer;
         private float _handHitTimer;
@@ -331,6 +332,7 @@ namespace MazeParty.Gameplay
         public void TriggerPunch(bool useRightHand)
         {
             EnsureBuilt();
+            _pushTimer = 0f;
             if (useRightHand)
             {
                 _rightPunchTimer = 1f;
@@ -339,6 +341,14 @@ namespace MazeParty.Gameplay
             {
                 _leftPunchTimer = 1f;
             }
+        }
+
+        public void TriggerPush()
+        {
+            EnsureBuilt();
+            _leftPunchTimer = 0f;
+            _rightPunchTimer = 0f;
+            _pushTimer = 1f;
         }
 
         public void TriggerHit()
@@ -396,6 +406,7 @@ namespace MazeParty.Gameplay
                 Time.deltaTime * 8f);
             _leftPunchTimer = Mathf.MoveTowards(_leftPunchTimer, 0f, Time.deltaTime * 4.5f);
             _rightPunchTimer = Mathf.MoveTowards(_rightPunchTimer, 0f, Time.deltaTime * 4.5f);
+            _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 4.5f);
             _bodyHitTimer = Mathf.MoveTowards(_bodyHitTimer, 0f, Time.deltaTime * 1.9f);
             _headHitTimer = Mathf.MoveTowards(_headHitTimer, 0f, Time.deltaTime * 1.9f);
             _handHitTimer = Mathf.MoveTowards(_handHitTimer, 0f, Time.deltaTime * 2.5f);
@@ -443,6 +454,7 @@ namespace MazeParty.Gameplay
             var swing = Mathf.Sin(time * 8.5f) * 0.12f * moving;
             var leftPunch = PunchAmount(_leftPunchTimer);
             var rightPunch = PunchAmount(_rightPunchTimer);
+            var push = PunchAmount(_pushTimer);
             var bodyWobble = WobbleAngle(_bodyHitTimer, 22f);
             var headWobble = WobbleAngle(_headHitTimer, 30f);
             var handWobble = WobbleAngle(_handHitTimer, 34f);
@@ -454,8 +466,8 @@ namespace MazeParty.Gameplay
             _head.localPosition = new Vector3(headOffsetX, headY, 0f);
             _head.localScale = Vector3.one * 0.78f;
             _head.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _leftHand.localPosition = new Vector3(-0.58f, handY, swing + leftPunch * 0.62f);
-            _rightHand.localPosition = new Vector3(0.58f, handY, -swing + rightPunch * 0.62f);
+            _leftHand.localPosition = new Vector3(-0.58f, handY, swing + (leftPunch + push) * 0.62f);
+            _rightHand.localPosition = new Vector3(0.58f, handY, -swing + (rightPunch + push) * 0.62f);
             _leftHand.localScale = Vector3.one * 0.27f;
             _rightHand.localScale = Vector3.one * 0.27f;
             _leftHand.localRotation = Quaternion.Euler(0f, 0f, handWobble);
@@ -489,9 +501,11 @@ namespace MazeParty.Gameplay
             if (_firstPersonHands != null)
             {
                 _firstPersonLeftHand.localPosition =
-                    new Vector3(-0.27f, -0.24f, 0.52f + leftPunch * 0.45f);
+                    new Vector3(-0.27f, -0.24f,
+                        0.52f + (leftPunch + push) * 0.45f);
                 _firstPersonRightHand.localPosition =
-                    new Vector3(0.27f, -0.24f, 0.52f + rightPunch * 0.45f);
+                    new Vector3(0.27f, -0.24f,
+                        0.52f + (rightPunch + push) * 0.45f);
             }
             if (_firstPersonItemRoot != null)
             {

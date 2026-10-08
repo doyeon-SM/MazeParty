@@ -116,6 +116,127 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void KeyShopShortestRoute_OverridesAuthoredFirstExitAsPrimary()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var detour = CreateTile("Authored First", 0, 1);
+            var detourEnd = CreateTile("Detour End", 0, 2);
+            var towardShop = CreateTile("Toward Shop", 1, 0);
+            var shop = CreateTile("Key Shop", 2, 0);
+            var topology = CreateTopology(
+                new[] { start, detour, detourEnd, towardShop, shop },
+                CreateGate(start, detour),
+                CreateGate(start, towardShop),
+                CreateGate(detour, detourEnd),
+                CreateGate(towardShop, shop));
+
+            var preview = new BoardTravelRoutePreview(
+                topology,
+                start,
+                2,
+                shop);
+            var steps = preview.GetVisibleSteps();
+
+            AssertStep(steps, start.Coordinate, 0, false);
+            AssertStep(steps, towardShop.Coordinate, 1, false);
+            AssertStep(steps, shop.Coordinate, 2, false);
+            AssertStep(steps, detour.Coordinate, 1, true);
+            AssertStep(steps, detourEnd.Coordinate, 2, true);
+        }
+
+        [Test]
+        public void UnreachableKeyShop_KeepsAuthoredFirstExitAsPrimary()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var authoredFirst = CreateTile("Authored First", 1, 0);
+            var branch = CreateTile("Branch", 0, 1);
+            var unreachableShop = CreateTile("Unreachable Shop", 5, 5);
+            var topology = CreateTopology(
+                new[] { start, authoredFirst, branch, unreachableShop },
+                CreateGate(start, authoredFirst),
+                CreateGate(start, branch));
+
+            var preview = new BoardTravelRoutePreview(
+                topology,
+                start,
+                1,
+                unreachableShop);
+            var steps = preview.GetVisibleSteps();
+
+            AssertStep(steps, authoredFirst.Coordinate, 1, false);
+            AssertStep(steps, branch.Coordinate, 1, true);
+        }
+
+        [Test]
+        public void KeyShopBeyondRoll_UsesYellowShortestRoutePrefixOnly()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var detour = CreateTile("Detour", 0, 1);
+            var first = CreateTile("Toward Shop 1", 1, 0);
+            var second = CreateTile("Toward Shop 2", 2, 0);
+            var shop = CreateTile("Key Shop", 3, 0);
+            var topology = CreateTopology(
+                new[] { start, detour, first, second, shop },
+                CreateGate(start, detour),
+                CreateGate(start, first),
+                CreateGate(first, second),
+                CreateGate(second, shop));
+
+            var preview = new BoardTravelRoutePreview(
+                topology,
+                start,
+                2,
+                shop);
+            var steps = preview.GetVisibleSteps();
+
+            AssertStep(steps, first.Coordinate, 1, false);
+            AssertStep(steps, second.Coordinate, 2, false);
+            AssertStep(steps, detour.Coordinate, 1, true);
+            Assert.That(
+                steps.Any(step => step.Coordinate == shop.Coordinate),
+                Is.False);
+            Assert.That(steps.Max(step => step.Step), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void KeyShopRoute_PromotesChosenDetourToNewYellowMainRoute()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var shortest = CreateTile("Original Shortest", 1, 0);
+            var chosen = CreateTile("Chosen Detour", 0, 1);
+            var bridge = CreateTile("Detour Bridge", 1, 1);
+            var shop = CreateTile("Key Shop", 2, 0);
+            var topology = CreateTopology(
+                new[] { start, shortest, chosen, bridge, shop },
+                CreateGate(start, shortest),
+                CreateGate(start, chosen),
+                CreateGate(shortest, shop),
+                CreateGate(chosen, bridge),
+                CreateGate(bridge, shop));
+            var preview = new BoardTravelRoutePreview(
+                topology,
+                start,
+                2,
+                shop);
+            var choices = new[]
+            {
+                new BoardRouteChoice(start.Coordinate, chosen.Coordinate)
+            };
+
+            var beforeChoice = preview.GetVisibleSteps();
+            var afterChoice = preview.GetVisibleSteps(choices);
+
+            AssertStep(beforeChoice, chosen.Coordinate, 1, true);
+            AssertStep(afterChoice, start.Coordinate, 0, false);
+            AssertStep(afterChoice, chosen.Coordinate, 1, false);
+            AssertStep(afterChoice, bridge.Coordinate, 2, false);
+            Assert.That(
+                afterChoice.Any(step =>
+                    step.Coordinate == shortest.Coordinate),
+                Is.False);
+        }
+
+        [Test]
         public void CyclesAndRepeatedForkChoices_AreKeptInTraversalOrder()
         {
             var start = CreateTile("Start", 0, 0);

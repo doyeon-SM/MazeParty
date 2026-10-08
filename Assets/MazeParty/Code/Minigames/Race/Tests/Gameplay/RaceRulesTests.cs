@@ -44,7 +44,7 @@ namespace MazeParty.Gameplay.Tests
         public void RoundLeaderboard_UsesProgressThenServerProcessingOrder()
         {
             var leaderboard = RaceRules.BuildRoundLeaderboard(
-                new[] { 250, 400, 400, 120 },
+                new[] { 100, 160, 160, 48 },
                 new ulong[] { 8, 15, 12, 7 });
 
             Assert.That(

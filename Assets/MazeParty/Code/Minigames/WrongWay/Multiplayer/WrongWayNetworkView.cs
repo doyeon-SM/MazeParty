@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private WrongWayHudBindings hud;
         [SerializeField] private GameObject progressVfxPrefab;
+        [SerializeField] private GameObject finishVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[WrongWayRules.PlayerCount];
@@ -48,6 +49,7 @@ namespace MazeParty.Multiplayer
         private bool _hudContractErrorLogged;
 
         public GameObject ProgressVfxPrefab => progressVfxPrefab;
+        public GameObject FinishVfxPrefab => finishVfxPrefab;
 
         public static float CourseLength =>
             WrongWayRules.StepCount * NetworkWrongWayState.StepDepth;
@@ -127,9 +129,12 @@ namespace MazeParty.Multiplayer
             return Quaternion.LookRotation(direction.normalized, Vector3.up);
         }
 
-        public void ConfigureVfx(GameObject progressPrefab)
+        public void ConfigureVfx(
+            GameObject progressPrefab,
+            GameObject finishPrefab)
         {
             progressVfxPrefab = progressPrefab;
+            finishVfxPrefab = finishPrefab;
         }
 
         private void Awake()
@@ -368,10 +373,12 @@ namespace MazeParty.Multiplayer
 
             var scale = 0f;
             var height = 0.35f;
+            var prefab = progressVfxPrefab;
             if (finished && !runner.WasFinished)
             {
                 scale = 1.1f;
                 height = 0.9f;
+                prefab = finishVfxPrefab;
             }
             else if (recovering && !runner.WasRecovering)
             {
@@ -383,10 +390,10 @@ namespace MazeParty.Multiplayer
                 scale = 0.5f;
             }
 
-            if (scale > 0f && progressVfxPrefab != null)
+            if (scale > 0f && prefab != null)
             {
                 OneShotVfxPool.Play(
-                    progressVfxPrefab,
+                    prefab,
                     runner.Root.position + Vector3.up * height,
                     Quaternion.identity,
                     scale);

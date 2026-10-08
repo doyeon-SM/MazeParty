@@ -359,7 +359,7 @@ namespace MazeParty.Multiplayer
 
             if (pusherSlot >= 0 && pusherSlot < _runners.Length)
             {
-                _runners[pusherSlot]?.Visual.TriggerPunch();
+                _runners[pusherSlot]?.Visual.TriggerPush();
             }
             var target = targetSlot >= 0 && targetSlot < _runners.Length
                 ? _runners[targetSlot]

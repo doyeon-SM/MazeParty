@@ -99,6 +99,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         private readonly int _laserLimit;
         private uint _randomState;
         private int _simulatedSteps;
+        private int _hazardFrequencyStep;
         private double _nextProjectileAt;
         private double _nextLaserAt;
 
@@ -238,15 +239,22 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             }
         }
 
-        public bool TryPush(int slot)
+        public bool CanStartPush(int slot)
         {
             ValidateSlot(slot);
             var player = _players[slot];
-            if (IsRoundComplete || player.IsEliminated ||
-                RoundElapsedSeconds + Epsilon < player.NextPushAt)
+            return !IsRoundComplete &&
+                !player.IsEliminated &&
+                RoundElapsedSeconds + Epsilon >= player.NextPushAt;
+        }
+
+        public bool TryPush(int slot)
+        {
+            if (!CanStartPush(slot))
             {
                 return false;
             }
+            var player = _players[slot];
             player.NextPushAt = RoundElapsedSeconds +
                 CliffBarrageRules.PushCooldownSeconds;
             var closest = -1;
@@ -393,6 +401,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             {
                 laser.Reset();
             }
+            _hazardFrequencyStep = 0;
             _nextProjectileAt = NextRange(ProjectileSpawnMin,
                 ProjectileSpawnMax);
             _nextLaserAt = NextRange(LaserSpawnMin,
@@ -429,20 +438,25 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 return;
             }
 
+            UpdateHazardFrequency(stepEnd);
+            var intervalScale =
+                CliffBarrageRules.GetHazardIntervalScale(
+                    _hazardFrequencyStep);
             if (_projectileLimit > 0 &&
                 stepEnd + Epsilon >= _nextProjectileAt)
             {
                 SpawnProjectile();
                 _nextProjectileAt = stepEnd +
                     NextRange(ProjectileSpawnMin,
-                        ProjectileSpawnMax);
+                        ProjectileSpawnMax) * intervalScale;
             }
             if (_laserLimit > 0 &&
                 stepEnd + Epsilon >= _nextLaserAt)
             {
                 SpawnLaser(stepEnd);
                 _nextLaserAt = stepEnd +
-                    NextRange(LaserSpawnMin, LaserSpawnMax);
+                    NextRange(LaserSpawnMin, LaserSpawnMax) *
+                    intervalScale;
             }
             SimulateProjectiles(step, stepEnd);
             if (IsRoundComplete)
@@ -455,6 +469,30 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 return;
             }
             RoundElapsedSeconds = stepEnd;
+        }
+
+        private void UpdateHazardFrequency(double stepEnd)
+        {
+            var nextStep = CliffBarrageRules.GetHazardFrequencyStep(
+                stepEnd);
+            if (nextStep == _hazardFrequencyStep)
+            {
+                return;
+            }
+
+            var previousScale =
+                CliffBarrageRules.GetHazardIntervalScale(
+                    _hazardFrequencyStep);
+            var nextScale =
+                CliffBarrageRules.GetHazardIntervalScale(nextStep);
+            var scaleRatio = nextScale / previousScale;
+            _nextProjectileAt = stepEnd +
+                Math.Max(0d, _nextProjectileAt - stepEnd) *
+                scaleRatio;
+            _nextLaserAt = stepEnd +
+                Math.Max(0d, _nextLaserAt - stepEnd) *
+                scaleRatio;
+            _hazardFrequencyStep = nextStep;
         }
 
         private void ResolvePlayerSeparation()

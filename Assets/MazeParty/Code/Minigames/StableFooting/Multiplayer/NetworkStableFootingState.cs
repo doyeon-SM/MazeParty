@@ -387,9 +387,18 @@ namespace MazeParty.Multiplayer
                 nearestDistance = distance;
             }
 
+            _nextPushAllowedAt[pusherSlot] =
+                now + StableFootingRules.PushCooldownSeconds;
             if (targetSlot < 0)
             {
-                return false;
+                // A valid push input still needs to read as an action even
+                // when nobody is inside the cone. Byte.MaxValue is decoded
+                // by the presentation RPC as a pusher-only animation.
+                PlayPushPresentationRpc(
+                    (byte)pusherSlot,
+                    byte.MaxValue,
+                    origin);
+                return true;
             }
 
             for (var slot = 0;
@@ -421,8 +430,6 @@ namespace MazeParty.Multiplayer
             }
             CommitNextPositionsOnServer();
 
-            _nextPushAllowedAt[pusherSlot] =
-                now + StableFootingRules.PushCooldownSeconds;
             _lastPusherSlot.Value = (byte)pusherSlot;
             _lastPushTargetSlot.Value = (byte)targetSlot;
             _pushRevision.Value++;
@@ -447,12 +454,15 @@ namespace MazeParty.Multiplayer
             byte targetSlot,
             Vector3 targetPosition)
         {
-            if (StableFootingRules.IsValidPlayerSlot(pusherSlot) &&
-                StableFootingRules.IsValidPlayerSlot(targetSlot))
+            if (StableFootingRules.IsValidPlayerSlot(pusherSlot))
             {
+                var resolvedTargetSlot =
+                    StableFootingRules.IsValidPlayerSlot(targetSlot)
+                        ? targetSlot
+                        : -1;
                 PushPresentationRequested?.Invoke(
                     pusherSlot,
-                    targetSlot,
+                    resolvedTargetSlot,
                     targetPosition);
             }
         }

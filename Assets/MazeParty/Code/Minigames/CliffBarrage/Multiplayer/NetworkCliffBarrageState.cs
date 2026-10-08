@@ -154,7 +154,7 @@ namespace MazeParty.Multiplayer
             CliffBarrageRules.MaximumLasers;
         public const float ArenaCenterX = 1740f;
         public const float ArenaHalfExtent = 8f;
-        private const double SnapshotIntervalSeconds = 0.05d;
+        public const double SnapshotIntervalSeconds = 0.05d;
 
         [SerializeField, Range(0, ProjectilePoolSize)]
         private int _projectileLimit = ProjectilePoolSize;
@@ -214,6 +214,7 @@ namespace MazeParty.Multiplayer
 
         public static NetworkCliffBarrageState Instance { get; private set; }
         public event Action<int, Vector2> DamagePresentationRequested;
+        public event Action<int> PushPresentationRequested;
         public NetworkCliffBarragePhase Phase =>
             (NetworkCliffBarragePhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -368,7 +369,12 @@ namespace MazeParty.Multiplayer
                 FinishRoundOnServer(now);
                 return false;
             }
+            var pushApproved = _serverMatch.CanStartPush(slot);
             var hit = _serverMatch.TryPush(slot);
+            if (pushApproved)
+            {
+                PlayPushPresentationRpc((byte)slot);
+            }
             SyncSnapshotOnServer();
             if (_serverMatch.IsRoundComplete)
             {
@@ -588,6 +594,17 @@ namespace MazeParty.Multiplayer
                 DamagePresentationRequested?.Invoke(
                     damagedSlot,
                     localPosition);
+            }
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayPushPresentationRpc(byte pusherSlot)
+        {
+            if (CliffBarrageRules.IsValidSlot(pusherSlot))
+            {
+                PushPresentationRequested?.Invoke(pusherSlot);
             }
         }
 

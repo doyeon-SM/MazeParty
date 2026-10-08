@@ -135,6 +135,8 @@ namespace MazeParty.Multiplayer
             private set;
         }
 
+        public event Action<int> AttackPresentationRequested;
+
         public NetworkTagChasePhase Phase =>
             (NetworkTagChasePhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -325,6 +327,7 @@ namespace MazeParty.Multiplayer
             SimulateToOnServer(now);
             _nextCatchAllowedAt =
                 now + CatchCooldownSeconds;
+            PlayAttackPresentationRpc((byte)slot);
             var target = FindCatchTarget(slot);
             if (target < 0)
             {
@@ -349,6 +352,17 @@ namespace MazeParty.Multiplayer
                 CompleteRoundOnServer(now);
             }
             return true;
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayAttackPresentationRpc(byte attackerSlot)
+        {
+            if (TagChaseRules.IsValidPlayerSlot(attackerSlot))
+            {
+                AttackPresentationRequested?.Invoke(attackerSlot);
+            }
         }
 
         public Vector2 GetPlayerPosition(int slot)

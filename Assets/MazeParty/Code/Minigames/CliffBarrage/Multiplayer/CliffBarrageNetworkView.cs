@@ -20,6 +20,9 @@ namespace MazeParty.Multiplayer
         public const float ProjectilePresentationHeight = 0.85f;
 
         private const float InterpolationSpeed = 22f;
+        private const float ProjectileTeleportDistance = 2f;
+        private const double MaximumProjectilePredictionSeconds =
+            NetworkCliffBarrageState.SnapshotIntervalSeconds * 2d;
         private const float FallDurationSeconds = 0.6f;
         private const float LaserWarningWidth = 0.14f;
         private const float LaserFiringWidth = 0.65f;
@@ -48,6 +51,16 @@ namespace MazeParty.Multiplayer
         private readonly PlayerView[] _players = new PlayerView[4];
         private readonly bool[] _wasEliminated = new bool[4];
         private readonly float[] _fallStartedAt = new float[4];
+        private readonly CliffBarrageProjectileNetworkSnapshot[]
+            _lastProjectileSnapshots =
+                new CliffBarrageProjectileNetworkSnapshot[
+                    NetworkCliffBarrageState.ProjectilePoolSize];
+        private readonly double[] _projectileSnapshotReceivedAt =
+            new double[NetworkCliffBarrageState.ProjectilePoolSize];
+        private readonly bool[] _hasProjectileSnapshot =
+            new bool[NetworkCliffBarrageState.ProjectilePoolSize];
+        private readonly bool[] _wasProjectileActive =
+            new bool[NetworkCliffBarrageState.ProjectilePoolSize];
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraRegistered;
         private bool _worldVisible;
@@ -350,18 +363,58 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
                 var snapshot = state.GetProjectile(index);
+                if (!_hasProjectileSnapshot[index] ||
+                    !_lastProjectileSnapshots[index].Equals(snapshot))
+                {
+                    _lastProjectileSnapshots[index] = snapshot;
+                    _projectileSnapshotReceivedAt[index] =
+                        Time.unscaledTimeAsDouble;
+                    _hasProjectileSnapshot[index] = true;
+                }
                 if (shell.gameObject.activeSelf != snapshot.Active)
                 {
                     shell.gameObject.SetActive(snapshot.Active);
                 }
                 if (!snapshot.Active)
                 {
+                    _wasProjectileActive[index] = false;
                     continue;
                 }
-                var position = snapshot.Position;
-                shell.localPosition = new Vector3(
-                    position.x, ProjectilePresentationHeight,
-                    position.y);
+
+                var presentationNow = Time.unscaledTimeAsDouble;
+                if (state.IsPaused)
+                {
+                    // Keep the prediction clock pinned while paused so a
+                    // velocity-bearing snapshot neither drifts during pause
+                    // nor jumps ahead on the first resumed frame.
+                    _projectileSnapshotReceivedAt[index] = presentationNow;
+                }
+                var sampleAge = state.IsPaused
+                    ? 0f
+                    : Mathf.Clamp(
+                        (float)(presentationNow -
+                            _projectileSnapshotReceivedAt[index]),
+                        0f,
+                        (float)MaximumProjectilePredictionSeconds);
+                var predicted = snapshot.Position +
+                    snapshot.Velocity * sampleAge;
+                var target = new Vector3(
+                    predicted.x,
+                    ProjectilePresentationHeight,
+                    predicted.y);
+                var shouldSnap = !_wasProjectileActive[index] ||
+                    !_hadVisibleFrame ||
+                    (shell.localPosition - target).sqrMagnitude >
+                    ProjectileTeleportDistance *
+                    ProjectileTeleportDistance;
+                shell.localPosition = shouldSnap
+                    ? target
+                    : Vector3.Lerp(
+                        shell.localPosition,
+                        target,
+                        1f - Mathf.Exp(-InterpolationSpeed *
+                            Time.unscaledDeltaTime));
+                _wasProjectileActive[index] = true;
                 shell.Rotate(Vector3.up,
                     240f * Time.unscaledDeltaTime,
                     Space.Self);
@@ -402,6 +455,16 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void HandlePushPresentationRequested(int slot)
+        {
+            if (!_worldVisible || slot < 0 || slot >= _players.Length)
+            {
+                return;
+            }
+
+            _players[slot]?.Visual.TriggerPush();
+        }
+
         private void EnsureDamageVfxSubscription()
         {
             if (_subscribedVfxState == state)
@@ -414,6 +477,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.DamagePresentationRequested +=
                     HandleDamagePresentationRequested;
+                _subscribedVfxState.PushPresentationRequested +=
+                    HandlePushPresentationRequested;
             }
         }
 
@@ -423,6 +488,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.DamagePresentationRequested -=
                     HandleDamagePresentationRequested;
+                _subscribedVfxState.PushPresentationRequested -=
+                    HandlePushPresentationRequested;
                 _subscribedVfxState = null;
             }
         }
@@ -536,6 +603,12 @@ namespace MazeParty.Multiplayer
             {
                 _hadVisibleFrame = false;
                 _lastRoundNumber = 0;
+                for (var index = 0; index <
+                    _hasProjectileSnapshot.Length; index++)
+                {
+                    _hasProjectileSnapshot[index] = false;
+                    _wasProjectileActive[index] = false;
+                }
             }
             if (arenaPresentation != null)
             {

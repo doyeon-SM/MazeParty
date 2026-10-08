@@ -164,7 +164,7 @@ namespace MazeParty.Multiplayer.Tests
 
 
         [Test]
-        public void RouteDots_FollowLiveMinimapProjection_ClearWhenUnavailable_AndStayHiddenOnFullMap()
+        public void RouteDots_FollowBothMapProjections_AndClearWhenUnavailable()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
@@ -189,20 +189,14 @@ namespace MazeParty.Multiplayer.Tests
                     var data = new SerializedObject(view);
                     var graphic = (BoardMapRouteGraphic)data.FindProperty("shopRouteGraphic").objectReferenceValue;
                     var projection = (MiniMapView)data.FindProperty("projection").objectReferenceValue;
-                    var showKeyShopDetails = data.FindProperty("showKeyShopDetails").boolValue;
                     Assert.That(graphic.transform.parent, Is.EqualTo(projection.otherDotCanvas));
                     var mask = (Mask)data.FindProperty("circularMask").objectReferenceValue;
                     if (mask != null) Assert.That(graphic.transform.IsChildOf(mask.transform), Is.True);
                     view.PrepareMap(topology, tiles[0].Coordinate, 0, tiles[2].Coordinate, tiles[0].WorldCenter);
-                    if (!showKeyShopDetails)
-                    {
-                        Assert.That(
-                            graphic.PointCount,
-                            Is.Zero,
-                            "The full map identifies the key shop through its yellow tile only.");
-                        continue;
-                    }
-                    Assert.That(graphic.PointCount, Is.GreaterThan(2), "The route is independent of the dice result.");
+                    Assert.That(
+                        graphic.PointCount,
+                        Is.GreaterThan(2),
+                        "Both the full map and minimap show the dice-independent shortest route to the key shop.");
                     var firstPoint = graphic.ProjectPoint(0);
                     var endPoint = graphic.ProjectPoint(graphic.PointCount - 1);
                     Assert.That(endPoint.x, Is.GreaterThan(firstPoint.x));

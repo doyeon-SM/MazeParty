@@ -200,6 +200,26 @@ namespace MazeParty.Gameplay.Tests
                 0d, 0d, -1d, 1d, 1d, 1d, 0.45d), Is.False);
         }
 
+        [TestCase(0d, 0, 1d)]
+        [TestCase(9.999d, 0, 1d)]
+        [TestCase(10d, 1, 1d / 1.2d)]
+        [TestCase(19.999d, 1, 1d / 1.2d)]
+        [TestCase(20d, 2, 1d / 1.4d)]
+        [TestCase(50d, 5, 0.5d)]
+        [TestCase(60d, 5, 0.5d)]
+        public void HazardFrequencyChangesAtExactTenSecondBoundaries(
+            double elapsed,
+            int expectedStep,
+            double expectedIntervalScale)
+        {
+            var step = CliffBarrageRules.GetHazardFrequencyStep(elapsed);
+
+            Assert.That(step, Is.EqualTo(expectedStep));
+            Assert.That(
+                CliffBarrageRules.GetHazardIntervalScale(step),
+                Is.EqualTo(expectedIntervalScale).Within(0.000000001d));
+        }
+
         [Test]
         public void SeededHazardsAreChunkIndependentAndNeverExceedPools()
         {

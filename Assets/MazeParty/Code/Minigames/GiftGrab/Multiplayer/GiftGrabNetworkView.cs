@@ -483,6 +483,8 @@ namespace MazeParty.Multiplayer
 
         private void HandleActionPresentationRequested(
             GiftGrabNetworkActionType actionType,
+            int actorSlot,
+            int targetSlot,
             Vector2 actionPosition)
         {
             if (!_worldVisible)
@@ -493,7 +495,13 @@ namespace MazeParty.Multiplayer
             switch (actionType)
             {
                 case GiftGrabNetworkActionType.Push:
+                    GetPlayerVisual(actorSlot)?.TriggerPush();
+                    GetPlayerVisual(targetSlot)?.TriggerHit();
+                    PlaceVfx(pushVfxAnchor, actionPosition);
+                    _pushVfxRemaining = ActionVfxSeconds;
+                    break;
                 case GiftGrabNetworkActionType.ThrownHit:
+                    GetPlayerVisual(targetSlot)?.TriggerHit();
                     PlaceVfx(pushVfxAnchor, actionPosition);
                     _pushVfxRemaining = ActionVfxSeconds;
                     break;
@@ -521,6 +529,13 @@ namespace MazeParty.Multiplayer
                     0.72f);
             }
             cueAudioSource?.Play();
+        }
+
+        private PlayerAvatarVisual GetPlayerVisual(int slot)
+        {
+            return slot >= 0 && slot < _players.Length
+                ? _players[slot]?.Visual
+                : null;
         }
 
         private void EnsureActionVfxSubscription()

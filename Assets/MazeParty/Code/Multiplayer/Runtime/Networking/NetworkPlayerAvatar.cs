@@ -966,6 +966,8 @@ namespace MazeParty.Multiplayer
                 RebaseBoardTravelPreviewAfterRelocationOnServer(respawn);
                 TeleportController(respawn.GetRecoveryCenter(1f), transform.rotation);
                 SyncLogicalTileOnServer();
+                NetworkWorldDiceCoordinator.Instance?
+                    .RelocatePendingDiceOnServer(this);
             }
 
             _currentHealth.Value = _maxHealth.Value;

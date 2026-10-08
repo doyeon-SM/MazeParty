@@ -644,6 +644,7 @@ MonoBehaviour:
   mineMarkerPrefab: {fileID: 717061402991843754, guid: 38e3b04e1c748074883815f1ca3ae684, type: 3}
   mineExplosionVfxPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
   hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  finishVfxPrefab: {fileID: 6809623227728566479, guid: 85473b9fd0e62a845a128ec2f6219fb1, type: 3}
 --- !u!114 &1149066039
 MonoBehaviour:
   m_ObjectHideFlags: 0

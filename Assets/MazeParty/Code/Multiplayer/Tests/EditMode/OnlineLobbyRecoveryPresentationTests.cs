@@ -31,6 +31,12 @@ namespace MazeParty.Multiplayer.Tests
                 var boardMapSelectionRoot = GetField<GameObject>(
                     view,
                     "boardMapSelectionRoot");
+                var boardSettingsPanel = GetField<GameObject>(
+                    view,
+                    "boardSettingsPanel");
+                var boardSettingsButton = GetField<Button>(
+                    view,
+                    "boardSettingsButton");
                 var previousBoardMapButton = GetField<Button>(
                     view,
                     "previousBoardMapButton");
@@ -65,6 +71,8 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(startHint.activeSelf, Is.False);
                 Assert.That(runningMessage.activeSelf, Is.False);
                 Assert.That(boardMapSelectionRoot.activeSelf, Is.False);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
                 Assert.That(customizationPanel.activeSelf, Is.False);
 
                 readyButton.onClick.Invoke();
@@ -97,9 +105,14 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(startButtonText.text, Is.EqualTo(normalStartLabel));
                 Assert.That(readyButton.interactable, Is.True);
                 Assert.That(startButton.interactable, Is.True);
-                Assert.That(boardMapSelectionRoot.activeSelf, Is.True);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                Assert.That(boardMapSelectionRoot.activeSelf, Is.False);
                 Assert.That(customizationPanel.activeSelf, Is.False);
 
+                boardSettingsButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
+                Assert.That(boardMapSelectionRoot.activeSelf, Is.True);
                 previousBoardMapButton.interactable = true;
                 nextBoardMapButton.interactable = true;
                 view.SetBoardMapSelectionLocked(true);
@@ -124,6 +137,8 @@ namespace MazeParty.Multiplayer.Tests
                     string.Empty);
                 Assert.That(readyButton.gameObject.activeSelf, Is.True);
                 Assert.That(startButton.gameObject.activeSelf, Is.False);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
                 Assert.That(boardMapSelectionRoot.activeSelf, Is.False);
                 Assert.That(customizationPanel.activeSelf, Is.False);
 

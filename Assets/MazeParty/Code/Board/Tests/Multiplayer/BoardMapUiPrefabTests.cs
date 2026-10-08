@@ -102,7 +102,7 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Null);
                     Assert.That(data.FindProperty("showKeyShopDetails").boolValue,
                         Is.False,
-                        "The full map presents the key shop through its yellow tile only.");
+                        "The full map must not restore the removed key-shop text and icon details.");
                     Assert.That(data.FindProperty("showTravelCounts").boolValue,
                         Is.True);
                     var rooms = data.FindProperty("rooms");

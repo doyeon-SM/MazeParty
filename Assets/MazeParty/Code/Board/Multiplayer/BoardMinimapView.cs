@@ -92,6 +92,7 @@ namespace MazeParty.Multiplayer
         private BoardTravelRoutePreview _travelPreview;
         private BoardTopology _travelTopology;
         private BoardTile _travelStart;
+        private BoardTile _travelPrimaryDestination;
         private int _travelStartingStep;
         private int _travelMaximumStep;
         private int _travelChoiceSignature = int.MinValue;
@@ -296,16 +297,9 @@ namespace MazeParty.Multiplayer
             projection.miniMapBounds.topRight.position = bounds.max;
             if (currentTile != null)
                 currentTile.text = GameText.T(unknownTileText);
-            if (showKeyShopDetails)
-            {
-                RefreshShopDistance(topology, localCoordinate, keyShop);
-            }
-            else
-            {
-                _shopRoute.Clear();
-                if (shopDistanceText != null)
-                    shopDistanceText.text = string.Empty;
-            }
+            RefreshShopDistance(topology, localCoordinate, keyShop);
+            if (!showKeyShopDetails && shopDistanceText != null)
+                shopDistanceText.text = string.Empty;
             shopRouteGraphic.Present(_shopRoute, bounds);
 
             if (freeform)
@@ -667,6 +661,13 @@ namespace MazeParty.Multiplayer
                 ? Mathf.Clamp(local.LocalTurnRouteStepOffset, 0, turnRoll)
                 : 0;
             BoardTile start = null;
+            BoardTile primaryDestination = null;
+            if (match != null && match.KeyShopHasLocation)
+            {
+                topology.TryGetTile(
+                    match.KeyShopLocation,
+                    out primaryDestination);
+            }
             var hasValidOrigin = local != null && local.IsOwner &&
                                  local.HasLocalTurnRouteOrigin &&
                                  turnRoll > 0 &&
@@ -687,11 +688,13 @@ namespace MazeParty.Multiplayer
             var signature = ComputeTravelChoiceSignature(local);
             if (_travelPreview == null || _travelTopology != topology ||
                 _travelStart != start ||
+                _travelPrimaryDestination != primaryDestination ||
                 _travelStartingStep != startingStep ||
                 _travelMaximumStep != turnRoll)
             {
                 _travelTopology = topology;
                 _travelStart = start;
+                _travelPrimaryDestination = primaryDestination;
                 _travelStartingStep = startingStep;
                 _travelMaximumStep = turnRoll;
                 _travelPreview = start != null && turnRoll > 0
@@ -699,7 +702,8 @@ namespace MazeParty.Multiplayer
                         topology,
                         start,
                         startingStep,
-                        turnRoll)
+                        turnRoll,
+                        primaryDestination)
                     : null;
                 _travelChoiceSignature = int.MinValue;
             }

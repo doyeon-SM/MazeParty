@@ -82,8 +82,11 @@ namespace MazeParty.Multiplayer
     /// where a turn's dice result was committed. The origin is normally step
     /// zero; after an authoritative relocation it can resume at the number of
     /// already-consumed moves. No route extends beyond the committed result. A
-    /// route becomes a branch when it takes any exit after the first authored
-    /// outgoing gate and remains a branch for the rest of that route.
+    /// route becomes a branch when it leaves the optional preferred route (or
+    /// takes any exit after the first authored outgoing gate when no preferred
+    /// route is available). After a fork is committed, the compatible route
+    /// whose remaining prefix follows the shortest path to the destination is
+    /// promoted to primary.
     /// </summary>
     public sealed class BoardTravelRoutePreview
     {
@@ -140,12 +143,32 @@ namespace MazeParty.Multiplayer
             new List<CandidateRoute>();
         private readonly Dictionary<StepKey, bool> _visibleSteps =
             new Dictionary<StepKey, bool>();
+        private readonly List<BoardTile> _primaryRoute =
+            new List<BoardTile>();
+        private readonly List<BoardTile> _choicePrimaryRoute =
+            new List<BoardTile>();
+        private readonly BoardTopology _topology;
+        private readonly BoardTile _primaryDestination;
 
         public BoardTravelRoutePreview(
             BoardTopology topology,
             BoardTile turnOrigin,
             int maximumStep)
-            : this(topology, turnOrigin, 0, maximumStep)
+            : this(topology, turnOrigin, 0, maximumStep, null)
+        {
+        }
+
+        public BoardTravelRoutePreview(
+            BoardTopology topology,
+            BoardTile turnOrigin,
+            int maximumStep,
+            BoardTile primaryDestination)
+            : this(
+                topology,
+                turnOrigin,
+                0,
+                maximumStep,
+                primaryDestination)
         {
         }
 
@@ -154,6 +177,21 @@ namespace MazeParty.Multiplayer
             BoardTile turnOrigin,
             int startingStep,
             int maximumStep)
+            : this(
+                topology,
+                turnOrigin,
+                startingStep,
+                maximumStep,
+                null)
+        {
+        }
+
+        public BoardTravelRoutePreview(
+            BoardTopology topology,
+            BoardTile turnOrigin,
+            int startingStep,
+            int maximumStep,
+            BoardTile primaryDestination)
         {
             if (topology == null)
                 throw new ArgumentNullException(nameof(topology));
@@ -167,6 +205,16 @@ namespace MazeParty.Multiplayer
             StartCoordinate = turnOrigin.Coordinate;
             StartingStep = startingStep;
             MaximumStep = maximumStep;
+            _topology = topology;
+            _primaryDestination = primaryDestination;
+            if (primaryDestination != null)
+            {
+                BoardMapRoute.TryFind(
+                    topology,
+                    turnOrigin,
+                    primaryDestination,
+                    _primaryRoute);
+            }
             var path = new List<RouteNode>
             {
                 new RouteNode(turnOrigin, false)
@@ -214,6 +262,7 @@ namespace MazeParty.Multiplayer
 
             destination.Clear();
             _visibleSteps.Clear();
+            var choicePrimaryRoute = ResolveChoicePrimaryRoute(choices);
             for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
             {
                 var route = _routes[routeIndex];
@@ -226,13 +275,16 @@ namespace MazeParty.Multiplayer
                     var key = new StepKey(
                         node.Tile.Coordinate,
                         StartingStep + step);
+                    var isBranch = choicePrimaryRoute != null
+                        ? !ReferenceEquals(route, choicePrimaryRoute)
+                        : node.IsBranch;
                     if (_visibleSteps.TryGetValue(key, out var existingBranch))
                     {
-                        _visibleSteps[key] = existingBranch && node.IsBranch;
+                        _visibleSteps[key] = existingBranch && isBranch;
                     }
                     else
                     {
-                        _visibleSteps.Add(key, node.IsBranch);
+                        _visibleSteps.Add(key, isBranch);
                     }
                 }
             }
@@ -257,6 +309,56 @@ namespace MazeParty.Multiplayer
             return result;
         }
 
+        private CandidateRoute ResolveChoicePrimaryRoute(
+            IReadOnlyList<BoardRouteChoice> choices)
+        {
+            if (choices == null || choices.Count == 0 ||
+                _primaryDestination == null ||
+                !_topology.TryGetTile(
+                    choices[choices.Count - 1].Destination,
+                    out var current) ||
+                current == null ||
+                !BoardMapRoute.TryFind(
+                    _topology,
+                    current,
+                    _primaryDestination,
+                    _choicePrimaryRoute))
+            {
+                return null;
+            }
+
+            CandidateRoute best = null;
+            var bestPrefixLength = -1;
+            for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
+            {
+                var route = _routes[routeIndex];
+                if (!TryGetChoiceEndNodeIndex(
+                        route,
+                        choices,
+                        out var choiceEndNode))
+                {
+                    continue;
+                }
+
+                var prefixLength = 0;
+                while (choiceEndNode + prefixLength < route.Nodes.Length &&
+                       prefixLength < _choicePrimaryRoute.Count &&
+                       route.Nodes[choiceEndNode + prefixLength].Tile ==
+                       _choicePrimaryRoute[prefixLength])
+                {
+                    prefixLength++;
+                }
+
+                if (prefixLength <= bestPrefixLength)
+                    continue;
+
+                best = route;
+                bestPrefixLength = prefixLength;
+            }
+
+            return best;
+        }
+
         private void Enumerate(
             BoardTopology topology,
             BoardTile current,
@@ -272,6 +374,11 @@ namespace MazeParty.Multiplayer
             var outgoing = topology.GetOutgoingGates(current);
             var destinations = new HashSet<BoardTile>();
             var extended = false;
+            var routeStep = path.Count - 1;
+            var preferredDestination = routeStep < _primaryRoute.Count - 1 &&
+                                       _primaryRoute[routeStep] == current
+                ? _primaryRoute[routeStep + 1]
+                : null;
             for (var gateIndex = 0; gateIndex < outgoing.Count; gateIndex++)
             {
                 var destination = outgoing[gateIndex]?.Destination;
@@ -282,7 +389,10 @@ namespace MazeParty.Multiplayer
                 }
 
                 extended = true;
-                var destinationIsBranch = isBranch || destinations.Count > 1;
+                var destinationIsBranch = isBranch ||
+                    (preferredDestination != null
+                        ? destination != preferredDestination
+                        : destinations.Count > 1);
                 path.Add(new RouteNode(destination, destinationIsBranch));
                 Enumerate(
                     topology,
@@ -300,6 +410,15 @@ namespace MazeParty.Multiplayer
             CandidateRoute route,
             IReadOnlyList<BoardRouteChoice> choices)
         {
+            return TryGetChoiceEndNodeIndex(route, choices, out _);
+        }
+
+        private static bool TryGetChoiceEndNodeIndex(
+            CandidateRoute route,
+            IReadOnlyList<BoardRouteChoice> choices,
+            out int choiceEndNode)
+        {
+            choiceEndNode = 0;
             if (choices == null || choices.Count == 0)
                 return true;
 
@@ -317,6 +436,7 @@ namespace MazeParty.Multiplayer
                     {
                         matched = true;
                         nextEdge = edge + 1;
+                        choiceEndNode = edge + 1;
                     }
 
                     break;

@@ -60,6 +60,7 @@ namespace MazeParty.Multiplayer
         private bool _worldVisible;
         private bool _hadVisibleFrame;
         private int _localSlot = -1;
+        private NetworkBombPassingState _subscribedActionState;
 
         public static Vector3 SharedCameraPosition =>
             MinigameCameraFraming.CalculateSharedPosition(
@@ -103,6 +104,7 @@ namespace MazeParty.Multiplayer
             GameObject explosionPrefab)
         {
             state = networkState;
+            EnsureActionPresentationSubscription();
             sharedCamera = camera;
             playerRoot = players;
             arenaPresentation = arena;
@@ -121,6 +123,7 @@ namespace MazeParty.Multiplayer
         private void Awake()
         {
             state ??= GetComponent<NetworkBombPassingState>();
+            EnsureActionPresentationSubscription();
             _baseLightIntensity = bombLight != null
                 ? Mathf.Max(0.01f, bombLight.intensity)
                 : 1f;
@@ -146,8 +149,15 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(false);
         }
 
+        private void OnEnable()
+        {
+            state ??= GetComponent<NetworkBombPassingState>();
+            EnsureActionPresentationSubscription();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeFromActionPresentation();
             if (explosionFlashLight != null)
             {
                 explosionFlashLight.enabled = false;
@@ -159,6 +169,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkBombPassingState>();
+            EnsureActionPresentationSubscription();
             EnsurePlayers();
             var match = NetworkMatchState.Instance;
             var selected = match != null && match.IsBombPassingPhase;
@@ -543,6 +554,44 @@ namespace MazeParty.Multiplayer
             {
                 playerRoot.gameObject.SetActive(active);
             }
+        }
+
+        private void HandleAttackPresentationRequested(int slot)
+        {
+            if (!_worldVisible || slot < 0 || slot >= _players.Length)
+            {
+                return;
+            }
+
+            _players[slot]?.Visual.TriggerPunch();
+        }
+
+        private void EnsureActionPresentationSubscription()
+        {
+            if (_subscribedActionState == state)
+            {
+                return;
+            }
+
+            UnsubscribeFromActionPresentation();
+            _subscribedActionState = state;
+            if (_subscribedActionState != null)
+            {
+                _subscribedActionState.AttackPresentationRequested +=
+                    HandleAttackPresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromActionPresentation()
+        {
+            if (_subscribedActionState == null)
+            {
+                return;
+            }
+
+            _subscribedActionState.AttackPresentationRequested -=
+                HandleAttackPresentationRequested;
+            _subscribedActionState = null;
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

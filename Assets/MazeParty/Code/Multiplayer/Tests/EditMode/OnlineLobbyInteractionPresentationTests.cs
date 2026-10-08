@@ -172,6 +172,9 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 var view = GetLobbyView(root);
+                var sessionHeader = GetField<GameObject>(
+                    view,
+                    "sessionHeaderRoot");
                 var inviteCodeText = GetField<Text>(view, "inviteCodeText");
                 var revealButton = GetField<HoldToRevealButton>(
                     view,
@@ -180,6 +183,23 @@ namespace MazeParty.Multiplayer.Tests
                 var maskedText = GameText.F("Invite Code: {0}", "****");
                 var revealedText = GameText.F("Invite Code: {0}", "ABCD");
                 var copyRequests = 0;
+
+                Assert.That(sessionHeader.transform.parent, Is.SameAs(root.transform),
+                    "The invite code controls must be authored as a root-level lobby header.");
+                AssertTopCentered((RectTransform)sessionHeader.transform);
+                Assert.That(inviteCodeText.transform.parent,
+                    Is.SameAs(sessionHeader.transform));
+                Assert.That(revealButton.transform.parent,
+                    Is.SameAs(sessionHeader.transform));
+                Assert.That(copyButton.transform.parent,
+                    Is.SameAs(sessionHeader.transform));
+                Assert.That(inviteCodeText.transform.GetSiblingIndex(),
+                    Is.LessThan(revealButton.transform.GetSiblingIndex()));
+                Assert.That(revealButton.transform.GetSiblingIndex(),
+                    Is.LessThan(copyButton.transform.GetSiblingIndex()));
+                AssertIconOnlyButton(revealButton.GetComponent<Button>(),
+                    "Invite-code reveal");
+                AssertIconOnlyButton(copyButton, "Invite-code copy");
 
                 BindButtonEvents(view);
                 view.CopyRequested += () => copyRequests++;
@@ -203,6 +223,63 @@ namespace MazeParty.Multiplayer.Tests
 
                 revealButton.OnPointerUp(pointerEvent);
                 Assert.That(inviteCodeText.text, Is.EqualTo(maskedText));
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
+        }
+
+        [Test]
+        public void PlayerRows_UseReadyNameColorAndModernUiHostStar()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            try
+            {
+                var view = GetLobbyView(root);
+                var playerRows = GetField<Text[]>(view, "playerRows");
+                var hostIcons = GetField<Image[]>(view, "playerHostIcons");
+                var readyColor = GetField<Color>(view, "readyPlayerNameColor");
+                var waitingColor = GetField<Color>(view, "waitingPlayerNameColor");
+
+                Assert.That(readyColor.g, Is.GreaterThan(readyColor.r),
+                    "The authored ready-name color must read as green.");
+                Assert.That(readyColor.g, Is.GreaterThan(readyColor.b),
+                    "The authored ready-name color must read as green.");
+                Assert.That(waitingColor, Is.Not.EqualTo(readyColor));
+                Assert.That(hostIcons, Has.Length.EqualTo(playerRows.Length));
+
+                for (var index = 0; index < playerRows.Length; index++)
+                {
+                    Assert.That(hostIcons[index].transform.parent,
+                        Is.SameAs(playerRows[index].transform.parent));
+                    Assert.That(hostIcons[index].transform.GetSiblingIndex(),
+                        Is.LessThan(playerRows[index].transform.GetSiblingIndex()),
+                        "The host star must be authored to the left of the nickname.");
+                    Assert.That(hostIcons[index].sprite, Is.Not.Null);
+                    Assert.That(AssetDatabase.GetAssetPath(hostIcons[index].sprite),
+                        Is.EqualTo(
+                            "Assets/Ignore/Modern UI Pack/Textures/Icon/Common/Star Filled.png"));
+                }
+
+                view.Render(CreateSnapshotWithMixedReadiness(),
+                    true,
+                    false,
+                    string.Empty);
+
+                Assert.That(playerRows[0].text, Is.EqualTo("Host"),
+                    "Readiness and host status must be visual, not text suffixes.");
+                Assert.That(playerRows[0].color, Is.EqualTo(waitingColor));
+                Assert.That(hostIcons[0].gameObject.activeSelf, Is.True);
+
+                Assert.That(playerRows[1].text, Is.EqualTo("Guest"));
+                Assert.That(playerRows[1].color, Is.EqualTo(readyColor));
+                Assert.That(hostIcons[1].gameObject.activeSelf, Is.False);
+                Assert.That(hostIcons.Skip(2).All(icon => !icon.gameObject.activeSelf),
+                    Is.True);
+                Assert.That(playerRows.Skip(2).All(row => row.color == waitingColor),
+                    Is.True,
+                    "Empty slots must restore the default nickname color.");
             }
             finally
             {
@@ -260,12 +337,21 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardMapSelector_ShowsNameToEveryoneAndOnlyHostCanCycle()
+        public void BoardSettingsPopup_TogglesSeparatelyAndOnlyHostCanCycleMaps()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
             {
                 var view = GetLobbyView(root);
+                var boardSettingsPanel = GetField<GameObject>(
+                    view,
+                    "boardSettingsPanel");
+                var boardSettingsButton = GetField<Button>(
+                    view,
+                    "boardSettingsButton");
+                var closeBoardSettingsButton = GetField<Button>(
+                    view,
+                    "closeBoardSettingsButton");
                 var selector = GetField<GameObject>(
                     view,
                     "boardMapSelectionRoot");
@@ -277,19 +363,50 @@ namespace MazeParty.Multiplayer.Tests
                     "nextBoardMapButton");
                 var mapName = GetField<Text>(view, "boardMapNameText");
                 var ready = GetField<Button>(view, "readyButton");
-                var sessionPanel = GetField<GameObject>(view, "sessionPanel");
+                var start = GetField<Button>(view, "startButton");
+                var sessionActions = GetField<GameObject>(
+                    view,
+                    "sessionActionsRoot");
+                var wardrobeButton = GetField<Button>(
+                    view,
+                    "customizationButton");
+                var wardrobePanel = GetField<GameObject>(
+                    view,
+                    "customizationPanel");
 
-                Assert.That(selector.transform.parent,
-                    Is.SameAs(sessionPanel.transform));
-                Assert.That(selector.transform.GetSiblingIndex(),
-                    Is.LessThan(ready.transform.GetSiblingIndex()));
-                Assert.That(
-                    ((RectTransform)selector.transform).sizeDelta.y,
-                    Is.EqualTo(48f).Within(0.01f),
-                    "Session Panel does not control child height, so the authored row height is the runtime height.");
+                Assert.That(boardSettingsPanel.transform.parent,
+                    Is.SameAs(root.transform),
+                    "Board settings must be a separate root-level popup.");
+                Assert.That(selector.transform.IsChildOf(
+                    boardSettingsPanel.transform), Is.True);
+                Assert.That(closeBoardSettingsButton.transform.IsChildOf(
+                    boardSettingsPanel.transform), Is.True);
                 Assert.That(previous.transform.IsChildOf(selector.transform), Is.True);
                 Assert.That(next.transform.IsChildOf(selector.transform), Is.True);
                 Assert.That(mapName.transform.IsChildOf(selector.transform), Is.True);
+                Assert.That(boardSettingsButton.transform.parent,
+                    Is.SameAs(wardrobeButton.transform.parent));
+                Assert.That(boardSettingsButton.transform.GetSiblingIndex() + 1,
+                    Is.EqualTo(wardrobeButton.transform.GetSiblingIndex()),
+                    "Board Settings must be authored immediately above Wardrobe.");
+                Assert.That(
+                    ((RectTransform)boardSettingsButton.transform)
+                        .anchoredPosition.y,
+                    Is.GreaterThan(
+                        ((RectTransform)wardrobeButton.transform)
+                            .anchoredPosition.y),
+                    "Board Settings must be positioned above Wardrobe.");
+
+                Assert.That(sessionActions.transform.parent,
+                    Is.SameAs(root.transform));
+                AssertBottomCentered((RectTransform)sessionActions.transform);
+                Assert.That(ready.transform.parent,
+                    Is.SameAs(sessionActions.transform));
+                Assert.That(start.transform.parent,
+                    Is.SameAs(sessionActions.transform));
+                Assert.That(ready.transform.GetSiblingIndex(),
+                    Is.LessThan(start.transform.GetSiblingIndex()),
+                    "Start must be authored below Ready in the shared action stack.");
 
                 BindButtonEvents(view);
                 var deltas = new List<int>();
@@ -301,7 +418,14 @@ namespace MazeParty.Multiplayer.Tests
                     true,
                     false,
                     string.Empty);
-                Assert.That(selector.activeSelf, Is.True);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False,
+                    "Board settings must start closed each time the lobby is entered.");
+                Assert.That(selector.activeInHierarchy, Is.False);
+
+                boardSettingsButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
+                Assert.That(selector.activeInHierarchy, Is.True);
                 Assert.That(mapName.text,
                     Is.EqualTo(GameText.F(
                         "Map: {0}",
@@ -324,13 +448,27 @@ namespace MazeParty.Multiplayer.Tests
                 next.onClick.Invoke();
                 Assert.That(deltas, Is.EqualTo(new[] { -1, 1 }));
 
+                wardrobeButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.False,
+                    "Opening Wardrobe must close Board Settings.");
+                Assert.That(wardrobePanel.activeSelf, Is.True);
+                boardSettingsButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
+                Assert.That(wardrobePanel.activeSelf, Is.False,
+                    "Opening Board Settings must close Wardrobe.");
+                closeBoardSettingsButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+
                 view.Render(CreateSnapshot(
                         MultiplayerConstants.LobbyPhase,
                         false),
                     true,
                     false,
                     string.Empty);
-                Assert.That(selector.activeSelf, Is.True);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                boardSettingsButton.onClick.Invoke();
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
                 Assert.That(mapName.text,
                     Is.EqualTo(GameText.F(
                         "Map: {0}",
@@ -356,6 +494,7 @@ namespace MazeParty.Multiplayer.Tests
                     true,
                     true,
                     string.Empty);
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
                 Assert.That(previous.gameObject.activeSelf, Is.True);
                 Assert.That(next.gameObject.activeSelf, Is.True);
                 Assert.That(previous.interactable, Is.False);
@@ -368,6 +507,7 @@ namespace MazeParty.Multiplayer.Tests
                     true,
                     false,
                     string.Empty);
+                Assert.That(boardSettingsPanel.activeSelf, Is.True);
                 Assert.That(previous.interactable, Is.False);
                 Assert.That(next.interactable, Is.False);
                 view.SetBoardMapSelectionLocked(false);
@@ -378,10 +518,24 @@ namespace MazeParty.Multiplayer.Tests
                     true,
                     false,
                     string.Empty);
-                Assert.That(selector.activeSelf, Is.False);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                Assert.That(selector.activeInHierarchy, Is.False);
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.True);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False,
+                    "Returning to the lobby must not reopen Board Settings.");
 
                 view.Render(SessionSnapshot.Empty, false, false, string.Empty);
-                Assert.That(selector.activeSelf, Is.False);
+                Assert.That(boardSettingsButton.gameObject.activeSelf, Is.False);
+                Assert.That(boardSettingsPanel.activeSelf, Is.False);
+                Assert.That(selector.activeInHierarchy, Is.False);
             }
             finally
             {
@@ -425,14 +579,70 @@ namespace MazeParty.Multiplayer.Tests
                 boardMapSelection);
         }
 
+        private static SessionSnapshot CreateSnapshotWithMixedReadiness()
+        {
+            return new SessionSnapshot(
+                "ABCD",
+                true,
+                MultiplayerConstants.LobbyPhase,
+                "host",
+                new[]
+                {
+                    new OnlinePlayerSnapshot("host", "Host", 0, false, true),
+                    new OnlinePlayerSnapshot("guest", "Guest", 1, true, false)
+                },
+                new BoardMapSelection("forest-graybox", 4));
+        }
+
         private static T GetField<T>(OnlineLobbyView view, string name)
-            where T : Object
         {
             var field = typeof(OnlineLobbyView).GetField(
                 name,
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(field, Is.Not.Null, name);
             return (T)field.GetValue(view);
+        }
+
+        private static void AssertIconOnlyButton(Button button, string context)
+        {
+            Assert.That(button, Is.Not.Null, context);
+            Assert.That(
+                button.GetComponentsInChildren<Text>(true)
+                    .All(label => !label.gameObject.activeSelf),
+                Is.True,
+                context + " button must not show a text label.");
+            Assert.That(
+                button.GetComponentsInChildren<Image>(true)
+                    .Any(image =>
+                        image.transform != button.transform &&
+                        image.gameObject.activeSelf &&
+                        image.sprite != null),
+                Is.True,
+                context + " button must show an authored icon.");
+        }
+
+        private static void AssertTopCentered(RectTransform rectTransform)
+        {
+            Assert.That(rectTransform.anchorMin.x,
+                Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.x,
+                Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(rectTransform.anchorMin.y,
+                Is.EqualTo(1f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.y,
+                Is.EqualTo(1f).Within(0.001f));
+        }
+
+        private static void AssertBottomCentered(RectTransform rectTransform)
+        {
+            Assert.That(rectTransform.anchorMin.x,
+                Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.x,
+                Is.EqualTo(0.5f).Within(0.001f));
+            Assert.That(rectTransform.anchorMin.y,
+                Is.EqualTo(0f).Within(0.001f));
+            Assert.That(rectTransform.anchorMax.y,
+                Is.EqualTo(0f).Within(0.001f));
         }
 
         private static void BindButtonEvents(OnlineLobbyView view)

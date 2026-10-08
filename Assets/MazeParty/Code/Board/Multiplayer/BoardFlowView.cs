@@ -1517,7 +1517,7 @@ namespace MazeParty.Multiplayer
                           "READY {0} / 4", readyCount)
                     : isRace
                         ? GameText.F("Alternate A and D to advance. Pressing the same key " +
-                          "twice does not count. The first player to reach 500 " +
+                          "twice does not count. The first player to reach 200 " +
                           "steps ends the round. Three rounds, 60 seconds each.\n" +
                           "READY {0} / 4", readyCount)
                     : isSequenceMemory
@@ -1755,7 +1755,7 @@ namespace MazeParty.Multiplayer
                     : isTagChase
                         ? GameText.T("RUNNERS: WASD\nTAGGER: WASD + LMB")
                     : isRace
-                        ? GameText.T("ALTERNATE A / D\n500 STEPS")
+                        ? GameText.T("ALTERNATE A / D\n200 STEPS")
                     : isSequenceMemory
                         ? GameText.T("A: HIGH\nS: MIDDLE\nD: LOW")
                     : isBouncingBalls
@@ -3042,7 +3042,7 @@ namespace MazeParty.Multiplayer
                     return GameText.T("Get ready to alternate A and D.");
                 case NetworkRacePhase.Running:
                     return GameText.T("Alternate A and D. Repeating the same key does not " +
-                           "advance; first to 500 steps ends the round.");
+                           "advance; first to 200 steps ends the round.");
                 case NetworkRacePhase.RoundResult:
                     return GameText.T("More steps rank higher; server input order breaks " +
                            "equal-progress ties.");

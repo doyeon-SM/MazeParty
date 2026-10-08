@@ -37,6 +37,57 @@ namespace MazeParty.Multiplayer
         public Quaternion LandingTargetRotation;
     }
 
+    [Serializable]
+    public struct WorldDieTintState : INetworkSerializable,
+        IEquatable<WorldDieTintState>
+    {
+        public byte Red;
+        public byte Green;
+        public byte Blue;
+
+        public Color Tint => new Color32(Red, Green, Blue, 255);
+
+        public static WorldDieTintState FromAppearance(
+            PlayerAppearanceState appearance)
+        {
+            var color = (Color32)appearance.Sanitized().BodyColor;
+            return new WorldDieTintState
+            {
+                Red = color.r,
+                Green = color.g,
+                Blue = color.b
+            };
+        }
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer)
+            where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Red);
+            serializer.SerializeValue(ref Green);
+            serializer.SerializeValue(ref Blue);
+        }
+
+        public bool Equals(WorldDieTintState other)
+        {
+            return Red == other.Red &&
+                   Green == other.Green &&
+                   Blue == other.Blue;
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is WorldDieTintState other && Equals(other);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((Red * 397) ^ Green) * 397 ^ Blue;
+            }
+        }
+    }
+
     /// <summary>
     /// Pure geometry helpers for keeping the full horizontal die footprint
     /// inside an authored polygon rather than constraining only its center.
@@ -259,6 +310,11 @@ namespace MazeParty.Multiplayer
                 false,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
+        private readonly NetworkVariable<WorldDieTintState> _ownerTint =
+            new NetworkVariable<WorldDieTintState>(
+                WorldDieTintState.FromAppearance(PlayerAppearanceState.Default),
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
 
         private readonly WorldDieAuthorityModel _authority = new WorldDieAuthorityModel();
         private readonly List<Vector3> _localFaceNormals =
@@ -306,6 +362,7 @@ namespace MazeParty.Multiplayer
         public Vector2Int TileCoordinate => _tileCoordinate.Value;
         public bool IsSimulationPaused => _simulationPaused.Value;
         public bool IsVisible => Phase != WorldDiePhase.Hidden;
+        public Color OwnerTint => _ownerTint.Value.Tint;
         public bool HasRequiredPresentation
         {
             get
@@ -367,8 +424,10 @@ namespace MazeParty.Multiplayer
             CacheComponents();
             _phase.OnValueChanged += OnPhaseChanged;
             _publicFace.OnValueChanged += OnPublicFaceChanged;
+            _ownerTint.OnValueChanged += OnOwnerTintChanged;
             ApplyVisibility(Phase);
             RefreshWorldResultText();
+            ApplyTint(_ownerTint.Value.Tint);
 
             if (!IsServer)
             {
@@ -394,6 +453,7 @@ namespace MazeParty.Multiplayer
         {
             _phase.OnValueChanged -= OnPhaseChanged;
             _publicFace.OnValueChanged -= OnPublicFaceChanged;
+            _ownerTint.OnValueChanged -= OnOwnerTintChanged;
             ActiveServerDice.Remove(this);
         }
 
@@ -421,6 +481,24 @@ namespace MazeParty.Multiplayer
                 MultiplayerConstants.MaxPlayers - 1);
             dieIndex = Mathf.Clamp(index, 0, 1);
             ApplyConfiguredSlotTint();
+        }
+
+        public void SetOwnerAppearanceOnServer(
+            PlayerAppearanceState appearance)
+        {
+            if (!IsServer)
+            {
+                return;
+            }
+
+            var tint = WorldDieTintState.FromAppearance(appearance);
+            if (_ownerTint.Value.Equals(tint))
+            {
+                return;
+            }
+
+            _ownerTint.Value = tint;
+            ApplyTint(tint.Tint);
         }
 
         private void FixedUpdate()
@@ -1641,11 +1719,28 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ApplyTint(slotTints[configuredSlot]);
+        }
+
+        private void ApplyTint(Color tint)
+        {
+            if (slotTintRenderer == null)
+            {
+                return;
+            }
+
             var properties = new MaterialPropertyBlock();
             slotTintRenderer.GetPropertyBlock(properties);
-            properties.SetColor("_BaseColor", slotTints[configuredSlot]);
-            properties.SetColor("_Color", slotTints[configuredSlot]);
+            properties.SetColor("_BaseColor", tint);
+            properties.SetColor("_Color", tint);
             slotTintRenderer.SetPropertyBlock(properties);
+        }
+
+        private void OnOwnerTintChanged(
+            WorldDieTintState _,
+            WorldDieTintState current)
+        {
+            ApplyTint(current.Tint);
         }
 
         private void SyncAuthorityToNetwork()

@@ -1,5 +1,6 @@
 using System;
 using System.Linq;
+using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -21,6 +22,9 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Common/VFX/CartoonExplosion.prefab";
         private const string TaggerAuraPath =
             "Assets/MazeParty/Prefabs/Minigames/Common/VFX/TaggerAura.prefab";
+        private const string ArrivalFireworksPath =
+            "Assets/MazeParty/Prefabs/Minigames/Common/VFX/" +
+            "ArrivalFireworks.prefab";
         private const string GrabPassShaderPath =
             "Assets/Ignore/AllIn1VfxToolkit/Shaders/" +
             "AllIn1VfxGrabPass.shader";
@@ -45,15 +49,17 @@ namespace MazeParty.Multiplayer.Tests
             SceneCase(
                 "Minefield", typeof(MinefieldNetworkView),
                 ("mineExplosionVfxPrefab", ExplosionPath),
-                ("hitSparkVfxPrefab", HitSparkPath)),
+                ("hitSparkVfxPrefab", HitSparkPath),
+                ("finishVfxPrefab", ArrivalFireworksPath)),
             SceneCase(
                 "Race", typeof(RaceNetworkView),
                 ("progressVfxPrefab", HitSparkPath),
-                ("finishVfxPrefab", ExplosionPath)),
+                ("finishVfxPrefab", ArrivalFireworksPath)),
             SceneCase(
                 "RedLightGreenLight",
                 typeof(RedLightGreenLightNetworkView),
-                ("signalPulseVfxPrefab", HitSparkPath)),
+                ("signalPulseVfxPrefab", HitSparkPath),
+                ("finishVfxPrefab", ArrivalFireworksPath)),
             SceneCase(
                 "SequenceMemory", typeof(SequenceMemoryNetworkView),
                 ("tonePulseVfxPrefab", HitSparkPath)),
@@ -72,8 +78,74 @@ namespace MazeParty.Multiplayer.Tests
                 ("paintSplashVfxPrefab", HitSparkPath)),
             SceneCase(
                 "WrongWay", typeof(WrongWayNetworkView),
-                ("progressVfxPrefab", HitSparkPath))
+                ("progressVfxPrefab", HitSparkPath),
+                ("finishVfxPrefab", ArrivalFireworksPath))
         };
+
+        [Test]
+        public void ArrivalFireworks_IsPooledAllIn1PresentationOnlyVfx()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                ArrivalFireworksPath);
+            Assert.That(prefab, Is.Not.Null, ArrivalFireworksPath);
+
+            var pooled = prefab.GetComponent<PooledOneShotVfx>();
+            Assert.That(pooled, Is.Not.Null, ArrivalFireworksPath);
+            Assert.That(pooled.ParticleSystems, Is.Not.Empty,
+                ArrivalFireworksPath);
+            Assert.That(pooled.ParticleSystems.All(item => item != null),
+                Is.True, ArrivalFireworksPath);
+            Assert.That(pooled.FlashLights, Has.Length.GreaterThanOrEqualTo(2),
+                ArrivalFireworksPath);
+            Assert.That(pooled.FlashLights.All(item => item != null),
+                Is.True, ArrivalFireworksPath);
+            Assert.That(prefab.GetComponentsInChildren<Collider>(true),
+                Is.Empty, ArrivalFireworksPath);
+            Assert.That(prefab.GetComponentsInChildren<Collider2D>(true),
+                Is.Empty, ArrivalFireworksPath);
+            Assert.That(prefab.GetComponentsInChildren<NetworkObject>(true),
+                Is.Empty, ArrivalFireworksPath);
+
+            var behaviours = prefab
+                .GetComponentsInChildren<MonoBehaviour>(true);
+            Assert.That(behaviours.Any(item => item == null),
+                Is.False,
+                ArrivalFireworksPath + " contains a missing script.");
+            Assert.That(behaviours.Where(item =>
+                    item is not PooledOneShotVfx),
+                Is.Empty,
+                ArrivalFireworksPath +
+                " must not carry vendor or gameplay scripts.");
+
+            var transforms = prefab.GetComponentsInChildren<Transform>(true);
+            Assert.That(transforms.Any(item =>
+                    item.name.IndexOf(
+                        "Distort", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    item.name.IndexOf(
+                        "GrabPass", StringComparison.OrdinalIgnoreCase) >= 0),
+                Is.False,
+                ArrivalFireworksPath +
+                " must remove distortion and GrabPass objects.");
+
+            var dependencies = AssetDatabase.GetDependencies(
+                    ArrivalFireworksPath,
+                    true)
+                .Select(path => path.Replace('\\', '/'))
+                .ToArray();
+            Assert.That(dependencies.Any(path => path.StartsWith(
+                    "Assets/Ignore/AllIn1VfxToolkit/",
+                    StringComparison.OrdinalIgnoreCase)),
+                Is.True,
+                ArrivalFireworksPath +
+                " must retain authored AllIn1 VFX dependencies.");
+            Assert.That(dependencies.Any(path => string.Equals(
+                    path,
+                    GrabPassShaderPath,
+                    StringComparison.OrdinalIgnoreCase)),
+                Is.False,
+                ArrivalFireworksPath +
+                " must not depend on AllIn1VfxGrabPass.shader.");
+        }
 
         [Test]
         public void TaggerAura_IsAuthoredVfxAndPresentationOnly()

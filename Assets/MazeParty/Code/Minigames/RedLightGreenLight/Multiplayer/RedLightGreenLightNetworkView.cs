@@ -42,6 +42,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private AudioClip redCue;
         [SerializeField] private RedLightGreenLightHudBindings hud;
         [SerializeField] private GameObject signalPulseVfxPrefab;
+        [SerializeField] private GameObject finishVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[RedLightGreenLightRules.PlayerCount];
@@ -55,10 +56,14 @@ namespace MazeParty.Multiplayer
         private bool _signalBaselineInitialized;
 
         public GameObject SignalPulseVfxPrefab => signalPulseVfxPrefab;
+        public GameObject FinishVfxPrefab => finishVfxPrefab;
 
-        public void ConfigureVfx(GameObject signalPulsePrefab)
+        public void ConfigureVfx(
+            GameObject signalPulsePrefab,
+            GameObject finishPrefab)
         {
             signalPulseVfxPrefab = signalPulsePrefab;
+            finishVfxPrefab = finishPrefab;
         }
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
@@ -327,6 +332,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 var playerState = state.GetPlayerState(slot);
+                var previousPlayerState = runner.LastState;
                 var violationCount = state.GetViolationCount(slot);
                 if (playerState != runner.LastState ||
                     violationCount != runner.LastViolationCount)
@@ -338,6 +344,21 @@ namespace MazeParty.Multiplayer
                     runner.LastState = playerState;
                     runner.LastViolationCount = violationCount;
                 }
+
+                if (runner.HasVfxBaseline &&
+                    previousPlayerState !=
+                        RedLightGreenLightPlayerState.Finished &&
+                    playerState ==
+                        RedLightGreenLightPlayerState.Finished &&
+                    finishVfxPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        finishVfxPrefab,
+                        runner.Root.position + Vector3.up * 0.9f,
+                        Quaternion.identity,
+                        1.05f);
+                }
+                runner.HasVfxBaseline = true;
             }
         }
 
@@ -575,6 +596,16 @@ namespace MazeParty.Multiplayer
 
         private void SetWorldPresentationActive(bool active)
         {
+            if (!active)
+            {
+                for (var slot = 0; slot < _runners.Length; slot++)
+                {
+                    if (_runners[slot] != null)
+                    {
+                        _runners[slot].HasVfxBaseline = false;
+                    }
+                }
+            }
             if (arenaPresentation != null &&
                 arenaPresentation.activeSelf != active)
             {
@@ -690,6 +721,7 @@ namespace MazeParty.Multiplayer
             public bool HasPosition { get; set; }
             public RedLightGreenLightPlayerState LastState { get; set; }
             public int LastViolationCount { get; set; }
+            public bool HasVfxBaseline { get; set; }
         }
     }
 }

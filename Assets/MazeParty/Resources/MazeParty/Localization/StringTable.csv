@@ -40,9 +40,9 @@ ALL PLAYERS,모든 플레이어,全プレイヤー,所有玩家
 All players arrived. Top view opens when the countdown ends.,모든 플레이어가 도착했습니다. 카운트다운이 끝나면 탑뷰가 열립니다.,全プレイヤーが到着しました。カウントダウン終了後にトップビューが開きます。,所有玩家已到达。倒计时结束后将切换为俯视。
 All {0} rounds complete. Final points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 최종 점수로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。最終ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按最终得分排名；按名次奖励金币。
 All {0} rounds complete. Total points determine rank; placement awards gold.,"{0}라운드가 모두 종료되었습니다. 총점으로 순위가 결정되며, 순위에 따라 골드를 지급합니다.",全{0}ラウンドが終了しました。合計ポイントで順位が決まり、順位に応じてゴールドを獲得します。,全部{0}轮已结束。按总分排名；按名次奖励金币。
-ALTERNATE A / D\n500 STEPS,A / D 번갈아 누르기\n500걸음,A / D を交互に押す\n500歩,交替按 A / D\n500步
-"Alternate A and D to advance. Pressing the same key twice does not count. The first player to reach 500 steps ends the round. Three rounds, 60 seconds each.\nREADY {0} / 4","A와 D를 번갈아 눌러 전진하세요. 같은 키를 연속으로 누르면 인정되지 않습니다. 가장 먼저 500걸음에 도달한 플레이어가 나오면 라운드가 종료됩니다. 총 3라운드, 라운드당 60초입니다.\n준비 {0} / 4",AとDを交互に押して進みます。同じキーを2回続けて押してもカウントされません。最初に500歩に到達したプレイヤーが出るとラウンド終了です。全3ラウンド、各60秒です。\n準備完了 {0} / 4,交替按A和D前进。连续按同一个键不计数。第一位达到500步的玩家将结束本轮。共三轮，每轮60秒。\n准备 {0} / 4
-Alternate A and D. Repeating the same key does not advance; first to 500 steps ends the round.,"A와 D를 번갈아 누르세요. 같은 키를 반복하면 전진하지 않으며, 가장 먼저 500걸음에 도달하면 라운드가 끝납니다.",AとDを交互に押してください。同じキーを繰り返しても進みません。最初に500歩に到達するとラウンド終了です。,交替按A和D。重复按同一个键不会前进；最先达到500步者将结束本轮。
+ALTERNATE A / D\n200 STEPS,A / D 번갈아 누르기\n200걸음,A / D を交互に押す\n200歩,交替按 A / D\n200步
+"Alternate A and D to advance. Pressing the same key twice does not count. The first player to reach 200 steps ends the round. Three rounds, 60 seconds each.\nREADY {0} / 4","A와 D를 번갈아 눌러 전진하세요. 같은 키를 연속으로 누르면 인정되지 않습니다. 가장 먼저 200걸음에 도달한 플레이어가 나오면 라운드가 종료됩니다. 총 3라운드, 라운드당 60초입니다.\n준비 {0} / 4",AとDを交互に押して進みます。同じキーを2回続けて押してもカウントされません。最初に200歩に到達したプレイヤーが出るとラウンド終了です。全3ラウンド、各60秒です。\n準備完了 {0} / 4,交替按A和D前进。连续按同一个键不计数。第一位达到200步的玩家将结束本轮。共三轮，每轮60秒。\n准备 {0} / 4
+Alternate A and D. Repeating the same key does not advance; first to 200 steps ends the round.,"A와 D를 번갈아 누르세요. 같은 키를 반복하면 전진하지 않으며, 가장 먼저 200걸음에 도달하면 라운드가 끝납니다.",AとDを交互に押してください。同じキーを繰り返しても進みません。最初に200歩に到達するとラウンド終了です。,交替按A和D。重复按同一个键不会前进；最先达到200步者将结束本轮。
 AMMO  {0}\nLMB USE / RMB INTERACT,탄약  {0}\n좌클릭 사용 / 우클릭 상호작용,弾薬  {0}\n左クリック 使用 / 右クリック インタラクト,弹药  {0}\n左键 使用 / 右键 互动
 Angry,화남,おこる,生气
 Apply,적용,適用,应用
@@ -68,6 +68,7 @@ Blue,파랑,青,蓝
 BOARD  /  {0} ^,보드  /  {0} ^,ボード  /  {0} ^,棋盘  /  {0} ^
 BOARD OVERVIEW,보드 전체 보기,ボード全体表示,棋盘总览
 Board overview: inspect every player and tile.,보드 전체 보기: 모든 플레이어와 타일을 확인하세요.,ボード全体表示：すべてのプレイヤーとタイルを確認できます。,棋盘总览：查看所有玩家和格子。
+Board Settings,보드 설정,ボード設定,棋盘设置
 BOMB PASSING,폭탄 돌리기,爆弾まわし,传炸弹
 BOMB PASSING RESULTS,폭탄 돌리기 결과,爆弾まわし結果,传炸弹结果
 BONUS KEY AWARD {0} / 2,보너스 열쇠 시상 {0} / 2,ボーナス鍵 表彰 {0} / 2,额外钥匙奖项 {0} / 2
@@ -100,6 +101,7 @@ CLIFF BARRAGE,절벽 탄막,崖っぷち弾幕,悬崖弹幕
 CLIFF BARRAGE RESULTS,절벽 탄막 결과,崖っぷち弾幕結果,悬崖弹幕结果
 CLOAK ACTIVE / ENDS BEFORE COMBAT,망토 활성 / 전투 전 해제,マント発動中 / バトル前に解除,斗篷生效中 / 战斗前结束
 CLOSE,닫기,閉じる,关闭
+Close,닫기,閉じる,关闭
 Color,색,色,颜色
 COMBAT QUEUE,전투 대기열,バトル待機列,战斗队列
 Connected to the online game.,온라인 게임에 접속했습니다.,オンラインゲームに接続しました。,已连接到在线游戏。

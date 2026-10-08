@@ -53,7 +53,9 @@ namespace MazeParty.Multiplayer
             if (!IsSpawned || !IsServer) return;
             ResolveDice();
             var match = NetworkMatchState.Instance;
-            if (match == null || !match.GameplayEnabled) return;
+            if (match == null) return;
+            SyncOwnerTintsOnServer(match);
+            if (!match.GameplayEnabled) return;
             if (_turn != match.Turn || _phase != match.FlowState)
             {
                 if (match.IsActionPhase) HideAllDiceOnServer();
@@ -68,7 +70,9 @@ namespace MazeParty.Multiplayer
             for (int slot = 0; slot < 4; slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                if (avatar == null || !avatar.IsBoardReady || !avatar.HasResolvedItemChoice || avatar.HasRolled) continue;
+                if (avatar == null || !avatar.IsBoardReady ||
+                    !avatar.HasResolvedItemChoice || avatar.HasRolled ||
+                    avatar.IsBoardDeathInProgressOnServer) continue;
                 var tile = avatar.CurrentBoardTileOnServer ?? topology.FindContainingTile(avatar.transform.position, .25f);
                 if (tile == null) continue;
                 for (int n = 0; n < (avatar.UsesDoubleDice ? 2 : 1); n++)
@@ -83,14 +87,40 @@ namespace MazeParty.Multiplayer
 
         public void RelocatePendingDiceOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!IsServer || avatar == null || avatar.HasRolled || avatar.CurrentBoardTileOnServer == null) return;
-            for (int n = 0; n < (avatar.UsesDoubleDice ? 2 : 1); n++)
+            if (!IsServer || avatar == null ||
+                avatar.CurrentBoardTileOnServer == null) return;
+            for (int n = 0; n < 2; n++)
             {
-                if (avatar.HasDieResultOnServer(n) || !TryGetDie(avatar.AssignedSlot, n, out var die) || die.Phase == WorldDiePhase.Rolling) continue;
+                var index = Index(avatar.AssignedSlot, n);
+                if (!TryGetDie(avatar.AssignedSlot, n, out var die) ||
+                    !WorldDiePreparedRelocationPolicy.ShouldRelocate(
+                        avatar.HasRolled,
+                        avatar.HasDieResultOnServer(n),
+                        die.Phase)) continue;
                 die.HideOnServer();
                 var lateral = avatar.UsesDoubleDice ? avatar.transform.right * (n == 0 ? -.65f : .65f) : Vector3.zero;
-                _prepared[Index(avatar.AssignedSlot, n)] = die.PrepareOnServer(avatar.CurrentBoardTileOnServer,
+                _prepared[index] = die.PrepareOnServer(avatar.CurrentBoardTileOnServer,
                     avatar.transform.position + lateral, avatar.transform.forward);
+            }
+        }
+
+        private void SyncOwnerTintsOnServer(NetworkMatchState match)
+        {
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar == null)
+                {
+                    continue;
+                }
+
+                for (var dieIndex = 0; dieIndex < 2; dieIndex++)
+                {
+                    if (TryGetDie(slot, dieIndex, out var die))
+                    {
+                        die.SetOwnerAppearanceOnServer(avatar.Appearance);
+                    }
+                }
             }
         }
 

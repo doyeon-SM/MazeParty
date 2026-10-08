@@ -31,6 +31,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject mineMarkerPrefab;
         [SerializeField] private GameObject mineExplosionVfxPrefab;
         [SerializeField] private GameObject hitSparkVfxPrefab;
+        [SerializeField] private GameObject finishVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[MinefieldRules.PlayerCount];
@@ -45,13 +46,16 @@ namespace MazeParty.Multiplayer
 
         public GameObject MineExplosionVfxPrefab => mineExplosionVfxPrefab;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+        public GameObject FinishVfxPrefab => finishVfxPrefab;
 
         public void ConfigureVfx(
             GameObject mineExplosionPrefab,
-            GameObject hitSparkPrefab)
+            GameObject hitSparkPrefab,
+            GameObject finishPrefab)
         {
             mineExplosionVfxPrefab = mineExplosionPrefab;
             hitSparkVfxPrefab = hitSparkPrefab;
+            finishVfxPrefab = finishPrefab;
         }
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
@@ -354,6 +358,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 var playerState = state.GetPlayerState(slot);
+                var previousPlayerState = view.LastState;
                 var mineHitCount = state.GetMineHitCount(slot);
                 var eliminationCause = state.GetEliminationCause(slot);
                 if (view.LastState != playerState ||
@@ -372,6 +377,19 @@ namespace MazeParty.Multiplayer
                     view.LastMineHitCount = mineHitCount;
                     view.LastEliminationCause = eliminationCause;
                 }
+
+                if (view.HasVfxBaseline &&
+                    previousPlayerState != MinefieldPlayerState.Finished &&
+                    playerState == MinefieldPlayerState.Finished &&
+                    finishVfxPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        finishVfxPrefab,
+                        view.Root.position + Vector3.up * 0.9f,
+                        Quaternion.identity,
+                        1.05f);
+                }
+                view.HasVfxBaseline = true;
 
                 var boardAvatar = match.GetAvatarForSlot(slot);
                 if (boardAvatar != null)
@@ -535,6 +553,16 @@ namespace MazeParty.Multiplayer
             }
             _worldVisibilityInitialized = true;
             _worldVisible = active;
+            if (!active)
+            {
+                for (var slot = 0; slot < _runners.Length; slot++)
+                {
+                    if (_runners[slot] != null)
+                    {
+                        _runners[slot].HasVfxBaseline = false;
+                    }
+                }
+            }
             if (arenaPresentation != null &&
                 arenaPresentation.activeSelf != active)
             {
@@ -678,6 +706,7 @@ namespace MazeParty.Multiplayer
             public MinefieldEliminationCause LastEliminationCause { get; set; }
             public int StateRevision { get; set; }
             public bool HasReceivedPosition { get; set; }
+            public bool HasVfxBaseline { get; set; }
         }
 
         private sealed class MineView

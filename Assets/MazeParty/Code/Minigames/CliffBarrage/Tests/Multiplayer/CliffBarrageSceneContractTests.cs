@@ -31,6 +31,20 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void PushPresentationRpc_IsReliablePerEvent()
+        {
+            var rpc = typeof(NetworkCliffBarrageState).GetMethod(
+                "PlayPushPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            var parameters = rpc.GetParameters();
+            Assert.That(parameters, Has.Length.EqualTo(1));
+            Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+        }
+
+        [Test]
         public void Scene_BindsSharedCameraAndReusableHazardPools()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);

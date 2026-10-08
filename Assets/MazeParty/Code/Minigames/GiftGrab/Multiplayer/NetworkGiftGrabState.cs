@@ -256,7 +256,7 @@ namespace MazeParty.Multiplayer
 
         public static NetworkGiftGrabState Instance { get; private set; }
 
-        public event Action<GiftGrabNetworkActionType, Vector2>
+        public event Action<GiftGrabNetworkActionType, int, int, Vector2>
             ActionPresentationRequested;
 
         public NetworkGiftGrabPhase Phase =>
@@ -1518,6 +1518,8 @@ namespace MazeParty.Multiplayer
             AdvanceRevision(_actionRevision);
             PlayActionPresentationRpc(
                 (byte)actionType,
+                EncodeIndex(actorSlot),
+                EncodeIndex(targetSlot),
                 ResolveActionPresentationPosition(
                     actionType,
                     actorSlot,
@@ -1562,13 +1564,19 @@ namespace MazeParty.Multiplayer
             Delivery = RpcDelivery.Reliable)]
         private void PlayActionPresentationRpc(
             byte actionTypeValue,
+            byte actorSlotValue,
+            byte targetSlotValue,
             Vector2 position)
         {
             var actionType = (GiftGrabNetworkActionType)actionTypeValue;
             if (actionType > GiftGrabNetworkActionType.None &&
                 actionType <= GiftGrabNetworkActionType.BoundsReturn)
             {
-                ActionPresentationRequested?.Invoke(actionType, position);
+                ActionPresentationRequested?.Invoke(
+                    actionType,
+                    DecodeIndex(actorSlotValue),
+                    DecodeIndex(targetSlotValue),
+                    position);
             }
         }
 

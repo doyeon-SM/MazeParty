@@ -47,6 +47,7 @@ namespace MazeParty.Multiplayer
         private bool _visibilityInitialized;
         private bool _caughtMaskBaselineInitialized;
         private byte _lastCaughtMask;
+        private NetworkTagChaseState _subscribedActionState;
 
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
         public GameObject TaggerAuraPrefab => taggerAuraPrefab;
@@ -81,6 +82,7 @@ namespace MazeParty.Multiplayer
             GameObject arena)
         {
             state = networkState;
+            EnsureActionPresentationSubscription();
             sharedRunnerCamera = runnerCamera;
             taggerCamera = firstPersonCamera;
             playerRoot = players;
@@ -95,13 +97,21 @@ namespace MazeParty.Multiplayer
         private void Awake()
         {
             state ??= GetComponent<NetworkTagChaseState>();
+            EnsureActionPresentationSubscription();
             ConfigureCameras();
             EnsurePlayers();
             SetWorldPresentationActive(false);
         }
 
+        private void OnEnable()
+        {
+            state ??= GetComponent<NetworkTagChaseState>();
+            EnsureActionPresentationSubscription();
+        }
+
         private void OnDisable()
         {
+            UnsubscribeFromActionPresentation();
             SetWorldPresentationActive(false);
             SetTaggerAimVisible(false);
             UnregisterCamera();
@@ -112,6 +122,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkTagChaseState>();
+            EnsureActionPresentationSubscription();
             EnsurePlayers();
 
             var match = NetworkMatchState.Instance;
@@ -497,6 +508,44 @@ namespace MazeParty.Multiplayer
                     _registeredCamera);
             }
             _registeredCamera = null;
+        }
+
+        private void HandleAttackPresentationRequested(int slot)
+        {
+            if (!_worldVisible || slot < 0 || slot >= _players.Length)
+            {
+                return;
+            }
+
+            _players[slot]?.Visual.TriggerPunch();
+        }
+
+        private void EnsureActionPresentationSubscription()
+        {
+            if (_subscribedActionState == state)
+            {
+                return;
+            }
+
+            UnsubscribeFromActionPresentation();
+            _subscribedActionState = state;
+            if (_subscribedActionState != null)
+            {
+                _subscribedActionState.AttackPresentationRequested +=
+                    HandleAttackPresentationRequested;
+            }
+        }
+
+        private void UnsubscribeFromActionPresentation()
+        {
+            if (_subscribedActionState == null)
+            {
+                return;
+            }
+
+            _subscribedActionState.AttackPresentationRequested -=
+                HandleAttackPresentationRequested;
+            _subscribedActionState = null;
         }
 
         private void SetWorldPresentationActive(bool active)
