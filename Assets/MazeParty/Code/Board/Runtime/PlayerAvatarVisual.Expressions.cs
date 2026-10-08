@@ -22,11 +22,9 @@ namespace MazeParty.Gameplay
             _hatModels = new GameObject[catalog.Hats.Length];
             _worldGestureRoot = bindings.WorldGestureRoot;
             _firstGestureRoot = bindings.FirstPersonGestureRoot;
-            _worldGestures = InstantiateGestures(_worldGestureRoot);
-            if (_firstGestureRoot != null)
-            {
-                _firstGestures = InstantiateGestures(_firstGestureRoot);
-            }
+            _worldGestureRoot.gameObject.SetActive(false);
+            _firstGestureRoot.gameObject.SetActive(false);
+            InitializeHandEmoteRigs();
             SetFaceExpression(0);
             SetHat(0);
         }
@@ -88,12 +86,8 @@ namespace MazeParty.Gameplay
         }
         public void SetFaceExpression(byte id)
         {
-            if (_faceSprite == null) return;
-            var catalog = PlayerExpressionCatalog.Instance;
-            if (catalog == null) return;
-            if (catalog.Faces.Length == 0) return;
-            _faceSprite.sprite = catalog.Faces[PlayerExpressionCatalog.SanitizeFace(id)].Sprite;
-            _leftEye.gameObject.SetActive(false); _rightEye.gameObject.SetActive(false); _mouth.gameObject.SetActive(false);
+            _baseExpression = PlayerExpressionCatalog.SanitizeFace(id);
+            RefreshCurrentFace();
         }
         private void SetHat(byte id)
         {
@@ -105,17 +99,26 @@ namespace MazeParty.Gameplay
             for (int i = 0; i < _hatModels.Length; i++)
                 if (_hatModels[i] != null) _hatModels[i].SetActive(i + 1 == _hatId);
         }
-        public void SetHandGesture(byte id)
+        public void SetHandGesture(byte id, byte expressionId)
         {
-            if (_gesture == id) return;
-            _gesture = id; RefreshVisibility();
+            expressionId = PlayerExpressionCatalog.SanitizeFace(expressionId);
+            if (_gesture != id)
+            {
+                _gesture = id;
+                _gestureStartedAt = Time.time;
+                if (_gesture == 0)
+                {
+                    RestoreHandEmotePose();
+                }
+                RefreshVisibility();
+            }
+            _gestureExpression = expressionId;
+            RefreshCurrentFace();
         }
         private void RefreshGestureVisibility(bool showingItem)
         {
-            bool active = _gesture > 0 && !showingItem && !_eliminated;
-            if (_worldGestureRoot != null) _worldGestureRoot.gameObject.SetActive(active);
-            if (_firstGestureRoot != null) _firstGestureRoot.gameObject.SetActive(active && _ownerFirstPerson && !_hiddenFromViewer);
-            SetGestureModels(_worldGestures); SetGestureModels(_firstGestures);
+            if (_worldGestureRoot != null) _worldGestureRoot.gameObject.SetActive(false);
+            if (_firstGestureRoot != null) _firstGestureRoot.gameObject.SetActive(false);
         }
         private void SetGestureModels(GameObject[] models)
         { if (models != null) for (int i = 0; i < models.Length; i++) if (models[i] != null) models[i].SetActive(i + 1 == _gesture); }

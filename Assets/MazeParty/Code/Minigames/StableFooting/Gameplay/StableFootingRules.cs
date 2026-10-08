@@ -15,9 +15,11 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         public const int TileCount = BoardWidth * BoardHeight;
         public const int SymbolCount = 3;
         public const int RoundCount = 3;
-        public const int PermanentTilesRemovedPerCycle = 2;
+        public const int PermanentTilesRemovedPerCycle = 4;
         public const double RoundSeconds = 60d;
-        public const double ShuffleRevealSeconds = 1d;
+        public const double ShuffleRevealSeconds = 3d;
+        public const double SymbolShuffleIntervalSeconds = 0.5d;
+        public const int SymbolShuffleStepCount = 6;
         public const double InitialMoveSeconds = 4d;
         public const double MoveAccelerationPerCycleSeconds = 0.25d;
         public const double MinimumMoveSeconds = 2d;
@@ -404,21 +406,23 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                 var secondUnsafeSymbol =
                     (StableFootingSymbol)(((int)safeSymbol + 2) %
                         StableFootingRules.SymbolCount);
+                var removalCount = Math.Min(
+                    StableFootingRules.PermanentTilesRemovedPerCycle,
+                    activeTiles.Count - 1);
                 var symbolsByTile =
                     new StableFootingSymbol[StableFootingRules.TileCount];
 
                 symbolsByTile[shuffledTiles[0]] = safeSymbol;
-                if (shuffledTiles.Length > 1)
+                for (var index = 1;
+                     index <= removalCount;
+                     index++)
                 {
-                    symbolsByTile[shuffledTiles[1]] = firstUnsafeSymbol;
+                    symbolsByTile[shuffledTiles[index]] = index % 2 == 1
+                        ? firstUnsafeSymbol
+                        : secondUnsafeSymbol;
                 }
 
-                if (shuffledTiles.Length > 2)
-                {
-                    symbolsByTile[shuffledTiles[2]] = secondUnsafeSymbol;
-                }
-
-                for (var index = 3;
+                for (var index = removalCount + 1;
                      index < shuffledTiles.Length;
                      index++)
                 {
@@ -438,9 +442,6 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                         symbolsByTile[tileIndex]);
                 }
 
-                var removalCount = Math.Min(
-                    StableFootingRules.PermanentTilesRemovedPerCycle,
-                    activeTiles.Count - 1);
                 var unsafeCandidates = new List<int>();
                 for (var index = 0;
                      index < shuffledTiles.Length;

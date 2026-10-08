@@ -135,6 +135,8 @@ namespace MazeParty.Multiplayer
         public SessionSnapshot CurrentSession =>
             _sessions != null ? _sessions.Current : SessionSnapshot.Empty;
         public PlayerAppearanceState LocalAppearance => _localProfile.Appearance;
+        public HandEmoteFaceSelections LocalEmoteFaces =>
+            _localProfile.EmoteFaces;
         public bool IsInSession => _sessions != null && _sessions.IsInSession;
         public bool IsBusy => _sessionOperations.IsBusy;
         public SessionLifecycleState LifecycleState => _sessionOperations.State;
@@ -309,6 +311,7 @@ namespace MazeParty.Multiplayer
 
             lobbyView?.SetDisplayName(displayName);
             lobbyView?.SetAppearance(_localProfile.Appearance);
+            lobbyView?.SetEmoteExpressions(_localProfile.EmoteFaces);
 
             _identity = new UnityAnonymousIdentityProvider();
             _sessions = new MpsRelaySessionProvider(_identity);
@@ -483,6 +486,7 @@ namespace MazeParty.Multiplayer
             lobbyView.RecoveryContinueRequested += OnRecoveryContinueRequested;
             lobbyView.RecoveryDiscardRequested += OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged += OnAppearanceChanged;
+            lobbyView.EmoteExpressionsChanged += OnEmoteExpressionsChanged;
             GameText.LanguageChanged += RenderLobby;
         }
 
@@ -503,6 +507,7 @@ namespace MazeParty.Multiplayer
             lobbyView.RecoveryContinueRequested -= OnRecoveryContinueRequested;
             lobbyView.RecoveryDiscardRequested -= OnRecoveryDiscardRequested;
             lobbyView.AppearanceChanged -= OnAppearanceChanged;
+            lobbyView.EmoteExpressionsChanged -= OnEmoteExpressionsChanged;
             GameText.LanguageChanged -= RenderLobby;
         }
 
@@ -543,17 +548,45 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void OnEmoteExpressionsChanged(
+            HandEmoteFaceSelections emoteFaces)
+        {
+            SaveLocalProfile(
+                _localProfile.DisplayName,
+                _localProfile.Appearance,
+                emoteFaces);
+            lobbyView?.SetEmoteExpressions(_localProfile.EmoteFaces);
+        }
+
         public void AcceptAuthoritativeAppearance(PlayerAppearanceState appearance)
         {
-            SaveLocalProfile(_localProfile.DisplayName, appearance.Sanitized());
+            SaveLocalProfile(
+                _localProfile.DisplayName,
+                appearance.Sanitized(),
+                _localProfile.EmoteFaces);
             lobbyView?.SetAppearance(_localProfile.Appearance);
+            lobbyView?.SetEmoteExpressions(_localProfile.EmoteFaces);
         }
 
         private void SaveLocalProfile(string displayName, PlayerAppearanceState appearance)
         {
+            SaveLocalProfile(displayName, appearance, _localProfile.EmoteFaces);
+        }
+
+        private void SaveLocalProfile(
+            string displayName,
+            PlayerAppearanceState appearance,
+            HandEmoteFaceSelections emoteFaces)
+        {
             var safeName = PlayerProfilePreferences.SanitizeDisplayName(displayName);
-            _localProfile = new PlayerLocalProfile(safeName, appearance.Sanitized());
-            PlayerProfilePreferences.Save(_localProfile.DisplayName, _localProfile.Appearance);
+            _localProfile = new PlayerLocalProfile(
+                safeName,
+                appearance.Sanitized(),
+                emoteFaces);
+            PlayerProfilePreferences.Save(
+                _localProfile.DisplayName,
+                _localProfile.Appearance,
+                _localProfile.EmoteFaces);
         }
 
         private void OnCopyRequested()

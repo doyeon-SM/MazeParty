@@ -64,6 +64,11 @@ namespace MazeParty.Multiplayer
         private string _currentInviteCode = string.Empty;
         public byte SelectedHat { get; private set; }
         public byte SelectedExpression { get; private set; }
+        public HandEmoteFaceSelections SelectedEmoteExpressions
+        {
+            get;
+            private set;
+        }
 
         public void SelectHat(byte id)
         {
@@ -75,6 +80,19 @@ namespace MazeParty.Multiplayer
         {
             SelectedExpression = PlayerExpressionCatalog.SanitizeFace(id);
             PublishAppearance(_selectedPaletteIndex);
+        }
+
+        public void SelectEmoteExpression(byte gestureId, byte expressionId)
+        {
+            if (!PlayerExpressionCatalog.HasGesture(gestureId))
+            {
+                return;
+            }
+
+            SelectedEmoteExpressions = SelectedEmoteExpressions.With(
+                gestureId,
+                PlayerExpressionCatalog.SanitizeFace(expressionId));
+            EmoteExpressionsChanged?.Invoke(SelectedEmoteExpressions);
         }
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
@@ -99,6 +117,7 @@ namespace MazeParty.Multiplayer
         public event Action RecoveryContinueRequested;
         public event Action RecoveryDiscardRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
+        public event Action<HandEmoteFaceSelections> EmoteExpressionsChanged;
 
         public bool HasRequiredReferences =>
             canvasGroup != null &&
@@ -625,7 +644,13 @@ namespace MazeParty.Multiplayer
                 0,
                 0,
                 SelectedHat,
-                0, SelectedExpression));
+                0,
+                SelectedExpression));
+        }
+
+        public void SetEmoteExpressions(HandEmoteFaceSelections selections)
+        {
+            SelectedEmoteExpressions = selections.Sanitized(SelectedExpression);
         }
 
         private void RefreshPaletteAvailability()

@@ -44,6 +44,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"
         };
@@ -66,6 +67,7 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Multiplayer.LobbyHatView",
             "MazeParty.Multiplayer.LobbyExpressionView",
+            "MazeParty.Multiplayer.LobbyEmoteExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.GameMenuBindings"
@@ -201,6 +203,43 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [TestCase("Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab")]
+        [TestCase("Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab")]
+        public void HandEmoteWheel_StaticInstructionsRemainLocalized(
+            string prefabPath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            Assert.That(prefab, Is.Not.Null, prefabPath);
+            var panel = prefab.GetComponentsInChildren<Transform>(true)
+                .Single(transform => transform.name == "Hand Emote Wheel");
+            foreach (var expected in new[]
+                     {
+                         new
+                         {
+                             Name = "Title",
+                             Source = "HAND EMOTES"
+                         },
+                         new
+                         {
+                             Name = "Help",
+                             Source = "HOLD T + DRAG  /  RELEASE TO USE\n" +
+                                      "CENTER / ESC / RMB: CANCEL"
+                         }
+                     })
+            {
+                var label = panel.Find(expected.Name);
+                Assert.That(label, Is.Not.Null,
+                    prefabPath + " :: Hand Emote Wheel/" + expected.Name);
+                var text = label.GetComponent<Text>();
+                var localized = label.GetComponent<LocalizedText>();
+                Assert.That(text, Is.Not.Null);
+                Assert.That(localized, Is.Not.Null,
+                    expected.Name + " must retain its LocalizedText binding.");
+                Assert.That(text.text, Is.EqualTo(expected.Source));
+                Assert.That(localized.SourceText, Is.EqualTo(expected.Source));
+            }
+        }
+
         [Test]
         public void GeneratedScenes_UseOnlyRegisteredCanvasPrefabInstances()
         {
@@ -259,6 +298,8 @@ namespace MazeParty.Multiplayer.Tests
                         { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
                         if (component is LobbyExpressionView faces)
                         { Assert.That(faces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(faces), Is.Not.Null); }
+                        if (component is LobbyEmoteExpressionView emoteFaces)
+                        { Assert.That(emoteFaces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(emoteFaces), Is.Not.Null); }
                         if (component is LobbyHatView hats)
                         { Assert.That(hats.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(hats), Is.Not.Null); }
                     }

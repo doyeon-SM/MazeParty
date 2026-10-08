@@ -640,11 +640,26 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _tileAnchors[index].localPosition = local;
             }
 
-            var revealSafeSymbol =
-                _session.Phase == StableFootingSoloPhase.Running;
-            _safeSymbolPresenter.Apply(
-                cycle.SafeSymbol,
-                revealSafeSymbol);
+            if (_session.Phase != StableFootingSoloPhase.Running)
+            {
+                _safeSymbolPresenter.Hide();
+            }
+            else if (_session.PresentationCyclePhase ==
+                     StableFootingCyclePhase.ShuffleReveal)
+            {
+                _safeSymbolPresenter.ApplyShuffle(
+                    cycle.CycleNumber,
+                    Math.Max(
+                        0d,
+                        _session.RunningElapsedSeconds -
+                        cycle.StartsAtSeconds));
+            }
+            else
+            {
+                _safeSymbolPresenter.ApplyReveal(
+                    cycle.SafeSymbol,
+                    cycle.CycleNumber);
+            }
         }
 
         private static SpriteRenderer RequireSafeSymbolRenderer(
@@ -752,12 +767,25 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
 
             var cycle = _session.CurrentCycle;
-            var feature = cycle == null
-                ? "SYMBOLS SHUFFLING"
-                : GetCyclePhaseLabel(_session.CurrentCyclePhase) +
-                  "  ·  SAFE " +
-                  cycle.SafeSymbol.ToString().ToUpperInvariant() +
-                  "  ·  CYCLE " + cycle.CycleNumber;
+            var cyclePhase = _session.CurrentCyclePhase;
+            string feature;
+            if (cycle == null)
+            {
+                feature = "SYMBOLS SHUFFLING";
+            }
+            else if (cyclePhase ==
+                     StableFootingCyclePhase.ShuffleReveal)
+            {
+                feature = GetCyclePhaseLabel(cyclePhase) +
+                          "  ·  CYCLE " + cycle.CycleNumber;
+            }
+            else
+            {
+                feature = GetCyclePhaseLabel(cyclePhase) +
+                          "  ·  SAFE " +
+                          cycle.SafeSymbol.ToString().ToUpperInvariant() +
+                          "  ·  CYCLE " + cycle.CycleNumber;
+            }
             var local = _session.LocalPlayer;
             var localState = local == null
                 ? "READY"

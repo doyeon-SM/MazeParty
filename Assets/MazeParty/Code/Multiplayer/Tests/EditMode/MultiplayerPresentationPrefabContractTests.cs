@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Reflection;
 using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -226,6 +227,156 @@ namespace MazeParty.Multiplayer.Tests
 
                 var catalog = PlayerExpressionCatalog.Instance;
                 Assert.That(catalog, Is.Not.Null);
+                var authoredPresentation = assets.PresentationPrefab;
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        authoredPresentation.LeftHandAnchor.GetChild(0).gameObject),
+                    Is.EqualTo(
+                        "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab"));
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        authoredPresentation.RightHandAnchor.GetChild(0).gameObject),
+                    Is.EqualTo(
+                        "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab"));
+
+                visual.ApplyAppearance(0, 0, 0, 2);
+                visual.SetHandGesture((byte)HandEmoteId.Greeting, 5);
+                Assert.That(
+                    visual.Bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[5].Sprite));
+                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(visual.Bindings.WorldGestureRoot.gameObject.activeSelf, Is.False,
+                    "Emotes must animate the player's normal hands instead of legacy gesture prefabs.");
+                visual.SetHandGesture((byte)HandEmoteId.EyesCover, 7);
+                Assert.That(
+                    visual.Bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[2].Sprite),
+                    "Eyes-cover must preserve the wardrobe base face.");
+                visual.SetHandGesture(0, 2);
+                Assert.That(
+                    visual.Bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[2].Sprite));
+
+                var worldLeftIndex = FindHandBone(
+                    visual.Bindings.LeftHandAnchor,
+                    "IndexFinger");
+                var worldRightIndex = FindHandBone(
+                    visual.Bindings.RightHandAnchor,
+                    "IndexFinger");
+                var firstLeftIndex = FindHandBone(
+                    visual.Bindings.FirstPersonLeftHand,
+                    "IndexFinger");
+                var firstRightIndex = FindHandBone(
+                    visual.Bindings.FirstPersonRightHand,
+                    "IndexFinger");
+                var worldLeftClosed = worldLeftIndex.localRotation;
+                var worldRightClosed = worldRightIndex.localRotation;
+                var firstLeftClosed = firstLeftIndex.localRotation;
+                var firstRightClosed = firstRightIndex.localRotation;
+                var updatePose = typeof(PlayerAvatarVisual).GetMethod(
+                    "UpdatePose",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                var gestureStartedAt = typeof(PlayerAvatarVisual).GetField(
+                    "_gestureStartedAt",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(updatePose, Is.Not.Null);
+                Assert.That(gestureStartedAt, Is.Not.Null);
+
+                foreach (var oneHandGesture in new[]
+                         {
+                             HandEmoteId.Greeting,
+                             HandEmoteId.Salute
+                         })
+                {
+                    visual.SetHandGesture((byte)oneHandGesture, 5);
+                    gestureStartedAt.SetValue(
+                        visual,
+                        Time.time - (float)HandEmoteRules.Duration * 0.06f);
+                    updatePose.Invoke(visual, new object[] { false });
+                    var stableFirstPersonPosition =
+                        visual.Bindings.FirstPersonRightHand.localPosition;
+                    var stableFirstPersonRotation =
+                        visual.Bindings.FirstPersonRightHand.localRotation;
+                    gestureStartedAt.SetValue(
+                        visual,
+                        Time.time - (float)HandEmoteRules.Duration * 0.06f);
+                    updatePose.Invoke(visual, new object[] { false });
+
+                    Assert.That(
+                        Vector3.Distance(
+                            stableFirstPersonPosition,
+                            visual.Bindings.FirstPersonRightHand.localPosition),
+                        Is.LessThan(0.0001f),
+                        oneHandGesture +
+                        " must be evaluated from the cached root pose each frame.");
+                    Assert.That(
+                        Quaternion.Angle(
+                            stableFirstPersonRotation,
+                            visual.Bindings.FirstPersonRightHand.localRotation),
+                        Is.LessThan(0.01f),
+                        oneHandGesture +
+                        " must not accumulate root rotation between frames.");
+
+                    Assert.That(
+                        Quaternion.Angle(
+                            worldLeftClosed,
+                            worldLeftIndex.localRotation),
+                        Is.LessThan(0.01f),
+                        oneHandGesture + " must leave the world left hand closed.");
+                    Assert.That(
+                        Quaternion.Angle(
+                            firstLeftClosed,
+                            firstLeftIndex.localRotation),
+                        Is.LessThan(0.01f),
+                        oneHandGesture + " must leave the first-person left hand closed.");
+                    Assert.That(
+                        Quaternion.Angle(
+                            worldRightClosed,
+                            worldRightIndex.localRotation),
+                        Is.GreaterThan(1f),
+                        oneHandGesture + " must open the world right hand.");
+                    Assert.That(
+                        Quaternion.Angle(
+                            firstRightClosed,
+                            firstRightIndex.localRotation),
+                        Is.GreaterThan(1f),
+                        oneHandGesture + " must open the first-person right hand.");
+
+                    visual.SetHandGesture(0, 2);
+                    AssertHandAnchorRestored(
+                        visual.Bindings.LeftHandAnchor,
+                        authoredPresentation.LeftHandAnchor);
+                    AssertHandAnchorRestored(
+                        visual.Bindings.RightHandAnchor,
+                        authoredPresentation.RightHandAnchor);
+                    AssertHandAnchorRestored(
+                        visual.Bindings.FirstPersonLeftHand,
+                        authoredPresentation.FirstPersonLeftHand);
+                    AssertHandAnchorRestored(
+                        visual.Bindings.FirstPersonRightHand,
+                        authoredPresentation.FirstPersonRightHand);
+                    Assert.That(
+                        Quaternion.Angle(
+                            worldLeftClosed,
+                            worldLeftIndex.localRotation),
+                        Is.LessThan(0.01f));
+                    Assert.That(
+                        Quaternion.Angle(
+                            worldRightClosed,
+                            worldRightIndex.localRotation),
+                        Is.LessThan(0.01f));
+                    Assert.That(
+                        Quaternion.Angle(
+                            firstLeftClosed,
+                            firstLeftIndex.localRotation),
+                        Is.LessThan(0.01f));
+                    Assert.That(
+                        Quaternion.Angle(
+                            firstRightClosed,
+                            firstRightIndex.localRotation),
+                        Is.LessThan(0.01f));
+                }
                 Assert.That(
                     visual.Bindings.HatAnchor.childCount,
                     Is.Zero,
@@ -536,6 +687,26 @@ namespace MazeParty.Multiplayer.Tests
             var zone = collider.GetComponent<PlayerHitZone>();
             Assert.That(zone, Is.Not.Null, collider.gameObject.name);
             Assert.That(zone.Region, Is.EqualTo(expectedRegion));
+        }
+
+        private static Transform FindHandBone(Transform root, string name)
+        {
+            return root.GetComponentsInChildren<Transform>(true)
+                .Single(transform => transform.name == name);
+        }
+
+        private static void AssertHandAnchorRestored(
+            Transform actual,
+            Transform authored)
+        {
+            Assert.That(
+                Vector3.Distance(actual.localPosition, authored.localPosition),
+                Is.LessThan(0.0001f),
+                actual.name + " local position was not restored.");
+            Assert.That(
+                Quaternion.Angle(actual.localRotation, authored.localRotation),
+                Is.LessThan(0.01f),
+                actual.name + " local rotation was not restored.");
         }
     }
 }

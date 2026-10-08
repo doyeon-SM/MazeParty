@@ -550,6 +550,10 @@ namespace MazeParty.Gameplay
 
         private void UpdatePose(bool immediate)
         {
+            // Gesture posing always starts from authored anchors. This prevents
+            // root transforms from accumulating Lerp/Slerp output and guarantees
+            // that cancellation restores both world and first-person hands.
+            RestoreHandEmotePose();
             var t = immediate ? (_crouching ? 1f : 0f) : _crouchBlend;
             var moving = Mathf.Clamp01(_speed / 2f);
             var time = Time.time;
@@ -622,6 +626,7 @@ namespace MazeParty.Gameplay
             }
 
             if (_worldGestureRoot != null) _worldGestureRoot.localPosition = new Vector3(0f, handY + .2f, .35f);
+            UpdateHandGesturePose();
             UpdateHitboxPose(t);
         }
 
@@ -688,15 +693,15 @@ namespace MazeParty.Gameplay
             }
             if (_firstPersonHands != null)
             {
-                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem && _gesture == 0 && !_hiddenFromViewer);
+                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem && !_hiddenFromViewer);
             }
             if (_leftHand != null)
             {
-                _leftHand.gameObject.SetActive(!showingItem && _gesture == 0);
+                _leftHand.gameObject.SetActive(!showingItem);
             }
             if (_rightHand != null)
             {
-                _rightHand.gameObject.SetActive(!showingItem && _gesture == 0);
+                _rightHand.gameObject.SetActive(!showingItem);
             }
             if (_worldItemRoot != null)
             {

@@ -34,10 +34,42 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(typeof(Vector3)));
         }
 
+        [TestCase(
+            NetworkStableFootingPhase.Running,
+            StableFootingCyclePhase.Move,
+            true)]
+        [TestCase(
+            NetworkStableFootingPhase.Running,
+            StableFootingCyclePhase.ShuffleReveal,
+            false)]
+        [TestCase(
+            NetworkStableFootingPhase.Running,
+            StableFootingCyclePhase.Drop,
+            false)]
+        [TestCase(
+            NetworkStableFootingPhase.Running,
+            StableFootingCyclePhase.Restore,
+            false)]
+        [TestCase(
+            NetworkStableFootingPhase.Countdown,
+            StableFootingCyclePhase.Move,
+            false)]
+        public void SafeSymbolRevealVfx_PlaysOnlyAtMoveReveal(
+            NetworkStableFootingPhase phase,
+            StableFootingCyclePhase cyclePhase,
+            bool expected)
+        {
+            Assert.That(
+                StableFootingNetworkView.ShouldPlaySafeSymbolRevealVfx(
+                    phase,
+                    cyclePhase),
+                Is.EqualTo(expected));
+        }
+
         [TestCase(StableFootingSymbol.Cross)]
         [TestCase(StableFootingSymbol.Circle)]
         [TestCase(StableFootingSymbol.Square)]
-        public void SafeSymbolDisplay_MarksSelectedSymbolAndAppliesVisibility(
+        public void SafeSymbolDisplay_ShufflesThenRevealsOnlySelectedSymbol(
             StableFootingSymbol safeSymbol)
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -60,40 +92,65 @@ namespace MazeParty.Multiplayer.Tests
                 var authoredActiveStates = renderers
                     .Select(renderer => renderer.gameObject.activeSelf)
                     .ToArray();
+                var authoredPositions = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .ToArray();
                 var presenter = new StableFootingSafeSymbolPresenter(
                     renderers[0],
                     renderers[1],
                     renderers[2]);
 
-                presenter.Apply(safeSymbol, true);
-
-                var safeIndex = (int)safeSymbol;
-                Assert.That(
-                    renderers[safeIndex].color,
-                    Is.Not.EqualTo(authoredColors[safeIndex]),
-                    "Only the selected semantic symbol should be marked.");
-                Assert.That(
-                    renderers.All(renderer =>
-                        renderer.gameObject.activeInHierarchy),
-                    Is.True);
-                for (var index = 0; index < renderers.Length; index++)
+                presenter.ApplyShuffle(1, 0d);
+                var previousShufflePositions = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .ToArray();
+                for (var step = 1;
+                     step < StableFootingRules.SymbolShuffleStepCount;
+                     step++)
                 {
-                    if (index == safeIndex)
+                    presenter.ApplyShuffle(
+                        1,
+                        step *
+                        StableFootingRules.SymbolShuffleIntervalSeconds);
+                    Assert.That(renderers.All(renderer => renderer.gameObject
+                        .activeInHierarchy), Is.True);
+                    for (var index = 0; index < renderers.Length; index++)
                     {
-                        continue;
+                        Assert.That(renderers[index].color,
+                            Is.EqualTo(authoredColors[index]),
+                            "Shuffle must not reveal the correct symbol.");
+                        Assert.That(
+                            renderers[index].transform.localPosition,
+                            Is.Not.EqualTo(previousShufflePositions[index]),
+                            "Every symbol changes slot at each 0.5 second step.");
                     }
 
-                    Assert.That(
-                        renderers[index].color,
-                        Is.EqualTo(authoredColors[index]),
-                        "Unselected symbols retain their authored state.");
+                    previousShufflePositions = renderers
+                        .Select(renderer => renderer.transform.localPosition)
+                        .ToArray();
                 }
 
-                presenter.Apply(safeSymbol, false);
+                presenter.ApplyReveal(safeSymbol, 1);
+                var safeIndex = (int)safeSymbol;
+                for (var index = 0; index < renderers.Length; index++)
+                {
+                    Assert.That(
+                        renderers[index].gameObject.activeInHierarchy,
+                        Is.EqualTo(index == safeIndex));
+                    Assert.That(
+                        renderers[index].color,
+                        index == safeIndex
+                            ? Is.EqualTo(Color.green)
+                            : Is.EqualTo(authoredColors[index]));
+                }
                 Assert.That(
-                    renderers.All(renderer =>
-                        !renderer.gameObject.activeSelf),
-                    Is.True);
+                    renderers[safeIndex].transform.localPosition,
+                    Is.EqualTo(previousShufflePositions[safeIndex]),
+                    "Reveal must preserve the final shuffle slot.");
+
+                presenter.Hide();
+                Assert.That(renderers.All(renderer =>
+                    !renderer.gameObject.activeInHierarchy), Is.True);
 
                 presenter.RestoreAuthoredState();
                 for (var index = 0; index < renderers.Length; index++)
@@ -101,8 +158,9 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         renderers[index].color,
                         Is.EqualTo(authoredColors[index]));
-                    Assert.That(
-                        renderers[index].gameObject.activeSelf,
+                    Assert.That(renderers[index].transform.localPosition,
+                        Is.EqualTo(authoredPositions[index]));
+                    Assert.That(renderers[index].gameObject.activeSelf,
                         Is.EqualTo(authoredActiveStates[index]));
                 }
             }

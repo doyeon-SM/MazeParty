@@ -195,9 +195,19 @@ MonoBehaviour:
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   Gestures:
-  - Name: THUMBS UP
-    HandsPrefab: {fileID: 4684904999885387765, guid: a4ad932aedf08ee46ab2c16aec2911e9, type: 3}
-  - Name: PEACE
-    HandsPrefab: {fileID: 3028735145400870850, guid: 0fa25f7fe0f39984298f5d10b92cd5c7, type: 3}
+  - Name: GREETING
+    HandsPrefab: {fileID: 0}
+  - Name: SALUTE
+    HandsPrefab: {fileID: 0}
+  - Name: INSULT
+    HandsPrefab: {fileID: 0}
   - Name: HEART
-    HandsPrefab: {fileID: 1710408392164390971, guid: 327f6174dbc3a444b8226b73131d87ea, type: 3}
+    HandsPrefab: {fileID: 0}
+  - Name: SURPRISE
+    HandsPrefab: {fileID: 0}
+  - Name: SURRENDER
+    HandsPrefab: {fileID: 0}
+  - Name: PLEADING
+    HandsPrefab: {fileID: 0}
+  - Name: EYES COVER
+    HandsPrefab: {fileID: 0}

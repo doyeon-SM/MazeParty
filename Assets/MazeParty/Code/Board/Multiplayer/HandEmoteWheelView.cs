@@ -27,7 +27,10 @@ namespace MazeParty.Multiplayer
         public static bool BlocksPointerInput => _open != null || _closedFrame == Time.frameCount;
         public bool IsOpen => panel != null && panel.activeSelf;
         public bool HasRequiredReferences => panel != null && pointer != null && selectionText != null && sectors != null && labels != null &&
-            sectors.Length == 3 && labels.Length == 3 && System.Array.TrueForAll(sectors, x => x != null) && System.Array.TrueForAll(labels, x => x != null);
+            sectors.Length == HandEmoteRules.GestureCount &&
+            labels.Length == HandEmoteRules.GestureCount &&
+            System.Array.TrueForAll(sectors, x => x != null) &&
+            System.Array.TrueForAll(labels, x => x != null);
         private void Awake() { if (!HasRequiredReferences) { Debug.LogError("Hand emote wheel bindings missing.", this); enabled = false; return; } panel.SetActive(false); }
         private void OnDisable() { Close(false); }
         private void OnApplicationFocus(bool focus) { if (!focus) Close(false); }

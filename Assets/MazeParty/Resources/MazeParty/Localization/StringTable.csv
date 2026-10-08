@@ -759,3 +759,12 @@ The saved player roster is incomplete.,저장된 플레이어 명단이 완전�
 The saved player roster is invalid.,저장된 플레이어 명단이 유효하지 않습니다.,保存したプレイヤー名簿が無効です。,已保存的玩家名单无效。
 The saved shop state is no longer valid.,저장된 상점 상태가 더 이상 유효하지 않습니다.,保存したショップの状態は無効になりました。,已保存的商店状态不再有效。
 The selected board map could not be loaded safely.,선택한 보드 맵을 안전하게 불러오지 못했습니다.,選択したボードマップを安全に読み込めませんでした。,无法安全地加载所选棋盘地图。
+{0} (FACE UNCHANGED),{0} (표정 유지),{0}（表情変更なし）,{0}（表情不变）
+Emote Faces,감정표현 표정,エモート表情,表情动作脸型
+EYES COVER,눈가림,目隠し,蒙眼
+GREETING,인사,挨拶,问候
+INSULT,욕설,侮辱,侮辱
+PLEADING,부탁,お願い,拜托
+SALUTE,경례,敬礼,敬礼
+SURRENDER,항복,降参,投降
+SURPRISE,놀람,驚き,惊讶

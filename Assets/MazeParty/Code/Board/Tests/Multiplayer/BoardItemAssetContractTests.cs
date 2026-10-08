@@ -42,7 +42,14 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(expectedHatFiles.Select(file =>
                     "Assets/Ignore/Pack_PartyCharacters/Resources/Prefabs/Hats/" +
                     file + ".prefab")));
-            Assert.That(expressions.Gestures.Length, Is.EqualTo(3));
+            Assert.That(expressions.Gestures.Length, Is.EqualTo(8));
+            Assert.That(
+                expressions.Gestures.Select(gesture => gesture.Name),
+                Is.EqualTo(new[]
+                {
+                    "GREETING", "SALUTE", "INSULT", "HEART",
+                    "SURPRISE", "SURRENDER", "PLEADING", "EYES COVER"
+                }));
             foreach (var face in expressions.Faces) Assert.That(face.Sprite, Is.Not.Null);
             foreach (var hat in expressions.Hats)
             {
@@ -50,10 +57,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(hat.LocalScale.sqrMagnitude, Is.GreaterThan(0f));
             }
             foreach (var gesture in expressions.Gestures)
-            {
-                Assert.That(PrefabUtility.IsPartOfPrefabAsset(gesture.HandsPrefab), Is.True);
-                Assert.That(gesture.HandsPrefab.GetComponentsInChildren<Collider>(true), Is.Empty);
-            }
+                Assert.That(gesture, Is.Not.Null);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
                 PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.LowDice, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak }));

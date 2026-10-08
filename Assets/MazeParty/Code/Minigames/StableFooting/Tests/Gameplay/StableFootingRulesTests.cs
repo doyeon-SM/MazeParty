@@ -15,7 +15,7 @@ namespace MazeParty.Gameplay.Tests
             var repeated = StableFootingCycleScheduleGenerator.Generate(seed, 1);
             var nextRound = StableFootingCycleScheduleGenerator.Generate(seed, 2);
 
-            Assert.That(first.Cycles.Count, Is.EqualTo(24));
+            Assert.That(first.Cycles.Count, Is.EqualTo(12));
             AssertSchedulesEqual(first, repeated);
             Assert.That(
                 CycleSignature(nextRound.Cycles[0]),
@@ -80,7 +80,7 @@ namespace MazeParty.Gameplay.Tests
             var first = schedule.Cycles[0];
 
             Assert.That(
-                schedule.GetPhaseAt(0.999d),
+                schedule.GetPhaseAt(2.999d),
                 Is.EqualTo(StableFootingCyclePhase.ShuffleReveal));
             Assert.That(
                 schedule.GetPhaseAt(first.ShuffleRevealEndsAtSeconds),
@@ -97,7 +97,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(schedule.Cycles[0].MoveSeconds, Is.EqualTo(4d));
             Assert.That(schedule.Cycles[1].MoveSeconds, Is.EqualTo(3.75d));
             Assert.That(schedule.Cycles[8].MoveSeconds, Is.EqualTo(2d));
-            Assert.That(schedule.Cycles[20].MoveSeconds, Is.EqualTo(2d));
+            Assert.That(schedule.Cycles[11].MoveSeconds, Is.EqualTo(2d));
             Assert.That(
                 schedule.GetPhaseAt(StableFootingRules.RoundSeconds),
                 Is.EqualTo(StableFootingCyclePhase.RoundComplete));

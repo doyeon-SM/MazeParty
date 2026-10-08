@@ -12,6 +12,12 @@ namespace MazeParty.Multiplayer
     public sealed class StableFootingSafeSymbolPresenter
     {
         private static readonly Color CorrectColor = Color.green;
+        private static readonly int[,] ShuffleLayouts =
+        {
+            { 0, 1, 2 },
+            { 1, 2, 0 },
+            { 2, 0, 1 }
+        };
 
         private readonly SpriteRenderer[] _renderers;
         private readonly Transform[] _roots;
@@ -53,24 +59,48 @@ namespace MazeParty.Multiplayer
                 (left, right) => left.x.CompareTo(right.x));
         }
 
-        public void Apply(
-            StableFootingSymbol safeSymbol,
-            bool visible)
+        public void ApplyShuffle(
+            int cycleNumber,
+            double shuffleElapsedSeconds)
         {
-            var safeIndex = ToIndex(safeSymbol);
-            var nextOuterSlot = 0;
+            ApplyShuffleLayout(
+                cycleNumber,
+                GetShuffleStep(shuffleElapsedSeconds));
             for (var symbolIndex = 0;
                  symbolIndex < _renderers.Length;
                  symbolIndex++)
             {
-                var slotIndex = symbolIndex == safeIndex
-                    ? 1
-                    : (nextOuterSlot++ == 0 ? 0 : 2);
-                _roots[symbolIndex].localPosition = _slots[slotIndex];
+                _renderers[symbolIndex].color =
+                    _authoredColors[symbolIndex];
+                _roots[symbolIndex].gameObject.SetActive(true);
+            }
+        }
+
+        public void ApplyReveal(
+            StableFootingSymbol safeSymbol,
+            int cycleNumber)
+        {
+            var safeIndex = ToIndex(safeSymbol);
+            ApplyShuffleLayout(
+                cycleNumber,
+                StableFootingRules.SymbolShuffleStepCount - 1);
+            for (var symbolIndex = 0;
+                 symbolIndex < _renderers.Length;
+                 symbolIndex++)
+            {
                 _renderers[symbolIndex].color = symbolIndex == safeIndex
                     ? CorrectColor
                     : _authoredColors[symbolIndex];
-                _roots[symbolIndex].gameObject.SetActive(visible);
+                _roots[symbolIndex].gameObject.SetActive(
+                    symbolIndex == safeIndex);
+            }
+        }
+
+        public void Hide()
+        {
+            for (var index = 0; index < _roots.Length; index++)
+            {
+                _roots[index].gameObject.SetActive(false);
             }
         }
 
@@ -94,6 +124,55 @@ namespace MazeParty.Multiplayer
             }
 
             return index;
+        }
+
+        private void ApplyShuffleLayout(
+            int cycleNumber,
+            int shuffleStep)
+        {
+            if (cycleNumber < 1)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(cycleNumber),
+                    cycleNumber,
+                    "Cycle number must be positive.");
+            }
+
+            var layoutCount = ShuffleLayouts.GetLength(0);
+            var layoutIndex =
+                ((cycleNumber - 1) + shuffleStep) % layoutCount;
+            for (var symbolIndex = 0;
+                 symbolIndex < _roots.Length;
+                 symbolIndex++)
+            {
+                var slotIndex = ShuffleLayouts[
+                    layoutIndex,
+                    symbolIndex];
+                _roots[symbolIndex].localPosition = _slots[slotIndex];
+            }
+        }
+
+        private static int GetShuffleStep(double shuffleElapsedSeconds)
+        {
+            if (double.IsNaN(shuffleElapsedSeconds) ||
+                double.IsInfinity(shuffleElapsedSeconds) ||
+                shuffleElapsedSeconds < 0d)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(shuffleElapsedSeconds),
+                    shuffleElapsedSeconds,
+                    "Shuffle time must be a finite non-negative value.");
+            }
+
+            if (shuffleElapsedSeconds >=
+                StableFootingRules.ShuffleRevealSeconds)
+            {
+                return StableFootingRules.SymbolShuffleStepCount - 1;
+            }
+
+            return (int)Math.Floor(
+                shuffleElapsedSeconds /
+                StableFootingRules.SymbolShuffleIntervalSeconds);
         }
 
         private static SpriteRenderer RequireSpriteRenderer(

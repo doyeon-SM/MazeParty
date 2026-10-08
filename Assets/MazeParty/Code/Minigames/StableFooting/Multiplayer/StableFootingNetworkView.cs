@@ -408,9 +408,31 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var visible = state.Phase ==
-                          NetworkStableFootingPhase.Running;
-            _safeSymbolPresenter.Apply(state.SafeSymbol, visible);
+            if (state.Phase != NetworkStableFootingPhase.Running ||
+                state.CycleNumber < 1 ||
+                state.CyclePhase ==
+                StableFootingCyclePhase.RoundComplete)
+            {
+                _safeSymbolPresenter.Hide();
+                return;
+            }
+
+            if (state.CyclePhase ==
+                StableFootingCyclePhase.ShuffleReveal)
+            {
+                var shuffleElapsedSeconds = Math.Max(
+                    0d,
+                    StableFootingRules.ShuffleRevealSeconds -
+                    state.CycleRemaining);
+                _safeSymbolPresenter.ApplyShuffle(
+                    state.CycleNumber,
+                    shuffleElapsedSeconds);
+                return;
+            }
+
+            _safeSymbolPresenter.ApplyReveal(
+                state.SafeSymbol,
+                state.CycleNumber);
         }
 
         private void EnsureSafeSymbolPresenter()
@@ -453,7 +475,9 @@ namespace MazeParty.Multiplayer
             {
                 cueAudioSource.Play();
             }
-            if (state.Phase == NetworkStableFootingPhase.Running &&
+            if (ShouldPlaySafeSymbolRevealVfx(
+                    state.Phase,
+                    state.CyclePhase) &&
                 interactionVfxPrefab != null)
             {
                 var renderer = state.SafeSymbol ==
@@ -471,6 +495,14 @@ namespace MazeParty.Multiplayer
                         1.1f);
                 }
             }
+        }
+
+        internal static bool ShouldPlaySafeSymbolRevealVfx(
+            NetworkStableFootingPhase phase,
+            StableFootingCyclePhase cyclePhase)
+        {
+            return phase == NetworkStableFootingPhase.Running &&
+                   cyclePhase == StableFootingCyclePhase.Move;
         }
 
         private int ResolveDisplayedRank(int slot)

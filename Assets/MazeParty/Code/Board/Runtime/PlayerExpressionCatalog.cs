@@ -3,6 +3,19 @@ using UnityEngine;
 
 namespace MazeParty.Gameplay
 {
+    public enum HandEmoteId : byte
+    {
+        None = 0,
+        Greeting = 1,
+        Salute = 2,
+        Insult = 3,
+        Heart = 4,
+        Surprise = 5,
+        Surrender = 6,
+        Pleading = 7,
+        EyesCover = 8
+    }
+
     [CreateAssetMenu(menuName = "MazeParty/Player Expressions")]
     public sealed class PlayerExpressionCatalog : ScriptableObject
     {
@@ -16,7 +29,12 @@ namespace MazeParty.Gameplay
             public Vector3 LocalEulerAngles;
             public Vector3 LocalScale = Vector3.one;
         }
-        [Serializable] public class Gesture { public string Name; public GameObject HandsPrefab; }
+        [Serializable]
+        public class Gesture
+        {
+            public string Name;
+            [HideInInspector] public GameObject HandsPrefab;
+        }
         public Face[] Faces = Array.Empty<Face>();
         public Hat[] Hats = Array.Empty<Hat>();
         public Gesture[] Gestures = Array.Empty<Gesture>();
@@ -27,17 +45,32 @@ namespace MazeParty.Gameplay
         public static byte SanitizeFace(byte id) => id == 0 ? (byte)0 : Instance != null && id < Instance.Faces.Length ? id : (byte)0;
         public static byte SanitizeHat(byte id) => id > 0 && Instance != null && Instance.Hats != null && id <= Instance.Hats.Length &&
             Instance.Hats[id - 1] != null && Instance.Hats[id - 1].Prefab != null ? id : (byte)0;
-        public static bool HasGesture(byte id) => Instance != null && id > 0 && id <= Instance.Gestures.Length &&
-            Instance.Gestures[id - 1].HandsPrefab != null;
+        public static bool HasGesture(byte id) => Instance != null && id > 0 &&
+            id <= Instance.Gestures.Length && Instance.Gestures[id - 1] != null;
     }
 
     public static class HandEmoteRules
     {
-        public const double Duration = 1d;
+        public const int GestureCount = 8;
+        public const double Duration = 2d;
         public static bool CanStart(double now, double previousEnd, bool allowed, bool validGesture) =>
             allowed && validGesture && !double.IsNaN(now) && !double.IsInfinity(now) && now >= previousEnd;
         public static bool IsActive(byte id, double end, double now) => id > 0 && now < end;
-        // Top, bottom-right, bottom-left; the center cancels selection.
+        public static byte ResolveExpression(
+            byte gestureId,
+            byte requestedExpression,
+            byte fallbackExpression,
+            int faceCount)
+        {
+            if ((HandEmoteId)gestureId == HandEmoteId.EyesCover ||
+                requestedExpression >= faceCount)
+            {
+                return fallbackExpression;
+            }
+
+            return requestedExpression;
+        }
+        // Clockwise from the top; the center cancels selection.
         public static int Select(Vector2 offset, float deadZone, int count)
         {
             if (count <= 0 || offset.sqrMagnitude < deadZone * deadZone) return -1;

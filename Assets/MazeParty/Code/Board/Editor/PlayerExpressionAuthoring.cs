@@ -15,6 +15,14 @@ namespace MazeParty.Editor
         const string Models = "Assets/MazeParty/Prefabs/Multiplayer/Expressions";
         const string PartyPack = "Assets/Ignore/Pack_PartyCharacters/Resources";
         const string LegacyPartyPack = "Assets/Ignore/FREE/Pack_FREE_PartyCharacters/Resources";
+        static readonly string[] GestureNames =
+        {
+            "GREETING", "SALUTE", "INSULT", "HEART",
+            "SURPRISE", "SURRENDER", "PLEADING", "EYES COVER"
+        };
+        const string WheelTitleSource = "HAND EMOTES";
+        const string WheelHelpSource =
+            "HOLD T + DRAG  /  RELEASE TO USE\nCENTER / ESC / RMB: CANCEL";
         [MenuItem("MazeParty/Player/Upgrade Expressions")]
         public static void Upgrade()
         {
@@ -24,14 +32,21 @@ namespace MazeParty.Editor
             {
                 catalog = ScriptableObject.CreateInstance<PlayerExpressionCatalog>();
                 ConfigurePartyPackAppearance(catalog);
-                var names = new[] { "THUMBS UP", "PEACE", "HEART" };
-                catalog.Gestures = new PlayerExpressionCatalog.Gesture[3];
-                for (int i = 0; i < 3; i++) catalog.Gestures[i] = new PlayerExpressionCatalog.Gesture { Name = names[i], HandsPrefab = Hands(i) };
+                ConfigureGestures(catalog);
                 AssetDatabase.CreateAsset(catalog, Data + "/PlayerExpressions.asset");
             }
             else if (IsLegacyAppearanceCatalog(catalog) || IsLimitedPartyPackCatalog(catalog))
             {
                 ConfigurePartyPackAppearance(catalog);
+                EditorUtility.SetDirty(catalog);
+            }
+            if (catalog.Gestures == null ||
+                catalog.Gestures.Length != GestureNames.Length ||
+                !catalog.Gestures.Select(gesture =>
+                        gesture != null ? gesture.Name : string.Empty)
+                    .SequenceEqual(GestureNames))
+            {
+                ConfigureGestures(catalog);
                 EditorUtility.SetDirty(catalog);
             }
             foreach (string path in new[] { "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab", "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" })
@@ -138,6 +153,11 @@ namespace MazeParty.Editor
                 };
             }
         }
+        static void ConfigureGestures(PlayerExpressionCatalog catalog)
+        {
+            catalog.Gestures = GestureNames.Select(name =>
+                new PlayerExpressionCatalog.Gesture { Name = name }).ToArray();
+        }
         static Sprite Sprite(string name, Func<float,float,Color> pixel)
         {
             string path=Data+"/"+name+".png";
@@ -203,34 +223,75 @@ namespace MazeParty.Editor
         static void EnsureWheel(GameObject canvas,bool lobby)
         {
             var old=canvas.GetComponent<HandEmoteWheelView>();
-            if(old!=null){if(!old.HasRequiredReferences)throw new InvalidOperationException("Incomplete emote bindings");return;}
+            if(old!=null&&old.HasRequiredReferences)
+            {
+                EnsureWheelLocalization(canvas.transform.Find("Hand Emote Wheel"));
+                return;
+            }
+            if(old!=null)
+            {
+                var oldPanel=canvas.transform.Find("Hand Emote Wheel");
+                if(oldPanel!=null)UnityEngine.Object.DestroyImmediate(oldPanel.gameObject);
+                UnityEngine.Object.DestroyImmediate(old);
+            }
             var view=canvas.AddComponent<HandEmoteWheelView>();
             var panel=Rect(canvas.transform,"Hand Emote Wheel",Vector2.zero,Vector2.zero);
             panel.anchorMin=Vector2.zero;panel.anchorMax=Vector2.one;
             var blocker=panel.gameObject.AddComponent<Image>();blocker.color=new Color(0,0,0,.12f);
             panel.gameObject.AddComponent<GraphicRaycaster>();
             // Own nested sorting canvas keeps this wheel above the lobby panels without changing the camera.
-            var overlay=panel.gameObject.AddComponent<Canvas>();overlay.overrideSorting=true;overlay.sortingOrder=100;
+            var overlay=panel.GetComponent<Canvas>() ?? panel.gameObject.AddComponent<Canvas>();overlay.overrideSorting=true;overlay.sortingOrder=100;
             var group=panel.gameObject.AddComponent<CanvasGroup>();group.ignoreParentGroups=true;group.blocksRaycasts=true;
-            var sectorSprite=Sprite("WheelSector",(x,y)=>{float r=Mathf.Sqrt(x*x+y*y);float a=Mathf.Atan2(x,y)*Mathf.Rad2Deg;return r>.12f&&r<.49f&&Mathf.Abs(a)<58f?Color.white:Color.clear;});
+            var sectorSprite=Sprite("WheelSector8",(x,y)=>{float r=Mathf.Sqrt(x*x+y*y);float a=Mathf.Atan2(x,y)*Mathf.Rad2Deg;return r>.12f&&r<.49f&&Mathf.Abs(a)<20f?Color.white:Color.clear;});
             var dotSprite=Sprite("WheelDot",(x,y)=>x*x+y*y<.24f?Color.white:Color.clear);
             var data=new SerializedObject(view);data.FindProperty("lobbyWheel").boolValue=lobby;Bind(data,"panel",panel.gameObject);
-            var sectors=data.FindProperty("sectors");sectors.arraySize=3;var labels=data.FindProperty("labels");labels.arraySize=3;
-            for(int i=0;i<3;i++)
+            var sectors=data.FindProperty("sectors");sectors.arraySize=GestureNames.Length;var labels=data.FindProperty("labels");labels.arraySize=GestureNames.Length;
+            for(int i=0;i<GestureNames.Length;i++)
             {
-                float angle=i*120*Mathf.Deg2Rad;
-                var sector=Rect(panel,"Sector "+i,new Vector2(360,360),Vector2.zero).gameObject.AddComponent<Image>();sector.sprite=sectorSprite;sector.raycastTarget=false;sector.rectTransform.localRotation=Quaternion.Euler(0,0,-i*120);sector.color=new Color(.07f,.12f,.18f,.96f);
+                float angle=i*45*Mathf.Deg2Rad;
+                var sector=Rect(panel,"Sector "+i,new Vector2(380,380),Vector2.zero).gameObject.AddComponent<Image>();sector.sprite=sectorSprite;sector.raycastTarget=false;sector.rectTransform.localRotation=Quaternion.Euler(0,0,-i*45);sector.color=new Color(.07f,.12f,.18f,.96f);
                 sectors.GetArrayElementAtIndex(i).objectReferenceValue=sector;
-                var label=Label(panel,"Gesture "+i,new[]{"THUMBS UP","PEACE","HEART"}[i],new Vector2(125,40),new Vector2(Mathf.Sin(angle)*112,Mathf.Cos(angle)*112),17);
+                var label=Label(panel,"Gesture "+i,GestureNames[i],new Vector2(105,32),new Vector2(Mathf.Sin(angle)*142,Mathf.Cos(angle)*142),13);
                 labels.GetArrayElementAtIndex(i).objectReferenceValue=label;
             }
             var center=Rect(panel,"Center Cancel Zone",new Vector2(86,86),Vector2.zero).gameObject.AddComponent<Image>();center.sprite=dotSprite;center.color=new Color(.05f,.08f,.12f,1);center.raycastTarget=false;
             Label(panel,"Center Label","T",new Vector2(48,40),Vector2.zero,24);
-            Label(panel,"Title","HAND EMOTES",new Vector2(360,30),new Vector2(0,205),23);
-            Label(panel,"Help","HOLD T + DRAG  /  RELEASE TO USE\nCENTER / ESC / RMB: CANCEL",new Vector2(440,50),new Vector2(0,-220),16);
+            Label(panel,"Title",WheelTitleSource,new Vector2(360,30),new Vector2(0,205),23);
+            Label(panel,"Help",WheelHelpSource,new Vector2(440,50),new Vector2(0,-220),16);
             var selected=Label(panel,"Selection","DRAG TO SELECT",new Vector2(390,28),new Vector2(0,-181),18);Bind(data,"selectionText",selected);
             var pointer=Rect(panel,"Selection Pointer",new Vector2(14,14),Vector2.zero);var dot=pointer.gameObject.AddComponent<Image>();dot.sprite=dotSprite;dot.color=new Color(1,.84f,.3f);dot.raycastTarget=false;Bind(data,"pointer",pointer);
-            data.ApplyModifiedPropertiesWithoutUndo();panel.gameObject.SetActive(false);
+            data.ApplyModifiedPropertiesWithoutUndo();
+            EnsureWheelLocalization(panel);
+            panel.gameObject.SetActive(false);
+        }
+        static void EnsureWheelLocalization(Transform panel)
+        {
+            if (panel == null)
+            {
+                throw new InvalidOperationException(
+                    "Hand Emote Wheel panel is missing from its authored Canvas prefab.");
+            }
+
+            EnsureLocalizedLabel(panel, "Title", WheelTitleSource);
+            EnsureLocalizedLabel(panel, "Help", WheelHelpSource);
+        }
+        static void EnsureLocalizedLabel(
+            Transform parent,
+            string childName,
+            string source)
+        {
+            var child = parent.Find(childName);
+            var label = child != null ? child.GetComponent<Text>() : null;
+            if (label == null)
+            {
+                throw new InvalidOperationException(
+                    "Hand Emote Wheel/" + childName + " Text is missing.");
+            }
+
+            label.text = source;
+            var localized = label.GetComponent<LocalizedText>() ??
+                            label.gameObject.AddComponent<LocalizedText>();
+            localized.Configure(source);
         }
         static void EnsureFaceSelector(GameObject canvas)
         {
@@ -252,6 +313,31 @@ namespace MazeParty.Editor
         {
             EnsureFaceSelector(canvas);
             EnsureHatSelector(canvas);
+            EnsureEmoteFaceSelector(canvas);
+        }
+        static void EnsureEmoteFaceSelector(GameObject canvas)
+        {
+            var existing=canvas.GetComponentInChildren<LobbyEmoteExpressionView>(true);
+            if(existing!=null){if(!existing.HasRequiredReferences)throw new InvalidOperationException("Incomplete emote face selector bindings");return;}
+            var lobby=canvas.GetComponent<OnlineLobbyView>();var panel=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Player Customization");var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
+            var panelRect=(RectTransform)panel;panelRect.sizeDelta=new Vector2(520,520);
+            var footerSize=footer.GetComponent<LayoutElement>();if(footerSize!=null)footerSize.preferredHeight=290;
+            SectionLabel(footer,"Emote Faces");
+            var row=Rect(footer,"Emote Face Mapping",new Vector2(472,72),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=72;
+            var view=row.gameObject.AddComponent<LobbyEmoteExpressionView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
+            Button SelectorButton(string name,string arrow,Vector2 position,string binding)
+            {
+                var r=Rect(row,name,new Vector2(36,36),position);var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;Label(r,"Arrow",arrow,new Vector2(24,24),Vector2.zero);Bind(data,binding,button);return button;
+            }
+            SelectorButton("Previous Emote","<",new Vector2(-218,0),"previousEmote");
+            SelectorButton("Next Emote",">",new Vector2(-82,0),"nextEmote");
+            Bind(data,"emoteTitle",Label(row,"Emote Name",GestureNames[0],new Vector2(96,32),new Vector2(-150,0),14));
+            SelectorButton("Previous Face","<",new Vector2(-42,0),"previousFace");
+            var previewBackground=Rect(row,"Emote Face Preview Background",new Vector2(34,32),new Vector2(8,0)).gameObject.AddComponent<Image>();previewBackground.color=new Color(.82f,.86f,.9f);previewBackground.raycastTarget=false;
+            var preview=Rect(row,"Emote Face Preview",new Vector2(32,32),new Vector2(8,0)).gameObject.AddComponent<Image>();preview.color=Color.white;preview.raycastTarget=false;Bind(data,"preview",preview);
+            Bind(data,"faceTitle",Label(row,"Emote Face Name","Face1",new Vector2(128,32),new Vector2(106,0),14));
+            SelectorButton("Next Face",">",new Vector2(218,0),"nextFace");
+            data.ApplyModifiedPropertiesWithoutUndo();
         }
         static void EnsureHatSelector(GameObject canvas)
         {

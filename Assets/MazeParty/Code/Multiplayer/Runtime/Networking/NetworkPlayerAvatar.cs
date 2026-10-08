@@ -561,9 +561,14 @@ namespace MazeParty.Multiplayer
                     GetCurrentSessionPhase()))
             {
                 HideBoundaryWalls();
-                if (_slot.Value >= 0 && CanUseLobbyInput())
+                if (_slot.Value >= 0 && CanUseLobbyInput() &&
+                    ActiveHandGesture == 0)
                 {
                     SimulateLobbyMovementOnServer();
+                }
+                else if (ActiveHandGesture != 0)
+                {
+                    StopServerInputOnServer();
                 }
                 return;
             }
@@ -573,7 +578,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (CanUseLobbyInput())
+            if (CanUseLobbyInput() && ActiveHandGesture == 0)
             {
                 HideBoundaryWalls();
                 SimulateLobbyMovementOnServer();
@@ -587,7 +592,9 @@ namespace MazeParty.Multiplayer
 
             var match = NetworkMatchState.Instance;
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
-                                  HasResolvedItemChoice && !IsSwapping && !IsBoardDeathInProgressOnServer;
+                                  HasResolvedItemChoice && !IsSwapping &&
+                                  !IsBoardDeathInProgressOnServer &&
+                                  ActiveHandGesture == 0;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
             var canMoveInArenaCombat = canMoveInCombat && match.IsArenaCombatPlaying;
             if (!canMoveInAction && !canMoveInCombat)
@@ -2437,7 +2444,8 @@ namespace MazeParty.Multiplayer
                                     HasResolvedItemChoice && !IsSwapping &&
                                     !IsBoardDeathInProgressOnServer;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
-            if (!canUseLobbyInput && !canUseActionInput && !canUseCombatInput)
+            if (ActiveHandGesture != 0 ||
+                (!canUseLobbyInput && !canUseActionInput && !canUseCombatInput))
             {
                 _serverInput = Vector2.zero;
                 _serverQuietWalkHeld = false;

@@ -286,11 +286,11 @@ namespace MazeParty.Multiplayer
             var keyboard = LocalKeyboard;
             var match = NetworkMatchState.Instance;
             var lobbyInput = CanUseLobbyInput();
-            var canMove = lobbyInput || (match != null &&
+            var canMove = ActiveHandGesture == 0 && (lobbyInput || (match != null &&
                           ((match.CanAcceptActionInput && HasResolvedItemChoice &&
                             CurrentHealth > 0 &&
                             !BoardFlowView.IsItemShopOpen && !BoardUtilityItemView.IsTargetPickerOpen && !IsSwapping) ||
-                           match.CanAvatarUseCombatInput(this)));
+                           match.CanAvatarUseCombatInput(this))));
             if (keyboard != null && canMove)
             {
                 input.x = (keyboard.dKey.isPressed ? 1f : 0f) -
