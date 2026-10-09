@@ -475,7 +475,7 @@ namespace MazeParty.Editor
                 message.font = font;
                 message.text = string.Empty;
                 message.fontSize = 24;
-                message.fontStyle = FontStyle.Bold;
+                message.fontStyle = FontStyle.Normal;
                 message.color = new Color(0.93f, 0.96f, 1f, 1f);
                 message.alignment = TextAnchor.MiddleCenter;
                 message.supportRichText = true;

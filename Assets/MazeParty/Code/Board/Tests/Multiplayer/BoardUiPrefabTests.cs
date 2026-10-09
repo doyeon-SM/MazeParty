@@ -3,11 +3,13 @@ using System.Linq;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -25,6 +27,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardKillFeedPanel.prefab";
         private const string LocalizationTablePath =
             "Assets/MazeParty/Resources/MazeParty/Localization/StringTable.csv";
+        private const string InputSpriteAssetPath =
+            "Assets/Ignore/Input Sprites for TextMesh Pro/all input icons same size.asset";
 
         private static readonly string[,] NestedModules =
         {
@@ -99,6 +103,7 @@ namespace MazeParty.Multiplayer.Tests
             AssertPlayerHealthSliderBindings(prefab, bindings);
             AssertBoardEventPopupBindings(prefab, bindings);
             AssertBoardKillFeedBindings(prefab, bindings);
+            AssertMinigameReadyPresentationBindings(prefab, bindings);
 
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
@@ -155,6 +160,9 @@ namespace MazeParty.Multiplayer.Tests
                 AssertBoardKillFeedBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
+                AssertMinigameReadyPresentationBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings);
 
                 var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);
@@ -202,30 +210,120 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardCanvas_ProvidesDistinctRuleCardsForEveryMinigame()
+        public void MinigameControlGuides_CoverEveryRegisteredMinigame()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            Assert.That(prefab, Is.Not.Null, PrefabPath);
-
-            var bindings = prefab.GetComponent<BoardCanvasBindings>();
-            Assert.That(bindings, Is.Not.Null);
-            Assert.That(bindings.MinigameRuleImage, Is.Not.Null);
-            Assert.That(bindings.MinigameRuleImage.preserveAspect, Is.True);
-            Assert.That(bindings.GetMinigameRuleCard(ScheduledMinigameId.Skip),
-                Is.Null);
-
-            var uniqueCards = new HashSet<Sprite>();
+            Assert.That(
+                BoardFlowView.GetMinigameControlGuide(
+                    ScheduledMinigameId.Skip),
+                Is.Empty);
             foreach (var game in MinigameCatalog.RegisteredMinigames)
             {
-                var sprite = bindings.GetMinigameRuleCard(game.Id);
-                Assert.That(sprite, Is.Not.Null, game.DisplayName);
-                Assert.That(AssetDatabase.GetAssetPath(sprite),
-                    Does.StartWith("Assets/MazeParty/Art/Minigames/RuleCards/"),
+                var rows = BoardFlowView.GetMinigameControlGuide(game.Id);
+                Assert.That(rows, Is.Not.Empty, game.DisplayName);
+                Assert.That(rows.Count, Is.LessThanOrEqualTo(4), game.DisplayName);
+                Assert.That(
+                    rows.All(row => row.Contains("<sprite name=\"")),
+                    Is.True,
                     game.DisplayName);
-                Assert.That(uniqueCards.Add(sprite), Is.True, game.DisplayName);
+            }
+        }
+
+        [TestCase(BoardFlowState.MinigameIntroReady, false, false, true)]
+        [TestCase(BoardFlowState.MinigameLoading, false, false, true)]
+        [TestCase(BoardFlowState.MinigamePlaying, false, false, false)]
+        [TestCase(BoardFlowState.MinigameIntroReady, true, false, false)]
+        [TestCase(BoardFlowState.MinigameIntroReady, false, true, false)]
+        public void MinigameReadyPresentation_OnlyRunsWhilePanelIsVisible(
+            BoardFlowState state,
+            bool globallyPaused,
+            bool reconnectPaused,
+            bool expected)
+        {
+            Assert.That(
+                BoardFlowView.ShouldShowMinigameReadyPresentation(
+                    state,
+                    globallyPaused,
+                    reconnectPaused),
+                Is.EqualTo(expected));
+        }
+
+        private static void AssertMinigameReadyPresentationBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            var panel = bindings.MinigameReadyPanel;
+            Assert.That(panel, Is.Not.Null);
+            Assert.That(bindings.MinigameDescription, Is.Not.Null);
+            Assert.That(bindings.MinigameDescription.transform.IsChildOf(
+                panel.transform), Is.True);
+            Assert.That(bindings.MinigamePreviewPlaceholder, Is.Not.Null);
+            Assert.That(bindings.MinigamePreviewImage, Is.Not.Null);
+            Assert.That(bindings.MinigamePreviewPlayer, Is.Not.Null);
+            Assert.That(bindings.MinigameControlRows, Has.Length.EqualTo(4));
+
+            var descendants = panel.GetComponentsInChildren<Transform>(true);
+            Assert.That(descendants.Any(candidate =>
+                candidate.name == "MinigameRuleImage"), Is.False);
+            Assert.That(descendants.Any(candidate =>
+                candidate.name == "MinigameRulePlaceholderText"), Is.False);
+
+            var playerStates = bindings.MinigameReadyPlayerStates;
+            Assert.That(playerStates, Has.Length.EqualTo(4));
+            for (var slot = 0; slot < playerStates.Length; slot++)
+            {
+                Assert.That(playerStates[slot].transform.IsChildOf(
+                    panel.transform), Is.True);
             }
 
-            Assert.That(uniqueCards.Count, Is.EqualTo(MinigameCatalog.RegisteredCount));
+            var inputSprites = AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(
+                InputSpriteAssetPath);
+            Assert.That(inputSprites, Is.Not.Null, InputSpriteAssetPath);
+            for (var row = 0; row < bindings.MinigameControlRows.Length; row++)
+            {
+                var control = bindings.MinigameControlRows[row];
+                Assert.That(control, Is.Not.Null, "control row " + row);
+                Assert.That(control.transform.IsChildOf(panel.transform), Is.True);
+                Assert.That(control.spriteAsset, Is.SameAs(inputSprites));
+                Assert.That(control.fontStyle, Is.EqualTo(FontStyles.Normal));
+                Assert.That(control.fontWeight, Is.EqualTo(FontWeight.Regular));
+            }
+
+            var preview = bindings.MinigamePreviewPlayer;
+            Assert.That(preview.playOnAwake, Is.False);
+            Assert.That(preview.isLooping, Is.True);
+            Assert.That(preview.waitForFirstFrame, Is.True);
+            Assert.That(preview.source, Is.EqualTo(VideoSource.VideoClip));
+            Assert.That(preview.renderMode, Is.EqualTo(VideoRenderMode.APIOnly));
+            Assert.That(preview.audioOutputMode,
+                Is.EqualTo(VideoAudioOutputMode.None));
+            Assert.That(preview.clip, Is.Null);
+            Assert.That(bindings.MinigamePreviewImage.texture, Is.Null);
+            Assert.That(bindings.MinigamePreviewImage.enabled, Is.False);
+            Assert.That(bindings.MinigamePreviewImage.transform.IsChildOf(
+                panel.transform), Is.True);
+
+            Assert.That(
+                bindings.GetMinigamePreviewClip(ScheduledMinigameId.Skip),
+                Is.Null);
+            Assert.That(
+                bindings.MinigamePreviewClipSlotCount,
+                Is.GreaterThan((int)ScheduledMinigameId.CliffBarrage));
+
+            Assert.That(
+                panel.GetComponentsInChildren<Text>(true).All(text =>
+                    text.fontStyle == FontStyle.Normal),
+                Is.True,
+                "Every legacy Text in the ready panel must use Normal style.");
+            Assert.That(
+                panel.GetComponentsInChildren<TMP_Text>(true).All(text =>
+                    text.fontStyle == FontStyles.Normal &&
+                    text.fontWeight == FontWeight.Regular),
+                Is.True,
+                "Every TMP text in the ready panel must use Normal style.");
+
+            Assert.That(root.GetComponentsInChildren<Transform>(true)
+                .Count(candidate => candidate.name == "MinigamePreviewVideo"),
+                Is.EqualTo(1));
         }
 
         private static void AssertBoardEventPopupBindings(

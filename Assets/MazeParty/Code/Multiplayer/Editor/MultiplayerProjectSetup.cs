@@ -573,7 +573,7 @@ namespace MazeParty.Editor
                     22,
                     TextAnchor.MiddleCenter,
                     34f);
-                title.fontStyle = FontStyle.Bold;
+                title.fontStyle = FontStyle.Normal;
                 title.gameObject.AddComponent<LocalizedText>()
                     .Configure("Board Settings");
                 titleObject = title.gameObject;
@@ -1176,7 +1176,7 @@ namespace MazeParty.Editor
             buildVersionRect.pivot = Vector2.zero;
             buildVersionRect.anchoredPosition = new Vector2(24f, 24f);
             buildVersionRect.sizeDelta = new Vector2(240f, 32f);
-            buildVersionText.fontStyle = FontStyle.Bold;
+            buildVersionText.fontStyle = FontStyle.Normal;
             buildVersionText.color = new Color(0.75f, 0.89f, 1f, 0.92f);
             var buildVersionShadow =
                 buildVersionText.gameObject.AddComponent<Shadow>();
@@ -1381,7 +1381,7 @@ namespace MazeParty.Editor
             rect.anchoredPosition = new Vector2(-12f, -12f);
             rect.sizeDelta = new Vector2(42f, 42f);
             label.fontSize = 26;
-            label.fontStyle = FontStyle.Bold;
+            label.fontStyle = FontStyle.Normal;
             GetOrAddComponent<UiSoundEmitter>(closeButton.gameObject);
             closeButton.transform.SetAsLastSibling();
             return closeButton;
@@ -1478,8 +1478,7 @@ namespace MazeParty.Editor
                 font,
                 new Vector2(0f, -24f),
                 new Vector2(280f, 42f),
-                25,
-                FontStyle.Bold);
+                25);
             var subtitle = CreateTowerText(
                 "Subtitle",
                 panel,
@@ -1487,8 +1486,7 @@ namespace MazeParty.Editor
                 font,
                 new Vector2(0f, -66f),
                 new Vector2(280f, 32f),
-                17,
-                FontStyle.Normal);
+                17);
 
             var blocks = new Image[MinigameScheduleTowerView.MaximumVisibleBlocks];
             var blockLabels = new Text[blocks.Length];
@@ -1516,8 +1514,7 @@ namespace MazeParty.Editor
                     font,
                     Vector2.zero,
                     blockRect.sizeDelta,
-                    18,
-                    index == 0 ? FontStyle.Bold : FontStyle.Normal);
+                    18);
             }
 
             root.GetComponent<MinigameScheduleTowerView>().Configure(
@@ -1537,8 +1534,7 @@ namespace MazeParty.Editor
             Font font,
             Vector2 anchoredPosition,
             Vector2 size,
-            int fontSize,
-            FontStyle style)
+            int fontSize)
         {
             var textObject = CreateUiObject(name, parent);
             var rect = textObject.GetComponent<RectTransform>();
@@ -1552,7 +1548,7 @@ namespace MazeParty.Editor
             text.text = value;
             text.font = font;
             text.fontSize = fontSize;
-            text.fontStyle = style;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.raycastTarget = false;
@@ -1652,7 +1648,7 @@ namespace MazeParty.Editor
                 40f);
             Object.DestroyImmediate(mapNameText.GetComponent<LayoutElement>());
             SetStretch(mapNameText.rectTransform, 62f, 62f, 4f, 4f);
-            mapNameText.fontStyle = FontStyle.Bold;
+            mapNameText.fontStyle = FontStyle.Normal;
             return row;
         }
 
@@ -1695,7 +1691,7 @@ namespace MazeParty.Editor
                 32f);
             Object.DestroyImmediate(labelText.GetComponent<LayoutElement>());
             SetStretch(labelText.rectTransform, 4f, 4f, 2f, 2f);
-            labelText.fontStyle = FontStyle.Bold;
+            labelText.fontStyle = FontStyle.Normal;
             return button;
         }
 
@@ -1742,7 +1738,7 @@ namespace MazeParty.Editor
             Object.DestroyImmediate(placeholder.GetComponent<LayoutElement>());
             SetStretch(placeholder.rectTransform, 12f, 12f, 6f, 6f);
             placeholder.color = new Color(0.55f, 0.62f, 0.72f, 1f);
-            placeholder.fontStyle = FontStyle.Italic;
+            placeholder.fontStyle = FontStyle.Normal;
 
             inputField.textComponent = valueText;
             inputField.placeholder = placeholder;

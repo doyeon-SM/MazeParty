@@ -526,7 +526,7 @@ namespace MazeParty.Editor
             var text = item.GetComponent<Text>();
             text.font = font;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;

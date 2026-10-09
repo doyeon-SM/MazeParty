@@ -694,7 +694,7 @@ namespace MazeParty.Editor
             text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             text.text = value;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.color = color;
             text.alignment = alignment;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;

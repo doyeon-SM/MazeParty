@@ -1,8 +1,10 @@
 using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace MazeParty.Multiplayer
 {
@@ -44,13 +46,15 @@ namespace MazeParty.Multiplayer
             public Text BoardEventPopupMessage;
             public Text BoardKillFeedMessage;
             public Text MinigameReadyTitle;
-            public Text MinigameReadyNote;
+            public Text MinigameDescription;
             public Text MinigameReadyStatus;
             public Text[] MinigameReadyPlayerStates;
-            public Text MinigameRulePlaceholder;
+            public Text MinigamePreviewPlaceholder;
+            public TMP_Text[] MinigameControlRows;
             public Text ReadyButtonLabel;
 
-            public Image MinigameRuleImage;
+            public RawImage MinigamePreviewImage;
+            public VideoPlayer MinigamePreviewPlayer;
             public Button NoItemButton;
             public Button ReadyButton;
             public Button ItemShopCloseButton;
@@ -104,9 +108,6 @@ namespace MazeParty.Multiplayer
             public Color CriticalHealth =
                 new Color(0.95f, 0.2f, 0.2f, 1f);
             public Color CombatOut = new Color(1f, 0.25f, 0.2f);
-            public Color RuleImageContent = Color.white;
-            public Color RuleImagePlaceholder =
-                new Color(0.055f, 0.09f, 0.14f, 1f);
             public Color ReadyPlayerWaiting =
                 new Color(0.68f, 0.74f, 0.82f, 1f);
             public Color ReadyPlayerComplete =
@@ -131,8 +132,10 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private References references = new References();
         [SerializeField] private StatePalette statePalette = new StatePalette();
-        // Index matches the append-only ScheduledMinigameId value; Skip has no card.
-        [SerializeField] private Sprite[] minigameRuleCards = Array.Empty<Sprite>();
+        // Index matches the append-only ScheduledMinigameId value. Clips are
+        // intentionally optional until each minigame preview has been captured.
+        [SerializeField] private VideoClip[] minigamePreviewClips =
+            Array.Empty<VideoClip>();
 
         public Canvas RootCanvas => references.RootCanvas;
         public GraphicRaycaster RootRaycaster => references.RootRaycaster;
@@ -161,24 +164,43 @@ namespace MazeParty.Multiplayer
             references.BoardEventPopupMessage;
         public Text BoardKillFeedMessage => references.BoardKillFeedMessage;
         public Text MinigameReadyTitle => references.MinigameReadyTitle;
-        public Text MinigameReadyNote => references.MinigameReadyNote;
+        public Text MinigameDescription => references.MinigameDescription;
         public Text MinigameReadyStatus => references.MinigameReadyStatus;
         public Text[] MinigameReadyPlayerStates =>
             references.MinigameReadyPlayerStates;
-        public Text MinigameRulePlaceholder =>
-            references.MinigameRulePlaceholder;
+        public Text MinigamePreviewPlaceholder =>
+            references.MinigamePreviewPlaceholder;
+        public TMP_Text[] MinigameControlRows => references.MinigameControlRows;
         public Text ReadyButtonLabel => references.ReadyButtonLabel;
-        public Image MinigameRuleImage => references.MinigameRuleImage;
+        public RawImage MinigamePreviewImage => references.MinigamePreviewImage;
+        public VideoPlayer MinigamePreviewPlayer =>
+            references.MinigamePreviewPlayer;
 
-        public Sprite GetMinigameRuleCard(ScheduledMinigameId minigame)
+        public static int RequiredMinigamePreviewClipSlotCount
+        {
+            get
+            {
+                var highestId = 0;
+                foreach (var definition in MinigameCatalog.RegisteredMinigames)
+                {
+                    highestId = Math.Max(highestId, (int)definition.Id);
+                }
+
+                return highestId + 1;
+            }
+        }
+
+        public VideoClip GetMinigamePreviewClip(ScheduledMinigameId minigame)
         {
             var index = (int)minigame;
             return index > 0 &&
-                   minigameRuleCards != null &&
-                   index < minigameRuleCards.Length
-                ? minigameRuleCards[index]
+                   minigamePreviewClips != null &&
+                   index < minigamePreviewClips.Length
+                ? minigamePreviewClips[index]
                 : null;
         }
+        public int MinigamePreviewClipSlotCount =>
+            minigamePreviewClips != null ? minigamePreviewClips.Length : 0;
         public Button NoItemButton => references.NoItemButton;
         public Button ReadyButton => references.ReadyButton;
         public Button ItemShopCloseButton => references.ItemShopCloseButton;
@@ -250,9 +272,6 @@ namespace MazeParty.Multiplayer
         public Color WoundedHealthColor => statePalette.WoundedHealth;
         public Color CriticalHealthColor => statePalette.CriticalHealth;
         public Color CombatOutColor => statePalette.CombatOut;
-        public Color RuleImageContentColor => statePalette.RuleImageContent;
-        public Color RuleImagePlaceholderColor =>
-            statePalette.RuleImagePlaceholder;
         public Color ReadyPlayerWaitingColor => statePalette.ReadyPlayerWaiting;
         public Color ReadyPlayerCompleteColor => statePalette.ReadyPlayerComplete;
         public Color ReticleDefaultColor => statePalette.ReticleDefault;
@@ -286,12 +305,17 @@ namespace MazeParty.Multiplayer
             references.BoardEventPopupMessage != null &&
             references.BoardKillFeedMessage != null &&
             references.MinigameReadyTitle != null &&
-            references.MinigameReadyNote != null &&
+            references.MinigameDescription != null &&
             references.MinigameReadyStatus != null &&
             HasArray(references.MinigameReadyPlayerStates, MultiplayerConstants.MaxPlayers) &&
-            references.MinigameRulePlaceholder != null &&
+            references.MinigamePreviewPlaceholder != null &&
+            HasArray(references.MinigameControlRows, 4) &&
             references.ReadyButtonLabel != null &&
-            references.MinigameRuleImage != null &&
+            references.MinigamePreviewImage != null &&
+            references.MinigamePreviewPlayer != null &&
+            minigamePreviewClips != null &&
+            minigamePreviewClips.Length >=
+                RequiredMinigamePreviewClipSlotCount &&
             references.NoItemButton != null &&
             references.ReadyButton != null &&
             references.ItemShopCloseButton != null &&

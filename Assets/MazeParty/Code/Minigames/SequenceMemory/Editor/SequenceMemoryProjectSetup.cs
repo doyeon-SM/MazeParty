@@ -580,7 +580,6 @@ namespace MazeParty.Editor
                 new Vector2(0f, -8f),
                 new Vector2(680f, 22f),
                 16,
-                FontStyle.Bold,
                 "NPC SEQUENCE");
             var npcSequenceText = CreateHudText(
                 "NPC Sequence",
@@ -589,7 +588,6 @@ namespace MazeParty.Editor
                 new Vector2(0f, -30f),
                 new Vector2(680f, 58f),
                 34,
-                FontStyle.Bold,
                 "A  S  D  A  S");
             npcSequenceText.color = new Color(1f, 0.82f, 0.25f);
             var playerRows =
@@ -626,7 +624,6 @@ namespace MazeParty.Editor
                     new Vector2(-245f, -8f),
                     new Vector2(190f, 28f),
                     16,
-                    FontStyle.Bold,
                     "PLAYER " + (slot + 1));
                 playerNames[slot].color = PlayerColors[slot];
                 playerInputs[slot] = CreateHudText(
@@ -636,7 +633,6 @@ namespace MazeParty.Editor
                     new Vector2(0f, -14f),
                     new Vector2(320f, 48f),
                     26,
-                    FontStyle.Bold,
                     "A S D");
                 playerStatuses[slot] = CreateHudText(
                     "Player Status",
@@ -645,7 +641,6 @@ namespace MazeParty.Editor
                     new Vector2(245f, -8f),
                     new Vector2(190f, 28f),
                     15,
-                    FontStyle.Bold,
                     "ENTERING");
                 playerStatuses[slot].color =
                     new Color(0.72f, 0.8f, 0.94f);
@@ -695,7 +690,6 @@ namespace MazeParty.Editor
             Vector2 anchoredPosition,
             Vector2 size,
             int fontSize,
-            FontStyle fontStyle,
             string sampleText)
         {
             var textObject = new GameObject(
@@ -713,7 +707,7 @@ namespace MazeParty.Editor
             var text = textObject.GetComponent<Text>();
             text.font = font;
             text.fontSize = fontSize;
-            text.fontStyle = fontStyle;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Truncate;

@@ -703,7 +703,7 @@ namespace MazeParty.Editor
             text.font = font;
             text.text = value;
             text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.color = color;
             text.alignment = alignment;
             text.raycastTarget = false;

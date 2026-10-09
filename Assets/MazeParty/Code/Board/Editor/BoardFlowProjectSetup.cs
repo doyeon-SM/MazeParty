@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.BoardFlowTestbed;
 using MazeParty.Multiplayer;
+using TMPro;
 using Unity.Cinemachine;
 using Unity.Netcode;
 using Unity.Netcode.Components;
@@ -12,6 +13,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace MazeParty.Editor
 {
@@ -1281,6 +1283,7 @@ namespace MazeParty.Editor
             prefab = BoardKillFeedProjectSetup.EnsureInstalled(prefab);
             prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
             prefab = MigrateBoardCanvasModulesIfMissing(prefab);
+            prefab = MinigameReadyPanelProjectSetup.EnsureInstalled(prefab);
             MinigameResultCanvasProjectSetup.EnsurePrefabMigrated();
             prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 BoardCanvasPrefabPath);
@@ -1826,6 +1829,13 @@ namespace MazeParty.Editor
                     root,
                     "MinigameReadyPlayerState" + index);
             }
+            var controlRows = new TMP_Text[4];
+            for (var index = 0; index < controlRows.Length; index++)
+            {
+                controlRows[index] = RequireBoardUiComponent<TMP_Text>(
+                    root,
+                    "MinigameControlRow" + index);
+            }
 
             bindings.Configure(new BoardCanvasBindings.References
             {
@@ -1887,20 +1897,24 @@ namespace MazeParty.Editor
                 MinigameReadyTitle = RequireBoardUiComponent<Text>(
                     root,
                     "Ready Title"),
-                MinigameReadyNote = RequireBoardUiComponent<Text>(
+                MinigameDescription = RequireBoardUiComponent<Text>(
                     root,
-                    "Ready Note"),
+                    "MinigameDescriptionText"),
                 MinigameReadyStatus = RequireBoardUiComponent<Text>(
                     root,
                     "MinigameReadyStatus"),
                 MinigameReadyPlayerStates = readyPlayerStates,
-                MinigameRulePlaceholder = RequireBoardUiComponent<Text>(
+                MinigamePreviewPlaceholder = RequireBoardUiComponent<Text>(
                     root,
-                    "MinigameRulePlaceholderText"),
+                    "MinigamePreviewPlaceholder"),
+                MinigameControlRows = controlRows,
                 ReadyButtonLabel = readyButtonLabel,
-                MinigameRuleImage = RequireBoardUiComponent<Image>(
+                MinigamePreviewImage = RequireBoardUiComponent<RawImage>(
                     root,
-                    "MinigameRuleImage"),
+                    "MinigamePreviewVideo"),
+                MinigamePreviewPlayer = RequireBoardUiComponent<VideoPlayer>(
+                    root,
+                    "MinigamePreviewVideo"),
                 NoItemButton = RequireBoardUiComponent<Button>(
                     root,
                     "NoItemButton"),
@@ -2262,7 +2276,7 @@ namespace MazeParty.Editor
                 position,
                 size,
                 TextAnchor.MiddleLeft);
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.color = new Color(0.72f, 1f, 0.82f, 1f);
         }
 
@@ -2324,43 +2338,67 @@ namespace MazeParty.Editor
                 new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(1180f, 840f),
                 new Vector2(0.5f, 0.5f), new Color(0.03f, 0.055f, 0.09f, 0.98f));
             CreateText("Ready Title", panel.transform, "MINIGAME READY", font, 28,
-                new Vector2(0f, 330f), new Vector2(960f, 44f), TextAnchor.MiddleCenter);
-            CreateText("Ready Note", panel.transform,
-                "Minigame rules appear here. The minigame starts when all four players are ready or the countdown ends.",
-                font, 17, new Vector2(0f, 282f), new Vector2(960f, 62f), TextAnchor.MiddleCenter);
+                new Vector2(155f, 365f), new Vector2(760f, 44f),
+                TextAnchor.MiddleCenter);
 
-            var ruleImageObject = CreateUiObject(
-                "MinigameRuleImage",
-                panel.transform);
-            var ruleImageRect = ruleImageObject.GetComponent<RectTransform>();
-            ruleImageRect.anchorMin = new Vector2(0.5f, 0.5f);
-            ruleImageRect.anchorMax = ruleImageRect.anchorMin;
-            ruleImageRect.anchoredPosition = new Vector2(0f, 15f);
-            ruleImageRect.sizeDelta = new Vector2(1040f, 480f);
-            var ruleImage = ruleImageObject.AddComponent<Image>();
-            ruleImage.color = new Color(0.055f, 0.09f, 0.14f, 1f);
-            ruleImage.preserveAspect = true;
-            ruleImage.raycastTarget = false;
-            ruleImageObject.transform.SetAsFirstSibling();
+            var previewFrame = CreatePanel(
+                "MinigamePreviewFrame",
+                panel.transform,
+                new Vector2(0.5f, 0.5f),
+                new Vector2(0.5f, 0.5f),
+                new Vector2(155f, 110f),
+                new Vector2(760f, 428f),
+                new Vector2(0.5f, 0.5f),
+                new Color(0.012f, 0.02f, 0.035f, 1f));
+            previewFrame.GetComponent<Image>().raycastTarget = false;
+            var previewObject = CreateUiObject(
+                "MinigamePreviewVideo",
+                previewFrame.transform);
+            var previewRect = previewObject.GetComponent<RectTransform>();
+            previewRect.anchorMin = Vector2.zero;
+            previewRect.anchorMax = Vector2.one;
+            previewRect.offsetMin = new Vector2(6f, 6f);
+            previewRect.offsetMax = new Vector2(-6f, -6f);
+            var previewImage = previewObject.AddComponent<RawImage>();
+            previewImage.color = Color.white;
+            previewImage.raycastTarget = false;
+            previewImage.enabled = false;
+            var previewPlayer = previewObject.AddComponent<VideoPlayer>();
+            previewPlayer.source = VideoSource.VideoClip;
+            previewPlayer.renderMode = VideoRenderMode.APIOnly;
+            previewPlayer.playOnAwake = false;
+            previewPlayer.isLooping = true;
+            previewPlayer.waitForFirstFrame = true;
+            previewPlayer.skipOnDrop = true;
+            previewPlayer.audioOutputMode = VideoAudioOutputMode.None;
+            CreateText(
+                "MinigamePreviewPlaceholder",
+                previewFrame.transform,
+                "PREVIEW",
+                font,
+                24,
+                Vector2.zero,
+                new Vector2(700f, 80f),
+                TextAnchor.MiddleCenter);
 
             CreateText(
-                "MinigameRulePlaceholderText",
+                "MinigameDescriptionText",
                 panel.transform,
-                "RULE IMAGE",
+                "---",
                 font,
-                26,
-                new Vector2(0f, 15f),
-                new Vector2(900f, 120f),
+                19,
+                new Vector2(155f, -148f),
+                new Vector2(760f, 72f),
                 TextAnchor.MiddleCenter);
             CreateText(
                 "MinigameReadyStatus",
                 panel.transform,
                 "READY 0 / 4",
                 font,
-                22,
-                new Vector2(0f, -255f),
-                new Vector2(900f, 40f),
-                TextAnchor.MiddleCenter);
+                20,
+                new Vector2(-420f, 346f),
+                new Vector2(290f, 40f),
+                TextAnchor.MiddleLeft);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 var playerReadyText = CreateText(
@@ -2369,13 +2407,45 @@ namespace MazeParty.Editor
                     "P" + (slot + 1) + "  WAITING",
                     font,
                     18,
-                    new Vector2(-360f + slot * 240f, -310f),
-                    new Vector2(210f, 36f),
-                    TextAnchor.MiddleCenter);
+                    new Vector2(-420f, 288f - slot * 52f),
+                    new Vector2(290f, 42f),
+                    TextAnchor.MiddleLeft);
                 playerReadyText.color = new Color(0.68f, 0.74f, 0.82f, 1f);
             }
+
+            CreateText(
+                "MinigameControlsTitle",
+                panel.transform,
+                "CONTROLS",
+                font,
+                20,
+                new Vector2(-420f, 42f),
+                new Vector2(290f, 38f),
+                TextAnchor.MiddleLeft);
+            var inputSprites = AssetDatabase.LoadAssetAtPath<TMP_SpriteAsset>(
+                MinigameReadyPanelProjectSetup.InputSpriteAssetPath);
+            if (inputSprites == null)
+            {
+                throw new InvalidOperationException(
+                    "Minigame control sprite asset is missing: " +
+                    MinigameReadyPanelProjectSetup.InputSpriteAssetPath);
+            }
+            for (var row = 0; row < 4; row++)
+            {
+                CreateTmpText(
+                    "MinigameControlRow" + row,
+                    panel.transform,
+                    row == 0
+                        ? "<sprite name=\"w\"><sprite name=\"a\">" +
+                          "<sprite name=\"s\"><sprite name=\"d\">  MOVE"
+                        : string.Empty,
+                    inputSprites,
+                    19,
+                    new Vector2(-420f, -12f - row * 54f),
+                    new Vector2(300f, 46f));
+            }
             CreateButton("ReadyButton", panel.transform, "READY", font,
-                new Vector2(0f, -380f), new Vector2(320f, 64f));
+                new Vector2(-420f, -350f), new Vector2(290f, 64f));
             panel.SetActive(false);
         }
 
@@ -2482,11 +2552,50 @@ namespace MazeParty.Editor
             text.font = font;
             text.text = value;
             text.fontSize = fontSize;
+            text.fontStyle = FontStyle.Normal;
             text.color = new Color(0.93f, 0.96f, 1f);
             text.alignment = alignment;
             text.raycastTarget = false;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;
             text.verticalOverflow = VerticalWrapMode.Overflow;
+            return text;
+        }
+
+        private static TextMeshProUGUI CreateTmpText(
+            string name,
+            Transform parent,
+            string value,
+            TMP_SpriteAsset spriteAsset,
+            int fontSize,
+            Vector2 position,
+            Vector2 size)
+        {
+            var textObject = CreateUiObject(name, parent);
+            var rect = textObject.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = position;
+            rect.sizeDelta = size;
+            var text = textObject.AddComponent<TextMeshProUGUI>();
+            text.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                MinigameReadyPanelProjectSetup.ControlFontAssetPath);
+            if (text.font == null)
+            {
+                throw new InvalidOperationException(
+                    "Minigame control font is missing: " +
+                    MinigameReadyPanelProjectSetup.ControlFontAssetPath);
+            }
+            text.spriteAsset = spriteAsset;
+            text.text = value;
+            text.fontSize = fontSize;
+            text.fontStyle = FontStyles.Normal;
+            text.fontWeight = FontWeight.Regular;
+            text.color = new Color(0.93f, 0.96f, 1f);
+            text.alignment = TextAlignmentOptions.MidlineLeft;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Ellipsis;
+            text.raycastTarget = false;
+            text.richText = true;
             return text;
         }
 

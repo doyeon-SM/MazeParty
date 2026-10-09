@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Text;
 using MazeParty.Gameplay;
@@ -13,8 +14,10 @@ using MazeParty.Gameplay.Minigames.StableFooting;
 using MazeParty.Gameplay.Minigames.TagChase;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
 using MazeParty.Gameplay.Minigames.WrongWay;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace MazeParty.Multiplayer
 {
@@ -25,9 +28,41 @@ namespace MazeParty.Multiplayer
     public sealed class BoardFlowView : MonoBehaviour
     {
         private const float BoardKillFeedEntrySeconds = 3.5f;
+        private const string MoveKeys =
+            "<sprite name=\"w\"><sprite name=\"a\">" +
+            "<sprite name=\"s\"><sprite name=\"d\">";
         private static readonly Color AvailableItemIconColor = Color.white;
         private static readonly Color SoldItemIconColor =
             new Color(0.45f, 0.45f, 0.45f, 0.45f);
+        private static readonly string[][] MinigameControlGuides =
+        {
+            Array.Empty<string>(),
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"mr\">  SCAN" },
+            new[] { MoveKeys + "  PRESS SHOWN KEY" },
+            new[] { MoveKeys + "  MOVE / STOP" },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" },
+            new[] { "<sprite name=\"ml\">  HOLD / RELEASE" },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  THROW / PUSH" },
+            new[] { MoveKeys + "  MOVE / PAINT" },
+            new[]
+            {
+                MoveKeys + "  MOVE",
+                "<sprite name=\"mouse\">  TAGGER LOOK",
+                "<sprite name=\"ml\">  TAGGER CATCH"
+            },
+            new[] { "<sprite name=\"a\"><sprite name=\"d\">  ALTERNATE" },
+            new[] { "<sprite name=\"a\"><sprite name=\"s\"><sprite name=\"d\">  REPEAT" },
+            new[] { "<sprite name=\"a\"><sprite name=\"d\">  MOVE SHIELD" },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PASS / STUN" },
+            new[] { MoveKeys + "  ROLL" },
+            new[]
+            {
+                MoveKeys + "  MOVE",
+                "<sprite name=\"mouse\">  LOOK",
+                "<sprite name=\"ml\">  PUNCH"
+            },
+            new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" }
+        };
 
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private BoardCanvasBindings uiBindings;
@@ -49,6 +84,7 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _minigameReadyPlayerStates =
             new Text[MultiplayerConstants.MaxPlayers];
+        private readonly TMP_Text[] _minigameControlRows = new TMP_Text[4];
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
         private readonly Image[] _shopOfferIcons = new Image[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
@@ -81,14 +117,15 @@ namespace MazeParty.Multiplayer
         private Text _boardEventPopupMessage;
         private Text _boardKillFeedMessage;
         private Text _minigameReadyTitle;
-        private Text _minigameReadyNote;
+        private Text _minigameDescription;
         private Text _minigameReadyStatus;
-        private Text _minigameRulePlaceholder;
+        private Text _minigamePreviewPlaceholder;
         private Text _minefieldResultTitle;
         private Text _minefieldResultNote;
         private Text _minefieldResultSummary;
         private Text _readyButtonLabel;
-        private Image _minigameRuleImage;
+        private RawImage _minigamePreviewImage;
+        private VideoPlayer _minigamePreviewPlayer;
         private Button _noItemButton;
         private Button _readyButton;
         private Button _itemShopCloseButton;
@@ -143,6 +180,7 @@ namespace MazeParty.Multiplayer
         private int _openItemShopIndex = -1;
         private bool _topViewShopHighlightsVisible;
         private float _boardKillFeedVisibleUntil;
+        private VideoClip _activeMinigamePreviewClip;
 
         public static BoardFlowView Instance { get; private set; }
         public static bool IsItemShopOpen =>
@@ -214,6 +252,8 @@ namespace MazeParty.Multiplayer
 
         private void OnDestroy()
         {
+            StopMinigamePreview();
+            UnwireMinigamePreview();
             UnwireButtons();
             UiPopupStack.Remove(_itemShopPanel);
             if (Instance == this)
@@ -250,6 +290,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            StopMinigamePreview();
             CloseItemShop();
             SetActive(_boardEventPopupPanel, false);
             SetText(_boardEventPopupMessage, string.Empty);
@@ -444,6 +485,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            UnwireMinigamePreview();
             _boardCanvas = uiBindings.RootCanvas;
             _boardRaycaster = uiBindings.RootRaycaster;
             _selectionPanel = uiBindings.ItemSelectionPanel;
@@ -469,10 +511,13 @@ namespace MazeParty.Multiplayer
             _boardEventPopupMessage = uiBindings.BoardEventPopupMessage;
             _boardKillFeedMessage = uiBindings.BoardKillFeedMessage;
             _minigameReadyTitle = uiBindings.MinigameReadyTitle;
-            _minigameReadyNote = uiBindings.MinigameReadyNote;
+            _minigameDescription = uiBindings.MinigameDescription;
             _minigameReadyStatus = uiBindings.MinigameReadyStatus;
-            _minigameRulePlaceholder = uiBindings.MinigameRulePlaceholder;
-            _minigameRuleImage = uiBindings.MinigameRuleImage;
+            _minigamePreviewPlaceholder =
+                uiBindings.MinigamePreviewPlaceholder;
+            _minigamePreviewImage = uiBindings.MinigamePreviewImage;
+            _minigamePreviewPlayer = uiBindings.MinigamePreviewPlayer;
+            WireMinigamePreview();
             _noItemButton = uiBindings.NoItemButton;
             _readyButton = uiBindings.ReadyButton;
             _readyButtonLabel = uiBindings.ReadyButtonLabel;
@@ -500,6 +545,9 @@ namespace MazeParty.Multiplayer
             CopyReferences(
                 uiBindings.MinigameReadyPlayerStates,
                 _minigameReadyPlayerStates);
+            CopyReferences(
+                uiBindings.MinigameControlRows,
+                _minigameControlRows);
 
             WireButtons();
         }
@@ -571,10 +619,10 @@ namespace MazeParty.Multiplayer
                                 _localAvatar != null &&
                                 _localAvatar.LocalChoiceResolution == ItemChoiceResolution.Pending &&
                                 !match.IsGlobalSimulationPaused;
-            var showMinefieldReady =
-                (match.FlowState == BoardFlowState.MinigameIntroReady ||
-                 match.FlowState == BoardFlowState.MinigameLoading) &&
-                !match.IsGlobalSimulationPaused;
+            var showMinefieldReady = ShouldShowMinigameReadyPresentation(
+                match.FlowState,
+                match.IsGlobalSimulationPaused,
+                match.IsReconnectPaused);
             SetActive(_selectionPanel, choicePending);
             SetActive(_readyPanel, showMinefieldReady);
             SetActive(_resultPanel,
@@ -602,7 +650,7 @@ namespace MazeParty.Multiplayer
             SetActive(_reticle, showReticle);
             RefreshReticleColor(showReticle);
 
-            RefreshMinefieldPanelContent(match);
+            RefreshMinefieldPanelContent(match, showMinefieldReady);
 
             if (_reconnectText != null)
             {
@@ -1411,7 +1459,9 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshMinefieldPanelContent(NetworkMatchState match)
+        private void RefreshMinefieldPanelContent(
+            NetworkMatchState match,
+            bool readyPresentationVisible)
         {
             if (_observedMinigameRevealRevision !=
                 match.MinigameRevealRevision)
@@ -1453,10 +1503,12 @@ namespace MazeParty.Multiplayer
             var isCliffBarrage =
                 selected == ScheduledMinigameId.CliffBarrage;
             var isSkip = selected == ScheduledMinigameId.Skip;
-            var ruleCard = uiBindings.GetMinigameRuleCard(selected);
-            var hasRuleImage = _minigameRuleImage != null &&
-                               ruleCard != null &&
-                               !isSkip;
+            var hideReadyPresentation =
+                !readyPresentationVisible ||
+                revealPending ||
+                isSkip;
+            RefreshMinigamePreview(selected, hideReadyPresentation);
+            RefreshMinigameControlRows(selected, hideReadyPresentation);
             SetText(
                 _minigameReadyTitle,
                 revealPending
@@ -1492,118 +1544,9 @@ namespace MazeParty.Multiplayer
                     : isSkip
                         ? GameText.T("NO MINIGAME / SKIP")
                         : GameText.T("MINEFIELD / TOP-DOWN"));
-            SetText(
-                _minigameReadyNote,
-                revealPending
-                    ? GameText.T("Opening the top block in the minigame tower...")
-                    : isWrongWay
-                    ? GameText.F("Press the shown WASD direction to climb. A wrong key knocks " +
-                      "you down for 0.5 seconds. First to step 50 ends the round. " +
-                      "Two rounds, 60 seconds each.\nREADY {0} / 4",
-                      readyCount)
-                    : isRedLightGreenLight
-                        ? GameText.F("Move with WASD during GREEN and freeze when RED begins. " +
-                          "The first violation injures you and slows you to walking " +
-                          "speed; the second eliminates you. First finisher ends the " +
-                          "round. Three rounds, 60 seconds each.\n" +
-                          "READY {0} / 4", readyCount)
-                    : isStableFooting
-                        ? GameText.F("Move with WASD and press LMB to push the nearest player " +
-                          "in front of you. Reach the announced X, circle or square " +
-                          "before unsafe platforms drop. Two dropped platforms are " +
-                          "removed each cycle. Last survivor wins each of three " +
-                          "60-second rounds.\nREADY {0} / 4",
-                           readyCount)
-                    : isBalloonBlow
-                        ? GameText.F("Hold LMB to inflate at 10% per second. Release before " +
-                          "two seconds for a 1-second cooldown; reaching two " +
-                          "seconds forces a stop and a 1.5-second cooldown, then " +
-                          "requires a fresh click. Progress decays 3% per second " +
-                          "while not inflating. First to pop ranks first. Three " +
-                          "30-second rounds.\nREADY {0} / 4",
-                          readyCount)
-                    : isGiftGrab
-                        ? GameText.F("Ten gifts start; three more drop at 15, 30 and 45 " +
-                          "seconds. Move with WASD. Touch a gift to carry one, " +
-                          "then return it to your base or press LMB to throw it. " +
-                          "Without a gift, LMB pushes and makes opponents drop " +
-                          "theirs. Steal stored gifts from rival bases. Two " +
-                          "60-second rounds; most stored gifts wins.\n" +
-                          "READY {0} / 4",
-                          readyCount)
-                    : isTerritoryPaint
-                        ? GameText.F("Move with WASD. Your circular trail paints the " +
-                          "arena and can overwrite rival colors. The full " +
-                          "arena is worth 1000 points. One 60-second round; " +
-                          "highest current area wins.\nREADY {0} / 4",
-                          readyCount)
-                    : isTagChase
-                        ? GameText.F("Each round assigns one player as the tagger. Runners " +
-                          "move with WASD using a shared camera. The tagger moves " +
-                          "with WASD in first person and presses LMB to catch. " +
-                          "Every player tags once across four 60-second rounds.\n" +
-                          "READY {0} / 4", readyCount)
-                    : isRace
-                        ? GameText.F("Alternate A and D to advance. Pressing the same key " +
-                          "twice does not count. The first player to reach 200 " +
-                          "steps ends the round. Three rounds, 60 seconds each.\n" +
-                          "READY {0} / 4", readyCount)
-                    : isSequenceMemory
-                        ? GameText.F("Watch and listen to the shared A/S/D sequence, then " +
-                          "repeat it after it is hidden. A is high, S is middle " +
-                          "and D is low. A wrong key locks the current problem. " +
-                          "Your first mistake removes your torso; your second " +
-                          "eliminates you. Ten problems, one final placement, " +
-                          "no per-problem score.\nREADY {0} / 4",
-                          readyCount)
-                    : isBouncingBalls
-                        ? GameText.F("Move your goal shield with A and D. Three neutral balls " +
-                          "launch from the center. Touching one claims your color; " +
-                          "when it passes a shield into any goal, its color owner " +
-                          "scores. A scored ball relaunches from the conceding " +
-                          "player's shield in their color. Two 60-second rounds; " +
-                          "highest combined score wins.\nREADY {0} / 4",
-                          readyCount)
-                    : isBombPassing
-                        ? GameText.F("Move with WASD. Touch the center bomb to pick it up. " +
-                          "Click a nearby player in front of you to pass it; " +
-                          "the receiver is stunned for 0.5 seconds. Empty-hand " +
-                          "click stuns a nearby player for 0.5 seconds. The " +
-                          "fuse starts at spawn and lasts 20–25 seconds. " +
-                          "At half time, an unheld bomb chases the nearest " +
-                          "survivor. Only the carrier is eliminated when it " +
-                          "explodes. Last survivor wins.\nREADY {0} / 4",
-                          readyCount)
-                    : isSnowySpin
-                        ? GameText.F("Roll your colored ball with WASD. Holding a direction " +
-                          "accelerates; colliding with other balls pushes them " +
-                          "toward the edge. A fall eliminates you for that round. " +
-                          "Three rounds, up to 60 seconds each. If time runs " +
-                          "out, surviving balls nearer the center rank higher. " +
-                          "Round placement points are combined; final placement " +
-                          "awards gold once.\nREADY {0} / 4",
-                          readyCount)
-                    : isArenaCombat
-                        ? GameText.F("Fight with WASD movement, mouse look and LMB punches. " +
-                          "Health is hidden. Defeated players spectate. " +
-                          "Last survivor wins, or remaining health decides " +
-                          "survivors after 60 seconds.\nREADY {0} / 4",
-                          readyCount)
-                    : isCliffBarrage
-                        ? GameText.F("Move with WASD and click to push the nearest rival " +
-                          "in your last movement direction. Falling eliminates " +
-                          "you immediately. A shell or laser hit first removes " +
-                          "your torso; a second hit eliminates you, with one " +
-                          "second of safety after a hit. Survive three 60-second " +
-                          "rounds.\nREADY {0} / 4",
-                          readyCount)
-                    : isSkip
-                        ? GameText.T("This queue slot has no available minigame. " +
-                          "The next turn starts automatically.")
-                        : (hasRuleImage ? string.Empty : GameText.T("RULE IMAGE PLACEHOLDER") + "\n") +
-                          GameText.F("Stop and RMB to scan. First mine cripples; second eliminates. " +
-                          "Reach the finish before the crusher.\n" +
-                          "READY {0} / 4", readyCount));
+            // Final one- or two-line descriptions are authored from the design
+            // document later. Keep the placeholder explicit until then.
+            SetText(_minigameDescription, "---");
             SetText(
                 _minigameReadyStatus,
                 revealPending
@@ -1752,56 +1695,6 @@ namespace MazeParty.Multiplayer
             {
                 SetText(_minefieldResultNote, resultSummary);
             }
-
-            if (_minigameRuleImage != null)
-            {
-                // Clear the previous card during the tower reveal so a new
-                // minigame cannot be inferred from a retained sprite.
-                _minigameRuleImage.sprite = revealPending ? null : ruleCard;
-                _minigameRuleImage.color = hasRuleImage
-                    ? uiBindings.RuleImageContentColor
-                    : uiBindings.RuleImagePlaceholderColor;
-                _minigameRuleImage.gameObject.SetActive(
-                    hasRuleImage && !revealPending);
-            }
-            SetText(
-                _minigameRulePlaceholder,
-                revealPending
-                    ? GameText.T("RULES REVEALING...")
-                    : isWrongWay
-                    ? GameText.T("W  A  S  D\n50 STEPS")
-                    : isRedLightGreenLight
-                        ? GameText.T("GREEN: MOVE\nRED: FREEZE")
-                    : isStableFooting
-                        ? GameText.T("WASD: MOVE\nLMB: PUSH\nX  O  □")
-                    : isBalloonBlow
-                        ? GameText.T("HOLD LMB\nPOP FIRST")
-                    : isGiftGrab
-                        ? GameText.T("WASD: MOVE\nLMB: THROW / PUSH\nSTEAL GIFTS")
-                    : isTerritoryPaint
-                        ? GameText.T("WASD: MOVE\nPAINT THE ARENA")
-                    : isTagChase
-                        ? GameText.T("RUNNERS: WASD\nTAGGER: WASD + LMB")
-                    : isRace
-                        ? GameText.T("ALTERNATE A / D\n200 STEPS")
-                    : isSequenceMemory
-                        ? GameText.T("A: HIGH\nS: MIDDLE\nD: LOW")
-                    : isBouncingBalls
-                        ? GameText.T("A / D: MOVE SHIELD\nCLAIM BALLS · SCORE GOALS")
-                    : isBombPassing
-                        ? GameText.T("WASD: MOVE\nLMB: PASS / STUN\nSURVIVE THE BOMB")
-                    : isSnowySpin
-                        ? GameText.T("WASD: ROLL\nBUILD SPEED · PUSH BALLS OFF")
-                    : isArenaCombat
-                        ? GameText.T("WASD: MOVE\nMOUSE: LOOK\nLMB: PUNCH")
-                    : isCliffBarrage
-                        ? GameText.T("WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS")
-                        : GameText.T("RULE IMAGE"));
-            SetActive(
-                _minigameRulePlaceholder != null
-                    ? _minigameRulePlaceholder.gameObject
-                    : null,
-                revealPending || (!isSkip && !hasRuleImage));
         }
 
         private static int CountReadyPlayers(NetworkMatchState match)
@@ -3216,13 +3109,190 @@ namespace MazeParty.Multiplayer
                     return GameText.T("Preparing Gift Grab...");
             }
         }
+        internal static IReadOnlyList<string> GetMinigameControlGuide(
+            ScheduledMinigameId minigame)
+        {
+            var index = (int)minigame;
+            return index >= 0 && index < MinigameControlGuides.Length
+                ? MinigameControlGuides[index]
+                : Array.Empty<string>();
+        }
 
+        internal static bool ShouldShowMinigameReadyPresentation(
+            BoardFlowState state,
+            bool isGlobalSimulationPaused,
+            bool isReconnectPaused)
+        {
+            return !isGlobalSimulationPaused &&
+                   !isReconnectPaused &&
+                   (state == BoardFlowState.MinigameIntroReady ||
+                    state == BoardFlowState.MinigameLoading);
+        }
 
+        private void RefreshMinigameControlRows(
+            ScheduledMinigameId minigame,
+            bool hidden)
+        {
+            var guide = hidden
+                ? Array.Empty<string>()
+                : GetMinigameControlGuide(minigame);
+            for (var index = 0; index < _minigameControlRows.Length; index++)
+            {
+                var row = _minigameControlRows[index];
+                if (row == null)
+                {
+                    continue;
+                }
 
+                var visible = index < guide.Count;
+                row.text = visible ? guide[index] : string.Empty;
+                row.gameObject.SetActive(visible);
+            }
+        }
 
+        private void RefreshMinigamePreview(
+            ScheduledMinigameId minigame,
+            bool hidden)
+        {
+            var clip = hidden || uiBindings == null
+                ? null
+                : uiBindings.GetMinigamePreviewClip(minigame);
+            if (_minigamePreviewPlayer == null)
+            {
+                return;
+            }
+
+            if (_activeMinigamePreviewClip != clip ||
+                _minigamePreviewPlayer.clip != clip)
+            {
+                _minigamePreviewPlayer.Stop();
+                _minigamePreviewPlayer.clip = clip;
+                _activeMinigamePreviewClip = clip;
+                if (_minigamePreviewImage != null)
+                {
+                    _minigamePreviewImage.texture = null;
+                    _minigamePreviewImage.enabled = false;
+                }
+                if (clip != null && Application.isPlaying)
+                {
+                    _minigamePreviewPlayer.Prepare();
+                }
+            }
+
+            var showPreparedVideo =
+                !hidden &&
+                clip != null &&
+                _minigamePreviewPlayer.isPrepared &&
+                _minigamePreviewPlayer.texture != null;
+            if (_minigamePreviewImage != null)
+            {
+                _minigamePreviewImage.texture = showPreparedVideo
+                    ? _minigamePreviewPlayer.texture
+                    : null;
+                _minigamePreviewImage.enabled = showPreparedVideo;
+            }
+            SetActive(
+                _minigamePreviewPlaceholder != null
+                    ? _minigamePreviewPlaceholder.gameObject
+                    : null,
+                !hidden && !showPreparedVideo);
+        }
+
+        private void WireMinigamePreview()
+        {
+            if (_minigamePreviewPlayer == null)
+            {
+                return;
+            }
+
+            _minigamePreviewPlayer.prepareCompleted -=
+                HandleMinigamePreviewPrepared;
+            _minigamePreviewPlayer.prepareCompleted +=
+                HandleMinigamePreviewPrepared;
+            _minigamePreviewPlayer.errorReceived -=
+                HandleMinigamePreviewError;
+            _minigamePreviewPlayer.errorReceived +=
+                HandleMinigamePreviewError;
+        }
+
+        private void UnwireMinigamePreview()
+        {
+            if (_minigamePreviewPlayer == null)
+            {
+                return;
+            }
+
+            _minigamePreviewPlayer.prepareCompleted -=
+                HandleMinigamePreviewPrepared;
+            _minigamePreviewPlayer.errorReceived -=
+                HandleMinigamePreviewError;
+        }
+
+        private void HandleMinigamePreviewPrepared(VideoPlayer player)
+        {
+            if (player == null ||
+                player != _minigamePreviewPlayer ||
+                player.clip == null ||
+                player.clip != _activeMinigamePreviewClip)
+            {
+                return;
+            }
+
+            if (_minigamePreviewImage != null)
+            {
+                _minigamePreviewImage.texture = player.texture;
+                _minigamePreviewImage.enabled = player.texture != null;
+            }
+            SetActive(
+                _minigamePreviewPlaceholder != null
+                    ? _minigamePreviewPlaceholder.gameObject
+                    : null,
+                false);
+            player.Play();
+        }
+
+        private void HandleMinigamePreviewError(
+            VideoPlayer player,
+            string message)
+        {
+            if (player != _minigamePreviewPlayer)
+            {
+                return;
+            }
+
+            if (_minigamePreviewImage != null)
+            {
+                _minigamePreviewImage.texture = null;
+                _minigamePreviewImage.enabled = false;
+            }
+            SetActive(
+                _minigamePreviewPlaceholder != null
+                    ? _minigamePreviewPlaceholder.gameObject
+                    : null,
+                true);
+            Debug.LogWarning(
+                "Minigame preview video could not be prepared: " + message,
+                this);
+        }
+
+        private void StopMinigamePreview()
+        {
+            if (_minigamePreviewPlayer != null)
+            {
+                _minigamePreviewPlayer.Stop();
+                _minigamePreviewPlayer.clip = null;
+            }
+            if (_minigamePreviewImage != null)
+            {
+                _minigamePreviewImage.texture = null;
+                _minigamePreviewImage.enabled = false;
+            }
+            _activeMinigamePreviewClip = null;
+        }
 
         private void SetWaitingState()
         {
+            StopMinigamePreview();
             SetBoardUiVisible(true);
             SetActive(_selectionPanel, false);
             SetActive(_readyPanel, false);

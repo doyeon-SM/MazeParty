@@ -110,7 +110,7 @@ namespace MazeParty.Editor
                 var number = Label("Seat", dot.transform, font, (slot + 1).ToString(), 11);
                 Stretch(number.rectTransform);
                 number.color = new Color(0.02f, 0.03f, 0.04f);
-                number.fontStyle = FontStyle.Bold;
+                number.fontStyle = FontStyle.Normal;
                 var highlight = Label("You Heading", dot.transform, font, "^", 18);
                 highlight.rectTransform.anchoredPosition = new Vector2(0f, 13f);
                 highlight.rectTransform.sizeDelta = new Vector2(22f, 20f);

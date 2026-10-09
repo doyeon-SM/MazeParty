@@ -260,7 +260,7 @@ namespace MazeParty.Editor
                 var text = label.GetComponent<Text>();
                 text.font = font;
                 text.fontSize = 19;
-                text.fontStyle = FontStyle.Bold;
+                text.fontStyle = FontStyle.Normal;
                 text.alignment = TextAnchor.MiddleCenter;
                 text.color = new Color(0.92f, 0.97f, 1f);
                 text.raycastTarget = false;
@@ -368,7 +368,7 @@ namespace MazeParty.Editor
             var text = aim.GetComponent<Text>();
             text.font = font;
             text.fontSize = 42;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.color = Color.white;
             text.raycastTarget = false;
@@ -477,7 +477,7 @@ namespace MazeParty.Editor
             var numeral = numeralObject.GetComponent<Text>();
             numeral.font = font;
             numeral.fontSize = 158;
-            numeral.fontStyle = FontStyle.Bold;
+            numeral.fontStyle = FontStyle.Normal;
             numeral.alignment = TextAnchor.MiddleCenter;
             numeral.color = Color.white;
             numeral.raycastTarget = false;

@@ -13,7 +13,8 @@
     "MazeParty.Gameplay",
     "Unity.Cinemachine",
     "Unity.Collections",
-    "Arikan.MiniMap"
+    "Arikan.MiniMap",
+    "Unity.TextMeshPro"
   ],
   "autoReferenced": true
 }

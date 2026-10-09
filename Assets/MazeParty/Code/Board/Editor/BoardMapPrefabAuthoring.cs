@@ -139,7 +139,7 @@ namespace MazeParty.Editor
                     markerRect.offsetMax = Vector2.zero;
                     marker.font = font;
                     marker.fontSize = markerFontSize;
-                    marker.fontStyle = FontStyle.Bold;
+                    marker.fontStyle = FontStyle.Normal;
                     marker.alignment = TextAnchor.MiddleCenter;
                     marker.color = Color.white;
                     marker.raycastTarget = false;
@@ -197,7 +197,7 @@ namespace MazeParty.Editor
             rect.sizeDelta = new Vector2(100f, 38f);
             label.font = font;
             label.fontSize = 16;
-            label.fontStyle = FontStyle.Bold;
+            label.fontStyle = FontStyle.Normal;
             label.alignment = TextAnchor.MiddleCenter;
             label.color = color;
             label.text = caption;

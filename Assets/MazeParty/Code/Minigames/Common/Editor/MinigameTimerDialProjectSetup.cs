@@ -172,7 +172,7 @@ namespace MazeParty.Editor
                 textObject.GetComponent<Text>();
             text.font = font;
             text.fontSize = 32;
-            text.fontStyle = FontStyle.Bold;
+            text.fontStyle = FontStyle.Normal;
             text.alignment =
                 TextAnchor.MiddleCenter;
             text.horizontalOverflow =

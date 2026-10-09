@@ -177,6 +177,10 @@
 
 ### 보드 HUD·착지 효과·아이템
 
+- 플레이 중 Canvas UI의 `UnityEngine.UI.Text`와 `TextMeshProUGUI`는 모두
+  Normal/Regular 스타일을 사용한다. 이후 setup으로 생성하는 UI도 같은 스타일로 고정하고,
+  중앙 프리팹 계약 테스트로 회귀를 막는다. Gift Grab 기지 표지처럼 Canvas가 아닌 월드
+  `TextMesh`는 이 규칙에서 제외한다.
 - BoardCanvas.prefab의 사용자 배치를 유지한다. 삭제된 Players·Inventory 제목,
   인벤토리 라벨, BoardStatusText, BoardChoiceTimerText, BoardShieldText, 지도 Title·Legend와
   Current Tile·Key Shop Distance 바인딩은 선택 사항이며 setup으로 복원하지 않는다.
@@ -223,6 +227,15 @@
 
 ### 미니게임
 
+- 보드의 미니게임 준비 화면은 왼쪽 위에 네 플레이어의 준비 상태를 세로로, 왼쪽 아래에
+  게임별 조작을 최대 4행으로 표시한다. 조작 아이콘은
+  `Assets/Ignore/Input Sprites for TextMesh Pro/all input icons same size.asset`를 각 TMP 행에
+  직접 바인딩하며 현재 실제 지원 범위인 키보드·마우스 입력만 안내한다.
+- 준비 화면 오른쪽 위의 넓은 미리보기는 authored `RawImage`와 APIOnly `VideoPlayer`를
+  사용한다. `ScheduledMinigameId`와 같은 16칸 `VideoClip` 배열은 현재 비워 두며 이후
+  Inspector에서 게임별 영상을 직접 할당한다. 클립이 없거나 게임이 공개되기 전이면 안전하게
+  정지하고 placeholder를 표시한다. 영상 아래 설명은 당분간 `---`로 통일한다. Notion과
+  런타임은 자동 동기화하지 않으며, 설명 확정·반영 요청 시 최종 문구를 코드/프리팹에 옮긴다.
 - 게임은 항상 4인 구조이며 첫 시작과 각 라운드 시작마다 서버 기준 공통 HUD에서
   3 → 2 → 1을 표시한다. 같은 시간 동안 로컬 플레이어를 WaterShield.prefab으로
   강조한다. Snowy Spin·Bouncing Balls 전용 표현도 같은 VFX를 균일 스케일로 사용한다.
@@ -287,6 +300,10 @@
   512개가 통과했다. 실패는 위의 기존 3건뿐이며 새 회귀는 없다. Windows Development Mono
   x64 빌드는 `Builds/Windows-Development-20261009-205102/MazeParty.exe`로 성공했고 빌드 후
   Unity 콘솔의 프로젝트 오류는 0건이다.
+- 2026-10-09 미니게임 준비 화면의 세로 준비 상태·TMP 입력 안내·선택형 영상 미리보기·설명
+  placeholder와 전 플레이 Canvas 텍스트 Normal/Regular 정책을 반영했다. 요청에 따라 전체
+  EditMode는 실행하지 않았고, `BoardUiPrefabTests`와 UI 글꼴 정책을 합친 표적 테스트
+  17/17만 통과했다. 스크립트 컴파일과 최종 Unity 콘솔 오류는 0건이다.
 
 ## 남은 TODO
 

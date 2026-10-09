@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using TMPro;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -24,6 +25,13 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity";
         private const string LobbyCanvasPrefabPath =
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
+
+        private static readonly string[] PlayerFacingUiPrefabSearchRoots =
+        {
+            "Assets/MazeParty/Prefabs/Multiplayer/UI",
+            "Assets/MazeParty/Prefabs/Board/UI",
+            "Assets/MazeParty/Prefabs/Minigames"
+        };
 
         private static readonly string[] RequiredPrefabPaths =
         {
@@ -202,6 +210,68 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
             }
+        }
+
+        [Test]
+        public void PlayerFacingCanvasText_UsesNormalFontStyle()
+        {
+            var prefabPaths = AssetDatabase.FindAssets(
+                    "t:Prefab",
+                    PlayerFacingUiPrefabSearchRoots)
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(IsPlayerFacingUiPrefabPath)
+                .Distinct()
+                .OrderBy(path => path)
+                .ToArray();
+            Assert.That(prefabPaths, Is.Not.Empty);
+
+            var violations = new List<string>();
+            foreach (var path in prefabPaths)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.That(prefab, Is.Not.Null, path);
+
+                foreach (var text in
+                         prefab.GetComponentsInChildren<Text>(true))
+                {
+                    if (text.fontStyle != FontStyle.Normal)
+                    {
+                        violations.Add(
+                            FormatFontViolation(
+                                path,
+                                prefab.transform,
+                                text.transform,
+                                "Text.fontStyle=" + text.fontStyle));
+                    }
+                }
+
+                foreach (var text in
+                         prefab.GetComponentsInChildren<TMP_Text>(true))
+                {
+                    if (!(text is TextMeshProUGUI))
+                    {
+                        continue;
+                    }
+
+                    if (text.fontStyle != FontStyles.Normal ||
+                        text.fontWeight != FontWeight.Regular)
+                    {
+                        violations.Add(
+                            FormatFontViolation(
+                                path,
+                                prefab.transform,
+                                text.transform,
+                                "TMP fontStyle=" + text.fontStyle +
+                                ", fontWeight=" + text.fontWeight));
+                    }
+                }
+            }
+
+            Assert.That(
+                violations,
+                Is.Empty,
+                "Player-facing Canvas text must use Normal/Regular style:\n" +
+                string.Join("\n", violations));
         }
 
         [TestCase("Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab")]
@@ -780,6 +850,41 @@ namespace MazeParty.Multiplayer.Tests
                    propertyPath.StartsWith(
                        "m_LocalEulerAnglesHint.",
                        StringComparison.Ordinal);
+        }
+
+        private static bool IsPlayerFacingUiPrefabPath(string path)
+        {
+            return path.StartsWith(
+                       "Assets/MazeParty/Prefabs/Multiplayer/UI/",
+                       StringComparison.Ordinal) ||
+                   path.StartsWith(
+                       "Assets/MazeParty/Prefabs/Board/UI/",
+                       StringComparison.Ordinal) ||
+                   (path.StartsWith(
+                        "Assets/MazeParty/Prefabs/Minigames/",
+                        StringComparison.Ordinal) &&
+                    path.IndexOf("/UI/", StringComparison.Ordinal) >= 0);
+        }
+
+        private static string FormatFontViolation(
+            string assetPath,
+            Transform prefabRoot,
+            Transform textTransform,
+            string details)
+        {
+            var transformPath = AnimationUtility.CalculateTransformPath(
+                textTransform,
+                prefabRoot);
+            if (string.IsNullOrEmpty(transformPath))
+            {
+                transformPath = prefabRoot.name;
+            }
+            else
+            {
+                transformPath = prefabRoot.name + "/" + transformPath;
+            }
+
+            return assetPath + " :: " + transformPath + " :: " + details;
         }
 
         private static string MaskCommentsAndLiterals(string source)

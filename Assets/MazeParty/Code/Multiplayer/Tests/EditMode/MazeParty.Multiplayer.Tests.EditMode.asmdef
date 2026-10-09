@@ -7,6 +7,7 @@
     "Unity.Netcode.Runtime",
     "Unity.Networking.Transport",
     "UnityEngine.UI",
+    "Unity.TextMeshPro",
     "Unity.InputSystem",
     "Arikan.MiniMap"
   ],

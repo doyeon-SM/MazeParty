@@ -749,7 +749,6 @@ namespace MazeParty.Editor
                 new Vector2(760f, 56f),
                 34,
                 TextAnchor.MiddleCenter,
-                FontStyle.Bold,
                 "<color=#38FF59FF>●</color>  " +
                 "<color=#38FF59FF>●</color>  " +
                 "<color=#38FF59FF>●</color>");
@@ -771,7 +770,6 @@ namespace MazeParty.Editor
             Vector2 size,
             int fontSize,
             TextAnchor alignment,
-            FontStyle style,
             string sampleText)
         {
             var textObject = new GameObject(
@@ -790,7 +788,7 @@ namespace MazeParty.Editor
             var text = textObject.GetComponent<Text>();
             text.font = font;
             text.fontSize = fontSize;
-            text.fontStyle = style;
+            text.fontStyle = FontStyle.Normal;
             text.color = new Color(0.94f, 0.97f, 1f);
             text.alignment = alignment;
             text.horizontalOverflow = HorizontalWrapMode.Wrap;

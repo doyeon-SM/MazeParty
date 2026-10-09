@@ -896,8 +896,7 @@ namespace MazeParty.EditorTools
                     16,
                     TextAnchor.MiddleLeft,
                     new Color(0.3f, 0.9f, 1f),
-                    font,
-                    FontStyle.Bold);
+                    font);
                 var primaryStatus = CreateHudText(
                     panel.transform,
                     "PrimaryStatusText",
@@ -907,8 +906,7 @@ namespace MazeParty.EditorTools
                     16,
                     TextAnchor.MiddleLeft,
                     Color.white,
-                    font,
-                    FontStyle.Bold);
+                    font);
                 var secondaryStatus = CreateHudText(
                     panel.transform,
                     "SecondaryStatusText",
@@ -918,8 +916,7 @@ namespace MazeParty.EditorTools
                     15,
                     TextAnchor.MiddleLeft,
                     new Color(0.78f, 0.88f, 1f),
-                    font,
-                    FontStyle.Bold);
+                    font);
 
                 var featurePanel = CreateHudPanel(
                     panel.transform,
@@ -940,7 +937,6 @@ namespace MazeParty.EditorTools
                     TextAnchor.MiddleCenter,
                     Color.white,
                     font,
-                    FontStyle.Bold,
                     new Vector2(0.5f, 0.5f));
                 var help = CreateHudText(
                     panel.transform,
@@ -961,8 +957,7 @@ namespace MazeParty.EditorTools
                     15,
                     TextAnchor.MiddleCenter,
                     Color.white,
-                    font,
-                    FontStyle.Bold);
+                    font);
 
                 var restart = CreateHudButton(
                     panel.transform,
@@ -1127,7 +1122,6 @@ namespace MazeParty.EditorTools
             TextAnchor alignment,
             Color color,
             Font font,
-            FontStyle fontStyle = FontStyle.Normal,
             Vector2? anchor = null)
         {
             var textObject = new GameObject(
@@ -1146,7 +1140,7 @@ namespace MazeParty.EditorTools
             text.font = font;
             text.text = value;
             text.fontSize = fontSize;
-            text.fontStyle = fontStyle;
+            text.fontStyle = FontStyle.Normal;
             text.alignment = alignment;
             text.color = color;
             text.raycastTarget = false;
@@ -1199,7 +1193,6 @@ namespace MazeParty.EditorTools
                 TextAnchor.MiddleCenter,
                 Color.white,
                 font,
-                FontStyle.Bold,
                 new Vector2(0.5f, 0.5f));
             return button;
         }
