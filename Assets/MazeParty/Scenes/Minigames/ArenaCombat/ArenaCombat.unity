@@ -282,7 +282,7 @@ MonoBehaviour:
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -731,7 +731,7 @@ MonoBehaviour:
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -924,7 +924,11 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 1747795897330584593, guid: 7461001cbead22d4e9565a5d2071c559, type: 3}
+    - {fileID: 3926969430825834735, guid: 7461001cbead22d4e9565a5d2071c559, type: 3}
+    - {fileID: 6741707803621904550, guid: 7461001cbead22d4e9565a5d2071c559, type: 3}
+    - {fileID: 6186997938814078586, guid: 7461001cbead22d4e9565a5d2071c559, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 7461001cbead22d4e9565a5d2071c559, type: 3}

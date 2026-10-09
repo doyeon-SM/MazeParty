@@ -157,7 +157,7 @@ namespace MazeParty.Gameplay.Tests
             };
             var duration = BoardLandingEffectLayout
                 .GetTotalDurationSeconds(turnEffects);
-            Assert.That(duration, Is.EqualTo(7d));
+            Assert.That(duration, Is.EqualTo(9d));
             Assert.That(
                 BoardLandingEffectLayout.GetTotalDurationSeconds(
                     turnEffects.Length,
@@ -175,11 +175,11 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.CombatResolve));
             Assert.That(flow.TryCompleteCombat(15d, duration), Is.True);
 
-            flow.Tick(21.999d);
+            flow.Tick(23.999d);
             Assert.That(
                 flow.State,
                 Is.EqualTo(BoardFlowState.LandingEffectResolve));
-            flow.Tick(22d);
+            flow.Tick(24d);
             Assert.That(
                 flow.State,
                 Is.EqualTo(BoardFlowState.MinigameIntroReady));

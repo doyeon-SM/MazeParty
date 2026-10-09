@@ -18,6 +18,10 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(nextRound.Windows, Is.Not.EqualTo(first.Windows));
             Assert.That(first.Windows[0].StartsAtSeconds, Is.Zero);
             Assert.That(first.Windows[0].Phase, Is.EqualTo(RedLightGreenLightSignalPhase.Green));
+            Assert.That(
+                RedLightGreenLightRules.MaximumGreenStepSeconds,
+                Is.EqualTo(2d),
+                "Each pre-red signal stage has a two-second maximum.");
 
             for (var index = 0; index < first.Windows.Count; index++)
             {

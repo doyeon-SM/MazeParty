@@ -310,6 +310,10 @@ namespace MazeParty.Multiplayer
                             : GameText.N("GOLD LOSS {0} GOLD"),
                         (goldDelta > 0 ? "+" : string.Empty) +
                         goldDelta.ToString(CultureInfo.InvariantCulture));
+                    PublishLandingEffectFeedbackOnServer(
+                        slot,
+                        BoardLandingEffectFeedbackKind.Gold,
+                        goldDelta);
                     break;
                 case BoardLandingEffectType.Healing20:
                 case BoardLandingEffectType.Healing10:
@@ -321,6 +325,10 @@ namespace MazeParty.Multiplayer
                         effect,
                         GameText.N("HEALING +{0} HP"),
                         healed.ToString(CultureInfo.InvariantCulture));
+                    PublishLandingEffectFeedbackOnServer(
+                        slot,
+                        BoardLandingEffectFeedbackKind.Health,
+                        healed);
                     break;
                 case BoardLandingEffectType.Damage40:
                 case BoardLandingEffectType.Damage20:
@@ -336,6 +344,10 @@ namespace MazeParty.Multiplayer
                         effect,
                         GameText.N("DAMAGE -{0} HP"),
                         damage.ToString(CultureInfo.InvariantCulture));
+                    PublishLandingEffectFeedbackOnServer(
+                        slot,
+                        BoardLandingEffectFeedbackKind.Health,
+                        -damage);
                     break;
                 case BoardLandingEffectType.ItemReward:
                     ResolveLandingItemRewardOnServer(slot, avatar, tile);
@@ -373,6 +385,10 @@ namespace MazeParty.Multiplayer
                     BoardLandingEffectType.ItemReward,
                     GameText.N("ITEM REWARD +1 {0}"),
                     PrototypeItemCatalog.Get(reward).DisplayName);
+                PublishLandingEffectFeedbackOnServer(
+                    slot,
+                    BoardLandingEffectFeedbackKind.Item,
+                    itemId: reward);
                 return;
             }
 
@@ -426,6 +442,9 @@ namespace MazeParty.Multiplayer
                     : GameText.N("EVENT RESULT: {0} LOSES UP TO {1}"),
                 GetSpecialEventTargetLabel(resolution, actorSlot),
                 GetSpecialEventResourceLabel(resolution));
+            PublishLandingEffectFeedbackOnServer(
+                actorSlot,
+                BoardLandingEffectFeedbackKind.Event);
         }
 
         private bool AreSpecialEventParticipantsAvailableOnServer(
@@ -513,6 +532,9 @@ namespace MazeParty.Multiplayer
                 ((opponentGives ? destinationSlot : sourceSlot) + 1)
                     .ToString(CultureInfo.InvariantCulture),
                 transferred.ToString(CultureInfo.InvariantCulture));
+            PublishLandingEffectFeedbackOnServer(
+                actorSlot,
+                BoardLandingEffectFeedbackKind.Event);
         }
 
         private static int GetSpecialEventResourceBalance(
@@ -676,6 +698,26 @@ namespace MazeParty.Multiplayer
             return index >= actorSlot ? index + 1 : index;
         }
 
+        private void PublishLandingEffectFeedbackOnServer(
+            int slot,
+            BoardLandingEffectFeedbackKind kind,
+            int signedAmount = 0,
+            PrototypeItemId itemId = PrototypeItemId.None)
+        {
+            var current = _landingEffectFeedback.Value;
+            _landingEffectFeedback.Value =
+                new BoardLandingEffectFeedbackSnapshot
+                {
+                    Active = true,
+                    Revision = current.Revision + 1,
+                    Slot = slot,
+                    Kind = (byte)kind,
+                    SignedAmount = signedAmount,
+                    ItemId = (byte)itemId,
+                    StartedAt = ServerNow
+                };
+        }
+
         private void ResetLandingEffectRuntimeOnServer(bool clearMessage)
         {
             _landingEffectPlanReady = false;
@@ -689,6 +731,7 @@ namespace MazeParty.Multiplayer
             Array.Clear(_landingEffectDurations, 0, _landingEffectDurations.Length);
             _pausedResourceTransferPresentationRemaining = 0d;
             ClearResourceTransferPresentationOnServer();
+            ClearLandingEffectFeedbackOnServer();
             if (clearMessage)
             {
                 ClearLandingEffectPresentationOnServer();
@@ -704,6 +747,22 @@ namespace MazeParty.Multiplayer
 
             _lastLandingEffectMessage.Value = default;
             _lastLandingEffectRevision.Value++;
+        }
+
+        private void ClearLandingEffectFeedbackOnServer()
+        {
+            var current = _landingEffectFeedback.Value;
+            if (!current.Active)
+            {
+                return;
+            }
+
+            _landingEffectFeedback.Value =
+                new BoardLandingEffectFeedbackSnapshot
+                {
+                    Revision = current.Revision + 1,
+                    Slot = -1
+                };
         }
 
         private void PublishResourceTransferPresentationOnServer(

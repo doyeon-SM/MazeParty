@@ -303,8 +303,7 @@ namespace MazeParty.Multiplayer
                 _wasPopped[slot] = popped;
                 if (isNewPop)
                 {
-                    PlayPopVfx(slot);
-                    cueAudioSource?.Play();
+                    PlayPopFeedback(slot);
                 }
 
                 var balloon = _balloons[slot];
@@ -328,8 +327,13 @@ namespace MazeParty.Multiplayer
                     ? _players[slot]
                     : null;
                 var mouth = player?.Visual?.Bindings?.MouthAnchor;
-                var blowing = !popped && state.IsPlayerInflating(slot);
+                var phase = state.GetPlayerPhase(slot);
+                var coughing = !popped &&
+                               phase == BalloonBlowPlayerPhase.Cooldown;
+                var blowing = !popped && !coughing &&
+                              phase == BalloonBlowPlayerPhase.Inflating;
                 player?.Visual?.SetMouthBlowing(blowing);
+                player?.Visual?.SetEliminated(coughing);
                 if (mouth != null)
                 {
                     balloon.FollowMouth(
@@ -343,22 +347,27 @@ namespace MazeParty.Multiplayer
             _popBaselineInitialized = true;
         }
 
-        private void PlayPopVfx(int slot)
+        private void PlayPopFeedback(int slot)
         {
-            if (popBurstVfxPrefab == null || balloonAnchors == null ||
+            if (balloonAnchors == null ||
                 slot < 0 || slot >= balloonAnchors.Length ||
                 balloonAnchors[slot] == null)
             {
                 return;
             }
 
-            OneShotVfxPool.Play(
-                popBurstVfxPrefab,
-                _balloons[slot] != null
-                    ? _balloons[slot].BodyPosition
-                    : balloonAnchors[slot].position,
-                Quaternion.identity,
-                1.05f);
+            var position = _balloons[slot] != null
+                ? _balloons[slot].BodyPosition
+                : balloonAnchors[slot].position;
+            if (popBurstVfxPrefab != null)
+            {
+                OneShotVfxPool.Play(
+                    popBurstVfxPrefab,
+                    position,
+                    Quaternion.identity,
+                    1.05f);
+            }
+            GameSound.PlayOn(SoundKeys.Balloon, cueAudioSource);
         }
 
         private void SetWorldPresentationActive(bool active)

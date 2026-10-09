@@ -24,6 +24,8 @@ namespace MazeParty.Multiplayer.Tests
         private const string ArrivalFireworksPath =
             "Assets/MazeParty/Prefabs/Minigames/Common/VFX/" +
             "ArrivalFireworks.prefab";
+        private const string LightningStrikePath =
+            "Assets/MazeParty/Prefabs/Common/VFX/LightningStrike.prefab";
         private static readonly TestCaseData[] SceneContracts =
         {
             SceneCase(
@@ -31,7 +33,7 @@ namespace MazeParty.Multiplayer.Tests
                 ("hitSparkVfxPrefab", HitSparkPath)),
             SceneCase(
                 "BalloonBlow", typeof(BalloonBlowNetworkView),
-                ("popBurstVfxPrefab", ExplosionPath)),
+                ("popBurstVfxPrefab", ArrivalFireworksPath)),
             SceneCase(
                 "BouncingBalls", typeof(BouncingBallsNetworkView),
                 ("goalBurstVfxPrefab", HitSparkPath)),
@@ -54,7 +56,8 @@ namespace MazeParty.Multiplayer.Tests
                 "RedLightGreenLight",
                 typeof(RedLightGreenLightNetworkView),
                 ("signalPulseVfxPrefab", HitSparkPath),
-                ("finishVfxPrefab", ArrivalFireworksPath)),
+                ("finishVfxPrefab", ArrivalFireworksPath),
+                ("penaltyVfxPrefab", LightningStrikePath)),
             SceneCase(
                 "SequenceMemory", typeof(SequenceMemoryNetworkView),
                 ("tonePulseVfxPrefab", HitSparkPath)),

@@ -19,6 +19,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(knowledge.CurrentVisibleMask, Is.Zero);
             Assert.That(knowledge.TryGetLastKnown(0, out var coordinate), Is.True);
             Assert.That(coordinate, Is.EqualTo(initial));
+            Assert.That(knowledge.TryGetCurrentlyVisible(0, out _), Is.False);
             Assert.That(knowledge.Revision, Is.EqualTo(1));
 
             knowledge.BeginObservationFrame();
@@ -29,6 +30,11 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(knowledge.CurrentVisibleMask, Is.EqualTo(0b0101));
             Assert.That(knowledge.IsCurrentlyVisible(0), Is.True);
             Assert.That(knowledge.IsCurrentlyVisible(1), Is.False);
+            Assert.That(
+                knowledge.TryGetCurrentlyVisible(0, out var currentCoordinate),
+                Is.True);
+            Assert.That(currentCoordinate, Is.EqualTo(observed),
+                "A current-visible query returns the logical tile captured by the committed observation.");
             Assert.That(knowledge.TryGetLastKnown(0, out coordinate), Is.True);
             Assert.That(coordinate, Is.EqualTo(observed));
             Assert.That(knowledge.Revision, Is.EqualTo(2),
@@ -41,14 +47,18 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(knowledge.Revision, Is.EqualTo(2),
                 "An identical frame must not churn map refresh revisions.");
 
-            knowledge.BeginObservationFrame();
-            Assert.That(knowledge.EndObservationFrame(), Is.True);
+            Assert.That(knowledge.ClearCurrentVisibility(), Is.True);
             Assert.That(knowledge.CurrentVisibleMask, Is.Zero);
+            Assert.That(knowledge.TryGetCurrentlyVisible(0, out _), Is.False);
             Assert.That(knowledge.TryGetLastKnown(0, out coordinate), Is.True);
             Assert.That(coordinate, Is.EqualTo(observed),
-                "Losing sight hides the live marker without erasing map history.");
+                "Clearing current visibility hides the live marker without erasing map history.");
             Assert.That(knowledge.TryGetLastKnown(2, out _), Is.True);
             Assert.That(knowledge.Revision, Is.EqualTo(3));
+
+            Assert.That(knowledge.ClearCurrentVisibility(), Is.False);
+            Assert.That(knowledge.Revision, Is.EqualTo(3),
+                "Repeated visibility clears must not churn map refresh revisions.");
         }
 
         [Test]

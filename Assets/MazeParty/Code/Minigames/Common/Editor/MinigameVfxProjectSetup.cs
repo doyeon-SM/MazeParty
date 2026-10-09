@@ -25,6 +25,8 @@ namespace MazeParty.Editor
         public const string ArrivalFireworksPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/Common/VFX/" +
             "ArrivalFireworks.prefab";
+        public const string LightningStrikePrefabPath =
+            SharedVfxProjectSetup.LightningStrikePrefabPath;
 
         private const string TaggerAuraSourcePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Evil Aura.prefab";
@@ -79,12 +81,33 @@ namespace MazeParty.Editor
             Debug.Log("Minigame VFX prefabs and scene bindings are ready.");
         }
 
+        [MenuItem("MazeParty/VFX/Install Balloon And Red Light Feedback")]
+        public static void InstallBalloonAndRedLightFeedback()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning(
+                    "Minigame feedback install requires Edit Mode.");
+                return;
+            }
+
+            EnsureAssets();
+            InstallScene(BalloonBlowProjectSetup.BalloonBlowScenePath);
+            InstallScene(
+                RedLightGreenLightProjectSetup.RedLightGreenLightScenePath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+            Debug.Log(
+                "Balloon and Red Light feedback VFX bindings are ready.");
+        }
+
         [MenuItem("MazeParty/VFX/Install Minigame VFX", true)]
         private static bool CanInstallMinigameVfx() =>
             !EditorApplication.isPlayingOrWillChangePlaymode;
 
         public static void EnsureAssets()
         {
+            SharedVfxProjectSetup.EnsureLightningStrikePrefab();
             EnsureFolder(PrefabFolder);
             if (AssetDatabase.LoadAssetAtPath<GameObject>(
                     TaggerAuraPrefabPath) == null)
@@ -150,9 +173,11 @@ namespace MazeParty.Editor
                 TaggerAuraPrefabPath);
             var arrivalFireworks = AssetDatabase.LoadAssetAtPath<GameObject>(
                 ArrivalFireworksPrefabPath);
+            var lightningStrike = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LightningStrikePrefabPath);
 
             if (hitSpark == null || explosion == null || aura == null ||
-                arrivalFireworks == null)
+                arrivalFireworks == null || lightningStrike == null)
             {
                 throw new InvalidOperationException(
                     "Required shared VFX prefabs are missing. Run " +
@@ -174,7 +199,7 @@ namespace MazeParty.Editor
 
                 var balloon = root.GetComponentInChildren<
                     BalloonBlowNetworkView>(true);
-                balloon?.ConfigureVfx(explosion);
+                balloon?.ConfigureVfx(arrivalFireworks);
 
                 var cliff = root.GetComponentInChildren<
                     CliffBarrageNetworkView>(true);
@@ -197,7 +222,10 @@ namespace MazeParty.Editor
 
                 var redLight = root.GetComponentInChildren<
                     RedLightGreenLightNetworkView>(true);
-                redLight?.ConfigureVfx(hitSpark, arrivalFireworks);
+                redLight?.ConfigureVfx(
+                    hitSpark,
+                    arrivalFireworks,
+                    lightningStrike);
 
                 var sequence = root.GetComponentInChildren<
                     SequenceMemoryNetworkView>(true);

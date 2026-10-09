@@ -1061,6 +1061,9 @@ namespace MazeParty.Editor
                     ResourceTransferCoinPrefabPath),
                 RequireBoardResourceTransferPrefab(
                     ResourceTransferKeyPrefabPath));
+            presenter.ConfigureLandingEffectFeedbackAssets(
+                BoardLandingEffectFeedbackProjectSetup.EnsureInstalled(),
+                SharedVfxProjectSetup.EnsureLightningStrikePrefab());
             return director;
         }
 

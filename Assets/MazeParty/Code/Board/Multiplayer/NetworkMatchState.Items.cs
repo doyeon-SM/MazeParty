@@ -16,16 +16,23 @@ namespace MazeParty.Multiplayer
         }
         private sealed class Grenade
         {
+            public uint PresentationId;
             public int OwnerSlot;
             public Vector3 Position, Velocity;
             public float Life, FlightDuration;
         }
         private readonly List<PlantedMine> _boardMines = new List<PlantedMine>();
         private readonly List<Grenade> _boardGrenades = new List<Grenade>();
-        private readonly List<GameObject> _grenadeViews = new List<GameObject>();
+        private readonly Dictionary<uint, GameObject> _grenadeViews =
+            new Dictionary<uint, GameObject>();
+        private readonly GrenadePresentationTrackSet _grenadePresentationTracks =
+            new GrenadePresentationTrackSet(.05d, .1d);
+        private readonly List<uint> _addedGrenadeViewIds = new List<uint>();
+        private readonly List<uint> _removedGrenadeViewIds = new List<uint>();
         private float _nextItemSync;
         private readonly NetworkPlayerAvatar[] _mineRecipients = new NetworkPlayerAvatar[4];
         private int _lastGrenadeViewCount;
+        private uint _nextGrenadePresentationId;
 
         public bool TryUseSelectedItemOnServer(NetworkPlayerAvatar avatar, Vector3 claimedOrigin, Vector3 claimedDirection)
         {
@@ -84,6 +91,7 @@ namespace MazeParty.Multiplayer
                 var flight = Mathf.Max(.1f, item.ThrowFlightSeconds);
                 _boardGrenades.Add(new Grenade
                 {
+                    PresentationId = NextGrenadePresentationId(),
                     OwnerSlot = avatar.AssignedSlot,
                     Position = origin,
                     Velocity = (target - origin) / flight -
@@ -270,11 +278,38 @@ namespace MazeParty.Multiplayer
             if (_nextItemSync <= 0f)
             {
                 _nextItemSync = .05f;
+                var ids = new uint[_boardGrenades.Count];
                 var positions = new Vector3[_boardGrenades.Count];
-                for (int i = 0; i < positions.Length; i++) positions[i] = _boardGrenades[i].Position;
-                if (positions.Length > 0 || _lastGrenadeViewCount > 0) SyncBoardGrenadesRpc(positions);
+                var velocities = new Vector3[_boardGrenades.Count];
+                for (int i = 0; i < positions.Length; i++)
+                {
+                    var grenade = _boardGrenades[i];
+                    ids[i] = grenade.PresentationId;
+                    positions[i] = grenade.Position;
+                    velocities[i] = IsGlobalSimulationPaused
+                        ? Vector3.zero
+                        : grenade.Velocity;
+                }
+                if (positions.Length > 0 || _lastGrenadeViewCount > 0)
+                {
+                    SyncBoardGrenadesRpc(ids, positions, velocities, ServerNow);
+                }
                 _lastGrenadeViewCount = positions.Length;
             }
+        }
+
+        private uint NextGrenadePresentationId()
+        {
+            unchecked
+            {
+                _nextGrenadePresentationId++;
+                if (_nextGrenadePresentationId == 0u)
+                {
+                    _nextGrenadePresentationId = 1u;
+                }
+            }
+
+            return _nextGrenadePresentationId;
         }
 
         private void ClearBoardGrenadesOnServer()
@@ -286,7 +321,11 @@ namespace MazeParty.Multiplayer
 
             _boardGrenades.Clear();
             _lastGrenadeViewCount = 0;
-            SyncBoardGrenadesRpc(Array.Empty<Vector3>());
+            SyncBoardGrenadesRpc(
+                Array.Empty<uint>(),
+                Array.Empty<Vector3>(),
+                Array.Empty<Vector3>(),
+                ServerNow);
         }
 
         private void ExplodeBoardItem(Vector3 position, int ownerSlot, BoardItemDefinition item)
@@ -318,13 +357,77 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void SyncBoardGrenadesRpc(Vector3[] positions)
+        private void SyncBoardGrenadesRpc(
+            uint[] ids,
+            Vector3[] positions,
+            Vector3[] velocities,
+            double snapshotTime)
         {
+            if (!_grenadePresentationTracks.ApplySnapshot(
+                    ids,
+                    positions,
+                    velocities,
+                    snapshotTime,
+                    _addedGrenadeViewIds,
+                    _removedGrenadeViewIds))
+            {
+                return;
+            }
+
             var prefab = PrototypeItemCatalog.Get(PrototypeItemId.Grenade).WorldPrefab;
-            while (_grenadeViews.Count < positions.Length) _grenadeViews.Add(Instantiate(prefab));
-            for (int i = _grenadeViews.Count - 1; i >= positions.Length; i--)
-            { Destroy(_grenadeViews[i]); _grenadeViews.RemoveAt(i); }
-            for (int i = 0; i < positions.Length; i++) _grenadeViews[i].transform.position = positions[i];
+            foreach (var id in _addedGrenadeViewIds)
+            {
+                var view = Instantiate(prefab);
+                _grenadeViews.Add(id, view);
+                if (_grenadePresentationTracks.TrySample(
+                        id,
+                        ServerNow,
+                        out var position))
+                {
+                    view.transform.position = position;
+                }
+            }
+        }
+
+        private void TickBoardGrenadePresentation()
+        {
+            var now = ServerNow;
+            if (_grenadePresentationTracks.RemoveExpired(
+                    now,
+                    _removedGrenadeViewIds))
+            {
+                foreach (var id in _removedGrenadeViewIds)
+                {
+                    if (!_grenadeViews.TryGetValue(id, out var expiredView))
+                    {
+                        continue;
+                    }
+
+                    if (expiredView != null)
+                    {
+                        Destroy(expiredView);
+                    }
+                    _grenadeViews.Remove(id);
+                }
+            }
+
+            if (_grenadeViews.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var pair in _grenadeViews)
+            {
+                var view = pair.Value;
+                if (view != null &&
+                    _grenadePresentationTracks.TrySample(
+                        pair.Key,
+                        now,
+                        out var position))
+                {
+                    view.transform.position = position;
+                }
+            }
         }
 
         [Rpc(SendTo.ClientsAndHost)]
@@ -397,8 +500,14 @@ namespace MazeParty.Multiplayer
         private void ClearBoardItemWorld()
         {
             _boardMines.Clear(); _boardGrenades.Clear();
-            foreach (var view in _grenadeViews) if (view != null) Destroy(view);
+            foreach (var pair in _grenadeViews)
+            {
+                if (pair.Value != null) Destroy(pair.Value);
+            }
             _grenadeViews.Clear();
+            _grenadePresentationTracks.Clear();
+            _addedGrenadeViewIds.Clear();
+            _removedGrenadeViewIds.Clear();
             Array.Clear(_mineRecipients, 0, _mineRecipients.Length);
             _lastGrenadeViewCount = 0;
             _nextItemSync = 0f;

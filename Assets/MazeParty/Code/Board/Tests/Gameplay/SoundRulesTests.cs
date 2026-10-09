@@ -45,7 +45,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(keys.Distinct(StringComparer.Ordinal).Count(), Is.EqualTo(keys.Count));
             foreach (var key in keys)
             {
-                Assert.That(Regex.IsMatch(key, @"^[a-z0-9_]+(\.[a-z0-9_]+)+$"), Is.True, key);
+                Assert.That(Regex.IsMatch(key, @"^[a-z0-9_]+(\.[a-z0-9_]+)*$"), Is.True, key);
             }
 
             foreach (var definition in MinigameCatalog.RegisteredMinigames)
@@ -60,6 +60,10 @@ namespace MazeParty.Gameplay.Tests
                 SoundKeys.ItemUse(PrototypeItemId.PositionSwapper),
                 Is.EqualTo("item.use.position_swapper"));
             Assert.That(SoundKeys.CombatHit(PlayerHitRegion.Head), Is.EqualTo(SoundKeys.CombatHitHead));
+            Assert.That(SoundKeys.Balloon, Is.EqualTo("balloon"));
+            Assert.That(SoundKeys.Lightning, Is.EqualTo("lightning"));
+            Assert.That(keys, Does.Contain(SoundKeys.Balloon));
+            Assert.That(keys, Does.Contain(SoundKeys.Lightning));
 
             Assert.That(SoundKeys.GetChannel(SoundKeys.BgmBoard), Is.EqualTo(AudioChannel.Bgm));
             Assert.That(

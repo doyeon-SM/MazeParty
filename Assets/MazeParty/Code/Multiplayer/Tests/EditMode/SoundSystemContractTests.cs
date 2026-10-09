@@ -21,6 +21,10 @@ namespace MazeParty.Multiplayer.Tests
         private const string UiPrefabRoot = "Assets/MazeParty/Prefabs";
         private const string SequenceMemoryBellPath =
             "Assets/Resources/sound/- Bell 7.mp3";
+        private const string BalloonClipPath =
+            "Assets/Resources/sound/balloon.mp3";
+        private const string LightningClipPath =
+            "Assets/Resources/sound/lightning.mp3";
 
         [Test]
         public void SoundSystemPrefab_MixerAndLibrary_CoverEveryKey()
@@ -84,6 +88,15 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(sequenceTone.ClipCount, Is.EqualTo(1));
             Assert.That(sequenceTone.GetClip(0), Is.SameAs(sequenceBell));
 
+            AssertCueUsesClip(
+                library,
+                SoundKeys.Balloon,
+                BalloonClipPath);
+            AssertCueUsesClip(
+                library,
+                SoundKeys.Lightning,
+                LightningClipPath);
+
             var registered = new HashSet<SoundCue>(library.Cues);
             var keys = new HashSet<string>();
             foreach (var cue in library.Cues)
@@ -105,6 +118,18 @@ namespace MazeParty.Multiplayer.Tests
             }
 
             Assert.That(problems, Is.Empty, string.Join("\n", problems));
+        }
+
+        private static void AssertCueUsesClip(
+            SoundLibrary library,
+            string key,
+            string clipPath)
+        {
+            Assert.That(library.TryGet(key, out var cue), Is.True, key);
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath);
+            Assert.That(clip, Is.Not.Null, clipPath);
+            Assert.That(cue.ClipCount, Is.EqualTo(1), key);
+            Assert.That(cue.GetClip(0), Is.SameAs(clip), key);
         }
 
         [Test]

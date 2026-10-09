@@ -153,6 +153,57 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void SpawnSlots_PlaceHostTopLeftThenContinueCounterClockwise()
+        {
+            var inset =
+                NetworkTerritoryPaintState.ArenaHalfExtent -
+                NetworkTerritoryPaintState.PlayerCollisionRadius -
+                0.85f;
+            var expected = new[]
+            {
+                new Vector2(
+                    NetworkTerritoryPaintState.ArenaCenterX - inset,
+                    inset),
+                new Vector2(
+                    NetworkTerritoryPaintState.ArenaCenterX - inset,
+                    -inset),
+                new Vector2(
+                    NetworkTerritoryPaintState.ArenaCenterX + inset,
+                    -inset),
+                new Vector2(
+                    NetworkTerritoryPaintState.ArenaCenterX + inset,
+                    inset)
+            };
+
+            for (var slot = 0; slot < expected.Length; slot++)
+            {
+                Assert.That(
+                    NetworkTerritoryPaintState.GetPlayerStartPosition(
+                        slot),
+                    Is.EqualTo(expected[slot]),
+                    "Unexpected spawn for authoritative slot " + slot + ".");
+            }
+        }
+
+        [TestCase(0, 0, 8)]
+        [TestCase(2, 0, 6)]
+        [TestCase(0, 2, 2)]
+        [TestCase(2, 2, 0)]
+        [TestCase(1, 1, 4)]
+        public void PaintTextureIndex_MirrorsUnityPlaneUvAcrossBothWorldAxes(
+            int cellX,
+            int cellY,
+            int expectedIndex)
+        {
+            Assert.That(
+                TerritoryPaintNetworkView.GetPaintTextureIndex(
+                    cellX,
+                    cellY,
+                    3),
+                Is.EqualTo(expectedIndex));
+        }
+
         private static Transform FindDescendant(
             Transform root,
             string name)

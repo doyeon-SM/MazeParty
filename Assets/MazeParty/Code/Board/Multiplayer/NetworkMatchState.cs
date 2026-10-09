@@ -99,6 +99,9 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<FixedString128Bytes>();
         private readonly NetworkVariable<int> _lastLandingEffectRevision =
             new NetworkVariable<int>();
+        private readonly NetworkVariable<BoardLandingEffectFeedbackSnapshot>
+            _landingEffectFeedback =
+                new NetworkVariable<BoardLandingEffectFeedbackSnapshot>();
         private readonly NetworkVariable<BoardResourceTransferSnapshot>
             _resourceTransferPresentation =
                 new NetworkVariable<BoardResourceTransferSnapshot>();
@@ -264,6 +267,8 @@ namespace MazeParty.Multiplayer
             LandingEffectMessage.GetEffectType(
                 _lastLandingEffectMessage.Value.ToString());
         public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
+        public BoardLandingEffectFeedbackSnapshot LandingEffectFeedback =>
+            _landingEffectFeedback.Value;
         public BoardResourceTransferSnapshot ResourceTransferPresentation =>
             _resourceTransferPresentation.Value;
         public BoardResourceTransferPhase ResourceTransferPresentationPhase =>
@@ -510,7 +515,13 @@ namespace MazeParty.Multiplayer
 
         private void Update()
         {
-            if (!IsSpawned || !IsServer)
+            if (!IsSpawned)
+            {
+                return;
+            }
+
+            TickBoardGrenadePresentation();
+            if (!IsServer)
             {
                 return;
             }

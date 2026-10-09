@@ -8,6 +8,39 @@ using UnityEngine.EventSystems;
 
 namespace MazeParty.Multiplayer
 {
+    internal struct BoardMapObservationSchedule
+    {
+        private bool _started;
+        private double _nextSampleAt;
+
+        public void Reset()
+        {
+            _started = false;
+            _nextSampleAt = 0d;
+        }
+
+        public bool ShouldSample(double now)
+        {
+            if (!_started)
+            {
+                _started = true;
+                _nextSampleAt = now +
+                    BoardMapView.PlayerObservationIntervalSeconds;
+                return true;
+            }
+
+            if (now < _nextSampleAt)
+                return false;
+
+            var overdue = Math.Max(0d, now - _nextSampleAt);
+            var elapsedIntervals = Math.Floor(
+                overdue / BoardMapView.PlayerObservationIntervalSeconds) + 1d;
+            _nextSampleAt += elapsedIntervals *
+                BoardMapView.PlayerObservationIntervalSeconds;
+            return true;
+        }
+    }
+
     /// <summary>
     /// Updates the 7x7 map cells authored in BoardCanvas.prefab. The board is
     /// north-up in the overview; the live minimap follows the local eye heading.
@@ -16,6 +49,8 @@ namespace MazeParty.Multiplayer
     {
         public const int GridSize = 7;
         public const int CellCount = GridSize * GridSize;
+        internal const double PlayerObservationIntervalSeconds = 1d;
+        private const int VisionSampleCount = 33;
 
         [Serializable]
         public sealed class Cell
@@ -30,9 +65,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject fullMapPanel;
         [SerializeField] private BoardMinimapView fullMap;
         [SerializeField] private Button fullMapCloseButton;
+        [SerializeField, HideInInspector] private int mapPresentationVersion;
         private bool _fullMapOpen;
         private bool _fullMapBoardAvailable;
-        private bool _turnOverviewUsesFullMap;
         private bool _fullMapCloseButtonWired;
         public bool FullMapOpen => _fullMapOpen;
         [SerializeField] private Cell[] overviewCells = Array.Empty<Cell>();
@@ -50,6 +85,10 @@ namespace MazeParty.Multiplayer
         private readonly BoardPlayerMapKnowledge _playerKnowledge =
             new BoardPlayerMapKnowledge();
         private readonly RaycastHit[] _playerSightHits = new RaycastHit[32];
+        private readonly RaycastHit[] _visionSightHits = new RaycastHit[32];
+        private readonly float[] _visionClearFractions =
+            new float[VisionSampleCount];
+        private BoardMapObservationSchedule _playerObservationSchedule;
         private NetworkMatchState _knowledgeMatch;
         private BoardTopology _knowledgeTopology;
         private GameplayCameraDirector _cameraDirector;
@@ -85,12 +124,21 @@ namespace MazeParty.Multiplayer
 
             var match = NetworkMatchState.Instance;
             var isReady = match != null && match.IsSpawned && match.GameplayEnabled;
-            var overview = isReady && match.FlowState == BoardFlowState.TurnOverview;
             var action = isReady && (match.FlowState == BoardFlowState.Descending ||
                 match.FlowState == BoardFlowState.Action ||
                 match.FlowState == BoardFlowState.AscendingResolve ||
                 match.FlowState == BoardFlowState.CombatResolve ||
                 match.FlowState == BoardFlowState.LandingEffectResolve);
+            if (_cameraDirector == null)
+            {
+                _cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            }
+
+            // Map UI belongs to first-person board exploration. In every
+            // top-view, event and spectator camera the board is already visible,
+            // so the map and minimap stay closed.
+            var mapAvailable = action && _cameraDirector != null &&
+                               IsMapUiAllowed(_cameraDirector.ActiveMode);
             var keyboard = Keyboard.current;
             var selected = EventSystem.current != null ? EventSystem.current.currentSelectedGameObject : null;
             var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
@@ -111,8 +159,9 @@ namespace MazeParty.Multiplayer
                     toggleRequested = false;
                 }
             }
-            if (!overview && !action)
+            if (!mapAvailable)
             {
+                SuspendPlayerObservation();
                 UpdateFullMapState(false, toggleRequested);
                 SetActive(overviewPanel, false);
                 SetActive(minimapPanel, false);
@@ -125,20 +174,16 @@ namespace MazeParty.Multiplayer
             }
             if (_topology == null)
             {
+                SuspendPlayerObservation();
                 UpdateFullMapState(false, false);
                 SetActive(overviewPanel, false);
                 SetActive(minimapPanel, false);
                 return;
             }
 
-            UpdateFullMapState(
-                true,
-                toggleRequested,
-                overview);
-            // Every topology now uses the authored full-map presentation during
-            // turn overview so Modern UI tile and player icons stay consistent.
+            UpdateFullMapState(true, toggleRequested);
             SetActive(overviewPanel, false);
-            SetActive(minimapPanel, action && !_fullMapOpen);
+            SetActive(minimapPanel, !_fullMapOpen);
 
             var manager = NetworkManager.Singleton;
             var localObject = manager != null && manager.SpawnManager != null
@@ -148,17 +193,15 @@ namespace MazeParty.Multiplayer
                 ? localObject.GetComponent<NetworkPlayerAvatar>()
                 : null;
             RefreshPlayerKnowledge(match, localAvatar);
-            if (_fullMapOpen || overview || action)
+            if (_fullMapOpen || action)
             {
-                if (_fullMapOpen || overview)
+                if (_fullMapOpen)
                 {
                     fullMap.Refresh(
                         _topology,
                         match,
                         localAvatar,
-                        overview
-                            ? BoardMinimapDisplayContext.TurnOverview
-                            : BoardMinimapDisplayContext.FullMap,
+                        BoardMinimapDisplayContext.FullMap,
                         _playerKnowledge);
                 }
                 else
@@ -172,36 +215,27 @@ namespace MazeParty.Multiplayer
                 }
                 return;
             }
-            var signature = ComputeSignature(match, localAvatar, overview);
+            var signature = ComputeSignature(match, localAvatar, false);
             if (signature == _lastSignature)
             {
                 return;
             }
             _lastSignature = signature;
 
-            var cells = overview ? overviewCells : minimapCells;
+            var cells = minimapCells;
             for (var y = 0; y < GridSize; y++)
             {
                 for (var x = 0; x < GridSize; x++)
                 {
                     RefreshCell(cells[y * GridSize + x], new Vector2Int(x, y),
-                        match, localAvatar, overview);
+                        match, localAvatar, false);
                 }
             }
         }
 
         public void UpdateFullMapState(bool boardAvailable, bool toggleRequested)
         {
-            UpdateFullMapState(boardAvailable, toggleRequested, false);
-        }
-
-        internal void UpdateFullMapState(
-            bool boardAvailable,
-            bool toggleRequested,
-            bool turnOverviewUsesFullMap)
-        {
             _fullMapBoardAvailable = boardAvailable;
-            _turnOverviewUsesFullMap = turnOverviewUsesFullMap;
             if (!boardAvailable)
             {
                 SetFullMapOpen(false);
@@ -212,6 +246,11 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshFullMapVisibility();
+        }
+
+        internal static bool IsMapUiAllowed(GameplayMode mode)
+        {
+            return mode == GameplayMode.FirstPerson;
         }
 
         public void CloseFullMap()
@@ -252,8 +291,7 @@ namespace MazeParty.Multiplayer
             {
                 SetActive(
                     fullMapPanel,
-                    _fullMapBoardAvailable &&
-                    (_fullMapOpen || _turnOverviewUsesFullMap));
+                    _fullMapBoardAvailable && _fullMapOpen);
             }
 
             if (fullMapCloseButton != null)
@@ -265,9 +303,9 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            SuspendPlayerObservation();
             WireFullMapCloseButton(false);
             _fullMapBoardAvailable = false;
-            _turnOverviewUsesFullMap = false;
             CloseFullMap();
         }
 
@@ -399,20 +437,13 @@ namespace MazeParty.Multiplayer
                 _knowledgeMatch = match;
                 _knowledgeTopology = _topology;
                 _playerKnowledge.Reset();
+                _playerObservationSchedule.Reset();
             }
             SeedInitialPlayerPositions();
 
-            _playerKnowledge.BeginObservationFrame();
-            if (localAvatar != null && localAvatar.HasLogicalBoardTile)
-            {
-                _playerKnowledge.Observe(
-                    localAvatar.AssignedSlot,
-                    localAvatar.LogicalBoardTileCoordinate);
-            }
-
             if (_fullMapOpen || localAvatar == null)
             {
-                _playerKnowledge.EndObservationFrame();
+                SuspendPlayerObservation();
                 return;
             }
 
@@ -425,17 +456,30 @@ namespace MazeParty.Multiplayer
                 _cameraDirector.ActiveMode != GameplayMode.FirstPerson ||
                 _cameraDirector.OutputCamera == null)
             {
-                _playerKnowledge.EndObservationFrame();
+                SuspendPlayerObservation();
                 return;
             }
 
+            if (!_playerObservationSchedule.ShouldSample(
+                    Time.unscaledTimeAsDouble))
+            {
+                return;
+            }
+
+            _playerKnowledge.BeginObservationFrame();
+            if (localAvatar.HasLogicalBoardTile)
+            {
+                _playerKnowledge.Observe(
+                    localAvatar.AssignedSlot,
+                    localAvatar.LogicalBoardTileCoordinate);
+            }
+
             var outputCamera = _cameraDirector.OutputCamera;
+            RefreshVisionMask(outputCamera);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 if (slot == localAvatar.AssignedSlot)
-                {
                     continue;
-                }
 
                 // A spawned cached avatar can remain visible during reconnect
                 // grace even while the replicated present bit is temporarily
@@ -454,7 +498,14 @@ namespace MazeParty.Multiplayer
             }
 
             _playerKnowledge.EndObservationFrame();
+        }
 
+        private void SuspendPlayerObservation()
+        {
+            _playerKnowledge.ClearCurrentVisibility();
+            _playerObservationSchedule.Reset();
+            if (liveMinimap != null)
+                liveMinimap.PresentVisionUnavailable();
         }
 
         private void SeedInitialPlayerPositions()
@@ -494,6 +545,84 @@ namespace MazeParty.Multiplayer
                 _playerSightHits);
         }
 
+        private void RefreshVisionMask(Camera outputCamera)
+        {
+            var forward = Vector3.ProjectOnPlane(
+                outputCamera.transform.forward,
+                Vector3.up);
+            var left = Vector3.ProjectOnPlane(
+                outputCamera.ViewportPointToRay(
+                    new Vector3(0f, 0.5f, 0f)).direction,
+                Vector3.up);
+            var right = Vector3.ProjectOnPlane(
+                outputCamera.ViewportPointToRay(
+                    new Vector3(1f, 0.5f, 0f)).direction,
+                Vector3.up);
+            if (forward.sqrMagnitude <= 0.0001f ||
+                left.sqrMagnitude <= 0.0001f ||
+                right.sqrMagnitude <= 0.0001f)
+            {
+                liveMinimap.PresentVisionUnavailable();
+                return;
+            }
+
+            forward.Normalize();
+            left.Normalize();
+            right.Normalize();
+            var halfAngle = Mathf.Max(
+                Vector3.Angle(forward, left),
+                Vector3.Angle(forward, right));
+            var maximumDistance = Mathf.Max(
+                BoardTile.RoomSize,
+                liveMinimap.VisibleWorldRadius);
+            var origin = outputCamera.transform.position;
+            for (var index = 0; index < VisionSampleCount; index++)
+            {
+                var viewportX = index / (VisionSampleCount - 1f);
+                var direction = Vector3.ProjectOnPlane(
+                    outputCamera.ViewportPointToRay(
+                        new Vector3(viewportX, 0.5f, 0f)).direction,
+                    Vector3.up);
+                _visionClearFractions[index] =
+                    direction.sqrMagnitude > 0.0001f
+                        ? GetVisionClearFraction(
+                            origin,
+                            direction.normalized,
+                            maximumDistance)
+                        : 0f;
+            }
+
+            liveMinimap.PresentVision(
+                halfAngle,
+                _visionClearFractions);
+        }
+
+        private float GetVisionClearFraction(
+            Vector3 origin,
+            Vector3 direction,
+            float maximumDistance)
+        {
+            var hitCount = Physics.RaycastNonAlloc(
+                origin,
+                direction,
+                _visionSightHits,
+                maximumDistance,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Ignore);
+            var closest = maximumDistance;
+            for (var index = 0; index < hitCount; index++)
+            {
+                var hit = _visionSightHits[index];
+                if (!IsSightOccluder(hit.collider))
+                    continue;
+                closest = Mathf.Min(closest, hit.distance);
+            }
+
+            return maximumDistance > 0f
+                ? Mathf.Clamp01(closest / maximumDistance)
+                : 0f;
+        }
+
         internal static bool IsPointDirectlyVisible(
             Camera outputCamera,
             Vector3 targetPoint,
@@ -528,22 +657,25 @@ namespace MazeParty.Multiplayer
                 QueryTriggerInteraction.Ignore);
             for (var index = 0; index < hitCount; index++)
             {
-                var collider = sightHits[index].collider;
-                if (collider == null ||
-                    collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
-                {
+                if (!IsSightOccluder(sightHits[index].collider))
                     continue;
-                }
-
-                var boundaryWall =
-                    collider.GetComponentInParent<BoardBoundaryWallVisual>();
-                if (boundaryWall != null && !boundaryWall.IsVisible)
-                    continue;
-
                 return false;
             }
 
             return hitCount < sightHits.Length;
+        }
+
+        private static bool IsSightOccluder(Collider collider)
+        {
+            if (collider == null ||
+                collider.GetComponentInParent<NetworkPlayerAvatar>() != null)
+            {
+                return false;
+            }
+
+            var boundaryWall =
+                collider.GetComponentInParent<BoardBoundaryWallVisual>();
+            return boundaryWall == null || boundaryWall.IsVisible;
         }
 
         private static bool HasCells(Cell[] cells)

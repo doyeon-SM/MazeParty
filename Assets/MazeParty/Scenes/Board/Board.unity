@@ -5185,6 +5185,8 @@ MonoBehaviour:
   cameraDirector: {fileID: 1548230740}
   resourceTransferCoinPrefab: {fileID: 5484315453847271486, guid: 0446cb893022762499dfef9bd8a80f17, type: 3}
   resourceTransferKeyPrefab: {fileID: 5763527392341924887, guid: 97909a6d33d76194c949ebeeac5f92f4, type: 3}
+  landingEffectFeedbackPrefab: {fileID: 73536901730914453, guid: d1d51ae957162df4ebfed799518d5fb2, type: 3}
+  landingEventLightningPrefab: {fileID: 4374848859648381583, guid: 4406f2ebf4af00a419646e0df20adbcf, type: 3}
   resourceTransferHeadOffset: 0.3
   resourceTransferTravelHeight: 1.5
 --- !u!1001 &1552949734

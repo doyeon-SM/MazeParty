@@ -102,6 +102,12 @@ namespace MazeParty.Multiplayer.Tests
                 var isFullMap = Mathf.Approximately(
                     data.FindProperty("radiusInTiles").floatValue,
                     0f);
+                var projection = data.FindProperty("projection")
+                    .objectReferenceValue as Arikan.MiniMapView;
+                var visionGraphic = data.FindProperty("visionGraphic")
+                    .objectReferenceValue as BoardMapVisionGraphic;
+                Assert.That(projection, Is.Not.Null);
+                Assert.That(projection.otherDotCanvas, Is.Not.Null);
                 Assert.That(data.FindProperty("currentTile").objectReferenceValue,
                     Is.Null);
                 Assert.That(data.FindProperty("shopDistanceIcon").objectReferenceValue,
@@ -127,6 +133,8 @@ namespace MazeParty.Multiplayer.Tests
                     ModernIconRoot + "Navigation/Help Filled.png");
                 if (isFullMap)
                 {
+                    Assert.That(visionGraphic, Is.Null,
+                        "The full map must not serialize the local camera-vision overlay.");
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Null);
                     Assert.That(data.FindProperty("showTravelCounts").boolValue,
@@ -146,6 +154,13 @@ namespace MazeParty.Multiplayer.Tests
                 }
                 else
                 {
+                    Assert.That(visionGraphic, Is.Not.Null,
+                        "The live minimap requires its authored camera-vision overlay.");
+                    Assert.That(visionGraphic.transform.parent,
+                        Is.EqualTo(projection.otherDotCanvas),
+                        "The vision overlay must stay on the projection surface.");
+                    Assert.That(visionGraphic.raycastTarget, Is.False,
+                        "The vision overlay must not intercept UI input.");
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Not.Null);
                     Assert.That(data.FindProperty("showTravelCounts").boolValue,
@@ -185,6 +200,23 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(marker.transform.GetSiblingIndex(),
                         Is.GreaterThan(effectLayer.GetSiblingIndex()),
                         "Player markers must render above every tile icon layer.");
+                    if (isFullMap)
+                    {
+                        var outline = marker.GetComponent<UnityEngine.UI.Outline>();
+                        Assert.That(outline, Is.Not.Null,
+                            "Every full-map player marker requires an Outline.");
+                        Assert.That(outline.effectColor, Is.EqualTo(Color.white),
+                            "Full-map player marker outlines must stay white.");
+                    }
+                    else
+                    {
+                        Assert.That(marker.transform.parent,
+                            Is.EqualTo(projection.otherDotCanvas),
+                            "Live player markers must share the vision projection surface.");
+                        Assert.That(marker.transform.GetSiblingIndex(),
+                            Is.GreaterThan(visionGraphic.transform.GetSiblingIndex()),
+                            "The live vision overlay must render behind player markers.");
+                    }
                 }
 
                 var shopColor = data.FindProperty("shopColor").colorValue;

@@ -21,6 +21,8 @@ namespace MazeParty.Editor
             VfxFolder + "/CartoonExplosion.prefab";
         public const string HitSparkPrefabPath =
             VfxFolder + "/HitSpark.prefab";
+        public const string LightningStrikePrefabPath =
+            VfxFolder + "/LightningStrike.prefab";
         public const string WaterShieldPrefabPath =
             VfxFolder + "/WaterShield.prefab";
         public const string SandShieldPrefabPath =
@@ -35,6 +37,8 @@ namespace MazeParty.Editor
             ToolkitPrefabFolder + "/Toon Explosion.prefab";
         private const string HitSparkSourcePath =
             ToolkitPrefabFolder + "/Blue Impact.prefab";
+        private const string LightningStrikeSourcePath =
+            ToolkitPrefabFolder + "/Lightning Strike.prefab";
         private const string WaterShieldSourcePath =
             ToolkitPrefabFolder + "/Water Shield.prefab";
         private const string SandShieldSourcePath =
@@ -49,6 +53,7 @@ namespace MazeParty.Editor
             EnsureFolder(VfxFolder);
             var explosion = EnsureCartoonExplosionPrefab();
             var impact = EnsureHitSparkPrefab();
+            EnsureLightningStrikePrefab();
             EnsureWaterShieldPrefab();
             EnsureSandShieldPrefab();
             EnsureBoardItemBindings(explosion, impact);
@@ -84,6 +89,20 @@ namespace MazeParty.Editor
                 1.2f,
                 3f,
                 0.32f);
+        }
+
+        public static GameObject EnsureLightningStrikePrefab()
+        {
+            return EnsureWrapper(
+                LightningStrikePrefabPath,
+                LightningStrikeSourcePath,
+                "Lightning Strike",
+                new Color(0.38f, 0.72f, 1f),
+                4.5f,
+                0.18f,
+                5f,
+                8f,
+                1f);
         }
 
         /// <summary>

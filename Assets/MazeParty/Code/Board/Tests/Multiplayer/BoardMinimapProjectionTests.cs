@@ -302,17 +302,12 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(controller.FullMapOpen, Is.True, "Opening does not require holding M.");
                 controller.UpdateFullMapState(true, true);
                 Assert.That(controller.FullMapOpen || panel.activeSelf, Is.False);
-                controller.UpdateFullMapState(true, false, true);
+                controller.UpdateFullMapState(false, false);
                 Assert.That(controller.FullMapOpen, Is.False,
-                    "A forced turn overview must not mutate the M-key latch.");
-                Assert.That(panel.activeSelf, Is.True);
-                Assert.That(UiPopupStack.Count, Is.Zero,
-                    "The automatic turn-overview map is not a dismissible popup.");
-                controller.UpdateFullMapState(true, false, true);
-                Assert.That(panel.activeSelf, Is.True,
-                    "Repeated turn-overview refreshes keep the authored panel active.");
-                controller.UpdateFullMapState(true, false, false);
-                Assert.That(panel.activeSelf, Is.False);
+                    "A top-view transition closes the user-open map latch.");
+                Assert.That(panel.activeSelf, Is.False,
+                    "Top view must not force the authored full-map panel on.");
+                Assert.That(UiPopupStack.Count, Is.Zero);
                 controller.UpdateFullMapState(true, true);
                 controller.UpdateFullMapState(false, false);
                 Assert.That(controller.FullMapOpen || panel.activeSelf, Is.False, "Leaving the board closes the map.");
@@ -328,6 +323,18 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [TestCase(GameplayMode.FirstPerson, true)]
+        [TestCase(GameplayMode.BoardTopDown, false)]
+        [TestCase(GameplayMode.BoardResourceEvent, false)]
+        [TestCase(GameplayMode.CombatSpectator, false)]
+        [TestCase(GameplayMode.Minigame, false)]
+        public void MapUi_IsAvailableOnlyInFirstPersonBoardView(
+            GameplayMode mode,
+            bool expected)
+        {
+            Assert.That(BoardMapView.IsMapUiAllowed(mode), Is.EqualTo(expected));
+        }
+
         [Test]
         public void DirectPlayerSight_RequiresViewportAndClearWorldLine()
         {
@@ -337,6 +344,7 @@ namespace MazeParty.Multiplayer.Tests
             {
                 var outputCamera = cameraObject.AddComponent<Camera>();
                 outputCamera.enabled = false;
+                outputCamera.aspect = 1f;
                 outputCamera.transform.position =
                     new Vector3(10000f, 10000f, 10000f);
                 outputCamera.transform.rotation = Quaternion.identity;
@@ -364,6 +372,13 @@ namespace MazeParty.Multiplayer.Tests
                 Physics.SyncTransforms();
                 Assert.That(BoardMapView.IsPointDirectlyVisible(
                     outputCamera,
+                    outputCamera.transform.position +
+                    Vector3.right * 20f + Vector3.forward * 10f,
+                    hits), Is.False,
+                    "A player outside the camera's horizontal field of view is not directly observed.");
+
+                Assert.That(BoardMapView.IsPointDirectlyVisible(
+                    outputCamera,
                     outputCamera.transform.position - Vector3.forward * 10f,
                     hits), Is.False,
                     "A player behind the camera is not directly observed.");
@@ -373,6 +388,32 @@ namespace MazeParty.Multiplayer.Tests
                 Object.DestroyImmediate(obstacle);
                 Object.DestroyImmediate(cameraObject);
             }
+        }
+
+        [Test]
+        public void PlayerObservationSchedule_UsesOneSecondBoundariesWithoutCatchUpBursts()
+        {
+            var schedule = default(BoardMapObservationSchedule);
+            const double startedAt = 100d;
+
+            Assert.That(schedule.ShouldSample(startedAt), Is.True,
+                "The first valid first-person observation samples immediately.");
+            Assert.That(schedule.ShouldSample(startedAt + .999999d), Is.False,
+                "An observation must not run before a full second has elapsed.");
+            Assert.That(schedule.ShouldSample(startedAt + 1d), Is.True,
+                "The exact one-second boundary starts the next observation.");
+
+            Assert.That(schedule.ShouldSample(startedAt + 5.25d), Is.True,
+                "A late frame performs one current observation.");
+            Assert.That(schedule.ShouldSample(startedAt + 5.25d), Is.False,
+                "Missed intervals must not be replayed in a catch-up burst.");
+            Assert.That(schedule.ShouldSample(startedAt + 5.999999d), Is.False);
+            Assert.That(schedule.ShouldSample(startedAt + 6d), Is.True,
+                "The cadence resumes at the next whole interval.");
+
+            schedule.Reset();
+            Assert.That(schedule.ShouldSample(startedAt + 100d), Is.True,
+                "Returning to a valid observation state samples immediately.");
         }
 
         [Test]

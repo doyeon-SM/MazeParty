@@ -12,6 +12,8 @@ namespace MazeParty.Gameplay.Tests
             "Assets/MazeParty/Prefabs/Common/VFX/CartoonExplosion.prefab";
         private const string HitSparkPath =
             "Assets/MazeParty/Prefabs/Common/VFX/HitSpark.prefab";
+        private const string LightningStrikePath =
+            "Assets/MazeParty/Prefabs/Common/VFX/LightningStrike.prefab";
         private const string WaterShieldPath =
             "Assets/MazeParty/Prefabs/Common/VFX/WaterShield.prefab";
         private const string WaterShieldSourcePath =
@@ -26,7 +28,12 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void SharedOneShots_AreAuthoredPooledAndPresentationOnly()
         {
-            foreach (var path in new[] { ExplosionPath, HitSparkPath })
+            foreach (var path in new[]
+                     {
+                         ExplosionPath,
+                         HitSparkPath,
+                         LightningStrikePath
+                     })
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 Assert.That(prefab, Is.Not.Null, path);

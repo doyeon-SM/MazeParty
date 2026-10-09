@@ -41,6 +41,7 @@ namespace MazeParty.Multiplayer
 
         [SerializeField] private MiniMapView projection;
         [SerializeField] private BoardMapTopologyGraphic topologyGraphic;
+        [SerializeField] private BoardMapVisionGraphic visionGraphic;
         [SerializeField] private Mask circularMask;
         [SerializeField, Min(0f)] private float radiusInTiles = 2f;
         [SerializeField] private bool followHeading = true;
@@ -53,6 +54,9 @@ namespace MazeParty.Multiplayer
             new Color(0.42f, 0.84f, 1f);
         private Vector3 _mapCenter;
         private float _visibleWorldRadius;
+        public float VisibleWorldRadius => _visibleWorldRadius > 0f
+            ? _visibleWorldRadius
+            : radiusInTiles * BoardTile.RoomSize;
         [SerializeField] private Room[] rooms = Array.Empty<Room>();
         [SerializeField] private Image[] players = Array.Empty<Image>();
         [SerializeField] private GameObject[] localHighlights = Array.Empty<GameObject>();
@@ -163,7 +167,9 @@ namespace MazeParty.Multiplayer
                         (shopDistanceIcon == null || shopDistanceText == null)) ||
                     (radiusInTiles > 0f && (heading == null ||
                         circularMask == null || !circularMask.enabled ||
-                        circularMask.GetComponent<BoardMapCircleGraphic>() == null)) ||
+                        circularMask.GetComponent<BoardMapCircleGraphic>() == null ||
+                        visionGraphic == null ||
+                        visionGraphic.transform.parent != projection.otherDotCanvas)) ||
                     rooms.Length != MaxRoomCount || players.Length != MultiplayerConstants.MaxPlayers ||
                     localHighlights.Length != players.Length || tileNames.Length != 4 ||
                     effectNames.Length != LandingEffectCount || compassPoints.Length != 8)
@@ -192,6 +198,25 @@ namespace MazeParty.Multiplayer
             localHighlights = highlights;
             currentTile = description;
             heading = compass;
+        }
+
+        public void BindVisionGraphic(BoardMapVisionGraphic graphic)
+        {
+            visionGraphic = graphic;
+        }
+
+        public void PresentVision(
+            float halfAngleDegrees,
+            float[] clearFractions)
+        {
+            if (visionGraphic != null)
+                visionGraphic.Present(halfAngleDegrees, clearFractions);
+        }
+
+        public void PresentVisionUnavailable()
+        {
+            if (visionGraphic != null)
+                visionGraphic.PresentUnavailable();
         }
 
         public void BindTopologyGraphic(BoardMapTopologyGraphic graphic)
@@ -248,6 +273,8 @@ namespace MazeParty.Multiplayer
             if (!followHeading) yaw = 0f;
             projection.otherDotCanvas.localRotation = Quaternion.Euler(0f, 0f, yaw);
             var upright = Quaternion.Euler(0f, 0f, -yaw);
+            if (visionGraphic != null)
+                visionGraphic.rectTransform.localRotation = upright;
             mineGraphic.SetIconRotation(upright);
             foreach (var room in rooms)
             {
@@ -521,15 +548,16 @@ namespace MazeParty.Multiplayer
 
             if (displayContext == BoardMinimapDisplayContext.Minimap)
             {
-                if (!knowledge.IsCurrentlyVisible(slot) || avatar == null ||
-                    !avatar.IsSpawned || !avatar.HasLogicalBoardTile)
+                if (avatar == null || !avatar.IsSpawned ||
+                    !avatar.HasLogicalBoardTile)
                 {
                     coordinate = default;
                     return false;
                 }
 
-                coordinate = avatar.LogicalBoardTileCoordinate;
-                return true;
+                return knowledge.TryGetCurrentlyVisible(
+                    slot,
+                    out coordinate);
             }
 
             if (avatar == null || !avatar.IsSpawned)

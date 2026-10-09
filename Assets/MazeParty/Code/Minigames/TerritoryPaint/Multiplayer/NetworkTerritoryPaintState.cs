@@ -427,13 +427,29 @@ namespace MazeParty.Multiplayer
                 return new Vector2(ArenaCenterX, 0f);
             }
 
-            var right = (playerSlot & 1) != 0;
-            var top = (playerSlot & 2) != 0;
             var inset =
                 ArenaHalfExtent - PlayerCollisionRadius - 0.85f;
-            return new Vector2(
-                ArenaCenterX + (right ? inset : -inset),
-                top ? inset : -inset);
+            switch (playerSlot)
+            {
+                // Slot zero is the host. Continue counter-clockwise from
+                // the camera-visible top-left corner.
+                case 0:
+                    return new Vector2(
+                        ArenaCenterX - inset,
+                        inset);
+                case 1:
+                    return new Vector2(
+                        ArenaCenterX - inset,
+                        -inset);
+                case 2:
+                    return new Vector2(
+                        ArenaCenterX + inset,
+                        -inset);
+                default:
+                    return new Vector2(
+                        ArenaCenterX + inset,
+                        inset);
+            }
         }
 
         private static Vector2 GetStartFacing(int playerSlot)

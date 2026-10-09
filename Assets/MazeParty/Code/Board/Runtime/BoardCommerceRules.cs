@@ -67,15 +67,50 @@ namespace MazeParty.Gameplay
         {
             Seed = seed;
             var random = new System.Random(seed);
+            var candidates = new List<BoardItemDefinition>(
+                PrototypeItemCatalog.All);
             for (var i = 0; i < _offers.Length; i++)
             {
-                _offers[i] = PrototypeItemCatalog.GetRandomId(random);
+                var totalWeight = 0;
+                for (var candidateIndex = 0;
+                     candidateIndex < candidates.Count;
+                     candidateIndex++)
+                {
+                    totalWeight = checked(
+                        totalWeight +
+                        Mathf.Max(0, candidates[candidateIndex].SpawnWeight));
+                }
+
+                if (totalWeight == 0)
+                {
+                    throw new InvalidOperationException(
+                        "At least five items need a positive spawn weight.");
+                }
+
+                var selectedWeight = random.Next(totalWeight);
+                for (var candidateIndex = 0;
+                     candidateIndex < candidates.Count;
+                     candidateIndex++)
+                {
+                    selectedWeight -= Mathf.Max(
+                        0,
+                        candidates[candidateIndex].SpawnWeight);
+                    if (selectedWeight >= 0)
+                    {
+                        continue;
+                    }
+
+                    _offers[i] = candidates[candidateIndex].Id;
+                    candidates.RemoveAt(candidateIndex);
+                    break;
+                }
             }
         }
 
         private ItemShopStock(
             IReadOnlyList<PrototypeItemId> offers,
-            byte soldMask)
+            byte soldMask,
+            int seed)
         {
             if (offers == null || offers.Count != ItemShopRules.OfferCount)
             {
@@ -84,6 +119,8 @@ namespace MazeParty.Gameplay
                     nameof(offers));
             }
 
+            var usedOffers = new HashSet<PrototypeItemId>();
+            var duplicateIndices = new List<int>();
             for (var index = 0; index < _offers.Length; index++)
             {
                 if (!PrototypeItemCatalog.IsValid(offers[index]))
@@ -93,10 +130,40 @@ namespace MazeParty.Gameplay
                         nameof(offers));
                 }
 
-                _offers[index] = offers[index];
+                if (usedOffers.Add(offers[index]))
+                {
+                    _offers[index] = offers[index];
+                }
+                else
+                {
+                    duplicateIndices.Add(index);
+                }
             }
 
-            Seed = 0;
+            if (duplicateIndices.Count > 0)
+            {
+                var replacements = new List<PrototypeItemId>();
+                var definitions = PrototypeItemCatalog.All;
+                for (var index = 0; index < definitions.Count; index++)
+                {
+                    if (!usedOffers.Contains(definitions[index].Id))
+                    {
+                        replacements.Add(definitions[index].Id);
+                    }
+                }
+
+                var random = new System.Random(seed);
+                for (var index = 0; index < duplicateIndices.Count; index++)
+                {
+                    var replacementIndex = random.Next(replacements.Count);
+                    var replacement = replacements[replacementIndex];
+                    _offers[duplicateIndices[index]] = replacement;
+                    usedOffers.Add(replacement);
+                    replacements.RemoveAt(replacementIndex);
+                }
+            }
+
+            Seed = seed;
             RestoreSoldMask(soldMask);
         }
 
@@ -138,9 +205,10 @@ namespace MazeParty.Gameplay
 
         public static ItemShopStock Restore(
             IReadOnlyList<PrototypeItemId> offers,
-            byte soldMask)
+            byte soldMask,
+            int seed = 0)
         {
-            return new ItemShopStock(offers, soldMask);
+            return new ItemShopStock(offers, soldMask, seed);
         }
     }
 

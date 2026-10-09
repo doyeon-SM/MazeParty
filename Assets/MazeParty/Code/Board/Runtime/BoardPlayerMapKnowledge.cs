@@ -141,6 +141,34 @@ namespace MazeParty.Gameplay
             return true;
         }
 
+        public bool TryGetCurrentlyVisible(
+            int slot,
+            out Vector2Int coordinate)
+        {
+            PlayerSlotRules.Validate(slot);
+            var bit = BitFor(slot);
+            if ((_currentVisibleMask & bit) == 0 ||
+                (_knownMask & bit) == 0)
+            {
+                coordinate = default;
+                return false;
+            }
+
+            coordinate = _lastKnown[slot];
+            return true;
+        }
+
+        public bool ClearCurrentVisibility()
+        {
+            var changed = _currentVisibleMask != 0;
+            _currentVisibleMask = 0;
+            _observedMask = 0;
+            _observationFrameOpen = false;
+            if (changed)
+                IncrementRevision();
+            return changed;
+        }
+
         public bool IsCurrentlyVisible(int slot)
         {
             PlayerSlotRules.Validate(slot);

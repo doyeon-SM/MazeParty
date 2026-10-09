@@ -43,6 +43,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private RedLightGreenLightHudBindings hud;
         [SerializeField] private GameObject signalPulseVfxPrefab;
         [SerializeField] private GameObject finishVfxPrefab;
+        [SerializeField] private GameObject penaltyVfxPrefab;
 
         private readonly RunnerView[] _runners =
             new RunnerView[RedLightGreenLightRules.PlayerCount];
@@ -57,13 +58,16 @@ namespace MazeParty.Multiplayer
 
         public GameObject SignalPulseVfxPrefab => signalPulseVfxPrefab;
         public GameObject FinishVfxPrefab => finishVfxPrefab;
+        public GameObject PenaltyVfxPrefab => penaltyVfxPrefab;
 
         public void ConfigureVfx(
             GameObject signalPulsePrefab,
-            GameObject finishPrefab)
+            GameObject finishPrefab,
+            GameObject penaltyPrefab)
         {
             signalPulseVfxPrefab = signalPulsePrefab;
             finishVfxPrefab = finishPrefab;
+            penaltyVfxPrefab = penaltyPrefab;
         }
 
         public static Quaternion PlayerCameraRotation => Quaternion.Euler(
@@ -334,6 +338,7 @@ namespace MazeParty.Multiplayer
                 var playerState = state.GetPlayerState(slot);
                 var previousPlayerState = runner.LastState;
                 var violationCount = state.GetViolationCount(slot);
+                var previousViolationCount = runner.LastViolationCount;
                 if (playerState != runner.LastState ||
                     violationCount != runner.LastViolationCount)
                 {
@@ -343,6 +348,21 @@ namespace MazeParty.Multiplayer
                             RedLightGreenLightPlayerState.Eliminated);
                     runner.LastState = playerState;
                     runner.LastViolationCount = violationCount;
+                }
+
+                if (runner.HasVfxBaseline &&
+                    violationCount > previousViolationCount)
+                {
+                    // A client can receive more than one authoritative
+                    // violation in a single replicated update. Preserve one
+                    // feedback event per health loss instead of collapsing
+                    // the whole delta into a single strike.
+                    for (var violation = previousViolationCount;
+                         violation < violationCount;
+                         violation++)
+                    {
+                        PlayPenaltyFeedback(runner);
+                    }
                 }
 
                 if (runner.HasVfxBaseline &&
@@ -360,6 +380,25 @@ namespace MazeParty.Multiplayer
                 }
                 runner.HasVfxBaseline = true;
             }
+        }
+
+        private void PlayPenaltyFeedback(RunnerView runner)
+        {
+            if (runner?.Root == null)
+            {
+                return;
+            }
+
+            var position = runner.Root.position;
+            if (penaltyVfxPrefab != null)
+            {
+                OneShotVfxPool.Play(
+                    penaltyVfxPrefab,
+                    position,
+                    Quaternion.identity,
+                    1.15f);
+            }
+            GameSound.PlayAt(SoundKeys.Lightning, position);
         }
 
         private void RefreshPlayerCamera()

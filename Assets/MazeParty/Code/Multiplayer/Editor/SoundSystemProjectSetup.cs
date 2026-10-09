@@ -29,6 +29,10 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Resources/" + SoundSystem.ResourcePath + ".prefab";
         public const string PrefabSearchRoot = "Assets/MazeParty/Prefabs";
         public const int VoiceCount = 24;
+        private const string BalloonDefaultClipPath =
+            "Assets/Resources/sound/balloon.mp3";
+        private const string LightningDefaultClipPath =
+            "Assets/Resources/sound/lightning.mp3";
 
         [MenuItem("MazeParty/Audio/Install Sound System")]
         public static void Install()
@@ -143,7 +147,29 @@ namespace MazeParty.Editor
                 created++;
             }
 
+            EnsureDefaultClip(SoundKeys.Balloon, BalloonDefaultClipPath);
+            EnsureDefaultClip(SoundKeys.Lightning, LightningDefaultClipPath);
             return created;
+        }
+
+        private static void EnsureDefaultClip(
+            string key,
+            string clipPath)
+        {
+            var cue = AssetDatabase.LoadAssetAtPath<SoundCue>(CuePath(key));
+            if (cue == null || cue.HasClips)
+            {
+                return;
+            }
+
+            var clip = AssetDatabase.LoadAssetAtPath<AudioClip>(clipPath);
+            if (clip == null)
+            {
+                return;
+            }
+
+            cue.SetClips(new[] { clip });
+            EditorUtility.SetDirty(cue);
         }
 
         /// <summary>
@@ -468,6 +494,18 @@ namespace MazeParty.Editor
                 maxInstances = 4;
                 minInterval = 0.05f;
                 priority = 30;
+            }
+            else if (key == SoundKeys.Balloon ||
+                     key == SoundKeys.Lightning)
+            {
+                spatial = true;
+                pitchVariance = 0.04f;
+                maxInstances = 4;
+                // Several players may pop or be penalized in the same frame.
+                // MaxInstances bounds the burst without dropping valid cues.
+                minInterval = 0f;
+                priority = 85;
+                maxDistance = 60f;
             }
             else if (key == SoundKeys.MinigameSequenceMemoryTone)
             {

@@ -78,7 +78,7 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public static class BoardResourceTransferPresentationRules
     {
-        public const double ResultDurationSeconds = 2d;
+        public const double ResultDurationSeconds = 3d;
         public const double SourceDurationSeconds = 2d;
         public const double DestinationDurationSeconds = 2d;
         public const double CameraLeadSeconds = 0.4d;

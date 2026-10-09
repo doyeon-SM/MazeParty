@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: SoundLibrary
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundLibrary
   cues:
+  - {fileID: 11400000, guid: 37e1cfb9d0fdf3a41ad7864b67c3d113, type: 2}
   - {fileID: 11400000, guid: 29dea1edb16e9bd4e8ad17843794b620, type: 2}
   - {fileID: 11400000, guid: c4c794ec2b0f8c541bec37092f926ebe, type: 2}
   - {fileID: 11400000, guid: fe6d18ecc46767a48b9cde2d1a271307, type: 2}
@@ -64,6 +65,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 8432e6c312b0e5f4092edd9362a1d133, type: 2}
   - {fileID: 11400000, guid: c9246e71189aeef4181cdd94d2aa38ba, type: 2}
   - {fileID: 11400000, guid: 6ece73a740e914a4583308870032cc7a, type: 2}
+  - {fileID: 11400000, guid: de9c5197acff2a649b23fff4f61f4b26, type: 2}
   - {fileID: 11400000, guid: 974b72d5860d14043bd7bfbd17aa42ca, type: 2}
   - {fileID: 11400000, guid: 0e831bfc2a35be84d8c772c323f43889, type: 2}
   - {fileID: 11400000, guid: a43f52a7d6c10f148b34c6897a268c48, type: 2}

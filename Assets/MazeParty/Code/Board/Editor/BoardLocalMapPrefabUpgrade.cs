@@ -46,10 +46,10 @@ namespace MazeParty.Editor
                 var fullRect = full.GetComponent<RectTransform>();
                 fullRect.anchorMin = fullRect.anchorMax = fullRect.pivot = Vector2.one * 0.5f;
                 fullRect.anchoredPosition = Vector2.zero;
-                fullRect.sizeDelta = new Vector2(640f, 720f);
+                fullRect.sizeDelta = new Vector2(780f, 780f);
                 full.GetComponent<Image>().color = new Color(0.025f, 0.045f, 0.08f, 0.98f);
                 var surface = full.GetComponentInChildren<MiniMapView>(true).otherDotCanvas;
-                Place(surface, new Vector2(320f, -335f), new Vector2(560f, 560f));
+                Place(surface, new Vector2(390f, -390f), new Vector2(728f, 728f));
                 var title = full.transform.Find("Minimap Title").GetComponent<Text>();
                 Place(title.rectTransform, new Vector2(320f, -25f), new Vector2(600f, 32f));
                 title.text = "FULL MAP / NORTH ^";

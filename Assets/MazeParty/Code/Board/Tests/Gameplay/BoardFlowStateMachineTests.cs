@@ -183,22 +183,22 @@ namespace MazeParty.Gameplay.Tests
         public void LandingEffectResolve_CanShortenZeroTransferToResultBoundary()
         {
             var flow = StartInCombat();
-            Assert.That(flow.TryCompleteCombat(15d, 9d), Is.True);
+            Assert.That(flow.TryCompleteCombat(15d, 10d), Is.True);
 
             Assert.That(
                 flow.TryShortenLandingEffectResolve(18d, 4d),
                 Is.True);
-            Assert.That(flow.GetStateRemaining(18d), Is.EqualTo(2d));
+            Assert.That(flow.GetStateRemaining(18d), Is.EqualTo(3d));
 
-            flow.Tick(19.999d);
+            flow.Tick(20.999d);
             Assert.That(
                 flow.State,
                 Is.EqualTo(BoardFlowState.LandingEffectResolve));
-            flow.Tick(20d);
+            flow.Tick(21d);
             Assert.That(
                 flow.State,
                 Is.EqualTo(BoardFlowState.MinigameIntroReady));
-            Assert.That(flow.StateStartedAt, Is.EqualTo(20d));
+            Assert.That(flow.StateStartedAt, Is.EqualTo(21d));
         }
 
         [Test]

@@ -317,6 +317,18 @@ namespace MazeParty.Multiplayer
         {
             for (var slot = 0; slot < _runners.Length; slot++)
             {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar != null)
+                {
+                    var appearance = avatar.Appearance;
+                    var bodyColor = (Color32)appearance.BodyColor;
+                    if (!_resolvedPlayerColors[slot].Equals(bodyColor))
+                    {
+                        _resolvedPlayerColors[slot] = bodyColor;
+                        _paintColorsDirty = true;
+                    }
+                }
+
                 var runner = _runners[slot];
                 if (runner == null)
                 {
@@ -355,16 +367,9 @@ namespace MazeParty.Multiplayer
                         Vector3.up);
                 }
 
-                var avatar = match.GetAvatarForSlot(slot);
                 if (avatar != null)
                 {
                     var appearance = avatar.Appearance;
-                    var bodyColor = (Color32)appearance.BodyColor;
-                    if (!_resolvedPlayerColors[slot].Equals(bodyColor))
-                    {
-                        _resolvedPlayerColors[slot] = bodyColor;
-                        _paintColorsDirty = true;
-                    }
                     runner.Visual.SetBodyColor(appearance.BodyColor);
                     runner.Visual.ApplyAppearance(
                         appearance.EyeId,
@@ -377,6 +382,35 @@ namespace MazeParty.Multiplayer
                             : avatar.DisplayName);
                 }
             }
+        }
+
+        internal static int GetPaintTextureIndex(
+            int cellX,
+            int cellY,
+            int resolution)
+        {
+            if (resolution < 1)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(resolution));
+            }
+            if (cellX < 0 || cellX >= resolution)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(cellX));
+            }
+            if (cellY < 0 || cellY >= resolution)
+            {
+                throw new System.ArgumentOutOfRangeException(
+                    nameof(cellY));
+            }
+
+            // Unity's built-in Plane maps +X/+Z toward UV zero on both
+            // axes. Mirror logical cells into that UV layout so the paint
+            // stays beneath the authoritative world-space runner.
+            var textureX = resolution - 1 - cellX;
+            var textureY = resolution - 1 - cellY;
+            return textureY * resolution + textureX;
         }
 
         private void RefreshPaintSurface()
@@ -412,7 +446,7 @@ namespace MazeParty.Multiplayer
                 for (var x = 0; x < resolution; x++)
                 {
                     var owner = state.GetPaintOwner(x, y);
-                    var index = y * resolution + x;
+                    var index = GetPaintTextureIndex(x, y, resolution);
                     if (canPlaySplash &&
                         owner != _paintOwners[index] &&
                         owner < _paintChangeCounts.Length)

@@ -15,6 +15,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private GameObject resourceTransferCoinPrefab;
         [SerializeField] private GameObject resourceTransferKeyPrefab;
+        [SerializeField] private BoardLandingEffectFeedbackView
+            landingEffectFeedbackPrefab;
+        [SerializeField] private GameObject landingEventLightningPrefab;
         [SerializeField, Min(0f)] private float resourceTransferHeadOffset = 0.3f;
         [SerializeField, Min(0.1f)] private float resourceTransferTravelHeight = 1.5f;
 
@@ -32,6 +35,9 @@ namespace MazeParty.Multiplayer
         private GameObject _resourceTransferVisual;
         private int _resourceTransferVisualRevision = -1;
         private BoardResourceTransferPhase _resourceTransferVisualPhase;
+        private BoardLandingEffectFeedbackView _landingEffectFeedbackVisual;
+        private int _landingEffectFeedbackRevision = -1;
+        private bool _landingEffectFeedbackInitialized;
 
         public void Configure(GameplayCameraDirector director)
         {
@@ -44,6 +50,20 @@ namespace MazeParty.Multiplayer
         {
             resourceTransferCoinPrefab = coinPrefab;
             resourceTransferKeyPrefab = keyPrefab;
+        }
+
+        public void ConfigureLandingEffectFeedbackAssets(
+            BoardLandingEffectFeedbackView feedbackPrefab,
+            GameObject lightningPrefab)
+        {
+            landingEffectFeedbackPrefab = feedbackPrefab;
+            landingEventLightningPrefab = lightningPrefab;
+            OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
+        }
+
+        private void OnEnable()
+        {
+            OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
         }
 
         private void OnDisable()
@@ -63,6 +83,9 @@ namespace MazeParty.Multiplayer
             }
             ClearNameplateOcclusion();
             ClearResourceTransferVisual();
+            ClearLandingEffectFeedbackVisual();
+            _landingEffectFeedbackInitialized = false;
+            _landingEffectFeedbackRevision = -1;
             BoardFlowView.Instance?.SetTopViewShopHighlights(false);
         }
 
@@ -79,8 +102,13 @@ namespace MazeParty.Multiplayer
             {
                 ClearNameplateOcclusion();
                 ClearResourceTransferVisual();
+                ClearLandingEffectFeedbackVisual();
+                _landingEffectFeedbackInitialized = false;
+                _landingEffectFeedbackRevision = -1;
                 return;
             }
+
+            RefreshLandingEffectFeedbackPresentation(match);
 
             if (_localAvatar != null)
             {
@@ -127,6 +155,93 @@ namespace MazeParty.Multiplayer
             // Camera movement and obstacle visibility change continuously even
             // while the replicated flow revision remains unchanged.
             RefreshOpponentNameplateOcclusion(match, targetMode);
+        }
+
+        private void RefreshLandingEffectFeedbackPresentation(
+            NetworkMatchState match)
+        {
+            var snapshot = match.LandingEffectFeedback;
+            if (!_landingEffectFeedbackInitialized)
+            {
+                _landingEffectFeedbackInitialized = true;
+                _landingEffectFeedbackRevision = -1;
+            }
+
+            if (_landingEffectFeedbackRevision == snapshot.Revision)
+            {
+                return;
+            }
+
+            ClearLandingEffectFeedbackVisual();
+            if (!BoardLandingEffectFeedbackRules.IsVisible(
+                    snapshot,
+                    match.SynchronizedNow))
+            {
+                // Inactive, invalid, and expired snapshots cannot become
+                // presentable later. Consume them so they do not retry forever.
+                _landingEffectFeedbackRevision = snapshot.Revision;
+                return;
+            }
+
+            if (match.IsReconnectPaused || match.IsGlobalSimulationPaused ||
+                match.FlowState != BoardFlowState.LandingEffectResolve)
+            {
+                // A valid one-second snapshot can arrive before the local flow
+                // and presentation dependencies are ready. Leave its revision
+                // pending so Update retries while the snapshot is still visible.
+                return;
+            }
+
+            var avatar = match.GetAvatarForSlot(snapshot.Slot);
+            if (avatar == null)
+            {
+                return;
+            }
+
+            if (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event)
+            {
+                if (landingEventLightningPrefab != null)
+                {
+                    OneShotVfxPool.Play(
+                        landingEventLightningPrefab,
+                        avatar.transform.position,
+                        Quaternion.identity,
+                        1f);
+                    _landingEffectFeedbackRevision = snapshot.Revision;
+                }
+                return;
+            }
+
+            if (landingEffectFeedbackPrefab == null ||
+                !BoardLandingEffectFeedbackRules.TryGetContent(
+                    snapshot,
+                    out var iconKind,
+                    out var label))
+            {
+                return;
+            }
+
+            var head = ResolveHeadAnchor(avatar);
+            if (head == null)
+            {
+                return;
+            }
+
+            var remaining = (float)
+                BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                    snapshot,
+                    match.SynchronizedNow);
+            _landingEffectFeedbackVisual = Instantiate(
+                landingEffectFeedbackPrefab);
+            _landingEffectFeedbackVisual.name =
+                "Board Landing Effect Feedback";
+            _landingEffectFeedbackVisual.Present(
+                head,
+                cameraDirector != null ? cameraDirector.OutputCamera : null,
+                iconKind,
+                label,
+                remaining);
+            _landingEffectFeedbackRevision = snapshot.Revision;
         }
 
         private BoardResourceTransferPhase RefreshResourceTransferPresentation(
@@ -245,6 +360,23 @@ namespace MazeParty.Multiplayer
             _resourceTransferVisual = null;
             _resourceTransferVisualRevision = -1;
             _resourceTransferVisualPhase = BoardResourceTransferPhase.None;
+        }
+
+        private void ClearLandingEffectFeedbackVisual()
+        {
+            if (_landingEffectFeedbackVisual != null)
+            {
+                if (Application.isPlaying)
+                {
+                    Destroy(_landingEffectFeedbackVisual.gameObject);
+                }
+                else
+                {
+                    DestroyImmediate(_landingEffectFeedbackVisual.gameObject);
+                }
+            }
+
+            _landingEffectFeedbackVisual = null;
         }
 
         private static Transform ResolveHeadAnchor(NetworkPlayerAvatar avatar)

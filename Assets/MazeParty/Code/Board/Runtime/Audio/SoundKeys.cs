@@ -63,6 +63,9 @@ namespace MazeParty.Gameplay
         public const string MinigameCountdownTick = "minigame.countdown.tick";
         public const string MinigameCountdownGo = "minigame.countdown.go";
         public const string MinigameFinish = "minigame.finish";
+        // Requested short cue identifiers.
+        public const string Balloon = "balloon";
+        public const string Lightning = "lightning";
         public const string MinigameSequenceMemoryTone =
             "minigame.sequence_memory.tone";
 
@@ -83,7 +86,7 @@ namespace MazeParty.Gameplay
             BoardFootstep,
             ItemExplosion, ItemBulletImpact,
             MinigameReveal, MinigameCountdownTick, MinigameCountdownGo,
-            MinigameFinish, MinigameSequenceMemoryTone,
+            MinigameFinish, Balloon, Lightning, MinigameSequenceMemoryTone,
             CeremonyAwardReady, CeremonyAward, CeremonyFanfare, CeremonyApplause
         };
 

@@ -19,7 +19,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
         public const double RoundSeconds = 60d;
         public const double ResultSeconds = 4d;
         public const double MinimumGreenStepSeconds = 0.1d;
-        public const double MaximumGreenStepSeconds = 3d;
+        public const double MaximumGreenStepSeconds = 2d;
         public const double MinimumRedSeconds = 1d;
         public const double MaximumRedSeconds = 2.5d;
         public const double RedMovementGraceSeconds = 0.15d;

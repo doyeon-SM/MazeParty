@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -22,6 +23,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/World/BoardEventCoin.prefab";
         private const string KeyPrefabPath =
             "Assets/MazeParty/Prefabs/Board/World/BoardEventKey.prefab";
+        private const string LandingFeedbackPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/BoardLandingEffectFeedback.prefab";
+        private const string LightningPrefabPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/LightningStrike.prefab";
 
         [Test]
         public void TransferTimeline_UsesResultThenSourceThenDestinationAtExactBoundaries()
@@ -39,14 +44,14 @@ namespace MazeParty.Multiplayer.Tests
             var cases = new[]
             {
                 (99.5d, BoardResourceTransferPhase.Result, 0f),
-                (101.999d, BoardResourceTransferPhase.Result, 0f),
-                (102d, BoardResourceTransferPhase.Source, 0f),
-                (102.4d, BoardResourceTransferPhase.Source, 0f),
-                (103.999d, BoardResourceTransferPhase.Source, 0.99f),
-                (104d, BoardResourceTransferPhase.Destination, 0f),
-                (104.4d, BoardResourceTransferPhase.Destination, 0f),
-                (105.999d, BoardResourceTransferPhase.Destination, 0.99f),
-                (106d, BoardResourceTransferPhase.Complete, 1f)
+                (102.999d, BoardResourceTransferPhase.Result, 0f),
+                (103d, BoardResourceTransferPhase.Source, 0f),
+                (103.4d, BoardResourceTransferPhase.Source, 0f),
+                (104.999d, BoardResourceTransferPhase.Source, 0.99f),
+                (105d, BoardResourceTransferPhase.Destination, 0f),
+                (105.4d, BoardResourceTransferPhase.Destination, 0f),
+                (106.999d, BoardResourceTransferPhase.Destination, 0.99f),
+                (107d, BoardResourceTransferPhase.Complete, 1f)
             };
 
             foreach (var testCase in cases)
@@ -84,7 +89,91 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardScene_UsesAuthoredCoinAndKeyWrappersWithoutGameplayComponents()
+        public void LandingEffectFeedback_UsesSignedMapContentForExactlyOneSecond()
+        {
+            var previousLanguage = GameText.Language;
+            GameText.SetLanguage(GameLanguage.English);
+            try
+            {
+                var cases = new[]
+                {
+                    (BoardLandingEffectFeedbackKind.Gold, 3,
+                        PrototypeItemId.None, BoardMapIconKind.GoldGain, "+3"),
+                    (BoardLandingEffectFeedbackKind.Gold, -3,
+                        PrototypeItemId.None, BoardMapIconKind.GoldLoss, "-3"),
+                    (BoardLandingEffectFeedbackKind.Health, 20,
+                        PrototypeItemId.None, BoardMapIconKind.Healing, "+20"),
+                    (BoardLandingEffectFeedbackKind.Health, -40,
+                        PrototypeItemId.None, BoardMapIconKind.Healing, "-40"),
+                    (BoardLandingEffectFeedbackKind.Item, 0,
+                        PrototypeItemId.Pistol, BoardMapIconKind.Item,
+                        "+ " + GameText.T(
+                            PrototypeItemCatalog.Get(
+                                PrototypeItemId.Pistol).DisplayName))
+                };
+
+                for (var index = 0; index < cases.Length; index++)
+                {
+                    var testCase = cases[index];
+                    var snapshot = new BoardLandingEffectFeedbackSnapshot
+                    {
+                        Active = true,
+                        Revision = index + 1,
+                        Slot = index % MultiplayerConstants.MaxPlayers,
+                        Kind = (byte)testCase.Item1,
+                        SignedAmount = testCase.Item2,
+                        ItemId = (byte)testCase.Item3,
+                        StartedAt = 100d
+                    };
+                    Assert.That(
+                        BoardLandingEffectFeedbackRules.TryGetContent(
+                            snapshot,
+                            out var iconKind,
+                            out var label),
+                        Is.True);
+                    Assert.That(iconKind, Is.EqualTo(testCase.Item4));
+                    Assert.That(label, Is.EqualTo(testCase.Item5));
+                }
+
+                var exactWindow = new BoardLandingEffectFeedbackSnapshot
+                {
+                    Active = true,
+                    Revision = 9,
+                    Slot = 0,
+                    Kind = (byte)BoardLandingEffectFeedbackKind.Event,
+                    StartedAt = 100d
+                };
+                Assert.That(
+                    BoardLandingEffectFeedbackRules.IsVisible(
+                        exactWindow,
+                        100.999999d),
+                    Is.True);
+                Assert.That(
+                    BoardLandingEffectFeedbackRules.IsVisible(
+                        exactWindow,
+                        101d),
+                    Is.False);
+                Assert.That(
+                    BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                        exactWindow,
+                        100d),
+                    Is.EqualTo(1d));
+                Assert.That(
+                    BoardLandingEffectFeedbackRules.TryGetContent(
+                        exactWindow,
+                        out _,
+                        out _),
+                    Is.False,
+                    "Events use one LightningStrike instead of overhead text.");
+            }
+            finally
+            {
+                GameText.SetLanguage(previousLanguage);
+            }
+        }
+
+        [Test]
+        public void BoardScene_UsesAuthoredResourceAndLandingFeedbackPrefabs()
         {
             var expected = new[]
             {
@@ -116,6 +205,24 @@ namespace MazeParty.Multiplayer.Tests
                     "The vendor floating script must not fight the authored transfer motion.");
             }
 
+            var feedbackPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LandingFeedbackPrefabPath);
+            Assert.That(feedbackPrefab, Is.Not.Null, LandingFeedbackPrefabPath);
+            var feedback = feedbackPrefab.GetComponent<
+                BoardLandingEffectFeedbackView>();
+            Assert.That(feedback, Is.Not.Null);
+            Assert.That(feedback.HasRequiredReferences, Is.True);
+            Assert.That(
+                feedbackPrefab.GetComponent<Canvas>().renderMode,
+                Is.EqualTo(RenderMode.WorldSpace));
+            Assert.That(
+                feedbackPrefab.GetComponentsInChildren<Text>(true)
+                    .All(text => text.fontStyle == FontStyle.Normal),
+                Is.True);
+            var lightningPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                LightningPrefabPath);
+            Assert.That(lightningPrefab, Is.Not.Null, LightningPrefabPath);
+
             var previousActiveScene = SceneManager.GetActiveScene();
             var scene = SceneManager.GetSceneByPath(BoardScenePath);
             var wasAlreadyLoaded = scene.IsValid() && scene.isLoaded;
@@ -141,6 +248,14 @@ namespace MazeParty.Multiplayer.Tests
                     serialized.FindProperty("resourceTransferKeyPrefab")
                         .objectReferenceValue,
                     Is.SameAs(prefabs[1]));
+                Assert.That(
+                    serialized.FindProperty("landingEffectFeedbackPrefab")
+                        .objectReferenceValue,
+                    Is.SameAs(feedback));
+                Assert.That(
+                    serialized.FindProperty("landingEventLightningPrefab")
+                        .objectReferenceValue,
+                    Is.SameAs(lightningPrefab));
             }
             finally
             {
