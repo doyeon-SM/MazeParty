@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -262,6 +263,58 @@ namespace MazeParty.Multiplayer.Tests
             {
                 Object.DestroyImmediate(dieObject);
             }
+        }
+
+        [Test]
+        public void SafeSpawnPlacement_UsesFirstDistinctClearTileCandidate()
+        {
+            var checkedCandidates = new List<Vector3>();
+            Vector3 Constrain(Vector3 candidate)
+            {
+                return new Vector3(
+                    Mathf.Clamp(candidate.x, -3f, 3f),
+                    candidate.y,
+                    Mathf.Clamp(candidate.z, -3f, 3f));
+            }
+
+            var resolved = WorldDieSpawnPlacementPolicy.TryResolve(
+                new Vector3(3.7f, 0f, 3.7f),
+                Vector3.zero,
+                Vector3.up,
+                Vector3.forward,
+                Vector3.forward,
+                0.75f,
+                Constrain,
+                candidate =>
+                {
+                    checkedCandidates.Add(candidate);
+                    return checkedCandidates.Count == 3;
+                },
+                out var position);
+
+            Assert.That(resolved, Is.True);
+            Assert.That(checkedCandidates, Has.Count.EqualTo(3));
+            Assert.That(position, Is.EqualTo(checkedCandidates[2]));
+            Assert.That(Mathf.Abs(position.x), Is.LessThanOrEqualTo(3f));
+            Assert.That(Mathf.Abs(position.z), Is.LessThanOrEqualTo(3f));
+            Assert.That(
+                checkedCandidates[0],
+                Is.Not.EqualTo(checkedCandidates[1]),
+                "Candidates collapsed by tile confinement must be tested once.");
+
+            Assert.That(
+                WorldDieSpawnPlacementPolicy.TryResolve(
+                    Vector3.zero,
+                    Vector3.zero,
+                    Vector3.up,
+                    Vector3.forward,
+                    Vector3.forward,
+                    0.75f,
+                    Constrain,
+                    _ => false,
+                    out _),
+                Is.False,
+                "Preparation must not accept an obstructed fallback position.");
         }
 
         [Test]

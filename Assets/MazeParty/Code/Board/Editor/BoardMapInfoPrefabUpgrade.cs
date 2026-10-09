@@ -81,7 +81,7 @@ namespace MazeParty.Editor
                         floor.transform,
                         BoardMapIconKind.Room,
                         new Vector2(.28f, .72f),
-                        20f);
+                        24f);
                 }
                 var effectProperty = room.FindPropertyRelative("EffectIcon");
                 if (effectProperty.objectReferenceValue == null)
@@ -91,7 +91,7 @@ namespace MazeParty.Editor
                         floor.transform,
                         BoardMapIconKind.GoldGain,
                         new Vector2(.72f, .72f),
-                        20f);
+                        24f);
                 }
                 var arrows = room.FindPropertyRelative("ProgressArrows");
                 if (arrows.arraySize != 4)

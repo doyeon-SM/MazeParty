@@ -203,7 +203,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
   GlobalObjectIdHash: 2410638060
   InScenePlacedSourceGlobalObjectIdHash: 0
@@ -230,7 +230,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 4d57c0f6b43b68e41951cc4c149c1357, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.WrongWayNetworkView
   state: {fileID: 0}
   raceCamera: {fileID: 0}
@@ -249,7 +249,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1ad6e63475e368d4f90eb41bf549e3d6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.NetworkWrongWayState
   ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1001 &82057304
@@ -300,9 +300,25 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3302990532168574361, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 59573b088aaea0442bf29e0a0e9d1339, type: 2}
     - target: {fileID: 7303652420358235008, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: m_Name
       value: Wrong Way Environment
+      objectReference: {fileID: 0}
+    - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 200
+      objectReference: {fileID: 0}
+    - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -394,7 +410,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8905755587365236001, guid: 666f1c23a7cf4e54a9c38c0530426aea, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0
+      value: -6.75
       objectReference: {fileID: 0}
     - target: {fileID: 8905755587365236001, guid: 666f1c23a7cf4e54a9c38c0530426aea, type: 3}
       propertyPath: m_LocalPosition.z
@@ -542,14 +558,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f9dfa5b682dcd46bda6128250e975f58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineCamera
   Priority:
     Enabled: 1
     m_Value: 0
   OutputChannel: 1
   StandbyUpdate: 2
-  m_StreamingVersion: 0
+  m_StreamingVersion: 20241001
   m_LegacyPriority: 0
   Target:
     TrackingTarget: {fileID: 0}
@@ -680,6 +696,7 @@ GameObject:
   m_Component:
   - component: {fileID: 640598209}
   - component: {fileID: 640598210}
+  - component: {fileID: 640598211}
   m_Layer: 0
   m_Name: WrongWay Directional Light
   m_TagString: Untagged
@@ -767,6 +784,35 @@ Light:
   m_LightUnit: 1
   m_LuxAtDistance: 1
   m_EnableSpotReflector: 1
+--- !u!114 &640598211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 640598208}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
+  m_UsePipelineSettings: 1
+  m_AdditionalLightsShadowResolutionTier: 2
+  m_CustomShadowLayers: 0
+  m_LightCookieSize: {x: 1, y: 1}
+  m_LightCookieOffset: {x: 0, y: 0}
+  m_SoftShadowQuality: 0
+  m_RenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_ShadowRenderingLayersMask:
+    serializedVersion: 0
+    m_Bits: 1
+  m_Version: 4
+  m_LightLayerMask: 1
+  m_ShadowLayerMask: 1
+  m_RenderingLayers: 1
+  m_ShadowRenderingLayers: 1
 --- !u!1001 &1169828344
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -878,7 +924,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e63d58a1e83724d4da5a05bf7a9a5497, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.WrongWayHudBindings
 --- !u!1001 &2013078123
 PrefabInstance:

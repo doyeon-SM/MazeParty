@@ -88,7 +88,10 @@ namespace MazeParty.Editor
                 BoardCanvasModuleFolder + "/MinigameReadyPanel.prefab"),
             new BoardCanvasModuleSpec(
                 BoardEventPopupProjectSetup.ModuleObjectName,
-                BoardEventPopupProjectSetup.ModulePrefabPath)
+                BoardEventPopupProjectSetup.ModulePrefabPath),
+            new BoardCanvasModuleSpec(
+                BoardKillFeedProjectSetup.ModuleObjectName,
+                BoardKillFeedProjectSetup.ModulePrefabPath)
         };
 
         private static readonly Vector2Int[] MainLoop =
@@ -1209,6 +1212,8 @@ namespace MazeParty.Editor
             CreateReticle(root.transform, font);
             BoardEventPopupProjectSetup.EnsureTemplateInstance(
                 root.transform);
+            BoardKillFeedProjectSetup.EnsureTemplateInstance(
+                root.transform);
             CreateReconnectOverlay(root.transform, font);
             BoardMapPrefabAuthoring.Ensure(root, font);
             var bindings = root.GetComponent<BoardCanvasBindings>();
@@ -1273,6 +1278,7 @@ namespace MazeParty.Editor
 
             prefab = MigrateObsoleteBoardHudTexts(prefab);
             prefab = BoardEventPopupProjectSetup.EnsureInstalled(prefab);
+            prefab = BoardKillFeedProjectSetup.EnsureInstalled(prefab);
             prefab = MigrateBoardItemChoiceBindingsIfMissing(prefab);
             prefab = MigrateBoardCanvasModulesIfMissing(prefab);
             MinigameResultCanvasProjectSetup.EnsurePrefabMigrated();
@@ -1295,6 +1301,8 @@ namespace MazeParty.Editor
             try
             {
                 BoardEventPopupProjectSetup.EnsureTemplateInstance(
+                    contents.transform);
+                BoardKillFeedProjectSetup.EnsureTemplateInstance(
                     contents.transform);
                 var bindings = contents.AddComponent<BoardCanvasBindings>();
                 ConfigureBoardCanvasBindings(contents, bindings);
@@ -1839,6 +1847,9 @@ namespace MazeParty.Editor
                 BoardEventPopupPanel = RequireBoardUiObject(
                     root,
                     BoardEventPopupProjectSetup.ModuleObjectName),
+                BoardKillFeedPanel = RequireBoardUiObject(
+                    root,
+                    BoardKillFeedProjectSetup.ModuleObjectName),
                 ReticleText = RequireBoardUiComponent<Text>(
                     root,
                     "BoardReticle"),
@@ -1870,6 +1881,9 @@ namespace MazeParty.Editor
                 BoardEventPopupMessage = RequireBoardUiComponent<Text>(
                     root,
                     BoardEventPopupProjectSetup.MessageObjectName),
+                BoardKillFeedMessage = RequireBoardUiComponent<Text>(
+                    root,
+                    BoardKillFeedProjectSetup.MessageObjectName),
                 MinigameReadyTitle = RequireBoardUiComponent<Text>(
                     root,
                     "Ready Title"),
@@ -2006,7 +2020,7 @@ namespace MazeParty.Editor
         {
             var panel = CreatePanel("Player State Panel", canvas, new Vector2(0f, 1f),
                 new Vector2(0f, 1f), new Vector2(22f, -22f), new Vector2(370f, 420f),
-                new Vector2(0f, 1f), new Color(0.025f, 0.045f, 0.08f, 0.9f));
+                new Vector2(0f, 1f), Color.clear);
             var keyIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(
                 PlayerKeyIconPath);
             var goldIcon = AssetDatabase.LoadAssetAtPath<Texture2D>(

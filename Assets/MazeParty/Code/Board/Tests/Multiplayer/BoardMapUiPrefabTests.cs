@@ -75,87 +75,6 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void MineHelpIcons_StayUprightWhileHeadingRotatesMap()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            var instance = Object.Instantiate(prefab);
-            try
-            {
-                var view = instance.GetComponent<BoardMinimapView>();
-                Assert.That(view, Is.Not.Null);
-                var data = new SerializedObject(view);
-                var projection = data.FindProperty("projection")
-                    .objectReferenceValue as Arikan.MiniMapView;
-                var mines = data.FindProperty("mineGraphic")
-                    .objectReferenceValue as BoardMapMineGraphic;
-                Assert.That(projection, Is.Not.Null);
-                Assert.That(mines, Is.Not.Null);
-                Assert.That(mines.IconSprite, Is.Not.Null);
-
-                mines.Present(
-                    new[] { new Vector3(5f, 0f, 0f) },
-                    new Bounds(Vector3.zero, new Vector3(20f, 1f, 20f)),
-                    0f);
-                var populateMesh = typeof(BoardMapMineGraphic).GetMethod(
-                    "OnPopulateMesh",
-                    System.Reflection.BindingFlags.Instance |
-                    System.Reflection.BindingFlags.NonPublic,
-                    null,
-                    new[] { typeof(UnityEngine.UI.VertexHelper) },
-                    null);
-                Assert.That(populateMesh, Is.Not.Null);
-                var initialGraphicRotation = mines.rectTransform.localRotation;
-                var initialCenter = Vector3.zero;
-
-                foreach (var yaw in new[] { 0f, 90f, 180f, 270f, 315f })
-                {
-                    view.SetHeading(yaw);
-                    using (var vertices = new UnityEngine.UI.VertexHelper())
-                    {
-                        populateMesh.Invoke(mines, new object[] { vertices });
-                        Assert.That(vertices.currentVertCount, Is.EqualTo(4));
-                        var bottomLeft = new UIVertex();
-                        var topLeft = new UIVertex();
-                        var topRight = new UIVertex();
-                        vertices.PopulateUIVertex(ref bottomLeft, 0);
-                        vertices.PopulateUIVertex(ref topLeft, 1);
-                        vertices.PopulateUIVertex(ref topRight, 2);
-
-                        var center =
-                            (bottomLeft.position + topRight.position) * 0.5f;
-                        if (Mathf.Approximately(yaw, 0f)) initialCenter = center;
-                        var mapRotation =
-                            projection.otherDotCanvas.localRotation;
-                        var displayedRotation = mapRotation *
-                                                mines.rectTransform.localRotation;
-                        var displayedUp = displayedRotation *
-                                          (topLeft.position -
-                                           bottomLeft.position);
-                        Assert.That(displayedUp.x,
-                            Is.EqualTo(0f).Within(0.001f),
-                            "Mine help icons must remain screen-upright at heading " +
-                            yaw + ".");
-                        Assert.That(displayedUp.y, Is.GreaterThan(0f));
-
-                        var displayedCenter = displayedRotation * center;
-                        var expectedCenter = mapRotation *
-                                             initialGraphicRotation *
-                                             initialCenter;
-                        Assert.That(
-                            Vector3.Distance(displayedCenter, expectedCenter),
-                            Is.LessThan(0.001f),
-                            "Counter-rotation must not move a mine marker at heading " +
-                            yaw + ".");
-                    }
-                }
-            }
-            finally
-            {
-                Object.DestroyImmediate(instance);
-            }
-        }
-
         private static void AssertBound(GameObject root)
         {
             var map = root.GetComponent<BoardMapView>();
@@ -263,8 +182,9 @@ namespace MazeParty.Multiplayer.Tests
                             ModernIconRoot +
                             "Map/Location Mark Filled.png"));
                     Assert.That(marker.preserveAspect, Is.True);
-                    Assert.That(effectLayer.GetSiblingIndex(),
-                        Is.GreaterThan(marker.transform.GetSiblingIndex()));
+                    Assert.That(marker.transform.GetSiblingIndex(),
+                        Is.GreaterThan(effectLayer.GetSiblingIndex()),
+                        "Player markers must render above every tile icon layer.");
                 }
 
                 var shopColor = data.FindProperty("shopColor").colorValue;

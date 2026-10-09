@@ -17,19 +17,14 @@ namespace MazeParty.Gameplay
         private readonly int[] _lastHighlightedRevisions = { -1, -1 };
         private readonly Vector2Int[] _lastHighlightedCoordinates =
             new Vector2Int[ItemShopRules.ShopCount];
-        private readonly GameObject[] _topViewHighlights =
-            new GameObject[ItemShopRules.ShopCount];
         private bool _topViewHighlightRequested;
 
         public void SetTopViewHighlight(bool highlighted)
         {
             _topViewHighlightRequested = highlighted;
-            for (var index = 0; index < _topViewHighlights.Length; index++)
+            for (var index = 0; index < _visuals.Length; index++)
             {
-                if (_topViewHighlights[index] != null)
-                {
-                    _topViewHighlights[index].SetActive(highlighted);
-                }
+                _visuals[index]?.SetTopViewHighlightVisible(highlighted);
             }
         }
 
@@ -78,8 +73,7 @@ namespace MazeParty.Gameplay
             var visual = Instantiate(worldPrefabs.ItemShop(shopIndex), transform, false);
             var root = visual.gameObject;
             _visuals[shopIndex] = visual;
-            _topViewHighlights[shopIndex] = visual.TopViewHighlight;
-            visual.TopViewHighlight.SetActive(_topViewHighlightRequested);
+            visual.SetTopViewHighlightVisible(_topViewHighlightRequested);
             _markers[shopIndex] = root;
 
             root.SetActive(false);

@@ -76,8 +76,10 @@ namespace MazeParty.Gameplay
         private bool _nameplateAllowed = true;
         private bool _nameplateOccluded;
         private bool _boardProtectionVisible;
-        private bool _locationHighlightVisible;
+        private bool _boardTopViewHighlightVisible;
+        private bool _minigameLocationHighlightVisible;
         private bool _missingPresentationReported;
+        private bool _destroying;
         public void SetHiddenFromViewer(bool hidden)
         {
             if (_hiddenFromViewer == hidden) return;
@@ -117,6 +119,11 @@ namespace MazeParty.Gameplay
             EnsureBuilt();
         }
 
+        private void OnDestroy()
+        {
+            _destroying = true;
+        }
+
         public void ConfigurePresentationBindings(
             PlayerAvatarPresentationBindings value)
         {
@@ -133,7 +140,7 @@ namespace MazeParty.Gameplay
 
         public void EnsureBuilt()
         {
-            if (IsBuilt)
+            if (_destroying || this == null || IsBuilt)
             {
                 return;
             }
@@ -391,10 +398,17 @@ namespace MazeParty.Gameplay
             RefreshShieldVfx();
         }
 
-        public void SetLocationHighlightVisible(bool visible)
+        public void SetBoardTopViewHighlightVisible(bool visible)
         {
             EnsureBuilt();
-            _locationHighlightVisible = visible;
+            _boardTopViewHighlightVisible = visible;
+            RefreshShieldVfx();
+        }
+
+        public void SetMinigameLocationHighlightVisible(bool visible)
+        {
+            EnsureBuilt();
+            _minigameLocationHighlightVisible = visible;
             RefreshShieldVfx();
         }
 
@@ -406,7 +420,8 @@ namespace MazeParty.Gameplay
             }
 
             var visible = (_boardProtectionVisible ||
-                           _locationHighlightVisible) &&
+                           _boardTopViewHighlightVisible ||
+                           _minigameLocationHighlightVisible) &&
                           !_hiddenFromViewer;
             if (_shieldVfx.activeSelf != visible)
             {

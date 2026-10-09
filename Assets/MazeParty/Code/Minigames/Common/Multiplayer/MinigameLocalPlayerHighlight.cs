@@ -133,7 +133,7 @@ namespace MazeParty.Multiplayer
 
             _localVisual.SetNameplateVisible(true);
             _localVisual.SetTopViewHighlight(false);
-            _localVisual.SetLocationHighlightVisible(
+            _localVisual.SetMinigameLocationHighlightVisible(
                 highlightVisible || locationHighlightVisible);
         }
 
@@ -503,7 +503,7 @@ namespace MazeParty.Multiplayer
             if (_localVisual != null)
             {
                 _localVisual.SetTopViewHighlight(false);
-                _localVisual.SetLocationHighlightVisible(false);
+                _localVisual.SetMinigameLocationHighlightVisible(false);
                 _localVisual = null;
             }
         }

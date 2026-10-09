@@ -239,6 +239,139 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>
+    /// Deterministically searches near the owner first, then across the tile,
+    /// so a prepared die never begins inside a solid board obstacle.
+    /// </summary>
+    public static class WorldDieSpawnPlacementPolicy
+    {
+        private static readonly Vector2[] OwnerCandidateOffsets =
+        {
+            new Vector2(0f, 2f),
+            new Vector2(1.5f, 1.5f),
+            new Vector2(-1.5f, 1.5f),
+            new Vector2(2f, 0f),
+            new Vector2(-2f, 0f),
+            new Vector2(1.5f, -1.5f),
+            new Vector2(-1.5f, -1.5f),
+            new Vector2(0f, -2f),
+            new Vector2(0f, 1f),
+            new Vector2(1f, 0f),
+            new Vector2(-1f, 0f),
+            Vector2.zero
+        };
+
+        private static readonly Vector2[] TileCandidateOffsets =
+        {
+            Vector2.zero,
+            new Vector2(0f, 3f),
+            new Vector2(2.5f, 2.5f),
+            new Vector2(-2.5f, 2.5f),
+            new Vector2(3f, 0f),
+            new Vector2(-3f, 0f),
+            new Vector2(2.5f, -2.5f),
+            new Vector2(-2.5f, -2.5f),
+            new Vector2(0f, -3f)
+        };
+
+        public static bool TryResolve(
+            Vector3 ownerAnchor,
+            Vector3 tileCenter,
+            Vector3 tileUp,
+            Vector3 ownerForward,
+            Vector3 tileForward,
+            float spawnHeight,
+            Func<Vector3, Vector3> constrainToTile,
+            Predicate<Vector3> isClear,
+            out Vector3 position)
+        {
+            if (constrainToTile == null)
+                throw new ArgumentNullException(nameof(constrainToTile));
+            if (isClear == null)
+                throw new ArgumentNullException(nameof(isClear));
+
+            position = default;
+            var up = tileUp.sqrMagnitude > 0.000001f
+                ? tileUp.normalized
+                : Vector3.up;
+            var forward = Vector3.ProjectOnPlane(ownerForward, up);
+            if (forward.sqrMagnitude <= 0.000001f)
+            {
+                forward = Vector3.ProjectOnPlane(tileForward, up);
+            }
+            if (forward.sqrMagnitude <= 0.000001f)
+            {
+                return false;
+            }
+
+            forward.Normalize();
+            var right = Vector3.Cross(up, forward).normalized;
+            var tested = new Vector3[
+                OwnerCandidateOffsets.Length + TileCandidateOffsets.Length];
+            var testedCount = 0;
+            var resolved = default(Vector3);
+
+            bool TryCandidates(Vector3 anchor, Vector2[] offsets)
+            {
+                for (var index = 0; index < offsets.Length; index++)
+                {
+                    var offset = offsets[index];
+                    var candidate = constrainToTile(
+                        anchor + right * offset.x + forward * offset.y +
+                        up * spawnHeight);
+                    if (!IsFinite(candidate))
+                    {
+                        continue;
+                    }
+
+                    var duplicate = false;
+                    for (var testedIndex = 0;
+                         testedIndex < testedCount;
+                         testedIndex++)
+                    {
+                        if ((tested[testedIndex] - candidate).sqrMagnitude <=
+                            0.000001f)
+                        {
+                            duplicate = true;
+                            break;
+                        }
+                    }
+                    if (duplicate)
+                    {
+                        continue;
+                    }
+
+                    tested[testedCount++] = candidate;
+                    if (!isClear(candidate))
+                    {
+                        continue;
+                    }
+
+                    resolved = candidate;
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (!TryCandidates(ownerAnchor, OwnerCandidateOffsets) &&
+                !TryCandidates(tileCenter, TileCandidateOffsets))
+            {
+                return false;
+            }
+
+            position = resolved;
+            return true;
+        }
+
+        private static bool IsFinite(Vector3 value)
+        {
+            return float.IsFinite(value.x) &&
+                   float.IsFinite(value.y) &&
+                   float.IsFinite(value.z);
+        }
+    }
+
+    /// <summary>
     /// Publicly observed, server-owned physical die for one stable player slot.
     /// Clients may request a push, but the server resolves the sender's avatar and
     /// repeats all authority, phase, tile, distance and ray checks before applying it.
@@ -252,6 +385,8 @@ namespace MazeParty.Multiplayer
     public sealed class NetworkWorldDie : NetworkBehaviour
     {
         private const float LandingClearance = 0.01f;
+        private const float SpawnObstaclePadding = 0.08f;
+        private const int SpawnOverlapCapacity = 64;
 
         private static readonly HashSet<NetworkWorldDie> ActiveServerDice =
             new HashSet<NetworkWorldDie>();
@@ -323,6 +458,8 @@ namespace MazeParty.Multiplayer
             new List<int>(WorldDieAuthorityModel.MaximumFace);
         private readonly List<Vector3> _tileFootprintVertices =
             new List<Vector3>(BoardTileFootprint.MaxVertexCount);
+        private readonly Collider[] _spawnOverlapHits =
+            new Collider[SpawnOverlapCapacity];
 
         private const float BounceSoundMinSpeed = 1.2f;
         private const float BounceSoundMinInterval = 0.08f;
@@ -351,6 +488,7 @@ namespace MazeParty.Multiplayer
         private Quaternion _landingStartRotation = Quaternion.identity;
         private Vector3 _landingTargetPosition;
         private Quaternion _landingTargetRotation = Quaternion.identity;
+        private bool _spawnPlacementWarningIssued;
 
         public event Action<NetworkWorldDie> RollStartedOnServer;
         public event Action<NetworkWorldDie, int> SettledOnServer;
@@ -627,15 +765,6 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            if (!_authority.Prepare(configuredSlot, tile.Coordinate))
-            {
-                return false;
-            }
-
-            _assignedTile = tile;
-            _tileFrame = CreateTileFrame(tile);
-            _hasTileFrame = true;
-
             var targetRotation = Quaternion.Euler(
                 UnityEngine.Random.Range(0f, 360f),
                 UnityEngine.Random.Range(0f, 360f),
@@ -663,18 +792,72 @@ namespace MazeParty.Multiplayer
             {
                 projectedForward = forward;
             }
-            var desiredPosition = tile.WorldCenter + ownerHorizontal +
-                                  projectedForward.normalized * 2f +
-                                  up * spawnHeight;
-            ConstrainToAssignedTile(
-                desiredPosition,
-                Vector3.zero,
-                projectedRightExtent,
-                projectedForwardExtent,
-                0f,
-                out var targetPosition,
-                out _,
-                rotationIndependentRadius);
+            var tileFrame = CreateTileFrame(tile);
+            Physics.SyncTransforms();
+            Vector3 ConstrainSpawnCandidate(Vector3 candidate)
+            {
+                ConstrainToTile(
+                    tile,
+                    tileFrame,
+                    candidate,
+                    Vector3.zero,
+                    projectedRightExtent,
+                    projectedForwardExtent,
+                    0f,
+                    out var constrained,
+                    out _,
+                    rotationIndependentRadius);
+                return constrained;
+            }
+
+            bool TryResolveSpawn(
+                bool ignoreShopInteractionTargets,
+                out Vector3 resolved)
+            {
+                return WorldDieSpawnPlacementPolicy.TryResolve(
+                    tile.WorldCenter + ownerHorizontal,
+                    tile.WorldCenter,
+                    up,
+                    projectedForward,
+                    forward,
+                    spawnHeight,
+                    ConstrainSpawnCandidate,
+                    candidate => IsSpawnPositionClear(
+                        candidate,
+                        rotationIndependentRadius,
+                        tile,
+                        ignoreShopInteractionTargets),
+                    out resolved);
+            }
+
+            // Prefer a position outside even the shop's interaction volume.
+            // Authored shops currently use one room-sized trigger for aiming,
+            // not a physical mesh collider, so retry without only that volume
+            // when it would otherwise make the entire logical tile unusable.
+            if (!TryResolveSpawn(false, out var targetPosition) &&
+                !TryResolveSpawn(true, out targetPosition))
+            {
+                if (!_spawnPlacementWarningIssued)
+                {
+                    Debug.LogWarning(
+                        $"Tile '{tile.name}' has no obstacle-free world die " +
+                        "spawn position. Preparation will retry after the " +
+                        "obstruction moves.",
+                        tile);
+                    _spawnPlacementWarningIssued = true;
+                }
+                return false;
+            }
+
+            _spawnPlacementWarningIssued = false;
+            if (!_authority.Prepare(configuredSlot, tile.Coordinate))
+            {
+                return false;
+            }
+
+            _assignedTile = tile;
+            _tileFrame = tileFrame;
+            _hasTileFrame = true;
             FreezeBody();
             _body.detectCollisions = true;
             _nudgeInProgress = false;
@@ -706,6 +889,7 @@ namespace MazeParty.Multiplayer
             _nudgeBelowThresholdSince = -1d;
             _resultHideDeadline = -1d;
             _localPauseStartedAt = -1d;
+            _spawnPlacementWarningIssued = false;
             ResetRollPresentationState();
             FreezeBody();
             _body.detectCollisions = false;
@@ -1593,7 +1777,32 @@ namespace MazeParty.Multiplayer
             out Vector3 constrainedVelocity,
             float customFootprintInset = -1f)
         {
-            var changed = _tileFrame.Constrain(
+            return ConstrainToTile(
+                _assignedTile,
+                _tileFrame,
+                position,
+                velocity,
+                projectedHalfExtentRight,
+                projectedHalfExtentForward,
+                restitution,
+                out constrainedPosition,
+                out constrainedVelocity,
+                customFootprintInset);
+        }
+
+        private static bool ConstrainToTile(
+            BoardTile tile,
+            WorldDieTileFrame tileFrame,
+            Vector3 position,
+            Vector3 velocity,
+            float projectedHalfExtentRight,
+            float projectedHalfExtentForward,
+            float restitution,
+            out Vector3 constrainedPosition,
+            out Vector3 constrainedVelocity,
+            float customFootprintInset = -1f)
+        {
+            var changed = tileFrame.Constrain(
                 position,
                 velocity,
                 projectedHalfExtentRight,
@@ -1601,7 +1810,7 @@ namespace MazeParty.Multiplayer
                 restitution,
                 out constrainedPosition,
                 out constrainedVelocity);
-            if (_assignedTile == null || !_assignedTile.HasCustomFootprint)
+            if (tile == null || !tile.HasCustomFootprint)
                 return changed;
 
             var safeInset = customFootprintInset >= 0f
@@ -1609,11 +1818,11 @@ namespace MazeParty.Multiplayer
                 : WorldDieFootprintConstraint.GetConservativeCircularInset(
                     projectedHalfExtentRight,
                     projectedHalfExtentForward);
-            var polygonPosition = _assignedTile.GetClosestPointInside(
+            var polygonPosition = tile.GetClosestPointInside(
                 constrainedPosition,
                 safeInset);
             var correction = polygonPosition - constrainedPosition;
-            correction -= _tileFrame.Up * Vector3.Dot(correction, _tileFrame.Up);
+            correction -= tileFrame.Up * Vector3.Dot(correction, tileFrame.Up);
             if (correction.sqrMagnitude <= 0.000001f)
                 return changed;
 
@@ -1624,6 +1833,50 @@ namespace MazeParty.Multiplayer
             {
                 constrainedVelocity -= inward * inwardSpeed *
                                        (1f + Mathf.Clamp01(restitution));
+            }
+
+            return true;
+        }
+
+        private bool IsSpawnPositionClear(
+            Vector3 position,
+            float rotationIndependentRadius,
+            BoardTile tile,
+            bool ignoreShopInteractionTargets)
+        {
+            var hitCount = Physics.OverlapSphereNonAlloc(
+                position,
+                rotationIndependentRadius + SpawnObstaclePadding,
+                _spawnOverlapHits,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Collide);
+            if (hitCount >= _spawnOverlapHits.Length)
+            {
+                return false;
+            }
+
+            for (var index = 0; index < hitCount; index++)
+            {
+                var candidate = _spawnOverlapHits[index];
+                if (candidate == null || candidate == _dieCollider ||
+                    candidate.transform.IsChildOf(transform))
+                {
+                    continue;
+                }
+
+                if (candidate.GetComponentInParent<BoardTile>() == tile)
+                {
+                    continue;
+                }
+
+                if (ignoreShopInteractionTargets && candidate.isTrigger &&
+                    (candidate.GetComponent<KeyShopWorldTarget>() != null ||
+                     candidate.GetComponent<ItemShopWorldTarget>() != null))
+                {
+                    continue;
+                }
+
+                return false;
             }
 
             return true;

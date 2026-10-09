@@ -138,6 +138,10 @@ namespace MazeParty.Multiplayer
                 _remainingMinigameSlots.Value = snapshot.remainingMinigameSlots;
                 _currentMinigame.Value = (byte)snapshot.currentMinigame;
                 _currentMinigameSeed.Value = currentMinigameSeed;
+                SynchronizeRevealedMinigamesOnServer(
+                    GetRevealedMinigameCountForRecovery(
+                        snapshot.checkpoint,
+                        snapshot.turn));
                 _selectedMinigameNetworkLoadCompleted = false;
                 _flow.RestoreCheckpoint(
                     ToBoardFlowState(snapshot.checkpoint),
@@ -674,6 +678,7 @@ namespace MazeParty.Multiplayer
             _scheduledSkipAt = 0d;
             _scheduledSkipPaused = false;
             _pausedScheduledSkipRemaining = 0d;
+            _revealedMinigames.Clear();
             ResetLandingEffectRuntimeOnServer(true);
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
             ResetAwardCeremonyForRecovery();
@@ -819,6 +824,22 @@ namespace MazeParty.Multiplayer
                     return BoardFlowState.MinigameIntroReady;
                 case MatchRecoveryCheckpoint.MatchComplete:
                     return BoardFlowState.MatchComplete;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(checkpoint));
+            }
+        }
+
+        internal static int GetRevealedMinigameCountForRecovery(
+            MatchRecoveryCheckpoint checkpoint,
+            int turn)
+        {
+            switch (checkpoint)
+            {
+                case MatchRecoveryCheckpoint.TurnOverview:
+                    return Math.Max(0, turn - 1);
+                case MatchRecoveryCheckpoint.MinigameIntroReady:
+                case MatchRecoveryCheckpoint.MatchComplete:
+                    return Math.Max(0, turn);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(checkpoint));
             }

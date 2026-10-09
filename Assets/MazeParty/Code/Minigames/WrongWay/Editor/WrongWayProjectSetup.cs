@@ -291,18 +291,19 @@ namespace MazeParty.Editor
                  step++)
             {
                 var topHeight =
-                    step * NetworkWrongWayState.StepHeight;
+                    WrongWayNetworkView.GetRunnerGroundHeight(step);
                 var tread = CreateCube(
                     "Step " + step.ToString("00"),
                     lane.transform,
                     new Vector3(
                         laneX,
-                        topHeight * 0.5f,
+                        topHeight -
+                        NetworkWrongWayState.StepHeight * 0.5f,
                         (step - 0.5f) *
                         NetworkWrongWayState.StepDepth),
                     new Vector3(
                         NetworkWrongWayState.StepWidth,
-                        topHeight,
+                        NetworkWrongWayState.StepHeight,
                         NetworkWrongWayState.StepDepth - 0.025f),
                     Quaternion.identity,
                     laneMaterial);

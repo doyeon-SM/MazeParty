@@ -77,7 +77,8 @@ namespace MazeParty.Multiplayer.Tests
         {
             "Assets/MazeParty/Prefabs/Board/UI/Modules/ReconnectOverlay.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab",
-            "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab"
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardKillFeedPanel.prefab"
         };
 
         private static readonly SceneUiContract[] SceneContracts =

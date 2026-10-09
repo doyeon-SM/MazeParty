@@ -390,7 +390,10 @@ namespace MazeParty.Multiplayer
                 // counts are populated separately when the full map is active.
                 room.Symbol.text = string.Empty;
                 var displayedType = isShop ? BoardTileType.KeyShop : tile.TileType;
-                room.TypeIcon.enabled = !isShop || showKeyShopDetails;
+                room.TypeIcon.enabled =
+                    displayedType != BoardTileType.Normal &&
+                    displayedType != BoardTileType.Start &&
+                    (!isShop || showKeyShopDetails);
                 if (room.TypeIcon.enabled)
                 {
                     var typeKind = displayedType == BoardTileType.Respawn
@@ -413,9 +416,7 @@ namespace MazeParty.Multiplayer
                     PresentFreeformBranchArrows(
                         topology,
                         tile,
-                        room,
-                        isLocal,
-                        remainingMoves);
+                        room);
                 }
                 else
                 {
@@ -484,8 +485,9 @@ namespace MazeParty.Multiplayer
             TranslateWorldPoint(worldPosition.Value, dot.rectTransform);
             dot.rectTransform.localRotation = Quaternion.identity;
             dot.color = color;
-            if (isLocal) dot.transform.SetAsLastSibling();
-            KeepLandingEffectsAbovePlayers();
+            // Player locations must remain readable even when the tile also has
+            // a type, landing-effect, route or mine icon at the same position.
+            dot.transform.SetAsLastSibling();
         }
 
         public bool IsPositionVisible(Vector3 position)
@@ -712,9 +714,7 @@ namespace MazeParty.Multiplayer
                     BoardMapIconKind.Arrow,
                     arrowUpIcon);
                 PlaceLegacyArrow(room.ProgressArrows[side], side);
-                room.ProgressArrows[side].enabled =
-                    isLocal && hasBranch && canExit &&
-                    remainingMoves > 0;
+                room.ProgressArrows[side].enabled = hasBranch && canExit;
                 room.Exits[side].color = blocked ? blockedExitColor : exitColor;
             }
         }
@@ -722,9 +722,7 @@ namespace MazeParty.Multiplayer
         private void PresentFreeformBranchArrows(
             BoardTopology topology,
             BoardTile tile,
-            Room room,
-            bool isLocal,
-            int remainingMoves)
+            Room room)
         {
             var outgoing = topology.GetOutgoingGates(tile);
             var destinationCount = 0;
@@ -738,8 +736,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            var show = isLocal && remainingMoves > 0 &&
-                       destinationCount > 1;
+            var show = destinationCount > 1;
             var arrowIndex = 0;
             if (show)
             {
@@ -984,9 +981,14 @@ namespace MazeParty.Multiplayer
                 while (stepIndex < _travelSteps.Count &&
                        _travelSteps[stepIndex].Coordinate == coordinate)
                 {
+                    var step = _travelSteps[stepIndex];
+                    if (step.Step <= 0)
+                    {
+                        stepIndex++;
+                        continue;
+                    }
                     if (_travelLabelBuilder.Length > 0)
                         _travelLabelBuilder.Append(' ');
-                    var step = _travelSteps[stepIndex];
                     _travelLabelBuilder.Append("<color=#");
                     _travelLabelBuilder.Append(step.IsBranch
                         ? branchHex
@@ -996,9 +998,12 @@ namespace MazeParty.Multiplayer
                     _travelLabelBuilder.Append("</color>");
                     stepIndex++;
                 }
-                _travelLabels.Add(
-                    coordinate,
-                    _travelLabelBuilder.ToString());
+                if (_travelLabelBuilder.Length > 0)
+                {
+                    _travelLabels.Add(
+                        coordinate,
+                        _travelLabelBuilder.ToString());
+                }
             }
         }
 
@@ -1021,11 +1026,5 @@ namespace MazeParty.Multiplayer
             icon.anchoredPosition = floor.anchoredPosition;
         }
 
-        private void KeepLandingEffectsAbovePlayers()
-        {
-            if (landingEffectLayer != null &&
-                landingEffectLayer.parent == projection.otherDotCanvas)
-                landingEffectLayer.SetAsLastSibling();
-        }
     }
 }

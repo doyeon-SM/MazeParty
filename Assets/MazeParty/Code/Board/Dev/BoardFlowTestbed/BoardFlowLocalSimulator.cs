@@ -3204,9 +3204,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 }
                 if (_playerCards[playerIndex] != null)
                 {
-                    _playerCards[playerIndex].color = playerIndex == 0
-                        ? boardUiBindings.LocalPlayerCardColor
-                        : boardUiBindings.RemotePlayerCardColor;
+                    _playerCards[playerIndex].color =
+                        boardUiBindings.GetPlayerCardColor(playerIndex);
                 }
 
                 var showCombatHealth = _flow.State == BoardFlowState.CombatResolve &&

@@ -303,6 +303,9 @@ namespace MazeParty.Multiplayer
             _sessionOperations.BecameIdle += OnSessionOperationsBecameIdle;
             _sessionOperations.StateChanged += TraceSessionTransition;
             Application.quitting += OnApplicationQuitting;
+#if !UNITY_EDITOR
+            Application.wantsToQuit += OnApplicationWantsToQuit;
+#endif
 
             _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
             _localProfile = PlayerProfilePreferences.Load();
@@ -351,6 +354,11 @@ namespace MazeParty.Multiplayer
 
         private void Update()
         {
+            if (_applicationQuitting)
+            {
+                return;
+            }
+
             if (_sessions != null &&
                 _sessions.IsInSession &&
                 _sessions.Current.Phase == MultiplayerConstants.PlayingPhase)
@@ -425,6 +433,9 @@ namespace MazeParty.Multiplayer
             _sessionOperations.BecameIdle -= OnSessionOperationsBecameIdle;
             ResetCompletedMatchLobbyReturnState();
             Application.quitting -= OnApplicationQuitting;
+#if !UNITY_EDITOR
+            Application.wantsToQuit -= OnApplicationWantsToQuit;
+#endif
             SceneManager.sceneLoaded -= OnSceneLoaded;
             SceneManager.sceneUnloaded -= OnSceneUnloaded;
             UnbindLobbyView();
@@ -656,7 +667,9 @@ namespace MazeParty.Multiplayer
 #if UNITY_EDITOR
             UnityEditor.EditorApplication.isPlaying = false;
 #else
-            Application.Quit();
+            // Prepare the network session before entering Unity teardown. MPS
+            // needs live PlayerLoop frames to finish NGO shutdown reliably.
+            BeginApplicationQuitPreparation();
 #endif
         }
 
@@ -2220,6 +2233,12 @@ namespace MazeParty.Multiplayer
 
         private void OnSessionChanged()
         {
+            if (_applicationQuitting)
+            {
+                ClearPlayingReconnectTicket();
+                return;
+            }
+
             UpdatePlayingReconnectTicket();
             QueueCompletedMatchDisconnectedLobbyCleanups();
             if (_networkManager != null)

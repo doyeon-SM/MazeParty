@@ -418,10 +418,11 @@ namespace MazeParty.Multiplayer
 
             if (_cameraDirector == null)
                 _cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            // ActiveMode changes when the first-person blend starts. Sampling
+            // the actual output camera during that blend prevents a player the
+            // user can already see from being omitted until the blend completes.
             if (_cameraDirector == null ||
                 _cameraDirector.ActiveMode != GameplayMode.FirstPerson ||
-                _cameraDirector.CompletedMode != GameplayMode.FirstPerson ||
-                _cameraDirector.IsTransitioning ||
                 _cameraDirector.OutputCamera == null)
             {
                 _playerKnowledge.EndObservationFrame();
@@ -431,12 +432,14 @@ namespace MazeParty.Multiplayer
             var outputCamera = _cameraDirector.OutputCamera;
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
-                if (slot == localAvatar.AssignedSlot ||
-                    !match.IsPlayerPresent(slot))
+                if (slot == localAvatar.AssignedSlot)
                 {
                     continue;
                 }
 
+                // A spawned cached avatar can remain visible during reconnect
+                // grace even while the replicated present bit is temporarily
+                // clear. Visibility and spawn state are the presentation truth.
                 var target = match.GetAvatarForSlot(slot);
                 if (target == null || !target.IsSpawned ||
                     !target.HasLogicalBoardTile || target.IsCloaked ||

@@ -17,6 +17,11 @@ namespace MazeParty.Gameplay.Tests
         private const string WaterShieldSourcePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/" +
             "Water Shield.prefab";
+        private const string SandShieldPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/SandShield.prefab";
+        private const string SandShieldSourcePath =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/" +
+            "Sand Shield.prefab";
 
         [Test]
         public void SharedOneShots_AreAuthoredPooledAndPresentationOnly()
@@ -131,36 +136,47 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void SharedWaterShield_IsTrackedPersistentPresentationWrapper()
+        public void SharedShields_AreTrackedPersistentPresentationWrappers()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                WaterShieldPath);
-            Assert.That(prefab, Is.Not.Null, WaterShieldPath);
-            Assert.That(prefab.GetComponent<PooledOneShotVfx>(), Is.Null,
-                "The shield lifetime is owned by presentation state, not a one-shot timer.");
-            Assert.That(
-                prefab.GetComponentsInChildren<Renderer>(true),
-                Is.Not.Empty);
-            Assert.That(
-                prefab.GetComponentsInChildren<Animator>(true),
-                Is.Not.Empty);
-            Assert.That(
-                prefab.GetComponentsInChildren<Collider>(true),
-                Is.Empty,
-                "The shared shield must never participate in gameplay physics.");
-            var behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(
-                true);
-            Assert.That(behaviours.Any(item => item == null), Is.False,
-                "The tracked wrapper must not contain missing scripts.");
-            Assert.That(
-                behaviours.Where(item => item != null),
-                Is.Empty,
-                "The tracked wrapper must not import vendor or gameplay scripts.");
-            Assert.That(
-                AssetDatabase.GetDependencies(WaterShieldPath, true)
-                    .Select(item => item.Replace('\\', '/')),
-                Does.Contain(WaterShieldSourcePath),
-                "The tracked wrapper must keep the requested toolkit source prefab.");
+            foreach (var shield in new[]
+                     {
+                         (Path: WaterShieldPath,
+                             SourcePath: WaterShieldSourcePath),
+                         (Path: SandShieldPath,
+                             SourcePath: SandShieldSourcePath)
+                     })
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    shield.Path);
+                Assert.That(prefab, Is.Not.Null, shield.Path);
+                Assert.That(prefab.GetComponent<PooledOneShotVfx>(), Is.Null,
+                    "The shield lifetime is owned by presentation state, not a one-shot timer.");
+                Assert.That(
+                    prefab.GetComponentsInChildren<Renderer>(true),
+                    Is.Not.Empty,
+                    shield.Path);
+                Assert.That(
+                    prefab.GetComponentsInChildren<Animator>(true),
+                    Is.Not.Empty,
+                    shield.Path);
+                Assert.That(
+                    prefab.GetComponentsInChildren<Collider>(true),
+                    Is.Empty,
+                    "The shared shield must never participate in gameplay physics.");
+                var behaviours = prefab.GetComponentsInChildren<MonoBehaviour>(
+                    true);
+                Assert.That(behaviours.Any(item => item == null), Is.False,
+                    "The tracked wrapper must not contain missing scripts.");
+                Assert.That(
+                    behaviours.Where(item => item != null),
+                    Is.Empty,
+                    "The tracked wrapper must not import vendor or gameplay scripts.");
+                Assert.That(
+                    AssetDatabase.GetDependencies(shield.Path, true)
+                        .Select(item => item.Replace('\\', '/')),
+                    Does.Contain(shield.SourcePath),
+                    "The tracked wrapper must keep the requested toolkit source prefab.");
+            }
         }
     }
 }

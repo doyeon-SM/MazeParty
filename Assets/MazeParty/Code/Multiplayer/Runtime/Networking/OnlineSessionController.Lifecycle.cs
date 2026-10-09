@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
             string progressSource,
             SessionLifecycleState operationState)
         {
-            if (_destroyed)
+            if (_destroyed || _applicationQuitting)
             {
                 return;
             }
@@ -33,7 +33,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSessionOperationsBecameIdle()
         {
-            if (!_destroyed)
+            if (!_destroyed && !_applicationQuitting)
             {
                 RenderLobby();
             }
@@ -154,7 +154,8 @@ namespace MazeParty.Multiplayer
 
         private void EndSessionAfterNetworkFailure(string reason)
         {
-            if (_networkTerminationRequested ||
+            if (_applicationQuitting ||
+                _networkTerminationRequested ||
                 _sessions == null ||
                 !_sessions.IsInSession)
             {

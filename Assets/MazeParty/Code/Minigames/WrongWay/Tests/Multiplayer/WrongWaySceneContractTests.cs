@@ -120,6 +120,22 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(
                         steps.Select(step => step.name).Distinct().Count(),
                         Is.EqualTo(WrongWayRules.StepCount));
+
+                    AssertRunnerMatchesSurface(
+                        slot,
+                        0,
+                        FindDescendant(lane, "Start Platform"));
+                    for (var progress = 1;
+                         progress <= WrongWayRules.StepCount;
+                         progress++)
+                    {
+                        AssertRunnerMatchesSurface(
+                            slot,
+                            progress,
+                            FindDescendant(
+                                lane,
+                                "Step " + progress.ToString("00")));
+                    }
                 }
             }
             finally
@@ -129,6 +145,40 @@ namespace MazeParty.Multiplayer.Tests
                     EditorSceneManager.CloseScene(scene, true);
                 }
             }
+        }
+
+        private static void AssertRunnerMatchesSurface(
+            int slot,
+            int progress,
+            Transform surface)
+        {
+            Assert.That(surface, Is.Not.Null);
+            var renderers = surface.GetComponentsInChildren<Renderer>(true);
+            Assert.That(
+                renderers,
+                Is.Not.Empty,
+                surface.name + " must have authored renderers.");
+
+            var bounds = renderers[0].bounds;
+            for (var index = 1; index < renderers.Length; index++)
+            {
+                bounds.Encapsulate(renderers[index].bounds);
+            }
+            var runnerPosition = WrongWayNetworkView.GetRunnerWorldPosition(
+                slot,
+                progress);
+            Assert.That(
+                runnerPosition.x,
+                Is.EqualTo(bounds.center.x).Within(0.001f),
+                surface.name + " lane center");
+            Assert.That(
+                runnerPosition.y,
+                Is.EqualTo(bounds.max.y).Within(0.001f),
+                surface.name + " top surface");
+            Assert.That(
+                runnerPosition.z,
+                Is.EqualTo(bounds.center.z).Within(0.001f),
+                surface.name + " tread center");
         }
 
         private static Transform FindDescendant(

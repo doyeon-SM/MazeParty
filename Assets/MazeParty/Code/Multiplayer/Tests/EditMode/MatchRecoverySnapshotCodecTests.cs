@@ -259,6 +259,22 @@ namespace MazeParty.Multiplayer.Tests
                 "The persisted saved-seat value remains immutable.");
         }
 
+        [TestCase(MatchRecoveryCheckpoint.TurnOverview, 1, 0)]
+        [TestCase(MatchRecoveryCheckpoint.TurnOverview, 8, 7)]
+        [TestCase(MatchRecoveryCheckpoint.MinigameIntroReady, 8, 8)]
+        [TestCase(MatchRecoveryCheckpoint.MatchComplete, 15, 15)]
+        public void RevealedMinigameHistory_RestoresOnlyPublicTurns(
+            MatchRecoveryCheckpoint checkpoint,
+            int turn,
+            int expectedCount)
+        {
+            Assert.That(
+                NetworkMatchState.GetRevealedMinigameCountForRecovery(
+                    checkpoint,
+                    turn),
+                Is.EqualTo(expectedCount));
+        }
+
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(
             params string[] playerKeys)
         {

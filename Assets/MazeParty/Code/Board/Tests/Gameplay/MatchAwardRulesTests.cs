@@ -137,20 +137,18 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void CategoryMapping_ProvidesValueAndDisplayContract()
+        public void CategoryValues_MapToTheMatchingAwardStatistic()
         {
             var stats = new MatchAwardStats(1, 2, 3, 4, 5, 6, 7);
             var cases = new[]
             {
-                (MatchAwardCategory.PeakGoldHeld, 1, "MOST GOLD HELD"),
-                (MatchAwardCategory.TotalGoldEarned, 2, "MOST GOLD EARNED"),
-                (MatchAwardCategory.MinigameWins, 3, "MOST MINIGAME WINS"),
-                (MatchAwardCategory.MinigameLastPlaces, 4,
-                    "MOST MINIGAME LAST PLACES"),
-                (MatchAwardCategory.ItemUses, 5, "MOST ITEMS USED"),
-                (MatchAwardCategory.DamageTaken, 6, "MOST DAMAGE TAKEN"),
-                (MatchAwardCategory.PlayerDamageDealt, 7,
-                    "MOST PLAYER DAMAGE DEALT")
+                (MatchAwardCategory.PeakGoldHeld, 1),
+                (MatchAwardCategory.TotalGoldEarned, 2),
+                (MatchAwardCategory.MinigameWins, 3),
+                (MatchAwardCategory.MinigameLastPlaces, 4),
+                (MatchAwardCategory.ItemUses, 5),
+                (MatchAwardCategory.DamageTaken, 6),
+                (MatchAwardCategory.PlayerDamageDealt, 7)
             };
 
             foreach (var testCase in cases)
@@ -158,10 +156,6 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(
                     MatchAwardRules.GetValue(stats, testCase.Item1),
                     Is.EqualTo(testCase.Item2),
-                    testCase.Item1.ToString());
-                Assert.That(
-                    MatchAwardRules.GetDisplayName(testCase.Item1),
-                    Is.EqualTo(testCase.Item3),
                     testCase.Item1.ToString());
             }
         }

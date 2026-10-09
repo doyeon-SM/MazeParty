@@ -8,7 +8,7 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Client-only pre-intro visualization of the immutable turn schedule.
-    /// Future blocks stay hidden; only the current top block is revealed.
+    /// Revealed turns remain open as a match record while future games stay hidden.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class MinigameScheduleTowerView : MonoBehaviour
@@ -134,32 +134,30 @@ namespace MazeParty.Multiplayer
                 match.Turn,
                 match.RemainingMinigameSlots);
 
-            var visibleCount = Mathf.Clamp(
-                match.RemainingMinigameSlots,
-                0,
-                MaximumVisibleBlocks);
             for (var index = 0; index < blocks.Length; index++)
             {
-                var active = index < visibleCount;
-                if (blocks[index].gameObject.activeSelf != active)
+                if (!blocks[index].gameObject.activeSelf)
                 {
-                    blocks[index].gameObject.SetActive(active);
+                    blocks[index].gameObject.SetActive(true);
                 }
 
-                if (!active)
-                {
-                    ApplyBlockScale(index, 1f);
-                    continue;
-                }
-
-                var current = index == 0;
+                var oneBasedTurn = index + 1;
+                var current = oneBasedTurn == match.Turn;
+                var hasRevealedMinigame =
+                    match.TryGetRevealedMinigame(
+                        oneBasedTurn,
+                        out var minigame);
+                var showName = hasRevealedMinigame &&
+                               (!current || revealed);
                 blockLabels[index].text =
-                    current && revealed
-                        ? DisplayName(match.CurrentMinigame)
+                    showName
+                        ? DisplayName(minigame)
                         : "???";
                 blocks[index].color =
-                    current
-                        ? CurrentColor(match.CurrentMinigame, revealed)
+                    current && !revealed
+                        ? hiddenCurrentColor
+                        : showName
+                            ? RevealedColor(minigame)
                         : futureBlockColor;
 
                 var pulse = current && !revealed
@@ -213,15 +211,8 @@ namespace MazeParty.Multiplayer
             return GameText.T(MinigameCatalog.GetDisplayName(minigame));
         }
 
-        private Color CurrentColor(
-            ScheduledMinigameId minigame,
-            bool revealed)
+        private Color RevealedColor(ScheduledMinigameId minigame)
         {
-            if (!revealed)
-            {
-                return hiddenCurrentColor;
-            }
-
             if (minigame == ScheduledMinigameId.Skip)
             {
                 return skipColor;

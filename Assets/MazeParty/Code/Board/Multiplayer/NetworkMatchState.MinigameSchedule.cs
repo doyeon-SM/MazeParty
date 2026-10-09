@@ -194,6 +194,7 @@ namespace MazeParty.Multiplayer
 
             var selected =
                 _minigameSchedule.GetMinigameForTurn(turn);
+            SynchronizeRevealedMinigamesOnServer(turn);
             _currentMinigame.Value = (byte)selected;
             _remainingMinigameSlots.Value =
                 Math.Max(0, _minigameSchedule.TurnCount - turn + 1);
@@ -208,6 +209,39 @@ namespace MazeParty.Multiplayer
                     ? ServerNow + SkipRevealSeconds
                     : 0d;
             _minigameRevealRevision.Value++;
+        }
+
+        private void SynchronizeRevealedMinigamesOnServer(
+            int revealedTurnCount)
+        {
+            if (!IsServer || _minigameSchedule == null)
+            {
+                return;
+            }
+
+            var targetCount = Mathf.Clamp(
+                revealedTurnCount,
+                0,
+                _minigameSchedule.TurnCount);
+            while (_revealedMinigames.Count > targetCount)
+            {
+                _revealedMinigames.RemoveAt(
+                    _revealedMinigames.Count - 1);
+            }
+
+            for (var index = 0; index < targetCount; index++)
+            {
+                var expected = (byte)_minigameSchedule.GetMinigameForTurn(
+                    index + 1);
+                if (index >= _revealedMinigames.Count)
+                {
+                    _revealedMinigames.Add(expected);
+                }
+                else if (_revealedMinigames[index] != expected)
+                {
+                    _revealedMinigames[index] = expected;
+                }
+            }
         }
 
         private string GetSelectedMinigameSceneName()

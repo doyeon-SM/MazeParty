@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
@@ -23,6 +24,7 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public sealed class BoardFlowView : MonoBehaviour
     {
+        private const float BoardKillFeedEntrySeconds = 3.5f;
         private static readonly Color AvailableItemIconColor = Color.white;
         private static readonly Color SoldItemIconColor =
             new Color(0.45f, 0.45f, 0.45f, 0.45f);
@@ -50,6 +52,8 @@ namespace MazeParty.Multiplayer
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
         private readonly Image[] _shopOfferIcons = new Image[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
+        private readonly Queue<BoardKillFeedEntry> _pendingBoardKills =
+            new Queue<BoardKillFeedEntry>();
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
@@ -58,6 +62,7 @@ namespace MazeParty.Multiplayer
         private GameObject _reticle;
         private GameObject _itemShopPanel;
         private GameObject _boardEventPopupPanel;
+        private GameObject _boardKillFeedPanel;
         private Canvas _boardCanvas;
         private GraphicRaycaster _boardRaycaster;
         private Text _turnText;
@@ -74,6 +79,7 @@ namespace MazeParty.Multiplayer
         private Text _itemShopTooltip;
         private Text _itemShopStatus;
         private Text _boardEventPopupMessage;
+        private Text _boardKillFeedMessage;
         private Text _minigameReadyTitle;
         private Text _minigameReadyNote;
         private Text _minigameReadyStatus;
@@ -136,6 +142,7 @@ namespace MazeParty.Multiplayer
         private bool _wired;
         private int _openItemShopIndex = -1;
         private bool _topViewShopHighlightsVisible;
+        private float _boardKillFeedVisibleUntil;
 
         public static BoardFlowView Instance { get; private set; }
         public static bool IsItemShopOpen =>
@@ -215,11 +222,38 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public void EnqueueBoardKillNotification(
+            int killerSlot,
+            int victimSlot)
+        {
+            if (killerSlot < 0 || killerSlot >= MultiplayerConstants.MaxPlayers ||
+                victimSlot < 0 || victimSlot >= MultiplayerConstants.MaxPlayers ||
+                killerSlot == victimSlot || uiBindings == null)
+            {
+                return;
+            }
+
+            var match = NetworkMatchState.Instance;
+            var killer = match != null ? match.GetAvatarForSlot(killerSlot) : null;
+            var victim = match != null ? match.GetAvatarForSlot(victimSlot) : null;
+            _pendingBoardKills.Enqueue(new BoardKillFeedEntry(
+                ResolveBoardPlayerName(killer, killerSlot),
+                ResolveBoardPlayerTextColor(killer, killerSlot),
+                ResolveBoardPlayerName(victim, victimSlot),
+                ResolveBoardPlayerTextColor(victim, victimSlot)));
+
+            if (_boardKillFeedPanel != null && !_boardKillFeedPanel.activeSelf)
+            {
+                ShowNextBoardKill();
+            }
+        }
+
         private void OnDisable()
         {
             CloseItemShop();
             SetActive(_boardEventPopupPanel, false);
             SetText(_boardEventPopupMessage, string.Empty);
+            ResetBoardKillFeed();
         }
 
         private void Update()
@@ -238,6 +272,7 @@ namespace MazeParty.Multiplayer
                 match.FlowState != BoardFlowState.MinigamePlaying &&
                 match.FlowState != BoardFlowState.MatchComplete);
             RefreshPanels(match);
+            RefreshBoardKillFeed();
             RefreshHeader(match);
             RefreshLocalPlayer(match);
             RefreshInventory();
@@ -417,6 +452,7 @@ namespace MazeParty.Multiplayer
             _reticle = uiBindings.Reticle;
             _itemShopPanel = uiBindings.ItemShopPanel;
             _boardEventPopupPanel = uiBindings.BoardEventPopupPanel;
+            _boardKillFeedPanel = uiBindings.BoardKillFeedPanel;
             _reticleText = uiBindings.ReticleText;
             _turnText = uiBindings.TurnText;
             _phaseText = uiBindings.PhaseText;
@@ -431,6 +467,7 @@ namespace MazeParty.Multiplayer
             _itemShopTooltip = uiBindings.ItemShopTooltip;
             _itemShopStatus = uiBindings.ItemShopStatus;
             _boardEventPopupMessage = uiBindings.BoardEventPopupMessage;
+            _boardKillFeedMessage = uiBindings.BoardKillFeedMessage;
             _minigameReadyTitle = uiBindings.MinigameReadyTitle;
             _minigameReadyNote = uiBindings.MinigameReadyNote;
             _minigameReadyStatus = uiBindings.MinigameReadyStatus;
@@ -881,15 +918,15 @@ namespace MazeParty.Multiplayer
                 if (_playerRows[slot] != null)
                 {
                     _playerRows[slot].color = isPresent
-                        ? uiBindings.GetPlayerColor(slot)
+                        ? ResolveBoardPlayerTextColor(avatar, slot)
                         : uiBindings.DisconnectedPlayerColor;
                 }
 
                 if (_playerCards[slot] != null)
                 {
-                    _playerCards[slot].color = isLocal
-                        ? uiBindings.LocalPlayerCardColor
-                        : uiBindings.RemotePlayerCardColor;
+                    _playerCards[slot].color =
+                        uiBindings.GetPlayerCardColor(
+                            ResolveBoardPlayerColor(avatar, slot));
                 }
 
                 var showCombatHealth = avatar != null && match.IsCombatPhase &&
@@ -1817,7 +1854,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null ? avatar.DisplayName : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     minefield.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -1862,9 +1899,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     wrongWay.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -1913,9 +1948,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     redLightGreenLight.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -1964,9 +1997,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     stableFooting.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2015,9 +2046,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     balloonBlow.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2063,9 +2092,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GIFTS {3}  GOLD +{4}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     giftGrab.GetScore(rankedSlot),
                     giftGrab.GetTotalStoredGiftCount(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
@@ -2115,9 +2142,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     territoryPaint.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2162,9 +2187,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     tagChase.GetTotalScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2209,9 +2232,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     race.GetTotalScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2260,9 +2281,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     snowySpin.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2311,9 +2330,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  GOLD +{2}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
@@ -2361,9 +2378,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  SCORE {2}  GOLD +{3}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     cliffBarrage.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
@@ -2414,9 +2429,7 @@ namespace MazeParty.Multiplayer
                         ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
                         : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
@@ -2464,9 +2477,7 @@ namespace MazeParty.Multiplayer
                 builder.Append(GameText.F(
                     "{0}.  {1}  GOALS {2}  CONCEDED {3}  GOLD +{4}",
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     bouncingBalls.GetScore(rankedSlot),
                     bouncingBalls.GetConceded(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
@@ -2518,9 +2529,7 @@ namespace MazeParty.Multiplayer
                         ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
                         : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
                     rank,
-                    avatar != null
-                        ? avatar.DisplayName
-                        : "P" + (rankedSlot + 1),
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
@@ -3221,6 +3230,7 @@ namespace MazeParty.Multiplayer
             SetActive(_reconnectOverlay, false);
             SetActive(_boardEventPopupPanel, false);
             SetText(_boardEventPopupMessage, string.Empty);
+            ResetBoardKillFeed();
             SetActive(_reticle, false);
             RefreshReticleColor(false);
             CloseItemShop();
@@ -3228,6 +3238,135 @@ namespace MazeParty.Multiplayer
             SetText(_phaseText, GameText.T("WAITING FOR 4 PLAYERS"));
             SetText(_phaseTimerText, "--:--");
             cameraDirector?.SetUiPointerVisible(true);
+        }
+
+        private void RefreshBoardKillFeed()
+        {
+            if (_boardKillFeedPanel == null || _boardKillFeedMessage == null)
+            {
+                return;
+            }
+
+            if (!_boardKillFeedPanel.activeSelf)
+            {
+                if (_pendingBoardKills.Count > 0)
+                {
+                    ShowNextBoardKill();
+                }
+                return;
+            }
+
+            if (Time.unscaledTime < _boardKillFeedVisibleUntil)
+            {
+                return;
+            }
+
+            if (_pendingBoardKills.Count > 0)
+            {
+                ShowNextBoardKill();
+                return;
+            }
+
+            SetActive(_boardKillFeedPanel, false);
+            SetText(_boardKillFeedMessage, string.Empty);
+            _boardKillFeedVisibleUntil = 0f;
+        }
+
+        private void ShowNextBoardKill()
+        {
+            if (_boardKillFeedPanel == null || _boardKillFeedMessage == null ||
+                _pendingBoardKills.Count == 0)
+            {
+                return;
+            }
+
+            var entry = _pendingBoardKills.Dequeue();
+            SetText(
+                _boardKillFeedMessage,
+                FormatBoardKillFeedMessage(
+                    entry.KillerName,
+                    entry.KillerColor,
+                    entry.VictimName,
+                    entry.VictimColor));
+            SetActive(_boardKillFeedPanel, true);
+            _boardKillFeedVisibleUntil =
+                Time.unscaledTime + BoardKillFeedEntrySeconds;
+        }
+
+        private void ResetBoardKillFeed()
+        {
+            _pendingBoardKills.Clear();
+            _boardKillFeedVisibleUntil = 0f;
+            SetActive(_boardKillFeedPanel, false);
+            SetText(_boardKillFeedMessage, string.Empty);
+        }
+
+        private static string ResolveBoardPlayerName(
+            NetworkPlayerAvatar avatar,
+            int slot)
+        {
+            return avatar != null && !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                ? avatar.DisplayName
+                : GameText.F("Player {0}", slot + 1);
+        }
+
+        private static string FormatMinigameResultPlayerName(
+            NetworkPlayerAvatar avatar,
+            int slot)
+        {
+            return ColorizeBoardPlayerName(
+                ResolveBoardPlayerName(avatar, slot),
+                ResolveBoardPlayerTextColor(avatar, slot));
+        }
+
+        private static Color ResolveBoardPlayerTextColor(
+            NetworkPlayerAvatar avatar,
+            int slot)
+        {
+            var color = ResolveBoardPlayerColor(avatar, slot);
+            return Instance != null && Instance.uiBindings != null
+                ? Instance.uiBindings.GetPlayerTextColor(color)
+                : BoardCanvasBindings.EnsureMinimumValue(color, 0.72f);
+        }
+
+        private static Color ResolveBoardPlayerColor(
+            NetworkPlayerAvatar avatar,
+            int slot)
+        {
+            if (avatar != null)
+            {
+                return avatar.Appearance.BodyColor;
+            }
+
+            return Instance != null && Instance.uiBindings != null
+                ? Instance.uiBindings.GetPlayerColor(slot)
+                : (Color)LobbyColorPalette.GetColor(slot);
+        }
+
+        internal static string FormatBoardKillFeedMessage(
+            string killerName,
+            Color killerColor,
+            string victimName,
+            Color victimColor)
+        {
+            return GameText.F(
+                "{0} eliminated {1}",
+                ColorizeBoardPlayerName(killerName, killerColor),
+                ColorizeBoardPlayerName(victimName, victimColor));
+        }
+
+        private static string ColorizeBoardPlayerName(
+            string displayName,
+            Color color)
+        {
+            var safeName = string.IsNullOrWhiteSpace(displayName)
+                ? GameText.T("Player")
+                : displayName
+                    .Replace("&", "＆")
+                    .Replace("<", "＜")
+                    .Replace(">", "＞");
+            return "<color=#" + ColorUtility.ToHtmlStringRGB(color) + ">" +
+                   safeName + "</color>";
         }
 
         private void RefreshReticleColor(bool visible)
@@ -3259,6 +3398,26 @@ namespace MazeParty.Multiplayer
             {
                 target.text = value;
             }
+        }
+
+        private readonly struct BoardKillFeedEntry
+        {
+            public BoardKillFeedEntry(
+                string killerName,
+                Color killerColor,
+                string victimName,
+                Color victimColor)
+            {
+                KillerName = killerName;
+                KillerColor = killerColor;
+                VictimName = victimName;
+                VictimColor = victimColor;
+            }
+
+            public string KillerName { get; }
+            public Color KillerColor { get; }
+            public string VictimName { get; }
+            public Color VictimColor { get; }
         }
 
         internal static bool ShouldShowBoardEventPopup(

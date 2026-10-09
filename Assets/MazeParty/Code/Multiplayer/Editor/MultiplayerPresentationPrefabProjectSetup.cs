@@ -387,7 +387,10 @@ namespace MazeParty.Editor
                 typeof(BoardGrenadeRangeIndicator));
             var ring = new GameObject("Range Ring", typeof(LineRenderer));
             ring.transform.SetParent(root.transform, false);
-            ring.transform.localPosition = new Vector3(0f, 0.06f, 0f);
+            // The player root is authored at capsule-center height. Offset the
+            // range ring to the standing foot plane, then keep a small lift to
+            // prevent z-fighting with the board surface.
+            ring.transform.localPosition = new Vector3(0f, -0.94f, 0f);
 
             var line = ring.GetComponent<LineRenderer>();
             line.useWorldSpace = false;

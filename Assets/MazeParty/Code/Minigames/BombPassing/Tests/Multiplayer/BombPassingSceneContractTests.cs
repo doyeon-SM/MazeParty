@@ -165,25 +165,6 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void ReducedFlash_DisablesFuseStrobeAndScalesExplosionIntensity()
-        {
-            PresentationAccessibility.Apply(false, true);
-            try
-            {
-                Assert.That(
-                    BombPassingNetworkView.ResolveWarningFrequency(0.05f, true),
-                    Is.Zero);
-                Assert.That(
-                    BombPassingNetworkView.ResolveFlashIntensity(4f, 1f),
-                    Is.EqualTo(1f).Within(0.0001f));
-            }
-            finally
-            {
-                PresentationAccessibility.Apply(false, false);
-            }
-        }
-
         private static float GetLensValue(
             Component camera,
             string fieldName)

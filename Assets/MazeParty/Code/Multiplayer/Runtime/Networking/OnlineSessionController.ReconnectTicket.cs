@@ -7,12 +7,16 @@ namespace MazeParty.Multiplayer
     {
         private void OnApplicationQuitting()
         {
-            // MPS owns its Application.quitting LeaveAsync. Suppress controller callbacks
-            // so a second project-side Leave cannot stop the same network session twice.
+            // Menu and window-close paths normally finish project-side Leave before
+            // reaching this non-cancellable phase. Keep the flag for external quit
+            // paths and arm the Windows native-shutdown fallback idempotently.
             _applicationQuitting = true;
-            // MPS treats graceful application quit as a normal Leave. Keep the
-            // reconnect ticket only for a process/network loss that skips this callback.
             ClearPlayingReconnectTicket();
+            ApplicationExitWatchdog.Arm(
+                _allowApplicationQuit
+                    ? ApplicationQuitNativeWatchdogMilliseconds
+                    : ApplicationQuitUnpreparedWatchdogMilliseconds,
+                0);
         }
 
         private void UpdatePlayingReconnectTicket()

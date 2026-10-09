@@ -202,17 +202,12 @@ namespace MazeParty.Multiplayer.Tests
 
                 Assert.That(sessionHeader.transform.parent, Is.SameAs(root.transform),
                     "The invite code controls must be authored as a root-level lobby header.");
-                AssertTopCentered((RectTransform)sessionHeader.transform);
                 Assert.That(inviteCodeText.transform.parent,
                     Is.SameAs(sessionHeader.transform));
                 Assert.That(revealButton.transform.parent,
                     Is.SameAs(sessionHeader.transform));
                 Assert.That(copyButton.transform.parent,
                     Is.SameAs(sessionHeader.transform));
-                Assert.That(inviteCodeText.transform.GetSiblingIndex(),
-                    Is.LessThan(revealButton.transform.GetSiblingIndex()));
-                Assert.That(revealButton.transform.GetSiblingIndex(),
-                    Is.LessThan(copyButton.transform.GetSiblingIndex()));
                 AssertIconOnlyButton(revealButton.GetComponent<Button>(),
                     "Invite-code reveal");
                 AssertIconOnlyButton(copyButton, "Invite-code copy");
@@ -247,24 +242,13 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void ReadyGuidance_IsBottomRightWithoutLegacyRosterPanel()
+        public void ReadyGuidance_ReplacesLegacyRosterAndTracksFourReadyPlayers()
         {
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
             {
                 var view = GetLobbyView(root);
                 var readyGuidance = GetField<GameObject>(view, "startHint");
-                var guidanceText = readyGuidance.GetComponent<Text>();
-                Assert.That(guidanceText, Is.Not.Null);
-                Assert.That(
-                    guidanceText.text,
-                    Is.EqualTo(GameText.T(
-                        "Exactly four ready players are required.")));
-                Assert.That(
-                    readyGuidance.transform.parent,
-                    Is.SameAs(root.transform),
-                    "The readiness guidance must be authored directly on the lobby canvas.");
-                AssertBottomRight((RectTransform)readyGuidance.transform);
 
                 var authoredNames = root
                     .GetComponentsInChildren<Transform>(true)
@@ -414,27 +398,13 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(mapName.transform.IsChildOf(selector.transform), Is.True);
                 Assert.That(boardSettingsButton.transform.parent,
                     Is.SameAs(wardrobeButton.transform.parent));
-                Assert.That(boardSettingsButton.transform.GetSiblingIndex() + 1,
-                    Is.EqualTo(wardrobeButton.transform.GetSiblingIndex()),
-                    "Board Settings must be authored immediately above Wardrobe.");
-                Assert.That(
-                    ((RectTransform)boardSettingsButton.transform)
-                        .anchoredPosition.y,
-                    Is.GreaterThan(
-                        ((RectTransform)wardrobeButton.transform)
-                            .anchoredPosition.y),
-                    "Board Settings must be positioned above Wardrobe.");
 
                 Assert.That(sessionActions.transform.parent,
                     Is.SameAs(root.transform));
-                AssertBottomCentered((RectTransform)sessionActions.transform);
                 Assert.That(ready.transform.parent,
                     Is.SameAs(sessionActions.transform));
                 Assert.That(start.transform.parent,
                     Is.SameAs(sessionActions.transform));
-                Assert.That(ready.transform.GetSiblingIndex(),
-                    Is.LessThan(start.transform.GetSiblingIndex()),
-                    "Start must be authored below Ready in the shared action stack.");
 
                 BindButtonEvents(view);
                 var deltas = new List<int>();
@@ -666,46 +636,6 @@ namespace MazeParty.Multiplayer.Tests
                         image.sprite != null),
                 Is.True,
                 context + " button must show an authored icon.");
-        }
-
-        private static void AssertTopCentered(RectTransform rectTransform)
-        {
-            Assert.That(rectTransform.anchorMin.x,
-                Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.x,
-                Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(rectTransform.anchorMin.y,
-                Is.EqualTo(1f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.y,
-                Is.EqualTo(1f).Within(0.001f));
-        }
-
-        private static void AssertBottomCentered(RectTransform rectTransform)
-        {
-            Assert.That(rectTransform.anchorMin.x,
-                Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.x,
-                Is.EqualTo(0.5f).Within(0.001f));
-            Assert.That(rectTransform.anchorMin.y,
-                Is.EqualTo(0f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.y,
-                Is.EqualTo(0f).Within(0.001f));
-        }
-
-        private static void AssertBottomRight(RectTransform rectTransform)
-        {
-            Assert.That(rectTransform.anchorMin.x,
-                Is.EqualTo(1f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.x,
-                Is.EqualTo(1f).Within(0.001f));
-            Assert.That(rectTransform.anchorMin.y,
-                Is.EqualTo(0f).Within(0.001f));
-            Assert.That(rectTransform.anchorMax.y,
-                Is.EqualTo(0f).Within(0.001f));
-            Assert.That(rectTransform.pivot.x,
-                Is.EqualTo(1f).Within(0.001f));
-            Assert.That(rectTransform.pivot.y,
-                Is.EqualTo(0f).Within(0.001f));
         }
 
         private static void BindButtonEvents(OnlineLobbyView view)

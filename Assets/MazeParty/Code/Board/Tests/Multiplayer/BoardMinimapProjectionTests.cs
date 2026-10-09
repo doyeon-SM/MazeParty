@@ -52,218 +52,6 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void AuthoredMapIcons_MatchTileAndLandingEffectDesign()
-        {
-            var instance = Object.Instantiate(
-                AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
-            var board = new GameObject("Map icon contract board");
-            try
-            {
-                var tile = board.AddComponent<BoardTile>();
-                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
-                var topology = board.AddComponent<BoardTopology>();
-                topology.Configure(new[] { tile }, new BoardGate[0]);
-                var view = instance.GetComponent<BoardMinimapView>();
-                var data = new SerializedObject(view);
-                var room = data.FindProperty("rooms").GetArrayElementAtIndex(0);
-                var typeIcon = (BoardMapIcon)room.FindPropertyRelative("TypeIcon")
-                    .objectReferenceValue;
-                var effectIcon = (BoardMapIcon)room.FindPropertyRelative("EffectIcon")
-                    .objectReferenceValue;
-
-                view.PrepareMap(topology, null, 0, null);
-                var normalColor = typeIcon.color;
-                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Room));
-                Assert.That(typeIcon.IconSprite, Is.Null);
-
-                tile.Configure(Vector2Int.zero, BoardTileType.Start);
-                view.PrepareMap(topology, null, 0, null);
-                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Room),
-                    "Start uses the normal tile icon.");
-                Assert.That(typeIcon.IconSprite, Is.Null);
-                Assert.That(typeIcon.color, Is.EqualTo(normalColor),
-                    "Start uses the normal tile color.");
-
-                tile.Configure(Vector2Int.zero, BoardTileType.Respawn);
-                view.PrepareMap(topology, null, 0, null);
-                Assert.That(typeIcon.Kind, Is.EqualTo(BoardMapIconKind.Respawn));
-                Assert.That(AssetDatabase.GetAssetPath(typeIcon.IconSprite),
-                    Is.EqualTo(
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Home Filled.png"));
-
-                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
-                var cases = new[]
-                {
-                    (BoardLandingEffectType.GoldGain,
-                        BoardMapIconKind.GoldGain,
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png",
-                        new Color(1f, .82f, .12f, 1f)),
-                    (BoardLandingEffectType.GoldLoss,
-                        BoardMapIconKind.GoldLoss,
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png",
-                        new Color(1f, .2f, .18f, 1f)),
-                    (BoardLandingEffectType.ItemReward,
-                        BoardMapIconKind.Item,
-                        (string)null,
-                        Color.white),
-                    (BoardLandingEffectType.Healing20,
-                        BoardMapIconKind.Healing,
-                        (string)null,
-                        new Color(.35f, 1f, .5f, 1f)),
-                    (BoardLandingEffectType.Healing10,
-                        BoardMapIconKind.Healing,
-                        (string)null,
-                        new Color(.35f, 1f, .5f, 1f)),
-                    (BoardLandingEffectType.Damage40,
-                        BoardMapIconKind.Damage,
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png",
-                        new Color(1f, .2f, .18f, 1f)),
-                    (BoardLandingEffectType.Damage20,
-                        BoardMapIconKind.Damage,
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png",
-                        new Color(1f, .2f, .18f, 1f)),
-                    (BoardLandingEffectType.SpecialEvent,
-                        BoardMapIconKind.SpecialEvent,
-                        "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Warning Filled.png",
-                        new Color(1f, .2f, .18f, 1f))
-                };
-
-                foreach (var iconCase in cases)
-                {
-                    tile.ApplyLandingEffectPresentation(iconCase.Item1);
-                    view.PrepareMap(topology, null, 0, null);
-                    Assert.That(effectIcon.Kind, Is.EqualTo(iconCase.Item2),
-                        iconCase.Item1.ToString());
-                    Assert.That(effectIcon.IconSprite != null
-                            ? AssetDatabase.GetAssetPath(effectIcon.IconSprite)
-                            : null,
-                        Is.EqualTo(iconCase.Item3), iconCase.Item1.ToString());
-                    Assert.That(effectIcon.color, Is.EqualTo(iconCase.Item4),
-                        iconCase.Item1.ToString());
-                }
-            }
-            finally
-            {
-                Object.DestroyImmediate(board);
-                Object.DestroyImmediate(instance);
-            }
-        }
-
-[Test]
-        public void PlayerAndEffectMarkers_AreCenteredOnTileWithEffectAbovePlayer()
-        {
-            var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
-            var board = new GameObject("Centered map marker board");
-            try
-            {
-                board.transform.position = new Vector3(24f, 0f, -12f);
-                var tile = board.AddComponent<BoardTile>();
-                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
-                board.AddComponent<BoardTileFootprint>().Configure(new[]
-                {
-                    new Vector2(2f, -2f),
-                    new Vector2(8f, -2f),
-                    new Vector2(5f, 3f)
-                });
-                tile.ApplyLandingEffectPresentation(
-                    BoardLandingEffectType.ItemReward);
-                Assert.That(
-                    Vector3.Distance(
-                        tile.GetRecoveryCenter(),
-                        tile.transform.position),
-                    Is.GreaterThan(0.1f),
-                    "The fixture must distinguish the authored tile center from its transform.");
-                var topology = board.AddComponent<BoardTopology>();
-                topology.Configure(new[] { tile }, new BoardGate[0]);
-
-                foreach (var view in instance
-                             .GetComponentsInChildren<BoardMinimapView>(true))
-                {
-                    view.PrepareMap(
-                        topology,
-                        tile.Coordinate,
-                        0,
-                        null,
-                        tile.GetRecoveryCenter());
-                    view.PresentPlayerAtTile(
-                        0,
-                        tile,
-                        Color.magenta,
-                        true,
-                        BoardMinimapDisplayContext.TurnOverview);
-
-                    var data = new SerializedObject(view);
-                    var room = data.FindProperty("rooms")
-                        .GetArrayElementAtIndex(0);
-                    var floor = (Image)room.FindPropertyRelative("Floor")
-                        .objectReferenceValue;
-                    var effect = (BoardMapIcon)room
-                        .FindPropertyRelative("EffectIcon")
-                        .objectReferenceValue;
-                    var player = (Image)data.FindProperty("players")
-                        .GetArrayElementAtIndex(0).objectReferenceValue;
-                    var effectLayer = effect.rectTransform.parent;
-                    var boundEffectLayer = (RectTransform)data
-                        .FindProperty("landingEffectLayer").objectReferenceValue;
-                    var unusedEffect = (BoardMapIcon)data.FindProperty("rooms")
-                        .GetArrayElementAtIndex(1)
-                        .FindPropertyRelative("EffectIcon").objectReferenceValue;
-
-                    Assert.That(player.gameObject.activeSelf, Is.True);
-                    Assert.That(
-                        AssetDatabase.GetAssetPath(player.sprite),
-                        Is.EqualTo(
-                            "Assets/Ignore/Modern UI Pack/Textures/Icon/Map/Location Mark Filled.png"),
-                        "The player marker must use the authored location sprite.");
-                    Assert.That(player.preserveAspect, Is.True);
-                    Assert.That(player.color, Is.EqualTo(Color.magenta));
-                    Assert.That(effect.gameObject.activeSelf, Is.True);
-                    Assert.That(unusedEffect.gameObject.activeSelf, Is.False,
-                        "Unused effect overlays must not retain stale icons.");
-                    Assert.That(effect.enabled, Is.True);
-                    Assert.That(
-                        Vector2.Distance(
-                            player.rectTransform.anchoredPosition,
-                            floor.rectTransform.anchoredPosition),
-                        Is.LessThan(0.001f),
-                        "The player location marker must use the tile center.");
-                    Assert.That(
-                        Vector2.Distance(
-                            effect.rectTransform.anchoredPosition,
-                            floor.rectTransform.anchoredPosition),
-                        Is.LessThan(0.001f),
-                        "The landing-effect icon must use the tile center.");
-                    Assert.That(
-                        boundEffectLayer,
-                        Is.EqualTo(effectLayer),
-                        "The authored effect overlay binding must be preserved.");
-                    Assert.That(
-                        effectLayer.parent,
-                        Is.EqualTo(player.rectTransform.parent),
-                        "The effect overlay and player marker must share map coordinates.");
-                    Assert.That(
-                        effectLayer.GetSiblingIndex(),
-                        Is.GreaterThan(player.rectTransform.GetSiblingIndex()),
-                        "The landing-effect icon must render above the player marker.");
-                    Assert.That(
-                        effect.rectTransform.anchorMin,
-                        Is.EqualTo(Vector2.one * 0.5f));
-                    Assert.That(
-                        effect.rectTransform.anchorMax,
-                        Is.EqualTo(Vector2.one * 0.5f));
-                }
-            }
-            finally
-            {
-                Object.DestroyImmediate(board);
-                Object.DestroyImmediate(instance);
-            }
-        }
-
-
-        [Test]
         public void RouteDots_FollowBothMapProjections_AndClearWhenUnavailable()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -319,7 +107,7 @@ namespace MazeParty.Multiplayer.Tests
             finally { Object.DestroyImmediate(instance); Object.DestroyImmediate(board); }
         }
         [Test]
-        public void DirectedShopRoute_UsesDistanceAndOnlyImmediateAvailableExits()
+        public void DirectedShopRoute_UsesDistanceAndPreviewsBranchesBeforeArrival()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
@@ -364,11 +152,17 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(east.enabled, Is.True);
                 Assert.That(north.enabled, Is.True,
                     "Direction icons appear for each choice at a branch.");
-                Assert.That(laterEast.enabled, Is.False, "Future steps must not be advertised as immediate exits.");
+                Assert.That(laterEast.enabled, Is.False,
+                    "Single-exit tiles do not display branch arrows.");
                 view.PrepareMap(topology, Vector2Int.zero, 0, Vector2Int.right);
-                Assert.That(east.enabled, Is.False);
+                Assert.That(east.enabled, Is.True,
+                    "Branch arrows remain visible before movement and without remaining moves.");
+                Assert.That(north.enabled, Is.True);
                 Assert.That(view.GetMinimumShopDistance(topology, Vector2Int.zero, Vector2Int.right), Is.EqualTo(1));
                 view.PrepareMap(topology, Vector2Int.right, 1, Vector2Int.right);
+                Assert.That(east.enabled, Is.True,
+                    "A branch already shown elsewhere on the map must not depend on the local tile.");
+                Assert.That(north.enabled, Is.True);
                 Assert.That(laterEast.enabled, Is.False,
                     "A tile with only one exit does not show a direction icon.");
                 Assert.That(view.GetMinimumShopDistance(topology,
@@ -717,14 +511,26 @@ namespace MazeParty.Multiplayer.Tests
                         .FindPropertyRelative("Floor").objectReferenceValue;
                     var secondFloor = (Image)rooms.GetArrayElementAtIndex(1)
                         .FindPropertyRelative("Floor").objectReferenceValue;
+                    var firstTypeIcon = (BoardMapIcon)rooms.GetArrayElementAtIndex(0)
+                        .FindPropertyRelative("TypeIcon").objectReferenceValue;
                     var secondTypeIcon = (BoardMapIcon)rooms.GetArrayElementAtIndex(1)
                         .FindPropertyRelative("TypeIcon").objectReferenceValue;
                     Assert.That(firstFloor.gameObject.activeSelf, Is.True);
                     Assert.That(secondFloor.gameObject.activeSelf, Is.True);
                     Assert.That(firstFloor.enabled, Is.False,
                         "The aggregate polygon graphic replaces square floor images.");
+                    Assert.That(firstTypeIcon.enabled, Is.False,
+                        "Normal and start tiles must not draw the meaningless Room square icon.");
                     Assert.That(secondTypeIcon.enabled, Is.False,
                         "Both maps mark a key shop only by coloring its tile.");
+                    view.PrepareMap(
+                        topology,
+                        first.Coordinate,
+                        1,
+                        null,
+                        first.WorldCenter);
+                    Assert.That(secondTypeIcon.enabled, Is.False,
+                        "A normal tile must not draw the meaningless Room square icon.");
 
                     var projection = (MiniMapView)data.FindProperty("projection")
                         .objectReferenceValue;
@@ -769,112 +575,6 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void StartTiles_UseNormalDesignWithoutPersistentPlayerLabels()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
-            foreach (var freeform in new[] { false, true })
-            {
-                var instance = Object.Instantiate(prefab);
-                var mapObject = new GameObject(
-                    freeform ? "Freeform starts" : "Legacy starts");
-                try
-                {
-                    var topologyObject = new GameObject("Topology");
-                    topologyObject.transform.SetParent(mapObject.transform, false);
-                    var firstObject = new GameObject("First normal start");
-                    firstObject.transform.SetParent(topologyObject.transform, false);
-                    var first = firstObject.AddComponent<BoardTile>();
-                    first.Configure(Vector2Int.zero, BoardTileType.Normal);
-
-                    var secondObject = new GameObject("Second normal start");
-                    secondObject.transform.SetParent(topologyObject.transform, false);
-                    secondObject.transform.localPosition =
-                        Vector3.right * BoardTile.RoomSize;
-                    var second = secondObject.AddComponent<BoardTile>();
-                    second.Configure(Vector2Int.right, BoardTileType.Normal);
-
-                    if (freeform)
-                    {
-                        firstObject.AddComponent<BoardTileFootprint>().Configure(
-                            new[]
-                            {
-                                new Vector2(-3f, -2f),
-                                new Vector2(3f, -2f),
-                                new Vector2(0f, 3f)
-                            });
-                    }
-
-                    var topology = topologyObject.AddComponent<BoardTopology>();
-                    topology.Configure(
-                        new[] { first, second },
-                        System.Array.Empty<BoardGate>());
-                    var starts = new BoardTile[PlayerSlotRules.Count];
-                    starts[0] = first;
-                    starts[1] = first;
-                    starts[2] = second;
-                    var mapRoot = mapObject.AddComponent<BoardMapRoot>();
-                    mapRoot.Configure(
-                        null,
-                        topology,
-                        topologyObject.transform,
-                        topologyObject.transform,
-                        mapObject.transform,
-                        second,
-                        starts,
-                        new Transform[PlayerSlotRules.Count]);
-
-                    var views = instance.GetComponentsInChildren<BoardMinimapView>(true);
-                    Assert.That(views, Has.Length.EqualTo(2));
-                    foreach (var view in views)
-                    {
-                        view.PrepareMap(
-                            topology,
-                            first.Coordinate,
-                            1,
-                            null,
-                            first.GetRecoveryCenter());
-                        var rooms = new SerializedObject(view).FindProperty("rooms");
-                        var firstSymbol = (Text)rooms.GetArrayElementAtIndex(0)
-                            .FindPropertyRelative("Symbol").objectReferenceValue;
-                        var secondSymbol = (Text)rooms.GetArrayElementAtIndex(1)
-                            .FindPropertyRelative("Symbol").objectReferenceValue;
-                        Assert.That(first.TileType, Is.EqualTo(BoardTileType.Normal));
-                        Assert.That(second.TileType, Is.EqualTo(BoardTileType.Normal));
-                        Assert.That(firstSymbol.text, Is.Empty);
-                        Assert.That(secondSymbol.text, Is.Empty,
-                            "Start tiles must use the normal-room design without persistent player labels.");
-                    }
-
-                    if (!freeform)
-                    {
-                        Assert.That(
-                            BoardMapView.ResolveOverviewMarker(
-                                string.Empty,
-                                string.Empty),
-                            Is.Empty);
-                        Assert.That(
-                            BoardMapView.ResolveOverviewMarker(
-                                string.Empty,
-                                ">"),
-                            Is.EqualTo(">"),
-                            "Route arrows remain visible when the tile is unoccupied.");
-                        Assert.That(
-                            BoardMapView.ResolveOverviewMarker(
-                                "K1",
-                                ">"),
-                            Is.EqualTo("K1"),
-                            "Shop/player markers keep precedence over routes.");
-                    }
-                }
-                finally
-                {
-                    Object.DestroyImmediate(mapObject);
-                    Object.DestroyImmediate(instance);
-                }
-            }
-        }
 
     }
 }

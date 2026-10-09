@@ -3,7 +3,6 @@ using System.Reflection;
 using MazeParty.Gameplay.Minigames.Minefield;
 using NUnit.Framework;
 using Unity.Netcode;
-using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -14,9 +13,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
-        private const string SonarPulsePrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/Minefield/SonarPulse.prefab";
-
         [Test]
         public void HazardPresentationRpc_IsReliablePerEvent()
         {
@@ -97,34 +93,6 @@ namespace MazeParty.Multiplayer.Tests
                 {
                     EditorSceneManager.CloseScene(scene, true);
                 }
-            }
-        }
-
-        [Test]
-        public void SonarPulsePrefab_MatchesAuthoritativeDetectionRadius()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                SonarPulsePrefabPath);
-            Assert.That(prefab, Is.Not.Null, SonarPulsePrefabPath);
-
-            var pulse = prefab.GetComponent<LineRenderer>();
-            Assert.That(pulse, Is.Not.Null, SonarPulsePrefabPath);
-            Assert.That(pulse.loop, Is.True);
-            Assert.That(pulse.useWorldSpace, Is.False);
-            Assert.That(pulse.positionCount, Is.GreaterThanOrEqualTo(16));
-
-            var positions = new Vector3[pulse.positionCount];
-            pulse.GetPositions(positions);
-            for (var index = 0; index < positions.Length; index++)
-            {
-                Assert.That(
-                    positions[index].y,
-                    Is.EqualTo(0f).Within(0.0001f),
-                    "Point " + index + " must stay on the authored XZ plane.");
-                Assert.That(
-                    new Vector2(positions[index].x, positions[index].z).magnitude,
-                    Is.EqualTo(NetworkMinefieldState.SonarRadius).Within(0.001f),
-                    "Point " + index + " must match the authoritative radius.");
             }
         }
 

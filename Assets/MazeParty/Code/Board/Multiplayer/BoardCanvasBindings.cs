@@ -26,6 +26,7 @@ namespace MazeParty.Multiplayer
             public GameObject Reticle;
             public GameObject ItemShopPanel;
             public GameObject BoardEventPopupPanel;
+            public GameObject BoardKillFeedPanel;
 
             public Text ReticleText;
             public Text TurnText;
@@ -41,6 +42,7 @@ namespace MazeParty.Multiplayer
             public Text ItemShopTooltip;
             public Text ItemShopStatus;
             public Text BoardEventPopupMessage;
+            public Text BoardKillFeedMessage;
             public Text MinigameReadyTitle;
             public Text MinigameReadyNote;
             public Text MinigameReadyStatus;
@@ -92,6 +94,9 @@ namespace MazeParty.Multiplayer
                 new Color(0.16f, 0.3f, 0.5f, 0.98f);
             public Color RemotePlayerCard =
                 new Color(0.055f, 0.085f, 0.13f, 0.94f);
+            [Range(0f, 1f)] public float PlayerCardDarken = 0.62f;
+            [Range(0f, 1f)] public float PlayerCardAlpha = 0.94f;
+            [Range(0f, 1f)] public float PlayerTextMinimumValue = 0.72f;
             public Color HealthyHealth =
                 new Color(0.2f, 0.82f, 0.38f, 1f);
             public Color WoundedHealth =
@@ -138,6 +143,7 @@ namespace MazeParty.Multiplayer
         public GameObject ItemShopPanel => references.ItemShopPanel;
         public GameObject BoardEventPopupPanel =>
             references.BoardEventPopupPanel;
+        public GameObject BoardKillFeedPanel => references.BoardKillFeedPanel;
         public Text ReticleText => references.ReticleText;
         public Text TurnText => references.TurnText;
         public Text PhaseText => references.PhaseText;
@@ -153,6 +159,7 @@ namespace MazeParty.Multiplayer
         public Text ItemShopStatus => references.ItemShopStatus;
         public Text BoardEventPopupMessage =>
             references.BoardEventPopupMessage;
+        public Text BoardKillFeedMessage => references.BoardKillFeedMessage;
         public Text MinigameReadyTitle => references.MinigameReadyTitle;
         public Text MinigameReadyNote => references.MinigameReadyNote;
         public Text MinigameReadyStatus => references.MinigameReadyStatus;
@@ -205,6 +212,40 @@ namespace MazeParty.Multiplayer
         public Color DisconnectedPlayerColor => statePalette.DisconnectedPlayer;
         public Color LocalPlayerCardColor => statePalette.LocalPlayerCard;
         public Color RemotePlayerCardColor => statePalette.RemotePlayerCard;
+        public Color GetPlayerCardColor(int slot)
+        {
+            return GetPlayerCardColor(GetPlayerColor(slot));
+        }
+
+        public Color GetPlayerCardColor(Color playerColor)
+        {
+            var brightness = 1f - Mathf.Clamp01(statePalette.PlayerCardDarken);
+            return new Color(
+                playerColor.r * brightness,
+                playerColor.g * brightness,
+                playerColor.b * brightness,
+                Mathf.Clamp01(statePalette.PlayerCardAlpha));
+        }
+
+        public Color GetPlayerTextColor(Color playerColor)
+        {
+            return EnsureMinimumValue(
+                playerColor,
+                statePalette.PlayerTextMinimumValue);
+        }
+
+        internal static Color EnsureMinimumValue(
+            Color color,
+            float minimumValue)
+        {
+            Color.RGBToHSV(color, out var hue, out var saturation, out var value);
+            var result = Color.HSVToRGB(
+                hue,
+                saturation,
+                Mathf.Max(value, Mathf.Clamp01(minimumValue)));
+            result.a = color.a;
+            return result;
+        }
         public Color HealthyHealthColor => statePalette.HealthyHealth;
         public Color WoundedHealthColor => statePalette.WoundedHealth;
         public Color CriticalHealthColor => statePalette.CriticalHealth;
@@ -229,6 +270,7 @@ namespace MazeParty.Multiplayer
             references.Reticle != null &&
             references.ItemShopPanel != null &&
             references.BoardEventPopupPanel != null &&
+            references.BoardKillFeedPanel != null &&
             references.ReticleText != null &&
             references.TurnText != null &&
             references.PhaseText != null &&
@@ -242,6 +284,7 @@ namespace MazeParty.Multiplayer
             references.ItemShopTooltip != null &&
             references.ItemShopStatus != null &&
             references.BoardEventPopupMessage != null &&
+            references.BoardKillFeedMessage != null &&
             references.MinigameReadyTitle != null &&
             references.MinigameReadyNote != null &&
             references.MinigameReadyStatus != null &&

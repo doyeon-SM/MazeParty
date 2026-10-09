@@ -339,12 +339,28 @@ namespace MazeParty.Gameplay.Tests
                 visuals.GetComponentsInChildren<Collider>(true),
                 Is.Empty,
                 "Vendor house colliders must not become gameplay collision.");
+            var authoredColliders = shop.InteractionColliders
+                .Concat(shop.PhysicalColliders)
+                .ToArray();
             Assert.That(
                 shop.GetComponentsInChildren<Collider>(true),
+                Is.EquivalentTo(authoredColliders),
+                "Every shop collider must be explicitly bound as interaction " +
+                "or physical occupancy.");
+            Assert.That(
+                shop.InteractionColliders,
                 Is.All.Matches<Collider>(collider =>
-                    collider.GetComponent<KeyShopWorldTarget>() != null ||
-                    collider.GetComponent<ItemShopWorldTarget>() != null),
-                "Every remaining shop collider must be an authored interaction target.");
+                    collider != null && collider.isTrigger &&
+                    (collider.GetComponent<KeyShopWorldTarget>() != null ||
+                     collider.GetComponent<ItemShopWorldTarget>() != null)),
+                "Shop interaction targets must remain query-only triggers.");
+            Assert.That(
+                shop.PhysicalColliders,
+                Is.All.Matches<Collider>(collider =>
+                    collider != null && !collider.isTrigger &&
+                    collider.GetComponent<KeyShopWorldTarget>() == null &&
+                    collider.GetComponent<ItemShopWorldTarget>() == null),
+                "Shop physical occupancy must remain separate from interaction.");
         }
 
         private static BoardTopology FindTopology(Scene scene)

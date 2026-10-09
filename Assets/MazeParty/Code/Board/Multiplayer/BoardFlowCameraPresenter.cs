@@ -53,8 +53,13 @@ namespace MazeParty.Multiplayer
             // out of the Board scene and into the lobby.
             if (_localAvatar != null)
             {
-                _localAvatar.AvatarVisual?.SetOwnerFirstPerson(false);
-                _localAvatar.AvatarVisual?.SetTopViewHighlight(false);
+                var visual = _localAvatar.AvatarVisual;
+                if (visual != null)
+                {
+                    visual.SetOwnerFirstPerson(false);
+                    visual.SetTopViewHighlight(false);
+                    visual.SetBoardTopViewHighlightVisible(false);
+                }
             }
             ClearNameplateOcclusion();
             ClearResourceTransferVisual();
@@ -362,7 +367,14 @@ namespace MazeParty.Multiplayer
         {
             for (var slot = 0; slot < _observedNameplateVisuals.Length; slot++)
             {
-                _observedNameplateVisuals[slot]?.SetNameplateOccluded(false);
+                // Null-conditional access bypasses UnityEngine.Object's destroyed-
+                // object equality. Use Unity's explicit check so scene teardown
+                // cannot call into an already destroyed avatar every frame.
+                var visual = _observedNameplateVisuals[slot];
+                if (visual != null)
+                {
+                    visual.SetNameplateOccluded(false);
+                }
                 _observedNameplateAvatars[slot] = null;
                 _observedNameplateVisuals[slot] = null;
             }
@@ -391,10 +403,17 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _localAvatar.AvatarVisual?.SetOwnerFirstPerson(
-                targetMode == GameplayMode.FirstPerson);
-            _localAvatar.AvatarVisual?.SetTopViewHighlight(
-                targetMode == GameplayMode.BoardTopDown);
+            var visual = _localAvatar.AvatarVisual;
+            if (visual != null)
+            {
+                visual.SetOwnerFirstPerson(
+                    targetMode == GameplayMode.FirstPerson);
+                // Board top view reuses the persistent WaterShield request. The
+                // square highlight remains available to minigames only.
+                visual.SetTopViewHighlight(false);
+                visual.SetBoardTopViewHighlightVisible(
+                    targetMode == GameplayMode.BoardTopDown);
+            }
             BoardFlowView.Instance?.SetTopViewShopHighlights(
                 targetMode == GameplayMode.BoardTopDown);
         }

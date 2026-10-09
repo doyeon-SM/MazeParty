@@ -232,6 +232,79 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(coordinator.IsBusy, Is.False);
         }
 
+        [Test]
+        public async Task ApplicationQuitCoordinator_IsSingleFlightAndApprovesAfterCleanup()
+        {
+            var coordinator = new ApplicationQuitCoordinator();
+            var cleanupRelease = new TaskCompletionSource<bool>();
+            var deadline = new TaskCompletionSource<bool>();
+            var cleanupCalls = 0;
+
+            Assert.That(
+                coordinator.TryBegin(
+                    () =>
+                    {
+                        cleanupCalls++;
+                        return cleanupRelease.Task;
+                    },
+                    deadline.Task),
+                Is.True);
+            Assert.That(
+                coordinator.TryBegin(
+                    () => Task.CompletedTask,
+                    deadline.Task),
+                Is.False);
+            Assert.That(coordinator.IsApproved, Is.False);
+
+            cleanupRelease.SetResult(true);
+            var result = await coordinator.PreparationTask;
+
+            Assert.That(
+                result,
+                Is.EqualTo(ApplicationQuitPreparationResult.Completed));
+            Assert.That(coordinator.IsApproved, Is.True);
+            Assert.That(cleanupCalls, Is.EqualTo(1));
+        }
+
+        [Test]
+        public async Task ApplicationQuitCoordinator_DeadlineStillApprovesQuit()
+        {
+            var coordinator = new ApplicationQuitCoordinator();
+            var cleanup = new TaskCompletionSource<bool>();
+            var deadline = new TaskCompletionSource<bool>();
+
+            Assert.That(
+                coordinator.TryBegin(() => cleanup.Task, deadline.Task),
+                Is.True);
+            deadline.SetResult(true);
+
+            var result = await coordinator.PreparationTask;
+            Assert.That(
+                result,
+                Is.EqualTo(ApplicationQuitPreparationResult.TimedOut));
+            Assert.That(coordinator.IsApproved, Is.True);
+        }
+
+        [Test]
+        public async Task ApplicationQuitCoordinator_FailureStillApprovesQuit()
+        {
+            var coordinator = new ApplicationQuitCoordinator();
+            var expected = new InvalidOperationException("cleanup failed");
+
+            Assert.That(
+                coordinator.TryBegin(
+                    () => Task.FromException(expected),
+                    new TaskCompletionSource<bool>().Task),
+                Is.True);
+
+            var result = await coordinator.PreparationTask;
+            Assert.That(
+                result,
+                Is.EqualTo(ApplicationQuitPreparationResult.Failed));
+            Assert.That(coordinator.IsApproved, Is.True);
+            Assert.That(coordinator.Failure, Is.SameAs(expected));
+        }
+
         private sealed class CountingDisposable : IDisposable
         {
             public int DisposeCount { get; private set; }

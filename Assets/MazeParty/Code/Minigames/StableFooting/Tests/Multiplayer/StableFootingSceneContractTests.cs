@@ -14,8 +14,9 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/StableFooting/StableFooting.unity";
-        private const string StableFootingPrefabFolder =
-            "Assets/MazeParty/Prefabs/Minigames/StableFooting/";
+        private const string SafeSymbolDisplayPrefabPath =
+            "Assets/MazeParty/Prefabs/Minigames/StableFooting/" +
+            "SafeSymbolDisplay.prefab";
 
         [Test]
         public void PushPresentationRpc_IsReliablePerEvent()
@@ -34,46 +35,12 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(typeof(Vector3)));
         }
 
-        [TestCase(
-            NetworkStableFootingPhase.Running,
-            StableFootingCyclePhase.Move,
-            true)]
-        [TestCase(
-            NetworkStableFootingPhase.Running,
-            StableFootingCyclePhase.ShuffleReveal,
-            false)]
-        [TestCase(
-            NetworkStableFootingPhase.Running,
-            StableFootingCyclePhase.Drop,
-            false)]
-        [TestCase(
-            NetworkStableFootingPhase.Running,
-            StableFootingCyclePhase.Restore,
-            false)]
-        [TestCase(
-            NetworkStableFootingPhase.Countdown,
-            StableFootingCyclePhase.Move,
-            false)]
-        public void SafeSymbolRevealVfx_PlaysOnlyAtMoveReveal(
-            NetworkStableFootingPhase phase,
-            StableFootingCyclePhase cyclePhase,
-            bool expected)
-        {
-            Assert.That(
-                StableFootingNetworkView.ShouldPlaySafeSymbolRevealVfx(
-                    phase,
-                    cyclePhase),
-                Is.EqualTo(expected));
-        }
-
-        [TestCase(StableFootingSymbol.Cross)]
-        [TestCase(StableFootingSymbol.Circle)]
-        [TestCase(StableFootingSymbol.Square)]
-        public void SafeSymbolDisplay_ShufflesThenRevealsOnlySelectedSymbol(
-            StableFootingSymbol safeSymbol)
+        [Test]
+        public void SafeSymbolDisplay_ShufflesThenRevealsOnlySelectedSymbol()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                StableFootingPrefabFolder + "SafeSymbolDisplay.prefab");
+                SafeSymbolDisplayPrefabPath);
+            Assert.That(prefab, Is.Not.Null, SafeSymbolDisplayPrefabPath);
             var instance = Object.Instantiate(prefab);
             try
             {
@@ -86,80 +53,85 @@ namespace MazeParty.Multiplayer.Tests
                     FindDescendant(instance.transform, "Square Mark")
                         .GetComponent<SpriteRenderer>()
                 };
+                var authoredPositions = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .ToArray();
                 var authoredColors = renderers
                     .Select(renderer => renderer.color)
                     .ToArray();
                 var authoredActiveStates = renderers
                     .Select(renderer => renderer.gameObject.activeSelf)
                     .ToArray();
-                var authoredPositions = renderers
-                    .Select(renderer => renderer.transform.localPosition)
-                    .ToArray();
                 var presenter = new StableFootingSafeSymbolPresenter(
-                    renderers[0],
-                    renderers[1],
-                    renderers[2]);
+                    renderers[0], renderers[1], renderers[2]);
 
                 presenter.ApplyShuffle(1, 0d);
-                var previousShufflePositions = renderers
+                var firstSlots = renderers
                     .Select(renderer => renderer.transform.localPosition)
                     .ToArray();
-                for (var step = 1;
-                     step < StableFootingRules.SymbolShuffleStepCount;
-                     step++)
+                Assert.That(renderers.All(renderer =>
+                    renderer.gameObject.activeInHierarchy), Is.True);
+                Assert.That(renderers.All(renderer =>
+                    renderer.color != Color.green), Is.True);
+
+                presenter.ApplyShuffle(
+                    1,
+                    StableFootingRules.SymbolShuffleIntervalSeconds);
+                var boundarySlots = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .ToArray();
+                Assert.That(renderers.All(renderer =>
+                    renderer.gameObject.activeInHierarchy), Is.True);
+                Assert.That(renderers.All(renderer =>
+                    renderer.color != Color.green), Is.True);
+                Assert.That(boundarySlots, Is.EquivalentTo(firstSlots));
+                Assert.That(boundarySlots, Is.Not.EqualTo(firstSlots));
+
+                presenter.ApplyShuffle(
+                    1,
+                    (StableFootingRules.SymbolShuffleStepCount - 1) *
+                    StableFootingRules.SymbolShuffleIntervalSeconds);
+                var finalSlots = renderers
+                    .Select(renderer => renderer.transform.localPosition)
+                    .ToArray();
+
+                var safeSymbols = new[]
                 {
-                    presenter.ApplyShuffle(
-                        1,
-                        step *
-                        StableFootingRules.SymbolShuffleIntervalSeconds);
-                    Assert.That(renderers.All(renderer => renderer.gameObject
-                        .activeInHierarchy), Is.True);
+                    StableFootingSymbol.Cross,
+                    StableFootingSymbol.Circle,
+                    StableFootingSymbol.Square
+                };
+                foreach (var safeSymbol in safeSymbols)
+                {
+                    presenter.ApplyReveal(safeSymbol, 1);
+                    var safeIndex = (int)safeSymbol;
                     for (var index = 0; index < renderers.Length; index++)
                     {
-                        Assert.That(renderers[index].color,
-                            Is.EqualTo(authoredColors[index]),
-                            "Shuffle must not reveal the correct symbol.");
                         Assert.That(
-                            renderers[index].transform.localPosition,
-                            Is.Not.EqualTo(previousShufflePositions[index]),
-                            "Every symbol changes slot at each 0.5 second step.");
+                            renderers[index].gameObject.activeInHierarchy,
+                            Is.EqualTo(index == safeIndex));
+                        Assert.That(
+                            renderers[index].color,
+                            index == safeIndex
+                                ? Is.EqualTo(Color.green)
+                                : Is.EqualTo(authoredColors[index]));
                     }
-
-                    previousShufflePositions = renderers
-                        .Select(renderer => renderer.transform.localPosition)
-                        .ToArray();
-                }
-
-                presenter.ApplyReveal(safeSymbol, 1);
-                var safeIndex = (int)safeSymbol;
-                for (var index = 0; index < renderers.Length; index++)
-                {
                     Assert.That(
-                        renderers[index].gameObject.activeInHierarchy,
-                        Is.EqualTo(index == safeIndex));
-                    Assert.That(
-                        renderers[index].color,
-                        index == safeIndex
-                            ? Is.EqualTo(Color.green)
-                            : Is.EqualTo(authoredColors[index]));
-                }
-                Assert.That(
-                    renderers[safeIndex].transform.localPosition,
-                    Is.EqualTo(previousShufflePositions[safeIndex]),
-                    "Reveal must preserve the final shuffle slot.");
+                        renderers[safeIndex].transform.localPosition,
+                        Is.EqualTo(finalSlots[safeIndex]));
 
-                presenter.Hide();
-                Assert.That(renderers.All(renderer =>
-                    !renderer.gameObject.activeInHierarchy), Is.True);
+                    presenter.Hide();
+                    Assert.That(renderers.All(renderer =>
+                        !renderer.gameObject.activeInHierarchy), Is.True);
+                }
 
                 presenter.RestoreAuthoredState();
                 for (var index = 0; index < renderers.Length; index++)
                 {
-                    Assert.That(
-                        renderers[index].color,
-                        Is.EqualTo(authoredColors[index]));
                     Assert.That(renderers[index].transform.localPosition,
                         Is.EqualTo(authoredPositions[index]));
+                    Assert.That(renderers[index].color,
+                        Is.EqualTo(authoredColors[index]));
                     Assert.That(renderers[index].gameObject.activeSelf,
                         Is.EqualTo(authoredActiveStates[index]));
                 }

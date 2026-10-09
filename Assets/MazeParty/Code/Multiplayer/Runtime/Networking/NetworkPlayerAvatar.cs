@@ -887,6 +887,10 @@ namespace MazeParty.Multiplayer
             PresentHitRpc((byte)request.HitRegion);
             if (_currentHealth.Value == 0)
             {
+                if (attacker != null)
+                {
+                    match?.PublishBoardKillOnServer(attacker, this);
+                }
                 BeginBoardDeathOnServer();
             }
             return DamageResult.Applied;

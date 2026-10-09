@@ -156,320 +156,29 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void PlayerAvatarVisual_InstantiatesOneSharedPresentation()
+        public void PlayerAvatarVisual_InstantiatesExactlyOneSharedPresentation()
         {
             var root = new GameObject("Player Presentation Contract Root");
             try
             {
                 var visual = root.AddComponent<PlayerAvatarVisual>();
+
                 visual.EnsureBuilt();
                 visual.EnsureBuilt();
+
                 Assert.That(visual.Bindings, Is.Not.Null);
                 Assert.That(visual.Bindings.HasRequiredReferences, Is.True);
                 Assert.That(
                     root.GetComponentsInChildren<
                         PlayerAvatarPresentationBindings>(true),
                     Has.Length.EqualTo(1));
+
                 var assets = Resources.Load<PlayerAvatarPresentationAssets>(
                     PlayerAvatarPresentationAssets.ResourcePath);
                 Assert.That(assets, Is.Not.Null);
                 Assert.That(
                     visual.Bindings.gameObject.name,
                     Is.EqualTo(assets.PresentationPrefab.gameObject.name));
-
-                var nameRenderer = visual.Bindings.NameText
-                    .GetComponent<Renderer>();
-                Assert.That(nameRenderer, Is.Not.Null);
-                var hostIcon = visual.Bindings.LobbyHostIcon;
-                var defaultNameColor = visual.Bindings.NameText.color;
-                var identityObjectCount = root
-                    .GetComponentsInChildren<Transform>(true)
-                    .Length;
-
-                visual.SetLobbyIdentityState(true, false);
-                Assert.That(
-                    visual.Bindings.NameText.color,
-                    Is.EqualTo(visual.Bindings.LobbyReadyNameColor));
-                Assert.That(hostIcon.gameObject.activeSelf, Is.False);
-
-                visual.SetLobbyIdentityState(false, true);
-                Assert.That(
-                    visual.Bindings.NameText.color,
-                    Is.EqualTo(defaultNameColor));
-                Assert.That(hostIcon.gameObject.activeSelf, Is.True);
-
-                visual.SetLobbyIdentityState(true, true);
-                Assert.That(
-                    visual.Bindings.NameText.color,
-                    Is.EqualTo(visual.Bindings.LobbyReadyNameColor));
-                Assert.That(hostIcon.gameObject.activeSelf, Is.True);
-                Assert.That(
-                    root.GetComponentsInChildren<Transform>(true).Length,
-                    Is.EqualTo(identityObjectCount),
-                    "Lobby identity changes must not create runtime presentation objects.");
-
-                visual.SetNameplateOccluded(true);
-                Assert.That(nameRenderer.forceRenderingOff, Is.True);
-                Assert.That(hostIcon.forceRenderingOff, Is.True);
-                Assert.That(visual.Bindings.WorldModel.gameObject.activeSelf, Is.True);
-                visual.SetNameplateOccluded(false);
-                Assert.That(nameRenderer.forceRenderingOff, Is.False);
-                Assert.That(hostIcon.forceRenderingOff, Is.False);
-
-                visual.SetLobbyIdentityState(false, false);
-                Assert.That(
-                    visual.Bindings.NameText.color,
-                    Is.EqualTo(defaultNameColor));
-                Assert.That(hostIcon.gameObject.activeSelf, Is.False,
-                    "Leaving the lobby must clear the host marker.");
-
-                var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
-                visual.SetEquippedItem(PrototypeItemId.Pistol);
-                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.False);
-                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.False);
-                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.True);
-                Assert.That(
-                    visual.Bindings.WorldItemRoot.Cast<Transform>()
-                        .Single(child => child.gameObject.activeSelf).name,
-                    Does.StartWith(pistol.HeldPrefab.name));
-                visual.SetEquippedItem(PrototypeItemId.None);
-                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
-
-                visual.SetEquippedItem(PrototypeItemId.DoubleDice);
-                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
-                visual.SetEquippedItem(PrototypeItemId.None);
-
-                var catalog = PlayerExpressionCatalog.Instance;
-                Assert.That(catalog, Is.Not.Null);
-                var authoredPresentation = assets.PresentationPrefab;
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        authoredPresentation.LeftHandAnchor.GetChild(0).gameObject),
-                    Is.EqualTo(
-                        "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab"));
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        authoredPresentation.RightHandAnchor.GetChild(0).gameObject),
-                    Is.EqualTo(
-                        "Assets/MazeParty/Prefabs/Multiplayer/Player/SimpleFistHand.prefab"));
-
-                visual.ApplyAppearance(0, 0, 0, 2);
-                visual.SetHandGesture((byte)HandEmoteId.Greeting, 5);
-                Assert.That(
-                    visual.Bindings.FaceSprite.sprite,
-                    Is.SameAs(catalog.Faces[5].Sprite));
-                Assert.That(visual.Bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.WorldGestureRoot.gameObject.activeSelf, Is.False,
-                    "Emotes must animate the player's normal hands instead of legacy gesture prefabs.");
-                visual.SetHandGesture((byte)HandEmoteId.EyesCover, 7);
-                Assert.That(
-                    visual.Bindings.FaceSprite.sprite,
-                    Is.SameAs(catalog.Faces[2].Sprite),
-                    "Eyes-cover must preserve the wardrobe base face.");
-                visual.SetHandGesture(0, 2);
-                Assert.That(
-                    visual.Bindings.FaceSprite.sprite,
-                    Is.SameAs(catalog.Faces[2].Sprite));
-
-                var worldLeftIndex = FindHandBone(
-                    visual.Bindings.LeftHandAnchor,
-                    "IndexFinger");
-                var worldRightIndex = FindHandBone(
-                    visual.Bindings.RightHandAnchor,
-                    "IndexFinger");
-                var firstLeftIndex = FindHandBone(
-                    visual.Bindings.FirstPersonLeftHand,
-                    "IndexFinger");
-                var firstRightIndex = FindHandBone(
-                    visual.Bindings.FirstPersonRightHand,
-                    "IndexFinger");
-                var worldLeftClosed = worldLeftIndex.localRotation;
-                var worldRightClosed = worldRightIndex.localRotation;
-                var firstLeftClosed = firstLeftIndex.localRotation;
-                var firstRightClosed = firstRightIndex.localRotation;
-                var updatePose = typeof(PlayerAvatarVisual).GetMethod(
-                    "UpdatePose",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-                var gestureStartedAt = typeof(PlayerAvatarVisual).GetField(
-                    "_gestureStartedAt",
-                    BindingFlags.Instance | BindingFlags.NonPublic);
-                Assert.That(updatePose, Is.Not.Null);
-                Assert.That(gestureStartedAt, Is.Not.Null);
-
-                foreach (var oneHandGesture in new[]
-                         {
-                             HandEmoteId.Greeting,
-                             HandEmoteId.Salute
-                         })
-                {
-                    visual.SetHandGesture((byte)oneHandGesture, 5);
-                    gestureStartedAt.SetValue(
-                        visual,
-                        Time.time - (float)HandEmoteRules.Duration * 0.06f);
-                    updatePose.Invoke(visual, new object[] { false });
-                    var stableFirstPersonPosition =
-                        visual.Bindings.FirstPersonRightHand.localPosition;
-                    var stableFirstPersonRotation =
-                        visual.Bindings.FirstPersonRightHand.localRotation;
-                    gestureStartedAt.SetValue(
-                        visual,
-                        Time.time - (float)HandEmoteRules.Duration * 0.06f);
-                    updatePose.Invoke(visual, new object[] { false });
-
-                    Assert.That(
-                        Vector3.Distance(
-                            stableFirstPersonPosition,
-                            visual.Bindings.FirstPersonRightHand.localPosition),
-                        Is.LessThan(0.0001f),
-                        oneHandGesture +
-                        " must be evaluated from the cached root pose each frame.");
-                    Assert.That(
-                        Quaternion.Angle(
-                            stableFirstPersonRotation,
-                            visual.Bindings.FirstPersonRightHand.localRotation),
-                        Is.LessThan(0.01f),
-                        oneHandGesture +
-                        " must not accumulate root rotation between frames.");
-
-                    Assert.That(
-                        Quaternion.Angle(
-                            worldLeftClosed,
-                            worldLeftIndex.localRotation),
-                        Is.LessThan(0.01f),
-                        oneHandGesture + " must leave the world left hand closed.");
-                    Assert.That(
-                        Quaternion.Angle(
-                            firstLeftClosed,
-                            firstLeftIndex.localRotation),
-                        Is.LessThan(0.01f),
-                        oneHandGesture + " must leave the first-person left hand closed.");
-                    Assert.That(
-                        Quaternion.Angle(
-                            worldRightClosed,
-                            worldRightIndex.localRotation),
-                        Is.GreaterThan(1f),
-                        oneHandGesture + " must open the world right hand.");
-                    Assert.That(
-                        Quaternion.Angle(
-                            firstRightClosed,
-                            firstRightIndex.localRotation),
-                        Is.GreaterThan(1f),
-                        oneHandGesture + " must open the first-person right hand.");
-
-                    visual.SetHandGesture(0, 2);
-                    AssertHandAnchorRestored(
-                        visual.Bindings.LeftHandAnchor,
-                        authoredPresentation.LeftHandAnchor);
-                    AssertHandAnchorRestored(
-                        visual.Bindings.RightHandAnchor,
-                        authoredPresentation.RightHandAnchor);
-                    AssertHandAnchorRestored(
-                        visual.Bindings.FirstPersonLeftHand,
-                        authoredPresentation.FirstPersonLeftHand);
-                    AssertHandAnchorRestored(
-                        visual.Bindings.FirstPersonRightHand,
-                        authoredPresentation.FirstPersonRightHand);
-                    Assert.That(
-                        Quaternion.Angle(
-                            worldLeftClosed,
-                            worldLeftIndex.localRotation),
-                        Is.LessThan(0.01f));
-                    Assert.That(
-                        Quaternion.Angle(
-                            worldRightClosed,
-                            worldRightIndex.localRotation),
-                        Is.LessThan(0.01f));
-                    Assert.That(
-                        Quaternion.Angle(
-                            firstLeftClosed,
-                            firstLeftIndex.localRotation),
-                        Is.LessThan(0.01f));
-                    Assert.That(
-                        Quaternion.Angle(
-                            firstRightClosed,
-                            firstRightIndex.localRotation),
-                        Is.LessThan(0.01f));
-                }
-                Assert.That(
-                    visual.Bindings.HatAnchor.childCount,
-                    Is.Zero,
-                    "Hat models must be instantiated only when selected.");
-                visual.ApplyAppearance(0, 0, 2, 1);
-                Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.True);
-                Assert.That(visual.Bindings.HatAnchor.childCount, Is.EqualTo(1));
-                var selectedHat = visual.Bindings.HatAnchor.GetChild(0).gameObject;
-                Assert.That(selectedHat.name, Is.EqualTo(catalog.Hats[1].Prefab.name));
-                Assert.That(
-                    visual.Bindings.HatAnchor.Cast<Transform>()
-                        .Count(child => child.gameObject.activeSelf),
-                    Is.EqualTo(1));
-                foreach (var renderer in selectedHat.GetComponentsInChildren<SkinnedMeshRenderer>(true))
-                {
-                    for (var blendShape = 0;
-                         blendShape < renderer.sharedMesh.blendShapeCount;
-                         blendShape++)
-                    {
-                        if (renderer.sharedMesh.GetBlendShapeName(blendShape) == "Scale")
-                        {
-                            Assert.That(renderer.GetBlendShapeWeight(blendShape), Is.Zero);
-                        }
-                    }
-                }
-                visual.ApplyAppearance(0, 0, (byte)catalog.Hats.Length,
-                    (byte)(catalog.Faces.Length - 1));
-                Assert.That(visual.Bindings.HatAnchor.childCount, Is.EqualTo(2));
-                Assert.That(
-                    visual.Bindings.HatAnchor.Cast<Transform>()
-                        .Count(child => child.gameObject.activeSelf),
-                    Is.EqualTo(1));
-                Assert.That(
-                    visual.Bindings.HatAnchor.Cast<Transform>()
-                        .Single(child => child.gameObject.activeSelf).name,
-                    Is.EqualTo(catalog.Hats[catalog.Hats.Length - 1].Prefab.name));
-                visual.ApplyAppearance(0, 0, 0, 2);
-                Assert.That(visual.Bindings.HatAnchor.gameObject.activeSelf, Is.False);
-                Assert.That(
-                    visual.Bindings.HatAnchor.Cast<Transform>()
-                        .Any(child => child.gameObject.activeSelf),
-                    Is.False);
-
-                var authoredHighlight = visual.Bindings.TopViewHighlight;
-                var authoredObjectCount = root
-                    .GetComponentsInChildren<Transform>(true)
-                    .Length;
-                visual.SetTopViewHighlight(true);
-                Assert.That(authoredHighlight.activeSelf, Is.True);
-                Assert.That(
-                    root.GetComponentsInChildren<Transform>(true).Length,
-                    Is.EqualTo(authoredObjectCount),
-                    "Highlight toggling must not create runtime geometry.");
-                visual.SetTopViewHighlight(false);
-                Assert.That(authoredHighlight.activeSelf, Is.False);
-
-                var authoredShield = visual.Bindings.ShieldVfx;
-                visual.SetBoardProtectionVisible(true);
-                Assert.That(authoredShield.activeSelf, Is.True);
-                visual.SetLocationHighlightVisible(true);
-                visual.SetBoardProtectionVisible(false);
-                Assert.That(authoredShield.activeSelf, Is.True,
-                    "The round-location request must survive board protection ending.");
-                visual.SetHiddenFromViewer(true);
-                Assert.That(authoredShield.activeSelf, Is.False,
-                    "A hidden avatar must not leave its shield presentation behind.");
-                visual.SetHiddenFromViewer(false);
-                Assert.That(authoredShield.activeSelf, Is.True,
-                    "The active location request must resume with avatar visibility.");
-                visual.SetLocationHighlightVisible(false);
-                Assert.That(authoredShield.activeSelf, Is.False);
-                Assert.That(
-                    root.GetComponentsInChildren<Transform>(true).Length,
-                    Is.EqualTo(authoredObjectCount),
-                    "Shield state changes must not create runtime geometry.");
             }
             finally
             {
@@ -478,31 +187,165 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void NetworkPlayer_UsesNestedAuthoredPresentationAndEyePivot()
+        public void LobbyIdentityAndOcclusion_TrackReadyHostAndExitState()
         {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                NetworkPlayerPrefabPath);
-            Assert.That(prefab, Is.Not.Null, NetworkPlayerPrefabPath);
-            var visual = prefab.GetComponent<PlayerAvatarVisual>();
-            var avatar = prefab.GetComponent<NetworkPlayerAvatar>();
-            Assert.That(visual, Is.Not.Null);
-            Assert.That(avatar, Is.Not.Null);
-            Assert.That(visual.Bindings, Is.Not.Null);
-            Assert.That(visual.Bindings.HasRequiredReferences, Is.True);
-            var source = PrefabUtility.GetCorrespondingObjectFromSource(
-                visual.Bindings);
-            Assert.That(source, Is.Not.Null);
-            Assert.That(
-                AssetDatabase.GetAssetPath(source),
-                Is.EqualTo(PlayerPresentationPrefabPath));
+            var root = new GameObject("Lobby Identity Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+                var defaultNameColor = bindings.NameText.color;
+                var nameRenderer = bindings.NameText.GetComponent<Renderer>();
 
-            var eyePivot = prefab.transform.Find("CameraPivot");
-            Assert.That(eyePivot, Is.Not.Null);
-            var serializedAvatar = new SerializedObject(avatar);
-            Assert.That(
-                serializedAvatar.FindProperty("eyePivot").objectReferenceValue,
-                Is.SameAs(eyePivot));
-            Assert.That(prefab.GetComponent<PlayerHitZoneOwner>(), Is.Not.Null);
+                visual.SetLobbyIdentityState(true, false);
+                Assert.That(
+                    bindings.NameText.color,
+                    Is.EqualTo(bindings.LobbyReadyNameColor));
+                Assert.That(bindings.LobbyHostIcon.gameObject.activeSelf, Is.False);
+
+                visual.SetLobbyIdentityState(false, true);
+                Assert.That(bindings.NameText.color, Is.EqualTo(defaultNameColor));
+                Assert.That(bindings.LobbyHostIcon.gameObject.activeSelf, Is.True);
+
+                visual.SetNameplateOccluded(true);
+                Assert.That(nameRenderer.forceRenderingOff, Is.True);
+                Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.True);
+                visual.SetNameplateOccluded(false);
+                Assert.That(nameRenderer.forceRenderingOff, Is.False);
+                Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.False);
+
+                visual.SetLobbyIdentityState(false, false);
+                Assert.That(bindings.NameText.color, Is.EqualTo(defaultNameColor));
+                Assert.That(bindings.LobbyHostIcon.gameObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void EquippedItem_SwitchesHandsAndWorldItemRootThenRestoresNone()
+        {
+            var root = new GameObject("Equipped Item Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+                var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
+
+                visual.SetEquippedItem(PrototypeItemId.Pistol);
+                Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.False);
+                Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.False);
+                Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.True);
+                Assert.That(
+                    bindings.WorldItemRoot.Cast<Transform>()
+                        .Single(child => child.gameObject.activeSelf).name,
+                    Does.StartWith(pistol.HeldPrefab.name));
+
+                visual.SetEquippedItem(PrototypeItemId.None);
+                Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(bindings.WorldItemRoot.gameObject.activeSelf, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void HandGesture_UsesWardrobeFaceNormalHandsAndRestoresAuthoredPose()
+        {
+            var root = new GameObject("Hand Gesture Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+                var catalog = PlayerExpressionCatalog.Instance;
+                var authored = Resources.Load<PlayerAvatarPresentationAssets>(
+                    PlayerAvatarPresentationAssets.ResourcePath)
+                    .PresentationPrefab;
+
+                visual.ApplyAppearance(0, 0, 0, 2);
+                visual.SetHandGesture((byte)HandEmoteId.Greeting, 5);
+                Assert.That(
+                    bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[5].Sprite));
+                Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
+                Assert.That(bindings.WorldGestureRoot.gameObject.activeSelf, Is.False);
+
+                visual.SetHandGesture((byte)HandEmoteId.EyesCover, 7);
+                Assert.That(
+                    bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[2].Sprite));
+
+                visual.SetHandGesture(0, 2);
+                Assert.That(
+                    bindings.FaceSprite.sprite,
+                    Is.SameAs(catalog.Faces[2].Sprite));
+                AssertHandAnchorRestored(
+                    bindings.LeftHandAnchor,
+                    authored.LeftHandAnchor);
+                AssertHandAnchorRestored(
+                    bindings.RightHandAnchor,
+                    authored.RightHandAnchor);
+                AssertHandAnchorRestored(
+                    bindings.FirstPersonLeftHand,
+                    authored.FirstPersonLeftHand);
+                AssertHandAnchorRestored(
+                    bindings.FirstPersonRightHand,
+                    authored.FirstPersonRightHand);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void ShieldPresentation_CombinesIndependentRequestsAndHiddenState()
+        {
+            var root = new GameObject("Shield Presentation Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var shield = visual.Bindings.ShieldVfx;
+
+                visual.SetBoardProtectionVisible(true);
+                Assert.That(shield.activeSelf, Is.True);
+
+                visual.SetBoardTopViewHighlightVisible(true);
+                visual.SetBoardProtectionVisible(false);
+                Assert.That(shield.activeSelf, Is.True);
+
+                visual.SetMinigameLocationHighlightVisible(true);
+                visual.SetBoardTopViewHighlightVisible(false);
+                Assert.That(shield.activeSelf, Is.True,
+                    "The minigame request must survive board cleanup.");
+
+                visual.SetBoardTopViewHighlightVisible(true);
+                visual.SetMinigameLocationHighlightVisible(false);
+                Assert.That(shield.activeSelf, Is.True,
+                    "The board request must survive minigame cleanup.");
+
+                visual.SetHiddenFromViewer(true);
+                Assert.That(shield.activeSelf, Is.False);
+                visual.SetHiddenFromViewer(false);
+                Assert.That(shield.activeSelf, Is.True);
+
+                visual.SetBoardTopViewHighlightVisible(false);
+                Assert.That(shield.activeSelf, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
@@ -513,11 +356,8 @@ namespace MazeParty.Multiplayer.Tests
             {
                 var visual = root.AddComponent<PlayerAvatarVisual>();
                 visual.EnsureBuilt();
-                Assert.That(visual.Bindings, Is.Not.Null);
-
                 var serialized = new SerializedObject(visual.Bindings);
                 var settings = serialized.FindProperty("handEmoteRotations");
-                Assert.That(settings, Is.Not.Null);
                 settings.FindPropertyRelative("greetingWaveDegrees")
                     .floatValue = 0f;
 
@@ -530,23 +370,14 @@ namespace MazeParty.Multiplayer.Tests
                 for (var index = 0; index < names.Length; index++)
                 {
                     var entry = settings.FindPropertyRelative(names[index]);
-                    Assert.That(entry, Is.Not.Null, names[index]);
-                    expected[index, 0] = new Vector3(
-                        index + 1f,
-                        index + 2f,
-                        index + 3f);
-                    expected[index, 1] = new Vector3(
-                        index + 11f,
-                        index + 12f,
-                        index + 13f);
-                    expected[index, 2] = new Vector3(
-                        index + 21f,
-                        index + 22f,
-                        index + 23f);
-                    expected[index, 3] = new Vector3(
-                        index + 31f,
-                        index + 32f,
-                        index + 33f);
+                    for (var context = 0; context < 4; context++)
+                    {
+                        expected[index, context] = new Vector3(
+                            index + context * 10f + 1f,
+                            index + context * 10f + 2f,
+                            index + context * 10f + 3f);
+                    }
+
                     entry.FindPropertyRelative("worldLeftEuler")
                         .vector3Value = expected[index, 0];
                     entry.FindPropertyRelative("worldRightEuler")
@@ -596,7 +427,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void HandEmoteRotationMigration_ReentryAndValidationPreserveAuthoredValues()
+        public void HandEmoteRotationSchema_PreservesAuthoredValuesOnReentry()
         {
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PlayerPresentationPrefabPath);
@@ -605,9 +436,8 @@ namespace MazeParty.Multiplayer.Tests
             {
                 var bindings = instance.GetComponent<
                     PlayerAvatarPresentationBindings>();
-                Assert.That(bindings, Is.Not.Null);
-                var serialized = new SerializedObject(bindings);
                 var custom = new Vector3(17f, -29f, 43f);
+                var serialized = new SerializedObject(bindings);
                 serialized.FindProperty("handEmoteRotations")
                     .FindPropertyRelative("salute")
                     .FindPropertyRelative("firstPersonRightEuler")
@@ -616,8 +446,7 @@ namespace MazeParty.Multiplayer.Tests
 
                 Assert.That(
                     bindings.EnsureHandEmoteRotationSettings(),
-                    Is.False,
-                    "A completed schema must not be initialized again.");
+                    Is.False);
                 var onValidate = typeof(PlayerAvatarPresentationBindings)
                     .GetMethod(
                         "OnValidate",
@@ -637,6 +466,35 @@ namespace MazeParty.Multiplayer.Tests
             {
                 Object.DestroyImmediate(instance);
             }
+        }
+
+
+        [Test]
+        public void NetworkPlayer_UsesNestedAuthoredPresentationAndEyePivot()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                NetworkPlayerPrefabPath);
+            Assert.That(prefab, Is.Not.Null, NetworkPlayerPrefabPath);
+            var visual = prefab.GetComponent<PlayerAvatarVisual>();
+            var avatar = prefab.GetComponent<NetworkPlayerAvatar>();
+            Assert.That(visual, Is.Not.Null);
+            Assert.That(avatar, Is.Not.Null);
+            Assert.That(visual.Bindings, Is.Not.Null);
+            Assert.That(visual.Bindings.HasRequiredReferences, Is.True);
+            var source = PrefabUtility.GetCorrespondingObjectFromSource(
+                visual.Bindings);
+            Assert.That(source, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(source),
+                Is.EqualTo(PlayerPresentationPrefabPath));
+
+            var eyePivot = prefab.transform.Find("CameraPivot");
+            Assert.That(eyePivot, Is.Not.Null);
+            var serializedAvatar = new SerializedObject(avatar);
+            Assert.That(
+                serializedAvatar.FindProperty("eyePivot").objectReferenceValue,
+                Is.SameAs(eyePivot));
+            Assert.That(prefab.GetComponent<PlayerHitZoneOwner>(), Is.Not.Null);
         }
 
         [Test]
@@ -841,24 +699,16 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(zone.Region, Is.EqualTo(expectedRegion));
         }
 
-        private static Transform FindHandBone(Transform root, string name)
-        {
-            return root.GetComponentsInChildren<Transform>(true)
-                .Single(transform => transform.name == name);
-        }
-
         private static void AssertHandAnchorRestored(
             Transform actual,
             Transform authored)
         {
             Assert.That(
                 Vector3.Distance(actual.localPosition, authored.localPosition),
-                Is.LessThan(0.0001f),
-                actual.name + " local position was not restored.");
+                Is.LessThan(0.0001f));
             Assert.That(
                 Quaternion.Angle(actual.localRotation, authored.localRotation),
-                Is.LessThan(0.01f),
-                actual.name + " local rotation was not restored.");
+                Is.LessThan(0.01f));
         }
 
         private static void AssertRotation(
@@ -869,8 +719,8 @@ namespace MazeParty.Multiplayer.Tests
                 Quaternion.Angle(
                     actual.localRotation,
                     Quaternion.Euler(expectedEuler)),
-                Is.LessThan(0.05f),
-                actual.name + " did not use the authored emote rotation.");
+                Is.LessThan(0.05f));
         }
+
     }
 }

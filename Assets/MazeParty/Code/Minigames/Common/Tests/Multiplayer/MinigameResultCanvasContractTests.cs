@@ -41,6 +41,8 @@ namespace MazeParty.Multiplayer.Tests
                 Is.Not.Null);
             Assert.That(result.ResultPanel.activeSelf, Is.False);
             Assert.That(result.ResultPanel.name, Is.EqualTo("MinigameResultPanel"));
+            Assert.That(result.ResultSummary.supportRichText, Is.True,
+                "Player-color tags must render instead of appearing as text.");
             Assert.That(board, Is.Not.Null);
             Assert.That(board.HasRequiredReferences, Is.True);
             Assert.That(result.RootCanvas.sortingOrder,

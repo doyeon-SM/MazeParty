@@ -125,6 +125,11 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<int>();
         private readonly NetworkVariable<ulong> _currentMinigameSeed =
             new NetworkVariable<ulong>();
+        private readonly NetworkList<byte> _revealedMinigames =
+            new NetworkList<byte>(
+                default,
+                NetworkVariableReadPermission.Everyone,
+                NetworkVariableWritePermission.Server);
         private readonly NetworkList<BoardTombstoneSnapshot> _tombstones =
             new NetworkList<BoardTombstoneSnapshot>(
                 default,
@@ -185,6 +190,23 @@ namespace MazeParty.Multiplayer
         public int RemainingMinigameSlots => _remainingMinigameSlots.Value;
         public int MinigameRevealRevision => _minigameRevealRevision.Value;
         public ulong CurrentMinigameSeed => _currentMinigameSeed.Value;
+        public int RevealedMinigameCount => _revealedMinigames.Count;
+
+        public bool TryGetRevealedMinigame(
+            int oneBasedTurn,
+            out ScheduledMinigameId minigame)
+        {
+            var index = oneBasedTurn - 1;
+            if (index < 0 || index >= _revealedMinigames.Count)
+            {
+                minigame = ScheduledMinigameId.Skip;
+                return false;
+            }
+
+            minigame = (ScheduledMinigameId)_revealedMinigames[index];
+            return true;
+        }
+
         public bool IsMinigameRoundCountdown =>
             TryGetMinigameRoundCountdown(out _);
         public double MinigameRoundCountdownRemaining =>
@@ -677,6 +699,7 @@ namespace MazeParty.Multiplayer
             ResetCombatRuntimeOnServer();
             ResetLandingEffectRuntimeOnServer(true);
             _tombstones.Clear();
+            _revealedMinigames.Clear();
             _nextTombstoneId = 0;
             SyncKeyShopSnapshot();
             InitializeBoardLandingEffectsOnServer();
@@ -757,6 +780,7 @@ namespace MazeParty.Multiplayer
             _selectedMinigameNetworkLoadCompleted = false;
             _readyMask.Value = 0;
             _remainingMinigameSlots.Value = 0;
+            _revealedMinigames.Clear();
             ResetAwardCeremonyForRecovery();
 
             try
@@ -1988,6 +2012,7 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
+            PublishBoardKillOnServer(attacker, target);
             var targetSlot = target.AssignedSlot;
             _combatEliminatedAt[targetSlot] = now;
             _combatAliveMask.Value = (byte)(
@@ -2000,6 +2025,36 @@ namespace MazeParty.Multiplayer
                 ResolveCurrentCombatOnServer(now);
             }
             return true;
+        }
+
+        internal void PublishBoardKillOnServer(
+            NetworkPlayerAvatar killer,
+            NetworkPlayerAvatar victim)
+        {
+            if (!IsServer || !GameplayEnabled || killer == null || victim == null ||
+                killer == victim || !killer.IsSpawned || !victim.IsSpawned)
+            {
+                return;
+            }
+
+            var killerSlot = killer.AssignedSlot;
+            var victimSlot = victim.AssignedSlot;
+            if (killerSlot < 0 || killerSlot >= MultiplayerConstants.MaxPlayers ||
+                victimSlot < 0 || victimSlot >= MultiplayerConstants.MaxPlayers ||
+                killerSlot == victimSlot)
+            {
+                return;
+            }
+
+            PresentBoardKillRpc(killerSlot, victimSlot);
+        }
+
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentBoardKillRpc(int killerSlot, int victimSlot)
+        {
+            BoardFlowView.Instance?.EnqueueBoardKillNotification(
+                killerSlot,
+                victimSlot);
         }
 
         public bool TryBoardPunchOnServer(

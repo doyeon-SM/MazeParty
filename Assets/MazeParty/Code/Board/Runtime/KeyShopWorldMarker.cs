@@ -45,7 +45,6 @@ namespace MazeParty.Gameplay
         private BoardShopVisual _visual;
         private GameObject _markerObject;
         private TextMesh _worldText;
-        private GameObject _topViewHighlight;
         private bool _topViewHighlightRequested;
         private bool _hasAppliedSnapshot;
         private KeyShopLifecycleState _appliedState = KeyShopLifecycleState.Inactive;
@@ -74,10 +73,7 @@ namespace MazeParty.Gameplay
         public void SetTopViewHighlight(bool highlighted)
         {
             _topViewHighlightRequested = highlighted;
-            if (_topViewHighlight != null)
-            {
-                _topViewHighlight.SetActive(highlighted);
-            }
+            _visual?.SetTopViewHighlightVisible(highlighted);
         }
 
         /// <summary>
@@ -202,8 +198,7 @@ namespace MazeParty.Gameplay
             _visual = visual;
             _markerObject = visual.gameObject;
             _worldText = visual.Label;
-            _topViewHighlight = visual.TopViewHighlight;
-            _topViewHighlight.SetActive(_topViewHighlightRequested);
+            visual.SetTopViewHighlightVisible(_topViewHighlightRequested);
             _markerObject.SetActive(false);
         }
 

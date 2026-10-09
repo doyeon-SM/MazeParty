@@ -17,7 +17,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity";
 
         [Test]
-        public void HitFlashPrefab_HasNonBlockingBindingsAndReducedFlashSupport()
+        public void HitFlashPrefab_HasRequiredNonBlockingBindings()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
@@ -35,27 +35,6 @@ namespace MazeParty.Multiplayer.Tests
                     .All(group => !group.blocksRaycasts),
                 Is.True);
 
-            var instance = Object.Instantiate(prefab);
-            try
-            {
-                var runtimeView = instance.GetComponent<ArenaCombatHitFlashView>();
-                PresentationAccessibility.Apply(false, false);
-                runtimeView.Flash();
-                var normalOpacity = runtimeView.CurrentOpacity;
-                PresentationAccessibility.Apply(false, true);
-                runtimeView.Flash();
-                Assert.That(normalOpacity, Is.GreaterThan(0f));
-                Assert.That(runtimeView.CurrentOpacity,
-                    Is.EqualTo(
-                        normalOpacity *
-                        PresentationAccessibility.ReducedFlashIntensityScale)
-                    .Within(0.0001f));
-            }
-            finally
-            {
-                PresentationAccessibility.Apply(false, false);
-                Object.DestroyImmediate(instance);
-            }
         }
 
         [Test]

@@ -1,633 +1,309 @@
 # MazeParty 임시 기획 메모
 
-이 문서는 현재 구현 기준, 확정된 작업 계약, 미정 결정과 다음 작업만 보관한다.
-완료 이력은 Git, 확정 기획 원문은 Notion, 장기 계약은 코드와 EditMode 테스트를
-원본으로 삼는다. 사용자의 최신 명시적 지시를 항상 우선한다.
+이 문서는 현재 구현 기준, 확정된 기획과 남은 TODO만 기록한다. 완료 이력은 Git과
+회의록, 세부 구현 계약은 코드와 유지 대상 EditMode 테스트를 원본으로 삼는다.
+사용자의 최신 명시적 지시가 이 문서보다 우선한다.
 
-## 현재 작업 기준
+## 현재 기준
 
-- 저장소·Unity 프로젝트: `C:/Unity/MazeParty`
-- 작업 브랜치: `dev/minigame`
-- 원격 기준 최신 성공 커밋은 `c99fc51311b237534f39a3a182c6c1195004fe0a`이며,
-  UI·VFX·팝업·보드 이벤트·Minefield·Arena 보완을 포함한다. 이후 EditMode 유지보수
-  변경은 검증된 미커밋 작업 트리에 있다.
-- 비차단 기존 경고는 `Assets/Ignore` 무료 캐릭터 에디터 스크립트의 `CS0414` 2개다.
-- `Assets/Ignore`의 에디터 전용 `MaterialImporter.cs`는 Player 빌드를 위해 파일 전체를
-  `#if UNITY_EDITOR`로 감싼다. Ignore 에셋은 새 환경에도 같은 GUID로 설치해야 한다.
-
-### 에셋·프리팹 운영 원칙
-
-- 사용자가 직접 조정한 씬 배치, UI 앵커와 디자인을 기준으로 삼는다. 런타임은 허용된
-  authored prefab의 직렬화된 바인딩을 통해 값과 표시 상태만 바꾸며, setup 재실행은
-  기존 디자인을 덮어쓰거나 대체 UI를 절차적으로 만들지 않는다.
-- 외부 패키지와 생성 원본은 `Assets/Ignore` 아래에 보관한다. 추적되는 프로젝트 전용
-  프리팹은 원본 경로와 GUID 의존을 유지하며 필요한 래퍼만 둔다.
-- 외부 visual의 Collider는 제거한다. 게임 판정 Collider와 NetworkObject는 기존 권위
-  오브젝트에만 두고, visual prefab이 판정이나 네트워크 권위를 소유하지 않게 한다.
-- 미니게임 환경 원본은 `Assets/Ignore/Pandazole_Ultimate_Pack`,
-  `Assets/Ignore/FreeLowpolyScifiObjects`, `Assets/Ignore/Fantasy Lowpoly Pack (Demo)`를
-  사용한다. URP 파생 재질·메시는 `Assets/Ignore/MazePartyGenerated`에 둔다.
-- 프로덕션 미니게임 15종과 보드는
-  `Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat`을 사용한다.
-  미니게임 전용 카메라를 추가하지 않고 지속 Main Camera·Cinemachine 경로를 유지한다.
+- 저장소·Unity 프로젝트: C:/Unity/MazeParty
+- 안정 기준 브랜치: main, 현재 작업 브랜치: dev/minigame
+- 현재 게임 버전은 v0.52, PlayerSettings.bundleVersion은 0.52다.
+- 외부 패키지 원본은 Assets/Ignore, 프로젝트 전용 추적 프리팹은 Assets/MazeParty에
+  둔다. 다른 환경에서도 Ignore 에셋의 경로와 GUID를 동일하게 유지해야 한다.
+- Assets/Ignore의 Resources/Scripts/MaterialImporter.cs는 Player 빌드에 포함되지 않도록
+  파일 전체를 #if UNITY_EDITOR로 감싼 로컬 패치를 유지한다.
+- 사용자가 조정한 씬 배치와 프리팹 디자인을 최종 authored 상태로 취급한다. 런타임은
+  직렬화된 바인딩을 통해 값과 표시 상태만 바꾸며 setup 재실행은 기존 디자인을
+  덮어쓰거나 런타임 대체 UI를 만들지 않는다.
+- 외부 visual에는 Collider와 NetworkObject를 두지 않고 판정과 네트워크 권위는 기존
+  gameplay 오브젝트가 소유하는 것을 목표 계약으로 삼는다. 현재 위반은 남은 TODO에 기록한다.
+- 보드와 프로덕션 미니게임 15종은
+  Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat을 사용한다.
+  미니게임 전용 Camera를 추가하지 않고 지속 Main Camera·Cinemachine 경로를 사용한다.
 
 ## 확정된 구현 계약
 
-### 멀티플레이 경기 복귀
+### UI·현지화·팝업
 
-- 복귀 소유권 상실 또는 저장 실패 시 대기열을 해제해 재시도를 막지 않는다.
-- 세션 단계 저장은 최대 3회, 준비·언로드는 명시적 deadline을 사용한다.
-- fail-closed `LeaveAsync`는 일반 예외 최대 3회와 10초 상한을 사용한다.
-- 시간 초과는 중복 재시도 없는 terminal 상태이며 recovery journal은 보존한다.
-- 실제 로비 복귀가 성공한 뒤에만 활성 미니게임 일정을 완료 처리한다.
-
-### UI·현지화
-
-- 캐주얼 영문 디자인을 기준으로 보라색을 주색, 초록색·남색을 보조색으로 사용하며,
-  둥근 채움 표면은 `Rounded Filled 1024px`로 통일한다.
-- 글자 역할 기준은 제목 34, 주요 CTA 32, 정보 22, 일반 20, 설명 16 Bold다.
-- 글자 가시성을 보완하기 위해 `UnityEngine.UI.Outline` 같은 테두리 효과로 획을
-  두껍게 만들지 않는다. 가독성은 폰트 크기·색상·배경 대비로 확보하며, 버튼·체력 바·
-  지도 선 등 글자가 아닌 그래픽 외곽선은 이 제한에 포함하지 않는다.
-- 사용자가 닫을 수 있는 화면 팝업은 로컬 LIFO 스택으로 관리한다. 공통 설정·나가기
-  확인·알림, 참가 코드, 보드 설정, 옷장, 사용자가 M으로 연 전체 지도, 아이템 상점,
-  위치교환 대상 선택창을 포함하며 ESC는 최상단 하나만 닫는다. 각 닫기·취소 버튼도
-  해당 팝업의 소유 상태를 닫고 같은 스택 항목을 제거한다. 스택이 하나라도 남아 있으면
-  로컬 게임 입력과 포인터 잠금을 막고, 모두 닫힌 다음 ESC부터 공통 설정 메뉴를 연다.
-- 홀드형 손 제스처 휠과 Unity Dropdown은 기존 Cancel 소비를 우선한다. 턴 선택·결과·
-  재접속·Pause Banner처럼 게임 또는 서버 상태가 소유한 패널과 자유배치 턴 개요에서
-  자동 표시되는 전체 지도는 사용자 팝업 스택에 넣지 않는다.
-- 영어 로고는 `MazeParty`, 한국어 로고는 `미로파티`다. 일본어·중국어는 전용 로고가
+- 캐주얼 영문 디자인을 기준으로 보라색을 주색, 초록색·남색을 보조색으로 사용한다.
+  둥근 채움 표면은 Rounded Filled 1024px를 사용한다.
+- 글자 역할 기준은 제목 34, 주요 CTA 32, 정보 22, 일반 20, 설명 16 Bold다. 글자에는
+  UnityEngine.UI.Outline 같은 테두리를 사용하지 않고 크기·색상·배경 대비로 가독성을
+  확보한다.
+- 영어·한국어는 KCC, 일본어는 Noto JP, 중국어 간체는 Noto SC를 사용한다. 플레이어
+  이름에는 상호 fallback을 적용하고 세 동적 폰트 importer는 Hinted Smooth를 사용한다.
+- 영어 로고는 MazeParty, 한국어 로고는 미로파티다. 일본어·중국어는 전용 로고가
   생기기 전까지 영어 로고를 사용한다.
-- 영어·한국어는 KCC, 일본어는 Noto JP, 중국어 간체는 Noto SC를 사용하고 플레이어
-  이름에는 상호 fallback을 적용한다. 세 동적 폰트 importer는 작은 글자의 픽셀 경계를
-  보강하는 `Hinted Smooth`를 사용한다.
-- 옷장은 색 → 얼굴 → 모자 → 감정표현 얼굴 순서다. Face1~15와 없음·Hat1~30을 사용하며
-  기존 Face1~3·Hat1~3 저장 ID를 유지한다. 기본 얼굴·모자 선택값은 저장·네트워크·모든
-  캐릭터 표시에 반영한다. 감정표현 얼굴은 8종별로 로컬 프로필에 저장하고 사용 시 선택한
-  얼굴 ID를 서버가 검증·복제한다. 기존 프로필의 미설정 값은 현재 기본 얼굴로 이관하며,
-  눈가림은 별도 선택값을 적용하지 않고 기본 얼굴을 유지한다.
-- 플레이어 이름은 월드 머리 위에 표시하고 각 라운드의 공통 카운트다운에는 로컬 위치를
-  강조한다.
-- 보드 상대 플레이어 닉네임은 일반 불투명 지형·벽에는 깊이 테스트로 가리고, 깊이를
-  기록하지 않는 파티클 장막·투명 장애물에는 보드 카메라에서 닉네임 앵커까지의 비트리거
-  Collider 시야 판정으로 닉네임 Renderer만 숨긴다. 플레이어 Collider와 이 클라이언트에
-  보이지 않는 다른 플레이어의 전용 경계벽은 판정에서 제외하며, 로컬 닉네임과 미니게임·
-  보드 이탈 상태에는 강제 마스킹을 남기지 않는다. 언어 변경 뒤에도 깊이 테스트 재질과
-  현재 언어 폰트 atlas를 함께 유지한다.
-- `BoardCanvas.prefab`은 사용자가 조정한 현재 배치를 유지한다. 삭제된 Players·Inventory
-  제목과 인벤토리 슬롯 라벨은 런타임 바인딩에서도 제거하며, 각 플레이어 카드의 Key와
-  Gold는 `Assets/Ignore/Icon_NCI`의 아이콘 뒤에 숫자 텍스트를 두는 구성으로 표시한다.
-- 보드 HUD에는 아이템 선택·사용 여부와 쉴드 남은 시간을 설명하는 별도 텍스트를 두지
-  않는다. `BoardChoiceTimerText`와 `BoardShieldText`는 프리팹·바인딩·런타임 갱신에서
-  제거하며 setup 재실행으로 복원하지 않는다.
-- 현재 플레이어의 3개 인벤토리 슬롯에 유효한 아이템이 하나도 없으면 액션 시작 시
-  아이템 미사용을 즉시 확정하고 아이템 선택 패널을 열지 않는다. 하나라도 있으면 기존
-  선택 패널에서 선택한다.
-- 개인 `BoardStatusText`에는 아이템 선택 상세나 착지 효과의 대상·내용을 표시하지 않는다.
-  아이템이 있을 때의 선택 자체는 기존 선택 패널에서 수행하고, 특별 이벤트 칸의 최종 결과만 별도
-  `BoardEventPopupPanel`에서 누가 누구에게 무엇을 주는지 모든 플레이어에게 알린다. 이
-  팝업은 서버의 착지 효과 처리 상태가 소유하는 non-dismissible UI이므로 닫기 버튼·ESC와
-  로컬 팝업 스택에 연결하지 않으며, 일반 골드·아이템·회복·피해 칸에는 표시하지 않는다.
-- 네 플레이어 카드의 체력은 기존 Bar·Fill·Text 배치를 유지한 표시 전용 `Slider`로
-  구성한다. 채움은 좌측에서 우측으로 진행하고 런타임은 값·상태색·텍스트만 갱신하며,
-  외곽선·상단 하이라이트·구간 눈금은 `BoardCanvas.prefab`에 직접 제작한다.
-- 술래잡기 술래의 1인칭 화면에는 공용 `MinigameCommonHud.prefab`에 authored된 중앙
-  `Tagger Aim`을 표시한다. 에임은 입력을 막지 않으며 술래의 실제 Running 단계에서만
-  켜고 카운트다운·일시정지·도망자 화면에서는 숨긴다.
+- 사용자가 닫을 수 있는 화면 팝업은 로컬 LIFO 스택으로 관리한다. ESC와 각 닫기·취소
+  버튼은 최상단 또는 자신이 소유한 항목 하나만 닫는다. 스택이 남아 있으면 로컬 게임
+  입력과 포인터 잠금을 막고, 모두 닫힌 뒤의 ESC만 공통 설정 메뉴를 연다.
+- 스택 대상은 공통 설정·나가기 확인·알림, 참가 코드, 보드 설정, 옷장, 사용자가 M으로
+  연 전체 지도, 아이템 상점, 위치교환 대상창이다. 홀드형 감정표현 휠과 Dropdown은
+  자체 Cancel을 우선한다. 서버 상태가 소유하는 턴 선택·결과·재접속·Pause Banner와
+  자동 턴 개요 지도는 스택에 넣지 않는다.
+- 플레이 중 Canvas UI는 허용된 authored prefab을 원본으로 사용하며 디자인상 삭제한
+  텍스트나 바인딩을 setup으로 복원하지 않는다.
 
-### 빌드 버전 및 방 접속
+### 세션·버전·경기 복귀
 
-- 현재 기획 버전은 `v0.52`이며 Unity `PlayerSettings.bundleVersion`은 접두사 없는
-  `0.52`로 관리한다. 런타임의 단일 버전 출처는 `Application.version`이다.
-- `LobbyCanvas.prefab` 왼쪽 아래에는 `v` 접두사를 붙인 현재 빌드 버전을 표시한다.
-  버전 라벨은 프리팹에 authored하고 런타임은 표시 문자열만 갱신한다.
-- 방 생성 시 현재 버전을 MPS 세션 속성과 NGO connection payload에 함께 기록한다.
+- 방 생성 시 Application.version을 MPS 세션 속성과 NGO connection payload에 기록한다.
   참가·재접속은 호스트와 정확히 같은 버전만 승인하며 누락·공백·접미사 차이도 거부한다.
-  NGO 승인 검사를 플레이어 생성 전에 수행하고 기존 MPS 세션 속성 검사는 2차 방어로 유지한다.
-- 승인 거절된 pending client의 disconnect는 실제 참가자 이탈로 처리하지 않는다. 따라서
-  잘못된 버전의 접속 시도가 진행 중 경기의 재접속 일시정지나 로비 좌석 정리를 일으키지 않는다.
-- 서로 호환되지 않는 변경을 배포할 때는 기획 버전과 `bundleVersion`을 함께 올린다.
+  거절된 pending client의 disconnect는 실제 참가자 이탈로 처리하지 않는다.
+- 로비에는 v 접두사를 붙인 현재 빌드 버전을 표시한다. 비호환 변경 배포 시 기획
+  버전과 bundleVersion을 함께 올린다.
+- 경기 복귀의 세션 단계 저장은 최대 3회, 준비·언로드는 명시적 deadline을 사용한다.
+  fail-closed LeaveAsync는 일반 예외 최대 3회와 10초 상한을 사용한다.
+- 소유권 상실 또는 저장 실패 시 대기열을 해제한다. 시간 초과는 중복 재시도 없는
+  terminal 상태로 처리하고 recovery journal은 보존한다. 실제 로비 복귀 성공 뒤에만
+  활성 미니게임 일정을 완료 처리한다.
+- 게임 종료는 메뉴와 창 닫기 모두 실제 Unity teardown 전에 단일 preparation을 거친다.
+  진행 중 세션 작업을 기다린 뒤 MPS Leave/Delete를 먼저 끝내며 전체 정리는 5초를 넘기지
+  않는다. 준비 중에는 새 세션 작업과 프레임 기반 상태 진행을 시작하지 않는다.
+- Windows Player는 정리 완료 뒤 정상 Application.Quit을 시도한다. Unity 6000.6 네이티브
+  teardown이 3초 안에 끝나지 않으면 백그라운드 watchdog이 TerminateProcess를 최후 수단으로
+  사용해 사용자가 작업 관리자에서 강제 종료할 필요가 없게 한다.
 
-### 로비 프레젠테이션과 맵 선택
+### 로비·옷장
 
-- 대기방 3D 공간은 `Assets/Ignore/Maze` 원본을 사용하는 하나의 철창·감옥이며,
-  `LobbyArena.prefab`과 허용된 `Multiplayer/UI` 프리팹에서 제작한다.
-- 대기방 입장 전에는 글자 없는 16:9 임시 배경과 현재 언어 로고를 표시한다. 입장 성공
-  즉시 둘을 숨기고 3D 대기방을 표시하며, 세션에서 나왔을 때 현재 언어 로고를 복원한다.
-- `LobbyCanvas.prefab` 비표시와 `OnlineBootstrap` 인스턴스 활성 override는 사용자가 보존을
-  지시한 현재 상태다. 중앙 UI 프리팹 정책은 이 활성 override만 명시적으로 허용하고,
-  나머지 씬 로컬 UI 디자인 override는 계속 실패시킨다.
-- 플레이어 장막은 대기방에서 표시와 판정을 모두 끄고 보드 단계부터 활성화한다. 남은
-  보드 상태와 관계없이 세션 단계가 대기방이면 서버와 클라이언트 모두 즉시 제거한다.
-- `OnlineBootstrap`의 남쪽 철문 조각은 최상위 씬 오브젝트로 두지 않고
-  `LobbyArena/Presentation` 하위에 둔다. 로비 외벽은 유지하되 보드가 additive 로드될 때
-  다른 대기실 프레젠테이션과 함께 표시·충돌이 꺼져 보드에 남지 않게 한다.
-- 대기실에는 준비 상태 명단·요약 패널을 두지 않는다. 준비한 플레이어는 3D 아바타
-  머리 위 닉네임을 초록색으로 바꾸고, 방장 닉네임 왼쪽에는 Modern UI의 채운 별
-  아이콘을 표시한다. 준비색과 방장 별은 로비 단계에서만 보이며 보드·미니게임 진입 시
-  기본 이름색과 별 숨김 상태로 즉시 복원한다.
-- `준비된 플레이어가 정확히 4명 필요합니다.` 같은 준비 안내는 대기실 화면 오른쪽
-  아래의 프리팹 텍스트로 표시하고, 네 플레이어가 모두 준비되면 숨긴다.
-- 초대 코드는 화면 중앙 상단에 두며 기본값은 마스킹한다. 코드 오른쪽에는 누르는 동안만
-  원문을 보여 주는 보기 아이콘 버튼, 그 오른쪽에는 마스킹을 유지하는 복사 아이콘 버튼을 둔다.
-- 준비 버튼은 화면 중앙 하단에, 시작 버튼은 그 바로 아래에 둔다. 저장 경기 복구 선택 시
-  같은 두 버튼을 폐기/계속 동작으로 재사용하는 기존 기능은 유지한다.
-- 맵 선택은 준비 영역에서 분리한 `Board Settings Popup` 안에 둔다. 옷장 버튼 바로 위의
-  `보드 설정` 버튼으로 열고 닫으며, 보드 설정과 옷장은 동시에 열지 않는다. 모든 플레이어가
-  동기화된 현재 맵 이름을 볼 수 있고, 호스트만 프로덕션 `BoardMapCatalog.Maps` 순서로
-  맵을 순환 선택한다.
-- 옷장과 보드 설정 팝업에는 프리팹에 authored된 닫기 버튼을 두며, ESC와 동일한 닫기
-  경로를 사용한다. 참가 코드 Cancel도 동일하게 참가 코드 입력을 비우고 스택에서 제거한다.
-- 맵 표시 이름은 영어 `Forest`·`Maze`, 한국어 `숲`·`미로`, 일본어 `森`·`迷路`,
-  중국어 간체 `森林`·`迷宫`이다. 새 세션 기본은 `forest-graybox`이며 저장 경기에서는
-  저장된 `MapId`와 `ContentVersion`을 우선한다.
+- 대기방은 Assets/Ignore/Maze 원본을 사용한 철창·감옥 공간이다. 입장 전에는 글자 없는
+  16:9 배경과 현재 언어 로고를 표시하고 입장 성공 시 숨기며, 세션 이탈 시 복원한다.
+- LobbyCanvas.prefab 비표시와 OnlineBootstrap 활성 override는 사용자가 보존하도록
+  지정한 현재 상태다. 해제 요청 전까지 변경하지 않는다.
+- 로비에서는 플레이어 장막의 표시와 판정을 끈다. 남쪽 철문 조각은
+  LobbyArena/Presentation 아래에 두며 보드 additive 로드 시 다른 로비 프레젠테이션과
+  함께 비활성화한다.
+- 준비 명단·요약 패널은 사용하지 않는다. 준비 완료는 3D 아바타 머리 위 닉네임을
+  초록색으로, 방장은 닉네임 왼쪽의 Modern UI 채운 별 아이콘으로 표시한다. 둘은 로비에서만
+  보이고 보드·미니게임 진입 시 기본 상태로 복원한다.
+- 준비 안내는 오른쪽 아래에 표시하고 네 명이 모두 준비되면 숨긴다. 준비 버튼은 중앙
+  하단, 시작 버튼은 그 아래에 둔다. 저장 경기 복구 시 두 버튼의 폐기/계속 재사용은 유지한다.
+- 초대 코드는 중앙 상단에서 기본 마스킹한다. 오른쪽의 보기 아이콘은 누르는 동안만
+  원문을 보여 주고, 그 오른쪽의 복사 아이콘은 마스킹 상태로 코드를 복사한다.
+- 맵 선택은 옷장 위 보드 설정 버튼으로 여는 별도 팝업에 둔다. 모든 플레이어가 선택
+  결과를 보며 호스트만 BoardMapCatalog.Maps 순서로 변경한다. 옷장과 보드 설정은 동시에
+  열지 않고 각각 닫기 버튼과 ESC를 같은 경로로 처리한다.
+- 새 세션 기본 맵은 forest-graybox다. 저장 경기에서는 저장된 MapId와 ContentVersion을
+  우선한다. 표시명은 Forest/숲/森/森林, Maze/미로/迷路/迷宫이다.
+- 옷장 순서는 색 → 얼굴 → 모자 → 감정표현 얼굴이다. Face1~15, 없음·Hat1~30을 사용하며
+  기존 Face1~3·Hat1~3 저장 ID를 유지한다. 기본 외형은 저장·네트워크·모든 캐릭터 표시에
+  반영한다.
 
-### 플레이어 기본 손
+### 플레이어 손·감정표현·충돌
 
-- 좌우 기본 손은 `Assets/Ignore/SimpleHands/Prefabs/WhiteHand.prefab` 원본의
-  `SimpleFistHand.prefab` 변형을 사용한다. 왼손은 visual root X축 미러로 구분한다.
-- 기존 손 앵커, 주먹 애니메이션, 독립 SphereCollider 히트박스와 직렬화 바인딩을 유지하며
-  SimpleHands 모델에는 Collider를 추가하지 않는다.
-- 손에 든 아이템이 활성화되면 기본 손을 숨긴다. 감정표현은 별도 대체 손 프리팹을 사용하지
-  않고 같은 `SimpleFistHand`의 손가락 본과 기존 좌우 손 앵커를 직접 보간한다.
-- T 홀드 원형 휠은 로비·보드에서만 인사·경례·욕설·하트·놀람·항복·부탁·눈가림의
-  8종을 제공한다. 각 모션은 2초 동안 서버 권위로 이동을 잠그며, 인사는 오른손을 두 번
-  흔들고 욕설은 양손 중지만 펴며 하트는 양손 엄지·검지만 펴서 몸 앞에 모은다. 나머지
-  모션도 열린 손을 요청 위치로 이동하며 시작·종료는 부드럽게 보간한다.
-- 감정표현 손 루트 각도는 공용 `PlayerAvatarPresentation.prefab`의
-  `Player Avatar Presentation Bindings > Hand Emote Rotations`에 저장한다. 8종 각각
-  월드/1인칭 좌우 Euler를 분리하고 인사의 흔들림 폭도 별도 조절한다. 최초 schema 이관
-  뒤 setup 재실행은 사용자가 조절한 값을 덮어쓰거나 프리팹을 재저장하지 않는다.
+- 기본 손은 WhiteHand.prefab 원본의 SimpleFistHand.prefab 변형을 사용하며 왼손은
+  visual root X축 미러로 구분한다. 기존 손 앵커·주먹 애니메이션·독립 trigger 히트박스를
+  유지하고 모델 자체에는 Collider를 추가하지 않는다. 장착 아이템이 활성화되면 손을 숨긴다.
+- T 홀드 원형 휠은 로비·보드에서만 인사·경례·욕설·하트·놀람·항복·부탁·눈가림 8종을
+  제공한다. 모션은 2초 동안 서버 권위로 이동을 잠그고 시작·종료를 부드럽게 보간한다.
+- 감정표현은 기본 손의 손가락 본과 손 앵커를 사용한다. 인사는 오른손을 두 번 흔들고,
+  욕설은 양손 중지만, 하트는 양손 엄지·검지만 편다. 나머지는 열린 손을 지정 위치로 옮긴다.
+- 감정표현 얼굴은 8종별로 프로필에 저장하고 서버가 검증·복제한다. 기존 프로필의 미설정
+  값은 현재 기본 얼굴로 이관하며 눈가림은 얼굴을 바꾸지 않는다.
+- 손 루트 각도는 PlayerAvatarPresentation.prefab의 Player Avatar Presentation Bindings >
+  Hand Emote Rotations에서 8종별 월드/1인칭 좌우 Euler와 인사 흔들림 폭을 조절한다.
+  최초 schema 이관 뒤 setup은 사용자 값을 덮어쓰거나 불필요하게 프리팹을 재저장하지 않는다.
+- 이동 충돌은 플레이어 루트 CharacterController 하나만 담당하며 반경은 0.42m다.
+  몸·머리·양손 PlayerHitZone은 trigger 피격 판정 전용이고 장식과 손은 이동을 막지 않는다.
+- 보드에서는 전역 일시정지를 제외하고 입력 잠금 중에도 서버가 중력 -24와 접지 속도
+  -2를 적용한다. 복구·스왑·리스폰 텔레포트는 수직 속도를 초기화하고 수평 경계 보정은
+  낙하 속도를 보존한다.
+- 보드 상대 닉네임은 불투명 지형·벽에는 깊이 테스트, 깊이를 기록하지 않는 장막·투명
+  장애물에는 비트리거 Collider 시야 판정으로 가린다. 로컬 닉네임과 보드 이탈·미니게임
+  상태에는 강제 마스킹을 남기지 않는다.
 
-### 플레이어 충돌·피격 영역
+### 보드 맵·상점
 
-- 이동과 장애물 차단에는 플레이어 루트의 `CharacterController` 하나만 사용한다.
-  반경은 몸 시각에 맞춘 `0.42m`이며 기존 높이·중심·앉기 전환은 접지 안정성을 위해
+- Forest는 콘텐츠 버전 4, 42칸·49개 일방통행 연결을 사용한다. 시작은 03, 리스폰은
+  02, 13, 슬롯별 시작은 03, 09, 14, 19다. authored Terrain·식생·환경 배치는
+  사용자 요청 없이 재생성·정규화하지 않는다.
+- Forest Terrain은 80×10×73m, 원점 Y -0.12다. 잔디·흙길·48그루 식생을 유지하고
+  visual Terrain과 식생에는 Collider를 두지 않는다. 높이맵 갱신은 기존 조형을 평탄화하지
+  않으며 런타임 포함용 비활성 참조 placeholder를 유지한다.
+- Maze는 콘텐츠 버전 1, 8×8 격자 64칸·80개 연결이다. 시작은 (0,0), 리스폰은
+  (2,2) (2,5) (5,2) (5,5), 슬롯별 시작은 네 모서리다. Maze Ground는 160×153m이고
+  MazeGroundTerrain.asset만 사용한다.
+- Forest·Maze Terrain과 placeholder는 Windows Player 렌더 호환을 위해
+  drawInstanced=false를 사용한다. authored 맵 활성 시 레거시 Board Backdrop은 숨긴다.
+- Map Authoring과 지도 UI는 방 100개를 지원하고 자유배치 맵에는 레거시 7×7 개요를
+  표시하지 않는다. 모든 authored gate와 새 맵 기본 통로 폭은 4m다.
+- 열쇠 상점은 blue-house_001, 두 아이템 상점은 house-red_001 visual을 사용한다.
+  상점 marker는 회피 오프셋 없이 선택된 BoardTile.WorldCenter에 정확히 놓는다.
+- 상점이 처음 나타나거나 위치 revision·좌표가 실제로 바뀌면 Shield VFX를 3초 재생한다.
+  아이템 상점은 프로젝트 전용 WaterShield.prefab, 열쇠상점은 AllIn1VfxToolkit의
+  Sand Shield를 기준으로 만든 별도 색의 프로젝트 전용 변형을 사용한다. 위치가 같은 구매
+  상태 갱신에는 반복하지 않는다.
+- 상점 안내 텍스트는 개인 카메라에서 로컬 플레이어를 향하도록 Y축으로만 회전한다.
+  상하 각도는 조절하지 않는다.
+- 상점의 넓은 조준·상호작용 영역은 Trigger로 유지하고, 실제 집 모델과 같은 메시를 쓰는
+  루트 직속 non-trigger Physical Footprint를 별도로 둔다. Visuals 계층은 충돌 없이 유지해
+  상호작용 범위가 플레이어나 주사위를 가두지 않으면서 모델 자체는 통과하지 못하게 한다.
+
+### 보드 칸·지도 UI
+
+- 월드의 칸 루트·라벨·착지 효과면 Renderer는 숨기고 Collider·Footprint·Topology·효과
+  데이터는 유지한다. 칸 종류와 능력은 미니맵·전체 지도 아이콘으로만 표시한다.
+- 지도 아이콘은 Modern UI Pack을 직접 바인딩한다. 일반·시작은 일반칸, 리스폰은
+  Home Filled, 골드 획득/손실은 노랑/빨강 Money Filled, 피해는 빨강 Add, 특별
+  이벤트는 빨강 Warning Filled다. 아이템은 기존 흰색, 회복은 기존 초록색 아이콘을 쓴다.
+  칸 아이콘은 현재보다 키우고 칸별 사각 배경은 숨기며, 플레이어 표식은 칸 아이콘보다
+  위 렌더 순서에 둔다.
+- 유효 출구가 둘 이상인 갈림길의 이동 방향 Arrow Up은 플레이어가 도착하기 전부터
+  미니맵·전체 지도에 미리 표시한다.
+  지뢰는 월드·미니맵·전체 지도 모두 빨강 Help Filled로 표시하며 설치자만 볼 수 있다.
+- 플레이어는 Location Mark Filled를 외형색으로 칠해 칸의 안전 중심에 표시한다. 본인은
+  현재 위치를 사용한다. 상대의 전체 지도는 시작 탑뷰 위치에서 시작해 1인칭 카메라로
+  직접 확인할 때만 최종 관측 위치를 갱신하고, 보드에서 직접 확인 가능한 동안에는
+  미니맵에도 현재 위치를 표시한다. 은신 상대는 새로 관측하지 않는다.
+- 주사위 결과 확정 전과 액션 턴 종료 후에는 칸수를 표시하지 않는다. 확정 후 현재 칸을
+  기준으로 삼되 숫자 0은 그리지 않고, 1부터 주사위 합계까지 가능한 모든 방향성 경로와
+  순환 경로를 미리 계산해 전체 지도에 표시하며 이동 중에는 같은 숫자를 유지한다.
+- authored 첫 경로는 노란색, 추가 갈림길은 하늘색 숫자를 칸 구석에 표시한다. 도달 가능한
+  열쇠상점이 있으면 최단경로를 노란 메인 경로로 우선한다. 갈림길 선택 후 불가능한 후보는
+  지우고 남은 최단 상점 경로를 메인으로 승격한다.
+- 액션 중 위치교환·사망 리스폰으로 말이 권위적으로 재배치되면 소비 칸수는 유지하고 새
+  칸을 기준으로 남은 숫자만 다시 계산하며 이전 갈림길 선택 기록을 초기화한다.
+- 미니맵·전체 지도에는 현재 칸부터 열쇠상점까지 방향성 최단경로를 노란 점선으로 표시한다.
+  상점 칸은 노란색으로 채우고 K 문자나 열쇠 아이콘은 겹치지 않는다. 상점 미배치·현재 칸과
+  동일·도달 불가 시 이전 점선을 지운다.
+- 월드 상점 경로 광점은 KeyShopRouteHemisphere.prefab의 경로·GUID·루트 fileID를
+  유지하되 반구 대신 AllIn1VfxToolkit OrbSparkGlow 단일 반복 파티클을 사용한다.
+  지름 약 0.15m의 노란 원형 반짝임이며 Light·Collider·NetworkObject는 두지 않는다.
+- M으로 연 전체 지도는 닫기 버튼·ESC·M이 같은 사용자 상태를 닫는다. 자동 턴 개요
+  지도에는 닫기 버튼과 팝업 스택 항목을 만들지 않는다.
+- 미굴림 Ready 주사위는 플레이어가 굴리기 전에 사망·리스폰하면 함께 재배치한다.
+  생성·재배치 위치는 상점과 다른 월드 오브젝트에 겹치지 않는 충돌 안전 위치를 사용하고,
+  주사위 몸체는 슬롯 고정색 대신 권위 있는 Appearance.BodyColor를 복제해 사용한다.
+
+### 보드 HUD·착지 효과·아이템
+
+- BoardCanvas.prefab의 사용자 배치를 유지한다. 삭제된 Players·Inventory 제목,
+  인벤토리 라벨, BoardStatusText, BoardChoiceTimerText, BoardShieldText, 지도 Title·Legend와
+  Current Tile·Key Shop Distance 바인딩은 선택 사항이며 setup으로 복원하지 않는다.
+- 플레이어 카드의 Key·Gold는 Assets/Ignore/Icon_NCI 아이콘 뒤 숫자로 표시한다. 체력은
+  기존 Bar·Fill·Text를 유지한 표시 전용 Slider이며 런타임은 값·상태색·텍스트만 바꾼다.
+- 이름·등수·체력·상태를 담는 각 플레이어 카드는 권위 있는 Appearance.BodyColor를 어둡게
+  한 배경을 사용한다. 네 카드를 감싸는 공통 Player State Panel 배경은 완전히 투명하게
   유지한다.
-- 몸·머리·왼손·오른손의 네 `PlayerHitZone` Collider는 모두 trigger로 유지해 피격에만
-  사용한다. 손·머리 Collider와 장착 장식은 이동을 막거나 장애물에 걸리지 않는다.
+- 인벤토리 3칸에 유효 아이템이 없으면 아이템 선택창을 열지 않고 미사용을 즉시 확정한다.
+  아이템이 있으면 기존 선택 패널을 사용하되 개인 상태 텍스트에 선택 상세를 표시하지 않는다.
+- 효과 배치 비율은 골드 획득:손실:아이템:회복:피해:특별 이벤트=5:5:2:2:2:1이다.
+  회복은 +20/+10, 피해는 -40/-20 균등 분할이고 Respawn은 제외, Start는 포함한다.
+  서버 시드로 결정론적으로 배치하며 저장 복구 호환 버전은 4다.
+- 특별 이벤트 결과는 BoardEventPopupPanel에서 대상·자원·결과를 모든 플레이어에게 먼저
+  보여 준다. 서버 상태 소유 non-dismissible UI라 닫기·ESC·로컬 팝업 스택에 연결하지 않는다.
+- 플레이어가 아이템 피해로 보드 체력을 0으로 만들거나 보드 격투에서 상대를 탈락시키면
+  서버가 모든 클라이언트의 BoardKillFeedPanel에 `{공격자}이(가) {피해자}을(를) 처치`를
+  전송한다. 두 이름만 권위 있는 Appearance.BodyColor로 표시하되 어두운 색은 텍스트
+  가독성만 보정한다. 환경·자해 사망은 제외하며 같은 프레임의 연속 처치는 로컬 큐에서
+  한 건씩 순서대로 보여 준다.
+- 자원 이동량이 있으면 뺏기는 플레이어 정면 카메라에서 Coin/Key가 머리 위로 올라가고,
+  받는 플레이어 정면에서는 위에서 내려온다. 숫자·텍스트는 표시하지 않는다. 이동량이 0이면
+  결과 팝업만 2초 표시한다. 모델은 BTM Coin.prefab·Key.prefab의 충돌 없는 로컬 래퍼다.
+- Pistol·Sniper는 화면 조준선 기준 hitscan이고 탄환 오브젝트 없이 짧은 tracer만 표시한다.
+  실제 피해 가능한 상대를 조준할 때만 조준선을 빨간색으로 바꾸며 Sniper 확대는 사용하지 않는다.
+- Grenade 선택 중에는 플레이어 발높이에 맞춘 로컬 최대 사거리 원만 표시하고 궤적선은
+  표시하지 않는다. 네 장착 아이템 visual은 WeaponStylizedPack, 9종 아이콘은
+  Assets/Ignore/AIImage/Icons를 사용한다.
 
-### 보드 플레이어 접지
+### 공용 VFX
 
-- 보드 플레이어는 점프 없이 `CharacterController`를 사용한다. 전역 일시정지를 제외하고
-  입력이 없거나 단계상 이동 입력이 잠긴 상태에서도 서버가 매 물리 틱 중력 `-24`와 접지
-  유지 속도 `-2`를 적용해, 언덕·장식·밀림으로 높아진 Y 위치가 공중에 고정되지 않고 충돌
-  지면으로 자연스럽게 내려오게 한다.
-- BoardFlowTestbed도 같은 접지 규칙을 사용한다. 복구·스왑·리스폰 텔레포트는 수직 속도를
-  초기화하되 수평 경계 보정은 진행 중인 낙하 속도를 보존한다.
+- 원본은 Assets/Ignore/AllIn1VfxToolkit v2.32다. 추적되는 전용 VFX는 authored prefab으로
+  만들고 외부 helper, Collider, NetworkObject, Distort/GrabPass 의존을 제거한다.
+- 서버가 의미 이벤트를 확정한 뒤 각 클라이언트가 로컬 VFX를 재생한다. 복수 이벤트를
+  유실하지 않고 재접속·재진입 시 과거 revision을 재생하지 않는다.
+- Race·Wrong Way·Minefield·Red Light Green Light 도착은 초록·노랑 두 burst의 풀링
+  one-shot ArrivalFireworks를 사용한다.
+- 보호막, 미니게임 라운드별 로컬 위치 강조, 보드의 일반 하이라이트와 아이템 상점
+  등장·재배치는 프로젝트 전용 WaterShield.prefab을 공용한다. 열쇠상점 하이라이트는
+  Sand Shield 기반의 별도 색 변형을 사용한다. 플레이어 보호·보드 탑뷰·미니게임 위치 강조
+  요청은 각각 독립적으로 유지하고 최종 표시만 합산한다.
+- 플레이어 장막은 authority Collider와 visual을 분리한다. 자기 장막만 표시하며 파랑은
+  통과 가능, 빨강은 통과 불가다. 숨길 때 Renderer와 ParticleSystem을 함께 끈다.
 
-### Forest Graybox
+### 미니게임
 
-- `Environment/Generated Ground`에는 TerrainLayer 기반 잔디·보드 연결을 따르는 흙길과
-  Terrain 식생을 자동 생성한다. 생성 외 `Environment` 자식은 보존하고 시각 지형과 식생에는
-  Collider를 두지 않는다.
-- Forest Terrain은 `80×10×73m`, 원점 Y `-0.12`를 사용한다. 기존 조형의 실제 높이를
-  보존한 채 수직 범위를 확장하므로 현재 표면 최고점 약 `0.88m`는 유지되고 이후에는
-  약 `9.88m`까지 조형할 수 있다. Ground 갱신을 다시 실행해도 높이맵을 평탄화하지 않는다.
-- Paint Trees는 Pandazole `Tree_24_Spring`의 충돌 없는 URP 래퍼를 사용해 48그루를
-  결정론적으로 배치한다. Paint Details는 `Grass_25/24/20/19` 충돌 없는 래퍼를
-  `256/16` 해상도로 혼합하며, 원본 FBX와 아틀라스의 Read/Write를 활성화한다.
-  Terrain은 `drawTreesAndFoliage=true`를 사용한다.
-- Resources에서 런타임 로드되는 Terrain이 Player 빌드에도 포함되도록 Board 씬에는
-  비활성 GameObject와 활성 Terrain 컴포넌트로 된 참조 placeholder를 유지한다.
-- Unity 6000.6.0f1 URP Standalone Player에서는 인스턴스 Terrain 경로가 표면을 누락하므로
-  Forest·Maze Terrain과 placeholder는 `drawInstanced=false`를 사용한다. authored 맵이
-  활성화되면 레거시 `Board Backdrop (No Gameplay Collision)`은 숨기고 해제 시 복원한다.
-- 42칸·49개 일방통행 연결을 사용한다. 외곽은 `0→1→…→22→0`, 내부는
-  `4→23→…→28→12`, `8→29→…→31→26`, `26→32→…→34→17`,
-  `20→35→…→38→24`, `24→39→40→41→7`이며 `1→3`, `12→14` 지름길을 사용한다.
-- 시작 칸은 `03`, 리스폰은 `02`, `13`, 슬롯별 시작은 `03`, `09`, `14`, `19`다.
-  콘텐츠 버전은 4이며 수동 꼭짓점·회전은 재생성 청사진에도 동기화한다.
-- 칸 연결 기즈모는 실제 `Source→Destination` 방향 화살표로 표시한다.
-- `ForestGrayboxMapRoot.prefab`의 현재 Terrain 조형·식생과 `Environment` 오브젝트 배치는
-  사용자가 완료하고 저장한 최종 authored 디자인이다. 사용자가 다시 요청하기 전에는
-  setup·authoring 도구로 이를 재생성·정규화하거나 덮어쓰지 않는다.
-- 칸 사이 논리 통로 폭은 공용 `BoardGate.DefaultWidth=4m`를 사용한다. Forest의 49개와
-  Maze의 80개 authored gate 및 새 맵 authoring 기본값을 모두 같은 폭으로 유지한다.
-
-### 보드 상점
-
-- 열쇠 상점은 `Fantasy Lowpoly Pack (Demo)`의 `blue-house_001`, 아이템 상점 1·2는
-  `house-red_001`을 기존 상점 래퍼의 visual로 사용한다. 두 아이템 상점 래퍼와 각 인덱스는
-  유지하며, 외부 집의 MeshCollider는 제거하고 기존 구매용 interaction target만 사용한다.
-- 열쇠·아이템 상점 marker 루트는 항상 선택된 `BoardTile.WorldCenter`에 정확히 배치한다.
-  주변 장식 오브젝트와의 Physics 겹침 검사나 회피 오프셋은 사용하지 않으며, 이미 다른
-  오브젝트가 중앙을 차지해도 겹친 상태로 그대로 소환한다.
-- 열쇠 상점과 두 아이템 상점은 처음 나타나거나 실제 위치 revision·좌표가 바뀔 때마다
-  프로젝트 전용 `WaterShield.prefab`을 3초 동안 재생해 위치를 강조한다. 같은 revision의
-  구매 상태 갱신처럼 상점 위치가 그대로인 변경에는 다시 재생하지 않으며, 기존 전체 지도용
-  top-view 상점 표식은 별도로 유지한다.
-
-### Maze Graybox
-
-- mapId는 `maze-graybox`, 표시 이름의 영문 원문은 `Maze`, 콘텐츠 버전은 1이다.
-  정의·루트 프리팹·Terrain은 미로 전용 에셋만 참조한다.
-- 사용자가 배치한 8×8 격자 64칸·80개 연결을 유지한다. 좌표는 월드 X 순서를 열,
-  Z 순서를 행으로 하는 `(열, 행)` 0~7이며 Footprint는 8×8m 정사각형이다.
-- 시작은 `(0,0)`, 리스폰은 `(2,2) (2,5) (5,2) (5,5)`, 슬롯별 시작은
-  `(0,0) (7,0) (7,7) (0,7)`이다.
-- 미니맵·전체 맵과 Map Authoring은 방 100개를 지원한다. 레거시 7×7 개요 패널은 자유
-  배치 맵에서 표시하지 않는다.
-- `Maze Ground`는 160×153m이고 전체 잔디 레이어다. 실제 지형은
-  `MazeGroundTerrain.asset` 하나만 사용하며 숲 전용 갱신 도구는 미로에 적용하지 않는다.
-
-### 보드 착지 효과
-
-- 칸 효과 6범주의 전역 배치 비율은 골드 획득 : 골드 손실 : 아이템 : 회복 : 피해 :
-  특별 이벤트 = `5:5:2:2:2:1`이다. 회복은 `+20/+10`, 피해는 `-40/-20`으로 균등
-  분할하며 홀수일 때 강한 효과에 1칸을 더 배정한다.
-- Respawn 칸은 효과 배정에서 제외하고 Start 칸은 포함한다. 서버 시드로 위치를 결정하며
-  같은 시드는 같은 배치를 만든다. Forest 40칸은 `12/12/5/5/4/2`, Maze 60칸은
-  `18/18/7/7/7/3`으로 배정한다.
-- 착지 효과 비율 변경에 따라 보드 저장 복구 호환 버전은 4이며, 이전 비율의 안정
-  체크포인트는 다른 칸 배치로 복구하지 않고 콘텐츠 지문에서 차단한다.
-- 특별 이벤트의 골드·열쇠 이동은 먼저 기존 `BoardEventPopupPanel`에서 대상·자원·결과
-  전체를 모든 플레이어에게 보여 준다. 이후 자원을 빼는 플레이어의 정면 카메라에서
-  Coin/Key가 머리 위로 상승해 빠져나가고, 받는 플레이어의 정면 카메라에서 위에서
-  머리 위로 내려오며 획득된다. 두 정면 연출 동안 결과 팝업은 숨기고 월드 연출에는
-  숫자나 텍스트를 표시하지 않는다. 실제 이동량이 0이면 결과 팝업만 2초간 보여 주고
-  정면 카메라·자원 모델 연출은 생략한다.
-- 자원 모델은 `Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs`의 `Coin.prefab`과
-  `Key.prefab`을 원본으로 사용하는 보드 전용 래퍼다. 원본 자동 애니메이션을 끄고
-  Collider·NetworkObject 없이 각 클라이언트의 표시 전용 오브젝트로 사용한다.
-
-### 보드 칸 시각
-
-- 일반·시작·리스폰·효과 칸의 루트, 라벨, 착지 효과면 Renderer는 플레이 화면에서
-  항상 숨긴다. Collider·Footprint·Topology·착지 효과 데이터는 그대로 유지한다.
-- 칸 종류와 능력은 미니맵·전체 지도 UI의 아이콘과 설명으로만 표시한다. 월드에서는
-  Terrain의 길, 장막, 플레이어, 주사위·아이템과 일회성 VFX만 보여준다.
-- 미니맵·전체 지도의 플레이어 표식은 Modern UI Pack의 `Location Mark Filled`를
-  플레이어 외형색으로 칠해 논리 칸의 안전 중심에 표시한다. 본인은 항상 현재 위치를
-  사용한다. 다른 플레이어의 전체 지도 위치는 최초 시작 탑뷰의 시작 칸으로 초기화한
-  로컬 최종 관측 위치이며, 보드 1인칭 카메라 화면 안에서 벽·장애물에 가리지 않은
-  상대를 직접 볼 때만 갱신한다. 미니맵의 다른 플레이어는 같은 직접 시야 판정이 참인
-  프레임에만 현재 위치를 표시하고 시야에서 사라지면 즉시 숨긴다. 은신 중인 상대는 새로
-  관측하지 않는다. 착지 효과 아이콘도 같은 중심에 표시하며, 둘이 겹치면 효과 아이콘을
-  플레이어 위치 표식보다 위 레이어에 그린다.
-- 지도 칸 아이콘은 Modern UI Pack 직접 Sprite 바인딩을 사용한다. 일반칸과 시작칸은
-  기존 일반칸 디자인으로 동일하게 표시하며 시작칸에 고정 `P1/P2` 텍스트를 남기지 않는다.
-  리스폰은 `Home Filled`, 골드 획득·손실은 각각 노랑·빨강
-  `Money Filled`, 피해는 빨강 `Add`, 특별 이벤트는 빨강 `Warning Filled`를 쓴다.
-  기존 아이템 아이콘은 흰색, 기존 회복 아이콘은 두 회복량 모두 초록색으로 유지한다.
-  이동 가능 방향은 `Arrow Up` 아이콘을 사용하되 현재 칸의 유효한 outgoing 경로가
-  둘 이상인 갈림길에서 이동 횟수가 남았을 때만 각 선택 방향에 표시한다.
-- 보드 전체 지도(M키 지도와 자유배치 턴 개요 지도, 미니맵 제외)는 각 로컬
-  플레이어의 최종 주사위 결과가 확정된 뒤에만 칸수를 표시한다. 굴림이 확정된
-  현재 칸을 `0`으로 두고 주사위 합계까지 가능한 모든 방향성 이동을 미리 계산하며,
-  한 굴림 안에서 순환해 같은 칸이나 갈림길을 다시 지나는 경로도 포함한다. authored
-  outgoing gate 순서의 첫 경로는 기본 노란색, 두 번째 이후 갈림 경로는 하늘색 숫자를
-  칸 구석에 표시한다. 활성 열쇠상점에 방향성 경로로 도달할 수 있으면 authored 첫
-  출구보다 열쇠상점까지의 최단경로를 노란색 메인 경로로 우선하며, 상점이 없거나
-  도달할 수 없으면 authored 순서로 폴백한다. 일반 칸 이동과 남은 이동 횟수 감소로는
-  번호를 다시 계산하거나 당기지 않는다. 실제 갈림길 선택이 확정되면 맞지 않는 후보
-  경로 숫자를 제거하고, 선택 후에도 열쇠상점에 도달할 수 있으면 남은 호환 경로 중
-  최단 안내 경로를 새 노란색 메인 경로로 승격한다.
-  같은 갈림길을 다시 방문하면 선택 순서를 계속 기록한다. 주사위 굴리기 전과 액션 턴
-  종료 후에는 숫자를 표시하지 않으며, 이동을 먼저 마친 뒤에도 액션 턴이 끝날 때까지
-  해당 굴림의 숫자를 유지한다. 위치교환·사망 리스폰처럼 액션 중 권위적으로 말을
-  재배치하면 이미 소비한 칸수는 유지하고 새 칸을 그 숫자의 기준점으로 삼아 남은
-  숫자만 다시 계산하며, 재배치 전 갈림길 선택 기록은 초기화한다.
-- 턴 시작 개요는 레거시 격자 맵과 자유배치 맵 모두 동일한 전체 지도 프리팹을 사용해
-  칸 종류·효과·플레이어 표식의 Modern UI 아이콘 규칙을 일관되게 적용한다.
-- `BoardCanvas.prefab`에서 디자인상 삭제한 `BoardStatusText`와 두 지도 변형의
-  `Current Tile`·`Key Shop Distance` 텍스트/아이콘, 전체 지도의 Title·Legend는 선택
-  바인딩으로 취급하고 setup 재실행으로 복원하지 않는다. 전체 지도의 열쇠상점은 해당
-  칸을 노란색으로 채우며 `K` 문자나
-  열쇠 타일 아이콘을 겹쳐 표시하지 않는다. 미니맵과 전체 지도에는 현재 칸에서
-  열쇠상점까지의 방향성 최단경로를 노란 점선으로 표시하고, 상점 미배치·현재 칸과
-  동일·도달 불가 상태에서는 이전 점선을 지운다.
-- 보드 월드의 열쇠상점 최단경로 광점은 기존 `KeyShopRouteHemisphere.prefab`의 경로·
-  GUID·루트 fileID를 유지하되 반구 메시 대신 AllIn1VfxToolkit의 `OrbSparkGlow` 재질을
-  쓰는 단일 반복 파티클로 표시한다. 각 광점은 기존 반구와 비슷한 지름 약 0.15m의
-  작은 노란 원형 반짝임이며 실제 Light, Collider, NetworkObject, vendor 동작 스크립트는
-  두지 않는다. 활성 상태 동안 계속 재생하고 숨김·재표시 때 로컬 풀을 재사용한다.
-- M으로 직접 연 전체 지도에는 프리팹 닫기 버튼을 표시하고 ESC·M·닫기 버튼 모두 같은
-  사용자 열림 상태를 해제한다. 자유배치 턴 개요가 강제로 표시한 전체 지도에는 닫기
-  버튼과 팝업 스택 항목을 만들지 않으며, 다른 팝업이 열린 동안에는 M으로 지도를 새로
-  열지 않는다.
-- 플레이어가 죽어 리스폰할 때 이미 표시된 미굴림 `Ready` 월드 주사위는 플레이어와
-  함께 새 리스폰 칸으로 재배치한다. 숨김·굴림 중·결과 표시 주사위는 건드리지 않으며,
-  사망 처리 중 숨겨진 주사위를 미리 준비하지 않는다.
-- 월드 주사위 몸체 색은 슬롯 고정색이 아니라 해당 플레이어의 권위 있는
-  `Appearance.BodyColor` RGB를 서버에서 복제해 모든 클라이언트와 중도 접속자에게
-  동일하게 표시한다. 프리팹의 슬롯색은 에디터·스폰 전 폴백으로만 유지한다.
-- 칸 경계 Gizmo는 Editor 작업용이므로 유지하며 Player 빌드에는 표시하지 않는다.
-
-### 보드 아이템 시각 자산
-
-- 모델 원본은 `Assets/Ignore/nappin/WeaponStylizedPack`에서 Pistol→Revolver,
-  Sniper→HuntingRifle, Mine→Dynamite, Grenade→Granade로 매핑한다.
-- 기존 아이템 프리팹 GUID를 유지하고 Collider를 제거한 추적 래퍼에 URP 재질로 표시한다.
-  `HeldPrefab`이 있는 네 아이템만 장착·사용 중 손을 숨긴다.
-- 9종 아이템 아이콘은 `Assets/Ignore/AIImage/Icons` 원본을 퀵슬롯·상점에서 공용한다.
-
-### 보드 아이템 사용 UX·판정
-
-- Pistol과 Sniper는 별도 조준 모드 없이 화면 조준선 기준 hitscan으로 피해를 적용한다.
-  실제 탄환 오브젝트는 발사하지 않고 짧은 tracer 선은 유지하며, Sniper 우클릭 2배 확대는 제거한다.
-- 총기 조준선은 차폐·사거리·생존·리스폰 보호를 모두 반영해 실제 피해 가능한 상대를
-  조준할 때만 빨간색이다. 그 외에는 흰색이며 Cloak 상태를 색으로 드러내지 않는다.
-- Mine 설치 위치는 설치한 플레이어에게만 표시한다. 미니맵·전체 지도·보드 월드 모두
-  Modern UI Pack의 빨간 `Help Filled` 아이콘을 공용하며, 손에 드는 `HeldPrefab`은
-  기존 Dynamite 모델을 유지하고 설치 월드 표식만 카메라를 향하는 별도 프리팹을 쓴다.
-- Grenade가 사용 선택된 동안 로컬 플레이어에게 최대 투척 사거리의 원형 범위를 표시하고
-  사용 즉시 숨긴다. 수류탄은 포물선으로 이동하지만 궤적선·포물선 미리보기는 표시하지 않는다.
-
-### VFX
-
-- 원본은 `Assets/Ignore/AllIn1VfxToolkit` v2.32이며, 추적되는 프로젝트 전용 VFX는
-  허용된 authored prefab에서 제작한다. 원본 GUID 의존은 유지하고 외부 helper script,
-  Collider, NetworkObject와 Distort/GrabPass 의존은 제거한다.
-- 서버가 의미 이벤트를 확정한 뒤 각 클라이언트가 로컬 VFX를 재생한다. 복수 이벤트는
-  잃지 않는 전달 방식을 사용하고 재접속·재진입 때 과거 revision을 재생하지 않는다.
-- 도착 지점이 있는 Race·Wrong Way·Minefield·Red Light Green Light는 AllIn1VfxToolkit의
-  `Explosion Galaxy`를 정리한 프로젝트 전용 `ArrivalFireworks`를 사용한다. 폭죽은 초록색과
-  노란색 두 burst로 구성한 풀링 one-shot이며, 첫 관측·재접속·재진입 때 이미 끝난 도착을
-  다시 재생하지 않는다.
-- 보드의 시작 보호와 개인 아이템 보호는 AllIn1VfxToolkit의
-  `Demo & Assets/Demo/Prefabs/Water Shield.prefab`을 중첩한 프로젝트 전용
-  `WaterShield.prefab`으로 표시한다. Collider·NetworkObject·외부 helper script가 없는
-  지속형 presentation이며, 보호 상태와 미니게임 위치 강조 요청을 독립적으로 합쳐 둘 중
-  하나라도 남아 있으면 표시한다. 같은 프리팹을 보드 상점의 등장·재배치 3초 강조에도
-  사용하며, 상점 visual의 실제 Renderer envelope 중심과 최대 크기에 맞춰 authored한다.
-  기존 보드 전체 지도용 top-view 표식은 별도로 유지한다.
-- 플레이어 장막은 authority Collider와 visual Transform을 분리한다. 자기 장막만 표시하며
-  파랑은 통과 가능, 빨강은 통과 불가다. 숨길 때 Renderer와 ParticleSystem을 모두 끈다.
-
-### 미니게임 HUD
-
-- 사용자가 2026-10-07 저장한 미니게임 씬·환경 프리팹의 배치, 카메라, 조명과 UI 디자인을
-  최종 authored 디자인으로 취급한다. 아래에서 명시한 세 변경 외에는 setup/rebuild 도구로
-  재생성·정규화하거나 미관을 수정하지 않는다.
-- Red Light Green Light 씬의 신호탑은 삭제된 최종 상태를 유지한다. 상단 HUD에는 글자 대신
-  빨강·초록 3등만 표시한다. 매 주기는 `초록 3 → 빨강 1/초록 2 → 빨강 2/초록 1 → 빨강 3`
-  순서이며, 빨강 3개 다음에는 세 등이 동시에 초록으로 돌아간다. 완전한 빨강 3개에서만
-  이동을 막고 위반을 판정한다. 빨강으로 바뀌기 전 세 단계의 유지시간은 서버 시드로 각각
-  `0.1~3.0초` 안에서 독립 결정한다. 완전한 빨강이 되면 이동 상태는 즉시 금지되며,
-  서버의 자발적 이동 위반 판정에는 기존 네트워크 보정용 `0.15초` 유예를 유지한다.
-- Stable Footing의 `SafeSymbolDisplay`는 authored 왼쪽·중앙·오른쪽 슬롯과 세 스프라이트를
-  그대로 사용한다. 매 사이클 공개 전 3초 동안 정답색을 노출하지 않은 세 심벌이 0.5초마다
-  모두 다른 슬롯으로 이동한다. 마지막 배치를 유지한 채 정답 하나만 초록색으로 공개하고
-  오답 둘은 숨긴다. `Drop`에서 모든 오답 발판이 일시적으로 내려가는 기존 규칙은 유지하며,
-  `Restore` 뒤 영구 제거되는 발판은 사이클당 4개로 늘린다.
-- Wrong Way는 기존 Lane/Step anchor, 플레이 좌표, 씬 환경 디자인을 유지한다. 네 Lane의
-  `Step 01~50`에 ToyBox `BasicBlock` 12종을 충돌 없는 nested visual로 결정론적으로 섞고,
-  Standard 셰이더 원본은 Ignore 원본을 수정하지 않은 URP/Lit 파생 재질로 표시한다.
-- 2026-10-09 전체 EditMode 정리 후 476개 중 473개가 통과했다. 공용 에셋의 옛 Bomb mesh,
-  정확한 UI scale·색·스프라이트·좌표·원본 경로처럼 구현 완료용 시각 세부 기대와 단순
-  getter·상수·Testbed/Solo 내부 테스트는 제거하거나 중앙 계약으로 통합했다. 남은 3개는
-  Forest 시각 지형의 `TerrainCollider`, Bomb Passing 환경 프리팹의 판정 Collider 소유,
-  최종 결과 UI의 전용 authored Canvas 출처라는 실제 장기 계약 불일치다.
-
-- 게임은 항상 4인 구조이며 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다.
-- Tag Chase·Race·Bomb Passing·Snowy Spin·Cliff Barrage는 공통 HUD만, Arena Combat은
-  공통 HUD와 피격 플래시만 사용한다. Minefield·Balloon Blow는 전용 화면 HUD가 없다.
-- Wrong Way는 로컬 방향 아이콘, Red Light Green Light는 현재 신호만 표시한다.
-- Gift Grab은 운반·스턴·기지 수량을 월드에, Stable Footing은 안전 문양만 표시한다.
-- Sequence Memory는 NPC 순서와 로컬 입력·상태 한 줄을 표시한다. Territory Paint와
-  Bouncing Balls는 이름 중복 없이 P1~P4 점수만 작게 표시한다.
-- Solo 캡처의 좌측 `DEVELOPER SOLO TEST` 패널은 Editor 전용 테스트 HUD다.
-  `UNITY_EDITOR` 전용 assembly와 Editor 런처에서만 생성되므로 Development·Release
-  Player 빌드에는 포함되거나 표시되지 않는다.
-
-### 미니게임·격투 관전 카메라
-
-- Gift Grab·Bomb Passing·Snowy Spin·Cliff Barrage·Race·Stable Footing·
-  Territory Paint의 고정 공용 orthographic 카메라는 정탑뷰에서 수직 기준 35°를
-  낮춘 시점(Euler X 55°)을 사용한다. 높이와 orthographic size는 유지하고 경기장
-  중심을 계속 바라보도록 뒤쪽 위치를 보정한다.
-- 이미 사선·정면·개인 추적 시점인 나머지 미니게임 카메라는 각 게임의 기존 구도를
-  유지한다.
-- Arena Combat 탈락자 관전과 보드 착지 전투의 비참가자·탈락자 관전도 같은
-  `SharedCameraFraming`의 정탑 기준 35°를 사용한다. Arena는 높이 12m·FOV 58,
-  보드 격투는 높이 10m·FOV 55이며 뒤쪽 거리는 35°에서 자동 계산한다. 살아 있는
-  격투 참가자는 기존 1인칭 시점을 유지한다.
-- 여러 참가자가 함께 보는 공용 카메라는 플레이 중 위치·회전·줌을 바꾸지 않는다.
-  Tag Chase 도망자 카메라와 Arena Combat 관전 카메라는 각 경기장 중앙의 시작 포즈에
-  고정하고, Bomb Passing은 폭발 VFX·조명은 유지하되 카메라 shake를 사용하지 않는다.
-  기존 공용 카메라들도 authored 포즈와 lens에서 런타임 reframe을 하지 않는다. Race·Minefield·
-  Wrong Way처럼 로컬 플레이어를 따라가는 개인 카메라는 이 고정 규칙에서 제외한다.
-- additive로 남아 있는 Arena Combat view는 미니게임이 활성인 동안에만 로컬 1인칭
-  presentation 소유권을 갖는다. 비활성 전환·disable 때 자신이 소유한 상태를 한 번만
-  해제하고, dormant frame마다 `SetOwnerFirstPerson(false)`를 반복해 보드 presenter의
-  1인칭 상태를 덮어쓰지 않는다. 따라서 보드 복귀 뒤 얼굴 표정 Sprite나 월드 모델이
-  로컬 카메라 앞에 다시 켜지지 않는다.
-
-### 미니게임 시각 피드백
-
-- 15종 미니게임은 첫 시작뿐 아니라 각 라운드가 시작될 때마다 서버 기준 공통 HUD에서
-  `3 → 2 → 1` 카운트다운을 표시한 뒤 진행한다.
-- 각 미니게임 라운드가 시작될 때마다 약 3초 동안 로컬 플레이어 위치를 공용
-  `WaterShield.prefab`으로 강조하고 해당 라운드의 공통 3/2/1 카운트다운 동안 유지한다.
-  복제된 라운드 번호 변화로 다음 라운드에도 다시 표시하며, Snowy Spin·Bouncing Balls의
-  전용 플레이어 표현도 같은 3D VFX를 균일 스케일로 사용한다.
-- 공격 입력은 기존 한손 공격 모션을 유지하고, 밀기 입력은 양손이 동시에 앞으로 나가는
-  공통 모션을 사용한다. 대상이 없는 유효한 공격·밀기 시도도 쿨다운당 한 번 애니메이션을
-  재생하며, 실제 피격 모션과 VFX는 대상이 있을 때만 재생한다.
-- Cliff Barrage 투사체는 20Hz 권위 스냅샷 사이를 제한된 속도 예측과 지수 보간으로 표시하고,
-  일시정지 중에는 예측 시간을 고정한다. 투사체·레이저 생성 빈도는 경기 경과 10초마다
-  20%씩 증가하며 5단계·최대 2배로 제한한다.
-- Race 완주 입력 목표는 A/D 교대 200회다.
-- Minefield 탐지 반경은 기존 6m의 절반인 3m이며 탐지 원형 시각도 같은 권위 반경을
-  사용한다. 0.75초 탐지 활성 동안 이동 입력은 잠그되 지뢰 접촉·결승선·압사 판정은
-  계속 진행한다. 지뢰 접촉은 서버 확정 이벤트로 기존 `CartoonExplosion`을 재생하고,
-  Editor Solo 테스트도 같은 프리팹을 사용한다.
-- 15종의 플레이어 스폰 표시는 숨긴다. Board 단계에서는 Lobby 프레젠테이션을
-  비활성화하며 Bomb Passing은 중앙 블록만 숨기고 소환 링은 유지한다.
-- Tag Chase 서버·Solo 이동 충돌은 기존 네 개의 보이지 않는 임시 사각형 대신 authored
-  환경의 내부 벽 16개와 기둥 14개의 XZ bounds를 사용한다. 외곽 경계는 기존 arena clamp를
-  유지하며, 환경 프리팹과 결정론적 collision layout의 30개 bounds 일치를 EditMode에서
-  검증한다.
-- Sequence Memory의 A/S/D는 도/미/솔에 대응한다. `Assets/Resources/sound/- Bell 7.mp3`를
-  공용 사운드 큐로 등록하고 원음 G5를 각각 0.6674199·0.8408964·1.0배 피치로 재생한다.
-  Snowy Spin 중앙 원, Bouncing Balls 중앙 원은 시각적으로 숨긴다.
-- Minefield·Wrong Way·Race는 로컬 플레이어 중심 개인 카메라를 사용하고 Minefield와
-  Red Light Green Light의 시점을 낮춘다. Bouncing Balls는 슬롯별 화면 축과 측면 방어바
-  방향을 보정하되 본인 점수는 별도로 강조하지 않는다.
-- Balloon Blow는 보드와 겹치지 않는 위치에서 플레이어가 카메라를 향한다. Stable Footing은
-  가로 8×세로 6이며 전광판은 뒤쪽 벽처럼 세운다. Gift Grab 기지 표시는 숫자만 사용한다.
+- 게임은 항상 4인 구조이며 첫 시작과 각 라운드 시작마다 서버 기준 공통 HUD에서
+  3 → 2 → 1을 표시한다. 같은 시간 동안 로컬 플레이어를 WaterShield.prefab으로
+  강조한다. Snowy Spin·Bouncing Balls 전용 표현도 같은 VFX를 균일 스케일로 사용한다.
+- 공격 입력은 기존 한손 공격 모션, 밀기는 양손 전진 모션을 재생한다. 유효 시도는 대상이
+  없어도 쿨다운당 한 번 애니메이션을 재생하고 실제 피격 모션·VFX는 대상이 있을 때만 낸다.
+- 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다. Solo의
+  DEVELOPER SOLO TEST 패널은 Editor 전용이며 Player 빌드에는 포함하지 않는다.
+- Stable Footing은 8×6이다. 공개 전 3초 동안 세 심벌을 0.5초마다 서로 다른 슬롯으로
+  섞고 마지막 배치에서 정답 하나만 초록색으로 공개한다. 오답 발판은 일시 하강하고
+  복원 뒤 사이클당 4개를 영구 제거한다.
+- Red Light Green Light는 상단의 빨강·초록 3등만 사용한다. 단계는 초록3 → 빨강1 →
+  빨강2 → 빨강3이며 완전한 빨강에서만 이동 금지·위반 판정을 한다. 전환 전 단계는 서버
+  시드 0.1~3.0초, 네트워크 보정 유예는 0.15초다.
+- Cliff Barrage 투사체는 20Hz 권위 스냅샷 사이를 제한 속도 예측과 지수 보간한다.
+  투사체·레이저 빈도는 10초마다 20%씩, 5단계·최대 2배까지 증가한다.
+- Race의 A/D 교대 완주 목표는 200회다.
+- Minefield 탐지 반경은 3m, 탐지 시간은 0.75초다. 탐지 중 이동을 잠그되 지뢰·결승선·
+  압사 판정은 유지하고 지뢰 접촉 시 서버 확정 CartoonExplosion을 재생한다.
+- Tag Chase 충돌은 authored 내부 벽 16개·기둥 14개의 XZ bounds와 기존 외곽 clamp를
+  사용한다. 술래 1인칭에는 Running 단계에만 공용 HUD의 중앙 Tagger Aim을 표시한다.
+- Sequence Memory의 A/S/D는 도/미/솔이며 Bell 7 원음 G5를 0.6674199/0.8408964/1.0
+  피치로 재생한다. 큐 선행 무음 0.21초를 건너뛰고 동시 재생은 8개로 제한한다.
+- 15종의 플레이어 스폰 표시는 숨긴다. Bomb Passing은 중앙 블록만 숨기고 소환 링은
+  유지한다. Snowy Spin·Bouncing Balls 중앙 원은 숨긴다.
+- Minefield·Wrong Way·Race는 로컬 플레이어 중심 개인 카메라를 사용한다. 공용 정탑
+  카메라 계열 7종과 Arena·보드 격투 관전은 SharedCameraFraming의 정탑 기준 35°를
+  사용하며 플레이 중 reframe·zoom·shake를 하지 않는다.
+- 미니게임 표시 탑은 플레이를 마친 항목을 제거하지 않고 열린 상태와 게임명을 유지해
+  이전에 어떤 미니게임을 플레이했는지 계속 확인할 수 있게 한다.
+- 미니게임 결과 발표의 플레이어 닉네임은 권위 있는 Appearance.BodyColor로 표시하되
+  어두운 색은 텍스트 가독성만 보정한다.
+- Wrong Way는 사용자가 조절한 계단 높이를 보존하고 그 높이에 맞춰 플레이어 시작·배치
+  위치를 조절한다.
+- Arena Combat 비활성화 시 자신이 소유한 로컬 1인칭 presentation을 한 번만 해제해
+  보드 복귀 뒤 얼굴 Sprite나 월드 모델이 카메라를 가리지 않게 한다.
 
 ### 오디오
 
 - 직접 BGM은 로비·보드·공용 미니게임만 사용하고 나머지는 fallback을 사용한다.
-- 보너스 준비음은 공개 전 2초만 재생하며 공개·일시정지에서 중지하고 duck하지 않는다.
+- 보너스 준비음은 공개 전 2초만 재생하고 공개·일시정지에서 중지하며 duck하지 않는다.
 - 보드 발소리는 짧은 원샷 11개를 shuffle 재생한다.
-- Sequence Memory 음계는 `minigame.sequence_memory.tone` 큐 하나를 전역 풀 음성으로
-  재생한다. 원본의 선행 무음 0.21초를 큐에서 건너뛰고 동시 재생은 8개로 제한한다.
-  각 음은 독립 피치 요청이라 겹치는 잔향도 서로의 피치를 덮어쓰지 않는다.
+- Sequence Memory 음계는 전역 풀 사운드 큐 하나에서 독립 피치 요청으로 재생한다.
 
-## 현재 검증 상태
+## 현재 검증 기준
 
-- 2026-10-09 KCC·Noto JP·Noto SC 동적 폰트를 `Hinted Smooth`로 재임포트하고,
-  Localization setup이 fallback과 함께 같은 렌더링 모드를 복원하도록 했다.
-  공용 플레이어 프리팹에 8종 감정표현별 월드/1인칭 좌우 손 Euler와 인사 흔들림 폭을
-  Inspector에서 조절하는 설정을 추가했다. 폰트·프리팹·런타임 적용 계약을 포함한 전체
-  EditMode는 518개 중 515개가 통과했으며 남은 3개는 기존 Forest TerrainCollider,
-  Bomb Passing 환경 Collider, MinigameResultCanvas authored 출처 계약이다. setup 메뉴
-  재실행 전후 플레이어 프리팹과 폰트 importer 메타 SHA-256은 동일하고 Unity 콘솔
-  오류는 0건이다.
-- 2026-10-09 Stable Footing의 3초 사전 페이크·0.5초 심벌 재배치·정답만 초록색 공개·
-  사이클당 영구 제거 4개와, 보드/로비 전용 감정표현 8종·동작 중 이동 잠금·옷장별
-  표정 매핑·눈가림 기본 표정 유지·프로필 v4 이관을 반영했다. 준비 단계 정답 VFX와
-  SoloTest 정답 문구 노출, 감정표현 종료 뒤 손 포즈 잔류, 인사·경례의 왼손 오픈,
-  8방향 휠 제목·도움말 현지화 바인딩 회귀도 최종 검토에서 수정했다. 전체 EditMode는
-  515개 중 512개가 통과했으며 남은 3개는 기존 Forest TerrainCollider, Bomb Passing
-  환경 Collider, MinigameResultCanvas authored 출처 계약이다. Unity 콘솔 오류는 0건이다.
-- 2026-10-09 빈 인벤토리의 아이템 선택창 자동 스킵, 특별 이벤트 결과 팝업 뒤 BTM
-  Coin/Key 자원 이동과 정면 카메라 연출, 15종 미니게임의 매 라운드 공통 3/2/1을
-  반영했다. 카운트다운 숫자 미표시는 폰트 높이와 `Truncate` 조합으로 진단만 하고
-  시각값은 변경하지 않았다. 관련 표적 EditMode 72/72가 통과했고 전체 EditMode는
-  501개 중 498개가 통과했다. 남은 3개는 기존 Forest TerrainCollider, Bomb Passing
-  환경 Collider, MinigameResultCanvas authored 출처 계약이다. Unity 콘솔 컴파일 오류는
-  0건이며 `MazeParty.Gameplay.csproj`와 `MazeParty.Multiplayer.csproj --no-restore`
-  빌드는 오류 0건이다.
-- 2026-10-09 삭제된 BoardCanvas 텍스트의 선택 바인딩, Modern UI 지도 칸·플레이어·
-  지뢰 아이콘, 갈림길 전용 방향 화살표, 로컬 최종 관측 위치 기반 전체 지도와 직접
-  시야 기반 미니맵 표시 계약, 전 맵 공통 전체 지도 턴 개요와 회전 중에도 정방향을
-  유지하는 지뢰 아이콘을 포함한 표적 EditMode 29/29가 통과했다. 전체 EditMode는
-  508개 중 505개가 통과했고 남은 3개는 기존 Forest TerrainCollider, Bomb Passing 환경
-  Collider, MinigameResultCanvas authored 출처 계약이다. Unity 콘솔 오류는 0건이며
-  `MazeParty.Gameplay.csproj`와 `MazeParty.Multiplayer.csproj --no-restore` 빌드도 오류
-  0건으로 성공했다.
-- 2026-10-09 열쇠상점 월드 안내 반구를 단일 AllIn1 노란 광원 파티클로 교체했다.
-  프리팹·경로 풀·보드 씬 표적 EditMode 6/6이 통과했고 setup 재실행 전후 프리팹 SHA-256이
-  동일해 authored 디자인 보존을 확인했다. 전체 EditMode는 477개 중 474개가 통과했으며
-  남은 3개는 기존 Forest TerrainCollider, Bomb Passing 환경 Collider,
-  MinigameResultCanvas authored 출처 계약이다. Unity 콘솔 컴파일 오류는 0건이고
-  `MazeParty.Gameplay.csproj`와 `MazeParty.Multiplayer.csproj --no-restore` 빌드도
-  오류 0건이다.
-- 2026-10-09 EditMode 장기 유지 기준을 핵심 상태 전이, 정확한 시간 경계, 서버 권한,
-  순위·보상, 시드 결정론, 저장 복원·손상 방지, 실제 씬·프리팹 출처·바인딩으로 좁혔다.
-  중복·단순·시각 세부 테스트 27개를 덜어 503개에서 476개로 정리했고, 전체 실행은
-  473개 통과·3개 실제 계약 실패다. 정확한 미니게임 결과 경계와 최종 턴 전이, 착지 효과
-  체력·시간, 상점 칸 중앙 배치, 외부 visual 하위 Collider 금지, Forest Terrain의 안정적
-  Player 렌더 경로는 장기 계약으로 복원했다. `BoardEventPopupPanel`은 새 중첩 프리팹
-  경로를 중앙 UI 정책에 등록해 해당 계약 4/4를 통과했다. Unity 콘솔 컴파일 오류는 0건이며
-  `MazeParty.Gameplay.csproj`와 `MazeParty.Multiplayer.csproj --no-restore`도 오류 0건이다.
-- 2026-10-08 Arena Combat 종료 뒤 로컬 1인칭 presentation 소유권 복원, 세 상점의
-  WaterShield 등장·재배치 강조, 특별 이벤트 전원 공용 팝업과 개인 HUD 상세 제거를
-  포함한 표적 EditMode 31/31이 통과했고 Unity 콘솔 컴파일 오류는 0건이다. 전체
-  EditMode는 503개 중 496개가 통과했으며 남은 7개는 기존 authored 계약 불일치와
-  동일해 새 실패는 없다. `MazeParty.Gameplay.csproj`와
-  `MazeParty.Multiplayer.csproj --no-restore` 빌드도 오류 0건으로 성공했다.
-- 2026-10-08 공용 LIFO 팝업 스택, ESC 최상단 닫기, 로비 세 팝업·전체 지도·아이템 상점·
-  위치교환 대상창 연동과 옷장/전체 지도 프리팹 닫기 버튼을 포함한 표적 EditMode 39/39가
-  통과했고 `MazeParty.Multiplayer` 빌드는 오류 0건이다. 전체 EditMode는 495개 중
-  488개가 통과했으며 남은 7개는 기존 authored 계약 불일치와 동일해 새 실패는 없다.
-- 2026-10-08 Water Shield 보드 보호·라운드별 로컬 위치 강조, 보드 HUD 상태 텍스트 제거,
-  Minefield 3m 탐지·탐지 중 이동 잠금·지뢰 폭발 표시를 포함한 표적 EditMode 39/39가
-  통과했고 Unity C# 컴파일 오류는 0건이다. 전체 EditMode는 491개 중 484개가 통과했으며
-  남은 7개는 기존 authored 계약 불일치와 동일해 이번 변경으로 새 실패는 없다.
-- 2026-10-08 대기실 준비 명단 패널 제거·우하단 공용 안내·월드 닉네임 준비색과
-  방장 별·로비 이탈 초기화 및 프리팹/setup 계약을 포함한 표적 EditMode 33/33이
-  통과했고 Unity C# 컴파일 오류는 0건이다. 전체 EditMode는 488개 중 481개가
-  통과했으며 남은 7개는 기존 authored 계약 불일치와 동일해 새 실패는 없다.
-- 2026-10-08 글자용 `Outline` 제거와 전역 UI 프리팹 정책을 포함한 표적 EditMode
-  5/5가 통과했고 Unity 콘솔 오류는 0건이다. 전체 EditMode는 484개 중 477개가
-  통과했으며 남은 7개는 기존 authored 계약 불일치와 동일해 이번 변경으로 새 실패는 없다.
-- 2026-10-08 보드 상대 닉네임의 깊이 마스킹·언어 전환 재질 유지·파티클 장막 Collider
-  시야 마스킹 계약을 포함한 표적 EditMode 13/13이 통과했고 Unity 콘솔 컴파일 오류는
-  0건이다. 전체 EditMode는 483개 중 476개가 통과했으며 남은 7개는 기존 authored 계약
-  불일치와 동일해 이번 변경으로 새 실패는 없다. `MazeParty.Gameplay.csproj`와
-  `MazeParty.Multiplayer.csproj --no-restore` 빌드도 오류 0건으로 성공했다.
-- 2026-10-08 공통 3/2/1 카운트다운·공격/밀기 애니메이션·도착 폭죽·Cliff Barrage
-  보간/10초 빈도 상승·Race 200회 변경의 표적 EditMode 57/57과 후속 엣지 재검증
-  30/30이 통과했다. 전체 EditMode는 482개 중 475개가 통과했고 남은 7개는 기존 authored
-  계약 불일치와 동일하다. Unity 콘솔 오류는 0건이며 `MazeParty.Gameplay.csproj`와
-  `MazeParty.Multiplayer.csproj --no-restore` 빌드는 모두 오류 0건으로 성공했다.
-- 2026-10-08 열쇠상점 최단경로 기반 노란 칸수·전체 지도 점선·주사위 리스폰 동행·
-  플레이어 외형색 복제의 표적 EditMode 35/35와 주사위 프리팹 계약 1/1이 통과했고
-  Unity 콘솔 컴파일 오류는 0건이다. 전체 EditMode는 471개 중 464개가 통과했으며
-  남은 7개는 기존 authored 계약 불일치와 동일하다. `MazeParty.Multiplayer.csproj
-  --no-restore` 빌드도 오류 0건으로 성공했다.
-- 2026-10-08 대기실 준비 닉네임 색·방장 별·상단 초대 코드 아이콘·하단 준비/시작
-  액션·보드 설정 팝업의 표적 EditMode 9/9가 통과했고 Unity 콘솔 컴파일 오류는 0건이다.
-  전체 EditMode는 465개 중 458개가 통과했으며 남은 7개는 기존 authored 계약 불일치와
-  동일하다. 새 헤더 배치를 덮던 `OnlineBootstrap` RectTransform override는 제거했고,
-  사용자가 보존한 LobbyCanvas 활성 override는 유지했다. `MazeParty.Multiplayer.csproj
-  --no-restore` 빌드도 오류 0건으로 성공했다.
-- 2026-10-08 주사위 결과 기반 칸수 표시 수명주기·순환/반복 갈림길·강제 재배치
-  재기준화·재접속 복원과 전체 지도 UI 계약을 포함한 표적 EditMode 20/20가 통과했고,
-  Unity 콘솔 컴파일 오류는 0건이다. 전체 EditMode는 464개 중 457개가 통과했으며
-  남은 7개는 기존 authored 계약 불일치와 동일하다.
-  `MazeParty.Multiplayer.csproj --no-restore` 빌드도 오류 0건으로 성공했다.
-- 2026-10-08 보드 전체 지도 이동 횟수·갈림길 필터·열쇠상점 단색 표시·삭제 UI
-  바인딩 계약을 포함한 표적 EditMode 24/24가 통과했고 Unity 콘솔 컴파일 오류는
-  0건이다. 전체 EditMode는 459개 중 452개가 통과했으며 남은 7개는 기존에 기록된
-  authored 계약 불일치와 동일하다. `MazeParty.Multiplayer.csproj --no-restore`
-  빌드도 오류 0건으로 성공했다.
-- 2026-10-08 Unity 컴파일 오류는 0건이다. 빌드 버전 payload·거절 상태·로비 프리팹·
-  `OnlineBootstrap` 연결 승인 표적 계약은 4/4 통과했다. 전체 EditMode는 457개 중
-  450개 통과·7개 기존 authored 계약 불일치이며 이번 변경으로 새로 남은 실패는 없다.
-- 2026-10-06 기준 Unity 컴파일 오류는 0건이며 Windows Development Mono x64 빌드가
-  성공했다. 전체 EditMode 445개 중 443개가 통과했다. 남은 2개는 사용자가 보존한
-  `LobbyCanvas.prefab` 비표시와 `OnlineBootstrap` 활성 override를 검사하는 알려진 예외다.
-  Terrain·Board 표적 계약 11개, Skybox·Sequence Memory 표적 테스트 20개와 카메라 관련
-  씬 계약 15개도 통과했다. 지도 중앙 정렬·원형 플레이어 표식·효과 아이콘 상위 표시를
-  포함한 지도 UI 계약 11개도 모두 통과했다.
-- Sequence Memory의 `Npc.prefab` 루트에 `LocalizedFontScope`를 적용해 이전 현지화 폰트
-  계약 실패를 해소했다.
-- 최종 아이템 4프로세스 실기 QA가 Forest v4·실제 UGS/Relay에서 4/4 PASS했다. Pistol·Sniper
-  hitscan, 조준선 조건, 무탄환 오브젝트, 전 프로세스 tracer, Sniper 무확대, Grenade
-  소유자 전용 16m 원·승인/거절 복구·1초 포물선, Mine 소유자 전용 보드/지도 표시와
-  발동 정리를 확인했다. 같은 빌드에서 월드 칸 블럭은 숨고 지도 능력 아이콘, Terrain
-  흙길, 장막·주사위는 유지됐다. 증빙은 `Logs/ItemMultiplayerQA-20261006-013807` 및
-  `Builds/TestArtifacts/ItemMultiplayerQA/2026-10-06/20261006-013807`의 31장이다.
-- pause 중 실제 client를 종료·재실행한 재접속 QA가 4/4 PASS했다. 일시정지 중 타이머
-  정지, 동적 슬롯 재연결, 동일 좌석의 권위 상태·위치 복원, player pause 복원·해제를
-  확인했다. 복원 직후 로비 초기 위치가 덮어쓰던 실제 결함은 `_restoredFromSnapshot`
-  가드와 `NetworkTransform.Teleport`로 수정했다. 증빙은
-  `Logs/ReconnectE2E-20261005-205843`이다.
-- Maze v1을 선택한 4인 경기를 실제 프로세스 종료·재실행으로 복구했다. Turn Overview,
-  Minigame Intro Ready, Match Complete 세 체크포인트가 각각 4/4 PASS했고 증빙은
-  `Builds/TestArtifacts/RecoveryQA/2026-10-05`에 있다.
-- Forest v4 Development Player 4프로세스에서 15종을 자연 결과까지 연속 실행했다.
-  15/15 입력 창·자연 종료·정산, 공동 1위 수상식(`ranks=1,1,1,1`), 4인 로비 복귀가
-  PASS했다. 결과 정산 주입은 사용하지 않았으며 게임별 1280×720 캡처는
-  `Builds/TestArtifacts/BuildMinigameQA/2026-10-05/FullMatch-20261005-212630`에 있다.
-- additive 씬에서 `OnlineBootstrap`의 기본 Skybox가 유지되던 실제 빌드 문제를 발견해
-  Bootstrap·setup·계약 테스트를 `FS000_Night_01`로 통일했다. 재빌드한 최종 15장에는
-  동일한 야간 Skybox가 적용됐다.
-- Forest Terrain은 Editor와 런타임 상태·빌드 포함 자산이 모두 정상이었지만
-  `drawInstanced=true`일 때만 Windows Player에서 사라졌다. 비인스턴스 경로로 전환한
-  `Builds/TestArtifacts/ItemMultiplayerQA/2026-10-06/20261006-010604/pistol-far-p0.png`에서
-  잔디·흙길과 야간 Skybox가 함께 표시되는 것을 확인했다. 이 실행은 이후 별도 아이템
-  마커 대기시간 초과로 중단되어 Terrain 시각 증빙으로만 사용한다.
-- 최종 Forest v4 Development Player에서 사용자 피드백 반영 후 15종을 다시 촬영했다.
-  결과·스크린샷 15/15, 수상식과 4인 로비 복귀가 통과했으며 보드 이동과 결과 정산은
-  물론 검증된 타격 이후 전투도 가속했다. 증빙은
-  `Builds/TestArtifacts/BuildMinigameQA/2026-10-06/FullMatch-20261006-011032`에 있다.
-- 공용 미니게임 7종, Arena Combat 관전, 보드 격투 관전은 하나의 정탑 기준 35° 계산을
-  사용한다. Unity 런타임 계산은 양쪽 관전 모두 `35.000°`였고 최종 빌드가 성공했다.
-- `DEVELOPER SOLO TEST` 패널은 Editor 전용이며 Player 캡처에는 없다. 우하단
-  `Development Build`는 캡처 도구 오버레이가 아니라 Development Player 자체 표시다.
+- 장기 유지 EditMode는 핵심 상태 전이, 정확한 시간 경계, 서버 권한·거부 조건,
+  순위·보상, 시드 결정론, 저장 복원·손상 방지, 실제 씬·프리팹 직렬화 계약에 한정한다.
+- 구현 완료용 시각 세부값, 단순 상수·getter·DTO, Testbed/Solo 내부 구현, 중복 씬·입력
+  사례 테스트는 제거하거나 상위 계약과 표 기반 테스트로 통합한다.
+- 2026-10-09 종료 선행 정리·시간 상한·Windows watchdog과 파괴된 아바타 참조 방지를
+  반영했다. 종료 상태 전이 표적 EditMode 10/10이 통과했고 전체 EditMode는 509개 중
+  506개가 통과했다. Windows Development Mono x64 빌드가 성공했으며 실제 창 닫기
+  스모크에서 정리 결과 Completed, 종료 코드 0, 3.026초 내 프로세스 종료를 확인했다.
+  같은 빌드에서 watchdog만 끈 A/B 실행은 12초 뒤에도 프로세스가 남아 테스트가 종료했으므로
+  sleeping thread가 원인이 아니라 Unity 6000.6 네이티브 teardown 잔류임을 재확인했다.
+  Player 로그에는 기존 PlayerAvatarVisual NullReference와 MPS StopAsync-after-dispose가
+  재발하지 않았다. 남은 실제 계약 실패는
+  Forest visual Terrain의 TerrainCollider, Bomb Passing 환경 Collider 소유권, 전용
+  authored MinigameResultCanvas 출처 3건이며 Unity 콘솔 오류는 0건이다.
+- 2026-10-09 보드 HUD·킬 피드·지도·주사위·수류탄·Shield 상점 강조와 미니게임 탑·결과·
+  Wrong Way 피드백을 반영했다. 관련 표적 EditMode는 79개 중 78개, 전체 EditMode는 515개 중
+  512개가 통과했다. 실패는 위의 기존 3건뿐이며 새 회귀는 없다. Windows Development Mono
+  x64 빌드는 `Builds/Windows-Development-20261009-205102/MazeParty.exe`로 성공했고 빌드 후
+  Unity 콘솔의 프로젝트 오류는 0건이다.
 
-## 남은 검증·TODO
+## 남은 TODO
 
-- 공통 카운트다운 UI는 활성화되고 숫자 문자열도 갱신되지만, 196×196 숫자 Rect보다
-  런타임 현지화 폰트의 preferred height가 커 `Vertical Overflow = Truncate`에서 렌더
-  정점이 생성되지 않아 숫자가 보이지 않는 것으로 진단했다. 사용자 요청에 따라 이번
-  작업에서는 폰트 크기와 프리팹 시각값을 수정하지 않는다.
-- 15종 캡처 피드백 뒤 게임별 에셋 교체, 디자인 변경, 배치·카메라 위치를 조정한다.
-  우선 검토 후보는 Bouncing Balls의 하단 골대·방어바 프레이밍과 Race의 하단 여백이다.
-- Arena Combat 최종 캡처는 살아 있는 참가자의 1인칭 화면이다. 35° 관전 계산은
-  검증했지만 최종 디자인 판단용 실제 관전 화면과 보드 격투 관전 화면은 별도 캡처한다.
-- 자연 진행 QA는 15종 정상 종료를 확인했지만, 모든 게임의 조기 종료·시간 종료·공동
-  순위 조합과 수동 조작감, VFX 투명 정렬·Bloom·Soft Particle·`Reduce Flashes`는
-  화면 피드백 단계에서 추가 확인한다.
-- 실제 Relay는 사용했지만 제어된 지연·패킷 손실 주입은 하지 않았다. 별도 PC 네트워크,
-  장시간 soak, Windows IL2CPP Release 후보를 검증한다.
-- `FS000_Night_01`은 Git 비추적 `Assets/Ignore` 에셋이므로 다른 빌드 환경에도 같은
-  GUID의 원본이 필요하다.
-- 보드 설정 팝업은 현재 맵만 설정한다. 추후 턴 수, 열쇠 가격, 미니게임 골드 지급량 등
-  세션 커스텀 규칙으로 확장하며, 이때 SessionSnapshot/MPS 속성/저장 복원/서버 검증도
-  함께 확장한다.
-- 사용자가 보존하도록 지정한 `LobbyCanvas.prefab` 비표시와 `OnlineBootstrap` 활성
-  override는 해당 숨김 상태를 해제하라는 명시적 요청이 있을 때만 변경한다.
-- 전체 EditMode의 남은 실제 계약 실패 3건을 후속 수정한다. Forest의 Generated Ground는
-  visual-only라 `TerrainCollider`를 소유하지 않아야 하고, Bomb Passing 환경 프리팹의
-  Collider는 씬 또는 gameplay core 권위로 이동해야 하며, 최종 결과 UI는 전용 authored
-  `MinigameResultCanvas` 하나만 사용해야 한다.
-- 미로 레이아웃 변경 뒤 흙길을 다시 칠할 미로 전용 바닥 갱신 도구는 기술 부채로 남는다.
+- Windows Development 빌드는 현재 상점 Physical Footprint 메시를 자동 조리하지만 향후 Unity
+  버전에서는 pre-baked collision을 요구한다는 경고를 낸다. Unity 업그레이드 전 전역
+  `bakeCollisionMeshes` 사용 또는 전용 충돌 메시 asset 생성 방식을 확정한다.
+- 공통 카운트다운 숫자는 값이 갱신되지만 196×196 Rect보다 현지화 폰트 preferred height가
+  커 Vertical Overflow = Truncate에서 보이지 않는 것으로 진단됐다. 사용자 요청에 따라
+  아직 폰트 크기와 프리팹 시각값은 변경하지 않았다.
+- 보드 설정은 현재 맵만 지원한다. 추후 턴 수·열쇠 가격·미니게임 골드 지급량을 추가하고
+  SessionSnapshot, MPS 속성, 저장 복원과 서버 검증을 함께 확장한다.
+- Forest Generated Ground에서 visual-only TerrainCollider를 제거하고, Bomb Passing
+  환경 Collider를 씬 또는 gameplay core 권위로 옮기며, 최종 결과 UI를 전용 authored
+  MinigameResultCanvas 하나로 통일한다.
+- 15종 캡처 피드백에 따라 게임별 에셋·배치·카메라를 조정한다. 우선 후보는 Bouncing Balls
+  하단 골대·방어바 프레이밍, Race 하단 여백, Arena·보드 격투 실제 관전 화면이다.
+- 조기 종료·시간 종료·공동 순위 조합, 수동 조작감, VFX 투명 정렬·Bloom·Soft Particle·
+  Reduce Flashes, 제어된 지연·패킷 손실, 별도 PC 장시간 soak, Windows IL2CPP Release를
+  추가 검증한다.
+- 미로 레이아웃 변경 후 흙길을 다시 칠하는 미로 전용 바닥 갱신 도구를 추가한다.

@@ -21,6 +21,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Ignore/Icon_NCI/free-icon-door-key-63432.png";
         private const string GoldIconPath =
             "Assets/Ignore/Icon_NCI/free-icon-dollar-coin-7022685.png";
+        private const string KillFeedModulePath =
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardKillFeedPanel.prefab";
+        private const string LocalizationTablePath =
+            "Assets/MazeParty/Resources/MazeParty/Localization/StringTable.csv";
 
         private static readonly string[,] NestedModules =
         {
@@ -35,6 +39,10 @@ namespace MazeParty.Multiplayer.Tests
             {
                 "BoardEventPopupPanel",
                 "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab"
+            },
+            {
+                "BoardKillFeedPanel",
+                KillFeedModulePath
             }
         };
 
@@ -90,6 +98,7 @@ namespace MazeParty.Multiplayer.Tests
             AssertPlayerCurrencyBindings(prefab, bindings);
             AssertPlayerHealthSliderBindings(prefab, bindings);
             AssertBoardEventPopupBindings(prefab, bindings);
+            AssertBoardKillFeedBindings(prefab, bindings);
 
             Assert.That(bindings.MinigameReadyPlayerStates.Length,
                 Is.EqualTo(MultiplayerConstants.MaxPlayers));
@@ -141,6 +150,9 @@ namespace MazeParty.Multiplayer.Tests
                     sceneBindings.gameObject,
                     sceneBindings);
                 AssertBoardEventPopupBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings);
+                AssertBoardKillFeedBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
 
@@ -243,6 +255,42 @@ namespace MazeParty.Multiplayer.Tests
                 candidate.name == "BoardEventPopupPanel"), Is.EqualTo(1));
         }
 
+        private static void AssertBoardKillFeedBindings(
+            GameObject root,
+            BoardCanvasBindings bindings)
+        {
+            var panel = bindings.BoardKillFeedPanel;
+            var message = bindings.BoardKillFeedMessage;
+            Assert.That(panel, Is.Not.Null);
+            Assert.That(message, Is.Not.Null);
+            Assert.That(panel.name, Is.EqualTo("BoardKillFeedPanel"));
+            Assert.That(message.name, Is.EqualTo("BoardKillFeedMessage"));
+            Assert.That(message.transform.IsChildOf(panel.transform), Is.True);
+            Assert.That(panel.activeSelf, Is.False,
+                "The server-owned kill feed must start hidden.");
+            Assert.That(message.supportRichText, Is.True);
+            Assert.That(message.raycastTarget, Is.False);
+
+            var background = panel.GetComponent<Image>();
+            Assert.That(background, Is.Not.Null);
+            Assert.That(background.raycastTarget, Is.False,
+                "The automatic kill feed must not intercept player input.");
+            Assert.That(panel.GetComponentsInChildren<Button>(true), Is.Empty,
+                "The server-owned kill feed is not user-dismissible.");
+
+            var source = PrefabUtility.GetCorrespondingObjectFromSource(panel);
+            Assert.That(source, Is.Not.Null);
+            Assert.That(
+                AssetDatabase.GetAssetPath(source),
+                Is.EqualTo(root.scene.IsValid()
+                    ? PrefabPath
+                    : KillFeedModulePath));
+
+            var transforms = root.GetComponentsInChildren<Transform>(true);
+            Assert.That(transforms.Count(candidate =>
+                candidate.name == "BoardKillFeedPanel"), Is.EqualTo(1));
+        }
+
         private static void AssertItemIconBindings(
             GameObject root,
             BoardCanvasBindings bindings)
@@ -331,6 +379,32 @@ namespace MazeParty.Multiplayer.Tests
                         Is.False,
                         graphic.name);
                 }
+            }
+        }
+
+        [Test]
+        public void BoardKillFeed_FormatsLocalizedColoredNamesSafely()
+        {
+            var tableAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                LocalizationTablePath);
+            Assert.That(tableAsset, Is.Not.Null, LocalizationTablePath);
+            GameText.UseTableForTests(StringTable.Parse(tableAsset.text));
+            try
+            {
+                GameText.SetLanguage(GameLanguage.Korean);
+                Assert.That(
+                    BoardFlowView.FormatBoardKillFeedMessage(
+                        "A<color=red>",
+                        Color.red,
+                        "B&>",
+                        Color.blue),
+                    Is.EqualTo(
+                        "<color=#FF0000>A＜color=red＞</color>이(가) " +
+                        "<color=#0000FF>B＆＞</color>을(를) 처치"));
+            }
+            finally
+            {
+                GameText.ResetForTests();
             }
         }
 

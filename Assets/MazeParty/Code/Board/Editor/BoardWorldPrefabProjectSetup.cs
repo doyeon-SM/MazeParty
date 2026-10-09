@@ -25,6 +25,8 @@ namespace MazeParty.Editor
         private const float BlockedFlameDensity = 2f;
         private const float MaximumBoundaryParticleDiameter = .72f;
         private const float MaximumBoundaryParticleTravel = .65f;
+        private const string ShopPhysicalFootprintName =
+            "Physical Footprint";
 
         [MenuItem("MazeParty/Board/Install World Prefabs")]
         public static void Install()
@@ -110,7 +112,8 @@ namespace MazeParty.Editor
 
             AssetDatabase.SaveAssets();
             Debug.Log(
-                "Shop location highlights now use authored WaterShield prefab instances.");
+                "Shop highlights now use shared WaterShield instances for item " +
+                "shops and SandShield for the key shop.");
         }
 
         private static void Convert(GameObject instance, GameObject prefab)
@@ -250,12 +253,17 @@ namespace MazeParty.Editor
                 var material = EnsureMaterial(name, key ? new Color(1,.66f,.08f) : index == 0 ? new Color(.58f,.2f,.86f) : new Color(.18f,.72f,.82f));
                 var body = Primitive("Body", PrimitiveType.Cube, visualRoot.transform,
                     new Vector3(0,key ? .9f : .85f,0), key ? new Vector3(1.35f,1.7f,1.35f) : new Vector3(1.4f,1.7f,1.4f), material);
-                Object.DestroyImmediate(body.GetComponent<Collider>());
+                var physicalColliders =
+                    new System.Collections.Generic.List<Collider>
+                    {
+                        body.GetComponent<Collider>()
+                    };
                 var hit = new GameObject("Interaction Target");
                 hit.transform.SetParent(root.transform, false);
                 var collider = hit.AddComponent<BoxCollider>();
                 collider.center = body.transform.localPosition;
                 collider.size = body.transform.localScale;
+                collider.isTrigger = true;
                 if (key) hit.AddComponent<KeyShopWorldTarget>();
                 else hit.AddComponent<ItemShopWorldTarget>().Configure(index);
                 var colliders = new System.Collections.Generic.List<Collider> { collider };
@@ -268,39 +276,42 @@ namespace MazeParty.Editor
                     baseHit.transform.localScale = stand.transform.localScale;
                     var baseCollider = baseHit.AddComponent<CapsuleCollider>();
                     EditorUtility.CopySerialized(stand.GetComponent<CapsuleCollider>(), baseCollider);
+                    baseCollider.isTrigger = true;
                     baseHit.AddComponent<KeyShopWorldTarget>();
                     colliders.Add(baseCollider);
-                    Object.DestroyImmediate(stand.GetComponent<Collider>());
+                    physicalColliders.Add(stand.GetComponent<Collider>());
                 }
                 var label = Label(root.transform, "World Label", new Vector3(0,key ? 1.95f : 1.9f,0),
                     key ? "KEY SHOP\nRMB BUY  20 GOLD" : "ITEM SHOP " + (index + 1) + "\nRMB OPEN");
-                var outline = TopViewHighlightUtility.CreateSquareOutline(root.transform, "Top View Highlight", key ? 1.12f : 1.05f, .1f, .04f);
-                foreach (var renderer in outline.GetComponentsInChildren<Renderer>())
-                {
-                    renderer.SetPropertyBlock(null);
-                    renderer.sharedMaterial = EnsureMaterial("ShopHighlight", Color.white);
-                }
-                outline.SetActive(false);
-                var locationHighlight = CreateShopLocationHighlight(
+                var sharedShield = key
+                    ? SharedVfxProjectSetup.EnsureSandShieldPrefab()
+                    : SharedVfxProjectSetup.EnsureWaterShieldPrefab();
+                var highlight = CreateShopHighlight(
                     root,
-                    SharedVfxProjectSetup.EnsureWaterShieldPrefab());
+                    sharedShield);
                 var binding = root.AddComponent<BoardShopVisual>();
                 var so = new SerializedObject(binding);
                 so.FindProperty("label").objectReferenceValue = label;
-                so.FindProperty("topViewHighlight").objectReferenceValue = outline;
+                so.FindProperty("topViewHighlight").objectReferenceValue =
+                    highlight;
                 so.FindProperty("locationHighlightVfx").objectReferenceValue =
-                    locationHighlight;
+                    highlight;
                 var targets = so.FindProperty("interactionColliders");
                 targets.arraySize = colliders.Count;
                 for (var i = 0; i < colliders.Count; i++) targets.GetArrayElementAtIndex(i).objectReferenceValue = colliders[i];
+                var physicalTargets = so.FindProperty("physicalColliders");
+                physicalTargets.arraySize = physicalColliders.Count;
+                for (var i = 0; i < physicalColliders.Count; i++)
+                    physicalTargets.GetArrayElementAtIndex(i)
+                        .objectReferenceValue = physicalColliders[i];
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return root;
             });
         }
 
-        private static void UpgradeShopLocationHighlight(
+        private static void UpgradeShopHighlight(
             string prefabPath,
-            GameObject waterShield)
+            GameObject desiredShield)
         {
             var root = PrefabUtility.LoadPrefabContents(prefabPath);
             try
@@ -313,43 +324,234 @@ namespace MazeParty.Editor
                 }
 
                 var serialized = new SerializedObject(visual);
-                var property = serialized.FindProperty(
+                var topViewProperty = serialized.FindProperty(
+                    "topViewHighlight");
+                var locationProperty = serialized.FindProperty(
                     "locationHighlightVfx");
-                if (property == null)
+                var interactionProperty = serialized.FindProperty(
+                    "interactionColliders");
+                var physicalProperty = serialized.FindProperty(
+                    "physicalColliders");
+                if (topViewProperty == null || locationProperty == null ||
+                    interactionProperty == null || physicalProperty == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardShopVisual has no location highlight binding. " +
+                        "BoardShopVisual has incomplete highlight bindings. " +
                         "Wait for scripts to compile and retry.");
                 }
 
-                var current = property.objectReferenceValue as GameObject;
-                if (current != null)
+                var desiredPath = AssetDatabase.GetAssetPath(desiredShield);
+                var currentTop =
+                    topViewProperty.objectReferenceValue as GameObject;
+                var currentLocation =
+                    locationProperty.objectReferenceValue as GameObject;
+                var highlight = currentLocation;
+                var changed = false;
+                if (!IsShieldInstance(highlight, desiredPath))
                 {
-                    if (!IsWaterShieldInstance(current))
+                    if (highlight != null &&
+                        !IsSharedShieldInstance(highlight))
                     {
                         throw new InvalidOperationException(
                             prefabPath + " has a custom location highlight. " +
-                            "Repair it explicitly instead of overwriting authored design.");
+                            "Repair it explicitly instead of overwriting " +
+                            "authored design.");
                     }
 
-                    if (current.activeSelf)
+                    if (highlight != null)
                     {
-                        current.SetActive(false);
-                        PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                        Object.DestroyImmediate(highlight);
                     }
-                    return;
+                    highlight = CreateShopHighlight(root, desiredShield);
+                    changed = true;
                 }
 
-                property.objectReferenceValue = CreateShopLocationHighlight(
+                if (currentTop != null && currentTop != highlight &&
+                    currentTop != currentLocation)
+                {
+                    if (!IsGeneratedSquareHighlight(currentTop) &&
+                        !IsSharedShieldInstance(currentTop))
+                    {
+                        throw new InvalidOperationException(
+                            prefabPath + " has a custom top-view highlight. " +
+                            "Repair it explicitly instead of overwriting " +
+                            "authored design.");
+                    }
+
+                    Object.DestroyImmediate(currentTop);
+                    changed = true;
+                }
+
+                if (highlight.activeSelf)
+                {
+                    highlight.SetActive(false);
+                    changed = true;
+                }
+                if (topViewProperty.objectReferenceValue != highlight)
+                {
+                    topViewProperty.objectReferenceValue = highlight;
+                    changed = true;
+                }
+                if (locationProperty.objectReferenceValue != highlight)
+                {
+                    locationProperty.objectReferenceValue = highlight;
+                    changed = true;
+                }
+
+                for (var index = 0;
+                     index < interactionProperty.arraySize;
+                     index++)
+                {
+                    var interactionCollider = interactionProperty
+                        .GetArrayElementAtIndex(index)
+                        .objectReferenceValue as Collider;
+                    if (interactionCollider != null &&
+                        !interactionCollider.isTrigger)
+                    {
+                        interactionCollider.isTrigger = true;
+                        changed = true;
+                    }
+                }
+
+                var physicalColliders = EnsureShopPhysicalColliders(
                     root,
-                    waterShield);
-                serialized.ApplyModifiedPropertiesWithoutUndo();
-                PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                    out var physicalChanged);
+                changed |= physicalChanged;
+                if (physicalProperty.arraySize != physicalColliders.Length)
+                {
+                    physicalProperty.arraySize = physicalColliders.Length;
+                    changed = true;
+                }
+                for (var index = 0; index < physicalColliders.Length; index++)
+                {
+                    var element = physicalProperty.GetArrayElementAtIndex(index);
+                    if (element.objectReferenceValue != physicalColliders[index])
+                    {
+                        element.objectReferenceValue = physicalColliders[index];
+                        changed = true;
+                    }
+                }
+
+                changed |= serialized.ApplyModifiedPropertiesWithoutUndo();
+                if (changed)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                }
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+        }
+
+        private static Collider[] EnsureShopPhysicalColliders(
+            GameObject shopRoot,
+            out bool changed)
+        {
+            changed = false;
+
+            // An earlier upgrade used the complete renderer AABB. That kept the
+            // die out of the shop, but also treated empty space beneath roof
+            // overhangs as solid. Remove that generated approximation before
+            // looking for an authored/exact collider.
+            var approximateFootprint = shopRoot.transform.Find(
+                ShopPhysicalFootprintName);
+            if (approximateFootprint != null &&
+                approximateFootprint.childCount == 0 &&
+                approximateFootprint.GetComponents<Collider>().Length == 1 &&
+                approximateFootprint.TryGetComponent<BoxCollider>(out _))
+            {
+                Object.DestroyImmediate(approximateFootprint.gameObject);
+                changed = true;
+            }
+
+            var visualRoot = shopRoot.transform.Find("Visuals");
+            if (visualRoot == null)
+            {
+                throw new InvalidOperationException(
+                    shopRoot.name + " is missing its authored Visuals root.");
+            }
+
+            // Migrate the short-lived version that placed the generated mesh
+            // collider below the nested visual. Shop visuals intentionally stay
+            // renderer-only; gameplay occupancy is owned by the shop root.
+            var nestedGeneratedFootprints = visualRoot
+                .GetComponentsInChildren<MeshCollider>(true)
+                .Where(candidate => candidate != null &&
+                    candidate.gameObject.name.StartsWith(
+                        ShopPhysicalFootprintName,
+                        StringComparison.Ordinal) &&
+                    candidate.transform.parent != null &&
+                    candidate.transform.parent.GetComponent<MeshFilter>() != null)
+                .Select(candidate => candidate.gameObject)
+                .Distinct()
+                .ToArray();
+            foreach (var nestedFootprint in nestedGeneratedFootprints)
+            {
+                Object.DestroyImmediate(nestedFootprint);
+                changed = true;
+            }
+
+            var physicalColliders = shopRoot
+                .GetComponentsInChildren<Collider>(true)
+                .Where(candidate => candidate != null &&
+                    !candidate.isTrigger &&
+                    !candidate.transform.IsChildOf(visualRoot) &&
+                    candidate.GetComponent<KeyShopWorldTarget>() == null &&
+                    candidate.GetComponent<ItemShopWorldTarget>() == null)
+                .ToArray();
+            if (physicalColliders.Length > 0)
+            {
+                return physicalColliders;
+            }
+
+            var meshFilters = visualRoot
+                .GetComponentsInChildren<MeshFilter>(true)
+                .Where(filter => filter != null && filter.sharedMesh != null)
+                .ToArray();
+            if (meshFilters.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    shopRoot.name + " has no authored mesh for its physical " +
+                    "footprint.");
+            }
+
+            physicalColliders = new Collider[meshFilters.Length];
+            for (var index = 0; index < meshFilters.Length; index++)
+            {
+                var meshFilter = meshFilters[index];
+                var footprintObject = new GameObject(
+                    meshFilters.Length == 1
+                        ? ShopPhysicalFootprintName
+                        : ShopPhysicalFootprintName + " " + (index + 1));
+                footprintObject.transform.SetParent(shopRoot.transform, false);
+                footprintObject.transform.localPosition = shopRoot.transform
+                    .InverseTransformPoint(meshFilter.transform.position);
+                footprintObject.transform.localRotation = Quaternion.Inverse(
+                    shopRoot.transform.rotation) * meshFilter.transform.rotation;
+                var rootScale = shopRoot.transform.lossyScale;
+                var meshScale = meshFilter.transform.lossyScale;
+                footprintObject.transform.localScale = new Vector3(
+                    DivideScale(meshScale.x, rootScale.x),
+                    DivideScale(meshScale.y, rootScale.y),
+                    DivideScale(meshScale.z, rootScale.z));
+
+                var footprint = footprintObject.AddComponent<MeshCollider>();
+                footprint.sharedMesh = meshFilter.sharedMesh;
+                footprint.convex = true;
+                footprint.isTrigger = false;
+                physicalColliders[index] = footprint;
+            }
+
+            changed = true;
+            return physicalColliders;
+        }
+
+        private static float DivideScale(float value, float parentScale)
+        {
+            return Mathf.Approximately(parentScale, 0f)
+                ? value
+                : value / parentScale;
         }
 
         private static void EnsureShopPrefabsAndLocationHighlights()
@@ -359,38 +561,37 @@ namespace MazeParty.Editor
             EnsureShop(1);
 
             var waterShield = SharedVfxProjectSetup.EnsureWaterShieldPrefab();
-            foreach (var prefabName in new[]
-                     {
-                         "KeyShop",
-                         "ItemShop1",
-                         "ItemShop2"
-                     })
-            {
-                UpgradeShopLocationHighlight(
-                    Folder + "/" + prefabName + ".prefab",
-                    waterShield);
-            }
+            var sandShield = SharedVfxProjectSetup.EnsureSandShieldPrefab();
+            UpgradeShopHighlight(
+                Folder + "/KeyShop.prefab",
+                sandShield);
+            UpgradeShopHighlight(
+                Folder + "/ItemShop1.prefab",
+                waterShield);
+            UpgradeShopHighlight(
+                Folder + "/ItemShop2.prefab",
+                waterShield);
         }
 
-        private static GameObject CreateShopLocationHighlight(
+        private static GameObject CreateShopHighlight(
             GameObject shopRoot,
-            GameObject waterShield)
+            GameObject shieldPrefab)
         {
             if (shopRoot == null)
                 throw new ArgumentNullException(nameof(shopRoot));
-            if (waterShield == null)
+            if (shieldPrefab == null)
             {
                 throw new InvalidOperationException(
-                    "The shared WaterShield prefab is required.");
+                    "A shared shield prefab is required.");
             }
 
             var instance = PrefabUtility.InstantiatePrefab(
-                waterShield,
+                shieldPrefab,
                 shopRoot.transform) as GameObject;
             if (instance == null)
             {
                 throw new InvalidOperationException(
-                    "Could not instantiate the shared WaterShield prefab.");
+                    "Could not instantiate the shared shield prefab.");
             }
 
             instance.name = "Shop Location Highlight VFX";
@@ -413,7 +614,7 @@ namespace MazeParty.Editor
             var shieldBounds = CalculateRenderedBounds(
                 instance.transform,
                 instance.transform,
-                "WaterShield");
+                shieldPrefab.name);
             // Match the two authored renderer envelopes instead of baking the
             // current house height or the toolkit prefab's native scale.
             var shopDiameter = MaximumComponent(shopBounds.size);
@@ -428,7 +629,8 @@ namespace MazeParty.Editor
             {
                 Object.DestroyImmediate(instance);
                 throw new InvalidOperationException(
-                    "WaterShield has no measurable renderer envelope.");
+                    shieldPrefab.name +
+                    " has no measurable renderer envelope.");
             }
 
             var scale = shopDiameter / shieldDiameter;
@@ -484,13 +686,43 @@ namespace MazeParty.Editor
             return Mathf.Max(value.x, value.y, value.z);
         }
 
-        private static bool IsWaterShieldInstance(GameObject candidate)
+        private static bool IsShieldInstance(
+            GameObject candidate,
+            string prefabPath)
         {
             return candidate != null && string.Equals(
                 PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                     candidate),
-                SharedVfxProjectSetup.WaterShieldPrefabPath,
+                prefabPath,
                 StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsSharedShieldInstance(GameObject candidate)
+        {
+            return IsShieldInstance(
+                       candidate,
+                       SharedVfxProjectSetup.WaterShieldPrefabPath) ||
+                   IsShieldInstance(
+                       candidate,
+                       SharedVfxProjectSetup.SandShieldPrefabPath);
+        }
+
+        private static bool IsGeneratedSquareHighlight(GameObject candidate)
+        {
+            if (candidate == null ||
+                PrefabUtility.IsAnyPrefabInstanceRoot(candidate) ||
+                !string.Equals(
+                    candidate.name,
+                    "Top View Highlight",
+                    StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return candidate.transform.Find("North") != null &&
+                   candidate.transform.Find("South") != null &&
+                   candidate.transform.Find("East") != null &&
+                   candidate.transform.Find("West") != null;
         }
 
         private static GameObject EnsureWall()

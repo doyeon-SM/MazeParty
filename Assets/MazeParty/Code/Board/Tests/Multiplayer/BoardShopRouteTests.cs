@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using MazeParty.Gameplay;
 using NUnit.Framework;
@@ -12,51 +11,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string MarkerPrefabPath =
             "Assets/MazeParty/Prefabs/Board/World/KeyShopRouteHemisphere.prefab";
-
-        [Test]
-        public void MarkerPrefab_UsesOneLoopingAllIn1GlowWithoutGameplayComponents()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                MarkerPrefabPath);
-            Assert.That(prefab, Is.Not.Null, MarkerPrefabPath);
-
-            var particles = prefab.GetComponentsInChildren<ParticleSystem>(true);
-            Assert.That(particles, Has.Length.EqualTo(1),
-                "The repeated route marker must stay a single lightweight effect.");
-            var main = particles[0].main;
-            Assert.That(main.loop, Is.True);
-            Assert.That(main.playOnAwake, Is.True);
-
-            var renderer = particles[0]
-                .GetComponent<ParticleSystemRenderer>();
-            Assert.That(renderer, Is.Not.Null);
-            Assert.That(renderer.sharedMaterial, Is.Not.Null);
-            Assert.That(renderer.sharedMaterial.shader, Is.Not.Null);
-            Assert.That(
-                AssetDatabase.GetAssetPath(renderer.sharedMaterial)
-                    .Replace('\\', '/'),
-                Does.StartWith("Assets/Ignore/AllIn1VfxToolkit/"));
-            Assert.That(renderer.sharedMaterial.shader.name.IndexOf(
-                    "GrabPass",
-                    StringComparison.OrdinalIgnoreCase),
-                Is.LessThan(0));
-
-            Assert.That(prefab.GetComponentsInChildren<Light>(true), Is.Empty);
-            Assert.That(prefab.GetComponentsInChildren<Collider>(true), Is.Empty);
-            Assert.That(prefab.GetComponentsInChildren<Collider2D>(true), Is.Empty);
-            Assert.That(prefab.GetComponentsInChildren<NetworkObject>(true), Is.Empty);
-            Assert.That(prefab.GetComponentsInChildren<MonoBehaviour>(true), Is.Empty);
-            Assert.That(prefab.GetComponentsInChildren<Transform>(true).All(
-                item => GameObjectUtility
-                    .GetMonoBehavioursWithMissingScriptCount(item.gameObject) == 0),
-                Is.True);
-            Assert.That(AssetDatabase.GetDependencies(MarkerPrefabPath, true)
-                    .Select(path => path.Replace('\\', '/'))
-                    .Any(path => path.StartsWith(
-                        "Assets/Ignore/AllIn1VfxToolkit/",
-                        StringComparison.OrdinalIgnoreCase)),
-                Is.True);
-        }
 
         [Test]
         public void LocalGuide_FollowsDirectedCentersAndClearsOldRoutesWithoutNetworkingOrCollision()

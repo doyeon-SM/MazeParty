@@ -54,8 +54,11 @@ namespace MazeParty.Multiplayer
         public static float CourseLength =>
             WrongWayRules.StepCount * NetworkWrongWayState.StepDepth;
 
+        public static float StepRise =>
+            NetworkWrongWayState.StepHeight * 0.5f;
+
         public static float CourseHeight =>
-            WrongWayRules.StepCount * NetworkWrongWayState.StepHeight;
+            GetRunnerGroundHeight(WrongWayRules.StepCount);
 
         public static float GetLaneX(int playerSlot)
         {
@@ -86,8 +89,19 @@ namespace MazeParty.Multiplayer
 
             return new Vector3(
                 GetLaneX(playerSlot),
-                progress * NetworkWrongWayState.StepHeight,
+                GetRunnerGroundHeight(progress),
                 (progress - 0.5f) * NetworkWrongWayState.StepDepth);
+        }
+
+        public static float GetRunnerGroundHeight(int completedSteps)
+        {
+            var progress = Mathf.Clamp(
+                completedSteps,
+                0,
+                WrongWayRules.StepCount);
+            return progress == 0
+                ? 0f
+                : (progress + 1) * StepRise;
         }
 
         public static Vector3 CalculateCameraFocus(int leadingProgress)
@@ -103,7 +117,7 @@ namespace MazeParty.Multiplayer
                     -StartPlatformDepth * 0.5f)
                 : new Vector3(
                     NetworkWrongWayState.ArenaCenterX,
-                    progress * NetworkWrongWayState.StepHeight,
+                    GetRunnerGroundHeight(progress),
                     (progress - 0.5f) * NetworkWrongWayState.StepDepth);
 
             return CalculateLocalCameraFocus(runnerPosition);
