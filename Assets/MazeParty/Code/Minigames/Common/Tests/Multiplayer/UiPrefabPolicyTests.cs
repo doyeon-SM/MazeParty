@@ -37,6 +37,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab",
@@ -61,6 +62,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
             "MazeParty.Multiplayer.AwardCeremonyCanvasBindings",
+            "MazeParty.Multiplayer.ArenaCombatHitFlashView",
             "MazeParty.Multiplayer.MinigameCommonHudView",
             "MazeParty.Multiplayer.MinigameResultCanvasBindings",
             "MazeParty.Multiplayer.ArenaCombatHitFlashView",
@@ -100,6 +102,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Scenes/Board/Board.unity",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameResultCanvas.prefab"),
             new SceneUiContract(

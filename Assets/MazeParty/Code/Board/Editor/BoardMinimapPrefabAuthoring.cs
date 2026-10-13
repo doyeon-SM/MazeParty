@@ -10,6 +10,9 @@ namespace MazeParty.Editor
     public static class BoardMinimapPrefabAuthoring
     {
         private const string Path = "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private static readonly Vector2 PlayerMarkerSize = new Vector2(30f, 30f);
+        private static readonly Vector2 PlayerHighlightPosition = new Vector2(0f, 24f);
+        private static readonly Vector2 PlayerHighlightSize = new Vector2(40f, 20f);
 
         [MenuItem("MazeParty/Board/Install Live Minimap")]
         public static void Install()
@@ -107,14 +110,18 @@ namespace MazeParty.Editor
             {
                 var dot = Rect("Live Player " + (slot + 1), surface).gameObject.AddComponent<Image>();
                 dot.raycastTarget = false;
-                dot.rectTransform.sizeDelta = Vector2.one * 15f;
+                dot.rectTransform.sizeDelta = PlayerMarkerSize;
+                var outline = dot.gameObject.AddComponent<Outline>();
+                outline.effectColor = Color.white;
+                outline.effectDistance = new Vector2(2f, -2f);
+                outline.useGraphicAlpha = true;
                 var number = Label("Seat", dot.transform, font, (slot + 1).ToString(), 11);
                 Stretch(number.rectTransform);
                 number.color = new Color(0.02f, 0.03f, 0.04f);
                 number.fontStyle = FontStyle.Normal;
                 var highlight = Label("You Heading", dot.transform, font, "^", 18);
-                highlight.rectTransform.anchoredPosition = new Vector2(0f, 13f);
-                highlight.rectTransform.sizeDelta = new Vector2(22f, 20f);
+                highlight.rectTransform.anchoredPosition = PlayerHighlightPosition;
+                highlight.rectTransform.sizeDelta = PlayerHighlightSize;
                 highlights[slot] = highlight.gameObject;
                 dots[slot] = dot;
                 dot.gameObject.SetActive(false);

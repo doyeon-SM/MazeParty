@@ -84,38 +84,38 @@ namespace MazeParty.Gameplay
 
             var zero = Vector3.zero;
             greeting = HandEmoteRotationPose.Create(zero, zero, zero, zero);
-            greetingWaveDegrees = 22f;
+            greetingWaveDegrees = -22f;
             salute = HandEmoteRotationPose.Create(
                 zero,
-                new Vector3(0f, 0f, -32f),
+                new Vector3(0f, 0f, 32f),
                 zero,
-                new Vector3(0f, 0f, -32f));
+                new Vector3(0f, 0f, 32f));
             insult = HandEmoteRotationPose.Create(zero, zero, zero, zero);
             heart = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, -42f),
                 new Vector3(0f, 0f, 42f),
                 new Vector3(0f, 0f, -42f),
-                new Vector3(0f, 0f, 42f));
+                new Vector3(0f, 0f, 42f),
+                new Vector3(0f, 0f, -42f));
             surprise = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, 18f),
                 new Vector3(0f, 0f, -18f),
                 new Vector3(0f, 0f, 18f),
-                new Vector3(0f, 0f, -18f));
+                new Vector3(0f, 0f, -18f),
+                new Vector3(0f, 0f, 18f));
             surrender = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, 10f),
                 new Vector3(0f, 0f, -10f),
                 new Vector3(0f, 0f, 10f),
-                new Vector3(0f, 0f, -10f));
+                new Vector3(0f, 0f, -10f),
+                new Vector3(0f, 0f, 10f));
             pleading = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, -82f),
                 new Vector3(0f, 0f, 82f),
                 new Vector3(0f, 0f, -82f),
-                new Vector3(0f, 0f, 82f));
+                new Vector3(0f, 0f, 82f),
+                new Vector3(0f, 0f, -82f));
             eyesCover = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, 8f),
                 new Vector3(0f, 0f, -8f),
                 new Vector3(0f, 0f, 8f),
-                new Vector3(0f, 0f, -8f));
+                new Vector3(0f, 0f, -8f),
+                new Vector3(0f, 0f, 8f));
             schemaVersion = CurrentSchemaVersion;
             return true;
         }
@@ -315,7 +315,7 @@ namespace MazeParty.Gameplay
             out HandEmoteRotationPose pose,
             out float greetingWaveDegrees)
         {
-            greetingWaveDegrees = 22f;
+            greetingWaveDegrees = -22f;
             if (handEmoteRotations == null ||
                 !handEmoteRotations.TryGet(id, out pose))
             {

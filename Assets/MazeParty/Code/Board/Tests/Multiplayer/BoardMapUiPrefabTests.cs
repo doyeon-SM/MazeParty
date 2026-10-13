@@ -197,18 +197,18 @@ namespace MazeParty.Multiplayer.Tests
                             ModernIconRoot +
                             "Map/Location Mark Filled.png"));
                     Assert.That(marker.preserveAspect, Is.True);
+                    Assert.That(marker.rectTransform.sizeDelta,
+                        Is.EqualTo(new Vector2(30f, 30f)),
+                        "Minimap and full-map player markers must use the same size.");
+                    var outline = marker.GetComponent<UnityEngine.UI.Outline>();
+                    Assert.That(outline, Is.Not.Null,
+                        "Every board-map player marker requires an Outline.");
+                    Assert.That(outline.effectColor, Is.EqualTo(Color.white),
+                        "Board-map player marker outlines must stay white.");
                     Assert.That(marker.transform.GetSiblingIndex(),
                         Is.GreaterThan(effectLayer.GetSiblingIndex()),
                         "Player markers must render above every tile icon layer.");
-                    if (isFullMap)
-                    {
-                        var outline = marker.GetComponent<UnityEngine.UI.Outline>();
-                        Assert.That(outline, Is.Not.Null,
-                            "Every full-map player marker requires an Outline.");
-                        Assert.That(outline.effectColor, Is.EqualTo(Color.white),
-                            "Full-map player marker outlines must stay white.");
-                    }
-                    else
+                    if (!isFullMap)
                     {
                         Assert.That(marker.transform.parent,
                             Is.EqualTo(projection.otherDotCanvas),

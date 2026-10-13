@@ -29,6 +29,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Resources/sound/explosion.mp3";
         private const string MinefieldScanClipPath =
             "Assets/Resources/sound/mine.mp3";
+        private const string PistolClipPath =
+            "Assets/Resources/sound/pistol.mp3";
+        private const string SniperClipPath =
+            "Assets/Resources/sound/sniper.mp3";
 
         [Test]
         public void SoundSystemPrefab_MixerAndLibrary_CoverEveryKey()
@@ -108,6 +112,14 @@ namespace MazeParty.Multiplayer.Tests
                 library,
                 SoundKeys.MinigameMinefieldScan,
                 MinefieldScanClipPath);
+            AssertSpatialCueUsesClip(
+                library,
+                SoundKeys.ItemUse(PrototypeItemId.Pistol),
+                PistolClipPath);
+            AssertSpatialCueUsesClip(
+                library,
+                SoundKeys.ItemUse(PrototypeItemId.Sniper),
+                SniperClipPath);
 
             var registered = new HashSet<SoundCue>(library.Cues);
             var keys = new HashSet<string>();

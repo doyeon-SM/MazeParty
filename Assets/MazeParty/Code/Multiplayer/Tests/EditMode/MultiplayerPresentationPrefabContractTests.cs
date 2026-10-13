@@ -308,6 +308,60 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void HandLayout_UsesSwappedSidesAndGreetingKeepsRightHandIdentity()
+        {
+            var root = new GameObject("Hand Layout Contract Root");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+
+                Assert.That(bindings.LeftHandAnchor.localPosition.x,
+                    Is.GreaterThan(0f));
+                Assert.That(bindings.RightHandAnchor.localPosition.x,
+                    Is.LessThan(0f));
+                Assert.That(bindings.FirstPersonLeftHand.localPosition.x,
+                    Is.GreaterThan(0f));
+                Assert.That(bindings.FirstPersonRightHand.localPosition.x,
+                    Is.LessThan(0f));
+                Assert.That(bindings.LeftHandHitbox.center.x,
+                    Is.GreaterThan(0f));
+                Assert.That(bindings.RightHandHitbox.center.x,
+                    Is.LessThan(0f));
+
+                var updatePose = typeof(PlayerAvatarVisual).GetMethod(
+                    "UpdatePose",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                var gestureStartedAt = typeof(PlayerAvatarVisual).GetField(
+                    "_gestureStartedAt",
+                    BindingFlags.Instance | BindingFlags.NonPublic);
+                Assert.That(updatePose, Is.Not.Null);
+                Assert.That(gestureStartedAt, Is.Not.Null);
+
+                visual.SetHandGesture((byte)HandEmoteId.Greeting, 0);
+                gestureStartedAt.SetValue(
+                    visual,
+                    Time.time - (float)HandEmoteRules.Duration * 0.5f);
+                updatePose.Invoke(visual, new object[] { false });
+
+                Assert.That(bindings.RightHandAnchor.localPosition.y,
+                    Is.GreaterThan(bindings.LeftHandAnchor.localPosition.y));
+                Assert.That(bindings.FirstPersonRightHand.localPosition.y,
+                    Is.GreaterThan(
+                        bindings.FirstPersonLeftHand.localPosition.y));
+                Assert.That(bindings.RightHandAnchor.localPosition.x,
+                    Is.LessThan(0f));
+                Assert.That(bindings.FirstPersonRightHand.localPosition.x,
+                    Is.LessThan(0f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
         public void ShieldPresentation_CombinesIndependentRequestsAndHiddenState()
         {
             var root = new GameObject("Shield Presentation Contract Root");

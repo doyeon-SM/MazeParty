@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,7 +6,7 @@ using UnityEngine.UI;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Local-only red screen flash for damage received in Arena Combat.
+    /// Local-only red screen flash for item and combat damage.
     /// Its Canvas and graphics are authored by the prefab, never at runtime.
     /// </summary>
     [DisallowMultipleComponent]
@@ -16,6 +17,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Image flashImage;
         [SerializeField, Min(0.01f)] private float flashDuration = 0.42f;
         [SerializeField, Range(0f, 1f)] private float peakOpacity = 0.42f;
+
+        private static readonly List<ArenaCombatHitFlashView> ActiveInstances =
+            new List<ArenaCombatHitFlashView>();
 
         private float _remaining;
 
@@ -48,18 +52,37 @@ namespace MazeParty.Multiplayer
 
         private void OnEnable()
         {
+            ActiveInstances.Remove(this);
+            ActiveInstances.Add(this);
             Instance = this;
         }
 
         private void OnDisable()
         {
+            ActiveInstances.Remove(this);
             if (Instance == this)
             {
-                Instance = null;
+                Instance = FindLatestActiveInstance();
             }
 
             _remaining = 0f;
             SetOpacity(0f);
+        }
+
+        private static ArenaCombatHitFlashView FindLatestActiveInstance()
+        {
+            for (var index = ActiveInstances.Count - 1; index >= 0; index--)
+            {
+                var candidate = ActiveInstances[index];
+                if (candidate != null && candidate.isActiveAndEnabled)
+                {
+                    return candidate;
+                }
+
+                ActiveInstances.RemoveAt(index);
+            }
+
+            return null;
         }
 
         private void Update()

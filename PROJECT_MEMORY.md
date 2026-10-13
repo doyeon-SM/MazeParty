@@ -94,6 +94,9 @@
 - 기본 손은 WhiteHand.prefab 원본의 SimpleFistHand.prefab 변형을 사용하며 왼손은
   visual root X축 미러로 구분한다. 기존 손 앵커·주먹 애니메이션·독립 trigger 히트박스를
   유지하고 모델 자체에는 Collider를 추가하지 않는다. 장착 아이템이 활성화되면 손을 숨긴다.
+- 좌우가 뒤집혀 보이던 배치를 교체해 월드·1인칭 모두 왼손 앵커와 왼손 피격 영역은 +X,
+  오른손은 -X를 사용한다. 모든 감정표현의 좌우 위치와 회전 방향도 같은 기준으로 반전하며,
+  오른손 전용 인사·경례의 손 정체성은 유지한다.
 - T 홀드 원형 휠은 로비·보드에서만 인사·경례·욕설·하트·놀람·항복·부탁·눈가림 8종을
   제공한다. 모션은 2초 동안 서버 권위로 이동을 잠그고 시작·종료를 부드럽게 보간한다.
 - 감정표현은 기본 손의 손가락 본과 손 앵커를 사용한다. 인사는 오른손을 두 번 흔들고,
@@ -159,8 +162,8 @@
   직접 확인할 때만 최종 관측 위치를 갱신하고, 보드에서 직접 확인 가능한 동안에는
   미니맵에도 현재 위치를 표시한다. 은신 상대는 새로 관측하지 않는다.
 - 전체 지도는 기존 600×600에서 780×780으로 1.3배 확대하고 내부 지도 표면은
-  560×560에서 728×728로 함께 확대한다. 전체 지도 플레이어 아이콘만 15×15에서
-  30×30으로 두 배 키우고 흰색 Outline을 사용하며, 로컬 미니맵 아이콘 크기는 유지한다.
+  560×560에서 728×728로 함께 확대한다. 전체 지도와 로컬 미니맵의 플레이어 아이콘은
+  모두 30×30과 흰색 Outline을 사용하고 본인 방향 표식도 같은 크기 기준으로 맞춘다.
 - 로컬 미니맵은 실제 1인칭 출력 카메라의 수평 시야를 부채꼴로 표시한다. 직접 보이는
   범위는 밝게, 시야 밖과 불투명 오브젝트 뒤는 어둡게 표시하되 칸·칸 아이콘·갈림길
   화살표·열쇠상점 안내 같은 정적 지도 정보는 어두운 레이어 아래 계속 확인할 수 있다.
@@ -230,6 +233,9 @@
   시간 안에서 표시 성공까지 같은 revision을 재시도한다.
 - Pistol·Sniper는 화면 조준선 기준 hitscan이고 탄환 오브젝트 없이 짧은 tracer만 표시한다.
   실제 피해 가능한 상대를 조준할 때만 조준선을 빨간색으로 바꾸며 Sniper 확대는 사용하지 않는다.
+- Pistol·Sniper의 서버 승인 발사에는 각각 `item.use.pistol`·`item.use.sniper` 공간 SoundCue를
+  한 번 재생한다. 아이템 피해와 보드·Arena 격투 피해를 받은 로컬 소유자 화면에는 격투의
+  빨간 피격 플래시를 표시하며, 피해 없는 일반 피격 반응에는 표시하지 않는다.
 - Grenade 선택 중에는 플레이어 발높이에 맞춘 로컬 최대 사거리 원만 표시하고 궤적선은
   표시하지 않는다. 네 장착 아이템 visual은 WeaponStylizedPack, 9종 아이콘은
   Assets/Ignore/AIImage/Icons를 사용한다. 비행 표시는 안정 ID별 50ms 지연 보간과 최대
@@ -335,8 +341,9 @@
 - 보너스 준비음은 공개 전 2초만 재생하고 공개·일시정지에서 중지하며 duck하지 않는다.
 - 보드 발소리는 짧은 원샷 11개를 shuffle 재생한다.
 - Sequence Memory 음계는 전역 풀 사운드 큐 하나에서 독립 피치 요청으로 재생한다.
-- `balloon`과 `lightning`, Minefield의 `minigame.minefield.explosion`과
-  `minigame.minefield.scan`은 실제 MP3를 SoundCue와 SoundLibrary에 연결한다. 여러
+- `balloon`과 `lightning`, Pistol·Sniper 발사음, Minefield의
+  `minigame.minefield.explosion`과 `minigame.minefield.scan`은 실제 MP3를 SoundCue와
+  SoundLibrary에 연결한다. 여러
   플레이어의 동시 팝·위반은 4개 voice 한도 안에서 같은 프레임에도 누락하지 않는다.
 
 ## 현재 검증 기준
@@ -380,6 +387,11 @@
   표현 프리팹에 남아 있던 물리 Collider 소유권 실패는 제거했다. 남은 4건은 Forest visual
   TerrainCollider, Arena Combat HitFlash 비차단 바인딩, Red Light Green Light Signal Tower
   Placeholder, 전용 authored MinigameResultCanvas 출처이며 최종 Unity 콘솔 오류는 0건이다.
+- 2026-10-14 보드 총 발사 SoundCue 계약, 아이템·격투 피해의 로컬 빨간 화면 플래시,
+  플레이어 손·감정표현 좌우 교체, 미니맵·전체 지도 플레이어 표식 통일을 반영했다. 관련
+  프리팹·씬·표현·Sound 계약 표적 EditMode 40/40이 통과했다. 전체 EditMode는 564개 중
+  560개가 통과했으며 남은 4건은 위 2026-10-13 기록과 같은 기존 실패이고, 최종 Unity
+  콘솔 오류는 0건이다.
 
 ## 남은 TODO
 

@@ -986,8 +986,8 @@ namespace MazeParty.Editor
                 PrimitiveType.Sphere,
                 bodyMaterial,
                 out var firstPersonRightRenderer);
-            firstPersonLeft.localPosition = new Vector3(-0.27f, -0.24f, 0.52f);
-            firstPersonRight.localPosition = new Vector3(0.27f, -0.24f, 0.52f);
+            firstPersonLeft.localPosition = new Vector3(0.27f, -0.24f, 0.52f);
+            firstPersonRight.localPosition = new Vector3(-0.27f, -0.24f, 0.52f);
             firstPersonLeft.localScale = Vector3.one * 0.22f;
             firstPersonRight.localScale = Vector3.one * 0.22f;
             var firstPersonItems = CreateAnchor(

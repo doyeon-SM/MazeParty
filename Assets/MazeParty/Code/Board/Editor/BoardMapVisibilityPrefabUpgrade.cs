@@ -16,12 +16,16 @@ namespace MazeParty.Editor
     {
         private const string PrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
-        private const int CurrentPresentationVersion = 1;
+        private const int CurrentPresentationVersion = 2;
         private static readonly Vector2 FullMapSize = new Vector2(780f, 780f);
         private static readonly Vector2 FullMapSurfaceSize =
             new Vector2(728f, 728f);
-        private static readonly Vector2 FullMapPlayerSize =
+        private static readonly Vector2 PlayerMarkerSize =
             new Vector2(30f, 30f);
+        private static readonly Vector2 PlayerHighlightPosition =
+            new Vector2(0f, 24f);
+        private static readonly Vector2 PlayerHighlightSize =
+            new Vector2(40f, 20f);
 
         [MenuItem("MazeParty/Board/Upgrade Map Visibility Presentation")]
         public static void UpgradePrefab()
@@ -61,15 +65,27 @@ namespace MazeParty.Editor
 
             EnsureVisionLayer(live);
             var version = mapData.FindProperty("mapPresentationVersion");
-            if (version.intValue < CurrentPresentationVersion)
+            var previousVersion = version.intValue;
+            if (previousVersion < 1)
             {
                 ApplyFullMapPresentation(mapData, full);
+            }
+
+            if (previousVersion < 2)
+            {
+                ApplyPlayerMarkerPresentation(live, "Live-minimap");
+                ApplyPlayerMarkerPresentation(full, "Full-map");
+            }
+
+            if (previousVersion < CurrentPresentationVersion)
+            {
                 version.intValue = CurrentPresentationVersion;
                 mapData.ApplyModifiedPropertiesWithoutUndo();
                 EditorUtility.SetDirty(map);
             }
             else
             {
+                ValidatePlayerMarkerPresentation(live, "Live-minimap");
                 ValidateFullMapPresentation(mapData, full);
             }
         }
@@ -164,17 +180,35 @@ namespace MazeParty.Editor
             surface.anchoredPosition = Vector2.zero;
             surface.sizeDelta = FullMapSurfaceSize;
 
+            EditorUtility.SetDirty(panelRect);
+            EditorUtility.SetDirty(surface);
+            EditorUtility.SetDirty(full);
+        }
+
+        private static void ApplyPlayerMarkerPresentation(
+            BoardMinimapView view,
+            string viewName)
+        {
+            var data = new SerializedObject(view);
             var players = data.FindProperty("players");
             var highlights = data.FindProperty("localHighlights");
+            if (players.arraySize != highlights.arraySize)
+            {
+                throw new InvalidOperationException(
+                    viewName + " player marker bindings are inconsistent.");
+            }
+
             for (var slot = 0; slot < players.arraySize; slot++)
             {
                 var marker = players.GetArrayElementAtIndex(slot)
                     .objectReferenceValue as Image;
                 if (marker == null)
+                {
                     throw new InvalidOperationException(
-                        "Full-map player marker is missing: " + slot);
+                        viewName + " player marker is missing: " + slot);
+                }
 
-                marker.rectTransform.sizeDelta = FullMapPlayerSize;
+                marker.rectTransform.sizeDelta = PlayerMarkerSize;
                 var outline = marker.GetComponent<Outline>();
                 if (outline == null)
                     outline = marker.gameObject.AddComponent<Outline>();
@@ -187,19 +221,22 @@ namespace MazeParty.Editor
                 var highlightRect = highlight != null
                     ? highlight.GetComponent<RectTransform>()
                     : null;
-                if (highlightRect != null)
+                if (highlightRect == null)
                 {
-                    highlightRect.anchoredPosition = new Vector2(0f, 24f);
-                    highlightRect.sizeDelta = new Vector2(40f, 20f);
+                    throw new InvalidOperationException(
+                        viewName + " player highlight is missing: " + slot);
                 }
 
+                highlightRect.anchoredPosition = PlayerHighlightPosition;
+                highlightRect.sizeDelta = PlayerHighlightSize;
+
+                EditorUtility.SetDirty(marker.rectTransform);
                 EditorUtility.SetDirty(marker);
                 EditorUtility.SetDirty(outline);
+                EditorUtility.SetDirty(highlightRect);
             }
 
-            EditorUtility.SetDirty(panelRect);
-            EditorUtility.SetDirty(surface);
-            EditorUtility.SetDirty(full);
+            EditorUtility.SetDirty(view);
         }
 
         private static void ValidateFullMapPresentation(
@@ -211,8 +248,22 @@ namespace MazeParty.Editor
             if (panel == null)
                 throw new InvalidOperationException("Full-map panel is missing.");
 
-            var data = new SerializedObject(full);
+            ValidatePlayerMarkerPresentation(full, "Full-map");
+        }
+
+        private static void ValidatePlayerMarkerPresentation(
+            BoardMinimapView view,
+            string viewName)
+        {
+            var data = new SerializedObject(view);
             var players = data.FindProperty("players");
+            var highlights = data.FindProperty("localHighlights");
+            if (players.arraySize != highlights.arraySize)
+            {
+                throw new InvalidOperationException(
+                    viewName + " player marker bindings are inconsistent.");
+            }
+
             for (var slot = 0; slot < players.arraySize; slot++)
             {
                 var marker = players.GetArrayElementAtIndex(slot)
@@ -220,10 +271,20 @@ namespace MazeParty.Editor
                 var outline = marker != null
                     ? marker.GetComponent<Outline>()
                     : null;
-                if (outline == null || outline.effectColor != Color.white)
+                var highlight = highlights.GetArrayElementAtIndex(slot)
+                    .objectReferenceValue as GameObject;
+                var highlightRect = highlight != null
+                    ? highlight.GetComponent<RectTransform>()
+                    : null;
+                if (marker == null ||
+                    marker.rectTransform.sizeDelta != PlayerMarkerSize ||
+                    outline == null || outline.effectColor != Color.white ||
+                    highlightRect == null ||
+                    highlightRect.anchoredPosition != PlayerHighlightPosition ||
+                    highlightRect.sizeDelta != PlayerHighlightSize)
                 {
                     throw new InvalidOperationException(
-                        "Full-map player markers require a white Outline.");
+                        viewName + " player marker presentation is incomplete.");
                 }
             }
         }

@@ -235,6 +235,7 @@ namespace MazeParty.Editor
             var topology = CreateTopology(materials);
             var cameras = CreateCameraRig();
             CreateBoardCanvas(cameras);
+            BoardHitFlashProjectSetup.EnsureSceneInstance(scene);
             MinigameResultCanvasProjectSetup.EnsureSceneInstance(scene);
             AwardCeremonyProjectSetup.EnsureSceneInstances(scene);
 

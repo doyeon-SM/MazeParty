@@ -595,12 +595,12 @@ namespace MazeParty.Gameplay
             _head.localPosition = new Vector3(headOffsetX, headY, 0f);
             _head.localScale = Vector3.one * 0.78f;
             _head.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _leftHand.localPosition = new Vector3(-0.58f, handY, swing + (leftPunch + push) * 0.62f);
-            _rightHand.localPosition = new Vector3(0.58f, handY, -swing + (rightPunch + push) * 0.62f);
+            _leftHand.localPosition = new Vector3(0.58f, handY, swing + (leftPunch + push) * 0.62f);
+            _rightHand.localPosition = new Vector3(-0.58f, handY, -swing + (rightPunch + push) * 0.62f);
             _leftHand.localScale = Vector3.one * 0.27f;
             _rightHand.localScale = Vector3.one * 0.27f;
-            _leftHand.localRotation = Quaternion.Euler(0f, 0f, handWobble);
-            _rightHand.localRotation = Quaternion.Euler(0f, 0f, -handWobble);
+            _leftHand.localRotation = Quaternion.Euler(0f, 0f, -handWobble);
+            _rightHand.localRotation = Quaternion.Euler(0f, 0f, handWobble);
 
             _leftEye.localPosition = new Vector3(-0.15f + headOffsetX, headY + 0.07f, 0.355f);
             _rightEye.localPosition = new Vector3(0.15f + headOffsetX, headY + 0.07f, 0.355f);
@@ -630,10 +630,10 @@ namespace MazeParty.Gameplay
             if (_firstPersonHands != null)
             {
                 _firstPersonLeftHand.localPosition =
-                    new Vector3(-0.27f, -0.24f,
+                    new Vector3(0.27f, -0.24f,
                         0.52f + (leftPunch + push) * 0.45f);
                 _firstPersonRightHand.localPosition =
-                    new Vector3(0.27f, -0.24f,
+                    new Vector3(-0.27f, -0.24f,
                         0.52f + (rightPunch + push) * 0.45f);
             }
             if (_firstPersonItemRoot != null)
@@ -664,8 +664,8 @@ namespace MazeParty.Gameplay
             _bodyHitbox.height = Mathf.Lerp(1.22f, 0.72f, crouch);
             _bodyHitbox.center = new Vector3(0f, Mathf.Lerp(-0.12f, -0.43f, crouch), 0f);
             _headHitbox.center = new Vector3(0f, Mathf.Lerp(0.75f, 0.08f, crouch), 0f);
-            _leftHandHitbox.center = new Vector3(-0.58f, Mathf.Lerp(-0.05f, -0.47f, crouch), 0f);
-            _rightHandHitbox.center = new Vector3(0.58f, Mathf.Lerp(-0.05f, -0.47f, crouch), 0f);
+            _leftHandHitbox.center = new Vector3(0.58f, Mathf.Lerp(-0.05f, -0.47f, crouch), 0f);
+            _rightHandHitbox.center = new Vector3(-0.58f, Mathf.Lerp(-0.05f, -0.47f, crouch), 0f);
         }
 
         private void ApplyBodyColor()

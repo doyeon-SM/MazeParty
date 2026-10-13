@@ -772,7 +772,7 @@ namespace MazeParty.Multiplayer
         {
             if (IsServer)
             {
-                PresentHitRpc((byte)region);
+                PresentHitRpc((byte)region, false);
             }
         }
 
@@ -887,7 +887,9 @@ namespace MazeParty.Multiplayer
                 ? sourceAvatar
                 : null;
             RecordDamageOnServer(appliedDamage, attacker);
-            PresentHitRpc((byte)request.HitRegion);
+            PresentHitRpc(
+                (byte)request.HitRegion,
+                request.Kind == DamageKind.Item);
             if (_currentHealth.Value == 0)
             {
                 if (attacker != null)
@@ -1186,7 +1188,7 @@ namespace MazeParty.Multiplayer
                 BoardCombatRules.PunchDamage);
             _combatHealth.Value -= appliedDamage;
             RecordDamageOnServer(appliedDamage, attacker);
-            PresentHitRpc((byte)PlayerHitRegion.Body);
+            PresentHitRpc((byte)PlayerHitRegion.Body, true);
             if (_combatHealth.Value > 0)
             {
                 _combatKnockbackVelocity += Vector3.ClampMagnitude(
@@ -2537,14 +2539,13 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentHitRpc(byte region)
+        private void PresentHitRpc(byte region, bool showLocalFlash)
         {
             _avatarVisual?.TriggerHit((PlayerHitRegion)region);
             GameSound.PlayAt(
                 SoundKeys.CombatHit((PlayerHitRegion)region),
                 transform.position);
-            if (IsOwner && NetworkMatchState.Instance != null &&
-                NetworkMatchState.Instance.IsArenaCombatPhase)
+            if (IsOwner && showLocalFlash)
             {
                 ArenaCombatHitFlashView.Instance?.Flash();
             }

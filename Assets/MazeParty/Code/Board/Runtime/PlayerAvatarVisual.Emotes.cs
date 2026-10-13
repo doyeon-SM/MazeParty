@@ -113,7 +113,7 @@ namespace MazeParty.Gameplay
                 1f,
                 Mathf.Min(progress / 0.12f, (1f - progress) / 0.12f));
             HandEmoteRotationPose authoredRotations = null;
-            var greetingWaveDegrees = 22f;
+            var greetingWaveDegrees = -22f;
             bindings?.TryGetHandEmoteRotation(
                 (HandEmoteId)_gesture,
                 out authoredRotations,
@@ -166,88 +166,88 @@ namespace MazeParty.Gameplay
             {
                 case HandEmoteId.Greeting:
                     rightPosition = firstPerson
-                        ? new Vector3(0.28f, 0.04f, 0.48f)
-                        : new Vector3(0.48f, 0.66f, 0.3f);
+                        ? new Vector3(-0.28f, 0.04f, 0.48f)
+                        : new Vector3(-0.48f, 0.66f, 0.3f);
                     rightRotation = Quaternion.Euler(
                         0f,
                         0f,
-                        Mathf.Sin(progress * Mathf.PI * 4f) * 22f);
+                        Mathf.Sin(progress * Mathf.PI * 4f) * -22f);
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.Salute:
                     rightPosition = firstPerson
-                        ? new Vector3(0.2f, 0.08f, 0.43f)
-                        : new Vector3(0.32f, 0.72f, 0.31f);
-                    rightRotation = Quaternion.Euler(0f, 0f, -32f);
+                        ? new Vector3(-0.2f, 0.08f, 0.43f)
+                        : new Vector3(-0.32f, 0.72f, 0.31f);
+                    rightRotation = Quaternion.Euler(0f, 0f, 32f);
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.Insult:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.15f, -0.03f, 0.55f)
-                        : new Vector3(-0.28f, 0.3f, 0.48f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.15f, -0.03f, 0.55f)
                         : new Vector3(0.28f, 0.3f, 0.48f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.15f, -0.03f, 0.55f)
+                        : new Vector3(-0.28f, 0.3f, 0.48f);
                     leftFingerPose = HandFingerPose.MiddleOnly;
                     rightFingerPose = HandFingerPose.MiddleOnly;
                     break;
                 case HandEmoteId.Heart:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.09f, -0.04f, 0.53f)
-                        : new Vector3(-0.15f, 0.2f, 0.45f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.09f, -0.04f, 0.53f)
                         : new Vector3(0.15f, 0.2f, 0.45f);
-                    leftRotation = Quaternion.Euler(0f, 0f, -42f);
-                    rightRotation = Quaternion.Euler(0f, 0f, 42f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.09f, -0.04f, 0.53f)
+                        : new Vector3(-0.15f, 0.2f, 0.45f);
+                    leftRotation = Quaternion.Euler(0f, 0f, 42f);
+                    rightRotation = Quaternion.Euler(0f, 0f, -42f);
                     leftFingerPose = HandFingerPose.Heart;
                     rightFingerPose = HandFingerPose.Heart;
                     break;
                 case HandEmoteId.Surprise:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.25f, 0.01f, 0.48f)
-                        : new Vector3(-0.46f, 0.45f, 0.38f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.25f, 0.01f, 0.48f)
                         : new Vector3(0.46f, 0.45f, 0.38f);
-                    leftRotation = Quaternion.Euler(0f, 0f, 18f);
-                    rightRotation = Quaternion.Euler(0f, 0f, -18f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.25f, 0.01f, 0.48f)
+                        : new Vector3(-0.46f, 0.45f, 0.38f);
+                    leftRotation = Quaternion.Euler(0f, 0f, -18f);
+                    rightRotation = Quaternion.Euler(0f, 0f, 18f);
                     leftFingerPose = HandFingerPose.OpenPalm;
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.Surrender:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.29f, 0.1f, 0.44f)
-                        : new Vector3(-0.47f, 0.76f, 0.27f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.29f, 0.1f, 0.44f)
                         : new Vector3(0.47f, 0.76f, 0.27f);
-                    leftRotation = Quaternion.Euler(0f, 0f, 10f);
-                    rightRotation = Quaternion.Euler(0f, 0f, -10f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.29f, 0.1f, 0.44f)
+                        : new Vector3(-0.47f, 0.76f, 0.27f);
+                    leftRotation = Quaternion.Euler(0f, 0f, -10f);
+                    rightRotation = Quaternion.Euler(0f, 0f, 10f);
                     leftFingerPose = HandFingerPose.OpenPalm;
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.Pleading:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.055f, -0.03f, 0.55f)
-                        : new Vector3(-0.08f, 0.22f, 0.46f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.055f, -0.03f, 0.55f)
                         : new Vector3(0.08f, 0.22f, 0.46f);
-                    leftRotation = Quaternion.Euler(0f, 0f, -82f);
-                    rightRotation = Quaternion.Euler(0f, 0f, 82f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.055f, -0.03f, 0.55f)
+                        : new Vector3(-0.08f, 0.22f, 0.46f);
+                    leftRotation = Quaternion.Euler(0f, 0f, 82f);
+                    rightRotation = Quaternion.Euler(0f, 0f, -82f);
                     leftFingerPose = HandFingerPose.OpenPalm;
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.EyesCover:
                     leftPosition = firstPerson
-                        ? new Vector3(-0.1f, 0.06f, 0.36f)
-                        : new Vector3(-0.16f, 0.7f, 0.38f);
-                    rightPosition = firstPerson
                         ? new Vector3(0.1f, 0.06f, 0.36f)
                         : new Vector3(0.16f, 0.7f, 0.38f);
-                    leftRotation = Quaternion.Euler(0f, 0f, 8f);
-                    rightRotation = Quaternion.Euler(0f, 0f, -8f);
+                    rightPosition = firstPerson
+                        ? new Vector3(-0.1f, 0.06f, 0.36f)
+                        : new Vector3(-0.16f, 0.7f, 0.38f);
+                    leftRotation = Quaternion.Euler(0f, 0f, -8f);
+                    rightRotation = Quaternion.Euler(0f, 0f, 8f);
                     leftFingerPose = HandFingerPose.OpenPalm;
                     rightFingerPose = HandFingerPose.OpenPalm;
                     break;
