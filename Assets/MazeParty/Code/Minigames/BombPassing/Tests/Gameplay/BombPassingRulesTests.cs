@@ -7,6 +7,108 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BombPassingRulesTests
     {
         [Test]
+        public void AuthoredCollisionLayoutContainsWallsAndPillars()
+        {
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlockingRectCount,
+                Is.EqualTo(23));
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksCircle(
+                    4d,
+                    1.7d,
+                    0d),
+                Is.True,
+                "Horizontal wall footprint is missing.");
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksCircle(
+                    5.2d,
+                    -5d,
+                    0d),
+                Is.True,
+                "Vertical wall footprint is missing.");
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksCircle(
+                    -6.5d,
+                    -4.78d,
+                    0d),
+                Is.True,
+                "Pillar footprint is missing.");
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksCircle(
+                    0d,
+                    0d,
+                    BombPassingRules.PlayerRadius),
+                Is.False);
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksSegment(
+                    4d,
+                    1d,
+                    4d,
+                    2.4d),
+                Is.True,
+                "Authored walls must block attacks across their footprint.");
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksSegment(
+                    0d,
+                    0d,
+                    0d,
+                    -1d),
+                Is.False);
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksSegment(
+                    4.48d,
+                    -3.5d,
+                    4.585d,
+                    -3.4d,
+                    BombPassingRules.BombCollisionRadius),
+                Is.False,
+                "Rounded bomb clearance must not use square-expanded " +
+                "wall corners.");
+        }
+
+        [Test]
+        public void DefaultSpawnsClearAuthoredCollisionLayout()
+        {
+            var match = new BombPassingMatchState(22091);
+
+            for (var slot = 0; slot < BombPassingRules.PlayerCount; slot++)
+            {
+                var player = match.GetPlayer(slot);
+                Assert.That(
+                    BombPassingArenaCollisionLayout.BlocksCircle(
+                        player.X,
+                        player.Z,
+                        BombPassingRules.PlayerRadius),
+                    Is.False,
+                    "Spawn for P" + (slot + 1) +
+                    " overlaps an authored obstacle.");
+            }
+        }
+
+        [Test]
+        public void MovementStopsAtAuthoredWallAndSlidesAlongIt()
+        {
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(4d, 0.4d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(6.5d, 6.5d),
+                new BombPassingPosition(-6.5d, 6.5d));
+            match.SetMovementInput(0, 1d, 1d);
+
+            match.AdvanceTo(0.5d);
+
+            var player = match.GetPlayer(0);
+            Assert.That(player.X, Is.GreaterThan(4.8d));
+            Assert.That(player.Z, Is.LessThanOrEqualTo(1.07d));
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksCircle(
+                    player.X,
+                    player.Z,
+                    BombPassingRules.PlayerRadius),
+                Is.False);
+        }
+
+        [Test]
         public void BombFuseIsSeededAtSpawnAndHalfwayUnheldBombChases()
         {
             var first = new BombPassingMatchState(22091);
@@ -35,66 +137,256 @@ namespace MazeParty.Gameplay.Tests
 
             first.AdvanceTo(initial.FuseSeconds * 0.5d + 0.05d);
             Assert.That(first.GetBomb().IsChasing, Is.True);
-            Assert.That(first.GetBomb().X, Is.LessThan(0d));
-            Assert.That(first.GetBomb().Z, Is.LessThan(0d));
+            Assert.That(
+                first.GetBomb().X * first.GetBomb().X +
+                first.GetBomb().Z * first.GetBomb().Z,
+                Is.GreaterThan(0d));
         }
 
         [Test]
-        public void TouchPickupTransferStunsRecipientAndCarrierMovesFaster()
+        public void TransferUsesExactCastStunAndPostCastRecoveryBoundaries()
         {
             var match = NewMatchWithPositions(
                 new BombPassingPosition(0.5d, 0d),
-                new BombPassingPosition(0.5d, 1.8d),
-                new BombPassingPosition(1.0d, 2.2d),
+                new BombPassingPosition(0.5d, -1.8d),
+                new BombPassingPosition(1.0d, -2.2d),
                 new BombPassingPosition(-5d, -5d));
             match.AdvanceTo(BombPassingRules.SimulationStepSeconds);
             Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
 
+            var castStartedAt = match.MatchElapsedSeconds;
+            BombPassingInteraction? resolved = null;
+            match.InteractionResolved += interaction =>
+                resolved = interaction;
+            match.SetFacing(0, 0d, -1d);
+            Assert.That(match.TryStartAttack(0), Is.True);
+            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.True);
+            Assert.That(match.TryStartAttack(0), Is.False);
+
+            var actorBeforeCast = match.GetPlayer(0);
+            match.SetMovementInput(0, 1d, 0d);
             match.SetFacing(0, 0d, 1d);
-            var transfer = match.TryAttack(0);
-            Assert.That(transfer.Kind,
+            match.AdvanceTo(
+                castStartedAt +
+                BombPassingRules.AttackCastSeconds - 0.001d);
+            Assert.That(match.InteractionSequence, Is.Zero);
+            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
+            Assert.That(match.GetPlayer(0).X,
+                Is.EqualTo(actorBeforeCast.X).Within(0.000001d));
+            Assert.That(match.GetPlayer(0).Z,
+                Is.EqualTo(actorBeforeCast.Z).Within(0.000001d));
+
+            var castCompletedAt = castStartedAt +
+                BombPassingRules.AttackCastSeconds;
+            match.AdvanceTo(castCompletedAt);
+            Assert.That(resolved.HasValue, Is.True);
+            Assert.That(resolved.Value.Kind,
                 Is.EqualTo(BombPassingInteractionKind.Transfer));
-            Assert.That(transfer.TargetSlot, Is.EqualTo(1));
+            Assert.That(resolved.Value.TargetSlot, Is.EqualTo(1));
             Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(1));
+            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.False);
             Assert.That(match.GetPlayer(1).StunRemainingSeconds,
                 Is.EqualTo(BombPassingRules.StunSeconds)
                     .Within(0.000001d));
-            Assert.That(match.TryAttack(0).WasApplied, Is.False);
-            Assert.That(match.TryAttack(1).WasApplied, Is.False);
+            Assert.That(match.CanStartAttack(0), Is.False);
 
-            match.SetMovementInput(1, 0d, 1d);
-            match.AdvanceTo(0.4d);
-            Assert.That(match.GetPlayer(1).Z, Is.EqualTo(1.8d));
+            match.SetMovementInput(1, 0d, -1d);
+            var stunnedAt = match.GetPlayer(1);
+            match.AdvanceTo(
+                castCompletedAt +
+                BombPassingRules.StunSeconds - 0.001d);
+            Assert.That(match.GetPlayer(1).Z,
+                Is.EqualTo(stunnedAt.Z).Within(0.000001d));
+            Assert.That(match.GetPlayer(1).IsStunned, Is.True);
+            Assert.That(match.CanStartAttack(0), Is.False);
+            Assert.That(match.GetPlayer(0).X,
+                Is.GreaterThan(actorBeforeCast.X));
 
-            match.AdvanceTo(0.7d);
-            Assert.That(match.GetPlayer(1).Z, Is.GreaterThan(1.8d));
+            var nextAttackAt = castCompletedAt +
+                BombPassingRules.AttackRecoverySeconds;
+            match.AdvanceTo(nextAttackAt);
             Assert.That(match.GetPlayer(1).IsStunned, Is.False);
+            Assert.That(match.CanStartAttack(0), Is.True);
+            Assert.That(match.TryStartAttack(0), Is.True);
             Assert.That(match.GetBomb().Z,
                 Is.EqualTo(match.GetPlayer(1).Z));
         }
 
         [Test]
-        public void EmptyHandAttackUsesNearestForwardHitboxAndStunsOnlyTarget()
+        public void EmptyHandCastUsesCompletionPositionsAndStartFacing()
         {
             var match = NewMatchWithPositions(
-                new BombPassingPosition(0.5d, 0d),
                 new BombPassingPosition(5d, 5d),
-                new BombPassingPosition(5d, 6.5d),
-                new BombPassingPosition(5.4d, 7d));
-            match.AdvanceTo(BombPassingRules.SimulationStepSeconds);
-            match.SetFacing(1, 0d, 1d);
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(5d, 7.8d),
+                new BombPassingPosition(-6.5d, 6.5d));
+            match.SetMovementInput(0, 1d, 0d);
+            match.SetMovementInput(2, 0d, -1d);
+            match.SetFacing(0, 0d, 1d);
 
-            var hit = match.TryAttack(1);
-            Assert.That(hit.Kind,
+            Assert.That(match.TryStartAttack(0), Is.True);
+            match.SetFacing(0, 0d, -1d);
+            match.AdvanceTo(BombPassingRules.AttackCastSeconds);
+
+            var hit = match.LastInteraction;
+            Assert.That(hit.HasValue, Is.True);
+            Assert.That(hit.Value.Kind,
                 Is.EqualTo(BombPassingInteractionKind.Stun));
-            Assert.That(hit.TargetSlot, Is.EqualTo(2));
+            Assert.That(hit.Value.TargetSlot, Is.EqualTo(2));
             Assert.That(match.GetPlayer(2).IsStunned, Is.True);
+            Assert.That(match.GetPlayer(0).X, Is.EqualTo(5d));
+            Assert.That(match.GetPlayer(0).Z, Is.EqualTo(5d));
             Assert.That(match.GetPlayer(1).IsStunned, Is.False);
             Assert.That(match.GetPlayer(3).IsStunned, Is.False);
-            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
+            Assert.That(match.GetBomb().HolderSlot,
+                Is.EqualTo(BombPassingRules.NoHolderSlot));
             Assert.That(BombPassingRules.IsInsideAttackHitbox(
                     5d, 5d, 0d, 1d, 5d, 4d),
                 Is.False);
+        }
+
+        [Test]
+        public void MissStillUsesExactCastAndRecoveryBoundaries()
+        {
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(5d, 5d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(5d, -5d),
+                new BombPassingPosition(-5d, 5d));
+            match.SetMovementInput(0, 1d, 0d);
+
+            Assert.That(match.TryStartAttack(0), Is.True);
+            match.AdvanceTo(BombPassingRules.AttackCastSeconds - 0.001d);
+
+            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.True);
+            Assert.That(match.GetPlayer(0).X, Is.EqualTo(5d));
+            Assert.That(match.InteractionSequence, Is.Zero);
+
+            match.AdvanceTo(BombPassingRules.AttackCastSeconds);
+
+            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.False);
+            Assert.That(match.GetPlayer(0).X, Is.EqualTo(5d));
+            Assert.That(match.LastInteraction, Is.Null);
+            Assert.That(match.CanStartAttack(0), Is.False);
+
+            match.AdvanceTo(BombPassingRules.AttackCooldownSeconds - 0.001d);
+
+            Assert.That(match.GetPlayer(0).X, Is.GreaterThan(5d));
+            Assert.That(match.CanStartAttack(0), Is.False);
+            Assert.That(match.GetPlayer(0).AttackCooldownRemainingSeconds,
+                Is.EqualTo(0.001d).Within(0.000001d));
+
+            match.AdvanceTo(BombPassingRules.AttackCooldownSeconds);
+
+            Assert.That(match.CanStartAttack(0), Is.True);
+        }
+
+        [Test]
+        public void AttackCannotHitThroughAuthoredWall()
+        {
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(4d, 1d),
+                new BombPassingPosition(4d, 2.4d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(6.5d, -6.5d));
+            match.SetFacing(0, 0d, 1d);
+
+            Assert.That(match.TryStartAttack(0), Is.True);
+            match.AdvanceTo(BombPassingRules.AttackCastSeconds);
+
+            Assert.That(match.LastInteraction, Is.Null);
+            Assert.That(match.GetPlayer(1).IsStunned, Is.False);
+        }
+
+        [Test]
+        public void UnheldBombChaseDoesNotEnterAuthoredWall()
+        {
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(1.3d, 3d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(6.5d, -6.5d),
+                new BombPassingPosition(-6.5d, 6.5d));
+            var chaseStartedAt =
+                match.GetBomb().FuseSeconds *
+                BombPassingRules.ChaseStartRemainingRatio;
+
+            for (var sample = 1; sample <= 20; sample++)
+            {
+                match.AdvanceTo(chaseStartedAt + sample * 0.05d);
+                var bomb = match.GetBomb();
+                Assert.That(
+                    BombPassingArenaCollisionLayout.BlocksCircle(
+                        bomb.X,
+                        bomb.Z,
+                        BombPassingRules.BombCollisionRadius),
+                    Is.False,
+                    "Bomb entered authored geometry at sample " + sample +
+                    ".");
+            }
+        }
+
+        [Test]
+        public void BombPickupRequiresLineOfSightAcrossAuthoredWall()
+        {
+            // This intentionally close target isolates pickup line of sight.
+            // Runtime movement cannot place a player this near the wall.
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(0d, 1.9d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(6.5d, -6.5d),
+                new BombPassingPosition(-6.5d, 6.5d));
+            var chaseSampleTime =
+                match.GetBomb().FuseSeconds *
+                BombPassingRules.ChaseStartRemainingRatio + 0.8d;
+
+            match.AdvanceTo(chaseSampleTime);
+
+            var bomb = match.GetBomb();
+            Assert.That(bomb.HolderSlot,
+                Is.EqualTo(BombPassingRules.NoHolderSlot));
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlocksSegment(
+                    bomb.X,
+                    bomb.Z,
+                    match.GetPlayer(0).X,
+                    match.GetPlayer(0).Z),
+                Is.True);
+            Assert.That(
+                Math.Sqrt(
+                    Math.Pow(bomb.X - match.GetPlayer(0).X, 2d) +
+                    Math.Pow(bomb.Z - match.GetPlayer(0).Z, 2d)),
+                Is.LessThanOrEqualTo(BombPassingRules.PickupRadius));
+        }
+
+        [Test]
+        public void ActiveTimePauseAndFreshMatchResetPreserveCastContract()
+        {
+            var match = NewMatchWithPositions(
+                new BombPassingPosition(5d, 5d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(5d, -5d),
+                new BombPassingPosition(-5d, 5d));
+            Assert.That(match.TryStartAttack(0), Is.True);
+            match.AdvanceTo(0.25d);
+            var remainingAtPause =
+                match.GetPlayer(0).AttackCastRemainingSeconds;
+
+            match.AdvanceTo(0.25d);
+
+            Assert.That(match.GetPlayer(0).AttackCastRemainingSeconds,
+                Is.EqualTo(remainingAtPause));
+            Assert.That(match.InteractionSequence, Is.Zero);
+
+            var reset = NewMatchWithPositions(
+                new BombPassingPosition(5d, 5d),
+                new BombPassingPosition(-6.5d, -6.5d),
+                new BombPassingPosition(5d, -5d),
+                new BombPassingPosition(-5d, 5d));
+            Assert.That(reset.GetPlayer(0).IsAttackCasting, Is.False);
+            Assert.That(reset.GetPlayer(0).AttackCooldownRemainingSeconds,
+                Is.Zero);
+            Assert.That(reset.CanStartAttack(0), Is.True);
+            Assert.That(reset.LastInteraction, Is.Null);
         }
 
         [Test]

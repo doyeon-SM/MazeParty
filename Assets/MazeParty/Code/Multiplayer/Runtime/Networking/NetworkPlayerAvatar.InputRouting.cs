@@ -881,6 +881,8 @@ namespace MazeParty.Multiplayer
                 _lastSentTagChaseInput = Vector2.zero;
                 _lastSentTagChaseRound = -1;
                 _lastSentTagChaseInputEpoch = 0U;
+                _nextTagChaseInputRefresh = 0f;
+                _nextTagChaseYawSendAt = 0f;
                 return false;
             }
 
@@ -908,21 +910,28 @@ namespace MazeParty.Multiplayer
                 input = Vector2.ClampMagnitude(input, 1f);
             }
 
-            if (input != _lastSentTagChaseInput ||
+            var now = Time.unscaledTime;
+            var inputChanged = input != _lastSentTagChaseInput;
+            var envelopeChanged =
+                roundNumber != _lastSentTagChaseRound ||
+                inputEpoch != _lastSentTagChaseInputEpoch;
+            var yawChanged =
                 Mathf.Abs(Mathf.DeltaAngle(
                     _lastSentTagChaseYaw,
-                    _localYaw)) >= 1f ||
-                roundNumber != _lastSentTagChaseRound ||
-                inputEpoch != _lastSentTagChaseInputEpoch ||
-                Time.unscaledTime >=
-                _nextTagChaseInputRefresh)
+                    _localYaw)) >= 1f;
+            if (inputChanged ||
+                envelopeChanged ||
+                now >= _nextTagChaseInputRefresh ||
+                (yawChanged && now >= _nextTagChaseYawSendAt))
             {
                 _lastSentTagChaseInput = input;
                 _lastSentTagChaseYaw = _localYaw;
                 _lastSentTagChaseRound = roundNumber;
                 _lastSentTagChaseInputEpoch = inputEpoch;
                 _nextTagChaseInputRefresh =
-                    Time.unscaledTime + 0.1f;
+                    now + TagChaseInputRefreshSeconds;
+                _nextTagChaseYawSendAt =
+                    now + TagChaseYawSendIntervalSeconds;
                 SubmitTagChaseInputRpc(
                     input,
                     _localYaw,
@@ -934,6 +943,8 @@ namespace MazeParty.Multiplayer
             if (canAccept &&
                 match.CurrentMinigameUsesFirstPersonForSlot(
                     AssignedSlot) &&
+                NetworkTagChaseState.Instance != null &&
+                NetworkTagChaseState.Instance.IsTagger(AssignedSlot) &&
                 mouse != null &&
                 mouse.leftButton.wasPressedThisFrame &&
                 !IsPointerOverUi())

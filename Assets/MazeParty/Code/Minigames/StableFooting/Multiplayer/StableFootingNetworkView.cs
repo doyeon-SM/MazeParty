@@ -357,7 +357,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (pusherSlot >= 0 && pusherSlot < _runners.Length)
+            if (targetSlot < 0 &&
+                pusherSlot >= 0 && pusherSlot < _runners.Length)
             {
                 _runners[pusherSlot]?.Visual.TriggerPush();
             }

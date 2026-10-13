@@ -6,9 +6,9 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Client presentation for Tag Chase. Runners share one deterministic
-    /// group camera while the current tagger receives an owner-only
-    /// first-person view.
+    /// Client presentation for Tag Chase. Active players use an owner-only
+    /// first-person view while countdowns and caught players use the shared
+    /// arena camera.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TagChaseNetworkView : MonoBehaviour
@@ -63,16 +63,11 @@ namespace MazeParty.Multiplayer
         public static Vector3 InitialSharedCameraPosition =>
             new Vector3(
                 NetworkTagChaseState.ArenaCenterX,
-                11f,
-                -13f);
+                21.505125f,
+                -19.443155f);
 
         public static Quaternion InitialSharedCameraRotation =>
-            Quaternion.LookRotation(
-                new Vector3(
-                    NetworkTagChaseState.ArenaCenterX,
-                    0.8f,
-                    0f) - InitialSharedCameraPosition,
-                Vector3.up);
+            Quaternion.Euler(50.471f, 0f, 0f);
 
         public void Configure(
             NetworkTagChaseState networkState,
@@ -255,10 +250,14 @@ namespace MazeParty.Multiplayer
 
         private void RefreshPlayers(NetworkMatchState match)
         {
-            var localIsTagger =
-                state.IsTagger(_localSlot);
             var showingRoundCountdown =
                 match.IsMinigameRoundCountdown;
+            var localUsesFirstPerson =
+                TagChaseRules.CanUseFirstPersonControls(
+                    _localSlot,
+                    state.IsMatchActive,
+                    state.IsCaught(_localSlot)) &&
+                !showingRoundCountdown;
             for (var slot = 0;
                  slot < _players.Length;
                  slot++)
@@ -314,29 +313,20 @@ namespace MazeParty.Multiplayer
                 if (avatar != null)
                 {
                     var appearance = avatar.Appearance;
-                    player.Visual.SetBodyColor(
-                        appearance.BodyColor);
-                    player.Visual.ApplyAppearance(
-                        appearance.EyeId,
-                        appearance.MouthId,
-                        appearance.HatId,
-                        appearance.ExpressionId);
-                    player.Visual.SetDisplayName(
+                    player.SetAppearance(
+                        appearance,
                         string.IsNullOrWhiteSpace(
                             avatar.DisplayName)
                             ? GameText.F("PLAYER {0}", slot + 1)
                             : avatar.DisplayName);
                 }
 
-                player.Visual.SetEliminated(
-                    state.IsCaught(slot));
-                player.Visual.SetOwnerFirstPerson(
-                    localIsTagger &&
-                    !showingRoundCountdown &&
-                    slot == _localSlot);
+                player.SetEliminated(state.IsCaught(slot));
+                player.SetOwnerFirstPerson(
+                    localUsesFirstPerson && slot == _localSlot);
                 var hideAuraFromFirstPersonOwner =
-                    localIsTagger &&
-                    !showingRoundCountdown &&
+                    localUsesFirstPerson &&
+                    state.IsTagger(slot) &&
                     slot == _localSlot;
                 player.SetTaggerAura(
                     state.IsTagger(slot) &&
@@ -366,7 +356,15 @@ namespace MazeParty.Multiplayer
 
                 var player = _players[slot];
                 player?.Visual.TriggerHit();
-                if (player != null && hitSparkVfxPrefab != null)
+                if (player == null)
+                {
+                    continue;
+                }
+
+                GameSound.PlayAt(
+                    SoundKeys.Lightning,
+                    player.Root.position);
+                if (hitSparkVfxPrefab != null)
                 {
                     OneShotVfxPool.Play(
                         hitSparkVfxPrefab,
@@ -379,24 +377,23 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCamera(NetworkMatchState match)
         {
-            var localIsTagger =
-                state.IsTagger(_localSlot);
-            // The tagger must see their own player and countdown overlay
-            // before each round starts. Switch back to the original owner-only
-            // first-person camera as soon as the shared countdown ends.
             var showingRoundCountdown =
                 match.IsMinigameRoundCountdown;
-            var useTaggerCamera =
-                localIsTagger && !showingRoundCountdown;
+            var useFirstPersonCamera =
+                TagChaseRules.CanUseFirstPersonControls(
+                    _localSlot,
+                    state.IsMatchActive,
+                    state.IsCaught(_localSlot)) &&
+                !showingRoundCountdown;
             var desiredCamera =
-                useTaggerCamera
+                useFirstPersonCamera
                     ? taggerCamera
                     : sharedRunnerCamera;
             RegisterCamera(desiredCamera);
 
-            if (useTaggerCamera)
+            if (useFirstPersonCamera)
             {
-                RefreshTaggerCamera(match);
+                RefreshFirstPersonCamera(match);
                 Cursor.lockState =
                     CursorLockMode.Locked;
                 Cursor.visible = false;
@@ -410,7 +407,8 @@ namespace MazeParty.Multiplayer
             }
 
             SetTaggerAimVisible(
-                useTaggerCamera &&
+                useFirstPersonCamera &&
+                state.IsTagger(_localSlot) &&
                 state.Phase == NetworkTagChasePhase.Running &&
                 !state.IsPaused);
 
@@ -418,7 +416,7 @@ namespace MazeParty.Multiplayer
             LocalInputGate.ApplyPointerOverride();
         }
 
-        private void RefreshTaggerCamera(
+        private void RefreshFirstPersonCamera(
             NetworkMatchState match)
         {
             if (taggerCamera == null ||
@@ -427,8 +425,20 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var position =
-                state.GetPlayerPosition(_localSlot);
+            var player = _players[_localSlot];
+            Vector3 position;
+            if (player != null && player.HasPosition)
+            {
+                position = player.Root.position;
+            }
+            else
+            {
+                var snapshot = state.GetPlayerPosition(_localSlot);
+                position = new Vector3(
+                    snapshot.x,
+                    PlayerPresentationHeight,
+                    snapshot.y);
+            }
             var avatar =
                 match.GetAvatarForSlot(_localSlot);
             var facing =
@@ -451,7 +461,7 @@ namespace MazeParty.Multiplayer
                 new Vector3(
                     position.x,
                     FirstPersonEyeHeight,
-                    position.y),
+                    position.z),
                 Quaternion.Euler(pitch, yaw, 0f));
         }
 
@@ -627,7 +637,69 @@ namespace MazeParty.Multiplayer
             private float[] AuraEmissionRates { get; }
             private Light[] AuraLights { get; }
             private float[] AuraLightIntensities { get; }
+            private bool _appearanceInitialized;
+            private PlayerAppearanceState _lastAppearance;
+            private string _lastDisplayName;
+            private bool _eliminatedInitialized;
+            private bool _lastEliminated;
+            private bool _firstPersonInitialized;
+            private bool _lastOwnerFirstPerson;
+            private bool _auraInitialized;
+            private bool _lastAuraActive;
+            private float _lastAuraIntensityScale;
             public bool HasPosition { get; set; }
+
+            public void SetAppearance(
+                PlayerAppearanceState appearance,
+                string displayName)
+            {
+                if (!_appearanceInitialized ||
+                    !_lastAppearance.Equals(appearance))
+                {
+                    _appearanceInitialized = true;
+                    _lastAppearance = appearance;
+                    Visual.SetBodyColor(appearance.BodyColor);
+                    Visual.ApplyAppearance(
+                        appearance.EyeId,
+                        appearance.MouthId,
+                        appearance.HatId,
+                        appearance.ExpressionId);
+                }
+
+                if (_lastDisplayName == displayName)
+                {
+                    return;
+                }
+
+                _lastDisplayName = displayName;
+                Visual.SetDisplayName(displayName);
+            }
+
+            public void SetEliminated(bool eliminated)
+            {
+                if (_eliminatedInitialized &&
+                    _lastEliminated == eliminated)
+                {
+                    return;
+                }
+
+                _eliminatedInitialized = true;
+                _lastEliminated = eliminated;
+                Visual.SetEliminated(eliminated);
+            }
+
+            public void SetOwnerFirstPerson(bool firstPerson)
+            {
+                if (_firstPersonInitialized &&
+                    _lastOwnerFirstPerson == firstPerson)
+                {
+                    return;
+                }
+
+                _firstPersonInitialized = true;
+                _lastOwnerFirstPerson = firstPerson;
+                Visual.SetOwnerFirstPerson(firstPerson);
+            }
 
             public void SetTaggerAura(bool active, float intensityScale)
             {
@@ -635,6 +707,18 @@ namespace MazeParty.Multiplayer
                 {
                     return;
                 }
+                if (_auraInitialized &&
+                    _lastAuraActive == active &&
+                    Mathf.Approximately(
+                        _lastAuraIntensityScale,
+                        intensityScale))
+                {
+                    return;
+                }
+
+                _auraInitialized = true;
+                _lastAuraActive = active;
+                _lastAuraIntensityScale = intensityScale;
                 if (Aura.activeSelf != active)
                 {
                     Aura.SetActive(active);

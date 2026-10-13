@@ -1,11 +1,61 @@
 using System.Linq;
 using MazeParty.Gameplay.Minigames.TagChase;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace MazeParty.Gameplay.Tests
 {
     public sealed class TagChaseRulesTests
     {
+        [Test]
+        public void FirstPersonMovementUsesViewYawAndSharedFiveMeterSpeed()
+        {
+            var facingNorth =
+                TagChaseRules.CalculateFirstPersonMovement(
+                    Vector2.up,
+                    0f,
+                    1f);
+            var facingEast =
+                TagChaseRules.CalculateFirstPersonMovement(
+                    Vector2.up,
+                    90f,
+                    1f);
+
+            Assert.That(facingNorth.x, Is.Zero.Within(0.0001f));
+            Assert.That(
+                facingNorth.y,
+                Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(
+                facingEast.x,
+                Is.EqualTo(5f).Within(0.0001f));
+            Assert.That(facingEast.y, Is.Zero.Within(0.0001f));
+        }
+
+        [Test]
+        public void EveryActiveUncaughtSlotUsesFirstPersonControls()
+        {
+            for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
+            {
+                Assert.That(
+                    TagChaseRules.CanUseFirstPersonControls(
+                        slot,
+                        true,
+                        false),
+                    Is.True,
+                    "P" + (slot + 1));
+            }
+
+            Assert.That(
+                TagChaseRules.CanUseFirstPersonControls(0, true, true),
+                Is.False);
+            Assert.That(
+                TagChaseRules.CanUseFirstPersonControls(0, false, false),
+                Is.False);
+            Assert.That(
+                TagChaseRules.CanUseFirstPersonControls(-1, true, false),
+                Is.False);
+        }
+
         [Test]
         public void TaggerOrder_IsSeededDeterministicPermutation()
         {

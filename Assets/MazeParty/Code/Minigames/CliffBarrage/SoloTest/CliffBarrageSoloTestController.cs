@@ -302,7 +302,11 @@ namespace MazeParty.Dev.MinigameSoloTest
             _match.SetMovementInput(LocalPlayerSlot, x, z);
             if (Mouse.current?.leftButton.wasPressedThisFrame == true)
             {
-                _match.TryPush(LocalPlayerSlot);
+                if (_match.CanStartPush(LocalPlayerSlot))
+                {
+                    _match.TryPush(LocalPlayerSlot);
+                    _visuals[LocalPlayerSlot]?.TriggerPush();
+                }
             }
 
             for (var slot = 1; slot < _players.Length; slot++)
@@ -361,9 +365,11 @@ namespace MazeParty.Dev.MinigameSoloTest
                 length > 0.001d ? steerZ / length : 0d);
             if (targetSlot >= 0 && bestDistance <
                 CliffBarrageRules.PushRange *
-                CliffBarrageRules.PushRange)
+                CliffBarrageRules.PushRange &&
+                _match.CanStartPush(slot))
             {
                 _match.TryPush(slot);
+                _visuals[slot]?.TriggerPush();
             }
         }
 

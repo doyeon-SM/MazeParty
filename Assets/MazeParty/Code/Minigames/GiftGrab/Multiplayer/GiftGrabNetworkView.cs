@@ -149,6 +149,7 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             UnsubscribeFromActionVfxEvents();
+            RestoreGiftPresentations();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -337,9 +338,6 @@ namespace MazeParty.Multiplayer
 
         private void RefreshGifts()
         {
-            var available = Mathf.Min(
-                _gifts.Length,
-                Mathf.Max(0, state.GiftSpawnedCount));
             for (var giftId = 0; giftId < _gifts.Length; giftId++)
             {
                 var gift = _gifts[giftId];
@@ -347,8 +345,9 @@ namespace MazeParty.Multiplayer
                 {
                     continue;
                 }
-                if (giftId >= available)
+                if (!state.IsGiftActive(giftId))
                 {
+                    gift.RestoreAuthoredPresentation();
                     gift.Root.gameObject.SetActive(false);
                     continue;
                 }
@@ -358,6 +357,7 @@ namespace MazeParty.Multiplayer
                 var storedOwner = state.GetGiftStoredOwnerSlot(giftId);
                 if (storedOwner >= 0 && storedOwner < PlayerCount)
                 {
+                    gift.RestoreAuthoredPresentation();
                     // Stored gifts remain on the exact server-authored grid so
                     // the visible steal target and authoritative contact point
                     // can never diverge. Merely lying over a base does not use
@@ -375,20 +375,30 @@ namespace MazeParty.Multiplayer
                 else if (carrier >= 0 && carrier < PlayerCount &&
                          _players[carrier] != null)
                 {
-                    var facing = state.GetPlayerFacing(carrier);
-                    if (facing.sqrMagnitude < 0.001f)
+                    var rightHand = _players[carrier].RightHandAnchor;
+                    if (rightHand != null)
                     {
-                        facing = Vector2.up;
+                        gift.AttachVisualTo(rightHand);
                     }
-                    facing.Normalize();
-                    gift.Root.position = _players[carrier].Root.position +
-                        new Vector3(facing.x * 0.65f, 1.25f,
-                            facing.y * 0.65f);
-                    gift.Root.rotation = Quaternion.Euler(0f,
-                        Time.unscaledTime * 90f + giftId * 17f, 0f);
+                    else
+                    {
+                        gift.RestoreAuthoredPresentation();
+                        var facing = state.GetPlayerFacing(carrier);
+                        if (facing.sqrMagnitude < 0.001f)
+                        {
+                            facing = Vector2.up;
+                        }
+                        facing.Normalize();
+                        gift.Root.position = _players[carrier].Root.position +
+                            new Vector3(facing.x * 0.65f, 1.25f,
+                                facing.y * 0.65f);
+                        gift.Root.rotation = Quaternion.Euler(0f,
+                            Time.unscaledTime * 90f + giftId * 17f, 0f);
+                    }
                 }
                 else
                 {
+                    gift.RestoreAuthoredPresentation();
                     var position = state.GetGiftPosition(giftId);
                     gift.Root.position = new Vector3(
                         position.x,
@@ -492,10 +502,15 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (actionType == GiftGrabNetworkActionType.PushCastStarted)
+            {
+                GetPlayerVisual(actorSlot)?.TriggerPush();
+                return;
+            }
+
             switch (actionType)
             {
                 case GiftGrabNetworkActionType.Push:
-                    GetPlayerVisual(actorSlot)?.TriggerPush();
                     GetPlayerVisual(targetSlot)?.TriggerHit();
                     PlaceVfx(pushVfxAnchor, actionPosition);
                     _pushVfxRemaining = ActionVfxSeconds;
@@ -511,6 +526,7 @@ namespace MazeParty.Multiplayer
                     break;
                 case GiftGrabNetworkActionType.Drop:
                 case GiftGrabNetworkActionType.BoundsReturn:
+                case GiftGrabNetworkActionType.Destroyed:
                     PlaceVfx(dropVfxAnchor, actionPosition);
                     _dropVfxRemaining = ActionVfxSeconds;
                     break;
@@ -637,6 +653,14 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void RestoreGiftPresentations()
+        {
+            for (var index = 0; index < _gifts.Length; index++)
+            {
+                _gifts[index]?.RestoreAuthoredPresentation();
+            }
+        }
+
         private static Transform FindDescendant(Transform root, string name)
         {
             if (root == null)
@@ -668,6 +692,10 @@ namespace MazeParty.Multiplayer
 
             public Transform Root { get; }
             public PlayerAvatarVisual Visual { get; }
+            public Transform RightHandAnchor =>
+                Visual != null && Visual.Bindings != null
+                    ? Visual.Bindings.RightHandAnchor
+                    : null;
         }
 
         private sealed class GiftView
@@ -676,11 +704,77 @@ namespace MazeParty.Multiplayer
             {
                 Root = root;
                 Visual = visual;
+                AuthoredRootLocalScale = root.localScale;
+                _authoredVisualParent = visual.parent;
+                _authoredVisualLocalPosition = visual.localPosition;
+                _authoredVisualLocalRotation = visual.localRotation;
+                _authoredVisualLocalScale = visual.localScale;
+                _authoredVisualWorldScale = visual.lossyScale;
+                _authoredVisualActive = visual.gameObject.activeSelf;
             }
 
             public Transform Root { get; }
             public Transform Visual { get; }
+            public Vector3 AuthoredRootLocalScale { get; }
             public string LastStateName { get; set; }
+
+            private readonly Transform _authoredVisualParent;
+            private readonly Vector3 _authoredVisualLocalPosition;
+            private readonly Quaternion _authoredVisualLocalRotation;
+            private readonly Vector3 _authoredVisualLocalScale;
+            private readonly Vector3 _authoredVisualWorldScale;
+            private readonly bool _authoredVisualActive;
+
+            public void RestoreAuthoredPresentation()
+            {
+                Root.localScale = AuthoredRootLocalScale;
+                if (Visual.parent != _authoredVisualParent)
+                {
+                    Visual.SetParent(_authoredVisualParent, false);
+                }
+                Visual.localPosition = _authoredVisualLocalPosition;
+                Visual.localRotation = _authoredVisualLocalRotation;
+                Visual.localScale = _authoredVisualLocalScale;
+                Visual.gameObject.SetActive(_authoredVisualActive);
+            }
+
+            public void AttachVisualTo(Transform rightHandAnchor)
+            {
+                if (rightHandAnchor == null)
+                {
+                    return;
+                }
+
+                Root.localScale = AuthoredRootLocalScale;
+                if (Visual.parent != rightHandAnchor)
+                {
+                    Visual.SetParent(rightHandAnchor, false);
+                }
+                Visual.localPosition = Vector3.zero;
+                Visual.localRotation = Quaternion.identity;
+                Visual.gameObject.SetActive(true);
+                SetWorldScale(Visual, _authoredVisualWorldScale);
+            }
+
+            private static void SetWorldScale(
+                Transform target,
+                Vector3 worldScale)
+            {
+                var parentScale = target.parent != null
+                    ? target.parent.lossyScale
+                    : Vector3.one;
+                target.localScale = new Vector3(
+                    DivideScale(worldScale.x, parentScale.x),
+                    DivideScale(worldScale.y, parentScale.y),
+                    DivideScale(worldScale.z, parentScale.z));
+            }
+
+            private static float DivideScale(float value, float scale)
+            {
+                return Mathf.Abs(scale) > 0.00001f
+                    ? value / scale
+                    : value;
+            }
         }
     }
 }

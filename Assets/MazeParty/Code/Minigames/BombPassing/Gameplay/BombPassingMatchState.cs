@@ -27,6 +27,8 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             double facingZ,
             bool isEliminated,
             double stunRemainingSeconds,
+            double attackCastRemainingSeconds,
+            double attackCooldownRemainingSeconds,
             int rank)
         {
             Slot = slot;
@@ -36,6 +38,8 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             FacingZ = facingZ;
             IsEliminated = isEliminated;
             StunRemainingSeconds = stunRemainingSeconds;
+            AttackCastRemainingSeconds = attackCastRemainingSeconds;
+            AttackCooldownRemainingSeconds = attackCooldownRemainingSeconds;
             Rank = rank;
         }
 
@@ -47,6 +51,11 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         public bool IsEliminated { get; }
         public double StunRemainingSeconds { get; }
         public bool IsStunned => StunRemainingSeconds > 0d;
+        public double AttackCastRemainingSeconds { get; }
+        public bool IsAttackCasting => AttackCastRemainingSeconds > 0d;
+        public double AttackCooldownRemainingSeconds { get; }
+        public bool CanMove => !IsEliminated && !IsStunned &&
+            !IsAttackCasting;
         public int Rank { get; }
     }
 
@@ -137,16 +146,38 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
     public sealed class BombPassingMatchState
     {
         private const double TimeEpsilon = 0.000000001d;
+        private const double BombNavigationGridStep = 0.25d;
+        private const int BombNavigationGridSize = 65;
+        private const int BombNavigationGridCellCount =
+            BombNavigationGridSize * BombNavigationGridSize;
+        private static readonly int[] BombNavigationNeighborX =
+        {
+            0, 1, 0, -1, 1, 1, -1, -1
+        };
+        private static readonly int[] BombNavigationNeighborZ =
+        {
+            1, 0, -1, 0, 1, -1, -1, 1
+        };
         private static readonly BombPassingPosition[] DefaultSpawns =
         {
-            new BombPassingPosition(-5d, -5d),
-            new BombPassingPosition(5d, -5d),
-            new BombPassingPosition(5d, 5d),
-            new BombPassingPosition(-5d, 5d)
+            new BombPassingPosition(-6.5d, -6.5d),
+            new BombPassingPosition(6.5d, -6.5d),
+            new BombPassingPosition(6.5d, 6.5d),
+            new BombPassingPosition(-6.5d, 6.5d)
         };
 
         private readonly PlayerState[] _players =
             new PlayerState[BombPassingRules.PlayerCount];
+        private readonly bool[] _bombNavigationWalkable =
+            new bool[BombNavigationGridCellCount];
+        private readonly bool[] _bombNavigationEdgeClear =
+            new bool[
+                BombNavigationGridCellCount *
+                BombNavigationNeighborX.Length];
+        private readonly int[] _bombNavigationParents =
+            new int[BombNavigationGridCellCount];
+        private readonly int[] _bombNavigationQueue =
+            new int[BombNavigationGridCellCount];
         private uint _randomState;
         private int _simulatedSteps;
         private double _bombSpawnElapsedSeconds;
@@ -192,6 +223,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                     position.Z);
             }
 
+            InitializeBombNavigationGrid();
             SpawnBomb(0d);
         }
 
@@ -199,6 +231,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         public bool IsComplete { get; private set; }
         public ulong InteractionSequence { get; private set; }
         public BombPassingInteraction? LastInteraction { get; private set; }
+        public event Action<BombPassingInteraction> InteractionResolved;
         public ulong ExplosionSequence { get; private set; }
         public BombPassingExplosion? LastExplosion { get; private set; }
         public int SurvivorCount { get; private set; } =
@@ -216,6 +249,10 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 player.FacingZ,
                 player.IsEliminated,
                 Math.Max(0d, player.StunnedUntil - MatchElapsedSeconds),
+                Math.Max(
+                    0d,
+                    player.AttackCastEndsAt - MatchElapsedSeconds),
+                Math.Max(0d, player.NextAttackAt - MatchElapsedSeconds),
                 player.Rank);
         }
 
@@ -309,48 +346,27 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             return !IsComplete &&
                 !actor.IsEliminated &&
                 actor.StunnedUntil <= MatchElapsedSeconds + TimeEpsilon &&
+                actor.AttackCastEndsAt <=
+                    MatchElapsedSeconds + TimeEpsilon &&
                 actor.NextAttackAt <= MatchElapsedSeconds + TimeEpsilon;
         }
 
-        public BombPassingInteraction TryAttack(int slot)
+        public bool TryStartAttack(int slot)
         {
             if (!CanStartAttack(slot))
             {
-                return NoInteraction(slot);
+                return false;
             }
 
             var actor = _players[slot];
+            actor.AttackCastEndsAt =
+                MatchElapsedSeconds + BombPassingRules.AttackCastSeconds;
             actor.NextAttackAt =
-                MatchElapsedSeconds +
-                BombPassingRules.AttackCooldownSeconds;
-            var targetSlot = FindClosestAttackTarget(slot);
-            if (targetSlot == BombPassingRules.NoHolderSlot)
-            {
-                return NoInteraction(slot);
-            }
-
-            var target = _players[targetSlot];
-            var kind = _bombHolderSlot == slot
-                ? BombPassingInteractionKind.Transfer
-                : BombPassingInteractionKind.Stun;
-            if (kind == BombPassingInteractionKind.Transfer)
-            {
-                _bombHolderSlot = targetSlot;
-                _bombX = target.X;
-                _bombZ = target.Z;
-            }
-
-            target.StunnedUntil = Math.Max(
-                target.StunnedUntil,
-                MatchElapsedSeconds + BombPassingRules.StunSeconds);
-            InteractionSequence++;
-            var interaction = new BombPassingInteraction(
-                kind,
-                InteractionSequence,
-                slot,
-                targetSlot);
-            LastInteraction = interaction;
-            return interaction;
+                actor.AttackCastEndsAt +
+                BombPassingRules.AttackRecoverySeconds;
+            actor.AttackFacingX = actor.FacingX;
+            actor.AttackFacingZ = actor.FacingZ;
+            return true;
         }
 
         public void AdvanceTo(double activeElapsedSeconds)
@@ -384,6 +400,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
 
             if (!IsComplete)
             {
+                ResolveCompletedAttacks(activeElapsedSeconds);
                 MatchElapsedSeconds = activeElapsedSeconds;
             }
         }
@@ -392,11 +409,14 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         {
             var stepStartSeconds =
                 stepEndSeconds - BombPassingRules.SimulationStepSeconds;
+            ResolveCompletedAttacks(stepStartSeconds);
             for (var slot = 0; slot < _players.Length; slot++)
             {
                 var player = _players[slot];
                 if (player.IsEliminated ||
-                    player.StunnedUntil > stepStartSeconds + TimeEpsilon)
+                    player.StunnedUntil > stepStartSeconds + TimeEpsilon ||
+                    player.AttackCastEndsAt >
+                        stepStartSeconds + TimeEpsilon)
                 {
                     continue;
                 }
@@ -404,13 +424,15 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 var speed = slot == _bombHolderSlot
                     ? BombPassingRules.CarrierSpeed
                     : BombPassingRules.EmptyHandSpeed;
-                player.X = ClampToArena(
-                    player.X + player.InputX * speed *
-                    BombPassingRules.SimulationStepSeconds);
-                player.Z = ClampToArena(
-                    player.Z + player.InputZ * speed *
+                ResolvePlayerMovement(
+                    player,
+                    player.InputX * speed *
+                    BombPassingRules.SimulationStepSeconds,
+                    player.InputZ * speed *
                     BombPassingRules.SimulationStepSeconds);
             }
+
+            ResolveCompletedAttacks(stepEndSeconds);
 
             if (_bombHolderSlot != BombPassingRules.NoHolderSlot)
             {
@@ -440,6 +462,118 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             MatchElapsedSeconds = stepEndSeconds;
         }
 
+        private void ResolveCompletedAttacks(double elapsedSeconds)
+        {
+            MatchElapsedSeconds = Math.Max(
+                MatchElapsedSeconds,
+                elapsedSeconds);
+            for (var slot = 0; slot < _players.Length; slot++)
+            {
+                var actor = _players[slot];
+                if (actor.AttackCastEndsAt <= 0d ||
+                    actor.AttackCastEndsAt > elapsedSeconds + TimeEpsilon)
+                {
+                    continue;
+                }
+
+                var castCompletedAt = actor.AttackCastEndsAt;
+                actor.AttackCastEndsAt = 0d;
+                if (actor.IsEliminated)
+                {
+                    continue;
+                }
+
+                var targetSlot = FindClosestAttackTarget(
+                    slot,
+                    actor.AttackFacingX,
+                    actor.AttackFacingZ);
+                if (targetSlot == BombPassingRules.NoHolderSlot)
+                {
+                    continue;
+                }
+
+                var target = _players[targetSlot];
+                var kind = _bombHolderSlot == slot
+                    ? BombPassingInteractionKind.Transfer
+                    : BombPassingInteractionKind.Stun;
+                if (kind == BombPassingInteractionKind.Transfer)
+                {
+                    _bombHolderSlot = targetSlot;
+                    _bombX = target.X;
+                    _bombZ = target.Z;
+                }
+
+                target.StunnedUntil = Math.Max(
+                    target.StunnedUntil,
+                    castCompletedAt + BombPassingRules.StunSeconds);
+                InteractionSequence++;
+                var interaction = new BombPassingInteraction(
+                    kind,
+                    InteractionSequence,
+                    slot,
+                    targetSlot);
+                LastInteraction = interaction;
+                InteractionResolved?.Invoke(interaction);
+            }
+        }
+
+        private static void ResolvePlayerMovement(
+            PlayerState player,
+            double displacementX,
+            double displacementZ)
+        {
+            var originX = player.X;
+            var originZ = player.Z;
+            ResolveCircleMovement(
+                ref originX,
+                ref originZ,
+                displacementX,
+                displacementZ,
+                BombPassingRules.PlayerRadius);
+            player.X = originX;
+            player.Z = originZ;
+        }
+
+        private static void ResolveCircleMovement(
+            ref double originX,
+            ref double originZ,
+            double displacementX,
+            double displacementZ,
+            double radius)
+        {
+            var proposedX = ClampToArena(originX + displacementX);
+            var proposedZ = ClampToArena(originZ + displacementZ);
+            if (CanCircleOccupy(proposedX, proposedZ, radius))
+            {
+                originX = proposedX;
+                originZ = proposedZ;
+                return;
+            }
+
+            var xOnly = ClampToArena(originX + displacementX);
+            if (CanCircleOccupy(xOnly, originZ, radius))
+            {
+                originX = xOnly;
+            }
+
+            var zOnly = ClampToArena(originZ + displacementZ);
+            if (CanCircleOccupy(originX, zOnly, radius))
+            {
+                originZ = zOnly;
+            }
+        }
+
+        private static bool CanCircleOccupy(
+            double x,
+            double z,
+            double radius)
+        {
+            return !BombPassingArenaCollisionLayout.BlocksCircle(
+                x,
+                z,
+                radius);
+        }
+
         private void TryPickupBomb()
         {
             var nearest = BombPassingRules.NoHolderSlot;
@@ -459,6 +593,11 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                     _players[slot].X,
                     _players[slot].Z);
                 if (distanceSquared <= nearestDistanceSquared &&
+                    !BombPassingArenaCollisionLayout.BlocksSegment(
+                        _bombX,
+                        _bombZ,
+                        _players[slot].X,
+                        _players[slot].Z) &&
                     (nearest == BombPassingRules.NoHolderSlot ||
                      distanceSquared < nearestDistanceSquared - TimeEpsilon ||
                      slot < nearest))
@@ -485,8 +624,26 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             }
 
             var target = _players[nearest];
-            var deltaX = target.X - _bombX;
-            var deltaZ = target.Z - _bombZ;
+            var destinationX = target.X;
+            var destinationZ = target.Z;
+            if (BombPassingArenaCollisionLayout.BlocksSegment(
+                    _bombX,
+                    _bombZ,
+                    target.X,
+                    target.Z,
+                    BombPassingRules.BombCollisionRadius) &&
+                TryFindBombNavigationStep(
+                    target.X,
+                    target.Z,
+                    out var routeX,
+                    out var routeZ))
+            {
+                destinationX = routeX;
+                destinationZ = routeZ;
+            }
+
+            var deltaX = destinationX - _bombX;
+            var deltaZ = destinationZ - _bombZ;
             var distance = Math.Sqrt(
                 (deltaX * deltaX) + (deltaZ * deltaZ));
             if (distance <= TimeEpsilon)
@@ -498,8 +655,263 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 distance,
                 BombPassingRules.BombChaseSpeed *
                 BombPassingRules.SimulationStepSeconds);
-            _bombX += deltaX / distance * travel;
-            _bombZ += deltaZ / distance * travel;
+            ResolveCircleMovement(
+                ref _bombX,
+                ref _bombZ,
+                deltaX / distance * travel,
+                deltaZ / distance * travel,
+                BombPassingRules.BombCollisionRadius);
+        }
+
+        private void InitializeBombNavigationGrid()
+        {
+            for (var z = 0; z < BombNavigationGridSize; z++)
+            {
+                for (var x = 0; x < BombNavigationGridSize; x++)
+                {
+                    var index = ToBombNavigationIndex(x, z);
+                    _bombNavigationWalkable[index] = CanCircleOccupy(
+                        ToBombNavigationCoordinate(x),
+                        ToBombNavigationCoordinate(z),
+                        BombPassingRules.BombCollisionRadius);
+                }
+            }
+
+            for (var z = 0; z < BombNavigationGridSize; z++)
+            {
+                for (var x = 0; x < BombNavigationGridSize; x++)
+                {
+                    var current = ToBombNavigationIndex(x, z);
+                    if (!_bombNavigationWalkable[current])
+                    {
+                        continue;
+                    }
+
+                    for (var direction = 0;
+                         direction < BombNavigationNeighborX.Length;
+                         direction++)
+                    {
+                        var nextX = x +
+                            BombNavigationNeighborX[direction];
+                        var nextZ = z +
+                            BombNavigationNeighborZ[direction];
+                        if (!IsBombNavigationWalkable(nextX, nextZ))
+                        {
+                            continue;
+                        }
+
+                        var isDiagonal =
+                            BombNavigationNeighborX[direction] != 0 &&
+                            BombNavigationNeighborZ[direction] != 0;
+                        if (isDiagonal &&
+                            (!IsBombNavigationWalkable(nextX, z) ||
+                             !IsBombNavigationWalkable(x, nextZ)))
+                        {
+                            continue;
+                        }
+
+                        _bombNavigationEdgeClear[
+                            ToBombNavigationEdgeIndex(
+                                current,
+                                direction)] =
+                            !BombPassingArenaCollisionLayout.BlocksSegment(
+                                ToBombNavigationCoordinate(x),
+                                ToBombNavigationCoordinate(z),
+                                ToBombNavigationCoordinate(nextX),
+                                ToBombNavigationCoordinate(nextZ),
+                                BombPassingRules.BombCollisionRadius);
+                    }
+                }
+            }
+        }
+
+        private bool TryFindBombNavigationStep(
+            double targetX,
+            double targetZ,
+            out double waypointX,
+            out double waypointZ)
+        {
+            waypointX = _bombX;
+            waypointZ = _bombZ;
+            var start = FindNearestWalkableBombNavigationCell(
+                _bombX,
+                _bombZ);
+            if (start < 0)
+            {
+                return false;
+            }
+
+            for (var index = 0;
+                 index < _bombNavigationParents.Length;
+                 index++)
+            {
+                _bombNavigationParents[index] = -2;
+            }
+
+            var read = 0;
+            var write = 0;
+            _bombNavigationQueue[write++] = start;
+            _bombNavigationParents[start] = -1;
+            var best = start;
+            var bestDistanceSquared = BombNavigationDistanceSquared(
+                start,
+                targetX,
+                targetZ);
+            while (read < write)
+            {
+                var current = _bombNavigationQueue[read++];
+                var currentX = current % BombNavigationGridSize;
+                var currentZ = current / BombNavigationGridSize;
+                for (var direction = 0;
+                     direction < BombNavigationNeighborX.Length;
+                     direction++)
+                {
+                    var nextX = currentX +
+                        BombNavigationNeighborX[direction];
+                    var nextZ = currentZ +
+                        BombNavigationNeighborZ[direction];
+                    if (nextX < 0 ||
+                        nextX >= BombNavigationGridSize ||
+                        nextZ < 0 ||
+                        nextZ >= BombNavigationGridSize)
+                    {
+                        continue;
+                    }
+
+                    var next = ToBombNavigationIndex(nextX, nextZ);
+                    if (!_bombNavigationWalkable[next] ||
+                        _bombNavigationParents[next] != -2 ||
+                        !_bombNavigationEdgeClear[
+                            ToBombNavigationEdgeIndex(
+                                current,
+                                direction)])
+                    {
+                        continue;
+                    }
+
+                    _bombNavigationParents[next] = current;
+                    _bombNavigationQueue[write++] = next;
+                    var distanceSquared =
+                        BombNavigationDistanceSquared(
+                            next,
+                            targetX,
+                            targetZ);
+                    if (distanceSquared <
+                            bestDistanceSquared - TimeEpsilon ||
+                        (Math.Abs(
+                             distanceSquared - bestDistanceSquared) <=
+                         TimeEpsilon && next < best))
+                    {
+                        best = next;
+                        bestDistanceSquared = distanceSquared;
+                    }
+                }
+            }
+
+            if (best == start)
+            {
+                return false;
+            }
+
+            var step = best;
+            while (_bombNavigationParents[step] != start)
+            {
+                step = _bombNavigationParents[step];
+                if (step < 0)
+                {
+                    return false;
+                }
+            }
+
+            waypointX = ToBombNavigationCoordinate(
+                step % BombNavigationGridSize);
+            waypointZ = ToBombNavigationCoordinate(
+                step / BombNavigationGridSize);
+            return true;
+        }
+
+        private int FindNearestWalkableBombNavigationCell(
+            double x,
+            double z)
+        {
+            var nearest = -1;
+            var nearestDistanceSquared = double.MaxValue;
+            for (var index = 0;
+                 index < _bombNavigationWalkable.Length;
+                 index++)
+            {
+                if (!_bombNavigationWalkable[index])
+                {
+                    continue;
+                }
+
+                var gridX = ToBombNavigationCoordinate(
+                    index % BombNavigationGridSize);
+                var gridZ = ToBombNavigationCoordinate(
+                    index / BombNavigationGridSize);
+                if (BombPassingArenaCollisionLayout.BlocksSegment(
+                        x,
+                        z,
+                        gridX,
+                        gridZ,
+                        BombPassingRules.BombCollisionRadius))
+                {
+                    continue;
+                }
+
+                var distanceSquared = BombNavigationDistanceSquared(
+                    index,
+                    x,
+                    z);
+                if (distanceSquared <
+                        nearestDistanceSquared - TimeEpsilon ||
+                    (Math.Abs(
+                         distanceSquared - nearestDistanceSquared) <=
+                     TimeEpsilon && index < nearest))
+                {
+                    nearest = index;
+                    nearestDistanceSquared = distanceSquared;
+                }
+            }
+
+            return nearest;
+        }
+
+        private bool IsBombNavigationWalkable(int x, int z)
+        {
+            return x >= 0 && x < BombNavigationGridSize &&
+                z >= 0 && z < BombNavigationGridSize &&
+                _bombNavigationWalkable[ToBombNavigationIndex(x, z)];
+        }
+
+        private static double BombNavigationDistanceSquared(
+            int index,
+            double x,
+            double z)
+        {
+            var gridX = ToBombNavigationCoordinate(
+                index % BombNavigationGridSize);
+            var gridZ = ToBombNavigationCoordinate(
+                index / BombNavigationGridSize);
+            return DistanceSquared(gridX, gridZ, x, z);
+        }
+
+        private static int ToBombNavigationIndex(int x, int z)
+        {
+            return z * BombNavigationGridSize + x;
+        }
+
+        private static int ToBombNavigationEdgeIndex(
+            int cell,
+            int direction)
+        {
+            return cell * BombNavigationNeighborX.Length + direction;
+        }
+
+        private static double ToBombNavigationCoordinate(int value)
+        {
+            return -BombPassingRules.ArenaHalfExtent +
+                value * BombNavigationGridStep;
         }
 
         private void Explode(double elapsedSeconds)
@@ -513,6 +925,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 eliminated.IsEliminated = true;
                 eliminated.InputX = 0d;
                 eliminated.InputZ = 0d;
+                eliminated.AttackCastEndsAt = 0d;
                 eliminated.Rank = SurvivorCount;
                 SurvivorCount--;
             }
@@ -555,7 +968,10 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                  BombPassingRules.MinimumFuseSeconds);
         }
 
-        private int FindClosestAttackTarget(int actorSlot)
+        private int FindClosestAttackTarget(
+            int actorSlot,
+            double attackFacingX,
+            double attackFacingZ)
         {
             var actor = _players[actorSlot];
             var nearest = BombPassingRules.NoHolderSlot;
@@ -571,8 +987,13 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 if (!BombPassingRules.IsInsideAttackHitbox(
                         actor.X,
                         actor.Z,
-                        actor.FacingX,
-                        actor.FacingZ,
+                        attackFacingX,
+                        attackFacingZ,
+                        target.X,
+                        target.Z) ||
+                    BombPassingArenaCollisionLayout.BlocksSegment(
+                        actor.X,
+                        actor.Z,
                         target.X,
                         target.Z))
                 {
@@ -635,15 +1056,6 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             return _randomState / (double)uint.MaxValue;
         }
 
-        private static BombPassingInteraction NoInteraction(int slot)
-        {
-            return new BombPassingInteraction(
-                BombPassingInteractionKind.None,
-                0UL,
-                slot,
-                BombPassingRules.NoHolderSlot);
-        }
-
         private static double DistanceSquared(
             double leftX,
             double leftZ,
@@ -691,6 +1103,9 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             public double InputX { get; set; }
             public double InputZ { get; set; }
             public double StunnedUntil { get; set; }
+            public double AttackCastEndsAt { get; set; }
+            public double AttackFacingX { get; set; }
+            public double AttackFacingZ { get; set; }
             public double NextAttackAt { get; set; }
             public bool IsEliminated { get; set; }
             public int Rank { get; set; }

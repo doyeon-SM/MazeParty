@@ -692,6 +692,12 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             _sonarPulseUntil = Time.unscaledTime + SonarVisualSeconds;
             _playerMotor?.SetMovementInputLocked(true);
+            if (_playerRoot != null)
+            {
+                GameSound.PlayAt(
+                    SoundKeys.MinigameMinefieldScan,
+                    _playerRoot.position);
+            }
         }
 
         private void RefreshSonarMovementLock()
@@ -714,7 +720,15 @@ namespace MazeParty.Dev.MinigameSoloTest
             var explosionPrefab = _networkView != null
                 ? _networkView.MineExplosionVfxPrefab
                 : null;
-            if (!resolution.WasApplied || mine == null || explosionPrefab == null)
+            if (!resolution.WasApplied || mine == null)
+            {
+                return;
+            }
+
+            GameSound.PlayAt(
+                SoundKeys.MinigameMinefieldExplosion,
+                mine.transform.position);
+            if (explosionPrefab == null)
             {
                 return;
             }

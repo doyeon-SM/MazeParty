@@ -31,6 +31,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             new PlayerAvatarVisual[GiftGrabRules.PlayerCount];
         private readonly Transform[] _giftAnchors =
             new Transform[GiftGrabRules.TotalGiftCount];
+        private readonly GiftPresentation[] _giftPresentations =
+            new GiftPresentation[GiftGrabRules.TotalGiftCount];
         private readonly TransformSnapshot[] _giftSnapshots =
             new TransformSnapshot[GiftGrabRules.TotalGiftCount];
         private readonly TransformSnapshot[] _playerLabelSnapshots =
@@ -259,12 +261,16 @@ namespace MazeParty.Dev.MinigameSoloTest
                  giftId++)
             {
                 _giftAnchors[giftId] = giftRoot.GetChild(giftId);
-                if (_giftAnchors[giftId].Find("Gift Visual") == null)
+                var giftVisual = _giftAnchors[giftId].Find("Gift Visual");
+                if (giftVisual == null)
                 {
                     throw new InvalidOperationException(
                         "Gift Anchor " + giftId +
                         " is missing its replaceable Gift Visual child.");
                 }
+                _giftPresentations[giftId] = new GiftPresentation(
+                    _giftAnchors[giftId],
+                    giftVisual);
                 _giftSnapshots[giftId] =
                     TransformSnapshot.Capture(_giftAnchors[giftId]);
             }
@@ -431,14 +437,17 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             var gift = _session.GetGift(giftId);
             var anchor = _giftAnchors[giftId];
+            var presentation = _giftPresentations[giftId];
             if (!gift.IsActive)
             {
+                presentation.RestoreAuthoredPresentation();
                 anchor.gameObject.SetActive(false);
                 return;
             }
             anchor.gameObject.SetActive(true);
             if (gift.StoredOwnerSlot >= 0)
             {
+                presentation.RestoreAuthoredPresentation();
                 anchor.position = new Vector3(
                     gift.Position.x,
                     GiftGrabNetworkView.GiftPresentationHeight,
@@ -447,20 +456,33 @@ namespace MazeParty.Dev.MinigameSoloTest
             }
             else if (gift.CarrierSlot >= 0)
             {
-                var player = _session.GetPlayer(gift.CarrierSlot);
-                var facing = player.Facing.sqrMagnitude > 0.001f
-                    ? player.Facing.normalized
-                    : Vector2.up;
-                anchor.position = _players[gift.CarrierSlot].position +
-                    new Vector3(facing.x * 0.65f, 1.25f,
-                        facing.y * 0.65f);
-                anchor.rotation = Quaternion.Euler(
-                    0f,
-                    Time.unscaledTime * 90f + giftId * 17f,
-                    0f);
+                var visual = _playerVisuals[gift.CarrierSlot];
+                var rightHand = visual != null && visual.Bindings != null
+                    ? visual.Bindings.RightHandAnchor
+                    : null;
+                if (rightHand != null)
+                {
+                    presentation.AttachVisualTo(rightHand);
+                }
+                else
+                {
+                    presentation.RestoreAuthoredPresentation();
+                    var player = _session.GetPlayer(gift.CarrierSlot);
+                    var facing = player.Facing.sqrMagnitude > 0.001f
+                        ? player.Facing.normalized
+                        : Vector2.up;
+                    anchor.position = _players[gift.CarrierSlot].position +
+                        new Vector3(facing.x * 0.65f, 1.25f,
+                            facing.y * 0.65f);
+                    anchor.rotation = Quaternion.Euler(
+                        0f,
+                        Time.unscaledTime * 90f + giftId * 17f,
+                        0f);
+                }
             }
             else
             {
+                presentation.RestoreAuthoredPresentation();
                 anchor.position = new Vector3(
                     gift.Position.x,
                     GiftGrabNetworkView.GiftPresentationHeight,
@@ -510,16 +532,35 @@ namespace MazeParty.Dev.MinigameSoloTest
             var targetPosition = target >= 0
                 ? _session.GetPlayer(target).Position
                 : actorPosition;
+            if (_session.LastActionType ==
+                GiftGrabSoloActionType.PushCastStarted)
+            {
+                if (GiftGrabRules.IsValidPlayerSlot(actor))
+                {
+                    _playerVisuals[actor]?.TriggerPush();
+                }
+                return;
+            }
+
             switch (_session.LastActionType)
             {
                 case GiftGrabSoloActionType.Push:
+                    if (GiftGrabRules.IsValidPlayerSlot(target))
+                    {
+                        _playerVisuals[target]?.TriggerHit();
+                    }
+                    PlaceVfx(_pushVfx, targetPosition);
+                    _pushVfxUntil = Time.unscaledTime + 0.38f;
+                    ShowFeedback(
+                        "PUSH!",
+                        MinigameSoloFeedbackStyle.Success,
+                        0.75f);
+                    break;
                 case GiftGrabSoloActionType.ThrownHit:
                     PlaceVfx(_pushVfx, targetPosition);
                     _pushVfxUntil = Time.unscaledTime + 0.38f;
                     ShowFeedback(
-                        _session.LastActionType == GiftGrabSoloActionType.Push
-                            ? "PUSH!"
-                            : "GIFT HIT!",
+                        "GIFT HIT!",
                         MinigameSoloFeedbackStyle.Success,
                         0.75f);
                     break;
@@ -533,6 +574,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     break;
                 case GiftGrabSoloActionType.Drop:
                 case GiftGrabSoloActionType.BoundsReturn:
+                case GiftGrabSoloActionType.Destroyed:
                     var position = giftId >= 0
                         ? _session.GetGift(giftId).Position
                         : targetPosition;
@@ -736,6 +778,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                  giftId < GiftGrabRules.TotalGiftCount;
                  giftId++)
             {
+                _giftPresentations[giftId]
+                    ?.RestoreAuthoredPresentation();
                 _giftSnapshots[giftId].Restore(_giftAnchors[giftId]);
             }
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
@@ -961,6 +1005,84 @@ namespace MazeParty.Dev.MinigameSoloTest
                 transform.localRotation = Rotation;
                 transform.localScale = Scale;
                 transform.gameObject.SetActive(Active);
+            }
+        }
+
+        private sealed class GiftPresentation
+        {
+            public GiftPresentation(Transform root, Transform visual)
+            {
+                Root = root;
+                Visual = visual;
+                AuthoredRootLocalScale = root.localScale;
+                _authoredVisualParent = visual.parent;
+                _authoredVisualLocalPosition = visual.localPosition;
+                _authoredVisualLocalRotation = visual.localRotation;
+                _authoredVisualLocalScale = visual.localScale;
+                _authoredVisualWorldScale = visual.lossyScale;
+                _authoredVisualActive = visual.gameObject.activeSelf;
+            }
+
+            public Transform Root { get; }
+            public Transform Visual { get; }
+            public Vector3 AuthoredRootLocalScale { get; }
+
+            private readonly Transform _authoredVisualParent;
+            private readonly Vector3 _authoredVisualLocalPosition;
+            private readonly Quaternion _authoredVisualLocalRotation;
+            private readonly Vector3 _authoredVisualLocalScale;
+            private readonly Vector3 _authoredVisualWorldScale;
+            private readonly bool _authoredVisualActive;
+
+            public void RestoreAuthoredPresentation()
+            {
+                Root.localScale = AuthoredRootLocalScale;
+                if (Visual.parent != _authoredVisualParent)
+                {
+                    Visual.SetParent(_authoredVisualParent, false);
+                }
+                Visual.localPosition = _authoredVisualLocalPosition;
+                Visual.localRotation = _authoredVisualLocalRotation;
+                Visual.localScale = _authoredVisualLocalScale;
+                Visual.gameObject.SetActive(_authoredVisualActive);
+            }
+
+            public void AttachVisualTo(Transform rightHandAnchor)
+            {
+                if (rightHandAnchor == null)
+                {
+                    return;
+                }
+
+                Root.localScale = AuthoredRootLocalScale;
+                if (Visual.parent != rightHandAnchor)
+                {
+                    Visual.SetParent(rightHandAnchor, false);
+                }
+                Visual.localPosition = Vector3.zero;
+                Visual.localRotation = Quaternion.identity;
+                Visual.gameObject.SetActive(true);
+                SetWorldScale(Visual, _authoredVisualWorldScale);
+            }
+
+            private static void SetWorldScale(
+                Transform target,
+                Vector3 worldScale)
+            {
+                var parentScale = target.parent != null
+                    ? target.parent.lossyScale
+                    : Vector3.one;
+                target.localScale = new Vector3(
+                    DivideScale(worldScale.x, parentScale.x),
+                    DivideScale(worldScale.y, parentScale.y),
+                    DivideScale(worldScale.z, parentScale.z));
+            }
+
+            private static float DivideScale(float value, float scale)
+            {
+                return Mathf.Abs(scale) > 0.00001f
+                    ? value / scale
+                    : value;
             }
         }
     }

@@ -64,6 +64,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         private double _cooldownEndsAtSeconds;
         private bool _isInflateHeld;
         private bool _requiresReleaseToRearm;
+        private bool _isRecoveringFromOverhold;
 
         internal BalloonBlowPlayerRoundState(int playerSlot)
         {
@@ -78,6 +79,8 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         public bool IsPopped => Phase == BalloonBlowPlayerPhase.Popped;
         public bool RequiresReleaseToRearm =>
             _requiresReleaseToRearm;
+        public bool IsRecoveringFromOverhold =>
+            _isRecoveringFromOverhold;
         public double ContinuousInflateSeconds =>
             _continuousInflateSeconds;
         public double CooldownEndsAtSeconds => _cooldownEndsAtSeconds;
@@ -197,6 +200,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             _continuousInflateSeconds = 0d;
             if (wasInflating)
             {
+                _isRecoveringFromOverhold = false;
                 _cooldownEndsAtSeconds =
                     activeElapsedSeconds +
                     BalloonBlowRules.ReleaseCooldownSeconds;
@@ -230,6 +234,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         {
             _continuousInflateSeconds = 0d;
             _requiresReleaseToRearm = true;
+            _isRecoveringFromOverhold = true;
             _cooldownEndsAtSeconds =
                 _observedAtSeconds +
                 BalloonBlowRules.OverholdCooldownSeconds;
@@ -251,6 +256,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             _continuousInflateSeconds = 0d;
             _isInflateHeld = false;
             _requiresReleaseToRearm = false;
+            _isRecoveringFromOverhold = false;
             _cooldownEndsAtSeconds = 0d;
             Phase = BalloonBlowPlayerPhase.Popped;
         }
@@ -269,6 +275,13 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             if (IsPopped)
             {
                 return;
+            }
+
+            if (_isRecoveringFromOverhold &&
+                _cooldownEndsAtSeconds <=
+                _observedAtSeconds + TimeEpsilon)
+            {
+                _isRecoveringFromOverhold = false;
             }
 
             if (_cooldownEndsAtSeconds >

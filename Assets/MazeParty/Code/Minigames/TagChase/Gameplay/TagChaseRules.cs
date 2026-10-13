@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace MazeParty.Gameplay.Minigames.TagChase
 {
@@ -29,10 +30,38 @@ namespace MazeParty.Gameplay.Minigames.TagChase
         public const int TaggerLossPoints = 0;
         public const int RunnerSurvivalPoints = 2;
         public const int RunnerCaughtPoints = 1;
+        public const float PlayerMoveSpeed = 5f;
 
         public static bool IsValidPlayerSlot(int slot)
         {
             return slot >= 0 && slot < PlayerCount;
+        }
+
+        public static bool CanUseFirstPersonControls(
+            int slot,
+            bool isMatchActive,
+            bool isCaught)
+        {
+            return IsValidPlayerSlot(slot) &&
+                   isMatchActive &&
+                   !isCaught;
+        }
+
+        public static Vector2 CalculateFirstPersonMovement(
+            Vector2 input,
+            float viewYawDegrees,
+            float deltaSeconds)
+        {
+            var radians = viewYawDegrees * Mathf.Deg2Rad;
+            var forward = new Vector2(
+                Mathf.Sin(radians),
+                Mathf.Cos(radians));
+            var right = new Vector2(forward.y, -forward.x);
+            var direction = Vector2.ClampMagnitude(
+                right * input.x + forward * input.y,
+                1f);
+            return direction *
+                   (PlayerMoveSpeed * Mathf.Max(0f, deltaSeconds));
         }
 
         public static int[] BuildTaggerOrder(ulong seed)

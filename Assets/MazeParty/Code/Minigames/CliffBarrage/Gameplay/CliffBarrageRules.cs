@@ -15,8 +15,12 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         public const double PlayerRadius = 0.45d;
         public const double SpawnRadius = 4.5d;
         public const double MovementSpeed = 4.5d;
-        public const double PushCooldownSeconds = 0.65d;
-        public const double PushRange = 2.4d;
+        public const double PushCastSeconds = 0.5d;
+        public const double PushStunSeconds = 0.5d;
+        public const double PushRecoverySeconds = 0.5d;
+        public const double PushCooldownSeconds =
+            PushCastSeconds + PushRecoverySeconds;
+        public const double PushRange = 2.04d;
         public const double PushHalfWidth = 0.95d;
         public const double PushDistance = 2.35d;
         public const double HitInvulnerabilitySeconds = 1d;
@@ -94,6 +98,77 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             var awayZ = centerZ - (startZ + dz * t);
             return awayX * awayX + awayZ * awayZ <=
                 radius * radius;
+        }
+    }
+
+    internal sealed class CliffBarragePushTimingState
+    {
+        public bool IsCasting { get; private set; }
+        public double CastEndsAt { get; private set; }
+        public double StunnedUntil { get; private set; }
+        public double NextPushAllowedAt { get; private set; }
+
+        public bool CanMove(double now)
+        {
+            ValidateTime(now);
+            return !IsCasting && now >= StunnedUntil;
+        }
+
+        public bool CanStartPush(double now)
+        {
+            ValidateTime(now);
+            return CanMove(now) && now >= NextPushAllowedAt;
+        }
+
+        public bool TryStartPush(double now)
+        {
+            if (!CanStartPush(now))
+            {
+                return false;
+            }
+
+            IsCasting = true;
+            CastEndsAt = now + CliffBarrageRules.PushCastSeconds;
+            NextPushAllowedAt = CastEndsAt +
+                                CliffBarrageRules.PushRecoverySeconds;
+            return true;
+        }
+
+        public bool TryCompletePush(double now)
+        {
+            ValidateTime(now);
+            if (!IsCasting || now < CastEndsAt)
+            {
+                return false;
+            }
+
+            IsCasting = false;
+            CastEndsAt = 0d;
+            return true;
+        }
+
+        public void ApplyStun(double now)
+        {
+            ValidateTime(now);
+            StunnedUntil = Math.Max(
+                StunnedUntil,
+                now + CliffBarrageRules.PushStunSeconds);
+        }
+
+        public void Reset()
+        {
+            IsCasting = false;
+            CastEndsAt = 0d;
+            StunnedUntil = 0d;
+            NextPushAllowedAt = 0d;
+        }
+
+        private static void ValidateTime(double now)
+        {
+            if (double.IsNaN(now) || double.IsInfinity(now) || now < 0d)
+            {
+                throw new ArgumentOutOfRangeException(nameof(now));
+            }
         }
     }
 }

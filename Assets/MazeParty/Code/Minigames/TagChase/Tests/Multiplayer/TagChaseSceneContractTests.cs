@@ -36,7 +36,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Scene_PreservesArenaAndRoleCameras()
+        public void Scene_PreservesArenaSharedAndFirstPersonCameras()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -158,31 +158,43 @@ namespace MazeParty.Multiplayer.Tests
                     }));
                 var sharedRunnerCamera = cameras.Single(camera =>
                     camera.name == "CM_TagChaseRunners");
+                var firstPersonCamera = cameras.Single(camera =>
+                    camera.name == "CM_TagChaseTagger");
                 Assert.That(
                     serialized.FindProperty("sharedRunnerCamera")
                         .objectReferenceValue,
                     Is.SameAs(sharedRunnerCamera));
+                Assert.That(
+                    serialized.FindProperty("taggerCamera")
+                        .objectReferenceValue,
+                    Is.SameAs(firstPersonCamera));
                 Assert.That(
                     Vector3.Distance(
                         sharedRunnerCamera.transform.position,
                         TagChaseNetworkView
                             .InitialSharedCameraPosition),
                     Is.LessThan(GeometryTolerance),
-                    "Runner camera position must remain the shared " +
-                    "fixed overview position.");
+                    "Shared camera position must remain the fixed " +
+                    "countdown and spectator overview position.");
                 Assert.That(
                     Quaternion.Angle(
                         sharedRunnerCamera.transform.rotation,
                         TagChaseNetworkView
                             .InitialSharedCameraRotation),
                     Is.LessThan(GeometryTolerance),
-                    "Runner camera rotation must remain fixed on the " +
+                    "Shared camera rotation must remain fixed on the " +
                     "arena center.");
                 Assert.That(
                     GetLensFieldOfView(sharedRunnerCamera),
                     Is.EqualTo(TagChaseNetworkView.SharedFieldOfView)
                         .Within(GeometryTolerance),
-                    "Runner camera zoom must remain fixed.");
+                    "Shared camera zoom must remain fixed.");
+                Assert.That(
+                    GetLensFieldOfView(firstPersonCamera),
+                    Is.EqualTo(TagChaseNetworkView.TaggerFieldOfView)
+                        .Within(GeometryTolerance),
+                    "Every active local player reuses the bound " +
+                    "first-person camera.");
                 Assert.That(
                     roots.SelectMany(root =>
                         root.GetComponentsInChildren<Camera>(true)),

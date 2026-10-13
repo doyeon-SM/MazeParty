@@ -87,6 +87,8 @@ namespace MazeParty.Multiplayer
 
         public static NetworkBombPassingState Instance { get; private set; }
         public event Action<int> AttackPresentationRequested;
+        public event Action<int, int, BombPassingInteractionKind>
+            InteractionPresentationRequested;
 
         public NetworkBombPassingPhase Phase =>
             (NetworkBombPassingPhase)_phase.Value;
@@ -179,6 +181,8 @@ namespace MazeParty.Multiplayer
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
             _serverMatch = new BombPassingMatchState(seed);
+            _serverMatch.InteractionResolved +=
+                HandleServerInteractionResolved;
             _matchActive.Value = true;
             _roundNumber.Value = 1;
             CacheAndFreezeBoardAvatarsOnServer();
@@ -264,14 +268,13 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var attackApproved = _serverMatch.CanStartAttack(slot);
-            _serverMatch.TryAttack(slot);
-            if (attackApproved)
+            var attackStarted = _serverMatch.TryStartAttack(slot);
+            if (attackStarted)
             {
                 PlayAttackPresentationRpc((byte)slot);
             }
             SyncSnapshotOnServer();
-            return true;
+            return attackStarted;
         }
 
         [Rpc(
@@ -283,6 +286,45 @@ namespace MazeParty.Multiplayer
             {
                 AttackPresentationRequested?.Invoke(attackerSlot);
             }
+        }
+
+        private void HandleServerInteractionResolved(
+            BombPassingInteraction interaction)
+        {
+            if (!IsServer || !interaction.WasApplied)
+            {
+                return;
+            }
+
+            SyncSnapshotOnServer();
+            PlayInteractionPresentationRpc(
+                (byte)interaction.ActorSlot,
+                (byte)interaction.TargetSlot,
+                (byte)interaction.Kind);
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayInteractionPresentationRpc(
+            byte actorSlot,
+            byte targetSlot,
+            byte interactionKindValue)
+        {
+            var interactionKind =
+                (BombPassingInteractionKind)interactionKindValue;
+            if (!BombPassingRules.IsValidPlayerSlot(actorSlot) ||
+                !BombPassingRules.IsValidPlayerSlot(targetSlot) ||
+                interactionKind != BombPassingInteractionKind.Stun &&
+                interactionKind != BombPassingInteractionKind.Transfer)
+            {
+                return;
+            }
+
+            InteractionPresentationRequested?.Invoke(
+                actorSlot,
+                targetSlot,
+                interactionKind);
         }
 
         public Vector2 GetPlayerPosition(int slot)
@@ -668,6 +710,11 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalRuntime()
         {
+            if (_serverMatch != null)
+            {
+                _serverMatch.InteractionResolved -=
+                    HandleServerInteractionResolved;
+            }
             _serverMatch = null;
             _phaseStartedAt = 0d;
             _phaseElapsedAtPause = 0d;

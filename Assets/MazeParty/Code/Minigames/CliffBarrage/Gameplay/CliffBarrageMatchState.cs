@@ -22,6 +22,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             IsEliminated = value.IsEliminated;
             RoundRank = value.RoundRank;
             TotalScore = score;
+            IsPushCasting = value.PushTiming.IsCasting;
+            PushCastEndsAt = value.PushTiming.CastEndsAt;
+            StunnedUntil = value.PushTiming.StunnedUntil;
+            NextPushAllowedAt = value.PushTiming.NextPushAllowedAt;
         }
 
         public double X { get; }
@@ -33,6 +37,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         public bool IsEliminated { get; }
         public int RoundRank { get; }
         public int TotalScore { get; }
+        public bool IsPushCasting { get; }
+        public double PushCastEndsAt { get; }
+        public double StunnedUntil { get; }
+        public double NextPushAllowedAt { get; }
     }
 
     public readonly struct CliffBarrageProjectileSnapshot
@@ -216,7 +224,8 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             ValidateFinite(x, nameof(x));
             ValidateFinite(z, nameof(z));
             var player = _players[slot];
-            if (IsRoundComplete || player.IsEliminated)
+            if (IsRoundComplete || player.IsEliminated ||
+                !player.PushTiming.CanMove(RoundElapsedSeconds))
             {
                 player.InputX = 0d;
                 player.InputZ = 0d;
@@ -245,7 +254,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             var player = _players[slot];
             return !IsRoundComplete &&
                 !player.IsEliminated &&
-                RoundElapsedSeconds + Epsilon >= player.NextPushAt;
+                player.PushTiming.CanStartPush(RoundElapsedSeconds);
         }
 
         public bool TryPush(int slot)
@@ -255,8 +264,34 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 return false;
             }
             var player = _players[slot];
-            player.NextPushAt = RoundElapsedSeconds +
-                CliffBarrageRules.PushCooldownSeconds;
+            if (!player.PushTiming.TryStartPush(RoundElapsedSeconds))
+            {
+                return false;
+            }
+            player.PushFacingX = player.FacingX;
+            player.PushFacingZ = player.FacingZ;
+            player.InputX = 0d;
+            player.InputZ = 0d;
+            return true;
+        }
+
+        private void ResolveCompletedPushes(double at)
+        {
+            for (var slot = 0; slot < _players.Length; slot++)
+            {
+                var player = _players[slot];
+                if (!player.PushTiming.TryCompletePush(at) ||
+                    player.IsEliminated)
+                {
+                    continue;
+                }
+                ResolvePush(slot, at);
+            }
+        }
+
+        private void ResolvePush(int slot, double at)
+        {
+            var player = _players[slot];
             var closest = -1;
             var bestDistanceSquared = double.MaxValue;
             for (var otherSlot = 0; otherSlot < _players.Length;
@@ -270,10 +305,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 var other = _players[otherSlot];
                 var dx = other.X - player.X;
                 var dz = other.Z - player.Z;
-                var forward = dx * player.FacingX +
-                    dz * player.FacingZ;
-                var lateral = Math.Abs(-dx * player.FacingZ +
-                    dz * player.FacingX);
+                var forward = dx * player.PushFacingX +
+                    dz * player.PushFacingZ;
+                var lateral = Math.Abs(-dx * player.PushFacingZ +
+                    dz * player.PushFacingX);
                 if (forward <= 0d || forward >
                     CliffBarrageRules.PushRange || lateral >
                     CliffBarrageRules.PushHalfWidth +
@@ -290,19 +325,25 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             }
             if (closest < 0)
             {
-                return false;
+                return;
             }
             var target = _players[closest];
-            target.X += player.FacingX *
-                CliffBarrageRules.PushDistance;
-            target.Z += player.FacingZ *
-                CliffBarrageRules.PushDistance;
-            ResolveFall(closest, RoundElapsedSeconds);
-            if (SurvivorCount <= 1)
+            var pushX = target.X - player.X;
+            var pushZ = target.Z - player.Z;
+            var pushLength = Math.Sqrt(pushX * pushX + pushZ * pushZ);
+            if (pushLength <= Epsilon)
             {
-                FinishRound(RoundElapsedSeconds);
+                pushX = player.PushFacingX;
+                pushZ = player.PushFacingZ;
+                pushLength = Math.Sqrt(pushX * pushX + pushZ * pushZ);
             }
-            return true;
+            target.X += pushX / pushLength *
+                CliffBarrageRules.PushDistance;
+            target.Z += pushZ / pushLength *
+                CliffBarrageRules.PushDistance;
+            target.PushTiming.ApplyStun(at);
+            target.InputX = 0d;
+            target.InputZ = 0d;
         }
 
         /// <summary>
@@ -411,10 +452,12 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         private void SimulateStep(double stepEnd)
         {
             var step = CliffBarrageRules.SimulationStepSeconds;
+            var stepStart = stepEnd - step;
             for (var slot = 0; slot < _players.Length; slot++)
             {
                 var player = _players[slot];
-                if (player.IsEliminated)
+                if (player.IsEliminated ||
+                    !player.PushTiming.CanMove(stepStart))
                 {
                     continue;
                 }
@@ -423,6 +466,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 player.Z += player.InputZ *
                     CliffBarrageRules.MovementSpeed * step;
             }
+            ResolveCompletedPushes(stepEnd);
             ResolvePlayerSeparation();
             for (var slot = 0; slot < _players.Length; slot++)
             {
@@ -898,7 +942,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             public bool IsEliminated;
             public double EliminatedAt;
             public double InvulnerableUntil;
-            public double NextPushAt;
+            public double PushFacingX;
+            public double PushFacingZ;
+            public readonly CliffBarragePushTimingState PushTiming =
+                new CliffBarragePushTimingState();
             public int RoundRank;
 
             public void Reset(double x, double z)
@@ -914,7 +961,9 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 IsEliminated = false;
                 EliminatedAt = 0d;
                 InvulnerableUntil = 0d;
-                NextPushAt = 0d;
+                PushFacingX = FacingX;
+                PushFacingZ = FacingZ;
+                PushTiming.Reset();
                 RoundRank = 0;
             }
         }

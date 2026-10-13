@@ -15,7 +15,7 @@ namespace MazeParty.Multiplayer
     public sealed class BouncingBallsNetworkView : MonoBehaviour
     {
         public const float ArenaCenterX = 1260f;
-        public const float SharedCameraOrthographicSize = 12.5f;
+        public const float SharedCameraOrthographicSize = 14.5f;
 
         private static readonly Color NeutralBallColor =
             new Color(0.91f, 0.96f, 1f);
@@ -56,7 +56,7 @@ namespace MazeParty.Multiplayer
         private int _localSlot;
 
         public static Vector3 SharedCameraPosition =>
-            new Vector3(ArenaCenterX, 0f, -20f);
+            new Vector3(ArenaCenterX, 0f, -30f);
 
         public static Quaternion SharedCameraRotation =>
             CalculatePlayerCameraRotation(0);

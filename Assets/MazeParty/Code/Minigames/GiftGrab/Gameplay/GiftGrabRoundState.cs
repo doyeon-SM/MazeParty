@@ -8,7 +8,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         Loose,
         Carried,
         Stored,
-        Thrown
+        Thrown,
+        Consumed
     }
 
     public enum GiftGrabRoundEndReason : byte
@@ -25,7 +26,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         IgnoredAlreadyCarrying,
         IgnoredUnavailable,
         IgnoredOwnStoredGift,
-        IgnoredRegrabLock
+        IgnoredRegrabLock,
+        IgnoredPushCasting
     }
 
     public enum GiftGrabDepositStatus : byte
@@ -33,7 +35,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         Deposited,
         IgnoredRoundComplete,
         IgnoredStunned,
-        IgnoredNotCarrying
+        IgnoredNotCarrying,
+        IgnoredPushCasting
     }
 
     public enum GiftGrabThrowStatus : byte
@@ -41,12 +44,20 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         Thrown,
         IgnoredRoundComplete,
         IgnoredStunned,
-        IgnoredNotCarrying
+        IgnoredNotCarrying,
+        IgnoredPushCasting
     }
 
     public enum GiftGrabGiftLandingStatus : byte
     {
         Landed,
+        IgnoredRoundComplete,
+        IgnoredNotThrown
+    }
+
+    public enum GiftGrabThrownConsumeStatus : byte
+    {
+        Consumed,
         IgnoredRoundComplete,
         IgnoredNotThrown
     }
@@ -66,7 +77,10 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         IgnoredRoundComplete,
         IgnoredStunned,
         IgnoredCarryingGift,
-        IgnoredCooldown
+        IgnoredCooldown,
+        CastStarted,
+        IgnoredCastInProgress,
+        IgnoredNotCasting
     }
 
     public enum GiftGrabOutOfBoundsStatus : byte
@@ -158,6 +172,22 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public bool WasLanded => Status == GiftGrabGiftLandingStatus.Landed;
     }
 
+    public readonly struct GiftGrabThrownConsumeResolution
+    {
+        internal GiftGrabThrownConsumeResolution(
+            int giftId,
+            GiftGrabThrownConsumeStatus status)
+        {
+            GiftId = giftId;
+            Status = status;
+        }
+
+        public int GiftId { get; }
+        public GiftGrabThrownConsumeStatus Status { get; }
+        public bool WasConsumed =>
+            Status == GiftGrabThrownConsumeStatus.Consumed;
+    }
+
     public readonly struct GiftGrabThrownHitResolution
     {
         internal GiftGrabThrownHitResolution(
@@ -213,6 +243,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public double CooldownEndsAtSeconds { get; }
         public double StunnedUntilSeconds { get; }
         public bool WasStarted =>
+            Status == GiftGrabPushStatus.CastStarted;
+        public bool WasCompleted =>
             Status == GiftGrabPushStatus.Hit ||
             Status == GiftGrabPushStatus.Missed;
         public bool WasHit => Status == GiftGrabPushStatus.Hit;
@@ -257,17 +289,19 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public double CumulativeStoredGiftSeconds { get; private set; }
         public double StunnedUntilSeconds { get; private set; }
         public double PushCooldownEndsAtSeconds { get; private set; }
+        public double PushCastEndsAtSeconds { get; private set; }
+        public bool IsPushCasting { get; private set; }
         public bool IsCarryingGift => HeldGiftId != GiftGrabRules.NoGiftId;
         public bool IsStunned =>
             _observedAtSeconds + TimeEpsilon < StunnedUntilSeconds;
-        public bool CanMove => !IsStunned;
-        public bool CanAct => !IsStunned;
+        public bool CanMove => !IsStunned && !IsPushCasting;
+        public bool CanAct => !IsStunned && !IsPushCasting;
         public bool IsPushReady =>
-            !IsStunned &&
+            CanAct &&
             !IsCarryingGift &&
             _observedAtSeconds + TimeEpsilon >=
             PushCooldownEndsAtSeconds;
-        public float CurrentMoveSpeed => IsStunned
+        public float CurrentMoveSpeed => !CanMove
             ? 0f
             : IsCarryingGift
                 ? GiftGrabRules.CarryMoveSpeed
@@ -319,9 +353,18 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 stunnedUntilSeconds);
         }
 
-        internal void BeginPush(double cooldownEndsAtSeconds)
+        internal void BeginPushCast(
+            double castEndsAtSeconds,
+            double cooldownEndsAtSeconds)
         {
+            PushCastEndsAtSeconds = castEndsAtSeconds;
             PushCooldownEndsAtSeconds = cooldownEndsAtSeconds;
+            IsPushCasting = true;
+        }
+
+        internal void CompletePushCast()
+        {
+            IsPushCasting = false;
         }
 
         internal GiftGrabRoundOutcome CaptureOutcome()
@@ -401,6 +444,17 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             SetLooseWithRegrabLock(
                 throwerSlot,
                 activeElapsedSeconds);
+        }
+
+        internal void Consume()
+        {
+            State = GiftGrabGiftState.Consumed;
+            CarrierSlot = GiftGrabRules.NoPlayerSlot;
+            StoredOwnerSlot = GiftGrabRules.NoPlayerSlot;
+            LastThrowerSlot = GiftGrabRules.NoPlayerSlot;
+            ThrowerImmunityEndsAtSeconds = 0d;
+            PickupLockedPlayerSlot = GiftGrabRules.NoPlayerSlot;
+            PickupLockEndsAtSeconds = 0d;
         }
 
         internal void SetLooseWithRegrabLock(
@@ -589,6 +643,14 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabPickupStatus.IgnoredStunned);
             }
 
+            if (player.IsPushCasting)
+            {
+                return PickupResolution(
+                    playerSlot,
+                    giftId,
+                    GiftGrabPickupStatus.IgnoredPushCasting);
+            }
+
             if (player.IsCarryingGift)
             {
                 return PickupResolution(
@@ -660,6 +722,13 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabDepositStatus.IgnoredStunned);
             }
 
+            if (player.IsPushCasting)
+            {
+                return DepositResolution(
+                    playerSlot,
+                    GiftGrabDepositStatus.IgnoredPushCasting);
+            }
+
             if (!player.IsCarryingGift)
             {
                 return DepositResolution(
@@ -694,6 +763,13 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 return ThrowResolution(
                     playerSlot,
                     GiftGrabThrowStatus.IgnoredStunned);
+            }
+
+            if (player.IsPushCasting)
+            {
+                return ThrowResolution(
+                    playerSlot,
+                    GiftGrabThrowStatus.IgnoredPushCasting);
             }
 
             if (!player.IsCarryingGift)
@@ -739,14 +815,66 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 GiftGrabGiftLandingStatus.Landed);
         }
 
+        public GiftGrabThrownConsumeResolution ResolveThrownConsumed(
+            int giftId,
+            double activeElapsedSeconds)
+        {
+            var gift = GetGift(giftId);
+            AdvanceTo(activeElapsedSeconds);
+            if (IsComplete)
+            {
+                return ConsumptionResolution(
+                    gift,
+                    GiftGrabThrownConsumeStatus.IgnoredRoundComplete);
+            }
+
+            if (gift.State != GiftGrabGiftState.Thrown)
+            {
+                return ConsumptionResolution(
+                    gift,
+                    GiftGrabThrownConsumeStatus.IgnoredNotThrown);
+            }
+
+            gift.Consume();
+            return ConsumptionResolution(
+                gift,
+                GiftGrabThrownConsumeStatus.Consumed);
+        }
+
         public GiftGrabThrownHitResolution ResolveThrownHit(
             int giftId,
             int victimSlot,
             double activeElapsedSeconds)
         {
+            return ResolveThrownHit(
+                giftId,
+                victimSlot,
+                activeElapsedSeconds,
+                activeElapsedSeconds);
+        }
+
+        public GiftGrabThrownHitResolution ResolveThrownHit(
+            int giftId,
+            int victimSlot,
+            double impactElapsedSeconds,
+            double observedElapsedSeconds)
+        {
+            GiftGrabRules.ValidateActiveElapsedSeconds(
+                impactElapsedSeconds);
+            GiftGrabRules.ValidateActiveElapsedSeconds(
+                observedElapsedSeconds);
+            if (impactElapsedSeconds >
+                observedElapsedSeconds + TimeEpsilon)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(impactElapsedSeconds),
+                    impactElapsedSeconds,
+                    "Impact time cannot be later than observation time.");
+            }
+
             var gift = GetGift(giftId);
             var victim = GetPlayer(victimSlot);
-            AdvanceTo(activeElapsedSeconds);
+            AdvanceTo(observedElapsedSeconds);
             if (IsComplete)
             {
                 return ThrownHitResolution(
@@ -766,7 +894,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             }
 
             if (gift.LastThrowerSlot == victimSlot &&
-                ElapsedSeconds + TimeEpsilon <
+                impactElapsedSeconds + TimeEpsilon <
                 gift.ThrowerImmunityEndsAtSeconds)
             {
                 return ThrownHitResolution(
@@ -776,10 +904,12 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabRules.NoGiftId);
             }
 
-            gift.LandFromThrow(ElapsedSeconds);
-            var droppedGiftId = DropHeldGift(victim, ElapsedSeconds);
+            gift.Consume();
+            var droppedGiftId = DropHeldGift(
+                victim,
+                impactElapsedSeconds);
             victim.ApplyStun(
-                ElapsedSeconds + GiftGrabRules.ThrowStunSeconds);
+                impactElapsedSeconds + GiftGrabRules.ThrowStunSeconds);
             return ThrownHitResolution(
                 gift,
                 victim,
@@ -787,10 +917,79 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 droppedGiftId);
         }
 
+        public GiftGrabPushResolution BeginPushCast(
+            int attackerSlot,
+            double activeElapsedSeconds)
+        {
+            var attacker = GetPlayer(attackerSlot);
+            AdvanceTo(activeElapsedSeconds);
+            if (IsComplete)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredRoundComplete,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (attacker.IsStunned)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredStunned,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (attacker.IsCarryingGift)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredCarryingGift,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (attacker.IsPushCasting)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredCastInProgress,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (ElapsedSeconds + TimeEpsilon <
+                attacker.PushCooldownEndsAtSeconds)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredCooldown,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            attacker.BeginPushCast(
+                ElapsedSeconds + GiftGrabRules.PushCastSeconds,
+                ElapsedSeconds + GiftGrabRules.PushCooldownSeconds);
+            return PushResolution(
+                attacker,
+                GiftGrabRules.NoPlayerSlot,
+                GiftGrabPushStatus.CastStarted,
+                GiftGrabRules.NoGiftId,
+                0d);
+        }
+
         /// <summary>
-        /// Resolves one empty-handed primary action. Pass NoPlayerSlot when the
-        /// server's short forward cast misses; a valid attempt always consumes
-        /// the 0.65-second push cooldown.
+        /// Resolves an already-started empty-handed push cast. Pass
+        /// NoPlayerSlot when the frozen-facing query misses at the exact cast
+        /// boundary. The cooldown was committed when the cast began, so a miss
+        /// keeps the same post-cast reuse delay as a hit.
         /// </summary>
         public GiftGrabPushResolution ResolvePush(
             int attackerSlot,
@@ -805,6 +1004,29 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             }
 
             AdvanceTo(activeElapsedSeconds);
+            if (!attacker.IsPushCasting)
+            {
+                return PushResolution(
+                    attacker,
+                    victimSlot,
+                    GiftGrabPushStatus.IgnoredNotCasting,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (ElapsedSeconds + TimeEpsilon <
+                attacker.PushCastEndsAtSeconds)
+            {
+                return PushResolution(
+                    attacker,
+                    victimSlot,
+                    GiftGrabPushStatus.IgnoredCastInProgress,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            var completedAtSeconds = attacker.PushCastEndsAtSeconds;
+            attacker.CompletePushCast();
             if (IsComplete)
             {
                 return PushResolution(
@@ -815,39 +1037,6 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     0d);
             }
 
-            if (attacker.IsStunned)
-            {
-                return PushResolution(
-                    attacker,
-                    victimSlot,
-                    GiftGrabPushStatus.IgnoredStunned,
-                    GiftGrabRules.NoGiftId,
-                    0d);
-            }
-
-            if (attacker.IsCarryingGift)
-            {
-                return PushResolution(
-                    attacker,
-                    victimSlot,
-                    GiftGrabPushStatus.IgnoredCarryingGift,
-                    GiftGrabRules.NoGiftId,
-                    0d);
-            }
-
-            if (ElapsedSeconds + TimeEpsilon <
-                attacker.PushCooldownEndsAtSeconds)
-            {
-                return PushResolution(
-                    attacker,
-                    victimSlot,
-                    GiftGrabPushStatus.IgnoredCooldown,
-                    GiftGrabRules.NoGiftId,
-                    0d);
-            }
-
-            attacker.BeginPush(
-                ElapsedSeconds + GiftGrabRules.PushCooldownSeconds);
             if (victimSlot == GiftGrabRules.NoPlayerSlot ||
                 victimSlot == attackerSlot)
             {
@@ -860,9 +1049,9 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             }
 
             var victim = _players[victimSlot];
-            var droppedGiftId = DropHeldGift(victim, ElapsedSeconds);
+            var droppedGiftId = DropHeldGift(victim, completedAtSeconds);
             victim.ApplyStun(
-                ElapsedSeconds + GiftGrabRules.PushStunSeconds);
+                completedAtSeconds + GiftGrabRules.PushStunSeconds);
             return PushResolution(
                 attacker,
                 victimSlot,
@@ -886,7 +1075,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabRules.NoPlayerSlot);
             }
 
-            if (gift.State == GiftGrabGiftState.Unspawned)
+            if (gift.State == GiftGrabGiftState.Unspawned ||
+                gift.State == GiftGrabGiftState.Consumed)
             {
                 return OutOfBoundsResolution(
                     gift,
@@ -957,6 +1147,15 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 status,
                 gift.PickupLockedPlayerSlot,
                 gift.PickupLockEndsAtSeconds);
+        }
+
+        private static GiftGrabThrownConsumeResolution ConsumptionResolution(
+            GiftGrabGiftRoundState gift,
+            GiftGrabThrownConsumeStatus status)
+        {
+            return new GiftGrabThrownConsumeResolution(
+                gift.GiftId,
+                status);
         }
 
         private static GiftGrabThrownHitResolution ThrownHitResolution(

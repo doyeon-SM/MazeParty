@@ -23,6 +23,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             new Transform[TagChaseRules.PlayerCount];
         private readonly PlayerAvatarVisual[] _visuals =
             new PlayerAvatarVisual[TagChaseRules.PlayerCount];
+        private readonly bool[] _wasCaught =
+            new bool[TagChaseRules.PlayerCount];
 
         private TagChaseSoloSession _session;
         private MinigameSoloHudView _hud;
@@ -193,6 +195,10 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             var localIsTagger =
                 _session.IsTagger(TagChaseSoloSession.LocalPlayerSlot);
+            var localUsesFirstPerson =
+                _session.Phase != TagChaseSoloPhase.Countdown &&
+                _session.Phase != TagChaseSoloPhase.Complete &&
+                !_session.IsCaught(TagChaseSoloSession.LocalPlayerSlot);
             for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
             {
                 var position = _session.GetPlayerPosition(slot);
@@ -216,37 +222,48 @@ namespace MazeParty.Dev.MinigameSoloTest
                         Vector3.up);
                 }
 
-                _visuals[slot].SetEliminated(_session.IsCaught(slot));
+                var isCaught = _session.IsCaught(slot);
+                if (isCaught && !_wasCaught[slot])
+                {
+                    GameSound.PlayAt(
+                        SoundKeys.Lightning,
+                        _players[slot].position);
+                }
+                _wasCaught[slot] = isCaught;
+                _visuals[slot].SetEliminated(isCaught);
                 _visuals[slot].SetOwnerFirstPerson(
-                    localIsTagger &&
+                    localUsesFirstPerson &&
                     slot == TagChaseSoloSession.LocalPlayerSlot);
                 _visuals[slot].SetTopViewHighlight(
-                    !localIsTagger &&
+                    !localUsesFirstPerson &&
                     slot == TagChaseSoloSession.LocalPlayerSlot &&
                     !_session.IsCaught(slot));
             }
 
-            RefreshCamera(localIsTagger);
+            RefreshCamera(localUsesFirstPerson, localIsTagger);
             RefreshHud(localIsTagger);
         }
 
-        private void RefreshCamera(bool localIsTagger)
+        private void RefreshCamera(
+            bool localUsesFirstPerson,
+            bool localIsTagger)
         {
-            if (localIsTagger)
+            if (localUsesFirstPerson)
             {
-                var position = _session.GetPlayerPosition(
-                    TagChaseSoloSession.LocalPlayerSlot);
+                var position = _players[
+                    TagChaseSoloSession.LocalPlayerSlot].position;
                 _runtimeCamera.fieldOfView =
                     TagChaseNetworkView.TaggerFieldOfView;
                 _runtimeCamera.transform.SetPositionAndRotation(
                     new Vector3(
                         position.x,
                         TagChaseNetworkView.FirstPersonEyeHeight,
-                        position.y),
+                        position.z),
                     Quaternion.Euler(_viewPitch, _viewYaw, 0f));
                 Cursor.lockState = CursorLockMode.Locked;
                 Cursor.visible = false;
                 _commonHud?.SetTaggerAimVisible(
+                    localIsTagger &&
                     _session.Phase == TagChaseSoloPhase.Running);
                 return;
             }
@@ -285,7 +302,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 "TAGGER P" + (_session.TaggerSlot + 1),
                 localIsTagger
                     ? "WASD MOVE  ·  MOUSE LOOK  ·  LMB CATCH"
-                    : "WASD MOVE  ·  SURVIVE",
+                    : "WASD MOVE  ·  MOUSE LOOK  ·  SURVIVE",
                 "R RESTART  ·  N NEXT SEED  ·  ESC STOP",
                 MinigameSoloFeedbackStyle.Neutral);
         }
@@ -327,7 +344,7 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void ReadLook()
         {
-            if (!_session.IsTagger(TagChaseSoloSession.LocalPlayerSlot) ||
+            if (_session.IsCaught(TagChaseSoloSession.LocalPlayerSlot) ||
                 Mouse.current == null)
             {
                 return;

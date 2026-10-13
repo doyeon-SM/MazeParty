@@ -265,18 +265,26 @@
 - 게임은 항상 4인 구조이며 첫 시작과 각 라운드 시작마다 서버 기준 공통 HUD에서
   3 → 2 → 1을 표시한다. 같은 시간 동안 로컬 플레이어를 WaterShield.prefab으로
   강조한다. Snowy Spin·Bouncing Balls 전용 표현도 같은 VFX를 균일 스케일로 사용한다.
-- 공격 입력은 기존 한손 공격 모션, 밀기는 양손 전진 모션을 재생한다. 유효 시도는 대상이
-  없어도 쿨다운당 한 번 애니메이션을 재생하고 실제 피격 모션·VFX는 대상이 있을 때만 낸다.
+- 공격 입력은 기존 한손 공격 모션, 밀기는 0.5초 동안 기존 양손 전진 모션을 재생한다.
+  Stable Footing·Cliff Barrage·Gift Grab의 밀기와 Bomb Passing의 넘기기 공격은 기존 범위를
+  15% 줄이고, 입력 뒤 0.5초 시전 중 이동·추가 행동을 잠근다. 시전 시작 방향과 완료 시점의
+  플레이어 위치로 대상을 판정하며 실제 밀림은 공격자→피격자 방향을 사용한다. 적중 시
+  0.5초 기절하고 빗나가도 시전 완료 뒤 0.5초의 같은 재사용 대기를 적용한다. 애니메이션은
+  시전 시작에 한 번, 피격 모션·VFX는 실제 적중 완료에만 낸다.
 - 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다. Solo의
   DEVELOPER SOLO TEST 패널은 Editor 전용이며 Player 빌드에는 포함하지 않는다.
 - Stable Footing은 8×6이다. 공개 전 3초 동안 세 심벌을 0.5초마다 서로 다른 슬롯으로
-  섞고 마지막 배치에서 정답 하나만 초록색으로 공개한다. 오답 발판은 일시 하강하고
-  복원 뒤 사이클당 4개를 영구 제거한다.
+  섞고 마지막 배치에서 정답 하나만 초록색으로 공개한다. 심벌이 섞이고 공개되는 동안에도
+  이동할 수 있지만 밀기는 Move 단계에서만 가능하다. 오답 발판은 일시 하강하고 복원 뒤
+  사이클당 4개를 영구 제거한다.
 - Territory Paint는 호스트 슬롯 0을 화면 기준 왼쪽 위에 두고 왼쪽 아래 → 오른쪽 아래 →
   오른쪽 위 순으로 반시계 배치한다. 바닥 칠 색은 각 슬롯의 권위 있는 Appearance.BodyColor를
-  사용하고 Unity Plane의 반전된 X/Z UV를 보정해 상하좌우 입력과 칠 위치를 일치시킨다.
-- Balloon Blow는 기침 cooldown 동안 기존 쓰러짐 자세를 사용하고 풍선 입력을 허용하지
-  않는다. 풍선이 터질 때 도착 ArrivalFireworks VFX를 재사용하고 `balloon` 큐를 재생한다.
+  사용하되 바닥에만 HSV 채도를 기존의 58%로 낮춘다. Unity Plane의 반전된 X/Z UV를 보정해
+  상하좌우 입력과 칠 위치를 일치시킨다.
+- Balloon Blow는 정상적으로 클릭을 놓고 숨을 고르는 동안 앉은 자세, 2초 이상 계속 눌러
+  강제 회복하는 동안 쓰러진 자세를 사용한다. 두 회복 상태를 시각적으로 구분하고 회복 중
+  풍선 입력을 허용하지 않는다. 풍선이 터질 때 도착 ArrivalFireworks VFX를 재사용하고
+  `balloon` 큐를 재생한다.
 - Red Light Green Light는 상단의 빨강·초록 3등만 사용한다. 단계는 초록3 → 빨강1 →
   빨강2 → 빨강3이며 완전한 빨강에서만 이동 금지·위반 판정을 한다. 전환 전 단계는 서버
   시드 0.1~2.0초, 네트워크 보정 유예는 0.15초다. 빨간불 위반으로 체력이 감소할 때마다
@@ -284,11 +292,27 @@
   위반이 합쳐져도 증가량만큼 피드백을 보존한다.
 - Cliff Barrage 투사체는 20Hz 권위 스냅샷 사이를 제한 속도 예측과 지수 보간한다.
   투사체·레이저 빈도는 10초마다 20%씩, 5단계·최대 2배까지 증가한다.
-- Race의 A/D 교대 완주 목표는 200회다.
-- Minefield 탐지 반경은 3m, 탐지 시간은 0.75초다. 탐지 중 이동을 잠그되 지뢰·결승선·
-  압사 판정은 유지하고 지뢰 접촉 시 서버 확정 CartoonExplosion을 재생한다.
+- Race의 A/D 교대 완주 목표는 200회다. 같은 키 연타에는 저항 시간이나 시각효과를 두지
+  않고 새 방향으로 바뀔 때만 전진하므로 `add`는 2칸, `addda`는 3칸 전진한다.
+- Bouncing Balls는 마지막으로 공을 막은 플레이어를 공 소유자로 본다. 자기 공이 자기
+  골에 들어가면 1점을 감점하되 0 아래로 내려가지 않고, 다른 골이면 1점을 얻는다. 세 공은
+  60Hz 권위 시뮬레이션에서 서로 충돌하며 쉴드 중심은 골대 양 끝까지 이동할 수 있다.
+  HUD 프리팹 루트는 1배 스케일을 유지해 점수 표시가 실제 씬에서 보이도록 한다.
+- Bomb Passing은 authored 벽·기둥 XZ footprint를 권위 충돌로 사용해 플레이어와 놓인
+  폭탄이 벽을 통과하지 않게 한다. 벽 너머 공격과 폭탄 습득도 차단하며 네 시작점은
+  (±6.5, ±6.5)다.
+- Minefield 탐지 반경은 3m, 탐지 시간은 0.75초, 지뢰 수는 35개다. 탐지 중 이동을 잠그되
+  지뢰·결승선·압사 판정은 유지한다. 스캔 시작에는 전용 scan 큐, 지뢰 접촉에는 서버 확정
+  CartoonExplosion과 전용 explosion 큐를 재생한다.
 - Tag Chase 충돌은 authored 내부 벽 16개·기둥 14개의 XZ bounds와 기존 외곽 clamp를
-  사용한다. 술래 1인칭에는 Running 단계에만 공용 HUD의 중앙 Tagger Aim을 표시한다.
+  사용한다. 살아 있는 술래와 도망자는 모두 같은 5m/s, 시점 기준 1인칭 이동을 사용하고
+  잡힌 도망자만 공용 관전 카메라로 전환한다. 술래에게만 Running 단계의 중앙 Tagger Aim을
+  표시하며 잡기 확정 시 피격 위치에서 `lightning` 큐를 재생한다. 카메라는 보간된 로컬
+  presentation을 따라가며 외형·1인칭 표시 갱신 캐시와 시점 송신 제한을 사용한다.
+- Gift Grab은 주운 선물을 고정 크기로 플레이어 오른손 앵커에 들고 맵의 원래 위치에서는
+  제거한다. 던진 선물은 투사체로 진행하며 플레이어나 경기장 벽에 닿으면 소비되어 사라진다.
+  기지에 넣은 선물은 크기를 바꾸지 않고 5×4의 작은 공간 적재로 보여 준다. Network와
+  Solo 모두 실제 투사체 충돌 시각부터 정확히 0.5초 동안 기절 이동 잠금을 적용한다.
 - Sequence Memory의 A/S/D는 도/미/솔이며 Bell 7 원음 G5를 0.6674199/0.8408964/1.0
   피치로 재생한다. 큐 선행 무음 0.21초를 건너뛰고 동시 재생은 8개로 제한한다.
 - 15종의 플레이어 스폰 표시는 숨긴다. Bomb Passing은 중앙 블록만 숨기고 소환 링은
@@ -311,8 +335,9 @@
 - 보너스 준비음은 공개 전 2초만 재생하고 공개·일시정지에서 중지하며 duck하지 않는다.
 - 보드 발소리는 짧은 원샷 11개를 shuffle 재생한다.
 - Sequence Memory 음계는 전역 풀 사운드 큐 하나에서 독립 피치 요청으로 재생한다.
-- `balloon`과 `lightning`은 사용자 제공 MP3를 실제 SoundCue와 SoundLibrary에 연결한다.
-  여러 플레이어의 동시 팝·위반은 4개 voice 한도 안에서 같은 프레임에도 누락하지 않는다.
+- `balloon`과 `lightning`, Minefield의 `minigame.minefield.explosion`과
+  `minigame.minefield.scan`은 실제 MP3를 SoundCue와 SoundLibrary에 연결한다. 여러
+  플레이어의 동시 팝·위반은 4개 voice 한도 안에서 같은 프레임에도 누락하지 않는다.
 
 ## 현재 검증 기준
 
@@ -349,6 +374,12 @@
   피드백을 반영했다. 요청에 따라 전체 EditMode는 실행하지 않았고, 정확 시간 경계·결정론·
   저장 복구·씬/프리팹 계약을 포함한 표적 EditMode 31/31만 통과했다. 스크립트 컴파일과
   최종 Unity 콘솔 오류는 0건이다.
+- 2026-10-13 공통 밀기 시전·기절·재사용 경계와 9개 미니게임 개선을 반영했다. 관련
+  Gameplay·Scene·Sound 계약을 합친 표적 EditMode 119/119가 통과했다. 전체 EditMode는
+  561개 중 557개가 통과했고, 요청 범위의 Bomb Passing·Gift Grab·Minefield·Tag Chase
+  표현 프리팹에 남아 있던 물리 Collider 소유권 실패는 제거했다. 남은 4건은 Forest visual
+  TerrainCollider, Arena Combat HitFlash 비차단 바인딩, Red Light Green Light Signal Tower
+  Placeholder, 전용 authored MinigameResultCanvas 출처이며 최종 Unity 콘솔 오류는 0건이다.
 
 ## 남은 TODO
 
@@ -360,12 +391,13 @@
   아직 폰트 크기와 프리팹 시각값은 변경하지 않았다.
 - 보드 설정은 현재 맵만 지원한다. 추후 턴 수·열쇠 가격·미니게임 골드 지급량을 추가하고
   SessionSnapshot, MPS 속성, 저장 복원과 서버 검증을 함께 확장한다.
-- Forest Generated Ground에서 visual-only TerrainCollider를 제거하고, Bomb Passing
-  환경 Collider를 씬 또는 gameplay core 권위로 옮기며, 최종 결과 UI를 전용 authored
-  MinigameResultCanvas 하나로 통일한다.
+- Forest Generated Ground에서 visual-only TerrainCollider를 제거하고, 최종 결과 UI를
+  전용 authored MinigameResultCanvas 하나로 통일한다.
 - 15종 캡처 피드백에 따라 게임별 에셋·배치·카메라를 조정한다. 우선 후보는 Bouncing Balls
-  하단 골대·방어바 프레이밍, Race 하단 여백, Arena·보드 격투 실제 관전 화면이다.
+  실기 화면 재확인, Race 하단 여백, Arena·보드 격투 실제 관전 화면이다.
 - 조기 종료·시간 종료·공동 순위 조합, 수동 조작감, VFX 투명 정렬·Bloom·Soft Particle·
   Reduce Flashes, 제어된 지연·패킷 손실, 별도 PC 장시간 soak, Windows IL2CPP Release를
   추가 검증한다.
+- Tag Chase 카메라의 보간·외형 갱신 캐시·시점 송신 제한은 적용했지만, 실제 4클라이언트
+  환경의 CPU/GPU 프로파일링으로 프레임 저하가 해소됐는지는 별도로 확인한다.
 - 미로 레이아웃 변경 후 흙길을 다시 칠하는 미로 전용 바닥 갱신 도구를 추가한다.

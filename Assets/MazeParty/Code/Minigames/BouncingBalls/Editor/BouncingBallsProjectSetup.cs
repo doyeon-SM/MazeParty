@@ -310,7 +310,8 @@ namespace MazeParty.Editor
             var objectCamera = new GameObject("CM_BouncingBallsShared");
             objectCamera.transform.SetParent(parent, false);
             objectCamera.transform.SetPositionAndRotation(
-                new Vector3(ArenaCenterX, 0f, -20f), Quaternion.identity);
+                BouncingBallsNetworkView.SharedCameraPosition,
+                Quaternion.identity);
             var camera = objectCamera.AddComponent<CinemachineCamera>();
             camera.Priority = 0;
             var lens = camera.Lens;

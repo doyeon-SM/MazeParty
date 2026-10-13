@@ -131,7 +131,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void PushUsesLastMovementHeadingAndCooldown()
+        public void PushResolvesAfterExactCastThenStunsAndRecovers()
         {
             var match = new CliffBarrageMatchState(13, 0, 0);
             var attacker = match.GetPlayer(0);
@@ -139,16 +139,110 @@ namespace MazeParty.Gameplay.Tests
             var dx = target.X - attacker.X;
             var dz = target.Z - attacker.Z;
             var length = Math.Sqrt(dx * dx + dz * dz);
-            match.SetMovementInput(0, dx / length, dz / length);
-            match.AdvanceTo(0.9d);
+            const double headingOffset = 0.08d;
+            var headingX = dx / length * Math.Cos(headingOffset) -
+                           dz / length * Math.Sin(headingOffset);
+            var headingZ = dx / length * Math.Sin(headingOffset) +
+                           dz / length * Math.Cos(headingOffset);
+            match.SetMovementInput(0, headingX, headingZ);
+            match.AdvanceTo(1d);
             match.SetMovementInput(0, 0d, 0d);
+            attacker = match.GetPlayer(0);
             var before = match.GetPlayer(1);
             Assert.That(match.TryPush(0), Is.True);
+            Assert.That(match.GetPlayer(0).IsPushCasting, Is.True);
+            Assert.That(match.GetPlayer(0).PushCastEndsAt,
+                Is.EqualTo(1.5d));
+            Assert.That(match.TryPush(0), Is.False);
+
+            match.SetMovementInput(0, -headingX, -headingZ);
+            match.AdvanceTo(1.5d -
+                CliffBarrageRules.SimulationStepSeconds);
+            Assert.That(match.GetPlayer(0).X,
+                Is.EqualTo(attacker.X).Within(0.000001d));
+            Assert.That(match.GetPlayer(0).Z,
+                Is.EqualTo(attacker.Z).Within(0.000001d));
+            Assert.That(Distance(before, match.GetPlayer(1)),
+                Is.EqualTo(0d).Within(0.000001d));
+
+            match.AdvanceTo(1.5d);
             var after = match.GetPlayer(1);
+            Assert.That(match.GetPlayer(0).IsPushCasting, Is.False);
             Assert.That(Distance(before, after),
                 Is.EqualTo(CliffBarrageRules.PushDistance)
                     .Within(0.000001d));
-            Assert.That(match.TryPush(0), Is.False);
+            var separationX = before.X - attacker.X;
+            var separationZ = before.Z - attacker.Z;
+            var separationLength = Math.Sqrt(
+                separationX * separationX + separationZ * separationZ);
+            var displacementX = after.X - before.X;
+            var displacementZ = after.Z - before.Z;
+            Assert.That(
+                displacementX * separationZ -
+                displacementZ * separationX,
+                Is.EqualTo(0d).Within(0.000001d));
+            Assert.That(
+                displacementX * separationX +
+                displacementZ * separationZ,
+                Is.EqualTo(
+                    CliffBarrageRules.PushDistance * separationLength)
+                    .Within(0.000001d));
+
+            Assert.That(match.CanStartPush(0), Is.False);
+            Assert.That(after.StunnedUntil, Is.EqualTo(2d));
+            var moveLength = Math.Sqrt(after.X * after.X +
+                                       after.Z * after.Z);
+            match.SetMovementInput(
+                1,
+                -after.X / moveLength,
+                -after.Z / moveLength);
+            match.AdvanceTo(1.999d);
+            Assert.That(match.CanStartPush(0), Is.False);
+            Assert.That(Distance(after, match.GetPlayer(1)),
+                Is.EqualTo(0d).Within(0.000001d));
+            match.AdvanceTo(2d);
+            Assert.That(match.CanStartPush(0), Is.True);
+            Assert.That(Distance(after, match.GetPlayer(1)),
+                Is.EqualTo(0d).Within(0.000001d));
+
+            match.SetMovementInput(
+                1,
+                -after.X / moveLength,
+                -after.Z / moveLength);
+            match.AdvanceTo(2d +
+                CliffBarrageRules.SimulationStepSeconds);
+            Assert.That(Distance(after, match.GetPlayer(1)),
+                Is.GreaterThan(0d));
+        }
+
+        [Test]
+        public void MissStillUsesExactCastAndRecoveryBoundaries()
+        {
+            var match = new CliffBarrageMatchState(13, 0, 0);
+            var positions = new CliffBarragePlayerSnapshot[
+                CliffBarrageRules.PlayerCount];
+            for (var slot = 0; slot < positions.Length; slot++)
+            {
+                positions[slot] = match.GetPlayer(slot);
+            }
+
+            Assert.That(match.TryPush(0), Is.True);
+            match.AdvanceTo(CliffBarrageRules.PushCastSeconds -
+                CliffBarrageRules.SimulationStepSeconds);
+            Assert.That(match.GetPlayer(0).IsPushCasting, Is.True);
+            match.AdvanceTo(CliffBarrageRules.PushCastSeconds);
+            Assert.That(match.GetPlayer(0).IsPushCasting, Is.False);
+            for (var slot = 0; slot < positions.Length; slot++)
+            {
+                Assert.That(Distance(positions[slot], match.GetPlayer(slot)),
+                    Is.EqualTo(0d).Within(0.000001d));
+            }
+
+            match.AdvanceTo(CliffBarrageRules.PushCooldownSeconds -
+                0.001d);
+            Assert.That(match.CanStartPush(0), Is.False);
+            match.AdvanceTo(CliffBarrageRules.PushCooldownSeconds);
+            Assert.That(match.CanStartPush(0), Is.True);
         }
 
         [Test]

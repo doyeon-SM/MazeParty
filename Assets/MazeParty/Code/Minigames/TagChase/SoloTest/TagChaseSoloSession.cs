@@ -225,18 +225,15 @@ namespace MazeParty.Dev.MinigameSoloTest
                 Vector2 input;
                 if (slot == LocalPlayerSlot)
                 {
-                    input = localMove;
-                    if (slot == TaggerSlot)
-                    {
-                        var radians = localViewYaw * Mathf.Deg2Rad;
-                        _facings[slot] = new Vector2(
-                            Mathf.Sin(radians),
-                            Mathf.Cos(radians));
-                    }
-                    else if (input.sqrMagnitude > 0.0001f)
-                    {
-                        _facings[slot] = input.normalized;
-                    }
+                    var radians = localViewYaw * Mathf.Deg2Rad;
+                    var forward = new Vector2(
+                        Mathf.Sin(radians),
+                        Mathf.Cos(radians));
+                    input = TagChaseRules.CalculateFirstPersonMovement(
+                        localMove,
+                        localViewYaw,
+                        deltaSeconds);
+                    _facings[slot] = forward;
                 }
                 else
                 {
@@ -247,13 +244,13 @@ namespace MazeParty.Dev.MinigameSoloTest
                     }
                 }
 
-                var speed = slot == TaggerSlot
-                    ? NetworkTagChaseState.TaggerMoveSpeed
-                    : NetworkTagChaseState.RunnerMoveSpeed;
                 MovePlayer(
                     slot,
-                    Vector2.ClampMagnitude(input, 1f) *
-                    (speed * deltaSeconds));
+                    slot == LocalPlayerSlot
+                        ? input
+                        : Vector2.ClampMagnitude(input, 1f) *
+                          (TagChaseRules.PlayerMoveSpeed *
+                           deltaSeconds));
             }
         }
 

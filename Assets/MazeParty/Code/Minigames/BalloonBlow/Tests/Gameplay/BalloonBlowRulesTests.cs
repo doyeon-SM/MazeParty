@@ -66,6 +66,7 @@ namespace MazeParty.Gameplay.Tests
         {
             var round = new BalloonBlowRoundState(1);
             round.SetInflateHeld(0, true, 0d);
+            round.SetInflateHeld(1, true, 0d);
 
             round.AdvanceTo(1.999d);
             var player = round.GetPlayer(0);
@@ -82,6 +83,27 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(BalloonBlowPlayerPhase.Cooldown));
             Assert.That(player.CooldownEndsAtSeconds, Is.EqualTo(3.5d));
             Assert.That(player.RequiresReleaseToRearm, Is.True);
+            Assert.That(player.IsRecoveringFromOverhold, Is.True);
+
+            round.SetInflateHeld(1, false, 2.25d);
+            var releasedDuringPenalty = round.GetPlayer(1);
+            Assert.That(
+                releasedDuringPenalty.RequiresReleaseToRearm,
+                Is.False);
+            Assert.That(
+                releasedDuringPenalty.IsRecoveringFromOverhold,
+                Is.True);
+            round.AdvanceTo(3.499d);
+            Assert.That(
+                releasedDuringPenalty.IsRecoveringFromOverhold,
+                Is.True);
+            round.AdvanceTo(3.5d);
+            Assert.That(
+                releasedDuringPenalty.IsRecoveringFromOverhold,
+                Is.False);
+            Assert.That(
+                releasedDuringPenalty.Phase,
+                Is.EqualTo(BalloonBlowPlayerPhase.Ready));
 
             round.AdvanceTo(4d);
             Assert.That(

@@ -30,7 +30,7 @@ namespace MazeParty.Multiplayer
         public const float TileSize = 2.4f;
         public const float MovementSpeed = 5f;
         public const float RunnerCollisionRadius = 0.65f;
-        public const float PushRangeInTiles = 1.75f;
+        public const float PushRangeInTiles = 1.4875f;
         public const float PushConeDot = 0.62f;
 
         private const float MovementInputThreshold = 0.0001f;
@@ -115,10 +115,10 @@ namespace MazeParty.Multiplayer
             new Vector2[StableFootingRules.PlayerCount];
         private readonly Vector3[] _nextPositions =
             new Vector3[StableFootingRules.PlayerCount];
-        private readonly double[] _nextPushAllowedAt =
-            new double[StableFootingRules.PlayerCount];
-        private readonly double[] _pausedPushCooldownRemaining =
-            new double[StableFootingRules.PlayerCount];
+        private readonly StableFootingPushTimingState[] _pushTimingStates =
+            CreatePushTimingStates();
+        private readonly Vector2[] _pushCastFacings =
+            new Vector2[StableFootingRules.PlayerCount];
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[StableFootingRules.PlayerCount];
         private readonly List<StableFootingRoundResult> _roundResults =
@@ -213,6 +213,11 @@ namespace MazeParty.Multiplayer
             var now = ServerNow;
             if (Phase == NetworkStableFootingPhase.Running)
             {
+                ResolveCompletedPushCastsOnServer(now);
+                if (Phase != NetworkStableFootingPhase.Running)
+                {
+                    return;
+                }
                 RefreshCycleOnServer(now);
                 if (Phase != NetworkStableFootingPhase.Running)
                 {
@@ -270,8 +275,14 @@ namespace MazeParty.Multiplayer
 
             FreezeBoardAvatarsOnServer();
             var now = ServerNow;
+            ResolveCompletedPushCastsOnServer(now);
+            if (Phase != NetworkStableFootingPhase.Running ||
+                _roundState == null || _roundState.IsComplete)
+            {
+                return;
+            }
             RefreshCycleOnServer(now);
-            if (CyclePhase != StableFootingCyclePhase.Move ||
+            if (!StableFootingRules.CanMoveDuring(CyclePhase) ||
                 _roundState.IsComplete)
             {
                 return;
@@ -323,6 +334,7 @@ namespace MazeParty.Multiplayer
 
             avatar.StopServerInputOnServer();
             _avatars[slot] = avatar;
+            ResolveCompletedPushCastsOnServer(ServerNow);
             if (!CanAcceptInputForSlot(slot) || !IsFinite(input))
             {
                 _serverInputs[slot] = Vector2.zero;
@@ -339,14 +351,15 @@ namespace MazeParty.Multiplayer
 
         public bool TryPushOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!TryResolveAuthoritativeSlot(avatar, out var pusherSlot) ||
-                !CanAcceptInputForSlot(pusherSlot))
+            if (!TryResolveAuthoritativeSlot(avatar, out var pusherSlot))
             {
                 return false;
             }
 
             var now = ServerNow;
-            if (now < _nextPushAllowedAt[pusherSlot])
+            ResolveCompletedPushCastsOnServer(now);
+            if (!CanAcceptPushForSlot(pusherSlot) ||
+                !_pushTimingStates[pusherSlot].TryStartPush(now))
             {
                 return false;
             }
@@ -357,7 +370,56 @@ namespace MazeParty.Multiplayer
                 facing2D = Vector2.up;
             }
             facing2D.Normalize();
-            var facing = new Vector3(facing2D.x, 0f, facing2D.y);
+            _pushCastFacings[pusherSlot] = facing2D;
+            _serverInputs[pusherSlot] = Vector2.zero;
+            var origin = GetRunnerPosition(pusherSlot);
+            PlayPushPresentationRpc(
+                (byte)pusherSlot,
+                NoPlayerSlot,
+                origin);
+            return true;
+        }
+
+        private void ResolveCompletedPushCastsOnServer(double now)
+        {
+            for (var slot = 0;
+                 slot < StableFootingRules.PlayerCount;
+                 slot++)
+            {
+                if (!_pushTimingStates[slot].TryCompletePush(now))
+                {
+                    continue;
+                }
+                if (!_matchActive.Value ||
+                    Phase != NetworkStableFootingPhase.Running ||
+                    _roundState == null || _roundState.IsComplete ||
+                    IsEliminated(slot))
+                {
+                    continue;
+                }
+
+                ResolvePushOnServer(slot, _pushCastFacings[slot], now);
+                if (Phase != NetworkStableFootingPhase.Running)
+                {
+                    return;
+                }
+            }
+        }
+
+        private void ResolvePushOnServer(
+            int pusherSlot,
+            Vector2 castFacing,
+            double now)
+        {
+            if (castFacing.sqrMagnitude <= MovementInputThreshold)
+            {
+                castFacing = Vector2.up;
+            }
+            castFacing.Normalize();
+            var facing = new Vector3(
+                castFacing.x,
+                0f,
+                castFacing.y);
             var origin = GetRunnerPosition(pusherSlot);
             var maximumDistance = TileSize * PushRangeInTiles;
             var targetSlot = -1;
@@ -387,18 +449,9 @@ namespace MazeParty.Multiplayer
                 nearestDistance = distance;
             }
 
-            _nextPushAllowedAt[pusherSlot] =
-                now + StableFootingRules.PushCooldownSeconds;
             if (targetSlot < 0)
             {
-                // A valid push input still needs to read as an action even
-                // when nobody is inside the cone. Byte.MaxValue is decoded
-                // by the presentation RPC as a pusher-only animation.
-                PlayPushPresentationRpc(
-                    (byte)pusherSlot,
-                    byte.MaxValue,
-                    origin);
-                return true;
+                return;
             }
 
             for (var slot = 0;
@@ -409,8 +462,14 @@ namespace MazeParty.Multiplayer
             }
 
             var pushedFrom = _nextPositions[targetSlot];
+            var pushDirection = pushedFrom - origin;
+            pushDirection.y = 0f;
+            pushDirection = pushDirection.sqrMagnitude >
+                            MovementInputThreshold
+                ? pushDirection.normalized
+                : facing;
             var pushedTo = ClampRunnerPosition(
-                pushedFrom + facing *
+                pushedFrom + pushDirection *
                 (TileSize * StableFootingRules.PushDistanceInTiles));
             if (TryFindFirstUnsupportedPoint(
                     pushedFrom,
@@ -429,6 +488,8 @@ namespace MazeParty.Multiplayer
                 ResolveRunnerCollisions();
             }
             CommitNextPositionsOnServer();
+            _pushTimingStates[targetSlot].ApplyStun(now);
+            _serverInputs[targetSlot] = Vector2.zero;
 
             _lastPusherSlot.Value = (byte)pusherSlot;
             _lastPushTargetSlot.Value = (byte)targetSlot;
@@ -443,7 +504,6 @@ namespace MazeParty.Multiplayer
             {
                 CompleteCurrentRoundOnServer(now);
             }
-            return true;
         }
 
         [Rpc(
@@ -472,9 +532,16 @@ namespace MazeParty.Multiplayer
             return StableFootingRules.IsValidPlayerSlot(slot) &&
                    _matchActive.Value && !_paused.Value &&
                    Phase == NetworkStableFootingPhase.Running &&
-                   CyclePhase == StableFootingCyclePhase.Move &&
+                   StableFootingRules.CanMoveDuring(CyclePhase) &&
                    Remaining > 0d && CycleRemaining > 0d &&
-                   !IsEliminated(slot);
+                   !IsEliminated(slot) &&
+                   _pushTimingStates[slot].CanMove(ServerNow);
+        }
+
+        private bool CanAcceptPushForSlot(int slot)
+        {
+            return CanAcceptInputForSlot(slot) &&
+                   StableFootingRules.CanPushDuring(CyclePhase);
         }
 
         public Vector3 GetRunnerPosition(int slot)
@@ -597,6 +664,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (Phase == NetworkStableFootingPhase.Running)
+            {
+                ResolveCompletedPushCastsOnServer(now);
+            }
             _pausedPhaseRemaining.Value = _phaseEndsAt.Value > 0d
                 ? Math.Max(0d, _phaseEndsAt.Value - now)
                 : 0d;
@@ -613,9 +684,7 @@ namespace MazeParty.Multiplayer
                  slot < StableFootingRules.PlayerCount;
                  slot++)
             {
-                _pausedPushCooldownRemaining[slot] = Math.Max(
-                    0d,
-                    _nextPushAllowedAt[slot] - now);
+                _pushTimingStates[slot].Pause(now);
             }
 
             _phaseEndsAt.Value = 0d;
@@ -645,9 +714,7 @@ namespace MazeParty.Multiplayer
                  slot < StableFootingRules.PlayerCount;
                  slot++)
             {
-                _nextPushAllowedAt[slot] =
-                    now + _pausedPushCooldownRemaining[slot];
-                _pausedPushCooldownRemaining[slot] = 0d;
+                _pushTimingStates[slot].Resume(now);
             }
 
             _pausedPhaseRemaining.Value = 0d;
@@ -715,8 +782,8 @@ namespace MazeParty.Multiplayer
             {
                 _serverInputs[slot] = Vector2.zero;
                 _lastFacing[slot] = Vector2.up;
-                _nextPushAllowedAt[slot] = 0d;
-                _pausedPushCooldownRemaining[slot] = 0d;
+                _pushCastFacings[slot] = Vector2.up;
+                _pushTimingStates[slot].Reset();
                 SetRunnerPositionOnServer(
                     slot,
                     GetTileCenter(GetStartTileIndex(slot)));
@@ -889,7 +956,8 @@ namespace MazeParty.Multiplayer
                  slot++)
             {
                 var position = GetRunnerPosition(slot);
-                if (!IsEliminated(slot))
+                if (!IsEliminated(slot) &&
+                    _pushTimingStates[slot].CanMove(now))
                 {
                     var input = Vector2.ClampMagnitude(
                         _serverInputs[slot],
@@ -1314,10 +1382,22 @@ namespace MazeParty.Multiplayer
                 _serverInputs[slot] = Vector2.zero;
                 _lastFacing[slot] = Vector2.up;
                 _nextPositions[slot] = Vector3.zero;
-                _nextPushAllowedAt[slot] = 0d;
-                _pausedPushCooldownRemaining[slot] = 0d;
+                _pushCastFacings[slot] = Vector2.up;
+                _pushTimingStates[slot].Reset();
                 _avatars[slot] = null;
             }
+        }
+
+        private static StableFootingPushTimingState[]
+            CreatePushTimingStates()
+        {
+            var states = new StableFootingPushTimingState[
+                StableFootingRules.PlayerCount];
+            for (var slot = 0; slot < states.Length; slot++)
+            {
+                states[slot] = new StableFootingPushTimingState();
+            }
+            return states;
         }
 
         private static bool IsValidTileIndex(int tileIndex)

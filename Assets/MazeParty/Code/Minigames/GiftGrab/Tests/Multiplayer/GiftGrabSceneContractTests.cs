@@ -7,6 +7,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -16,6 +17,41 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
         private const string LabelPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
+
+        [Test]
+        public void ThrownGiftBoundary_UsesRadiusAdjustedExactContact()
+        {
+            var contactX = NetworkGiftGrabState.ArenaCenterX +
+                           NetworkGiftGrabState.ArenaHalfExtent -
+                           NetworkGiftGrabState.GiftCollisionRadius;
+            var start = new Vector2(contactX - 1f, 0f);
+
+            Assert.That(
+                NetworkGiftGrabState.TryGetGiftArenaBoundaryImpact(
+                    start,
+                    new Vector2(contactX - 0.001f, 0f),
+                    out _),
+                Is.False,
+                "A gift whose edge has not touched the wall must remain active.");
+            Assert.That(
+                NetworkGiftGrabState.TryGetGiftArenaBoundaryImpact(
+                    start,
+                    new Vector2(contactX, 0f),
+                    out var exactImpact),
+                Is.True,
+                "The gift must be consumed when its edge exactly touches the wall.");
+            Assert.That(exactImpact.x,
+                Is.EqualTo(contactX).Within(0.0001f));
+            Assert.That(exactImpact.y, Is.Zero.Within(0.0001f));
+
+            Assert.That(
+                NetworkGiftGrabState.TryGetGiftArenaBoundaryImpact(
+                    new Vector2(contactX, 0f),
+                    new Vector2(contactX - 0.25f, 0f),
+                    out _),
+                Is.False,
+                "A gift moving inward from the wall must not be consumed again.");
+        }
 
         [Test]
         public void ActionPresentationRpc_IsReliablePerEvent()
@@ -33,6 +69,90 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(parameters[2].ParameterType, Is.EqualTo(typeof(byte)));
             Assert.That(parameters[3].ParameterType,
                 Is.EqualTo(typeof(Vector2)));
+        }
+
+        [Test]
+        public void ServerSimulation_StunLocksMovementThroughExactBoundary()
+        {
+            var round = new GiftGrabRoundState(1);
+            Assert.That(round.ResolvePickup(1, 0, 0d).WasPickedUp,
+                Is.True);
+            Assert.That(round.ResolveThrow(1, 0d).WasThrown, Is.True);
+            Assert.That(round.ResolveThrownHit(0, 0, 0d).WasHit, Is.True);
+
+            var root = new GameObject("GiftGrab Stun Boundary Test");
+            try
+            {
+                var state = root.AddComponent<NetworkGiftGrabState>();
+                NetworkCountdownTestAccess.SetPrivateField(
+                    state,
+                    "_roundState",
+                    round);
+
+                var positions = GetPrivateField<Vector2[]>(
+                    state,
+                    "_playerPositions");
+                positions[0] = new Vector2(
+                    NetworkGiftGrabState.ArenaCenterX,
+                    0f);
+                positions[1] = new Vector2(
+                    NetworkGiftGrabState.ArenaCenterX + 6f,
+                    6f);
+                positions[2] = new Vector2(
+                    NetworkGiftGrabState.ArenaCenterX - 6f,
+                    6f);
+                positions[3] = new Vector2(
+                    NetworkGiftGrabState.ArenaCenterX + 6f,
+                    -6f);
+                var start = positions[0];
+
+                GetPrivateField<Vector2[]>(state, "_serverInputs")[0] =
+                    Vector2.right;
+                var initialized = GetPrivateField<bool[]>(
+                    state,
+                    "_giftPositionInitialized");
+                for (var index = 0; index < initialized.Length; index++)
+                {
+                    initialized[index] = true;
+                }
+
+                LogAssert.Expect(
+                    LogType.Warning,
+                    "NetworkVariable is written to, but doesn't know its " +
+                    "NetworkBehaviour yet. Are you modifying a " +
+                    "NetworkVariable before the NetworkObject is spawned?");
+                NetworkCountdownTestAccess.InvokePrivate(
+                    state,
+                    "SimulateToOnServer",
+                    0.499d);
+                Assert.That(positions[0], Is.EqualTo(start));
+
+                NetworkCountdownTestAccess.InvokePrivate(
+                    state,
+                    "SimulateToOnServer",
+                    GiftGrabRules.ThrowStunSeconds);
+                Assert.That(
+                    positions[0],
+                    Is.EqualTo(start),
+                    "The segment ending exactly at the stun boundary " +
+                    "must remain locked.");
+
+                NetworkCountdownTestAccess.InvokePrivate(
+                    state,
+                    "SimulateToOnServer",
+                    GiftGrabRules.ThrowStunSeconds + 0.01d);
+                Assert.That(
+                    positions[0].x,
+                    Is.EqualTo(
+                        start.x + GiftGrabRules.NormalMoveSpeed * 0.01f)
+                        .Within(0.0001f));
+                Assert.That(positions[0].y,
+                    Is.EqualTo(start.y).Within(0.0001f));
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+            }
         }
 
         [Test]
@@ -131,8 +251,11 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(baseAnchor, Is.Not.Null);
                     Assert.That(playerAnchor, Is.Not.Null);
                     var expectedBase = NetworkGiftGrabState.GetBaseCenter(slot);
+                    var expectedDeposit =
+                        NetworkGiftGrabState.GetDepositedGiftDisplayCenter(slot);
                     var expectedStart =
                         NetworkGiftGrabState.GetPlayerStartPosition(slot);
+                    var depositAnchor = view.DepositedGiftAnchors[slot];
                     Assert.That(baseAnchor.position.x,
                         Is.EqualTo(expectedBase.x).Within(0.001f));
                     Assert.That(baseAnchor.position.z,
@@ -141,6 +264,10 @@ namespace MazeParty.Multiplayer.Tests
                         Is.EqualTo(expectedStart.x).Within(0.001f));
                     Assert.That(playerAnchor.position.z,
                         Is.EqualTo(expectedStart.y).Within(0.001f));
+                    Assert.That(depositAnchor.position.x,
+                        Is.EqualTo(expectedDeposit.x).Within(0.001f));
+                    Assert.That(depositAnchor.position.z,
+                        Is.EqualTo(expectedDeposit.y).Within(0.001f));
                 }
                 for (var giftId = 0;
                      giftId < GiftGrabRules.TotalGiftCount;
@@ -225,6 +352,17 @@ namespace MazeParty.Multiplayer.Tests
                 }
             }
             return null;
+        }
+
+        private static T GetPrivateField<T>(
+            object target,
+            string fieldName)
+        {
+            var field = target.GetType().GetField(
+                fieldName,
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(field, Is.Not.Null, fieldName);
+            return (T)field.GetValue(target);
         }
     }
 }

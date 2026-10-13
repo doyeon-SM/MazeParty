@@ -25,7 +25,11 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         public const double MinimumMoveSeconds = 2d;
         public const double DropSeconds = 2d;
         public const double RestoreSeconds = 1d;
-        public const double PushCooldownSeconds = 0.65d;
+        public const double PushCastSeconds = 0.5d;
+        public const double PushStunSeconds = 0.5d;
+        public const double PushRecoverySeconds = 0.5d;
+        public const double PushCooldownSeconds =
+            PushCastSeconds + PushRecoverySeconds;
         public const float PushDistanceInTiles = 1.5f;
 
         public static int GetPointsForRank(int rank)
@@ -62,6 +66,17 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
             return playerSlot >= 0 && playerSlot < PlayerCount;
         }
 
+        public static bool CanMoveDuring(StableFootingCyclePhase phase)
+        {
+            return phase == StableFootingCyclePhase.ShuffleReveal ||
+                   phase == StableFootingCyclePhase.Move;
+        }
+
+        public static bool CanPushDuring(StableFootingCyclePhase phase)
+        {
+            return phase == StableFootingCyclePhase.Move;
+        }
+
         internal static void ValidateRoundNumber(int roundNumber)
         {
             if (roundNumber < 1 || roundNumber > RoundCount)
@@ -96,6 +111,129 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                     nameof(value),
                     value,
                     "Round time must be a finite non-negative value.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pure push clock shared by the server simulation and solo harness.
+    /// Deadlines use active server time, so pausing preserves every remaining
+    /// cast, stun and recovery interval without relying on frame duration.
+    /// </summary>
+    public sealed class StableFootingPushTimingState
+    {
+        private double _pausedCastRemaining;
+        private double _pausedStunRemaining;
+        private double _pausedRecoveryRemaining;
+
+        public bool IsCasting { get; private set; }
+        public bool IsPaused { get; private set; }
+        public double CastEndsAt { get; private set; }
+        public double StunnedUntil { get; private set; }
+        public double NextPushAllowedAt { get; private set; }
+
+        public bool CanMove(double now)
+        {
+            ValidateTime(now);
+            return !IsPaused && !IsCasting && now >= StunnedUntil;
+        }
+
+        public bool CanStartPush(double now)
+        {
+            ValidateTime(now);
+            return CanMove(now) && now >= NextPushAllowedAt;
+        }
+
+        public bool TryStartPush(double now)
+        {
+            if (!CanStartPush(now))
+            {
+                return false;
+            }
+
+            IsCasting = true;
+            CastEndsAt = now + StableFootingRules.PushCastSeconds;
+            NextPushAllowedAt = CastEndsAt +
+                                StableFootingRules.PushRecoverySeconds;
+            return true;
+        }
+
+        public bool TryCompletePush(double now)
+        {
+            ValidateTime(now);
+            if (IsPaused || !IsCasting || now < CastEndsAt)
+            {
+                return false;
+            }
+
+            IsCasting = false;
+            CastEndsAt = 0d;
+            return true;
+        }
+
+        public void ApplyStun(double now)
+        {
+            ValidateTime(now);
+            StunnedUntil = Math.Max(
+                StunnedUntil,
+                now + StableFootingRules.PushStunSeconds);
+        }
+
+        public void Pause(double now)
+        {
+            ValidateTime(now);
+            if (IsPaused)
+            {
+                return;
+            }
+
+            _pausedCastRemaining = IsCasting
+                ? Math.Max(0d, CastEndsAt - now)
+                : 0d;
+            _pausedStunRemaining = Math.Max(0d, StunnedUntil - now);
+            _pausedRecoveryRemaining = Math.Max(
+                0d,
+                NextPushAllowedAt - now);
+            IsPaused = true;
+        }
+
+        public void Resume(double now)
+        {
+            ValidateTime(now);
+            if (!IsPaused)
+            {
+                return;
+            }
+
+            if (IsCasting)
+            {
+                CastEndsAt = now + _pausedCastRemaining;
+            }
+            StunnedUntil = now + _pausedStunRemaining;
+            NextPushAllowedAt = now + _pausedRecoveryRemaining;
+            _pausedCastRemaining = 0d;
+            _pausedStunRemaining = 0d;
+            _pausedRecoveryRemaining = 0d;
+            IsPaused = false;
+        }
+
+        public void Reset()
+        {
+            IsCasting = false;
+            IsPaused = false;
+            CastEndsAt = 0d;
+            StunnedUntil = 0d;
+            NextPushAllowedAt = 0d;
+            _pausedCastRemaining = 0d;
+            _pausedStunRemaining = 0d;
+            _pausedRecoveryRemaining = 0d;
+        }
+
+        private static void ValidateTime(double now)
+        {
+            if (double.IsNaN(now) || double.IsInfinity(now) || now < 0d)
+            {
+                throw new ArgumentOutOfRangeException(nameof(now));
             }
         }
     }

@@ -22,9 +22,13 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         // Matches the project's 5 m/s base and 55% walking movement tier.
         public const double EmptyHandSpeed = 2.75d;
         public const double BombChaseSpeed = 6.5d;
-        public const double AttackDepth = 2.2d;
+        public const double BombCollisionRadius = 0.3d;
+        public const double AttackDepth = 1.87d;
         public const double AttackHalfWidth = 0.9d;
-        public const double AttackCooldownSeconds = 0.65d;
+        public const double AttackCastSeconds = 0.5d;
+        public const double AttackRecoverySeconds = 0.5d;
+        public const double AttackCooldownSeconds =
+            AttackCastSeconds + AttackRecoverySeconds;
         public const double StunSeconds = 0.5d;
         public const int SimulationHz = 60;
         public const double SimulationStepSeconds = 1d / SimulationHz;

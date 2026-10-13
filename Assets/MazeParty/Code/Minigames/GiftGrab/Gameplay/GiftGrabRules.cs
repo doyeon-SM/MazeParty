@@ -24,13 +24,16 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const float NormalMoveSpeed = 5f;
         public const float CarryMoveSpeed = 2.75f;
         public const float ThrowSpeed = 11f;
-        public const double ThrowStunSeconds = 1d;
+        public const double ThrowStunSeconds = 0.5d;
         public const double ThrowSelfHitImmunitySeconds = 0.25d;
-        public const float PushRange = 1.6f;
+        public const float PushRange = 1.36f;
         public const float PushRadius = 0.7f;
         public const float PushKnockbackDistance = 1.25f;
+        public const double PushCastSeconds = 0.5d;
         public const double PushStunSeconds = 0.5d;
-        public const double PushCooldownSeconds = 0.65d;
+        public const double PushReuseDelaySeconds = 0.5d;
+        public const double PushCooldownSeconds =
+            PushCastSeconds + PushReuseDelaySeconds;
         public const double RegrabLockSeconds = 0.25d;
 
         public const int NoPlayerSlot = -1;

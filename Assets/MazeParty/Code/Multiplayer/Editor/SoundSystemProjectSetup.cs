@@ -33,6 +33,10 @@ namespace MazeParty.Editor
             "Assets/Resources/sound/balloon.mp3";
         private const string LightningDefaultClipPath =
             "Assets/Resources/sound/lightning.mp3";
+        private const string MinefieldExplosionDefaultClipPath =
+            "Assets/Resources/sound/explosion.mp3";
+        private const string MinefieldScanDefaultClipPath =
+            "Assets/Resources/sound/mine.mp3";
 
         [MenuItem("MazeParty/Audio/Install Sound System")]
         public static void Install()
@@ -149,6 +153,12 @@ namespace MazeParty.Editor
 
             EnsureDefaultClip(SoundKeys.Balloon, BalloonDefaultClipPath);
             EnsureDefaultClip(SoundKeys.Lightning, LightningDefaultClipPath);
+            EnsureDefaultClip(
+                SoundKeys.MinigameMinefieldExplosion,
+                MinefieldExplosionDefaultClipPath);
+            EnsureDefaultClip(
+                SoundKeys.MinigameMinefieldScan,
+                MinefieldScanDefaultClipPath);
             return created;
         }
 
@@ -515,11 +525,20 @@ namespace MazeParty.Editor
                 priority = 80;
                 startOffsetSeconds = 0.21f;
             }
-            else if (key == SoundKeys.ItemExplosion)
+            else if (key == SoundKeys.ItemExplosion ||
+                     key == SoundKeys.MinigameMinefieldExplosion)
             {
                 spatial = true;
                 pitchVariance = 0.06f;
                 priority = 90;
+                maxDistance = 60f;
+            }
+            else if (key == SoundKeys.MinigameMinefieldScan)
+            {
+                spatial = true;
+                pitchVariance = 0.04f;
+                maxInstances = 4;
+                priority = 85;
                 maxDistance = 60f;
             }
             else if (key.StartsWith("combat.", StringComparison.Ordinal) ||

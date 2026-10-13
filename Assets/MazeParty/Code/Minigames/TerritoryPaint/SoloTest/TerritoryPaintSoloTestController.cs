@@ -332,7 +332,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                         _session.GetPaintOwner(x, y);
                     _pixels[y * resolution + x] =
                         owner < PlayerColors.Length
-                            ? PlayerColors[owner]
+                            ? TerritoryPaintNetworkView.GetFloorPaintColor(
+                                PlayerColors[owner])
                             : UnpaintedColor;
                 }
             }

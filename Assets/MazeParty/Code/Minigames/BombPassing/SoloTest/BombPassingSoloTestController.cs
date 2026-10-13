@@ -152,6 +152,10 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void OnDestroy()
         {
+            if (_match != null)
+            {
+                _match.InteractionResolved -= HandleInteractionResolved;
+            }
             if (_hud != null)
             {
                 _hud.BindActions(null, null, null);
@@ -282,8 +286,13 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void BeginMatch(int seed)
         {
+            if (_match != null)
+            {
+                _match.InteractionResolved -= HandleInteractionResolved;
+            }
             _seed = seed;
             _match = new BombPassingMatchState(seed);
+            _match.InteractionResolved += HandleInteractionResolved;
             _phase = SoloPhase.Countdown;
             _phaseElapsed = 0d;
             RefreshPresentation();
@@ -311,7 +320,11 @@ namespace MazeParty.Dev.MinigameSoloTest
             if (Mouse.current != null &&
                 Mouse.current.leftButton.wasPressedThisFrame)
             {
-                _match.TryAttack(LocalPlayerSlot);
+                if (_match.CanStartAttack(LocalPlayerSlot))
+                {
+                    _match.TryStartAttack(LocalPlayerSlot);
+                    _visuals[LocalPlayerSlot]?.TriggerPush();
+                }
             }
 
             for (var slot = 1; slot < BombPassingRules.PlayerCount;
@@ -372,9 +385,10 @@ namespace MazeParty.Dev.MinigameSoloTest
                 moveZ /= magnitude;
             }
             _match.SetMovementInput(slot, moveX, moveZ);
-            if (attack)
+            if (attack && _match.CanStartAttack(slot))
             {
-                _match.TryAttack(slot);
+                _match.TryStartAttack(slot);
+                _visuals[slot]?.TriggerPush();
             }
         }
 
@@ -438,11 +452,25 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _visuals[slot].SetOwnerFirstPerson(false);
                 _visuals[slot].SetTopViewHighlight(
                     slot == LocalPlayerSlot);
+                _visuals[slot].SetCrouching(player.IsStunned);
                 _visuals[slot].SetEliminated(player.IsEliminated);
             }
 
             RefreshBomb();
             RefreshDeveloperHud();
+        }
+
+        private void HandleInteractionResolved(
+            BombPassingInteraction interaction)
+        {
+            if (!interaction.WasApplied ||
+                !BombPassingRules.IsValidPlayerSlot(
+                    interaction.TargetSlot))
+            {
+                return;
+            }
+
+            _visuals[interaction.TargetSlot]?.TriggerHit();
         }
 
         private void RefreshBomb()

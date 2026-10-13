@@ -66,6 +66,8 @@ namespace MazeParty.Multiplayer
             CreateByteVariable();
         private readonly NetworkVariable<byte> _heldMask =
             CreateByteVariable();
+        private readonly NetworkVariable<byte> _overholdMask =
+            CreateByteVariable();
         private readonly NetworkVariable<uint> _popOrders =
             CreateUIntVariable();
         private readonly NetworkVariable<uint> _scores =
@@ -310,6 +312,10 @@ namespace MazeParty.Multiplayer
             !BalloonBlowRules.IsValidPlayerSlot(slot) ||
             IsMaskBitSet(_poppedMask.Value, slot);
 
+        public bool IsPlayerOverheld(int slot) =>
+            BalloonBlowRules.IsValidPlayerSlot(slot) &&
+            IsMaskBitSet(_overholdMask.Value, slot);
+
         public bool IsPlayerInputHeld(int slot) =>
             BalloonBlowRules.IsValidPlayerSlot(slot) &&
             IsMaskBitSet(_heldMask.Value, slot);
@@ -552,6 +558,7 @@ namespace MazeParty.Multiplayer
             var previousPoppedMask = _poppedMask.Value;
             byte poppedMask = 0;
             byte heldMask = 0;
+            byte overholdMask = 0;
             uint playerPhases = 0U;
             uint popOrders = 0U;
             var newestPoppedSlot = -1;
@@ -579,6 +586,10 @@ namespace MazeParty.Multiplayer
                 {
                     heldMask = SetMaskBit(heldMask, slot, true);
                 }
+                if (player.IsRecoveringFromOverhold)
+                {
+                    overholdMask = SetMaskBit(overholdMask, slot, true);
+                }
                 if (!player.IsPopped)
                 {
                     continue;
@@ -599,6 +610,7 @@ namespace MazeParty.Multiplayer
 
             _playerPhases.Value = playerPhases;
             _heldMask.Value = heldMask;
+            _overholdMask.Value = overholdMask;
             _poppedMask.Value = poppedMask;
             _popOrders.Value = popOrders;
             if (newestPoppedSlot >= 0)
@@ -748,6 +760,7 @@ namespace MazeParty.Multiplayer
             _playerPhases.Value = 0U;
             _poppedMask.Value = 0;
             _heldMask.Value = 0;
+            _overholdMask.Value = 0;
             _popOrders.Value = 0U;
             _scores.Value = 0U;
             _roundPoints.Value = 0U;

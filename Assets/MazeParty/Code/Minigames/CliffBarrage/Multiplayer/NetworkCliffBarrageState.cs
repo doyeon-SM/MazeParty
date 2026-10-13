@@ -364,8 +364,7 @@ namespace MazeParty.Multiplayer
                 FinishRoundOnServer(now);
                 return false;
             }
-            var pushApproved = _serverMatch.CanStartPush(slot);
-            var hit = _serverMatch.TryPush(slot);
+            var pushApproved = _serverMatch.TryPush(slot);
             if (pushApproved)
             {
                 PlayPushPresentationRpc((byte)slot);
@@ -375,7 +374,7 @@ namespace MazeParty.Multiplayer
             {
                 FinishRoundOnServer(now);
             }
-            return hit;
+            return pushApproved;
         }
 
         public Vector2 GetPlayerPosition(int slot)

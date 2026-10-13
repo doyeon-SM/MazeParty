@@ -1,4 +1,5 @@
 using MazeParty.Gameplay.Minigames;
+using MazeParty.Gameplay.Minigames.TagChase;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -39,8 +40,10 @@ namespace MazeParty.Multiplayer
         {
             var state = CurrentState;
             return state != null &&
-                   state.IsTagger(slot) &&
-                   state.IsMatchActive;
+                   TagChaseRules.CanUseFirstPersonControls(
+                       slot,
+                       state.IsMatchActive,
+                       state.IsCaught(slot));
         }
 
 

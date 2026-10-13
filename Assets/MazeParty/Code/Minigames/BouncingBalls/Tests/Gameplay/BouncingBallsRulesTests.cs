@@ -21,6 +21,24 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(expectedRailAxis));
         }
 
+        [TestCase(3, 0, 1, 4)]
+        [TestCase(3, 0, 0, 2)]
+        [TestCase(0, 0, 0, 0)]
+        [TestCase(3, BouncingBallsRules.NoOwnerSlot, 0, 3)]
+        public void GoalScoringRewardsOpponentsAndClampsOwnGoalsAtZero(
+            int currentScore,
+            int scorerSlot,
+            int defenderSlot,
+            int expectedScore)
+        {
+            Assert.That(
+                BouncingBallsRules.CalculateScoreAfterGoal(
+                    currentScore,
+                    scorerSlot,
+                    defenderSlot),
+                Is.EqualTo(expectedScore));
+        }
+
         [Test]
         public void SeedStartsThreeNeutralCenterBallsWithDeterministicDirections()
         {
@@ -56,6 +74,57 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void BallCollisionExchangesHeadOnVelocityAndSeparatesMatchBalls()
+        {
+            var first = new BouncingBallsBallSnapshot(
+                0, -0.1d, 0d, 1d, 0d, 0);
+            var second = new BouncingBallsBallSnapshot(
+                1, 0.1d, 0d, -1d, 0d, 1);
+
+            Assert.That(
+                BouncingBallsRules.TryResolveBallCollision(
+                    first,
+                    second,
+                    out var resolvedFirst,
+                    out var resolvedSecond),
+                Is.True);
+            Assert.That(resolvedFirst.X,
+                Is.EqualTo(-BouncingBallsRules.BallRadius)
+                    .Within(0.0000001d));
+            Assert.That(resolvedSecond.X,
+                Is.EqualTo(BouncingBallsRules.BallRadius)
+                    .Within(0.0000001d));
+            Assert.That(resolvedFirst.VelocityX, Is.EqualTo(-1d));
+            Assert.That(resolvedSecond.VelocityX, Is.EqualTo(1d));
+            Assert.That(resolvedFirst.OwnerSlot, Is.EqualTo(0));
+            Assert.That(resolvedSecond.OwnerSlot, Is.EqualTo(1));
+
+            var match = new BouncingBallsMatchState(1701);
+            match.AdvanceTo(BouncingBallsRules.SimulationStepSeconds);
+            for (var firstId = 0;
+                 firstId < BouncingBallsRules.BallCount - 1;
+                 firstId++)
+            {
+                for (var secondId = firstId + 1;
+                     secondId < BouncingBallsRules.BallCount;
+                     secondId++)
+                {
+                    var left = match.GetBall(firstId);
+                    var right = match.GetBall(secondId);
+                    var deltaX = right.X - left.X;
+                    var deltaY = right.Y - left.Y;
+                    var distance = Math.Sqrt(
+                        (deltaX * deltaX) + (deltaY * deltaY));
+                    Assert.That(
+                        distance,
+                        Is.GreaterThanOrEqualTo(
+                            (BouncingBallsRules.BallRadius * 2d) -
+                            0.0001d));
+                }
+            }
+        }
+
+        [Test]
         public void FixedStepSimulationIsIndependentOfUpdateChunking()
         {
             var batched = new BouncingBallsMatchState(2481);
@@ -74,10 +143,10 @@ namespace MazeParty.Gameplay.Tests
             AssertSameSimulation(batched, incremental);
             Assert.That(
                 batched.GetShield(0).Center,
-                Is.EqualTo(BouncingBallsRules.ShieldMaximumOffset));
+                Is.EqualTo(BouncingBallsRules.GoalHalfWidth));
             Assert.That(
                 batched.GetShield(2).Center,
-                Is.EqualTo(-BouncingBallsRules.ShieldMaximumOffset));
+                Is.EqualTo(-BouncingBallsRules.GoalHalfWidth));
         }
 
         [Test]
@@ -123,12 +192,17 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(SumConceded(match),
                     Is.EqualTo(previousConcededTotal + 1));
                 Assert.That(SumScores(match),
-                    Is.EqualTo(previousScoreTotal +
-                        (goal.AwardedPoint ? 1 : 0)));
+                    Is.EqualTo(previousScoreTotal + goal.ScoreDelta));
                 if (goal.AwardedPoint)
                 {
                     Assert.That(match.GetScore(goal.ScorerSlot),
                         Is.GreaterThanOrEqualTo(1));
+                }
+                else if (goal.WasOwnGoal)
+                {
+                    Assert.That(goal.ScoreDelta, Is.InRange(-1, 0));
+                    Assert.That(match.GetScore(goal.ScorerSlot),
+                        Is.GreaterThanOrEqualTo(0));
                 }
 
                 switch (goal.DefenderSlot)
@@ -170,7 +244,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void MatchUsesExactTwoRoundDeadlinesAndCumulativeScores()
+        public void MatchUsesExactTwoRoundDeadlinesAndPreservesScoresAtTransition()
         {
             var match = new BouncingBallsMatchState(8128);
             match.AdvanceTo(59.999d);
@@ -194,6 +268,11 @@ namespace MazeParty.Gameplay.Tests
             match.BeginNextRound();
             Assert.That(match.RoundNumber, Is.EqualTo(2));
             Assert.That(match.RoundElapsedSeconds, Is.Zero);
+            for (var slot = 0; slot < scoresAfterOne.Length; slot++)
+            {
+                Assert.That(match.GetScore(slot),
+                    Is.EqualTo(scoresAfterOne[slot]));
+            }
             for (var id = 0; id < BouncingBallsRules.BallCount; id++)
             {
                 var ball = match.GetBall(id);
@@ -208,7 +287,7 @@ namespace MazeParty.Gameplay.Tests
             for (var slot = 0; slot < scoresAfterOne.Length; slot++)
             {
                 Assert.That(match.GetScore(slot),
-                    Is.GreaterThanOrEqualTo(scoresAfterOne[slot]));
+                    Is.GreaterThanOrEqualTo(0));
             }
 
             var seenRanks = new bool[BouncingBallsRules.PlayerCount + 1];

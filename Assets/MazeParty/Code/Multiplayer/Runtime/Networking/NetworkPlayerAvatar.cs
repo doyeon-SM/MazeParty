@@ -20,6 +20,8 @@ namespace MazeParty.Multiplayer
         private const float BoardStartRecoveryHeight = 1f;
         private const float BoardStartAnchorHeightTolerance = 0.05f;
         private const float ControllerFootprintPadding = 0.02f;
+        private const float TagChaseInputRefreshSeconds = 0.1f;
+        private const float TagChaseYawSendIntervalSeconds = 0.05f;
 
         [SerializeField, Min(0.1f)] private float moveSpeed = 5f;
         [SerializeField, Min(0.01f)] private float lookSensitivity = 0.12f;
@@ -206,6 +208,7 @@ namespace MazeParty.Multiplayer
         private float _nextStableFootingInputRefresh;
         private float _nextGiftGrabInputRefresh;
         private float _nextTagChaseInputRefresh;
+        private float _nextTagChaseYawSendAt;
         private float _nextTerritoryPaintInputRefresh;
         private float _nextBombPassingInputRefresh;
         private float _nextCliffBarrageInputRefresh;

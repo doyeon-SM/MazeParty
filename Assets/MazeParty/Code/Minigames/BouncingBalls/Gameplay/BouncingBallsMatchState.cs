@@ -4,7 +4,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 {
     public readonly struct BouncingBallsBallSnapshot
     {
-        internal BouncingBallsBallSnapshot(
+        public BouncingBallsBallSnapshot(
             int id,
             double x,
             double y,
@@ -53,7 +53,8 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             double elapsedSeconds,
             int ballId,
             int defenderSlot,
-            int scorerSlot)
+            int scorerSlot,
+            int scoreDelta)
         {
             Sequence = sequence;
             RoundNumber = roundNumber;
@@ -61,6 +62,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             BallId = ballId;
             DefenderSlot = defenderSlot;
             ScorerSlot = scorerSlot;
+            ScoreDelta = scoreDelta;
         }
 
         public ulong Sequence { get; }
@@ -69,8 +71,11 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         public int BallId { get; }
         public int DefenderSlot { get; }
         public int ScorerSlot { get; }
-        public bool AwardedPoint =>
-            BouncingBallsRules.IsValidPlayerSlot(ScorerSlot);
+        public int ScoreDelta { get; }
+        public bool AwardedPoint => ScoreDelta > 0;
+        public bool WasOwnGoal =>
+            BouncingBallsRules.IsValidPlayerSlot(ScorerSlot) &&
+            ScorerSlot == DefenderSlot;
     }
 
     /// <summary>
@@ -82,6 +87,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
     {
         private const double TimeEpsilon = 0.000000001d;
         private const double Tau = Math.PI * 2d;
+        private const int BallCollisionSolverIterations = 12;
 
         private readonly BallState[] _balls =
             new BallState[BouncingBallsRules.BallCount];
@@ -93,6 +99,10 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             new int[BouncingBallsRules.PlayerCount];
         private readonly int[] _conceded =
             new int[BouncingBallsRules.PlayerCount];
+        private readonly double[] _previousBallX =
+            new double[BouncingBallsRules.BallCount];
+        private readonly double[] _previousBallY =
+            new double[BouncingBallsRules.BallCount];
         private uint _randomState;
         private int _simulatedSteps;
 
@@ -271,19 +281,68 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             for (var id = 0; id < _balls.Length; id++)
             {
                 var ball = _balls[id];
-                var oldX = ball.X;
-                var oldY = ball.Y;
+                _previousBallX[id] = ball.X;
+                _previousBallY[id] = ball.Y;
                 ball.X += ball.VelocityX * dt;
                 ball.Y += ball.VelocityY * dt;
+            }
 
+            ResolveBallCollisions();
+
+            for (var id = 0; id < _balls.Length; id++)
+            {
+                var ball = _balls[id];
                 for (var slot = 0;
                      slot < BouncingBallsRules.PlayerCount;
                      slot++)
                 {
-                    if (ResolveSide(ball, slot, oldX, oldY))
+                    if (ResolveSide(
+                            ball,
+                            slot,
+                            _previousBallX[id],
+                            _previousBallY[id]))
                     {
                         break;
                     }
+                }
+            }
+        }
+
+        private void ResolveBallCollisions()
+        {
+            for (var iteration = 0;
+                 iteration < BallCollisionSolverIterations;
+                 iteration++)
+            {
+                var foundOverlap = false;
+                for (var firstId = 0;
+                     firstId < _balls.Length - 1;
+                     firstId++)
+                {
+                    for (var secondId = firstId + 1;
+                         secondId < _balls.Length;
+                         secondId++)
+                    {
+                        var first = _balls[firstId].ToSnapshot();
+                        var second = _balls[secondId].ToSnapshot();
+                        if (!BouncingBallsRules.TryResolveBallCollision(
+                                first,
+                                second,
+                                out var resolvedFirst,
+                                out var resolvedSecond))
+                        {
+                            continue;
+                        }
+
+                        foundOverlap = true;
+                        _balls[firstId].Set(resolvedFirst);
+                        _balls[secondId].Set(resolvedSecond);
+                    }
+                }
+
+                if (!foundOverlap)
+                {
+                    break;
                 }
             }
         }
@@ -359,9 +418,16 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         private void ScoreGoal(BallState ball, int defenderSlot)
         {
             var scorerSlot = ball.OwnerSlot;
+            var scoreDelta = 0;
             if (BouncingBallsRules.IsValidPlayerSlot(scorerSlot))
             {
-                _scores[scorerSlot]++;
+                var previousScore = _scores[scorerSlot];
+                _scores[scorerSlot] =
+                    BouncingBallsRules.CalculateScoreAfterGoal(
+                        previousScore,
+                        scorerSlot,
+                        defenderSlot);
+                scoreDelta = _scores[scorerSlot] - previousScore;
             }
 
             _conceded[defenderSlot]++;
@@ -373,7 +439,8 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                     BouncingBallsRules.SimulationStepSeconds,
                 ball.Id,
                 defenderSlot,
-                scorerSlot);
+                scorerSlot,
+                scoreDelta);
             RespawnFromShield(ball, defenderSlot);
         }
 
@@ -505,6 +572,27 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 VelocityX = velocityX;
                 VelocityY = velocityY;
                 OwnerSlot = ownerSlot;
+            }
+
+            public void Set(BouncingBallsBallSnapshot snapshot)
+            {
+                Set(
+                    snapshot.X,
+                    snapshot.Y,
+                    snapshot.VelocityX,
+                    snapshot.VelocityY,
+                    snapshot.OwnerSlot);
+            }
+
+            public BouncingBallsBallSnapshot ToSnapshot()
+            {
+                return new BouncingBallsBallSnapshot(
+                    Id,
+                    X,
+                    Y,
+                    VelocityX,
+                    VelocityY,
+                    OwnerSlot);
             }
         }
     }

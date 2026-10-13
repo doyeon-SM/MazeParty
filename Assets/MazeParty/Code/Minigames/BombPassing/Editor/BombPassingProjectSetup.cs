@@ -34,10 +34,10 @@ namespace MazeParty.Editor
 
         private static readonly Vector3[] SpawnPoints =
         {
-            new Vector3(-5f, 0f, -5f),
-            new Vector3(5f, 0f, -5f),
-            new Vector3(5f, 0f, 5f),
-            new Vector3(-5f, 0f, 5f)
+            new Vector3(-6.5f, 0f, -6.5f),
+            new Vector3(6.5f, 0f, -6.5f),
+            new Vector3(6.5f, 0f, 6.5f),
+            new Vector3(-6.5f, 0f, 6.5f)
         };
 
         private static readonly Color[] PlayerColors =

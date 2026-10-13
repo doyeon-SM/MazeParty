@@ -563,7 +563,23 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _players[slot]?.Visual.TriggerPunch();
+            _players[slot]?.Visual.TriggerPush();
+        }
+
+        private void HandleInteractionPresentationRequested(
+            int actorSlot,
+            int targetSlot,
+            BombPassingInteractionKind interactionKind)
+        {
+            if (!_worldVisible ||
+                !BombPassingRules.IsValidPlayerSlot(actorSlot) ||
+                !BombPassingRules.IsValidPlayerSlot(targetSlot) ||
+                interactionKind == BombPassingInteractionKind.None)
+            {
+                return;
+            }
+
+            _players[targetSlot]?.Visual.TriggerHit();
         }
 
         private void EnsureActionPresentationSubscription()
@@ -579,6 +595,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedActionState.AttackPresentationRequested +=
                     HandleAttackPresentationRequested;
+                _subscribedActionState.InteractionPresentationRequested +=
+                    HandleInteractionPresentationRequested;
             }
         }
 
@@ -591,6 +609,8 @@ namespace MazeParty.Multiplayer
 
             _subscribedActionState.AttackPresentationRequested -=
                 HandleAttackPresentationRequested;
+            _subscribedActionState.InteractionPresentationRequested -=
+                HandleInteractionPresentationRequested;
             _subscribedActionState = null;
         }
 

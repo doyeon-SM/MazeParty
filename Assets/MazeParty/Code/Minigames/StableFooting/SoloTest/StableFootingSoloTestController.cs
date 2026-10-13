@@ -47,6 +47,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             new PlayerAvatarVisual[StableFootingRules.PlayerCount];
         private readonly ulong[] _seenEliminationOrders =
             new ulong[StableFootingRules.PlayerCount];
+        private readonly StableFootingPushTimingState[] _pushTimingStates =
+            CreatePushTimingStates();
 
         private GameObject _safeCross;
         private GameObject _safeCircle;
@@ -54,7 +56,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         private StableFootingSafeSymbolPresenter _safeSymbolPresenter;
         private Camera _runtimeCamera;
         private Vector3 _facingDirection = Vector3.forward;
-        private float _nextPushAt;
+        private Vector3 _pushCastFacing = Vector3.forward;
         private string _feedback = string.Empty;
         private MinigameSoloFeedbackStyle _feedbackStyle =
             MinigameSoloFeedbackStyle.Neutral;
@@ -369,12 +371,18 @@ namespace MazeParty.Dev.MinigameSoloTest
         private void SimulatePlayers()
         {
             var localPlayer = _session.LocalPlayer;
-            if (localPlayer == null || !localPlayer.IsAlive)
+            if (_session.Phase != StableFootingSoloPhase.Running ||
+                localPlayer == null || !localPlayer.IsAlive)
             {
                 return;
             }
 
-            if (_session.CurrentCyclePhase == StableFootingCyclePhase.Move)
+            var now = Time.unscaledTimeAsDouble;
+            ResolveCompletedPushCast(now);
+            var cyclePhase = _session.CurrentCyclePhase;
+            if (StableFootingRules.CanMoveDuring(cyclePhase) &&
+                _pushTimingStates[StableFootingSoloSession.LocalPlayerSlot]
+                    .CanMove(now))
             {
                 var input = ReadMovementInput();
                 if (input.sqrMagnitude > 0.0001f)
@@ -396,24 +404,38 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
 
                 var mouse = Mouse.current;
-                if (mouse != null &&
+                if (StableFootingRules.CanPushDuring(cyclePhase) &&
+                    mouse != null &&
                     mouse.leftButton.wasPressedThisFrame)
                 {
-                    TryPushNearestRunner();
+                    TryStartPush(now);
                 }
             }
 
             UpdatePlayerTileOccupancy();
         }
 
-        private void TryPushNearestRunner()
+        private void TryStartPush(double now)
         {
-            if (Time.unscaledTime < _nextPushAt)
+            var pushTiming =
+                _pushTimingStates[StableFootingSoloSession.LocalPlayerSlot];
+            if (!pushTiming.TryStartPush(now))
             {
                 return;
             }
-            _nextPushAt = Time.unscaledTime +
-                          (float)StableFootingRules.PushCooldownSeconds;
+            _pushCastFacing = _facingDirection;
+            _runnerVisuals[StableFootingSoloSession.LocalPlayerSlot]
+                ?.TriggerPush();
+        }
+
+        private void ResolveCompletedPushCast(double now)
+        {
+            var pushTiming =
+                _pushTimingStates[StableFootingSoloSession.LocalPlayerSlot];
+            if (!pushTiming.TryCompletePush(now))
+            {
+                return;
+            }
 
             var origin = LocalRunner.position;
             var bestSlot = -1;
@@ -435,7 +457,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     distance >= bestDistance ||
                     Vector3.Dot(
                         offset.normalized,
-                        _facingDirection) <
+                        _pushCastFacing) <
                     NetworkStableFootingState.PushConeDot)
                 {
                     continue;
@@ -457,8 +479,13 @@ namespace MazeParty.Dev.MinigameSoloTest
                 NetworkStableFootingState.TileSize *
                 StableFootingRules.PushDistanceInTiles;
             var pushedFrom = _runners[bestSlot].position;
+            var pushDirection = pushedFrom - origin;
+            pushDirection.y = 0f;
+            pushDirection = pushDirection.sqrMagnitude > 0.0001f
+                ? pushDirection.normalized
+                : _pushCastFacing;
             var pushedPosition = pushedFrom +
-                                 _facingDirection * distanceMeters;
+                                 pushDirection * distanceMeters;
             var cycle = _session.CurrentCycle;
             if (cycle != null)
             {
@@ -485,8 +512,9 @@ namespace MazeParty.Dev.MinigameSoloTest
             pushedPosition.y = RunnerHeight;
             _runners[bestSlot].position = pushedPosition;
             _runners[bestSlot].rotation = Quaternion.LookRotation(
-                _facingDirection,
+                pushDirection,
                 Vector3.up);
+            _pushTimingStates[bestSlot].ApplyStun(now);
             UpdatePlayerTileOccupancy();
             ShowFeedback(
                 "PUSHED PRACTICE " + (bestSlot + 1),
@@ -551,7 +579,13 @@ namespace MazeParty.Dev.MinigameSoloTest
                 0,
                 _seenEliminationOrders.Length);
             _facingDirection = Vector3.forward;
-            _nextPushAt = 0f;
+            _pushCastFacing = Vector3.forward;
+            for (var slot = 0;
+                 slot < _pushTimingStates.Length;
+                 slot++)
+            {
+                _pushTimingStates[slot].Reset();
+            }
             _feedback = string.Empty;
             _feedbackStyle = MinigameSoloFeedbackStyle.Neutral;
             _feedbackUntil = float.NegativeInfinity;
@@ -757,6 +791,18 @@ namespace MazeParty.Dev.MinigameSoloTest
                 (keyboard.aKey.isPressed ? 1f : 0f),
                 (keyboard.wKey.isPressed ? 1f : 0f) -
                 (keyboard.sKey.isPressed ? 1f : 0f));
+        }
+
+        private static StableFootingPushTimingState[]
+            CreatePushTimingStates()
+        {
+            var states = new StableFootingPushTimingState[
+                StableFootingRules.PlayerCount];
+            for (var slot = 0; slot < states.Length; slot++)
+            {
+                states[slot] = new StableFootingPushTimingState();
+            }
+            return states;
         }
 
         private void UpdateHud()

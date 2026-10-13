@@ -350,6 +350,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _balloonBodies[slot].gameObject.SetActive(true);
                 _balloonKnots[slot].gameObject.SetActive(true);
                 _playerVisuals[slot].SetMouthBlowing(false);
+                _playerVisuals[slot].SetCrouching(false);
                 _playerVisuals[slot].SetEliminated(false);
             }
         }
@@ -380,12 +381,16 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _balloonKnots[slot].gameObject.SetActive(!popped);
                 var inflating =
                     player.Phase == BalloonBlowPlayerPhase.Inflating;
-                _playerVisuals[slot].SetCrouching(inflating);
+                var releasedRest = !popped &&
+                    player.Phase == BalloonBlowPlayerPhase.Cooldown &&
+                    !player.IsRecoveringFromOverhold;
+                var forcedRest = !popped &&
+                    player.IsRecoveringFromOverhold &&
+                    player.Phase == BalloonBlowPlayerPhase.Cooldown;
+                _playerVisuals[slot].SetCrouching(releasedRest);
                 _playerVisuals[slot].SetMouthBlowing(
                     inflating && !popped);
-                _playerVisuals[slot].SetEliminated(
-                    !popped &&
-                    player.Phase == BalloonBlowPlayerPhase.Cooldown);
+                _playerVisuals[slot].SetEliminated(forcedRest);
                 var mouth = _playerVisuals[slot].Bindings?.MouthAnchor;
                 if (mouth != null)
                 {

@@ -11,6 +11,8 @@ namespace MazeParty.Gameplay.Tests
         {
             var cases = new[]
             {
+                (Inputs: "add", ExpectedSteps: 2),
+                (Inputs: "addda", ExpectedSteps: 3),
                 (Inputs: "aad", ExpectedSteps: 2),
                 (Inputs: "ada", ExpectedSteps: 3),
                 (Inputs: "dddd", ExpectedSteps: 1)

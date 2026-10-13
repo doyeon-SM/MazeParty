@@ -99,9 +99,17 @@ namespace MazeParty.Multiplayer.Tests
                 var hud = state.GetComponentInChildren<BouncingBallsHudBindings>(true);
                 Assert.That(hud, Is.Not.Null);
                 Assert.That(hud.HasRequiredReferences, Is.True);
+                Assert.That(hud.transform.localScale, Is.EqualTo(Vector3.one),
+                    "The authored HUD instance must remain visible.");
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         hud.gameObject), Is.EqualTo(HudPrefabPath));
+                var hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    HudPrefabPath);
+                Assert.That(hudPrefab, Is.Not.Null);
+                Assert.That(hudPrefab.transform.localScale,
+                    Is.EqualTo(Vector3.one),
+                    "The HUD prefab root must not collapse to zero scale.");
                 Assert.That(roots.SelectMany(root =>
                     root.GetComponentsInChildren<Canvas>(true)).Count(),
                     Is.EqualTo(1));
@@ -114,7 +122,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(cameras, Has.Length.EqualTo(1));
                 Assert.That(cameras[0].name, Is.EqualTo("CM_BouncingBallsShared"));
                 Assert.That(cameras[0].transform.position,
-                    Is.EqualTo(new Vector3(1260f, 0f, -20f)));
+                    Is.EqualTo(new Vector3(1260f, 0f, -30f)));
                 Assert.That(roots.SelectMany(root =>
                     root.GetComponentsInChildren<Camera>(true)), Is.Empty);
                 Assert.That(roots.SelectMany(root =>

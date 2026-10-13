@@ -13,20 +13,22 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/Minefield/Minefield.unity";
-        [Test]
-        public void HazardPresentationRpc_IsReliablePerEvent()
+        [TestCase("PlayHazardVfxRpc", 3)]
+        [TestCase("PlaySonarPresentationRpc", 2)]
+        public void PresentationRpc_IsReliablePerEvent(
+            string methodName,
+            int expectedParameterCount)
         {
             var rpc = typeof(NetworkMinefieldState).GetMethod(
-                "PlayHazardVfxRpc",
+                methodName,
                 BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.That(rpc, Is.Not.Null);
             Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
                 Is.EqualTo(RpcDelivery.Reliable));
             var parameters = rpc.GetParameters();
-            Assert.That(parameters, Has.Length.EqualTo(3));
+            Assert.That(parameters, Has.Length.EqualTo(expectedParameterCount));
             Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
-            Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(byte)));
-            Assert.That(parameters[2].ParameterType,
+            Assert.That(parameters[expectedParameterCount - 1].ParameterType,
                 Is.EqualTo(typeof(Vector3)));
         }
 
@@ -99,7 +101,7 @@ namespace MazeParty.Multiplayer.Tests
         private static void AssertAuthoritativeLayoutContract()
         {
             Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(3));
-            Assert.That(NetworkMinefieldState.MineCount, Is.EqualTo(20));
+            Assert.That(NetworkMinefieldState.MineCount, Is.EqualTo(35));
             Assert.That(NetworkMinefieldState.SonarRadius, Is.EqualTo(3f));
             Assert.That(
                 NetworkMinefieldState.SonarDetectionSeconds,
@@ -113,7 +115,7 @@ namespace MazeParty.Multiplayer.Tests
                     0x123456789ABCDEF0UL,
                     1),
                 Is.EqualTo(positions));
-            Assert.That(positions, Has.Length.EqualTo(20));
+            Assert.That(positions, Has.Length.EqualTo(35));
             for (var index = 0; index < positions.Length; index++)
             {
                 Assert.That(
@@ -153,7 +155,12 @@ namespace MazeParty.Multiplayer.Tests
                 stateType.GetField(
                     "_detonatedMineMask",
                     privateInstance)?.FieldType,
-                Is.EqualTo(typeof(uint)));
+                Is.EqualTo(typeof(ulong)));
+            Assert.That(
+                stateType.GetField(
+                    "_cachedDetonatedMask",
+                    privateInstance)?.FieldType,
+                Is.EqualTo(typeof(ulong)));
             Assert.That(
                 stateType.GetField(
                     "_revealedMinePositions",

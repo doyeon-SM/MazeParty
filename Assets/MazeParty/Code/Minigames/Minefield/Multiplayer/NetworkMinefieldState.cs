@@ -32,7 +32,7 @@ namespace MazeParty.Multiplayer
     {
         public const int GridWidth = 3;
         public const int GridHeight = 12;
-        public const int MineCount = 20;
+        public const int MineCount = 35;
         public const double CountdownSeconds = 3d;
         public const double RunSeconds = 40d;
         public const double RoundResultSeconds = 4d;
@@ -115,7 +115,7 @@ namespace MazeParty.Multiplayer
             CreateByteVariable();
         private readonly NetworkVariable<byte> _sonarMask =
             CreateByteVariable();
-        private uint _detonatedMineMask;
+        private ulong _detonatedMineMask;
         private readonly NetworkList<Vector3> _revealedMinePositions =
             new NetworkList<Vector3>(
                 default,
@@ -188,7 +188,7 @@ namespace MazeParty.Multiplayer
         private Vector3[] _cachedActiveMineWorldPositions = Array.Empty<Vector3>();
         private ulong _cachedLayoutSeed;
         private int _cachedLayoutRound = -1;
-        private uint _cachedDetonatedMask = uint.MaxValue;
+        private ulong _cachedDetonatedMask = ulong.MaxValue;
         private ulong _eventSequence;
         private bool _completionReported;
 
@@ -196,6 +196,7 @@ namespace MazeParty.Multiplayer
 
         public event Action<int, MinefieldHazardVfxKind, Vector3>
             HazardVfxRequested;
+        public event Action<int, Vector3> SonarPresentationRequested;
 
         public NetworkMinefieldPhase Phase =>
             (NetworkMinefieldPhase)_phase.Value;
@@ -414,6 +415,9 @@ namespace MazeParty.Multiplayer
             _sonarEndsAt[slot] = ServerNow + SonarDetectionSeconds;
             _sonarMask.Value = SetMaskBit(_sonarMask.Value, slot, true);
             RefreshSensorReplicationOnServer();
+            PlaySonarPresentationRpc(
+                (byte)slot,
+                GetRunnerPosition(slot));
             return true;
         }
 
@@ -627,7 +631,7 @@ namespace MazeParty.Multiplayer
             _eliminatedMask.Value = 0;
             _finishedMask.Value = 0;
             _sonarMask.Value = 0;
-            _detonatedMineMask = 0U;
+            _detonatedMineMask = 0UL;
             _eliminationCauses.Value = 0U;
             _sirenIntensities.Value = 0U;
             _revealedMinePositions.Clear();
@@ -701,8 +705,8 @@ namespace MazeParty.Multiplayer
                  mineIndex < _cachedMineWorldPositions.Length;
                  mineIndex++)
             {
-                var mineBit = 1U << mineIndex;
-                if ((_detonatedMineMask & mineBit) != 0U)
+                var mineBit = 1UL << mineIndex;
+                if ((_detonatedMineMask & mineBit) != 0UL)
                 {
                     continue;
                 }
@@ -825,6 +829,19 @@ namespace MazeParty.Multiplayer
                  kind == MinefieldHazardVfxKind.Crusher))
             {
                 HazardVfxRequested?.Invoke(slot, kind, position);
+            }
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlaySonarPresentationRpc(
+            byte slot,
+            Vector3 position)
+        {
+            if (MinefieldRules.IsValidPlayerSlot(slot))
+            {
+                SonarPresentationRequested?.Invoke(slot, position);
             }
         }
 
@@ -1263,7 +1280,7 @@ namespace MazeParty.Multiplayer
                  index < _cachedMineWorldPositions.Length;
                  index++)
             {
-                if ((detonatedMask & (1U << index)) == 0U)
+                if ((detonatedMask & (1UL << index)) == 0UL)
                 {
                     activeMines.Add(_cachedMineWorldPositions[index]);
                 }
@@ -1347,12 +1364,12 @@ namespace MazeParty.Multiplayer
         {
             _cachedLayoutRound = -1;
             _cachedLayoutSeed = 0UL;
-            _cachedDetonatedMask = uint.MaxValue;
+            _cachedDetonatedMask = ulong.MaxValue;
         }
 
         private void InvalidateActiveMineCache()
         {
-            _cachedDetonatedMask = uint.MaxValue;
+            _cachedDetonatedMask = ulong.MaxValue;
         }
 
         private void ResetReplicatedStateOnServer()
@@ -1369,7 +1386,7 @@ namespace MazeParty.Multiplayer
             _eliminatedMask.Value = 0;
             _finishedMask.Value = 0;
             _sonarMask.Value = 0;
-            _detonatedMineMask = 0U;
+            _detonatedMineMask = 0UL;
             _sirenIntensities.Value = 0U;
             _eliminationCauses.Value = 0U;
             _revealedMinePositions.Clear();

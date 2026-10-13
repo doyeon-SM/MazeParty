@@ -25,7 +25,9 @@ namespace MazeParty.Multiplayer
         Push,
         Drop,
         GiftSpawned,
-        BoundsReturn
+        BoundsReturn,
+        Destroyed,
+        PushCastStarted
     }
 
     public struct GiftGrabPlayerNetworkSnapshot :
@@ -35,6 +37,7 @@ namespace MazeParty.Multiplayer
         public Vector2 Position;
         public Vector2 Facing;
         public float StunRemainingSeconds;
+        public float PushCastRemainingSeconds;
         public float ActionCooldownRemainingSeconds;
         public byte CarriedGiftId;
         public byte StoredGiftCount;
@@ -45,6 +48,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref Position);
             serializer.SerializeValue(ref Facing);
             serializer.SerializeValue(ref StunRemainingSeconds);
+            serializer.SerializeValue(ref PushCastRemainingSeconds);
             serializer.SerializeValue(ref ActionCooldownRemainingSeconds);
             serializer.SerializeValue(ref CarriedGiftId);
             serializer.SerializeValue(ref StoredGiftCount);
@@ -56,6 +60,8 @@ namespace MazeParty.Multiplayer
                    Facing == other.Facing &&
                    StunRemainingSeconds.Equals(
                        other.StunRemainingSeconds) &&
+                   PushCastRemainingSeconds.Equals(
+                       other.PushCastRemainingSeconds) &&
                    ActionCooldownRemainingSeconds.Equals(
                        other.ActionCooldownRemainingSeconds) &&
                    CarriedGiftId == other.CarriedGiftId &&
@@ -74,6 +80,7 @@ namespace MazeParty.Multiplayer
             hash.Add(Position);
             hash.Add(Facing);
             hash.Add(StunRemainingSeconds);
+            hash.Add(PushCastRemainingSeconds);
             hash.Add(ActionCooldownRemainingSeconds);
             hash.Add(CarriedGiftId);
             hash.Add(StoredGiftCount);
@@ -231,6 +238,8 @@ namespace MazeParty.Multiplayer
         private readonly Vector2[] _playerPositions =
             new Vector2[GiftGrabRules.PlayerCount];
         private readonly Vector2[] _playerFacings =
+            new Vector2[GiftGrabRules.PlayerCount];
+        private readonly Vector2[] _pendingPushFacings =
             new Vector2[GiftGrabRules.PlayerCount];
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[GiftGrabRules.PlayerCount];
@@ -434,7 +443,7 @@ namespace MazeParty.Multiplayer
             var player = _roundState.GetPlayer(slot);
             var changed = player.IsCarryingGift
                 ? TryThrowOnServer(slot, elapsed)
-                : TryPushOnServer(slot, elapsed);
+                : TryStartPushOnServer(slot, elapsed);
             SyncSnapshotsOnServer();
             return changed;
         }
@@ -445,7 +454,8 @@ namespace MazeParty.Multiplayer
                    _matchActive.Value && !_paused.Value &&
                    Phase == NetworkGiftGrabPhase.Running &&
                    RemainingSeconds > 0d &&
-                   !IsPlayerStunned(slot);
+                   !IsPlayerStunned(slot) &&
+                   !IsPlayerPushCasting(slot);
         }
 
         public Vector2 GetPlayerPosition(int slot)
@@ -477,6 +487,18 @@ namespace MazeParty.Multiplayer
         public double GetPlayerStunRemainingSeconds(int slot)
         {
             return GetPlayerStunRemaining(slot);
+        }
+
+        public bool IsPlayerPushCasting(int slot)
+        {
+            return GetPlayerPushCastRemainingSeconds(slot) > 0d;
+        }
+
+        public double GetPlayerPushCastRemainingSeconds(int slot)
+        {
+            return TryGetPlayerSnapshot(slot, out var snapshot)
+                ? snapshot.PushCastRemainingSeconds
+                : 0d;
         }
 
         public double GetActionCooldownRemainingSeconds(int slot)
@@ -547,9 +569,14 @@ namespace MazeParty.Multiplayer
 
         public bool IsGiftActive(int giftId)
         {
-            return TryGetGiftSnapshot(giftId, out var snapshot) &&
-                   (GiftGrabGiftState)snapshot.State !=
-                   GiftGrabGiftState.Unspawned;
+            if (!TryGetGiftSnapshot(giftId, out var snapshot))
+            {
+                return false;
+            }
+
+            var giftState = (GiftGrabGiftState)snapshot.State;
+            return giftState != GiftGrabGiftState.Unspawned &&
+                   giftState != GiftGrabGiftState.Consumed;
         }
 
         public Vector2 GetGiftPosition(int giftId)
@@ -833,15 +860,26 @@ namespace MazeParty.Multiplayer
                 FinalInteractionEpsilonSeconds);
             while (_simulatedElapsed + 0.000000001d < interactionLimit)
             {
-                var next = Math.Min(
+                var stepLimit = Math.Min(
                     interactionLimit,
                     _simulatedElapsed + MaximumSimulationStepSeconds);
+                var next = GetNextActionLockBoundary(
+                    _simulatedElapsed,
+                    stepLimit);
                 var delta = (float)(next - _simulatedElapsed);
+                // Movement is integrated from the state at the start of the
+                // segment. Advancing first would unlock a stun on its exact
+                // end boundary and incorrectly grant this whole segment's
+                // movement.
+                SimulatePlayerMovementOnServer(delta);
                 _roundState.AdvanceTo(next);
                 InitializeNewGiftPositionsOnServer();
-                SimulatePlayerMovementOnServer(delta);
-                SimulateThrownGiftsOnServer(delta, next);
+                SimulateThrownGiftsOnServer(
+                    delta,
+                    _simulatedElapsed,
+                    next);
                 ResolveDepositsAndPickupsOnServer(next);
+                ResolveCompletedPushCastsOnServer(next);
                 UpdateCarriedAndStoredGiftPositions();
                 _simulatedElapsed = next;
             }
@@ -939,7 +977,7 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
                 var player = _roundState.GetPlayer(slot);
-                if (player.IsStunned)
+                if (!player.CanAct)
                 {
                     continue;
                 }
@@ -1033,23 +1071,90 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
-        private bool TryPushOnServer(int slot, double elapsed)
+        private bool TryStartPushOnServer(int slot, double elapsed)
         {
-            var target = FindPushTarget(slot);
-            var resolution = _roundState.ResolvePush(
-                slot,
-                target,
-                elapsed);
+            var resolution = _roundState.BeginPushCast(slot, elapsed);
             if (!resolution.WasStarted)
             {
                 return false;
             }
 
-            if (resolution.WasHit)
+            var facing = _playerFacings[slot].sqrMagnitude > 0.0001f
+                ? _playerFacings[slot].normalized
+                : Vector2.up;
+            _pendingPushFacings[slot] = facing;
+            RecordAction(
+                GiftGrabNetworkActionType.PushCastStarted,
+                slot,
+                GiftGrabRules.NoPlayerSlot,
+                GiftGrabRules.NoGiftId);
+            return true;
+        }
+
+        private double GetNextActionLockBoundary(
+            double currentElapsed,
+            double stepLimit)
+        {
+            var next = stepLimit;
+            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
-                var direction = _playerFacings[slot].sqrMagnitude > 0.0001f
-                    ? _playerFacings[slot].normalized
+                var player = _roundState.GetPlayer(slot);
+                if (player.IsPushCasting &&
+                    player.PushCastEndsAtSeconds >
+                    currentElapsed + 0.000000001d &&
+                    player.PushCastEndsAtSeconds < next)
+                {
+                    next = player.PushCastEndsAtSeconds;
+                }
+
+                if (player.StunnedUntilSeconds >
+                    currentElapsed + 0.000000001d &&
+                    player.StunnedUntilSeconds < next)
+                {
+                    next = player.StunnedUntilSeconds;
+                }
+            }
+
+            return next;
+        }
+
+        private void ResolveCompletedPushCastsOnServer(double elapsed)
+        {
+            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
+            {
+                var player = _roundState.GetPlayer(slot);
+                if (!player.IsPushCasting ||
+                    elapsed + 0.000000001d <
+                    player.PushCastEndsAtSeconds)
+                {
+                    continue;
+                }
+
+                var frozenFacing = _pendingPushFacings[slot].sqrMagnitude >
+                                   0.0001f
+                    ? _pendingPushFacings[slot].normalized
                     : Vector2.up;
+                var target = FindPushTarget(slot, frozenFacing);
+                var resolution = _roundState.ResolvePush(
+                    slot,
+                    target,
+                    elapsed);
+                _pendingPushFacings[slot] = Vector2.zero;
+                if (!resolution.WasHit)
+                {
+                    continue;
+                }
+
+                var direction = _playerPositions[target] -
+                                _playerPositions[slot];
+                if (direction.sqrMagnitude > 0.0001f)
+                {
+                    direction.Normalize();
+                }
+                else
+                {
+                    direction = frozenFacing;
+                }
                 var targetPosition = ResolvePlayerMovement(
                     target,
                     _playerPositions[target],
@@ -1061,22 +1166,22 @@ namespace MazeParty.Multiplayer
                     _giftPositions[resolution.DroppedGiftId] =
                         targetPosition;
                 }
-            }
 
-            RecordAction(
-                GiftGrabNetworkActionType.Push,
-                slot,
-                target,
-                resolution.DroppedGiftId);
-            return true;
+                RecordAction(
+                    GiftGrabNetworkActionType.Push,
+                    slot,
+                    target,
+                    resolution.DroppedGiftId);
+            }
         }
 
-        private int FindPushTarget(int attackerSlot)
+        private int FindPushTarget(
+            int attackerSlot,
+            Vector2 frozenFacing)
         {
             var origin = _playerPositions[attackerSlot];
-            var direction = _playerFacings[attackerSlot].sqrMagnitude >
-                            0.0001f
-                ? _playerFacings[attackerSlot].normalized
+            var direction = frozenFacing.sqrMagnitude > 0.0001f
+                ? frozenFacing.normalized
                 : Vector2.up;
             var bestSlot = GiftGrabRules.NoPlayerSlot;
             var bestForward = float.MaxValue;
@@ -1116,6 +1221,7 @@ namespace MazeParty.Multiplayer
 
         private void SimulateThrownGiftsOnServer(
             float deltaSeconds,
+            double segmentStartElapsed,
             double elapsed)
         {
             for (var giftId = 0;
@@ -1129,13 +1235,19 @@ namespace MazeParty.Multiplayer
                 }
 
                 var start = _giftPositions[giftId];
+                var travelDelta = Mathf.Min(
+                    deltaSeconds,
+                    (float)Math.Max(
+                        0d,
+                        _thrownEndsAt[giftId] - segmentStartElapsed));
                 var end = start +
-                          _thrownVelocities[giftId] * deltaSeconds;
+                          _thrownVelocities[giftId] * travelDelta;
                 var victim = FindFirstThrownVictim(
                     gift,
                     start,
                     end,
-                    elapsed,
+                    segmentStartElapsed,
+                    travelDelta,
                     out var collisionFraction);
                 if (victim != GiftGrabRules.NoPlayerSlot)
                 {
@@ -1143,9 +1255,13 @@ namespace MazeParty.Multiplayer
                         start,
                         end,
                         collisionFraction);
+                    var throwerSlot = gift.LastThrowerSlot;
+                    var impactElapsed = segmentStartElapsed +
+                        travelDelta * collisionFraction;
                     var hit = _roundState.ResolveThrownHit(
                         giftId,
                         victim,
+                        impactElapsed,
                         elapsed);
                     if (hit.WasHit)
                     {
@@ -1170,19 +1286,37 @@ namespace MazeParty.Multiplayer
                         }
                         RecordAction(
                             GiftGrabNetworkActionType.ThrownHit,
-                            gift.LastThrowerSlot,
+                            throwerSlot,
                             victim,
                             giftId);
                         continue;
                     }
                 }
 
-                _giftPositions[giftId] = end;
-                if (IsOutsideArena(end))
+                if (TryGetGiftArenaBoundaryImpact(
+                        start,
+                        end,
+                        out var boundaryImpact))
                 {
-                    ReturnGiftToCenterOnServer(giftId, elapsed);
+                    var throwerSlot = gift.LastThrowerSlot;
+                    _giftPositions[giftId] = boundaryImpact;
+                    var consumed = _roundState.ResolveThrownConsumed(
+                        giftId,
+                        elapsed);
+                    if (consumed.WasConsumed)
+                    {
+                        _thrownVelocities[giftId] = Vector2.zero;
+                        _thrownEndsAt[giftId] = 0d;
+                        RecordAction(
+                            GiftGrabNetworkActionType.Destroyed,
+                            throwerSlot,
+                            GiftGrabRules.NoPlayerSlot,
+                            giftId);
+                    }
                     continue;
                 }
+
+                _giftPositions[giftId] = end;
 
                 if (elapsed + 0.000000001d >= _thrownEndsAt[giftId])
                 {
@@ -1209,7 +1343,8 @@ namespace MazeParty.Multiplayer
             GiftGrabGiftRoundState gift,
             Vector2 start,
             Vector2 end,
-            double elapsed,
+            double segmentStartElapsed,
+            float travelDelta,
             out float collisionFraction)
         {
             var result = GiftGrabRules.NoPlayerSlot;
@@ -1217,19 +1352,21 @@ namespace MazeParty.Multiplayer
             var radius = PlayerCollisionRadius + GiftCollisionRadius;
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
-                if (gift.LastThrowerSlot == slot &&
-                    elapsed + 0.000000001d <
-                    gift.ThrowerImmunityEndsAtSeconds)
-                {
-                    continue;
-                }
-
                 if (!TrySegmentCircleIntersection(
                         start,
                         end,
                         _playerPositions[slot],
                         radius,
                         out var fraction))
+                {
+                    continue;
+                }
+
+                var impactElapsed = segmentStartElapsed +
+                    travelDelta * fraction;
+                if (gift.LastThrowerSlot == slot &&
+                    impactElapsed + 0.000000001d <
+                    gift.ThrowerImmunityEndsAtSeconds)
                 {
                     continue;
                 }
@@ -1308,6 +1445,7 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
                 _playerPositions[slot] = GetPlayerStartPosition(slot);
+                _pendingPushFacings[slot] = Vector2.zero;
                 var towardCenter =
                     new Vector2(ArenaCenterX, 0f) -
                     _playerPositions[slot];
@@ -1384,16 +1522,37 @@ namespace MazeParty.Multiplayer
                    CentralSpawnOffsets[orderedIndex];
         }
 
-        private static Vector2 GetStoredGiftPosition(
+        public static Vector2 GetDepositedGiftDisplayCenter(int ownerSlot)
+        {
+            var baseCenter = GetBaseCenter(ownerSlot);
+            var towardArenaCenter =
+                new Vector2(ArenaCenterX, 0f) - baseCenter;
+            return baseCenter + towardArenaCenter.normalized * 0.5f;
+        }
+
+        private Vector2 GetStoredGiftPosition(
             int ownerSlot,
             int giftId)
         {
-            var column = giftId % 5;
-            var row = (giftId / 5) % 4;
+            var stackIndex = 0;
+            for (var candidateGiftId = 0;
+                 candidateGiftId < giftId;
+                 candidateGiftId++)
+            {
+                var candidate = _roundState.GetGift(candidateGiftId);
+                if (candidate.State == GiftGrabGiftState.Stored &&
+                    candidate.StoredOwnerSlot == ownerSlot)
+                {
+                    stackIndex++;
+                }
+            }
+
+            var column = stackIndex % 5;
+            var row = (stackIndex / 5) % 4;
             var offset = new Vector2(
-                (column - 2f) * 0.43f,
-                (row - 1.5f) * 0.43f);
-            return GetBaseCenter(ownerSlot) + offset;
+                (column - 2f) * 0.55f,
+                (row - 1.5f) * 0.55f);
+            return GetDepositedGiftDisplayCenter(ownerSlot) + offset;
         }
 
         private Vector2 GetCarriedGiftPosition(int carrierSlot)
@@ -1447,6 +1606,12 @@ namespace MazeParty.Multiplayer
                         ? (float)Math.Max(
                             0d,
                             player.StunnedUntilSeconds - elapsed)
+                        : 0f,
+                    PushCastRemainingSeconds = player != null &&
+                                               player.IsPushCasting
+                        ? (float)Math.Max(
+                            0d,
+                            player.PushCastEndsAtSeconds - elapsed)
                         : 0f,
                     ActionCooldownRemainingSeconds = player != null
                         ? (float)Math.Max(
@@ -1545,10 +1710,12 @@ namespace MazeParty.Multiplayer
                 case GiftGrabNetworkActionType.Push:
                 case GiftGrabNetworkActionType.ThrownHit:
                     return targetPosition;
+                case GiftGrabNetworkActionType.PushCastStarted:
                 case GiftGrabNetworkActionType.Throw:
                     return actorPosition;
                 case GiftGrabNetworkActionType.Drop:
                 case GiftGrabNetworkActionType.BoundsReturn:
+                case GiftGrabNetworkActionType.Destroyed:
                     return GiftGrabRules.IsValidGiftId(giftId)
                         ? _giftPositions[giftId]
                         : targetPosition;
@@ -1570,7 +1737,7 @@ namespace MazeParty.Multiplayer
         {
             var actionType = (GiftGrabNetworkActionType)actionTypeValue;
             if (actionType > GiftGrabNetworkActionType.None &&
-                actionType <= GiftGrabNetworkActionType.BoundsReturn)
+                actionType <= GiftGrabNetworkActionType.PushCastStarted)
             {
                 ActionPresentationRequested?.Invoke(
                     actionType,
@@ -1729,12 +1896,57 @@ namespace MazeParty.Multiplayer
                     ArenaHalfExtent - inset));
         }
 
-        private static bool IsOutsideArena(Vector2 position)
+        public static bool TryGetGiftArenaBoundaryImpact(
+            Vector2 start,
+            Vector2 end,
+            out Vector2 impact)
         {
-            return position.x < ArenaCenterX - ArenaHalfExtent ||
-                   position.x > ArenaCenterX + ArenaHalfExtent ||
-                   position.y < -ArenaHalfExtent ||
-                   position.y > ArenaHalfExtent;
+            var minX = ArenaCenterX - ArenaHalfExtent +
+                       GiftCollisionRadius;
+            var maxX = ArenaCenterX + ArenaHalfExtent -
+                       GiftCollisionRadius;
+            var minY = -ArenaHalfExtent + GiftCollisionRadius;
+            var maxY = ArenaHalfExtent - GiftCollisionRadius;
+            var clampedStart = new Vector2(
+                Mathf.Clamp(start.x, minX, maxX),
+                Mathf.Clamp(start.y, minY, maxY));
+            if (start.x < minX || start.x > maxX ||
+                start.y < minY || start.y > maxY)
+            {
+                impact = clampedStart;
+                return true;
+            }
+
+            var delta = end - start;
+            var fraction = 1f;
+            var collided = false;
+
+            if (delta.x < 0f && end.x <= minX)
+            {
+                fraction = Mathf.Min(fraction, (minX - start.x) / delta.x);
+                collided = true;
+            }
+            else if (delta.x > 0f && end.x >= maxX)
+            {
+                fraction = Mathf.Min(fraction, (maxX - start.x) / delta.x);
+                collided = true;
+            }
+
+            if (delta.y < 0f && end.y <= minY)
+            {
+                fraction = Mathf.Min(fraction, (minY - start.y) / delta.y);
+                collided = true;
+            }
+            else if (delta.y > 0f && end.y >= maxY)
+            {
+                fraction = Mathf.Min(fraction, (maxY - start.y) / delta.y);
+                collided = true;
+            }
+
+            impact = collided
+                ? Vector2.Lerp(start, end, Mathf.Clamp01(fraction))
+                : end;
+            return collided;
         }
 
         private void ResetReplicatedStateOnServer()
@@ -1817,6 +2029,7 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < _avatars.Length; slot++)
             {
                 _avatars[slot] = null;
+                _pendingPushFacings[slot] = Vector2.zero;
             }
         }
 

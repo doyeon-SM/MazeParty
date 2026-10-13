@@ -425,7 +425,13 @@ namespace MazeParty.Dev.MinigameSoloTest
             var recentGoal = _match.LastGoal;
             var feedback = recentGoal.HasValue &&
                 recentGoal.Value.RoundNumber == _match.RoundNumber
-                    ? recentGoal.Value.AwardedPoint
+                    ? recentGoal.Value.WasOwnGoal
+                        ? "P" + (recentGoal.Value.ScorerSlot + 1) +
+                          " OWN GOAL" +
+                          (recentGoal.Value.ScoreDelta < 0
+                              ? " · SCORE -1"
+                              : " · SCORE REMAINS 0")
+                        : recentGoal.Value.AwardedPoint
                         ? "P" + (recentGoal.Value.ScorerSlot + 1) +
                           " SCORED IN P" +
                           (recentGoal.Value.DefenderSlot + 1) +

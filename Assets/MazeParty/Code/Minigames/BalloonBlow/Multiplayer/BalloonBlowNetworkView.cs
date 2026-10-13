@@ -328,12 +328,16 @@ namespace MazeParty.Multiplayer
                     : null;
                 var mouth = player?.Visual?.Bindings?.MouthAnchor;
                 var phase = state.GetPlayerPhase(slot);
-                var coughing = !popped &&
-                               phase == BalloonBlowPlayerPhase.Cooldown;
-                var blowing = !popped && !coughing &&
+                var overheld = state.IsPlayerOverheld(slot);
+                var releasedRest = !popped && !overheld &&
+                    phase == BalloonBlowPlayerPhase.Cooldown;
+                var forcedRest = !popped && overheld &&
+                    phase == BalloonBlowPlayerPhase.Cooldown;
+                var blowing = !popped && !releasedRest && !forcedRest &&
                               phase == BalloonBlowPlayerPhase.Inflating;
                 player?.Visual?.SetMouthBlowing(blowing);
-                player?.Visual?.SetEliminated(coughing);
+                player?.Visual?.SetCrouching(releasedRest);
+                player?.Visual?.SetEliminated(forcedRest);
                 if (mouth != null)
                 {
                     balloon.FollowMouth(

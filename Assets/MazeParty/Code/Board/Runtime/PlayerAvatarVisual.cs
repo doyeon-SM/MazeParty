@@ -512,7 +512,9 @@ namespace MazeParty.Gameplay
                 Time.deltaTime * 8f);
             _leftPunchTimer = Mathf.MoveTowards(_leftPunchTimer, 0f, Time.deltaTime * 4.5f);
             _rightPunchTimer = Mathf.MoveTowards(_rightPunchTimer, 0f, Time.deltaTime * 4.5f);
-            _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 4.5f);
+            // The shared push action deliberately reads for the full cast
+            // window used by the minigame rules (0.5 seconds).
+            _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 2f);
             _bodyHitTimer = Mathf.MoveTowards(_bodyHitTimer, 0f, Time.deltaTime * 1.9f);
             _headHitTimer = Mathf.MoveTowards(_headHitTimer, 0f, Time.deltaTime * 1.9f);
             _handHitTimer = Mathf.MoveTowards(_handHitTimer, 0f, Time.deltaTime * 2.5f);

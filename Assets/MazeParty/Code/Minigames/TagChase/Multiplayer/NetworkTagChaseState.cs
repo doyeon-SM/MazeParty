@@ -62,8 +62,7 @@ namespace MazeParty.Multiplayer
         public const float ArenaHalfDepth = 10f;
         public const float PlayerCollisionRadius =
             PlayerAvatarVisual.MovementControllerRadius;
-        public const float RunnerMoveSpeed = 2.75f;
-        public const float TaggerMoveSpeed = 5f;
+        public const float PlayerMoveSpeed = TagChaseRules.PlayerMoveSpeed;
         public const float CatchRange = 2.15f;
         public const float CatchFacingCosine = 0.45f;
         public const double CatchCooldownSeconds = 0.65d;
@@ -292,9 +291,9 @@ namespace MazeParty.Multiplayer
             uint inputEpoch)
         {
             if (!TryResolveAuthoritativeSlot(avatar, out var slot) ||
-                slot != TaggerSlot ||
                 !ValidateInputEnvelope(roundNumber, inputEpoch) ||
-                !IsFinite(yaw))
+                !IsFinite(yaw) ||
+                IsCaught(slot))
             {
                 return false;
             }
@@ -704,37 +703,16 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
-                Vector2 direction;
-                if (slot == TaggerSlot)
-                {
-                    var forward =
-                        DirectionFromYaw(_serverViewYaw[slot]);
-                    var right =
-                        new Vector2(forward.y, -forward.x);
-                    direction =
-                        Vector2.ClampMagnitude(
-                            right * input.x +
-                            forward * input.y,
-                            1f);
-                }
-                else
-                {
-                    direction = input;
-                }
-
-                var speed = slot == TaggerSlot
-                    ? TaggerMoveSpeed
-                    : RunnerMoveSpeed;
+                var forward = DirectionFromYaw(_serverViewYaw[slot]);
                 _playerPositions[slot] =
                     ResolvePlayerMovement(
                         slot,
                         _playerPositions[slot],
-                        direction * speed * deltaSeconds);
-                if (direction.sqrMagnitude > 0.0001f)
-                {
-                    _playerFacings[slot] =
-                        direction.normalized;
-                }
+                        TagChaseRules.CalculateFirstPersonMovement(
+                            input,
+                            _serverViewYaw[slot],
+                            deltaSeconds));
+                _playerFacings[slot] = forward;
             }
         }
 

@@ -1,6 +1,9 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames.BombPassing;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -14,6 +17,10 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/BombPassing/BombPassing.unity";
+        private const string EnvironmentPrefabPath =
+            "Assets/MazeParty/Prefabs/Minigames/BombPassing/" +
+            "BombPassingEnvironment.prefab";
+        private const float GeometryTolerance = 0.001f;
 
         [Test]
         public void AttackPresentationRpc_IsReliablePerEvent()
@@ -27,6 +34,71 @@ namespace MazeParty.Multiplayer.Tests
             var parameters = rpc.GetParameters();
             Assert.That(parameters, Has.Length.EqualTo(1));
             Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+        }
+
+        [Test]
+        public void InteractionPresentationRpc_IsReliablePerResolvedHit()
+        {
+            var rpc = typeof(NetworkBombPassingState).GetMethod(
+                "PlayInteractionPresentationRpc",
+                BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.That(rpc, Is.Not.Null);
+            Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
+                Is.EqualTo(RpcDelivery.Reliable));
+            Assert.That(
+                rpc.GetParameters().Select(parameter => parameter.ParameterType),
+                Is.EqualTo(new[]
+                {
+                    typeof(byte),
+                    typeof(byte),
+                    typeof(byte)
+                }));
+        }
+
+        [Test]
+        public void EnvironmentBlockingVisualsMatchBakedCollisionLayout()
+        {
+            var environment =
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    EnvironmentPrefabPath);
+            Assert.That(environment, Is.Not.Null);
+
+            var authoredRects = environment
+                .GetComponentsInChildren<Renderer>(true)
+                .Where(IsAuthoredBlockingVisual)
+                .Select(renderer =>
+                {
+                    var bounds = renderer.bounds;
+                    return new Rect(
+                        bounds.min.x,
+                        bounds.min.z,
+                        bounds.size.x,
+                        bounds.size.z);
+                })
+                .ToList();
+
+            Assert.That(authoredRects, Has.Count.EqualTo(23));
+            Assert.That(
+                BombPassingArenaCollisionLayout.BlockingRectCount,
+                Is.EqualTo(authoredRects.Count));
+
+            var unmatched = new List<Rect>(authoredRects);
+            foreach (var bakedRect in
+                     BombPassingArenaCollisionLayout.BlockingRects)
+            {
+                var matchIndex = unmatched.FindIndex(
+                    authoredRect => RectApproximatelyEquals(
+                        authoredRect,
+                        bakedRect));
+                Assert.That(
+                    matchIndex,
+                    Is.GreaterThanOrEqualTo(0),
+                    "No authored wall or pillar matches baked rect " +
+                    bakedRect + ".");
+                unmatched.RemoveAt(matchIndex);
+            }
+
+            Assert.That(unmatched, Is.Empty);
         }
 
         [Test]
@@ -82,10 +154,10 @@ namespace MazeParty.Multiplayer.Tests
                     Is.Not.Null);
                 var spawnCoordinates = new[]
                 {
-                    new Vector2(-5f, -5f),
-                    new Vector2(5f, -5f),
-                    new Vector2(5f, 5f),
-                    new Vector2(-5f, 5f)
+                    new Vector2(-6.5f, -6.5f),
+                    new Vector2(6.5f, -6.5f),
+                    new Vector2(6.5f, 6.5f),
+                    new Vector2(-6.5f, 6.5f)
                 };
                 for (var slot = 0; slot < spawnCoordinates.Length; slot++)
                 {
@@ -176,6 +248,33 @@ namespace MazeParty.Multiplayer.Tests
             var field = lens.GetType().GetField(fieldName);
             Assert.That(field, Is.Not.Null);
             return (float)field.GetValue(lens);
+        }
+
+        private static bool IsAuthoredBlockingVisual(Renderer renderer)
+        {
+            return renderer.name.StartsWith(
+                       "Wall_3M",
+                       StringComparison.Ordinal) ||
+                   renderer.name.StartsWith(
+                       "Pilar",
+                       StringComparison.Ordinal) ||
+                   renderer.name.StartsWith(
+                       "Pillar",
+                       StringComparison.Ordinal);
+        }
+
+        private static bool RectApproximatelyEquals(
+            Rect left,
+            Rect right)
+        {
+            return Mathf.Abs(left.xMin - right.xMin) <=
+                   GeometryTolerance &&
+                   Mathf.Abs(left.yMin - right.yMin) <=
+                   GeometryTolerance &&
+                   Mathf.Abs(left.width - right.width) <=
+                   GeometryTolerance &&
+                   Mathf.Abs(left.height - right.height) <=
+                   GeometryTolerance;
         }
 
         private static Transform FindDescendant(Transform root, string name)

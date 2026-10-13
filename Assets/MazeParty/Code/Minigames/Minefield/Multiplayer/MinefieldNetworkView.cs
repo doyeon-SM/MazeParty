@@ -409,7 +409,8 @@ namespace MazeParty.Multiplayer
                     ? 0f
                     : state.GetSirenIntensity(slot);
                 ApplySiren(view, intensity);
-                view.SonarPulse.enabled = state.IsSonarActive(slot);
+                var sonarActive = state.IsSonarActive(slot);
+                view.SonarPulse.enabled = sonarActive;
             }
         }
 
@@ -481,6 +482,9 @@ namespace MazeParty.Multiplayer
             switch (kind)
             {
                 case MinefieldHazardVfxKind.Mine:
+                    GameSound.PlayAt(
+                        SoundKeys.MinigameMinefieldExplosion,
+                        hazardPosition);
                     if (mineExplosionVfxPrefab != null)
                     {
                         OneShotVfxPool.Play(
@@ -507,6 +511,22 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private void HandleSonarPresentationRequested(
+            int slot,
+            Vector3 runnerPosition)
+        {
+            if (!_worldVisible ||
+                !MinefieldRules.IsValidPlayerSlot(slot))
+            {
+                return;
+            }
+
+            var view = _runners[slot];
+            GameSound.PlayAt(
+                SoundKeys.MinigameMinefieldScan,
+                view != null ? view.Root.position : runnerPosition);
+        }
+
         private void EnsureHazardVfxSubscription()
         {
             if (_subscribedVfxState == state)
@@ -519,6 +539,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.HazardVfxRequested +=
                     HandleHazardVfxRequested;
+                _subscribedVfxState.SonarPresentationRequested +=
+                    HandleSonarPresentationRequested;
             }
         }
 
@@ -528,6 +550,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.HazardVfxRequested -=
                     HandleHazardVfxRequested;
+                _subscribedVfxState.SonarPresentationRequested -=
+                    HandleSonarPresentationRequested;
                 _subscribedVfxState = null;
             }
         }

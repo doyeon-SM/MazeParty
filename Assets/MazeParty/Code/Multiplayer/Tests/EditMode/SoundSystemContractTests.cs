@@ -25,6 +25,10 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Resources/sound/balloon.mp3";
         private const string LightningClipPath =
             "Assets/Resources/sound/lightning.mp3";
+        private const string MinefieldExplosionClipPath =
+            "Assets/Resources/sound/explosion.mp3";
+        private const string MinefieldScanClipPath =
+            "Assets/Resources/sound/mine.mp3";
 
         [Test]
         public void SoundSystemPrefab_MixerAndLibrary_CoverEveryKey()
@@ -96,6 +100,14 @@ namespace MazeParty.Multiplayer.Tests
                 library,
                 SoundKeys.Lightning,
                 LightningClipPath);
+            AssertSpatialCueUsesClip(
+                library,
+                SoundKeys.MinigameMinefieldExplosion,
+                MinefieldExplosionClipPath);
+            AssertSpatialCueUsesClip(
+                library,
+                SoundKeys.MinigameMinefieldScan,
+                MinefieldScanClipPath);
 
             var registered = new HashSet<SoundCue>(library.Cues);
             var keys = new HashSet<string>();
@@ -130,6 +142,16 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(clip, Is.Not.Null, clipPath);
             Assert.That(cue.ClipCount, Is.EqualTo(1), key);
             Assert.That(cue.GetClip(0), Is.SameAs(clip), key);
+        }
+
+        private static void AssertSpatialCueUsesClip(
+            SoundLibrary library,
+            string key,
+            string clipPath)
+        {
+            AssertCueUsesClip(library, key, clipPath);
+            Assert.That(library.TryGet(key, out var cue), Is.True, key);
+            Assert.That(cue.Spatial, Is.True, key);
         }
 
         [Test]

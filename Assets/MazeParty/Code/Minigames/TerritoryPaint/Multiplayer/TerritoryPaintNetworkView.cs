@@ -19,6 +19,7 @@ namespace MazeParty.Multiplayer
 
         private const float RunnerInterpolationSpeed = 18f;
         private const float PaintSplashCooldownSeconds = 0.14f;
+        private const float FloorSaturationMultiplier = 0.58f;
 
         private static readonly Color32 UnpaintedColor =
             new Color32(58, 65, 73, 255);
@@ -45,7 +46,7 @@ namespace MazeParty.Multiplayer
                 TerritoryPaintRules.SurfaceResolution *
                 TerritoryPaintRules.SurfaceResolution];
         private readonly Color32[] _resolvedPlayerColors =
-            (Color32[])FallbackPlayerColors.Clone();
+            CreateFloorPaintColors();
         private readonly byte[] _paintOwners =
             new byte[
                 TerritoryPaintRules.SurfaceResolution *
@@ -321,7 +322,8 @@ namespace MazeParty.Multiplayer
                 if (avatar != null)
                 {
                     var appearance = avatar.Appearance;
-                    var bodyColor = (Color32)appearance.BodyColor;
+                    var bodyColor = GetFloorPaintColor(
+                        appearance.BodyColor);
                     if (!_resolvedPlayerColors[slot].Equals(bodyColor))
                     {
                         _resolvedPlayerColors[slot] = bodyColor;
@@ -411,6 +413,29 @@ namespace MazeParty.Multiplayer
             var textureX = resolution - 1 - cellX;
             var textureY = resolution - 1 - cellY;
             return textureY * resolution + textureX;
+        }
+
+        public static Color32 GetFloorPaintColor(Color source)
+        {
+            Color.RGBToHSV(source, out var hue, out var saturation,
+                out var value);
+            var color = Color.HSVToRGB(
+                hue,
+                saturation * FloorSaturationMultiplier,
+                value);
+            color.a = source.a;
+            return color;
+        }
+
+        private static Color32[] CreateFloorPaintColors()
+        {
+            var colors = new Color32[FallbackPlayerColors.Length];
+            for (var index = 0; index < colors.Length; index++)
+            {
+                colors[index] = GetFloorPaintColor(
+                    FallbackPlayerColors[index]);
+            }
+            return colors;
         }
 
         private void RefreshPaintSurface()
