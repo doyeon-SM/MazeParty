@@ -49,7 +49,7 @@ namespace MazeParty.Editor
                 ConfigureGestures(catalog);
                 EditorUtility.SetDirty(catalog);
             }
-            foreach (string path in new[] { "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab", "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" })
+            foreach (string path in new[] { "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab", BoardCanvasSplitProjectSetup.HudPrefabPath })
             {
                 var root = PrefabUtility.LoadPrefabContents(path);
                 try
@@ -220,50 +220,188 @@ namespace MazeParty.Editor
             label.gameObject.AddComponent<LocalizedText>().Configure(source);
         }
         static void Bind(SerializedObject data,string field,UnityEngine.Object value){data.FindProperty(field).objectReferenceValue=value;}
-        static void EnsureWheel(GameObject canvas,bool lobby)
+        static void EnsureWheel(GameObject canvas, bool lobby)
         {
-            var old=canvas.GetComponent<HandEmoteWheelView>();
-            if(old!=null&&old.HasRequiredReferences)
+            var old = canvas.GetComponent<HandEmoteWheelView>();
+            if (old != null && old.HasRequiredReferences)
             {
-                EnsureWheelLocalization(canvas.transform.Find("Hand Emote Wheel"));
+                var existingPanel =
+                    canvas.transform.Find("Hand Emote Wheel");
+                if (!lobby)
+                {
+                    EnsureBoardWheelUsesHudCanvas(existingPanel);
+                }
+                EnsureWheelLocalization(existingPanel);
                 return;
             }
-            if(old!=null)
+
+            if (old != null)
             {
-                var oldPanel=canvas.transform.Find("Hand Emote Wheel");
-                if(oldPanel!=null)UnityEngine.Object.DestroyImmediate(oldPanel.gameObject);
+                var oldPanel = canvas.transform.Find("Hand Emote Wheel");
+                if (oldPanel != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(oldPanel.gameObject);
+                }
                 UnityEngine.Object.DestroyImmediate(old);
             }
-            var view=canvas.AddComponent<HandEmoteWheelView>();
-            var panel=Rect(canvas.transform,"Hand Emote Wheel",Vector2.zero,Vector2.zero);
-            panel.anchorMin=Vector2.zero;panel.anchorMax=Vector2.one;
-            var blocker=panel.gameObject.AddComponent<Image>();blocker.color=new Color(0,0,0,.12f);
-            panel.gameObject.AddComponent<GraphicRaycaster>();
-            // Own nested sorting canvas keeps this wheel above the lobby panels without changing the camera.
-            var overlay=panel.GetComponent<Canvas>() ?? panel.gameObject.AddComponent<Canvas>();overlay.overrideSorting=true;overlay.sortingOrder=100;
-            var group=panel.gameObject.AddComponent<CanvasGroup>();group.ignoreParentGroups=true;group.blocksRaycasts=true;
-            var sectorSprite=Sprite("WheelSector8",(x,y)=>{float r=Mathf.Sqrt(x*x+y*y);float a=Mathf.Atan2(x,y)*Mathf.Rad2Deg;return r>.12f&&r<.49f&&Mathf.Abs(a)<20f?Color.white:Color.clear;});
-            var dotSprite=Sprite("WheelDot",(x,y)=>x*x+y*y<.24f?Color.white:Color.clear);
-            var data=new SerializedObject(view);data.FindProperty("lobbyWheel").boolValue=lobby;Bind(data,"panel",panel.gameObject);
-            var sectors=data.FindProperty("sectors");sectors.arraySize=GestureNames.Length;var labels=data.FindProperty("labels");labels.arraySize=GestureNames.Length;
-            for(int i=0;i<GestureNames.Length;i++)
+
+            var view = canvas.AddComponent<HandEmoteWheelView>();
+            var panel = Rect(
+                canvas.transform,
+                "Hand Emote Wheel",
+                Vector2.zero,
+                Vector2.zero);
+            panel.anchorMin = Vector2.zero;
+            panel.anchorMax = Vector2.one;
+            var blocker = panel.gameObject.AddComponent<Image>();
+            blocker.color = new Color(0, 0, 0, .12f);
+            if (lobby)
             {
-                float angle=i*45*Mathf.Deg2Rad;
-                var sector=Rect(panel,"Sector "+i,new Vector2(380,380),Vector2.zero).gameObject.AddComponent<Image>();sector.sprite=sectorSprite;sector.raycastTarget=false;sector.rectTransform.localRotation=Quaternion.Euler(0,0,-i*45);sector.color=new Color(.07f,.12f,.18f,.96f);
-                sectors.GetArrayElementAtIndex(i).objectReferenceValue=sector;
-                var label=Label(panel,"Gesture "+i,GestureNames[i],new Vector2(105,32),new Vector2(Mathf.Sin(angle)*142,Mathf.Cos(angle)*142),13);
-                labels.GetArrayElementAtIndex(i).objectReferenceValue=label;
+                panel.gameObject.AddComponent<GraphicRaycaster>();
+                // The lobby wheel still needs its own sorting surface above
+                // the independently-authored lobby panels.
+                var overlay = panel.GetComponent<Canvas>() ??
+                              panel.gameObject.AddComponent<Canvas>();
+                overlay.overrideSorting = true;
+                overlay.sortingOrder = 100;
             }
-            var center=Rect(panel,"Center Cancel Zone",new Vector2(86,86),Vector2.zero).gameObject.AddComponent<Image>();center.sprite=dotSprite;center.color=new Color(.05f,.08f,.12f,1);center.raycastTarget=false;
-            Label(panel,"Center Label","T",new Vector2(48,40),Vector2.zero,24);
-            Label(panel,"Title",WheelTitleSource,new Vector2(360,30),new Vector2(0,205),23);
-            Label(panel,"Help",WheelHelpSource,new Vector2(440,50),new Vector2(0,-220),16);
-            var selected=Label(panel,"Selection","DRAG TO SELECT",new Vector2(390,28),new Vector2(0,-181),18);Bind(data,"selectionText",selected);
-            var pointer=Rect(panel,"Selection Pointer",new Vector2(14,14),Vector2.zero);var dot=pointer.gameObject.AddComponent<Image>();dot.sprite=dotSprite;dot.color=new Color(1,.84f,.3f);dot.raycastTarget=false;Bind(data,"pointer",pointer);
+            else
+            {
+                EnsureBoardWheelUsesHudCanvas(panel);
+            }
+
+            var group = panel.gameObject.AddComponent<CanvasGroup>();
+            group.ignoreParentGroups = true;
+            group.blocksRaycasts = true;
+            var sectorSprite = Sprite(
+                "WheelSector8",
+                (x, y) =>
+                {
+                    var r = Mathf.Sqrt(x * x + y * y);
+                    var a = Mathf.Atan2(x, y) * Mathf.Rad2Deg;
+                    return r > .12f && r < .49f && Mathf.Abs(a) < 20f
+                        ? Color.white
+                        : Color.clear;
+                });
+            var dotSprite = Sprite(
+                "WheelDot",
+                (x, y) => x * x + y * y < .24f
+                    ? Color.white
+                    : Color.clear);
+            var data = new SerializedObject(view);
+            data.FindProperty("lobbyWheel").boolValue = lobby;
+            Bind(data, "panel", panel.gameObject);
+            var sectors = data.FindProperty("sectors");
+            sectors.arraySize = GestureNames.Length;
+            var labels = data.FindProperty("labels");
+            labels.arraySize = GestureNames.Length;
+            for (var i = 0; i < GestureNames.Length; i++)
+            {
+                var angle = i * 45 * Mathf.Deg2Rad;
+                var sector = Rect(
+                        panel,
+                        "Sector " + i,
+                        new Vector2(380, 380),
+                        Vector2.zero)
+                    .gameObject.AddComponent<Image>();
+                sector.sprite = sectorSprite;
+                sector.raycastTarget = false;
+                sector.rectTransform.localRotation =
+                    Quaternion.Euler(0, 0, -i * 45);
+                sector.color = new Color(.07f, .12f, .18f, .96f);
+                sectors.GetArrayElementAtIndex(i).objectReferenceValue =
+                    sector;
+                var label = Label(
+                    panel,
+                    "Gesture " + i,
+                    GestureNames[i],
+                    new Vector2(105, 32),
+                    new Vector2(
+                        Mathf.Sin(angle) * 142,
+                        Mathf.Cos(angle) * 142),
+                    13);
+                labels.GetArrayElementAtIndex(i).objectReferenceValue =
+                    label;
+            }
+
+            var center = Rect(
+                    panel,
+                    "Center Cancel Zone",
+                    new Vector2(86, 86),
+                    Vector2.zero)
+                .gameObject.AddComponent<Image>();
+            center.sprite = dotSprite;
+            center.color = new Color(.05f, .08f, .12f, 1);
+            center.raycastTarget = false;
+            Label(
+                panel,
+                "Center Label",
+                "T",
+                new Vector2(48, 40),
+                Vector2.zero,
+                24);
+            Label(
+                panel,
+                "Title",
+                WheelTitleSource,
+                new Vector2(360, 30),
+                new Vector2(0, 205),
+                23);
+            Label(
+                panel,
+                "Help",
+                WheelHelpSource,
+                new Vector2(440, 50),
+                new Vector2(0, -220),
+                16);
+            var selected = Label(
+                panel,
+                "Selection",
+                "DRAG TO SELECT",
+                new Vector2(390, 28),
+                new Vector2(0, -181),
+                18);
+            Bind(data, "selectionText", selected);
+            var pointer = Rect(
+                panel,
+                "Selection Pointer",
+                new Vector2(14, 14),
+                Vector2.zero);
+            var dot = pointer.gameObject.AddComponent<Image>();
+            dot.sprite = dotSprite;
+            dot.color = new Color(1, .84f, .3f);
+            dot.raycastTarget = false;
+            Bind(data, "pointer", pointer);
             data.ApplyModifiedPropertiesWithoutUndo();
             EnsureWheelLocalization(panel);
             panel.gameObject.SetActive(false);
         }
+
+        static void EnsureBoardWheelUsesHudCanvas(Transform panel)
+        {
+            if (panel == null)
+            {
+                throw new InvalidOperationException(
+                    "Hand Emote Wheel panel is missing from BoardHudCanvas.");
+            }
+
+            var nestedRaycaster = panel.GetComponent<GraphicRaycaster>();
+            if (nestedRaycaster != null)
+            {
+                UnityEngine.Object.DestroyImmediate(nestedRaycaster);
+            }
+
+            var nestedCanvas = panel.GetComponent<Canvas>();
+            if (nestedCanvas != null)
+            {
+                UnityEngine.Object.DestroyImmediate(nestedCanvas);
+            }
+
+            // A final sibling renders last inside the authored HUD Canvas, so
+            // the board wheel needs no extra Canvas or raycaster.
+            panel.SetAsLastSibling();
+        }
+
         static void EnsureWheelLocalization(Transform panel)
         {
             if (panel == null)

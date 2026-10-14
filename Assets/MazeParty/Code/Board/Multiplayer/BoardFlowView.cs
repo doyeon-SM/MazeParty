@@ -64,6 +64,11 @@ namespace MazeParty.Multiplayer
             new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" }
         };
 
+        private ScheduledMinigameId _renderedControlMinigame;
+        private GameLanguage _renderedControlLanguage;
+        private bool _renderedControlHidden;
+        private bool _controlGuideInitialized;
+
         [SerializeField] private GameplayCameraDirector cameraDirector;
         [SerializeField] private BoardCanvasBindings uiBindings;
         [SerializeField] private MinigameResultCanvasBindings resultUiBindings;
@@ -99,16 +104,19 @@ namespace MazeParty.Multiplayer
         private GameObject _itemShopPanel;
         private GameObject _boardEventPopupPanel;
         private GameObject _boardKillFeedPanel;
-        private Canvas _boardCanvas;
-        private GraphicRaycaster _boardRaycaster;
+        private Canvas _hudCanvas;
+        private GraphicRaycaster _hudRaycaster;
+        private Canvas _mapCanvas;
+        private GraphicRaycaster _mapRaycaster;
+        private Canvas _itemCanvas;
+        private GraphicRaycaster _itemRaycaster;
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
-        private Text _reticleText;
-        private Text _diceText;
+        private Image _reticleImage;
         private Text _movesText;
         private Text _ammoText;
-        private Text _statusText;
+        private Text _interactionPrompt;
         private Text _tooltipText;
         private Text _reconnectText;
         private Text _itemShopTitle;
@@ -134,48 +142,9 @@ namespace MazeParty.Multiplayer
         private KeyShopWorldMarker _keyShopMarker;
         private ItemShopWorldMarker _itemShopMarker;
         private BoardTopology _topology;
-        private int _lastRevision = -1;
-        private bool _lastLocalBoardDeath;
         private int _lastBoardEffectRevision = -1;
-        private ItemChoiceResolution _lastChoiceResolution = ItemChoiceResolution.NotStarted;
-        private NetworkMinefieldPhase _lastMinefieldPhase = NetworkMinefieldPhase.Inactive;
-        private int _lastMinefieldRound = -1;
-        private NetworkWrongWayPhase _lastWrongWayPhase =
-            NetworkWrongWayPhase.Inactive;
-        private int _lastWrongWayRound = -1;
-        private NetworkRedLightGreenLightPhase
-            _lastRedLightGreenLightPhase =
-                NetworkRedLightGreenLightPhase.Inactive;
-        private RedLightGreenLightSignalPhase
-            _lastRedLightGreenLightSignal =
-                RedLightGreenLightSignalPhase.Green;
-        private int _lastRedLightGreenLightRound = -1;
-        private NetworkStableFootingPhase _lastStableFootingPhase =
-            NetworkStableFootingPhase.Inactive;
-        private StableFootingCyclePhase _lastStableFootingCyclePhase =
-            StableFootingCyclePhase.RoundComplete;
-        private int _lastStableFootingRound = -1;
-        private NetworkBalloonBlowPhase _lastBalloonBlowPhase =
-            NetworkBalloonBlowPhase.Inactive;
-        private int _lastBalloonBlowRound = -1;
-        private NetworkGiftGrabPhase _lastGiftGrabPhase =
-            NetworkGiftGrabPhase.Inactive;
-        private int _lastGiftGrabRound = -1;
-        private NetworkTagChasePhase _lastTagChasePhase =
-            NetworkTagChasePhase.Inactive;
-        private int _lastTagChaseRound = -1;
-        private NetworkRacePhase _lastRacePhase =
-            NetworkRacePhase.Inactive;
-        private int _lastRaceRound = -1;
-        private NetworkSequenceMemoryPhase _lastSequenceMemoryPhase =
-            NetworkSequenceMemoryPhase.Inactive;
-        private int _lastSequenceMemoryRound = -1;
-        private NetworkBouncingBallsPhase _lastBouncingBallsPhase =
-            NetworkBouncingBallsPhase.Inactive;
-        private int _lastBouncingBallsRound = -1;
         private int _observedMinigameRevealRevision = -1;
         private float _minigameRevealObservedAt;
-        private bool _lastMinigameRevealPending;
         private bool _wired;
         private int _openItemShopIndex = -1;
         private bool _topViewShopHighlightsVisible;
@@ -185,7 +154,10 @@ namespace MazeParty.Multiplayer
         public static BoardFlowView Instance { get; private set; }
         public static bool IsItemShopOpen =>
             Instance != null && Instance._openItemShopIndex >= 0;
-        public bool BoardUiVisible => _boardCanvas == null || _boardCanvas.enabled;
+        public bool BoardUiVisible =>
+            (_hudCanvas == null || _hudCanvas.enabled) &&
+            (_mapCanvas == null || _mapCanvas.enabled) &&
+            (_itemCanvas == null || _itemCanvas.enabled);
         public BoardCanvasBindings UiBindings => uiBindings;
         public MinigameResultCanvasBindings ResultUiBindings =>
             resultUiBindings;
@@ -224,22 +196,46 @@ namespace MazeParty.Multiplayer
                 CloseItemShop();
             }
 
-            if (_boardCanvas == null && uiBindings != null)
+            ResolveBoardCanvasRoots();
+            SetCanvasVisible(_hudCanvas, _hudRaycaster, visible);
+            SetCanvasVisible(_mapCanvas, _mapRaycaster, visible);
+            SetCanvasVisible(_itemCanvas, _itemRaycaster, visible);
+            if (!visible)
             {
-                _boardCanvas = uiBindings.RootCanvas;
+                uiBindings?.Map?.MapView?.CloseFullMap();
             }
-            if (_boardRaycaster == null && uiBindings != null)
+        }
+
+        private void ResolveBoardCanvasRoots()
+        {
+            if (uiBindings == null)
             {
-                _boardRaycaster = uiBindings.RootRaycaster;
+                return;
             }
 
-            if (_boardCanvas != null)
+            var hud = uiBindings.Hud;
+            var map = uiBindings.Map;
+            var item = uiBindings.Item;
+            _hudCanvas = hud != null ? hud.RootCanvas : null;
+            _hudRaycaster = hud != null ? hud.RootRaycaster : null;
+            _mapCanvas = map != null ? map.RootCanvas : null;
+            _mapRaycaster = map != null ? map.RootRaycaster : null;
+            _itemCanvas = item != null ? item.RootCanvas : null;
+            _itemRaycaster = item != null ? item.RootRaycaster : null;
+        }
+
+        private static void SetCanvasVisible(
+            Canvas canvas,
+            GraphicRaycaster raycaster,
+            bool visible)
+        {
+            if (canvas != null)
             {
-                _boardCanvas.enabled = visible;
+                canvas.enabled = visible;
             }
-            if (_boardRaycaster != null)
+            if (raycaster != null)
             {
-                _boardRaycaster.enabled = visible;
+                raycaster.enabled = visible;
             }
         }
 
@@ -317,13 +313,13 @@ namespace MazeParty.Multiplayer
             RefreshHeader(match);
             RefreshLocalPlayer(match);
             RefreshInventory();
+            RefreshInteractionPrompt();
             RefreshPlayerRows(match);
             RefreshBoardEffects(match);
             RefreshKeyShop(match);
             RefreshItemShops(match);
             RefreshItemShopPanel(match);
             RefreshCursor(match);
-            RefreshStatusOnStateChange(match);
         }
 
         public void SelectItem(int slotIndex)
@@ -486,67 +482,68 @@ namespace MazeParty.Multiplayer
             }
 
             UnwireMinigamePreview();
-            _boardCanvas = uiBindings.RootCanvas;
-            _boardRaycaster = uiBindings.RootRaycaster;
-            _selectionPanel = uiBindings.ItemSelectionPanel;
-            _readyPanel = uiBindings.MinigameReadyPanel;
-            _reconnectOverlay = uiBindings.ReconnectOverlay;
-            _reticle = uiBindings.Reticle;
-            _itemShopPanel = uiBindings.ItemShopPanel;
-            _boardEventPopupPanel = uiBindings.BoardEventPopupPanel;
-            _boardKillFeedPanel = uiBindings.BoardKillFeedPanel;
-            _reticleText = uiBindings.ReticleText;
-            _turnText = uiBindings.TurnText;
-            _phaseText = uiBindings.PhaseText;
-            _phaseTimerText = uiBindings.PhaseTimerText;
-            _diceText = uiBindings.DiceText;
-            _movesText = uiBindings.MovesText;
-            _ammoText = uiBindings.AmmoText;
-            _statusText = uiBindings.StatusText;
-            _tooltipText = uiBindings.TooltipText;
-            _reconnectText = uiBindings.ReconnectText;
-            _itemShopTitle = uiBindings.ItemShopTitle;
-            _itemShopTooltip = uiBindings.ItemShopTooltip;
-            _itemShopStatus = uiBindings.ItemShopStatus;
-            _boardEventPopupMessage = uiBindings.BoardEventPopupMessage;
-            _boardKillFeedMessage = uiBindings.BoardKillFeedMessage;
-            _minigameReadyTitle = uiBindings.MinigameReadyTitle;
-            _minigameDescription = uiBindings.MinigameDescription;
-            _minigameReadyStatus = uiBindings.MinigameReadyStatus;
+            ResolveBoardCanvasRoots();
+            var hud = uiBindings.Hud;
+            var map = uiBindings.Map;
+            var item = uiBindings.Item;
+            _selectionPanel = item.ItemSelectionPanel;
+            _readyPanel = hud.MinigameReadyPanel;
+            _reconnectOverlay = hud.ReconnectOverlay;
+            _reticle = hud.Reticle;
+            _itemShopPanel = item.ItemShopPanel;
+            _boardEventPopupPanel = hud.BoardEventPopupPanel;
+            _boardKillFeedPanel = hud.BoardKillFeedPanel;
+            _reticleImage = hud.ReticleImage;
+            _turnText = hud.TurnText;
+            _phaseText = hud.PhaseText;
+            _phaseTimerText = hud.PhaseTimerText;
+            _movesText = map.MovesText;
+            _ammoText = item.AmmoText;
+            _interactionPrompt = item.InteractionPrompt;
+            _tooltipText = item.TooltipText;
+            _reconnectText = hud.ReconnectText;
+            _itemShopTitle = item.ItemShopTitle;
+            _itemShopTooltip = item.ItemShopTooltip;
+            _itemShopStatus = item.ItemShopStatus;
+            _boardEventPopupMessage = hud.BoardEventPopupMessage;
+            _boardKillFeedMessage = hud.BoardKillFeedMessage;
+            _minigameReadyTitle = hud.MinigameReadyTitle;
+            _minigameDescription = hud.MinigameDescription;
+            _minigameReadyStatus = hud.MinigameReadyStatus;
             _minigamePreviewPlaceholder =
-                uiBindings.MinigamePreviewPlaceholder;
-            _minigamePreviewImage = uiBindings.MinigamePreviewImage;
-            _minigamePreviewPlayer = uiBindings.MinigamePreviewPlayer;
+                hud.MinigamePreviewPlaceholder;
+            _minigamePreviewImage = hud.MinigamePreviewImage;
+            _minigamePreviewPlayer = hud.MinigamePreviewPlayer;
             WireMinigamePreview();
-            _noItemButton = uiBindings.NoItemButton;
-            _readyButton = uiBindings.ReadyButton;
-            _readyButtonLabel = uiBindings.ReadyButtonLabel;
-            _itemShopCloseButton = uiBindings.ItemShopCloseButton;
+            _noItemButton = item.NoItemButton;
+            _readyButton = hud.ReadyButton;
+            _readyButtonLabel = hud.ReadyButtonLabel;
+            _itemShopCloseButton = item.ItemShopCloseButton;
             BindResultUi();
 
             CopyReferences(
-                uiBindings.InventorySlotBackgrounds,
+                item.InventorySlotBackgrounds,
                 _slotBackgrounds);
-            CopyReferences(uiBindings.InventorySlotIcons, _slotIcons);
-            CopyReferences(uiBindings.ItemChoiceButtons, _choiceButtons);
-            CopyReferences(uiBindings.ItemChoiceLabels, _choiceLabels);
-            CopyReferences(uiBindings.ShopOfferButtons, _shopOfferButtons);
-            CopyReferences(uiBindings.ShopOfferIcons, _shopOfferIcons);
-            CopyReferences(uiBindings.ShopOfferLabels, _shopOfferLabels);
-            CopyReferences(uiBindings.PlayerRows, _playerRows);
-            CopyReferences(uiBindings.PlayerCards, _playerCards);
-            CopyReferences(uiBindings.PlayerHealthSliders, _playerHealthSliders);
-            CopyReferences(uiBindings.PlayerHealthFills, _playerHealthFills);
-            CopyReferences(uiBindings.PlayerHealthTexts, _playerHealthTexts);
-            CopyReferences(uiBindings.PlayerKeyTexts, _playerKeyTexts);
-            CopyReferences(uiBindings.PlayerGoldTexts, _playerGoldTexts);
-            CopyReferences(uiBindings.PlayerActionIcons, _playerActionIcons);
-            CopyReferences(uiBindings.PlayerRankTexts, _playerRankTexts);
+            CopyReferences(item.InventorySlotIcons, _slotIcons);
+            CopyReferences(item.ItemChoiceButtons, _choiceButtons);
+            CopyReferences(item.ItemChoiceLabels, _choiceLabels);
+            CopyReferences(item.ShopOfferButtons, _shopOfferButtons);
+            CopyReferences(item.ShopOfferIcons, _shopOfferIcons);
+            CopyReferences(item.ShopOfferLabels, _shopOfferLabels);
+            CopyReferences(hud.PlayerRows, _playerRows);
+            CopyReferences(hud.PlayerCards, _playerCards);
+            CopyReferences(hud.PlayerHealthSliders, _playerHealthSliders);
+            CopyReferences(hud.PlayerHealthFills, _playerHealthFills);
+            CopyReferences(hud.PlayerHealthTexts, _playerHealthTexts);
+            CopyReferences(hud.PlayerKeyTexts, _playerKeyTexts);
+            CopyReferences(hud.PlayerGoldTexts, _playerGoldTexts);
+            CopyReferences(hud.PlayerActionIcons, _playerActionIcons);
+            CopyReferences(hud.PlayerRankTexts, _playerRankTexts);
             CopyReferences(
-                uiBindings.MinigameReadyPlayerStates,
+                hud.MinigameReadyPlayerStates,
                 _minigameReadyPlayerStates);
             CopyReferences(
-                uiBindings.MinigameControlRows,
+                hud.MinigameControlRows,
                 _minigameControlRows);
 
             WireButtons();
@@ -845,55 +842,27 @@ namespace MazeParty.Multiplayer
         {
             if (_localAvatar == null)
             {
-                SetText(_diceText, GameText.T("DICE  WAITING FOR PLAYER"));
-                SetText(_movesText, GameText.T("MOVES  --"));
+                SetTextVisible(_movesText, string.Empty, false);
                 return;
             }
 
             if (match.IsCombatPhase)
             {
-                var isFighting = match.IsCombatActive &&
-                                 match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
-                                 match.IsCombatAlive(_localAvatar.AssignedSlot);
-                SetText(_diceText, isFighting ? GameText.T("LMB  PUNCH") : GameText.T("FIGHT  SPECTATING"));
-                SetText(_movesText, isFighting
-                    ? _localAvatar.IsQuietWalking
-                        ? GameText.T("QUIET WALK  6m")
-                        : GameText.T("WASD  MOVE / LCTRL QUIET 6m")
-                    : GameText.T("INPUT  LOCKED"));
+                SetTextVisible(_movesText, string.Empty, false);
                 return;
             }
 
-            var visibleRoll = _localAvatar.LocalVisibleRoll;
-            var diePhase = _localAvatar.LocalWorldDiePhase;
-            var publicFace = _localAvatar.LocalWorldDiePublicFace;
             var isActionPhase = match.FlowState == BoardFlowState.Action;
-            SetText(
-                _diceText,
-                WorldDieHudPresentationPolicy.ResolveDiceStatusLabel(
-                    visibleRoll,
-                    _localAvatar.HasRolled,
-                    _localAvatar.HasResolvedItemChoice,
-                    isActionPhase,
-                    match.ActionRemaining > 0d,
-                    diePhase,
-                    publicFace));
-            if (isActionPhase && _localAvatar.UsesDoubleDice)
-                SetText(_diceText, _localAvatar.LocalDiceSummary);
             if (!isActionPhase)
             {
-                SetText(_movesText, GameText.T("MOVES  --"));
+                SetTextVisible(_movesText, string.Empty, false);
                 return;
             }
 
-            var movementLabel = _localAvatar.HasRolled &&
-                                _localAvatar.LocalRemainingMoves == 0
-                ? GameText.T("MOVES  0 / FREE IN ROOM")
-                : GameText.F("MOVES  {0}", _localAvatar.LocalRemainingMoves);
-            SetText(_movesText, movementLabel + "  /  " +
-                (_localAvatar.IsQuietWalking
-                    ? GameText.T("QUIET WALK 6m")
-                    : GameText.T("LCTRL QUIET 6m")));
+            SetTextVisible(
+                _movesText,
+                Mathf.Max(0, _localAvatar.LocalRemainingMoves).ToString(),
+                true);
         }
 
         private void RefreshInventory()
@@ -920,10 +889,10 @@ namespace MazeParty.Multiplayer
                 if (_slotBackgrounds[i] != null)
                 {
                     _slotBackgrounds[i].color = selected
-                        ? uiBindings.InventorySelectedColor
+                        ? uiBindings.Item.InventorySelectedColor
                         : occupied
-                            ? uiBindings.InventoryOccupiedColor
-                            : uiBindings.InventoryEmptyColor;
+                            ? uiBindings.Item.InventoryOccupiedColor
+                            : uiBindings.Item.InventoryEmptyColor;
                 }
 
                 if (_choiceButtons[i] != null)
@@ -932,12 +901,30 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            SetText(_ammoText,
-                _localAvatar != null && _localAvatar.LocalSelectedItemSlot >= 0
-                    ? _localAvatar.UsesDoubleDice ? GameText.T("RMB  ROLL EACH DIE") :
-                        GameText.F("AMMO  {0}\nLMB USE / RMB INTERACT", _localAvatar.LocalItemCharges)
-                    : GameText.T("CHARGE  --"));
+            var firearmSelected = _localAvatar != null &&
+                                  _localAvatar.LocalSelectedItemSlot >= 0 &&
+                                  BoardItemPresentationRules.IsFirearm(
+                                      _localAvatar.LocalEquippedItem);
+            SetTextVisible(
+                _ammoText,
+                firearmSelected
+                    ? Mathf.Max(0, _localAvatar.LocalItemCharges).ToString()
+                    : string.Empty,
+                firearmSelected);
         }
+
+        private void RefreshInteractionPrompt()
+        {
+            var prompt = string.Empty;
+            var visible = _localAvatar != null &&
+                          _localAvatar.TryGetLocalBoardInteractionPrompt(
+                              out prompt);
+            SetTextVisible(
+                _interactionPrompt,
+                visible ? prompt : string.Empty,
+                visible);
+        }
+
 
         private void RefreshPlayerRows(NetworkMatchState match)
         {
@@ -967,13 +954,13 @@ namespace MazeParty.Multiplayer
                 {
                     _playerRows[slot].color = isPresent
                         ? ResolveBoardPlayerTextColor(avatar, slot)
-                        : uiBindings.DisconnectedPlayerColor;
+                        : uiBindings.Hud.DisconnectedPlayerColor;
                 }
 
                 if (_playerCards[slot] != null)
                 {
                     _playerCards[slot].color =
-                        uiBindings.GetPlayerCardColor(
+                        uiBindings.Hud.GetPlayerCardColor(
                             ResolveBoardPlayerColor(avatar, slot));
                 }
 
@@ -998,10 +985,10 @@ namespace MazeParty.Multiplayer
                     _playerHealthFills[slot].gameObject.SetActive(
                         !match.IsArenaCombatPhase);
                     _playerHealthFills[slot].color = healthRatio > 0.5f
-                        ? uiBindings.HealthyHealthColor
+                        ? uiBindings.Hud.HealthyHealthColor
                         : healthRatio > 0.25f
-                            ? uiBindings.WoundedHealthColor
-                            : uiBindings.CriticalHealthColor;
+                            ? uiBindings.Hud.WoundedHealthColor
+                            : uiBindings.Hud.CriticalHealthColor;
                 }
                 SetText(_playerHealthTexts[slot], avatar != null
                     ? currentHealth + "/" + maxHealth
@@ -1031,8 +1018,8 @@ namespace MazeParty.Multiplayer
                 if (_playerActionIcons[slot] != null)
                 {
                     _playerActionIcons[slot].color = isCombatOut
-                        ? uiBindings.CombatOutColor
-                        : uiBindings.GetActionIconColor(actionState);
+                        ? uiBindings.Hud.CombatOutColor
+                        : uiBindings.Hud.GetActionIconColor(actionState);
                 }
             }
         }
@@ -1191,274 +1178,6 @@ namespace MazeParty.Multiplayer
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
 
-        private void RefreshStatusOnStateChange(NetworkMatchState match)
-        {
-            var choice = _localAvatar != null
-                ? _localAvatar.LocalChoiceResolution
-                : ItemChoiceResolution.NotStarted;
-            var minefield = NetworkMinefieldState.Instance;
-            var minefieldPhase = minefield != null
-                ? minefield.Phase
-                : NetworkMinefieldPhase.Inactive;
-            var minefieldRound = minefield != null ? minefield.RoundNumber : -1;
-            var wrongWay = NetworkWrongWayState.Instance;
-            var wrongWayPhase = wrongWay != null
-                ? wrongWay.Phase
-                : NetworkWrongWayPhase.Inactive;
-            var wrongWayRound = wrongWay != null
-                ? wrongWay.RoundNumber
-                : -1;
-            var redLightGreenLight =
-                NetworkRedLightGreenLightState.Instance;
-            var redLightGreenLightPhase = redLightGreenLight != null
-                ? redLightGreenLight.Phase
-                : NetworkRedLightGreenLightPhase.Inactive;
-            var redLightGreenLightSignal = redLightGreenLight != null
-                ? redLightGreenLight.SignalPhase
-                : RedLightGreenLightSignalPhase.Green;
-            var redLightGreenLightRound = redLightGreenLight != null
-                ? redLightGreenLight.RoundNumber
-                : -1;
-            var stableFooting = NetworkStableFootingState.Instance;
-            var stableFootingPhase = stableFooting != null
-                ? stableFooting.Phase
-                : NetworkStableFootingPhase.Inactive;
-            var stableFootingCyclePhase = stableFooting != null
-                ? stableFooting.CyclePhase
-                : StableFootingCyclePhase.RoundComplete;
-            var stableFootingRound = stableFooting != null
-                ? stableFooting.RoundNumber
-                : -1;
-            var balloonBlow = NetworkBalloonBlowState.Instance;
-            var balloonBlowPhase = balloonBlow != null
-                ? balloonBlow.Phase
-                : NetworkBalloonBlowPhase.Inactive;
-            var balloonBlowRound = balloonBlow != null
-                ? balloonBlow.RoundNumber
-                : -1;
-            var giftGrab = NetworkGiftGrabState.Instance;
-            var giftGrabPhase = giftGrab != null
-                ? giftGrab.Phase
-                : NetworkGiftGrabPhase.Inactive;
-            var giftGrabRound = giftGrab != null
-                ? giftGrab.RoundNumber
-                : -1;
-            var tagChase = NetworkTagChaseState.Instance;
-            var tagChasePhase = tagChase != null
-                ? tagChase.Phase
-                : NetworkTagChasePhase.Inactive;
-            var tagChaseRound = tagChase != null
-                ? tagChase.RoundNumber
-                : -1;
-            var race = NetworkRaceState.Instance;
-            var racePhase = race != null
-                ? race.Phase
-                : NetworkRacePhase.Inactive;
-            var raceRound = race != null
-                ? race.RoundNumber
-                : -1;
-            var sequenceMemory = NetworkSequenceMemoryState.Instance;
-            var sequenceMemoryPhase = sequenceMemory != null
-                ? sequenceMemory.Phase
-                : NetworkSequenceMemoryPhase.Inactive;
-            var sequenceMemoryRound = sequenceMemory != null
-                ? sequenceMemory.RoundNumber
-                : -1;
-            var bouncingBalls = NetworkBouncingBallsState.Instance;
-            var bouncingBallsPhase = bouncingBalls != null
-                ? bouncingBalls.Phase
-                : NetworkBouncingBallsPhase.Inactive;
-            var bouncingBallsRound = bouncingBalls != null
-                ? bouncingBalls.RoundNumber
-                : -1;
-            var revealPending = IsMinigameRevealPending(match);
-            var localBoardDeath = _localAvatar != null &&
-                                  _localAvatar.CurrentHealth <= 0;
-            if (_lastRevision == match.StateRevision &&
-                _lastLocalBoardDeath == localBoardDeath &&
-                _lastChoiceResolution == choice &&
-                _lastMinefieldPhase == minefieldPhase &&
-                _lastMinefieldRound == minefieldRound &&
-                _lastWrongWayPhase == wrongWayPhase &&
-                _lastWrongWayRound == wrongWayRound &&
-                _lastRedLightGreenLightPhase ==
-                redLightGreenLightPhase &&
-                _lastRedLightGreenLightSignal ==
-                redLightGreenLightSignal &&
-                _lastRedLightGreenLightRound ==
-                redLightGreenLightRound &&
-                _lastStableFootingPhase == stableFootingPhase &&
-                _lastStableFootingCyclePhase == stableFootingCyclePhase &&
-                _lastStableFootingRound == stableFootingRound &&
-                _lastBalloonBlowPhase == balloonBlowPhase &&
-                _lastBalloonBlowRound == balloonBlowRound &&
-                _lastGiftGrabPhase == giftGrabPhase &&
-                _lastGiftGrabRound == giftGrabRound &&
-                _lastTagChasePhase == tagChasePhase &&
-                _lastTagChaseRound == tagChaseRound &&
-                _lastRacePhase == racePhase &&
-                _lastRaceRound == raceRound &&
-                _lastSequenceMemoryPhase == sequenceMemoryPhase &&
-                _lastSequenceMemoryRound == sequenceMemoryRound &&
-                _lastBouncingBallsPhase == bouncingBallsPhase &&
-                _lastBouncingBallsRound == bouncingBallsRound &&
-                _lastMinigameRevealPending == revealPending)
-            {
-                return;
-            }
-
-            _lastRevision = match.StateRevision;
-            _lastLocalBoardDeath = localBoardDeath;
-            _lastChoiceResolution = choice;
-            _lastMinefieldPhase = minefieldPhase;
-            _lastMinefieldRound = minefieldRound;
-            _lastWrongWayPhase = wrongWayPhase;
-            _lastWrongWayRound = wrongWayRound;
-            _lastRedLightGreenLightPhase = redLightGreenLightPhase;
-            _lastRedLightGreenLightSignal = redLightGreenLightSignal;
-            _lastRedLightGreenLightRound = redLightGreenLightRound;
-            _lastStableFootingPhase = stableFootingPhase;
-            _lastStableFootingCyclePhase = stableFootingCyclePhase;
-            _lastStableFootingRound = stableFootingRound;
-            _lastBalloonBlowPhase = balloonBlowPhase;
-            _lastBalloonBlowRound = balloonBlowRound;
-            _lastGiftGrabPhase = giftGrabPhase;
-            _lastGiftGrabRound = giftGrabRound;
-            _lastTagChasePhase = tagChasePhase;
-            _lastTagChaseRound = tagChaseRound;
-            _lastRacePhase = racePhase;
-            _lastRaceRound = raceRound;
-            _lastSequenceMemoryPhase = sequenceMemoryPhase;
-            _lastSequenceMemoryRound = sequenceMemoryRound;
-            _lastBouncingBallsPhase = bouncingBallsPhase;
-            _lastBouncingBallsRound = bouncingBallsRound;
-            _lastMinigameRevealPending = revealPending;
-            if (match.IsKeyShopRevealActive)
-            {
-                SetText(_statusText,
-                    GameText.T("Key purchased. The new shop location is shown; play resumes when the countdown ends."));
-                return;
-            }
-            if (_localAvatar != null && _localAvatar.CurrentHealth <= 0 &&
-                (match.FlowState == BoardFlowState.Action ||
-                 match.FlowState == BoardFlowState.AscendingResolve))
-            {
-                SetText(_statusText,
-                    GameText.T("KNOCKED OUT: respawning at the nearest marked room. Input is locked."));
-                return;
-            }
-            switch (match.FlowState)
-            {
-                case BoardFlowState.TurnOverview:
-                    SetText(_statusText, GameText.T("Board overview: inspect every player and tile."));
-                    break;
-                case BoardFlowState.Descending:
-                    SetText(_statusText, GameText.T("Camera descending to your first-person view."));
-                    break;
-                case BoardFlowState.Action:
-                    SetText(_statusText, match.IsArrivalGraceActive
-                        ? GameText.T("All players arrived. Top view opens when the countdown ends.")
-                        : choice == ItemChoiceResolution.Pending
-                        ? string.Empty
-                        : GameText.T("WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item."));
-                    break;
-                case BoardFlowState.AscendingResolve:
-                    SetText(_statusText, GameText.T("Input closed. Camera rising while pending effects settle."));
-                    break;
-                case BoardFlowState.CombatResolve:
-                    var isFighting = match.IsCombatActive && _localAvatar != null &&
-                                     match.IsCombatParticipant(_localAvatar.AssignedSlot) &&
-                                     match.IsCombatAlive(_localAvatar.AssignedSlot);
-                    SetText(_statusText, isFighting
-                        ? GameText.T("FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage.")
-                        : GameText.T("SPECTATING: the camera follows the current fight room. Input is locked."));
-                    break;
-                case BoardFlowState.LandingEffectResolve:
-                    SetText(
-                        _statusText,
-                        GameText.T("Applying final landing effects in player order."));
-                    break;
-                case BoardFlowState.MinigameIntroReady:
-                    SetText(
-                        _statusText,
-                        revealPending
-                            ? GameText.T("Opening the top block in the minigame tower...")
-                            : match.CurrentMinigame == ScheduledMinigameId.Skip
-                            ? GameText.T("No minigame is available for this queue slot. It will advance automatically.")
-                            : GameText.F("{0}: review the rules. Press READY to start early; the minigame starts automatically when the countdown ends.",
-                              MinigameName(match.CurrentMinigame)));
-                    break;
-                case BoardFlowState.MinigameLoading:
-                    SetText(_statusText,
-                        GameText.F("Loading the synchronized {0} scene. Board movement is locked; the match ends if loading reaches zero.",
-                        MinigameName(match.CurrentMinigame)));
-                    break;
-                case BoardFlowState.MinigamePlaying:
-                    SetText(
-                        _statusText,
-                        match.CurrentMinigame == ScheduledMinigameId.WrongWay
-                            ? WrongWayStatus(wrongWay)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.RedLightGreenLight
-                                ? RedLightGreenLightStatus(
-                                    redLightGreenLight)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.StableFooting
-                                ? StableFootingStatus(stableFooting)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.BalloonBlow
-                                ? BalloonBlowStatus(balloonBlow)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.GiftGrab
-                                ? GiftGrabStatus(giftGrab)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.TerritoryPaint
-                                ? TerritoryPaintStatus(
-                                    NetworkTerritoryPaintState.Instance)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.TagChase
-                                ? TagChaseStatus(tagChase)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.Race
-                                ? RaceStatus(race)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.SequenceMemory
-                                ? SequenceMemoryStatus(sequenceMemory)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.BouncingBalls
-                                ? BouncingBallsStatus(bouncingBalls)
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.BombPassing
-                                ? GameText.T("Keep the bomb away. Its light flashes " +
-                                  "faster as detonation approaches.")
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.SnowySpin
-                                ? GameText.T("Roll and push opponents off the ice.")
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.ArenaCombat
-                                ? GameText.T("Fight in first person. Eliminated players spectate.")
-                            : match.CurrentMinigame ==
-                              ScheduledMinigameId.CliffBarrage
-                                ? GameText.T("Dodge shells and lasers. Push rivals off the cliff.")
-                            : MinefieldStatus(minefield));
-                    break;
-                case BoardFlowState.MinigameResult:
-                    SetText(
-                        _statusText,
-                        match.CurrentMinigame == ScheduledMinigameId.Skip
-                            ? GameText.T("SKIPPED: moving to the next block in the minigame tower.")
-                            : GameText.F("{0} COMPLETE: final standings and {1} gold rewards are shown.",
-                              MinigameName(match.CurrentMinigame),
-                              MinigameRewardRules.FinalPlacementGoldSchedule));
-                    break;
-                case BoardFlowState.MatchComplete:
-                    SetText(
-                        _statusText,
-                        GameText.T("MATCH COMPLETE: all 15 turns have finished."));
-                    break;
-            }
-        }
-
         private void RefreshMinefieldPanelContent(
             NetworkMatchState match,
             bool readyPresentationVisible)
@@ -1580,8 +1299,8 @@ namespace MazeParty.Multiplayer
                         ? GameText.F("P{0}  READY", slot + 1)
                         : GameText.F("P{0}  WAITING", slot + 1));
                 playerState.color = isReady
-                    ? uiBindings.ReadyPlayerCompleteColor
-                    : uiBindings.ReadyPlayerWaitingColor;
+                    ? uiBindings.Hud.ReadyPlayerCompleteColor
+                    : uiBindings.Hud.ReadyPlayerWaitingColor;
             }
 
             var localReady = _localAvatar != null &&
@@ -2461,30 +2180,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string MinefieldStatus(NetworkMinefieldState minefield)
-        {
-            if (minefield == null)
-            {
-                return GameText.T("Synchronizing the Minefield simulation...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.Minefield);
-            switch (minefield.Phase)
-            {
-                case NetworkMinefieldPhase.Countdown:
-                    return GameText.T("Get ready. Every player respawns and the mine layout changes each round.");
-                case NetworkMinefieldPhase.Running:
-                    return GameText.T("WASD moves in top view. Stop moving and press RMB to scan nearby mines.");
-                case NetworkMinefieldPhase.RoundResult:
-                    return GameText.T("Round points: 3 / 2 / 1 / 0. Finishers rank first; others rank by earliest elimination.");
-                case NetworkMinefieldPhase.Complete:
-                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
-                           totalRounds);
-                default:
-                    return GameText.T("Preparing Minefield...");
-            }
-        }
 
         private static string WrongWayPhaseLabel(
             NetworkWrongWayState wrongWay)
@@ -2518,31 +2213,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string WrongWayStatus(
-            NetworkWrongWayState wrongWay)
-        {
-            if (wrongWay == null)
-            {
-                return GameText.T("Synchronizing the WrongWay race...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.WrongWay);
-            switch (wrongWay.Phase)
-            {
-                case NetworkWrongWayPhase.Countdown:
-                    return GameText.T("Get ready. Every player receives the same direction sequence.");
-                case NetworkWrongWayPhase.Running:
-                    return GameText.T("Press the shown WASD direction. Wrong input locks you for 0.5 seconds.");
-                case NetworkWrongWayPhase.RoundResult:
-                    return GameText.T("Round points: 3 / 2 / 1 / 0. More stairs and earlier arrivals rank higher.");
-                case NetworkWrongWayPhase.Complete:
-                    return GameText.F("{0} rounds complete. Final points determine rank; placement awards gold.",
-                           totalRounds);
-                default:
-                    return GameText.T("Preparing WrongWay...");
-            }
-        }
 
         private static string RedLightGreenLightPhaseLabel(
             NetworkRedLightGreenLightState redLightGreenLight)
@@ -2579,51 +2249,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string RedLightGreenLightStatus(
-            NetworkRedLightGreenLightState redLightGreenLight)
-        {
-            if (redLightGreenLight == null)
-            {
-                return GameText.T("Synchronizing the Red Light / Green Light race...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.RedLightGreenLight);
-            switch (redLightGreenLight.Phase)
-            {
-                case NetworkRedLightGreenLightPhase.Countdown:
-                    return GameText.T("Get ready at the shared start line.");
-                case NetworkRedLightGreenLightPhase.Running:
-                    var remaining =
-                        redLightGreenLight.SignalRemaining;
-                    switch (redLightGreenLight.SignalPhase)
-                    {
-                        case RedLightGreenLightSignalPhase.Green:
-                            return GameText.F("GREEN  {0:0.0}s: move toward the finish.",
-                                   remaining);
-                        case RedLightGreenLightSignalPhase.OneRed:
-                            return GameText.F("1 RED / 2 GREEN  {0:0.0}s: movement is still legal.",
-                                   remaining);
-                        case RedLightGreenLightSignalPhase.TwoRed:
-                            return GameText.F("2 RED / 1 GREEN  {0:0.0}s: movement is still legal.",
-                                   remaining);
-                        case RedLightGreenLightSignalPhase.Red:
-                            return GameText.F("RED  {0:0.0}s: freeze; voluntary movement is a violation.",
-                                   remaining);
-                        default:
-                            return GameText.T("Follow the synchronized signal.");
-                    }
-                case NetworkRedLightGreenLightPhase.RoundResult:
-                    return GameText.T("Finishers rank first, then survivors by forward " +
-                           "progress, with eliminated players placed last.");
-                case NetworkRedLightGreenLightPhase.Complete:
-                    return GameText.F("All {0} rounds complete. Final points determine " +
-                           "rank; placement awards gold.", totalRounds);
-                default:
-                    return GameText.T("Preparing Red Light / Green Light...");
-            }
-        }
 
         private static string RedLightGreenLightSignalLabel(
             RedLightGreenLightSignalPhase signal)
@@ -2677,44 +2302,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string StableFootingStatus(
-            NetworkStableFootingState stableFooting)
-        {
-            if (stableFooting == null)
-            {
-                return GameText.T("Synchronizing the Stable Footing arena...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.StableFooting);
-            switch (stableFooting.Phase)
-            {
-                case NetworkStableFootingPhase.Countdown:
-                    return GameText.T("Get ready on the shared 6 x 8 platform arena.");
-                case NetworkStableFootingPhase.Running:
-                    switch (stableFooting.CyclePhase)
-                    {
-                        case StableFootingCyclePhase.ShuffleReveal:
-                            return GameText.T("Symbols are shuffling. Watch the shared safe-symbol display.");
-                        case StableFootingCyclePhase.Move:
-                            return GameText.T("WASD moves. LMB pushes the nearest player in front of you.");
-                        case StableFootingCyclePhase.Drop:
-                            return GameText.T("Unsafe platforms are dropping. Falling eliminates immediately.");
-                        case StableFootingCyclePhase.Restore:
-                            return GameText.T("Platforms are returning; two remain permanently removed.");
-                        default:
-                            return GameText.T("Stay on the announced safe symbol.");
-                    }
-                case NetworkStableFootingPhase.RoundResult:
-                    return GameText.T("The last survivor ranks first; later falls rank above earlier falls.");
-                case NetworkStableFootingPhase.Complete:
-                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
-                           totalRounds);
-                default:
-                    return GameText.T("Preparing Stable Footing...");
-            }
-        }
 
         private static string BalloonBlowPhaseLabel(
             NetworkBalloonBlowState balloonBlow)
@@ -2749,34 +2336,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string BalloonBlowStatus(
-            NetworkBalloonBlowState balloonBlow)
-        {
-            if (balloonBlow == null)
-            {
-                return GameText.T("Synchronizing the Balloon Blow arena...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.BalloonBlow);
-            switch (balloonBlow.Phase)
-            {
-                case NetworkBalloonBlowPhase.Countdown:
-                    return GameText.T("Get ready. Hold LMB after the countdown to inflate.");
-                case NetworkBalloonBlowPhase.Running:
-                    return GameText.T("Hold LMB to inflate. Release before two seconds; " +
-                           "idle and cooldown time slowly deflate your balloon.");
-                case NetworkBalloonBlowPhase.RoundResult:
-                    return GameText.T("Popped balloons rank by pop order; remaining balloons " +
-                           "rank by progress, then server player order.");
-                case NetworkBalloonBlowPhase.Complete:
-                    return GameText.F("All {0} rounds complete. Final points determine rank; placement awards gold.",
-                           totalRounds);
-                default:
-                    return GameText.T("Preparing Balloon Blow...");
-            }
-        }
 
         private static string GiftGrabPhaseLabel(
             NetworkGiftGrabState giftGrab)
@@ -2863,35 +2422,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string TagChaseStatus(
-            NetworkTagChaseState tagChase)
-        {
-            if (tagChase == null)
-            {
-                return GameText.T("Synchronizing the Tag Chase arena...");
-            }
-
-            var taggerLabel = tagChase.TaggerSlot >= 0
-                ? "P" + (tagChase.TaggerSlot + 1)
-                : GameText.T("The selected player");
-            switch (tagChase.Phase)
-            {
-                case NetworkTagChasePhase.Countdown:
-                    return GameText.F("{0} is the tagger. Get ready for the chase.",
-                           taggerLabel);
-                case NetworkTagChasePhase.Running:
-                    return GameText.T("Runners escape with WASD on the shared camera. " +
-                           "The tagger uses WASD and LMB in first person.");
-                case NetworkTagChasePhase.RoundResult:
-                    return GameText.T("The tagger earns 3 points only after catching every " +
-                           "runner; surviving and caught runners score separately.");
-                case NetworkTagChasePhase.Complete:
-                    return GameText.F("All {0} rounds complete. Total points determine rank; " +
-                           "placement awards gold.", TagChaseRules.RoundCount);
-                default:
-                    return GameText.T("Preparing Tag Chase...");
-            }
-        }
 
         private static string RacePhaseLabel(NetworkRaceState race)
         {
@@ -2922,30 +2452,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string RaceStatus(NetworkRaceState race)
-        {
-            if (race == null)
-            {
-                return GameText.T("Synchronizing the Race arena...");
-            }
-
-            switch (race.Phase)
-            {
-                case NetworkRacePhase.Countdown:
-                    return GameText.T("Get ready to alternate A and D.");
-                case NetworkRacePhase.Running:
-                    return GameText.T("Alternate A and D. Repeating the same key does not " +
-                           "advance; first to 200 steps ends the round.");
-                case NetworkRacePhase.RoundResult:
-                    return GameText.T("More steps rank higher; server input order breaks " +
-                           "equal-progress ties.");
-                case NetworkRacePhase.Complete:
-                    return GameText.F("All {0} rounds complete. Total points determine rank; " +
-                           "placement awards gold.", RaceRules.RoundCount);
-                default:
-                    return GameText.T("Preparing Race...");
-            }
-        }
 
         private static string BouncingBallsPhaseLabel(
             NetworkBouncingBallsState bouncingBalls)
@@ -2977,31 +2483,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string BouncingBallsStatus(
-            NetworkBouncingBallsState bouncingBalls)
-        {
-            if (bouncingBalls == null)
-            {
-                return GameText.T("Synchronizing the Bouncing Balls arena...");
-            }
-
-            switch (bouncingBalls.Phase)
-            {
-                case NetworkBouncingBallsPhase.Countdown:
-                    return GameText.T("Three neutral balls will launch from the center.");
-                case NetworkBouncingBallsPhase.Playing:
-                    return GameText.T("Hold A or D to slide your shield. A touched ball " +
-                           "takes your color; a goal scores for its color owner.");
-                case NetworkBouncingBallsPhase.RoundBreak:
-                    return GameText.T("Round over. Combined goals across both rounds " +
-                           "determine final placement.");
-                case NetworkBouncingBallsPhase.Complete:
-                    return GameText.F("Two rounds complete. Final placement awards {0} gold.",
-                           MinigameRewardRules.FinalPlacementGoldSchedule);
-                default:
-                    return GameText.T("Preparing Bouncing Balls...");
-            }
-        }
 
         private static string SequenceMemoryPhaseLabel(
             NetworkSequenceMemoryState sequenceMemory)
@@ -3035,87 +2516,30 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static string SequenceMemoryStatus(
-            NetworkSequenceMemoryState sequenceMemory)
-        {
-            if (sequenceMemory == null)
-            {
-                return GameText.T("Synchronizing the Sequence Memory game...");
-            }
 
-            switch (sequenceMemory.Phase)
-            {
-                case NetworkSequenceMemoryPhase.Countdown:
-                    return GameText.T("Get ready. The NPC will play one shared A/S/D sequence.");
-                case NetworkSequenceMemoryPhase.PresentingProblem:
-                    return GameText.T("Watch and listen: A is high, S is middle and D is low.");
-                case NetworkSequenceMemoryPhase.AcceptingInput:
-                    return GameText.T("Repeat the hidden sequence with A, S and D. A wrong key locks this problem immediately.");
-                case NetworkSequenceMemoryPhase.RevealingAnswer:
-                    return GameText.T("The answer is visible. One mistake loses the torso; the second eliminates.");
-                case NetworkSequenceMemoryPhase.Complete:
-                    return GameText.T("The single match is complete. Placement awards 10 / 6 / 3 / 0 gold.");
-                default:
-                    return GameText.T("Preparing Sequence Memory...");
-            }
-        }
 
-        private static string TerritoryPaintStatus(
-            NetworkTerritoryPaintState territoryPaint)
-        {
-            if (territoryPaint == null)
-            {
-                return GameText.T("Synchronizing the Territory Paint arena...");
-            }
-
-            switch (territoryPaint.Phase)
-            {
-                case NetworkTerritoryPaintPhase.Countdown:
-                    return GameText.T("Get ready at your corner.");
-                case NetworkTerritoryPaintPhase.Running:
-                    return GameText.T("WASD moves and continuously paints a circular trail.");
-                case NetworkTerritoryPaintPhase.RoundResult:
-                    return GameText.T("Current owned area decides the final score.");
-                case NetworkTerritoryPaintPhase.Complete:
-                    return GameText.T("Territory Paint complete.");
-                default:
-                    return GameText.T("Preparing Territory Paint...");
-            }
-        }
-
-        private static string GiftGrabStatus(NetworkGiftGrabState giftGrab)
-        {
-            if (giftGrab == null)
-            {
-                return GameText.T("Synchronizing the Gift Grab arena...");
-            }
-
-            var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
-            switch (giftGrab.Phase)
-            {
-                case NetworkGiftGrabPhase.Countdown:
-                    return GameText.T("Get ready. Ten gifts begin in the shared arena.");
-                case NetworkGiftGrabPhase.Running:
-                    return GameText.T("WASD moves. Carry gifts home, throw while carrying, " +
-                           "or push while empty-handed. Three gifts drop every 15 seconds.");
-                case NetworkGiftGrabPhase.RoundResult:
-                    return GameText.T("Stored gifts decide the round; gift ownership time breaks ties.");
-                case NetworkGiftGrabPhase.Complete:
-                    return GameText.F("{0} rounds complete. Points, total stored gifts, " +
-                           "final-round rank, then server player order " +
-                           "determine placement.", totalRounds);
-                default:
-                    return GameText.T("Preparing Gift Grab...");
-            }
-        }
         internal static IReadOnlyList<string> GetMinigameControlGuide(
             ScheduledMinigameId minigame)
         {
             var index = (int)minigame;
-            return index >= 0 && index < MinigameControlGuides.Length
-                ? MinigameControlGuides[index]
-                : Array.Empty<string>();
+            if (index < 0 || index >= MinigameControlGuides.Length)
+            {
+                return Array.Empty<string>();
+            }
+
+            var sources = MinigameControlGuides[index];
+            var localized = new string[sources.Length];
+            for (var row = 0; row < sources.Length; row++)
+            {
+                var source = sources[row];
+                var labelStart = source.LastIndexOf(">  ", StringComparison.Ordinal);
+                localized[row] = labelStart < 0
+                    ? GameText.T(source)
+                    : source.Substring(0, labelStart + 3) +
+                      GameText.T(source.Substring(labelStart + 3));
+            }
+
+            return localized;
         }
 
         internal static bool ShouldShowMinigameReadyPresentation(
@@ -3133,6 +2557,18 @@ namespace MazeParty.Multiplayer
             ScheduledMinigameId minigame,
             bool hidden)
         {
+            if (_controlGuideInitialized &&
+                _renderedControlMinigame == minigame &&
+                _renderedControlLanguage == GameText.Language &&
+                _renderedControlHidden == hidden)
+            {
+                return;
+            }
+
+            _renderedControlMinigame = minigame;
+            _renderedControlLanguage = GameText.Language;
+            _renderedControlHidden = hidden;
+            _controlGuideInitialized = true;
             var guide = hidden
                 ? Array.Empty<string>()
                 : GetMinigameControlGuide(minigame);
@@ -3156,7 +2592,7 @@ namespace MazeParty.Multiplayer
         {
             var clip = hidden || uiBindings == null
                 ? null
-                : uiBindings.GetMinigamePreviewClip(minigame);
+                : uiBindings.Hud.GetMinigamePreviewClip(minigame);
             if (_minigamePreviewPlayer == null)
             {
                 return;
@@ -3307,6 +2743,9 @@ namespace MazeParty.Multiplayer
             SetText(_turnText, GameText.T("TURN --"));
             SetText(_phaseText, GameText.T("WAITING FOR 4 PLAYERS"));
             SetText(_phaseTimerText, "--:--");
+            SetTextVisible(_movesText, string.Empty, false);
+            SetTextVisible(_ammoText, string.Empty, false);
+            SetTextVisible(_interactionPrompt, string.Empty, false);
             cameraDirector?.SetUiPointerVisible(true);
         }
 
@@ -3395,7 +2834,7 @@ namespace MazeParty.Multiplayer
         {
             var color = ResolveBoardPlayerColor(avatar, slot);
             return Instance != null && Instance.uiBindings != null
-                ? Instance.uiBindings.GetPlayerTextColor(color)
+                ? Instance.uiBindings.Hud.GetPlayerTextColor(color)
                 : BoardCanvasBindings.EnsureMinimumValue(color, 0.72f);
         }
 
@@ -3409,7 +2848,7 @@ namespace MazeParty.Multiplayer
             }
 
             return Instance != null && Instance.uiBindings != null
-                ? Instance.uiBindings.GetPlayerColor(slot)
+                ? Instance.uiBindings.Hud.GetPlayerColor(slot)
                 : (Color)LobbyColorPalette.GetColor(slot);
         }
 
@@ -3441,17 +2880,17 @@ namespace MazeParty.Multiplayer
 
         private void RefreshReticleColor(bool visible)
         {
-            if (_reticleText == null || uiBindings == null)
+            if (_reticleImage == null || uiBindings == null)
             {
                 return;
             }
 
-            _reticleText.color =
+            _reticleImage.color =
                 visible &&
                 _localAvatar != null &&
                 _localAvatar.HasLocalDamageableFirearmTarget()
-                    ? uiBindings.ReticleDamageableTargetColor
-                    : uiBindings.ReticleDefaultColor;
+                    ? uiBindings.Hud.ReticleDamageableTargetColor
+                    : uiBindings.Hud.ReticleDefaultColor;
         }
 
         private static void CopyReferences<T>(T[] source, T[] destination)
@@ -3467,6 +2906,23 @@ namespace MazeParty.Multiplayer
             if (target != null)
             {
                 target.text = value;
+            }
+        }
+
+        private static void SetTextVisible(
+            Text target,
+            string value,
+            bool visible)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.text = value;
+            if (target.gameObject.activeSelf != visible)
+            {
+                target.gameObject.SetActive(visible);
             }
         }
 

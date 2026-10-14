@@ -18,6 +18,10 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab";
         public const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity";
+        public const string AimSpritePath =
+            "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png";
+
+        private const string AimSpriteName = "Add";
 
         [MenuItem("MazeParty/Minigames/Install Arena Combat Hit Flash")]
         public static void Install()
@@ -57,10 +61,11 @@ namespace MazeParty.Editor
                 }
             }
 
-            var view = prefab != null
+            var hitFlashView = prefab != null
                 ? prefab.GetComponent<ArenaCombatHitFlashView>()
                 : null;
-            if (view == null || !view.HasRequiredReferences ||
+            if (hitFlashView == null ||
+                !hitFlashView.HasRequiredReferences ||
                 prefab.GetComponent<Canvas>() == null)
             {
                 throw new InvalidOperationException(
@@ -68,12 +73,17 @@ namespace MazeParty.Editor
                     "serialized bindings.");
             }
 
+            RequireAimView(
+                prefab,
+                RequireAimSprite(),
+                "Arena Combat hit-flash prefab");
             return prefab;
         }
 
         public static void EnsureSceneInstance()
         {
             var prefab = EnsurePrefabExists();
+            var aimSprite = RequireAimSprite();
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForSetup = !scene.IsValid() || !scene.isLoaded;
             if (openedForSetup)
@@ -84,49 +94,68 @@ namespace MazeParty.Editor
 
             try
             {
-                ArenaCombatHitFlashView view = null;
+                ArenaCombatHitFlashView hitFlashView = null;
                 foreach (var root in scene.GetRootGameObjects())
                 {
-                    var candidate = root.GetComponent<ArenaCombatHitFlashView>();
+                    var candidate =
+                        root.GetComponent<ArenaCombatHitFlashView>();
                     if (candidate == null)
                     {
                         continue;
                     }
 
-                    if (view != null)
+                    if (hitFlashView != null)
                     {
                         throw new InvalidOperationException(
                             "Arena Combat scene has multiple hit-flash views.");
                     }
 
-                    view = candidate;
+                    hitFlashView = candidate;
                 }
 
-                if (view == null)
+                var sceneChanged = false;
+                if (hitFlashView == null)
                 {
                     var instance = PrefabUtility.InstantiatePrefab(
                         prefab, scene) as GameObject;
-                    view = instance != null
+                    hitFlashView = instance != null
                         ? instance.GetComponent<ArenaCombatHitFlashView>()
                         : null;
-                    if (view == null)
+                    if (hitFlashView == null)
                     {
                         throw new InvalidOperationException(
                             "Could not instantiate hit-flash prefab.");
                     }
 
                     instance.name = "Arena Combat Hit Flash";
-                    EditorSceneManager.MarkSceneDirty(scene);
-                    EditorSceneManager.SaveScene(scene);
+                    sceneChanged = true;
                 }
 
-                if (view.transform.parent != null ||
+                if (hitFlashView.transform.parent != null ||
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        view.gameObject) != PrefabPath)
+                        hitFlashView.gameObject) != PrefabPath)
                 {
                     throw new InvalidOperationException(
                         "Hit flash must be a standalone prefab instance " +
                         "in Arena Combat scene.");
+                }
+
+                var aimView = RequireAimView(
+                    hitFlashView.gameObject,
+                    aimSprite,
+                    "Arena Combat scene hit-flash instance");
+                var networkView = RequireArenaNetworkView(scene);
+                if (networkView.AimView != aimView)
+                {
+                    networkView.ConfigureAim(aimView);
+                    EditorUtility.SetDirty(networkView);
+                    sceneChanged = true;
+                }
+
+                if (sceneChanged)
+                {
+                    EditorSceneManager.MarkSceneDirty(scene);
+                    EditorSceneManager.SaveScene(scene);
                 }
             }
             finally
@@ -145,7 +174,8 @@ namespace MazeParty.Editor
                 typeof(RectTransform),
                 typeof(Canvas),
                 typeof(CanvasScaler),
-                typeof(ArenaCombatHitFlashView));
+                typeof(ArenaCombatHitFlashView),
+                typeof(ArenaCombatAimView));
             root.transform.localScale = Vector3.one;
             var canvas = root.GetComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
@@ -154,7 +184,8 @@ namespace MazeParty.Editor
             var scaler = root.GetComponent<CanvasScaler>();
             scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.screenMatchMode =
+                CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
             scaler.matchWidthOrHeight = 0.5f;
 
             var flash = new GameObject(
@@ -164,21 +195,41 @@ namespace MazeParty.Editor
                 typeof(CanvasRenderer),
                 typeof(Image));
             flash.transform.SetParent(root.transform, false);
-            var rect = flash.GetComponent<RectTransform>();
-            rect.anchorMin = Vector2.zero;
-            rect.anchorMax = Vector2.one;
-            rect.offsetMin = Vector2.zero;
-            rect.offsetMax = Vector2.zero;
+            var flashRect = flash.GetComponent<RectTransform>();
+            flashRect.anchorMin = Vector2.zero;
+            flashRect.anchorMax = Vector2.one;
+            flashRect.offsetMin = Vector2.zero;
+            flashRect.offsetMax = Vector2.zero;
             var group = flash.GetComponent<CanvasGroup>();
             group.alpha = 0f;
             group.interactable = false;
             group.blocksRaycasts = false;
-            var image = flash.GetComponent<Image>();
-            image.color = new Color(0.95f, 0.025f, 0.025f, 1f);
-            image.raycastTarget = false;
+            var flashImage = flash.GetComponent<Image>();
+            flashImage.color = new Color(0.95f, 0.025f, 0.025f, 1f);
+            flashImage.raycastTarget = false;
+
+            var aim = new GameObject(
+                "Aim",
+                typeof(RectTransform),
+                typeof(CanvasRenderer),
+                typeof(Image));
+            aim.transform.SetParent(root.transform, false);
+            var aimRect = aim.GetComponent<RectTransform>();
+            aimRect.anchorMin = new Vector2(0.5f, 0.5f);
+            aimRect.anchorMax = new Vector2(0.5f, 0.5f);
+            aimRect.pivot = new Vector2(0.5f, 0.5f);
+            aimRect.anchoredPosition = Vector2.zero;
+            aimRect.sizeDelta = new Vector2(50f, 50f);
+            var aimImage = aim.GetComponent<Image>();
+            aimImage.sprite = RequireAimSprite();
+            aimImage.color = Color.white;
+            aimImage.raycastTarget = false;
+            aimImage.maskable = false;
+            aim.SetActive(false);
 
             root.GetComponent<ArenaCombatHitFlashView>()
-                .ConfigureUiBindings(canvas, group, image);
+                .ConfigureUiBindings(canvas, group, flashImage);
+            root.GetComponent<ArenaCombatAimView>().Configure(aimImage);
             SetUiLayer(root);
             return root;
         }
@@ -190,6 +241,83 @@ namespace MazeParty.Editor
             {
                 SetUiLayer(root.transform.GetChild(index).gameObject);
             }
+        }
+
+        private static ArenaCombatNetworkView RequireArenaNetworkView(
+            Scene scene)
+        {
+            ArenaCombatNetworkView result = null;
+            foreach (var root in scene.GetRootGameObjects())
+            {
+                var candidates =
+                    root.GetComponentsInChildren<ArenaCombatNetworkView>(true);
+                for (var index = 0; index < candidates.Length; index++)
+                {
+                    if (result != null)
+                    {
+                        throw new InvalidOperationException(
+                            "Arena Combat scene has multiple network views.");
+                    }
+
+                    result = candidates[index];
+                }
+            }
+
+            if (result == null)
+            {
+                throw new InvalidOperationException(
+                    "Arena Combat scene requires ArenaCombatNetworkView.");
+            }
+
+            return result;
+        }
+
+        private static Sprite RequireAimSprite()
+        {
+            var assets = AssetDatabase.LoadAllAssetsAtPath(AimSpritePath);
+            for (var index = 0; index < assets.Length; index++)
+            {
+                if (assets[index] is Sprite sprite &&
+                    sprite.name == AimSpriteName)
+                {
+                    return sprite;
+                }
+            }
+
+            throw new InvalidOperationException(
+                "Arena Combat aim sprite is missing at '" +
+                AimSpritePath + "'.");
+        }
+
+        private static ArenaCombatAimView RequireAimView(
+            GameObject root,
+            Sprite expectedSprite,
+            string context)
+        {
+            var aimViews = root != null
+                ? root.GetComponents<ArenaCombatAimView>()
+                : Array.Empty<ArenaCombatAimView>();
+            if (aimViews.Length != 1 ||
+                !aimViews[0].HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    context + " requires one root ArenaCombatAimView with " +
+                    "an authored Image binding.");
+            }
+
+            var aimView = aimViews[0];
+            var aimImage = aimView.AimImage;
+            if (aimImage.sprite != expectedSprite ||
+                aimImage.raycastTarget ||
+                aimImage.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException(
+                    context + " requires the authored Add aim sprite, " +
+                    "disabled by default and non-blocking. Repair the prefab " +
+                    "directly; setup will not overwrite its design.");
+            }
+
+            return aimView;
         }
     }
 }

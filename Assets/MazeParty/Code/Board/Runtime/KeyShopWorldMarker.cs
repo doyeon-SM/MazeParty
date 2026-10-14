@@ -37,14 +37,10 @@ namespace MazeParty.Gameplay
     [DisallowMultipleComponent]
     public sealed class KeyShopWorldMarker : MonoBehaviour
     {
-        public const string WorldLabel = "KEY SHOP";
-
         [SerializeField] private BoardWorldPrefabs worldPrefabs;
-
 
         private BoardShopVisual _visual;
         private GameObject _markerObject;
-        private TextMesh _worldText;
         private bool _topViewHighlightRequested;
         private bool _hasAppliedSnapshot;
         private KeyShopLifecycleState _appliedState = KeyShopLifecycleState.Inactive;
@@ -63,7 +59,6 @@ namespace MazeParty.Gameplay
         public event Action<KeyShopWorldMarkerEvent> Activated;
 
         public GameObject MarkerObject => _markerObject;
-        public TextMesh WorldTextMesh => _worldText;
         public KeyShopLifecycleState AppliedState => _appliedState;
         public bool AppliedHasLocation => _appliedHasLocation;
         public Vector2Int AppliedCoordinate => _appliedCoordinate;
@@ -197,7 +192,6 @@ namespace MazeParty.Gameplay
             var visual = Instantiate(worldPrefabs.KeyShop, transform, false);
             _visual = visual;
             _markerObject = visual.gameObject;
-            _worldText = visual.Label;
             visual.SetTopViewHighlightVisible(_topViewHighlightRequested);
             _markerObject.SetActive(false);
         }

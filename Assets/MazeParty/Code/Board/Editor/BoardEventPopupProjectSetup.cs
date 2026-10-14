@@ -8,7 +8,7 @@ namespace MazeParty.Editor
 {
     /// <summary>
     /// Adds the authored, shared landing-event popup without rebuilding or
-    /// restyling the existing Board Canvas prefab.
+    /// restyling the existing Board HUD Canvas prefab.
     /// </summary>
     public static class BoardEventPopupProjectSetup
     {
@@ -17,8 +17,8 @@ namespace MazeParty.Editor
         public const string ModulePrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardEventPopupPanel.prefab";
 
-        private const string BoardCanvasPrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string BoardHudCanvasPrefabPath =
+            BoardCanvasSplitProjectSetup.HudPrefabPath;
         private const string ModuleFolder =
             "Assets/MazeParty/Prefabs/Board/UI/Modules";
 
@@ -32,18 +32,18 @@ namespace MazeParty.Editor
             }
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             if (prefab == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab must exist before adding its event popup.");
+                    "BoardHudCanvas.prefab must exist before adding its event popup.");
             }
 
             EnsureInstalled(prefab);
             AssetDatabase.SaveAssets();
             Debug.Log(
                 "The shared board event popup was added without rebuilding " +
-                "the existing Board Canvas design.");
+                "the existing Board HUD Canvas design.");
         }
 
         public static GameObject EnsureInstalled(GameObject prefab)
@@ -60,17 +60,17 @@ namespace MazeParty.Editor
             }
 
             var contents = PrefabUtility.LoadPrefabContents(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             try
             {
                 var panel = EnsureInstance(contents.transform, modulePrefab);
                 Bind(contents, panel);
                 if (PrefabUtility.SaveAsPrefabAsset(
                         contents,
-                        BoardCanvasPrefabPath) == null)
+                        BoardHudCanvasPrefabPath) == null)
                 {
                     throw new InvalidOperationException(
-                        "Failed to save the Board Canvas event popup migration.");
+                        "Failed to save the Board HUD Canvas event popup migration.");
                 }
             }
             finally
@@ -79,7 +79,7 @@ namespace MazeParty.Editor
             }
 
             return AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
         }
 
         public static GameObject EnsureTemplateInstance(Transform parent)
@@ -181,7 +181,7 @@ namespace MazeParty.Editor
                 if (!IsExpectedModule(existing.gameObject))
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvas already contains '" + ModuleObjectName +
+                        "BoardHudCanvas already contains '" + ModuleObjectName +
                         "', but it is not connected to " + ModulePrefabPath +
                         ". It was left untouched so authored design is not lost.");
                 }
@@ -212,14 +212,14 @@ namespace MazeParty.Editor
 
         private static void Bind(GameObject root, GameObject panel)
         {
-            var bindings = root.GetComponent<BoardCanvasBindings>();
+            var bindings = root.GetComponent<BoardHudCanvasBindings>();
             var message = FindDescendant(
                 panel.transform,
                 MessageObjectName)?.GetComponent<Text>();
             if (bindings == null || message == null)
             {
                 throw new InvalidOperationException(
-                    "Board event popup requires BoardCanvasBindings and its " +
+                    "Board event popup requires BoardHudCanvasBindings and its " +
                     "authored message Text.");
             }
 
@@ -232,7 +232,7 @@ namespace MazeParty.Editor
             if (panelProperty == null || messageProperty == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvasBindings is missing its event popup fields.");
+                    "BoardHudCanvasBindings is missing its event popup fields.");
             }
 
             panelProperty.objectReferenceValue = panel;
@@ -254,7 +254,7 @@ namespace MazeParty.Editor
             var message = FindDescendant(
                 panel,
                 MessageObjectName)?.GetComponent<Text>();
-            var bindings = prefab.GetComponent<BoardCanvasBindings>();
+            var bindings = prefab.GetComponent<BoardHudCanvasBindings>();
             if (bindings == null || message == null)
             {
                 return false;
@@ -336,7 +336,7 @@ namespace MazeParty.Editor
 
     /// <summary>
     /// Adds the authored, non-interactive board kill feed without rebuilding or
-    /// restyling the existing Board Canvas prefab.
+    /// restyling the existing Board HUD Canvas prefab.
     /// </summary>
     public static class BoardKillFeedProjectSetup
     {
@@ -345,8 +345,8 @@ namespace MazeParty.Editor
         public const string ModulePrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardKillFeedPanel.prefab";
 
-        private const string BoardCanvasPrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string BoardHudCanvasPrefabPath =
+            BoardCanvasSplitProjectSetup.HudPrefabPath;
         private const string ModuleFolder =
             "Assets/MazeParty/Prefabs/Board/UI/Modules";
 
@@ -360,18 +360,18 @@ namespace MazeParty.Editor
             }
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             if (prefab == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab must exist before adding its kill feed.");
+                    "BoardHudCanvas.prefab must exist before adding its kill feed.");
             }
 
             EnsureInstalled(prefab);
             AssetDatabase.SaveAssets();
             Debug.Log(
                 "The shared board kill feed was added without rebuilding " +
-                "the existing Board Canvas design.");
+                "the existing Board HUD Canvas design.");
         }
 
         public static GameObject EnsureInstalled(GameObject prefab)
@@ -388,17 +388,17 @@ namespace MazeParty.Editor
             }
 
             var contents = PrefabUtility.LoadPrefabContents(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             try
             {
                 var panel = EnsureInstance(contents.transform, modulePrefab);
                 Bind(contents, panel);
                 if (PrefabUtility.SaveAsPrefabAsset(
                         contents,
-                        BoardCanvasPrefabPath) == null)
+                        BoardHudCanvasPrefabPath) == null)
                 {
                     throw new InvalidOperationException(
-                        "Failed to save the Board Canvas kill feed migration.");
+                        "Failed to save the Board HUD Canvas kill feed migration.");
                 }
             }
             finally
@@ -407,7 +407,7 @@ namespace MazeParty.Editor
             }
 
             return AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
         }
 
         public static GameObject EnsureTemplateInstance(Transform parent)
@@ -511,7 +511,7 @@ namespace MazeParty.Editor
                 if (!IsExpectedModule(existing.gameObject))
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvas already contains '" + ModuleObjectName +
+                        "BoardHudCanvas already contains '" + ModuleObjectName +
                         "', but it is not connected to " + ModulePrefabPath +
                         ". It was left untouched so authored design is not lost.");
                 }
@@ -542,14 +542,14 @@ namespace MazeParty.Editor
 
         private static void Bind(GameObject root, GameObject panel)
         {
-            var bindings = root.GetComponent<BoardCanvasBindings>();
+            var bindings = root.GetComponent<BoardHudCanvasBindings>();
             var message = FindDescendant(
                 panel.transform,
                 MessageObjectName)?.GetComponent<Text>();
             if (bindings == null || message == null)
             {
                 throw new InvalidOperationException(
-                    "Board kill feed requires BoardCanvasBindings and its " +
+                    "Board kill feed requires BoardHudCanvasBindings and its " +
                     "authored message Text.");
             }
 
@@ -562,7 +562,7 @@ namespace MazeParty.Editor
             if (panelProperty == null || messageProperty == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvasBindings is missing its kill feed fields.");
+                    "BoardHudCanvasBindings is missing its kill feed fields.");
             }
 
             panelProperty.objectReferenceValue = panel;
@@ -584,7 +584,7 @@ namespace MazeParty.Editor
             var message = FindDescendant(
                 panel,
                 MessageObjectName)?.GetComponent<Text>();
-            var bindings = prefab.GetComponent<BoardCanvasBindings>();
+            var bindings = prefab.GetComponent<BoardHudCanvasBindings>();
             if (bindings == null || message == null)
             {
                 return false;

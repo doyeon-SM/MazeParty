@@ -54,7 +54,8 @@ namespace MazeParty.Editor
                         PreviewEffects[i % PreviewEffects.Length]);
                 }
                 var ui = (GameObject)PrefabUtility.InstantiatePrefab(
-                    AssetDatabase.LoadAssetAtPath<GameObject>("Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"), preview);
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        BoardCanvasSplitProjectSetup.MapPrefabPath), preview);
                 // This is an editor-only visual fixture, not an online session.
                 foreach (Transform child in ui.transform) child.gameObject.SetActive(false);
                 var panel = ui.transform.Find("Board Action Minimap");

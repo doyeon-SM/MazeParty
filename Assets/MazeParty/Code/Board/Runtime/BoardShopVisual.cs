@@ -8,21 +8,16 @@ namespace MazeParty.Gameplay
     {
         public const float LocationHighlightSeconds = 3f;
 
-        [SerializeField] private TextMesh label;
         [SerializeField] private GameObject topViewHighlight;
         [SerializeField] private GameObject locationHighlightVfx;
         [SerializeField] private Collider[] interactionColliders =
             Array.Empty<Collider>();
         [SerializeField] private Collider[] physicalColliders =
             Array.Empty<Collider>();
-        [SerializeField, TextArea] private string availableText = GameText.N("ITEM SHOP {0}\nRMB OPEN");
-        [SerializeField, TextArea] private string soldOutText = GameText.N("ITEM SHOP {0}\nSOLD OUT");
         private float _locationHighlightEndsAt = float.NegativeInfinity;
-        private Camera _facingCamera;
         private bool _topViewHighlightVisible;
         private bool _locationHighlightVisible;
 
-        public TextMesh Label => label;
         public GameObject TopViewHighlight => topViewHighlight;
         public GameObject LocationHighlightVfx => locationHighlightVfx;
         public Collider[] InteractionColliders => interactionColliders;
@@ -30,7 +25,6 @@ namespace MazeParty.Gameplay
 
         private void Awake()
         {
-            if (Application.isPlaying && label != null) WorldTextOcclusion.Apply(label);
             RefreshHighlightVisibility();
         }
 
@@ -48,39 +42,8 @@ namespace MazeParty.Gameplay
             }
         }
 
-        private void LateUpdate()
-        {
-            if (label == null)
-            {
-                return;
-            }
-
-            if (_facingCamera == null || !_facingCamera.isActiveAndEnabled)
-            {
-                _facingCamera = Camera.main;
-            }
-
-            if (_facingCamera == null)
-            {
-                return;
-            }
-
-            var direction =
-                label.transform.position - _facingCamera.transform.position;
-            direction.y = 0f;
-            if (direction.sqrMagnitude <= Mathf.Epsilon)
-            {
-                return;
-            }
-
-            label.transform.rotation = Quaternion.LookRotation(
-                direction.normalized,
-                Vector3.up);
-        }
-
         private void OnDisable()
         {
-            _facingCamera = null;
             _locationHighlightVisible = false;
             _locationHighlightEndsAt = float.NegativeInfinity;
             SetHighlightObjectVisible(topViewHighlight, false);
@@ -94,8 +57,8 @@ namespace MazeParty.Gameplay
         {
             get
             {
-                if (label == null || topViewHighlight == null ||
-                    locationHighlightVfx == null || interactionColliders == null ||
+                if (topViewHighlight == null || locationHighlightVfx == null ||
+                    interactionColliders == null ||
                     interactionColliders.Length == 0 || physicalColliders == null ||
                     physicalColliders.Length == 0)
                 {
@@ -148,11 +111,14 @@ namespace MazeParty.Gameplay
 
         public void SetItemState(int index, bool soldOut)
         {
-            label.text = GameText.T(soldOut ? soldOutText : availableText).Replace("{0}", (index + 1).ToString());
+            _ = soldOut;
             foreach (var target in interactionColliders)
             {
                 var item = target.GetComponent<ItemShopWorldTarget>();
-                if (item != null) item.Configure(index);
+                if (item != null)
+                {
+                    item.Configure(index);
+                }
             }
         }
 

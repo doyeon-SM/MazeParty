@@ -1640,7 +1640,7 @@ namespace MazeParty.Multiplayer
             return die != null;
         }
 
-        private bool TryGetAimedBoardShop(out RaycastHit hit)
+        private bool TryGetAimedBoardInteractionHit(out RaycastHit hit)
         {
             var origin = eyePivot != null
                 ? eyePivot.position

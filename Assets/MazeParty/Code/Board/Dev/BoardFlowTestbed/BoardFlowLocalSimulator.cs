@@ -86,10 +86,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Text _turnText;
         private Text _phaseText;
         private Text _phaseTimerText;
-        private Text _diceText;
         private Text _movesText;
         private Text _ammoText;
-        private Text _statusText;
         private Text _tooltipText;
         private Text _speedButtonLabel;
         private Button _noItemButton;
@@ -114,6 +112,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private int _roll;
         private int _remainingMoves;
         private int _selectedSlot = -1;
+        private int _selectedItemCharges;
         private byte _occupiedMask;
         private bool _paused;
         private bool _editorPointerVisible;
@@ -307,7 +306,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _flow.Start(_simulationNow, 1);
             RefreshLocalItemShops(1);
             TryPlaceLocalKeyShop(1);
-            SetStatus("EDITOR LOCAL SIMULATION: board overview started.");
+            LogSimulation("EDITOR LOCAL SIMULATION: board overview started.");
             RefreshUi();
         }
 
@@ -344,7 +343,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_lastChoiceResolution == ItemChoiceResolution.TimedOut)
                 {
                     PrepareLocalWorldDie();
-                    SetStatus("Choice timed out. DO NOT USE was selected automatically.");
+                    LogSimulation("Choice timed out. DO NOT USE was selected automatically.");
                 }
             }
             HandleEditorPointerToggle();
@@ -380,8 +379,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             _selectedSlot = slot;
+            _selectedItemCharges = PrototypeItemCatalog.Get(
+                _itemSlots[slot]).Charges;
             PrepareLocalWorldDie();
-            SetStatus("Item active. WASD moves in-room; aim at your world die to roll or nudge it.");
+            LogSimulation("Item active. WASD moves in-room; aim at your world die to roll or nudge it.");
         }
 
         public void ChooseNoItem()
@@ -389,8 +390,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (_flow.ActionClock.TryChooseNoItem(_simulationNow))
             {
                 _selectedSlot = -1;
+                _selectedItemCharges = 0;
                 PrepareLocalWorldDie();
-                SetStatus("DO NOT USE selected. Aim at your world die and press RMB to roll.");
+                LogSimulation("DO NOT USE selected. Aim at your world die and press RMB to roll.");
             }
         }
 
@@ -406,33 +408,33 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _arrivalTimes[slot] = _simulationNow + slot * 0.001d;
                 _flow.TryReportPlayerArrived(slot, _arrivalTimes[slot]);
             }
-            SetStatus("EDITOR: all four arrival reports submitted.");
+            LogSimulation("EDITOR: all four arrival reports submitted.");
         }
 
         public void StageTwoPlayerFight()
         {
             if (_flow.State != BoardFlowState.Action)
             {
-                SetStatus("EDITOR: stage a fight during FIRST-PERSON ACTION.");
+                LogSimulation("EDITOR: stage a fight during FIRST-PERSON ACTION.");
                 return;
             }
 
             _stageTwoPlayerFightAtFinish = true;
-            SetStatus("EDITOR: P2 will finish in P1's room when FINISH ACTION is pressed.");
+            LogSimulation("EDITOR: P2 will finish in P1's room when FINISH ACTION is pressed.");
         }
 
         public void ReadyAllAndSkip()
         {
             if (_flow.TrySkipMinigame(_simulationNow))
             {
-                SetStatus("EDITOR: all players ready; minigame skipped without rewards.");
+                LogSimulation("EDITOR: all players ready; minigame skipped without rewards.");
             }
         }
 
         public void CycleSimulationSpeed()
         {
             _simulationSpeed = _simulationSpeed < 2f ? 10f : _simulationSpeed < 20f ? 60f : 1f;
-            SetStatus("EDITOR: flow clock speed set to x" + _simulationSpeed.ToString("0") + ".");
+            LogSimulation("EDITOR: flow clock speed set to x" + _simulationSpeed.ToString("0") + ".");
         }
 
         public void DamageLocalPlayer()
@@ -440,27 +442,27 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (_localCombatActive && IsLocalCombatAlive(0))
             {
                 ApplyLocalCombatDamage(0);
-                SetStatus("EDITOR: simulated P2 punch dealt 5 temporary HP damage to P1.");
+                LogSimulation("EDITOR: simulated P2 punch dealt 5 temporary HP damage to P1.");
                 return;
             }
 
             _currentHealth[0] = PlayerStatRules.ClampHealth(
                 _currentHealth[0] - 20,
                 _maxHealth[0]);
-            SetStatus("EDITOR: P1 took 20 damage. The HUD health bar updated immediately.");
+            LogSimulation("EDITOR: P1 took 20 damage. The HUD health bar updated immediately.");
         }
 
         public void AddLocalGold()
         {
             _gold[0] = PlayerStatRules.ApplyGoldDelta(_gold[0], 10);
-            SetStatus("EDITOR: P1 received 10 gold.");
+            LogSimulation("EDITOR: P1 received 10 gold.");
         }
 
         public void BuyLocalKey()
         {
             if (!PlayerStatRules.CanPurchaseKey(_gold[0]))
             {
-                SetStatus("EDITOR: P1 needs 20 gold to buy one key.");
+                LogSimulation("EDITOR: P1 needs 20 gold to buy one key.");
                 return;
             }
 
@@ -468,7 +470,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _gold[0],
                 -PlayerStatRules.KeyShopGoldPrice);
             _keys[0] = PlayerStatRules.AddKeys(_keys[0], 1);
-            SetStatus("EDITOR: P1 bought one key for 20 gold.");
+            LogSimulation("EDITOR: P1 bought one key for 20 gold.");
         }
 
         public void TogglePause()
@@ -477,12 +479,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             {
                 _flow.Resume(_simulationNow);
                 _paused = false;
-                SetStatus("EDITOR: reconnect-style global pause resumed.");
+                LogSimulation("EDITOR: reconnect-style global pause resumed.");
             }
             else if (_flow.Pause(_simulationNow))
             {
                 _paused = true;
-                SetStatus("EDITOR: reconnect-style global pause active; flow timers are frozen.");
+                LogSimulation("EDITOR: reconnect-style global pause active; flow timers are frozen.");
             }
         }
 
@@ -517,11 +519,11 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
                     RefreshLocalItemShops(transition.Turn);
                     TryPlaceLocalKeyShop(transition.Turn);
-                    SetStatus("Board overview for turn " + transition.Turn + ".");
+                    LogSimulation("Board overview for turn " + transition.Turn + ".");
                     break;
                 case BoardFlowState.Descending:
                     cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
-                    SetStatus("Descending through the local overhead bridge.");
+                    LogSimulation("Descending through the local overhead bridge.");
                     break;
                 case BoardFlowState.Action:
                     for (var slot = 0; slot < _arrivalTimes.Length; slot++)
@@ -547,28 +549,28 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     }
                     else
                     {
-                        SetStatus("Choose an item within 30 seconds; shield and action clocks started together.");
+                        LogSimulation("Choose an item within 30 seconds; shield and action clocks started together.");
                     }
                     break;
                 case BoardFlowState.AscendingResolve:
                     EndSelectedItemUse();
                     SetAllActionStates(PlayerBoardActionState.Hidden);
                     cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
-                    SetStatus("Input closed. Five-second effect settle window.");
+                    LogSimulation("Input closed. Five-second effect settle window.");
                     break;
                 case BoardFlowState.CombatResolve:
                     BeginLocalCombatSequence();
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLocalLandingEffects();
-                    SetStatus("All fights completed. Resolving landing effects in P1-P4 order.");
+                    LogSimulation("All fights completed. Resolving landing effects in P1-P4 order.");
                     break;
                 case BoardFlowState.MinigameIntroReady:
                     ResolveAllRemainingLocalLandingEffects();
-                    SetStatus("Minigame intro: READY readies every player and skips the minigame in the local testbed.");
+                    LogSimulation("Minigame intro: READY readies every player and skips the minigame in the local testbed.");
                     break;
                 case BoardFlowState.MinigameResult:
-                    SetStatus("Minigame skipped in the local testbed: no rewards. Next turn in three seconds.");
+                    LogSimulation("Minigame skipped in the local testbed: no rewards. Next turn in three seconds.");
                     break;
             }
 
@@ -654,7 +656,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     {
                         NudgeLocalWorldDie(dieRay);
                         _avatarVisual?.TriggerPunch();
-                        SetStatus("Your world die was nudged inside the current room.");
+                        LogSimulation("Your world die was nudged inside the current room.");
                     }
                 }
                 else if (repeatPrimary && _selectedSlot >= 0)
@@ -663,10 +665,27 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     {
                         var item = _itemSlots[_selectedSlot];
                         _avatarVisual?.TriggerItemUse(item);
-                        _occupiedMask = (byte)(_occupiedMask & ~(1 << _selectedSlot));
-                        _itemSlots[_selectedSlot] = PrototypeItemId.None;
-                        _selectedSlot = -1;
-                        SetStatus("Item consumed. The local testbed does not simulate item effects.");
+                        _selectedItemCharges = Mathf.Max(
+                            0,
+                            _selectedItemCharges - 1);
+                        if (!BoardItemPresentationRules.IsFirearm(item) ||
+                            _selectedItemCharges == 0)
+                        {
+                            _occupiedMask = (byte)(
+                                _occupiedMask & ~(1 << _selectedSlot));
+                            _itemSlots[_selectedSlot] = PrototypeItemId.None;
+                            _selectedSlot = -1;
+                            _selectedItemCharges = 0;
+                            LogSimulation(
+                                "Item consumed. The local testbed does not " +
+                                "simulate item effects.");
+                        }
+                        else
+                        {
+                            LogSimulation(
+                                "Firearm round consumed. The local testbed " +
+                                "does not simulate hit effects.");
+                        }
                     }
                 }
                 else if (repeatPrimary)
@@ -770,7 +789,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             _editorPointerVisible = !_editorPointerVisible;
-            SetStatus(_editorPointerVisible
+            LogSimulation(_editorPointerVisible
                 ? "EDITOR: pointer released. Use the tools panel; press TAB to capture it again."
                 : "EDITOR: pointer captured. Press TAB to use the tools panel.");
         }
@@ -797,7 +816,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     {
                         _actionStates[0] = PlayerBoardActionState.Arrived;
                         _flow.TryReportPlayerArrived(0, _simulationNow);
-                        SetStatus("Moves are spent. You may keep positioning inside this room until all players arrive.");
+                        LogSimulation("Moves are spent. You may keep positioning inside this room until all players arrive.");
                     }
                     return;
                 }
@@ -843,6 +862,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _roll = 0;
             _remainingMoves = 0;
             _selectedSlot = -1;
+            _selectedItemCharges = 0;
             _editorPointerVisible = false;
             _localFootstepCadence.Reset();
             if (_traversal.IsInitialized)
@@ -861,6 +881,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _itemSlots[_selectedSlot] = PrototypeItemId.None;
             }
             _selectedSlot = -1;
+            _selectedItemCharges = 0;
             _boundaryWalls?.Hide();
             HideLocalWorldDie();
         }
@@ -1300,7 +1321,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 WorldDieRollTorqueImpulse,
                 ForceMode.Impulse);
             _avatarVisual?.TriggerPunch();
-            SetStatus(
+            LogSimulation(
                 "Rolling the local D12. Movement commits after its one-second landing.");
             return true;
         }
@@ -1454,7 +1475,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             RefreshBoundaryWalls();
-            SetStatus(
+            LogSimulation(
                 "Rolled " + settledFace +
                 ". Blue walls are passable; black walls physically block entry.");
         }
@@ -1660,45 +1681,6 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
-        private bool IsLocalWorldDieResultPublic(double now)
-        {
-            return _roll > 0 &&
-                   _worldDie != null &&
-                   _worldDie.activeSelf &&
-                   _worldDieRollPresentationPhase ==
-                   WorldDieRollPresentationPhase.None &&
-                   _worldDieHideDeadline >= 0d &&
-                   now < _worldDieHideDeadline;
-        }
-
-        private string ResolveLocalWorldDieHudLabel()
-        {
-            if (_flow.State == BoardFlowState.CombatResolve)
-            {
-                return IsLocalCombatAlive(0)
-                    ? "LMB  PUNCH"
-                    : "FIGHT  SPECTATING";
-            }
-
-            if (_worldDieRollPresentationPhase !=
-                WorldDieRollPresentationPhase.None)
-            {
-                return "DICE  ROLLING...";
-            }
-
-            if (_roll > 0)
-            {
-                return IsLocalWorldDieResultPublic(
-                    Time.unscaledTimeAsDouble)
-                    ? "DICE  " + _roll
-                    : "DICE  ROLL COMPLETE";
-            }
-
-            return _flow.ActionClock.IsChoicePending
-                ? "DICE  CHOOSE ITEM FIRST"
-                : "AIM AT WORLD DIE / RMB ROLL";
-        }
-
         private void UpdateLocalWorldDiePhysics()
         {
             var isPhysicalTumble =
@@ -1810,6 +1792,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             _occupiedMask = 0;
             _selectedSlot = -1;
+            _selectedItemCharges = 0;
             for (var itemSlot = 0; itemSlot < _itemSlots.Length; itemSlot++)
             {
                 _itemSlots[itemSlot] = PrototypeItemId.None;
@@ -1955,7 +1938,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     : GameplayMode.CombatSpectator);
                 ApplyBodyVisibility(localFighting);
                 RefreshBoundaryWalls();
-                SetStatus(localFighting
+                LogSimulation(localFighting
                     ? "EDITOR FIGHT: WASD moves in-room. LMB punches P2 for 5 temporary HP."
                     : "EDITOR SPECTATOR: input locked while the current fight resolves.");
                 return;
@@ -2027,7 +2010,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             if (targetSlot < 0)
             {
-                SetStatus("EDITOR FIGHT: punch missed.");
+                LogSimulation("EDITOR FIGHT: punch missed.");
                 return;
             }
 
@@ -2043,7 +2026,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
             ApplyLocalCombatDamage(targetSlot);
             target?.GetComponent<PlayerAvatarVisual>()?.TriggerHit(PlayerHitRegion.Body);
-            SetStatus("EDITOR FIGHT: P" + (targetSlot + 1) +
+            LogSimulation("EDITOR FIGHT: P" + (targetSlot + 1) +
                       " took 5 temporary HP damage.");
         }
 
@@ -2110,7 +2093,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (zone != null && targetVisual != null && targetVisual != _avatarVisual)
                 {
                     targetVisual.TriggerHit(zone.Region);
-                    SetStatus("EDITOR PUNCH: hit " + zone.Region +
+                    LogSimulation("EDITOR PUNCH: hit " + zone.Region +
                               ". HP unchanged; visual wobble only.");
                     return;
                 }
@@ -2125,7 +2108,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 }
             }
 
-            SetStatus("EDITOR PUNCH: missed. HP unchanged.");
+            LogSimulation("EDITOR PUNCH: missed. HP unchanged.");
         }
 
         private void ApplyLocalCombatDamage(int slot)
@@ -2490,7 +2473,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             _lastLandingEffectPreviewKey = previewKey;
-            SetStatus(phase == 0
+            LogSimulation(phase == 0
                 ? "SPECIAL EVENT: TARGET ROULETTE"
                 : phase == 1
                     ? "SPECIAL EVENT: TARGET LOCKED / RESOURCE ROULETTE"
@@ -2522,7 +2505,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 case BoardLandingEffectType.GoldLoss:
                     var goldDelta = BoardLandingEffectLayout.GetGoldDelta(effect);
                     _gold[slot] = PlayerStatRules.ApplyGoldDelta(_gold[slot], goldDelta);
-                    SetStatus("P" + (slot + 1) + " landing effect: " +
+                    LogSimulation("P" + (slot + 1) + " landing effect: " +
                               (goldDelta >= 0 ? "+" : string.Empty) + goldDelta + " gold.");
                     break;
                 case BoardLandingEffectType.Healing20:
@@ -2539,14 +2522,14 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                         ResolveLocalLandingDeath(slot);
                         break;
                     }
-                    SetStatus("P" + (slot + 1) + " landing effect: " +
+                    LogSimulation("P" + (slot + 1) + " landing effect: " +
                               (healthDelta >= 0 ? "+" : string.Empty) +
                               healthDelta + " HP.");
                     break;
                 case BoardLandingEffectType.ItemReward:
                     if (slot != 0)
                     {
-                        SetStatus("P" + (slot + 1) +
+                        LogSimulation("P" + (slot + 1) +
                                   " landing effect: simulated random item reward.");
                         break;
                     }
@@ -2556,7 +2539,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                         _flow.CurrentTurn * 31 ^
                         tile.Coordinate.GetHashCode());
                     var reward = PrototypeItemCatalog.GetRandomId(new System.Random(seed));
-                    SetStatus(TryAddLocalItem(reward)
+                    LogSimulation(TryAddLocalItem(reward)
                         ? "P1 landing effect: received " +
                           PrototypeItemCatalog.Get(reward).DisplayName + "."
                         : "P1 landing effect: inventory full; item reward was not received.");
@@ -2601,7 +2584,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
 
             _currentHealth[slot] = _maxHealth[slot];
-            SetStatus(
+            LogSimulation(
                 "P" + (slot + 1) + " was knocked out by a landing effect, " +
                 "dropped " + droppedGold + " gold, and respawned.");
         }
@@ -2651,7 +2634,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 ApplyLocalSpecialEventResource(destination, resolution.Resource, transferred);
             }
 
-            SetStatus("P" + (actorSlot + 1) +
+            LogSimulation("P" + (actorSlot + 1) +
                       " landing effect: special event resolved.");
         }
 
@@ -2709,7 +2692,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 ApplyLocalKeyShopState();
                 _keyShopState.TryCompleteAppearance();
                 ApplyLocalKeyShopState();
-                SetStatus("A single Key Shop appeared on an unoccupied random room.");
+                LogSimulation("A single Key Shop appeared on an unoccupied random room.");
             }
         }
 
@@ -2861,12 +2844,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 topology == null || !_traversal.IsInitialized ||
                 _traversal.CurrentTile.Coordinate != _keyShopState.Location)
             {
-                SetStatus("Key Shop purchase failed: stand in the shop room and aim at it.");
+                LogSimulation("Key Shop purchase failed: stand in the shop room and aim at it.");
                 return;
             }
             if (!PlayerStatRules.CanPurchaseKey(_gold[0]))
             {
-                SetStatus("Key Shop purchase failed: P1 needs 20 gold.");
+                LogSimulation("Key Shop purchase failed: P1 needs 20 gold.");
                 return;
             }
             if (!_flow.Pause(_simulationNow))
@@ -2881,7 +2864,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     out _))
             {
                 _flow.Resume(_simulationNow);
-                SetStatus("Key Shop could not find a valid relocation room.");
+                LogSimulation("Key Shop could not find a valid relocation room.");
                 return;
             }
 
@@ -2895,7 +2878,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             StopLocalWorldDieNudge();
             ApplyLocalKeyShopState();
             cameraDirector?.SwitchTo(GameplayMode.BoardTopDown);
-            SetStatus("Key purchased. Global action paused for the five-second shop relocation view.");
+            LogSimulation("Key purchased. Global action paused for the five-second shop relocation view.");
         }
 
         private void AdvanceLocalKeyShopReveal()
@@ -2912,7 +2895,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _flow.Resume(_simulationNow);
             cameraDirector?.SwitchTo(GameplayMode.FirstPerson);
             RefreshBoundaryWalls();
-            SetStatus("Key Shop relocation complete. The exact action state resumed.");
+            LogSimulation("Key Shop relocation complete. The exact action state resumed.");
         }
 
         private bool CanAccessLocalItemShop(int shopIndex)
@@ -2936,13 +2919,13 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         {
             if (!CanAccessLocalItemShop(shopIndex))
             {
-                SetStatus("Item Shop is out of interaction range.");
+                LogSimulation("Item Shop is out of interaction range.");
                 return;
             }
 
             _openItemShopIndex = shopIndex;
             _editorPointerVisible = false;
-            SetStatus("Item Shop opened. The global timer continues; movement and attacks are locked.");
+            LogSimulation("Item Shop opened. The global timer continues; movement and attacks are locked.");
         }
 
         public void CloseLocalItemShop()
@@ -2962,7 +2945,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             var stock = _itemShopStocks[_openItemShopIndex];
             if (stock == null || stock.IsSold(offerIndex))
             {
-                SetStatus("That one-copy offer is already sold.");
+                LogSimulation("That one-copy offer is already sold.");
                 return;
             }
 
@@ -2975,12 +2958,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             var definition = PrototypeItemCatalog.Get(itemId);
             if (!HasFreeLocalItemSlot())
             {
-                SetStatus("Purchase failed: inventory is full.");
+                LogSimulation("Purchase failed: inventory is full.");
                 return;
             }
             if (_gold[0] < definition.Price)
             {
-                SetStatus("Purchase failed: not enough gold.");
+                LogSimulation("Purchase failed: not enough gold.");
                 return;
             }
             if (!stock.TrySell(offerIndex) || !TryAddLocalItem(itemId))
@@ -2990,7 +2973,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             _gold[0] = PlayerStatRules.ApplyGoldDelta(_gold[0], -definition.Price);
             ApplyLocalItemShopState(_openItemShopIndex);
-            SetStatus(stock.IsSoldOut
+            LogSimulation(stock.IsSoldOut
                 ? "Purchased " + definition.DisplayName +
                   ". SOLD OUT; this shop moves and restocks next overview."
                 : "Purchased " + definition.DisplayName + ".");
@@ -3064,7 +3047,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 !CanAccessLocalItemShop(_openItemShopIndex))
             {
                 CloseLocalItemShop();
-                SetStatus("Item Shop closed because P1 left its interaction range.");
+                LogSimulation("Item Shop closed because P1 left its interaction range.");
             }
 
             var isOpen = _openItemShopIndex >= 0 &&
@@ -3159,26 +3142,22 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _flow.State == BoardFlowState.MinigameIntroReady && !_keyShopRevealActive
                     ? "--:--"
                     : FormatClock(remaining));
-            SetText(_diceText, ResolveLocalWorldDieHudLabel());
-            var movementLabel = _flow.State == BoardFlowState.CombatResolve
-                ? IsLocalCombatAlive(0) ? "WASD  MOVE" : "INPUT  LOCKED"
-                : _worldDieRollPresentationPhase !=
-                  WorldDieRollPresentationPhase.None
-                    ? "MOVES  LOCKED / DIE ROLLING"
-                : _roll > 0 && _remainingMoves == 0
-                ? "MOVES  0 / FREE IN ROOM"
-                : "MOVES  " + _remainingMoves;
-            var keyboard = Keyboard.current;
-            var quietWalkHeld = keyboard != null && keyboard.leftCtrlKey.isPressed;
-            SetText(_movesText, movementLabel +
-                ((_flow.State == BoardFlowState.Action ||
-                  _flow.State == BoardFlowState.CombatResolve) &&
-                 movementLabel != "INPUT  LOCKED"
-                    ? quietWalkHeld
-                        ? "  /  QUIET WALK 6m"
-                        : "  /  LCTRL QUIET 6m"
-                    : string.Empty));
-            SetText(_ammoText, _selectedSlot >= 0 ? "CHARGE  1\nLMB  USE ITEM" : "CHARGE  --");
+            var showMoves = _flow.State == BoardFlowState.Action;
+            SetTextVisible(
+                _movesText,
+                showMoves ? Mathf.Max(0, _remainingMoves).ToString() : string.Empty,
+                showMoves);
+            var selectedItem = _selectedSlot >= 0 &&
+                               _selectedSlot < _itemSlots.Length
+                ? _itemSlots[_selectedSlot]
+                : PrototypeItemId.None;
+            var showAmmo = BoardItemPresentationRules.IsFirearm(selectedItem);
+            SetTextVisible(
+                _ammoText,
+                showAmmo
+                    ? Mathf.Max(0, _selectedItemCharges).ToString()
+                    : string.Empty,
+                showAmmo);
             SetText(_speedButtonLabel, "FLOW SPEED  x" + _simulationSpeed.ToString("0"));
 
             var rankingStats = new PlayerRankingStats[_playerRows.Length];
@@ -3200,12 +3179,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_playerRows[playerIndex] != null)
                 {
                     _playerRows[playerIndex].color =
-                        boardUiBindings.GetPlayerColor(playerIndex);
+                        boardUiBindings.Hud.GetPlayerColor(playerIndex);
                 }
                 if (_playerCards[playerIndex] != null)
                 {
                     _playerCards[playerIndex].color =
-                        boardUiBindings.GetPlayerCardColor(playerIndex);
+                        boardUiBindings.Hud.GetPlayerCardColor(playerIndex);
                 }
 
                 var showCombatHealth = _flow.State == BoardFlowState.CombatResolve &&
@@ -3226,10 +3205,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_playerHealthFills[playerIndex] != null)
                 {
                     _playerHealthFills[playerIndex].color = healthRatio > 0.5f
-                        ? boardUiBindings.HealthyHealthColor
+                        ? boardUiBindings.Hud.HealthyHealthColor
                         : healthRatio > 0.25f
-                            ? boardUiBindings.WoundedHealthColor
-                            : boardUiBindings.CriticalHealthColor;
+                            ? boardUiBindings.Hud.WoundedHealthColor
+                            : boardUiBindings.Hud.CriticalHealthColor;
                 }
                 SetText(_playerHealthTexts[playerIndex],
                     shownHealth + "/" + maxHealth);
@@ -3247,8 +3226,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_playerActionIcons[playerIndex] != null)
                 {
                     _playerActionIcons[playerIndex].color = combatOut
-                        ? boardUiBindings.CombatOutColor
-                        : boardUiBindings.GetActionIconColor(actionState);
+                        ? boardUiBindings.Hud.CombatOutColor
+                        : boardUiBindings.Hud.GetActionIconColor(actionState);
                 }
             }
 
@@ -3266,10 +3245,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 if (_slotImages[i] != null)
                 {
                     _slotImages[i].color = i == _selectedSlot
-                        ? boardUiBindings.InventorySelectedColor
+                        ? boardUiBindings.Item.InventorySelectedColor
                         : occupied
-                            ? boardUiBindings.InventoryOccupiedColor
-                            : boardUiBindings.InventoryEmptyColor;
+                            ? boardUiBindings.Item.InventoryOccupiedColor
+                            : boardUiBindings.Item.InventoryEmptyColor;
                 }
                 if (_choiceButtons[i] != null)
                 {
@@ -3304,25 +3283,26 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 return false;
             }
 
-            _selectionPanel = boardUiBindings.ItemSelectionPanel;
-            _readyPanel = boardUiBindings.MinigameReadyPanel;
+            var hud = boardUiBindings.Hud;
+            var map = boardUiBindings.Map;
+            var item = boardUiBindings.Item;
+            _selectionPanel = item.ItemSelectionPanel;
+            _readyPanel = hud.MinigameReadyPanel;
             _resultPanel = resultUiBindings.ResultPanel;
-            _reticle = boardUiBindings.Reticle;
-            _itemShopPanel = boardUiBindings.ItemShopPanel;
-            _turnText = boardUiBindings.TurnText;
-            _phaseText = boardUiBindings.PhaseText;
-            _phaseTimerText = boardUiBindings.PhaseTimerText;
-            _diceText = boardUiBindings.DiceText;
-            _movesText = boardUiBindings.MovesText;
-            _ammoText = boardUiBindings.AmmoText;
-            _statusText = boardUiBindings.StatusText;
-            _tooltipText = boardUiBindings.TooltipText;
-            _itemShopTitle = boardUiBindings.ItemShopTitle;
-            _itemShopTooltip = boardUiBindings.ItemShopTooltip;
-            _itemShopStatus = boardUiBindings.ItemShopStatus;
-            _noItemButton = boardUiBindings.NoItemButton;
-            _readyButton = boardUiBindings.ReadyButton;
-            _itemShopCloseButton = boardUiBindings.ItemShopCloseButton;
+            _reticle = hud.Reticle;
+            _itemShopPanel = item.ItemShopPanel;
+            _turnText = hud.TurnText;
+            _phaseText = hud.PhaseText;
+            _phaseTimerText = hud.PhaseTimerText;
+            _movesText = map.MovesText;
+            _ammoText = item.AmmoText;
+            _tooltipText = item.TooltipText;
+            _itemShopTitle = item.ItemShopTitle;
+            _itemShopTooltip = item.ItemShopTooltip;
+            _itemShopStatus = item.ItemShopStatus;
+            _noItemButton = item.NoItemButton;
+            _readyButton = hud.ReadyButton;
+            _itemShopCloseButton = item.ItemShopCloseButton;
             _finishActionButton = testToolsBindings.FinishActionButton;
             _stageFightButton = testToolsBindings.StageFightButton;
             _speedButton = testToolsBindings.SpeedButton;
@@ -3333,33 +3313,33 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _speedButtonLabel = testToolsBindings.SpeedButtonLabel;
 
             CopyReferences(
-                boardUiBindings.InventorySlotBackgrounds,
+                item.InventorySlotBackgrounds,
                 _slotImages);
-            CopyReferences(boardUiBindings.InventorySlotIcons, _slotIcons);
-            CopyReferences(boardUiBindings.ItemChoiceButtons, _choiceButtons);
-            CopyReferences(boardUiBindings.ItemChoiceLabels, _choiceLabels);
-            CopyReferences(boardUiBindings.PlayerRows, _playerRows);
-            CopyReferences(boardUiBindings.PlayerCards, _playerCards);
+            CopyReferences(item.InventorySlotIcons, _slotIcons);
+            CopyReferences(item.ItemChoiceButtons, _choiceButtons);
+            CopyReferences(item.ItemChoiceLabels, _choiceLabels);
+            CopyReferences(hud.PlayerRows, _playerRows);
+            CopyReferences(hud.PlayerCards, _playerCards);
             CopyReferences(
-                boardUiBindings.PlayerHealthSliders,
+                hud.PlayerHealthSliders,
                 _playerHealthSliders);
             CopyReferences(
-                boardUiBindings.PlayerHealthFills,
+                hud.PlayerHealthFills,
                 _playerHealthFills);
             CopyReferences(
-                boardUiBindings.PlayerHealthTexts,
+                hud.PlayerHealthTexts,
                 _playerHealthTexts);
-            CopyReferences(boardUiBindings.PlayerKeyTexts, _playerKeyTexts);
-            CopyReferences(boardUiBindings.PlayerGoldTexts, _playerGoldTexts);
+            CopyReferences(hud.PlayerKeyTexts, _playerKeyTexts);
+            CopyReferences(hud.PlayerGoldTexts, _playerGoldTexts);
             CopyReferences(
-                boardUiBindings.PlayerActionIcons,
+                hud.PlayerActionIcons,
                 _playerActionIcons);
-            CopyReferences(boardUiBindings.PlayerRankTexts, _playerRankTexts);
+            CopyReferences(hud.PlayerRankTexts, _playerRankTexts);
             CopyReferences(
-                boardUiBindings.ShopOfferButtons,
+                item.ShopOfferButtons,
                 _shopOfferButtons);
-            CopyReferences(boardUiBindings.ShopOfferIcons, _shopOfferIcons);
-            CopyReferences(boardUiBindings.ShopOfferLabels, _shopOfferLabels);
+            CopyReferences(item.ShopOfferIcons, _shopOfferIcons);
+            CopyReferences(item.ShopOfferLabels, _shopOfferLabels);
             return true;
         }
 
@@ -3566,9 +3546,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             }
         }
 
-        private void SetStatus(string message)
+        private void LogSimulation(string message)
         {
-            SetText(_statusText, message);
             Debug.Log("[Board Flow Testbed] " + message, this);
         }
 
@@ -3614,6 +3593,23 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             if (target != null)
             {
                 target.text = value;
+            }
+        }
+
+        private static void SetTextVisible(
+            Text target,
+            string value,
+            bool visible)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            target.text = value;
+            if (target.gameObject.activeSelf != visible)
+            {
+                target.gameObject.SetActive(visible);
             }
         }
 

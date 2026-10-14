@@ -52,8 +52,6 @@ ARENA COMBAT,아레나 대결,アリーナバトル,竞技场对决
 ARENA COMBAT RESULTS,아레나 대결 결과,アリーナバトル結果,竞技场对决结果
 ARRIVAL COMPLETE,도착 완료,到着完了,到达完成
 ARRIVED,도착,到着,已到达
-ARROW: NEXT AVAILABLE TILE\nRADIUS 2 TILES  /  M FULL MAP,화살표: 이동 가능한 다음 타일\n반경 2타일  /  M 전체 지도,矢印: 次に移動できるタイル\n半径2タイル  /  M 全体マップ,箭头：下一个可前往的格子\n半径2格  /  M 完整地图
-ARROW: NEXT AVAILABLE TILE  /  M CLOSE,화살표: 이동 가능한 다음 타일  /  M 닫기,矢印: 次に移動できるタイル  /  M 閉じる,箭头：下一个可前往的格子  /  M 关闭
 AUTO SKIP,자동 건너뛰기,自動スキップ,自动跳过
 Back in the waiting room. Other players are still at the award ceremony; you can leave the room from the menu.,"대기방으로 돌아왔습니다. 다른 플레이어는 아직 시상식 중이며, 메뉴에서 방을 나갈 수 있습니다.",待機ルームに戻りました。ほかのプレイヤーはまだ表彰式中です。メニューから退室できます。,已返回等待房间。其他玩家仍在颁奖典礼中，可通过菜单离开房间。
 BALLOON BLOW,풍선 불기,風船ふくらまし,吹气球
@@ -130,13 +128,6 @@ D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2},D12 {0} + {1} = {2}
 DAMAGE -{0} HP,피해 -{0} HP,ダメージ -{0} HP,伤害 -{0} HP
 DESCENDING,하강 중,降下中,下降中
 DICE,주사위,サイコロ,骰子
-DICE  --,주사위  --,サイコロ  --,骰子  --
-DICE  CHOOSE ITEM FIRST,주사위  먼저 아이템 선택,サイコロ  先にアイテムを選択,骰子  请先选择道具
-DICE  ROLL COMPLETE,주사위  굴리기 완료,サイコロ  ロール完了,骰子  投掷完成
-DICE  ROLLING...,주사위  굴리는 중...,サイコロ  ロール中...,骰子  投掷中...
-DICE  TIME EXPIRED,주사위  시간 초과,サイコロ  時間切れ,骰子  时间到
-DICE  WAITING FOR PLAYER,주사위  플레이어 대기 중,サイコロ  プレイヤー待機中,骰子  等待玩家
-DICE  {0},주사위  {0},サイコロ  {0},骰子  {0}
 Discard Saved Match,저장된 게임 폐기,保存した試合を破棄,放弃已保存的对局
 DO NOT USE,사용 안 함,使わない,不使用
 Dodge shells and lasers. Push rivals off the cliff.,포탄과 레이저를 피하세요. 상대를 절벽 밖으로 밀어내세요.,砲弾とレーザーを避けましょう。ライバルを崖から突き落としましょう。,躲避炮弹和激光。把对手推下悬崖。
@@ -144,7 +135,6 @@ Double Dice,더블 주사위,ダブルダイス,双骰子
 DRAG TO SELECT,드래그하여 선택,ドラッグで選択,拖动以选择
 DROP,낙하,落下,掉落
 DROPPING,낙하 중,落下中,掉落中
-Each offer has one shared copy. The action clock continues.,각 상품은 모두가 공유하는 1개뿐입니다. 행동 시간은 계속 흐릅니다.,各商品は全員共通で1個のみです。行動時間は進み続けます。,每件商品仅有一份，所有人共享。行动计时继续进行。
 EVENT RESULT: {0} LOSES UP TO {1},이벤트 결과: {0}에게서 최대 {1} 차감,イベント結果: {0}から最大{1}を差し引く,事件结果：{0}最多失去{1}
 EVENT RESULT: {0} RECEIVES UP TO {1},이벤트 결과: {0}에게 최대 {1} 지급,イベント結果: {0}に最大{1}を付与,事件结果：{0}最多获得{1}
 EVENT RESULT: P{0} GIVES P{1} {2} GOLD,이벤트 결과: P{0}이 P{1}에게 골드 {2} 지급,イベント結果: P{0}がP{1}に{2}ゴールドを渡す,事件结果：P{0}向P{1}支付{2}金币
@@ -163,7 +153,6 @@ FIGHT  SPECTATING,전투  관전 중,バトル  観戦中,战斗  观战中
 Fight in first person. Eliminated players spectate.,1인칭으로 싸우세요. 탈락한 플레이어는 관전합니다.,一人称視点で戦います。脱落したプレイヤーは観戦します。,以第一人称战斗。被淘汰的玩家将观战。
 "Fight with WASD movement, mouse look and LMB punches. Health is hidden. Defeated players spectate. Last survivor wins, or remaining health decides survivors after 60 seconds.\nREADY {0} / 4","WASD로 이동하고 마우스로 시점을 돌리며 좌클릭 펀치로 싸우세요. 체력은 표시되지 않습니다. 패배한 플레이어는 관전합니다. 마지막 생존자가 승리하며, 60초가 지나면 남은 체력으로 생존자의 순위를 가립니다.\n준비 {0} / 4",WASDで移動、マウスで視点操作、左クリックでパンチして戦います。体力は表示されません。倒されたプレイヤーは観戦します。最後の生存者が勝利し、60秒経過後は残り体力で生存者の順位が決まります。\n準備完了 {0} / 4,用WASD移动、鼠标控制视角、左键出拳战斗。生命值不显示。被击败的玩家将观战。最后的幸存者获胜；60秒后按剩余生命值决定幸存者名次。\n准备 {0} / 4
 FIGHT {0}  /  {1},전투 {0}  /  {1},バトル {0}  /  {1},战斗 {0}  /  {1}
-FIGHT: WASD moves inside the room. LMB punches for 5 temporary HP damage.,전투: 방 안에서 WASD로 이동합니다. 좌클릭 펀치로 임시 HP 피해 5를 줍니다.,バトル：部屋の中をWASDで移動します。左クリックのパンチで一時HPに5ダメージを与えます。,战斗：在房间内用WASD移动。左键出拳造成5点临时HP伤害。
 Final placement awards {0} gold.,최종 순위에 따라 {0} 골드를 지급합니다.,最終順位に応じて {0} ゴールドを獲得します。,按最终名次奖励 {0} 金币。
 FINAL RANKING,최종 순위,最終順位,最终排名
 FINAL RESULTS,최종 결과,最終結果,最终结果
@@ -305,7 +294,6 @@ Landing: HP -40,도착 효과: HP -40,到着効果: HP -40,停留效果: HP -40
 Landing: Item,도착 효과: 아이템,到着効果: アイテム,停留效果: 道具
 Landing: Special Event,도착 효과: 특별 이벤트,到着効果: スペシャルイベント,停留效果: 特殊事件
 Language,언어,言語,语言
-LCTRL QUIET 6m,왼쪽 Ctrl 조용히 걷기 6m,左Ctrl 忍び足 6m,左Ctrl 静步 6m
 Leave,나가기,退出,离开
 Leave Game,게임나가기,ゲームから退出,离开游戏
 Leaving the game...,게임에서 나가는 중...,ゲームから退出中...,正在离开游戏...
@@ -354,9 +342,6 @@ MOVE,이동,移動,移动
 "Move with WASD. Touch the center bomb to pick it up. Click a nearby player in front of you to pass it; the receiver is stunned for 0.5 seconds. Empty-hand click stuns a nearby player for 0.5 seconds. The fuse starts at spawn and lasts 20–25 seconds. At half time, an unheld bomb chases the nearest survivor. Only the carrier is eliminated when it explodes. Last survivor wins.\nREADY {0} / 4","WASD로 이동합니다. 중앙의 폭탄에 닿으면 폭탄을 집습니다. 앞에 있는 가까운 플레이어를 클릭하면 폭탄을 넘기며, 받은 플레이어는 0.5초간 기절합니다. 빈손으로 클릭하면 가까운 플레이어를 0.5초간 기절시킵니다. 도화선은 폭탄이 생성될 때부터 타기 시작해 20–25초간 지속됩니다. 절반이 지나면 아무도 들고 있지 않은 폭탄이 가장 가까운 생존자를 쫓아갑니다. 폭발하면 폭탄을 든 플레이어만 탈락합니다. 마지막 생존자가 승리합니다.\n준비 {0} / 4",WASDで移動します。中央の爆弾に触れると拾います。目の前の近くのプレイヤーをクリックすると爆弾を渡せ、受け取ったプレイヤーは0.5秒間スタンします。手ぶらでクリックすると近くのプレイヤーを0.5秒間スタンさせます。導火線は出現時に点火され、20–25秒続きます。半分の時間が過ぎると、誰も持っていない爆弾は最も近い生存者を追いかけます。爆発時に脱落するのは爆弾を持っているプレイヤーだけです。最後の生存者が勝利します。\n準備完了 {0} / 4,用WASD移动。触碰中央的炸弹即可拾取。点击前方附近的玩家即可传递炸弹，接收者会被眩晕0.5秒。空手点击可使附近玩家眩晕0.5秒。引信在炸弹生成时开始燃烧，持续20–25秒。过半时，无人持有的炸弹会追向最近的幸存者。爆炸时只有持弹者被淘汰。最后的幸存者获胜。\n准备 {0} / 4
 Move with WASD. Your circular trail paints the arena and can overwrite rival colors. The full arena is worth 1000 points. One 60-second round; highest current area wins.\nREADY {0} / 4,"WASD로 이동합니다. 원형 궤적이 아레나를 칠하며 상대의 색을 덮어쓸 수 있습니다. 아레나 전체는 1000점입니다. 60초 라운드 1회이며, 현재 영역이 가장 넓은 플레이어가 승리합니다.\n준비 {0} / 4",WASDで移動します。円形の軌跡がアリーナを塗り、ライバルの色を上書きできます。アリーナ全体で1000ポイントです。60秒のラウンドを1回行い、現在の面積が最も大きいプレイヤーが勝利します。\n準備完了 {0} / 4,用WASD移动。你的圆形轨迹会为竞技场涂色，并可覆盖对手的颜色。整个竞技场价值1000分。共一轮，60秒；当前面积最大者获胜。\n准备 {0} / 4
 "Move your goal shield with A and D. Three neutral balls launch from the center. Touching one claims your color; when it passes a shield into any goal, its color owner scores. A scored ball relaunches from the conceding player's shield in their color. Two 60-second rounds; highest combined score wins.\nREADY {0} / 4","A와 D로 골대 보호막을 움직입니다. 중앙에서 중립 공 3개가 발사됩니다. 공에 닿으면 내 색이 되며, 공이 보호막을 지나 어느 골대에든 들어가면 그 색의 주인이 득점합니다. 득점된 공은 실점한 플레이어의 보호막에서 그 플레이어의 색으로 다시 발사됩니다. 60초 라운드 2회이며, 합산 점수가 가장 높은 플레이어가 승리합니다.\n준비 {0} / 4",AとDでゴールのシールドを動かします。中央から中立のボールが3つ発射されます。ボールに触れると自分の色になり、そのボールがシールドを抜けてどこかのゴールに入ると、その色の持ち主が得点します。得点されたボールは、失点したプレイヤーのシールドからそのプレイヤーの色で再発射されます。60秒のラウンドを2回行い、合計得点が最も高いプレイヤーが勝利します。\n準備完了 {0} / 4,用A和D移动你的球门护盾。三个中立球从中央发射。触碰球即可将其染成你的颜色；当球越过护盾进入任意球门时，该颜色的所有者得分。进球后的球会从失分玩家的护盾处以其颜色重新发射。共两轮，每轮60秒；总分最高者获胜。\n准备 {0} / 4
-MOVES  --,이동  --,移動  --,移动  --
-MOVES  0 / FREE IN ROOM,이동  0 / 방 안에서 자유 이동,移動  0 / 部屋の中は自由移動,移动  0 / 房间内自由移动
-MOVES  {0},이동  {0},移動  {0},移动  {0}
 MPS has not unregistered the session yet. Try cleanup again.,MPS에서 아직 방 등록이 해제되지 않았습니다. 정리를 다시 시도하세요.,MPSがまだルームの登録を解除していません。クリーンアップを再試行してください。,MPS 尚未注销该房间。请再次尝试清理。
 Neutral,무표정,ふつう,平静
 None,없음,なし,无
@@ -387,7 +372,6 @@ PAUSED,일시정지,一時停止中,已暂停
 Paused by {0}.,{0}에 의해 일시정지되었습니다,{0}によって一時停止されました,{0} 暂停了游戏
 PEACE,브이,ピース,比耶
 PENDING,선택 대기 중,選択待ち,等待选择
-Personal 30-second limit. The shared 3:00 action clock continues.,개인 제한 시간 30초. 공용 3:00 행동 시간은 계속 흐릅니다.,個人制限時間30秒。共通の3:00行動時間は進み続けます。,个人限时30秒。共享的3:00行动计时继续进行。
 Pistol,권총,ピストル,手枪
 Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.,4m 이내의 지면에 설치합니다. 1초 후 작동; 2m 감지 / 4m 폭발 / 피해 50.,4m以内の地面に設置します。1秒後に起動、2m感知 / 4m爆発 / 50ダメージ。,放置在4m内的地面上。1秒后激活；2m触发 / 4m爆炸 / 50伤害。
 Platforms are returning; two remain permanently removed.,발판이 복구되고 있습니다. 2개는 영구적으로 제거된 상태로 남습니다.,足場が復元されています。2枚は永久に取り除かれたままです。,平台正在恢复；其中两块将被永久移除。
@@ -428,8 +412,6 @@ P{0}  {1},P{0}  {1},P{0}  {1},P{0}  {1}
 "P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}","P{0} ({1},{2}): {3}"
 P{0} exchanged positions with you!,P{0} 플레이어가 당신과 위치를 교환했습니다!,P{0}があなたと位置を交換しました！,P{0} 与你交换了位置！
 P{0}: {1},P{0}: {1},P{0}: {1},P{0}: {1}
-QUIET WALK  6m,조용히 걷기  6m,忍び足  6m,静步  6m
-QUIET WALK 6m,조용히 걷기 6m,忍び足 6m,静步 6m
 Quit Game,게임종료,ゲーム終了,退出游戏
 RACE,달리기,かけっこ,赛跑
 RACE  ROUND {0} / {1}  -  COUNTDOWN,달리기  라운드 {0} / {1}  -  카운트다운,かけっこ  ラウンド {0} / {1}  -  カウントダウン,赛跑  第{0} / {1}轮  -  倒计时
@@ -472,8 +454,6 @@ Returned to the player ready screen.,플레이어 준비 화면으로 돌아왔�
 Returning the completed match to the player ready screen...,완료된 게임을 플레이어 준비 화면으로 되돌리는 중...,終了した試合をプレイヤー準備画面に戻しています...,正在将已完成的比赛返回玩家准备界面...
 Returning the match to the player ready screen...,게임을 플레이어 준비 화면으로 되돌리는 중...,試合をプレイヤー準備画面に戻しています...,正在将比赛返回玩家准备界面...
 REVEALING...,공개 중...,公開中...,揭晓中...
-RMB  AIM AT YOUR DIE TO ROLL,우클릭  내 주사위를 조준해 굴리기,右クリック  自分のサイコロを狙って振る,右键  瞄准自己的骰子投掷
-RMB  ROLL EACH DIE,우클릭  주사위 각각 굴리기,右クリック  サイコロを1個ずつ振る,右键  逐个掷骰子
 Roll and push opponents off the ice.,굴러가서 상대를 얼음 밖으로 밀어내세요.,転がって相手を氷の外へ押し出しましょう。,滚动并把对手推下冰面。
 Roll two D12s with RMB. Move after both settle.,우클릭으로 D12 두 개를 굴립니다. 둘 다 멈춘 뒤 이동합니다.,右クリックでD12を2個振ります。両方止まってから移動します。,右键投掷两个D12。两个都停下后移动。
 "Roll your colored ball with WASD. Holding a direction accelerates; colliding with other balls pushes them toward the edge. A fall eliminates you for that round. Three rounds, up to 60 seconds each. If time runs out, surviving balls nearer the center rank higher. Round placement points are combined; final placement awards gold once.\nREADY {0} / 4","WASD로 내 색깔의 공을 굴리세요. 방향키를 계속 누르면 가속하고, 다른 공과 부딪히면 가장자리 쪽으로 밀어냅니다. 떨어지면 해당 라운드에서 탈락합니다. 3라운드, 각 최대 60초. 시간이 다 되면 살아남은 공 중 중앙에 가까울수록 순위가 높습니다. 라운드 순위 점수를 합산하며, 최종 순위에 따른 골드는 한 번만 지급됩니다.\n준비 {0} / 4",WASDで自分の色のボールを転がします。方向キーを押し続けると加速し、他のボールにぶつかると端の方へ押し出します。落下するとそのラウンドは脱落です。全3ラウンド、各最大60秒。時間切れになると、生き残ったボールのうち中央に近いほど上位になります。ラウンドごとの順位ポイントを合計し、最終順位に応じたゴールドは1回だけ与えられます。\n準備完了 {0} / 4,用WASD滚动你颜色的球。按住方向键可加速；撞击其他球会把它们推向边缘。掉落即在本轮被淘汰。共3轮，每轮最长60秒。若时间耗尽，存活的球越靠近中心排名越高。各轮排名分累计；最终排名的金币奖励只发放一次。\n准备 {0} / 4
@@ -647,10 +627,8 @@ Waiting for {0} player(s) to finish unloading {1}.,플레이어 {0}명이 {1} �
 Waiting to retry synchronized scene unload for {0}: {1},{0}의 동기화된 씬 언로드 재시도 대기 중: {1},{0}の同期シーンアンロードの再試行待ち: {1},正在等待重试{0}的同步场景卸载：{1}
 WAITING...,대기 중...,待機中...,等待中...
 WARNED · WALK SPEED,경고 · 걷기 속도,警告 · 歩行速度,警告 · 步行速度
-WASD  MOVE / LCTRL QUIET 6m,WASD  이동 / 왼쪽 Ctrl 조용히 걷기 6m,WASD  移動 / 左Ctrl 忍び足 6m,WASD  移动 / 左Ctrl 静步 6m
 WASD moves and continuously paints a circular trail.,WASD로 이동하면 원형 자국이 계속 칠해집니다.,WASDで移動すると、円形の軌跡が塗られ続けます。,用WASD移动，并持续涂出圆形轨迹。
 WASD moves in top view. Stop moving and press RMB to scan nearby mines.,탑뷰에서 WASD로 이동합니다. 멈춘 뒤 우클릭하면 주변 지뢰를 탐지합니다.,トップビューでWASDを使って移動します。止まって右クリックすると、近くの地雷を探知します。,在俯视视角下用WASD移动。停下并按右键可探测附近的地雷。
-"WASD moves inside the room. Aim at your world die: RMB rolls, LMB nudges. LMB elsewhere uses the active item.","방 안에서 WASD로 이동합니다. 내 주사위를 조준하세요: 우클릭은 굴리기, 좌클릭은 살짝 밀기. 다른 곳을 좌클릭하면 활성화된 아이템을 사용합니다.",部屋の中をWASDで移動します。自分のサイコロを狙います：右クリックで振り、左クリックで軽く押します。それ以外の場所で左クリックすると、使用中のアイテムを使います。,在房间内用WASD移动。瞄准你的骰子：右键掷骰，左键轻推。在其他位置按左键会使用当前道具。
 "WASD moves. Carry gifts home, throw while carrying, or push while empty-handed. Three gifts drop every 15 seconds.","WASD로 이동합니다. 선물을 기지로 옮기고, 들고 있을 때는 던지고, 빈손일 때는 밀치세요. 15초마다 선물 3개가 떨어집니다.",WASDで移動します。プレゼントを基地へ運び、持っているときは投げ、手ぶらのときは押しましょう。15秒ごとにプレゼントが3個落ちてきます。,用WASD移动。把礼物带回基地，携带时可投掷，空手时可推人。每15秒掉落3个礼物。
 WASD moves. LMB pushes the nearest player in front of you.,WASD로 이동합니다. 좌클릭하면 앞에 있는 가장 가까운 플레이어를 밉니다.,WASDで移動します。左クリックで目の前の一番近いプレイヤーを押します。,用WASD移动。按左键推开你前方最近的玩家。
 WASD: DODGE\nLMB: PUSH\nAVOID SHELLS / LASERS,WASD: 회피\n좌클릭: 밀치기\n포탄 / 레이저 피하기,WASD: 回避\n左クリック: 押す\n砲弾 / レーザーを避ける,WASD: 闪避\n左键: 推人\n躲避炮弹 / 激光
@@ -769,3 +747,20 @@ PLEADING,부탁,お願い,拜托
 SALUTE,경례,敬礼,敬礼
 SURRENDER,항복,降参,投降
 SURPRISE,놀람,驚き,惊讶
+CONTROLS,조작법,操作方法,操作说明
+SCAN,탐색,スキャン,扫描
+PRESS SHOWN KEY,표시된 키 누르기,表示されたキーを押す,按显示的按键
+MOVE / STOP,이동 / 멈추기,移動 / 停止,移动 / 停止
+PUSH,밀기,押す,推开
+HOLD / RELEASE,누르고 있기 / 놓기,長押し / 離す,按住 / 松开
+THROW / PUSH,던지기 / 밀기,投げる / 押す,投掷 / 推开
+MOVE / PAINT,이동 / 칠하기,移動 / 塗る,移动 / 涂色
+TAGGER LOOK,술래 시점 조작,鬼の視点操作,追捕者视角
+TAGGER CATCH,술래 잡기,鬼が捕まえる,追捕者抓捕
+ALTERNATE,번갈아 누르기,交互に押す,交替按键
+REPEAT,순서대로 누르기,順番どおりに押す,按顺序重复
+MOVE SHIELD,방패 이동,シールド移動,移动护盾
+PASS / STUN,넘기기 / 기절시키기,渡す / 気絶させる,传递 / 击晕
+ROLL,굴리기,転がる,滚动
+LOOK,시점 조작,視点操作,控制视角
+PUNCH,펀치,パンチ,出拳

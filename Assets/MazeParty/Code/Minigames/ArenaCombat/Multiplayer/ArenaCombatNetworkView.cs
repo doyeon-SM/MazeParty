@@ -52,6 +52,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private Transform[] spawnMarkers = new Transform[4];
         [SerializeField] private GameObject hitSparkVfxPrefab;
+        [SerializeField] private ArenaCombatAimView aimView;
 
         private GameplayCameraDirector _cameraDirector;
         private CinemachineCamera _registeredCamera;
@@ -70,6 +71,7 @@ namespace MazeParty.Multiplayer
         public CinemachineCamera SpectatorCamera => spectatorCamera;
         public GameObject ArenaPresentation => arenaPresentation;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
+        public ArenaCombatAimView AimView => aimView;
 
         public static Vector3 SharedSpectatorCenter =>
             new Vector3(ArenaCenterX, 0f, 0f);
@@ -120,14 +122,23 @@ namespace MazeParty.Multiplayer
             hitSparkVfxPrefab = hitSparkPrefab;
         }
 
+        public void ConfigureAim(ArenaCombatAimView arenaAimView)
+        {
+            aimView = arenaAimView;
+            SetAimVisible(false);
+        }
+
+
         private void Awake()
         {
             state ??= GetComponent<NetworkArenaCombatState>();
             ConfigureCameras();
+            SetAimVisible(false);
         }
 
         private void OnDisable()
         {
+            SetAimVisible(false);
             ReleaseOwnerPresentation();
             ResetHitVfxGates();
             _worldVisible = false;
@@ -148,6 +159,7 @@ namespace MazeParty.Multiplayer
             SetWorldPresentationActive(showWorld);
             if (!showWorld)
             {
+                SetAimVisible(false);
                 // Additively loaded minigame scenes remain enabled between
                 // turns. Release once instead of overwriting the board's local
                 // first-person visibility on every dormant frame.
@@ -168,6 +180,10 @@ namespace MazeParty.Multiplayer
             var playing = match.FlowState ==
                           BoardFlowState.MinigamePlaying;
             var useFirstPerson = isAlive && playing && !showingCountdown;
+            var showAim = useFirstPerson &&
+                          state.Phase == NetworkArenaCombatPhase.Playing &&
+                          !state.IsPaused;
+            SetAimVisible(showAim);
 
             ClaimOwnerPresentation(useFirstPerson);
             RegisterCamera(useFirstPerson
@@ -378,6 +394,14 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < _hitVfxGates.Length; slot++)
             {
                 _hitVfxGates[slot].Reset();
+            }
+        }
+
+        private void SetAimVisible(bool visible)
+        {
+            if (aimView != null)
+            {
+                aimView.SetVisible(visible);
             }
         }
     }

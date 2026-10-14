@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
         public void LandingEffect_StaysVisibleOnMapWhileWorldTileStaysHidden()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
             var board = GameObject.CreatePrimitive(PrimitiveType.Cube);
             try
             {
@@ -55,7 +55,7 @@ namespace MazeParty.Multiplayer.Tests
         public void RouteDots_FollowBothMapProjections_AndClearWhenUnavailable()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
             var board = new GameObject("Route board");
             try
             {
@@ -110,7 +110,7 @@ namespace MazeParty.Multiplayer.Tests
         public void DirectedShopRoute_UsesDistanceAndPreviewsBranchesBeforeArrival()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab"));
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
             var board = new GameObject("Directed board");
             try
             {
@@ -182,7 +182,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             UiPopupStack.ClearForTests();
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab");
             var instance = Object.Instantiate(prefab);
             var board = new GameObject("Board");
             var player = new GameObject("Local player");
@@ -420,7 +420,7 @@ namespace MazeParty.Multiplayer.Tests
         public void AuthoredMinimap_ProjectsOffsetBoardAndKeepsViewHeadingUp()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab");
             var instance = Object.Instantiate(prefab);
             var board = new GameObject("Offset board");
             var target = new GameObject("Player");
@@ -490,7 +490,7 @@ namespace MazeParty.Multiplayer.Tests
         public void FreeformMap_UsesAuthoredPolygonsAndConnectedPortalOverlay()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab");
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab");
             var instance = Object.Instantiate(prefab);
             var board = new GameObject("Freeform board");
             try

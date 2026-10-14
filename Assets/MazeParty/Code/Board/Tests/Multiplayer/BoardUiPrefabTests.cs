@@ -17,6 +17,15 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string PrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string HudPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab";
+        private const string MapPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab";
+        private const string ItemPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/UI/BoardItemCanvas.prefab";
+        private const string TombstonePrefabPath =
+            "Assets/MazeParty/Prefabs/Board/World/BoardTombstone.prefab";
+
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string KeyIconPath =
@@ -25,6 +34,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/Ignore/Icon_NCI/free-icon-dollar-coin-7022685.png";
         private const string KillFeedModulePath =
             "Assets/MazeParty/Prefabs/Board/UI/Modules/BoardKillFeedPanel.prefab";
+        private const string ReadyPanelModulePath =
+            "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab";
         private const string LocalizationTablePath =
             "Assets/MazeParty/Resources/MazeParty/Localization/StringTable.csv";
         private const string InputSpriteAssetPath =
@@ -51,11 +62,18 @@ namespace MazeParty.Multiplayer.Tests
         };
 
         [Test]
-        public void BoardCanvas_ComposesConnectedAuthoredModules()
+        public void BoardCanvas_IsNonVisualAggregateOfExactlyThreeAuthoredCanvases()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
+            var bindings = prefab.GetComponent<BoardCanvasBindings>();
+            Assert.That(bindings, Is.Not.Null);
+            Assert.That(bindings.HasRequiredReferences, Is.True);
+            AssertAggregateCanvasContract(prefab, bindings);
 
+            var hudPrefab =
+                AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
+            Assert.That(hudPrefab, Is.Not.Null, HudPrefabPath);
             for (var index = 0; index < NestedModules.GetLength(0); index++)
             {
                 var objectName = NestedModules[index, 0];
@@ -64,18 +82,13 @@ namespace MazeParty.Multiplayer.Tests
                     AssetDatabase.LoadAssetAtPath<GameObject>(modulePath),
                     Is.Not.Null,
                     modulePath);
-                var module = prefab.GetComponentsInChildren<Transform>(true)
+                var module = hudPrefab.GetComponentsInChildren<Transform>(true)
                     .FirstOrDefault(candidate => candidate.name == objectName);
                 Assert.That(module, Is.Not.Null, objectName);
-                var source = PrefabUtility.GetCorrespondingObjectFromSource(
-                    module.gameObject);
                 Assert.That(
-                    source,
+                    PrefabUtility.GetCorrespondingObjectFromSource(
+                        module.gameObject),
                     Is.Not.Null,
-                    objectName);
-                Assert.That(
-                    AssetDatabase.GetAssetPath(source),
-                    Is.EqualTo(modulePath),
                     objectName);
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
@@ -86,6 +99,31 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void BoardWorldInteractionPrefabs_DoNotContainTextMeshPrompts()
+        {
+            var worldPrefabs = BoardWorldPrefabs.LoadRequired();
+            var tombstone =
+                AssetDatabase.LoadAssetAtPath<GameObject>(TombstonePrefabPath);
+            Assert.That(tombstone, Is.Not.Null, TombstonePrefabPath);
+
+            var roots = new Dictionary<string, GameObject>
+            {
+                { "Key Shop", worldPrefabs.KeyShop.gameObject },
+                { "Item Shop 1", worldPrefabs.ItemShop(0).gameObject },
+                { "Item Shop 2", worldPrefabs.ItemShop(1).gameObject },
+                { "Board Tombstone", tombstone }
+            };
+            foreach (var entry in roots)
+            {
+                Assert.That(
+                    entry.Value.GetComponentsInChildren<TextMesh>(true),
+                    Is.Empty,
+                    entry.Key + " interaction guidance belongs to Item UI.");
+            }
+        }
+
+
+        [Test]
         public void ReadyPlayerStates_AreBoundOnBoardCanvasPrefabAndSceneInstance()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
@@ -93,11 +131,16 @@ namespace MazeParty.Multiplayer.Tests
             var bindings = prefab.GetComponent<BoardCanvasBindings>();
             Assert.That(bindings, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
+            AssertSplitOwnershipBindings(bindings);
+            AssertReticleBindings(bindings);
             Assert.That(bindings.StatusText, Is.Null,
                 "BoardStatusText was intentionally removed from the authored HUD.");
             Assert.That(prefab.GetComponentsInChildren<Text>(true)
                 .Any(text => text.name == "BoardStatusText"), Is.False);
-            Assert.That(prefab.GetComponent<BoardUtilityItemView>().HasRequiredReferences, Is.True);
+            Assert.That(
+                bindings.Item.GetComponent<BoardUtilityItemView>()
+                    .HasRequiredReferences,
+                Is.True);
             AssertItemIconBindings(prefab, bindings);
             AssertPlayerCurrencyBindings(prefab, bindings);
             AssertPlayerHealthSliderBindings(prefab, bindings);
@@ -118,7 +161,7 @@ namespace MazeParty.Multiplayer.Tests
             }
 
             var scene = SceneManager.GetSceneByPath(BoardScenePath);
-            var openedForTest = !scene.isLoaded;
+            var openedForTest = !scene.IsValid() || !scene.isLoaded;
             if (openedForTest)
             {
                 scene = EditorSceneManager.OpenScene(
@@ -128,22 +171,22 @@ namespace MazeParty.Multiplayer.Tests
 
             try
             {
-                BoardCanvasBindings sceneBindings = null;
-                foreach (var root in scene.GetRootGameObjects())
-                {
-                    sceneBindings = root.GetComponentInChildren<BoardCanvasBindings>(true);
-                    if (sceneBindings != null)
-                    {
-                        break;
-                    }
-                }
-
-                Assert.That(sceneBindings, Is.Not.Null);
+                var sceneBindingsInstances = scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<BoardCanvasBindings>(true))
+                    .ToArray();
+                Assert.That(sceneBindingsInstances, Has.Length.EqualTo(1));
+                var sceneBindings = sceneBindingsInstances[0];
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         sceneBindings.gameObject),
                     Is.EqualTo(PrefabPath));
                 Assert.That(sceneBindings.HasRequiredReferences, Is.True);
+                AssertAggregateCanvasContract(
+                    sceneBindings.gameObject,
+                    sceneBindings);
+                AssertSplitOwnershipBindings(sceneBindings);
+                AssertReticleBindings(sceneBindings);
                 Assert.That(sceneBindings.StatusText, Is.Null);
                 Assert.That(sceneBindings.GetComponentsInChildren<Text>(true)
                     .Any(text => text.name == "BoardStatusText"), Is.False);
@@ -164,9 +207,12 @@ namespace MazeParty.Multiplayer.Tests
                     sceneBindings.gameObject,
                     sceneBindings);
 
-                var utility = sceneBindings.GetComponent<BoardUtilityItemView>();
+                var utility =
+                    sceneBindings.Item.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);
-                Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(utility), Is.Not.Null);
+                Assert.That(
+                    PrefabUtility.GetCorrespondingObjectFromSource(utility),
+                    Is.Not.Null);
             }
             finally
             {
@@ -187,27 +233,199 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 var view = instance.GetComponent<BoardFlowView>();
-                var canvas = instance.GetComponent<Canvas>();
-                var raycaster = instance.GetComponent<GraphicRaycaster>();
+                var bindings = instance.GetComponent<BoardCanvasBindings>();
                 Assert.That(view, Is.Not.Null);
-                Assert.That(canvas, Is.Not.Null);
-                Assert.That(raycaster, Is.Not.Null);
+                Assert.That(bindings, Is.Not.Null);
+                Assert.That(instance.GetComponent<Canvas>(), Is.Null);
+                var canvases = new[]
+                {
+                    bindings.Hud.RootCanvas,
+                    bindings.Map.RootCanvas,
+                    bindings.Item.RootCanvas
+                };
+                var raycasters = new[]
+                {
+                    bindings.Hud.RootRaycaster,
+                    bindings.Map.RootRaycaster,
+                    bindings.Item.RootRaycaster
+                };
+                Assert.That(canvases.All(canvas => canvas != null), Is.True);
+                Assert.That(
+                    raycasters.All(raycaster => raycaster != null),
+                    Is.True);
+                Canvas.ForceUpdateCanvases();
+                Assert.That(
+                    new[]
+                    {
+                        bindings.Hud.transform,
+                        bindings.Map.transform,
+                        bindings.Item.transform
+                    }.All(module => module.localScale == Vector3.one),
+                    Is.True,
+                    "Instantiated root Canvases must resolve to unit scale.");
 
                 view.SetBoardUiVisible(false);
                 Assert.That(view.BoardUiVisible, Is.False);
-                Assert.That(canvas.enabled, Is.False);
-                Assert.That(raycaster.enabled, Is.False);
+                Assert.That(
+                    canvases.All(canvas => !canvas.enabled),
+                    Is.True);
+                Assert.That(
+                    raycasters.All(raycaster => !raycaster.enabled),
+                    Is.True);
 
                 view.SetBoardUiVisible(true);
                 Assert.That(view.BoardUiVisible, Is.True);
-                Assert.That(canvas.enabled, Is.True);
-                Assert.That(raycaster.enabled, Is.True);
+                Assert.That(
+                    canvases.All(canvas => canvas.enabled),
+                    Is.True);
+                Assert.That(
+                    raycasters.All(raycaster => raycaster.enabled),
+                    Is.True);
             }
             finally
             {
                 Object.DestroyImmediate(instance);
             }
         }
+
+        private static void AssertAggregateCanvasContract(
+            GameObject aggregate,
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(aggregate.GetComponent<Canvas>(), Is.Null);
+            Assert.That(aggregate.GetComponent<CanvasScaler>(), Is.Null);
+            Assert.That(aggregate.GetComponent<GraphicRaycaster>(), Is.Null);
+            Assert.That(
+                aggregate.GetComponent<BoardEventSystemBootstrap>(),
+                Is.Null);
+            Assert.That(aggregate.GetComponent<Graphic>(), Is.Null);
+            Assert.That(aggregate.GetComponent<BoardFlowView>(), Is.Not.Null);
+            Assert.That(aggregate.transform.childCount, Is.EqualTo(3));
+
+            var handEmoteWheel =
+                bindings.Hud.transform.Find("Hand Emote Wheel");
+            Assert.That(handEmoteWheel, Is.Not.Null);
+            Assert.That(
+                handEmoteWheel.parent,
+                Is.SameAs(bindings.Hud.transform));
+            Assert.That(
+                handEmoteWheel.GetSiblingIndex(),
+                Is.EqualTo(bindings.Hud.transform.childCount - 1));
+            Assert.That(handEmoteWheel.GetComponent<Canvas>(), Is.Null);
+            Assert.That(
+                handEmoteWheel.GetComponent<GraphicRaycaster>(),
+                Is.Null);
+            Assert.That(
+                aggregate.GetComponentsInChildren<Canvas>(true),
+                Has.Length.EqualTo(3));
+
+            AssertNestedCanvas(
+                aggregate,
+                "BoardHudCanvas",
+                HudPrefabPath,
+                bindings.Hud);
+            AssertNestedCanvas(
+                aggregate,
+                "BoardMapCanvas",
+                MapPrefabPath,
+                bindings.Map);
+            AssertNestedCanvas(
+                aggregate,
+                "BoardItemCanvas",
+                ItemPrefabPath,
+                bindings.Item);
+
+            var descendantNames = aggregate
+                .GetComponentsInChildren<Transform>(true)
+                .Select(child => child.name)
+                .ToArray();
+            Assert.That(descendantNames, Does.Not.Contain("DiceText"));
+            Assert.That(
+                descendantNames,
+                Does.Not.Contain("Board Overview Map"));
+        }
+
+        private static void AssertNestedCanvas(
+            GameObject aggregate,
+            string objectName,
+            string prefabPath,
+            Component binding)
+        {
+            Assert.That(
+                AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath),
+                Is.Not.Null,
+                prefabPath);
+            var child = aggregate.transform.Cast<Transform>()
+                .SingleOrDefault(candidate => candidate.name == objectName);
+            Assert.That(child, Is.Not.Null, objectName);
+            Assert.That(binding, Is.Not.Null, objectName);
+            Assert.That(binding.gameObject, Is.SameAs(child.gameObject));
+            Assert.That(child.GetComponent<Canvas>(), Is.Not.Null, objectName);
+            Assert.That(
+                child.GetComponent<CanvasScaler>(),
+                Is.Not.Null,
+                objectName);
+            Assert.That(
+                child.GetComponent<GraphicRaycaster>(),
+                Is.Not.Null,
+                objectName);
+            Assert.That(
+                PrefabUtility.GetCorrespondingObjectFromSource(
+                    child.gameObject),
+                Is.Not.Null,
+                objectName);
+            Assert.That(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    child.gameObject),
+                Is.EqualTo(prefabPath),
+                objectName);
+        }
+
+        private static void AssertSplitOwnershipBindings(
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(bindings.Hud, Is.Not.Null);
+            Assert.That(bindings.Map, Is.Not.Null);
+            Assert.That(bindings.Item, Is.Not.Null);
+            Assert.That(bindings.Hud.HasRequiredReferences, Is.True);
+            Assert.That(bindings.Map.HasRequiredReferences, Is.True);
+            Assert.That(bindings.Item.HasRequiredReferences, Is.True);
+
+            var badges =
+                bindings.Hud.GetComponent<BoardPlayerStatusBadges>();
+            Assert.That(badges, Is.Not.Null);
+            Assert.That(badges.HasRequiredReferences, Is.True);
+            Assert.That(
+                bindings.Map.GetComponent<BoardMapView>(),
+                Is.SameAs(bindings.Map.MapView));
+            Assert.That(
+                bindings.Item.GetComponent<BoardUtilityItemView>(),
+                Is.Not.Null);
+
+            Assert.That(bindings.MovesText.name, Is.EqualTo("MovesText"));
+            Assert.That(
+                bindings.MovesText.transform.IsChildOf(
+                    bindings.Map.transform),
+                Is.True);
+            Assert.That(bindings.AmmoText.name, Is.EqualTo("BoardAmmoText"));
+            Assert.That(
+                bindings.AmmoText.transform.IsChildOf(
+                    bindings.Item.transform),
+                Is.True);
+
+            var prompt = bindings.Item.InteractionPrompt;
+            Assert.That(prompt, Is.Not.Null);
+            Assert.That(bindings.InteractionPrompt, Is.SameAs(prompt));
+            Assert.That(prompt.name, Is.EqualTo("BoardInteractionPrompt"));
+            Assert.That(
+                prompt.transform.IsChildOf(bindings.Item.transform),
+                Is.True);
+            Assert.That(prompt.gameObject.activeSelf, Is.False);
+            Assert.That(prompt.raycastTarget, Is.False);
+        }
+
+
+
 
         [Test]
         public void MinigameControlGuides_CoverEveryRegisteredMinigame()
@@ -225,6 +443,132 @@ namespace MazeParty.Multiplayer.Tests
                     rows.All(row => row.Contains("<sprite name=\"")),
                     Is.True,
                     game.DisplayName);
+            }
+        }
+
+        [Test]
+        public void MinigameControlGuides_TranslateDescriptionsAndKeepInputSprites()
+        {
+            var previousLanguage = GameText.Language;
+            try
+            {
+                GameText.SetLanguage(GameLanguage.English);
+                var english = MinigameCatalog.RegisteredMinigames.ToDictionary(
+                    game => game.Id,
+                    game => BoardFlowView.GetMinigameControlGuide(game.Id)
+                        .ToArray());
+                var tableAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                    LocalizationTablePath);
+                Assert.That(tableAsset, Is.Not.Null);
+                var table = StringTable.Parse(tableAsset.text);
+
+                foreach (var language in new[]
+                         {
+                             GameLanguage.Korean,
+                             GameLanguage.Japanese,
+                             GameLanguage.ChineseSimplified
+                         })
+                {
+                    GameText.SetLanguage(language);
+                    foreach (var game in MinigameCatalog.RegisteredMinigames)
+                    {
+                        var translated = BoardFlowView.GetMinigameControlGuide(
+                            game.Id);
+                        var sources = english[game.Id];
+                        Assert.That(translated.Count, Is.EqualTo(sources.Length));
+                        for (var row = 0; row < sources.Length; row++)
+                        {
+                            var split = sources[row].LastIndexOf(
+                                ">  ", System.StringComparison.Ordinal);
+                            Assert.That(split, Is.GreaterThanOrEqualTo(0));
+                            var iconMarkup = sources[row].Substring(0, split + 3);
+                            var label = sources[row].Substring(split + 3);
+                            Assert.That(table.TryGet(label, language,
+                                out var expected), Is.True, label);
+                            Assert.That(translated[row],
+                                Is.EqualTo(iconMarkup + expected),
+                                game.DisplayName);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                GameText.SetLanguage(previousLanguage);
+            }
+        }
+
+        [Test]
+        public void BoardCopy_RetiredHintsAreAbsentAndReadyHeadingIsLocalized()
+        {
+            var map = AssetDatabase.LoadAssetAtPath<GameObject>(MapPrefabPath);
+            var item = AssetDatabase.LoadAssetAtPath<GameObject>(ItemPrefabPath);
+            var ready = AssetDatabase.LoadAssetAtPath<GameObject>(
+                ReadyPanelModulePath);
+            Assert.That(map, Is.Not.Null);
+            Assert.That(item, Is.Not.Null);
+            Assert.That(ready, Is.Not.Null);
+            Assert.That(map.GetComponentsInChildren<Transform>(true)
+                .Any(child => child.name == "Minimap Legend"), Is.False);
+            Assert.That(item.GetComponentsInChildren<Transform>(true)
+                .Any(child => child.name == "Selection Rule" ||
+                              child.name == "ItemShopRule"), Is.False);
+
+            var title = ready.GetComponentsInChildren<Transform>(true)
+                .FirstOrDefault(child => child.name == "MinigameControlsTitle");
+            Assert.That(title, Is.Not.Null);
+            var localized = title.GetComponent<LocalizedText>();
+            Assert.That(localized, Is.Not.Null);
+            Assert.That(localized.SourceText, Is.EqualTo("CONTROLS"));
+
+            var controlFonts = ready.GetComponent<MinigameReadyControlFonts>();
+            Assert.That(controlFonts, Is.Not.Null);
+            Assert.That(controlFonts.HasRequiredReferences, Is.True);
+            Assert.That(AssetDatabase.GetAssetPath(
+                controlFonts.GetFont(GameLanguage.Korean).sourceFontFile),
+                Is.EqualTo(GameFonts.EnglishKoreanAssetPath));
+            Assert.That(AssetDatabase.GetAssetPath(
+                controlFonts.GetFont(GameLanguage.Japanese).sourceFontFile),
+                Is.EqualTo(GameFonts.JapaneseAssetPath));
+            Assert.That(AssetDatabase.GetAssetPath(
+                controlFonts.GetFont(GameLanguage.ChineseSimplified)
+                    .sourceFontFile),
+                Is.EqualTo(GameFonts.ChineseSimplifiedAssetPath));
+            Assert.That(controlFonts.GetFont(GameLanguage.Korean)
+                .HasCharacter('조', false, false), Is.True);
+            Assert.That(controlFonts.GetFont(GameLanguage.Japanese)
+                .HasCharacter('作', false, false), Is.True);
+            Assert.That(controlFonts.GetFont(GameLanguage.ChineseSimplified)
+                .HasCharacter('说', false, false), Is.True);
+
+            var previousLanguage = GameText.Language;
+            var instance = Object.Instantiate(ready);
+            try
+            {
+                var instanceFonts =
+                    instance.GetComponent<MinigameReadyControlFonts>();
+                var row = instance.GetComponentsInChildren<TMP_Text>(true)
+                    .First(child => child.name == "MinigameControlRow0");
+                var inputSprites = row.spriteAsset;
+                foreach (var language in new[]
+                         {
+                             GameLanguage.English,
+                             GameLanguage.Korean,
+                             GameLanguage.Japanese,
+                             GameLanguage.ChineseSimplified
+                         })
+                {
+                    GameText.SetLanguage(language);
+                    instanceFonts.Apply();
+                    Assert.That(row.font,
+                        Is.SameAs(instanceFonts.GetFont(language)));
+                    Assert.That(row.spriteAsset, Is.SameAs(inputSprites));
+                }
+            }
+            finally
+            {
+                GameText.SetLanguage(previousLanguage);
+                Object.DestroyImmediate(instance);
             }
         }
 
@@ -376,13 +720,12 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(panel.GetComponentsInChildren<Button>(true), Is.Empty,
                 "The server-owned kill feed is not user-dismissible.");
 
-            var source = PrefabUtility.GetCorrespondingObjectFromSource(panel);
-            Assert.That(source, Is.Not.Null);
             Assert.That(
-                AssetDatabase.GetAssetPath(source),
-                Is.EqualTo(root.scene.IsValid()
-                    ? PrefabPath
-                    : KillFeedModulePath));
+                PrefabUtility.GetCorrespondingObjectFromSource(panel),
+                Is.Not.Null);
+            Assert.That(
+                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(panel),
+                Is.EqualTo(KillFeedModulePath));
 
             var transforms = root.GetComponentsInChildren<Transform>(true);
             Assert.That(transforms.Count(candidate =>
@@ -644,6 +987,26 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(text.name, Is.EqualTo(expectedName));
             Assert.That(text.raycastTarget, Is.False, expectedName);
             Assert.That(text.transform.IsChildOf(card), Is.True, expectedName);
+        }
+
+        private static void AssertReticleBindings(
+            BoardCanvasBindings bindings)
+        {
+            Assert.That(bindings.Reticle, Is.Not.Null);
+            Assert.That(bindings.ReticleImage, Is.Not.Null);
+            Assert.That(
+                bindings.Reticle.transform.IsChildOf(
+                    bindings.Hud.transform),
+                Is.True);
+            Assert.That(
+                bindings.ReticleImage.gameObject,
+                Is.SameAs(bindings.Reticle));
+            Assert.That(
+                AssetDatabase.GetAssetPath(bindings.ReticleImage.sprite),
+                Is.EqualTo(
+                    "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png"));
+            Assert.That(bindings.ReticleImage.raycastTarget, Is.False);
+            Assert.That(bindings.Reticle.activeSelf, Is.False);
         }
     }
 }

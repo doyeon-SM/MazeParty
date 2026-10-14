@@ -23,14 +23,6 @@ namespace MazeParty.Multiplayer
         public IReadOnlyList<Vector3> LocalMinePositions => IsOwner ? _localMines : Array.Empty<Vector3>();
         public int LocalItemCharges => IsOwner ? _itemCharges.Value : 0;
         public bool UsesDoubleDice => (IsOwner || IsServer) && _doubleDice.Value;
-        public string LocalDiceSummary => HasRolled
-            ? GameText.F("D12 {0} + {1} = {2}",
-                _firstDieResult.Value > 0 ? _firstDieResult.Value.ToString() : "?",
-                _secondDieResult.Value > 0 ? _secondDieResult.Value.ToString() : "?",
-                _privateRoll.Value)
-            : GameText.F("D12 {0} + {1} / RMB EACH DIE",
-                _firstDieResult.Value > 0 ? _firstDieResult.Value.ToString() : "?",
-                _secondDieResult.Value > 0 ? _secondDieResult.Value.ToString() : "?");
 
         private void InitializeSelectedItem()
         {

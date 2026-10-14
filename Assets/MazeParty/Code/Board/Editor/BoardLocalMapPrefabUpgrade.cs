@@ -8,20 +8,20 @@ namespace MazeParty.Editor
 {
     public static class BoardLocalMapPrefabUpgrade
     {
-        private const string BoardCanvasPrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string BoardMapCanvasPrefabPath =
+            BoardCanvasSplitProjectSetup.MapPrefabPath;
 
         [MenuItem("MazeParty/Board/Add Full Map Close Control")]
         public static void AddFullMapCloseControl()
         {
             var root = PrefabUtility.LoadPrefabContents(
-                BoardCanvasPrefabPath);
+                BoardMapCanvasPrefabPath);
             try
             {
                 Ensure(root);
                 PrefabUtility.SaveAsPrefabAsset(
                     root,
-                    BoardCanvasPrefabPath);
+                    BoardMapCanvasPrefabPath);
                 AssetDatabase.SaveAssets();
                 Debug.Log(
                     "Board full-map close control was added without " +
@@ -63,10 +63,7 @@ namespace MazeParty.Editor
                     Place(description.rectTransform, new Vector2(320f, -650f),
                         new Vector2(600f, 50f));
                 }
-                var legend = full.transform.Find("Minimap Legend").GetComponent<Text>();
-                Place(legend.rectTransform, new Vector2(320f, -696f), new Vector2(600f, 24f));
-                legend.fontSize = 14;
-                legend.text = "M CLOSE  /  1-4 PLAYERS  /  K KEY SHOP  /  R RESPAWN";
+                var legend = full.transform.Find("Minimap Legend");
                 var rooms = new BoardMinimapView.Room[BoardMapView.CellCount];
                 var originalRooms = localData.FindProperty("rooms");
                 for (var i = 0; i < rooms.Length; i++)
@@ -105,7 +102,8 @@ namespace MazeParty.Editor
                 Object.DestroyImmediate(title.gameObject);
                 if (description != null)
                     Object.DestroyImmediate(description.gameObject);
-                Object.DestroyImmediate(legend.gameObject);
+                if (legend != null)
+                    Object.DestroyImmediate(legend.gameObject);
                 var distance = full.transform.Find("Key Shop Distance");
                 if (distance != null)
                     Object.DestroyImmediate(distance.gameObject);
@@ -130,7 +128,7 @@ namespace MazeParty.Editor
                 map.ApplyModifiedPropertiesWithoutUndo();
             }
 
-            EnsureFullMapCloseButton(root, map);
+            EnsureFullMapCloseButton(map);
 
             if (localData.FindProperty("circularMask").objectReferenceValue is Mask existingMask)
             {
@@ -154,7 +152,6 @@ namespace MazeParty.Editor
             localData.FindProperty("circularMask").objectReferenceValue = clip.GetComponent<Mask>();
             localData.FindProperty("radiusInTiles").floatValue = 2f;
             localData.ApplyModifiedPropertiesWithoutUndo();
-            panel.transform.Find("Minimap Legend").GetComponent<Text>().text = "RADIUS 2 TILES  /  ^ YOU\nM FULL MAP";
         }
 
         private static T Remap<T>(SerializedProperty property, Transform source, Transform destination) where T : Component
@@ -164,7 +161,6 @@ namespace MazeParty.Editor
         }
 
         private static void EnsureFullMapCloseButton(
-            GameObject root,
             SerializedObject map)
         {
             var closeProperty = map.FindProperty("fullMapCloseButton");
@@ -175,51 +171,22 @@ namespace MazeParty.Editor
 
             var fullMapPanel =
                 (GameObject)map.FindProperty("fullMapPanel").objectReferenceValue;
+            if (fullMapPanel == null)
+            {
+                throw new System.InvalidOperationException(
+                    "BoardMapCanvas.prefab requires its authored Board Full Map panel.");
+            }
+
             var existing = fullMapPanel.transform.Find("Full Map Close Button");
-            Button closeButton;
-            if (existing != null)
-            {
-                closeButton = existing.GetComponent<Button>();
-            }
-            else
-            {
-                var template = root.GetComponentsInChildren<Button>(true);
-                Button source = null;
-                foreach (var candidate in template)
-                {
-                    if (candidate.name == "ItemShopCloseButton")
-                    {
-                        source = candidate;
-                        break;
-                    }
-                }
-
-                if (source == null)
-                {
-                    throw new System.InvalidOperationException(
-                        "BoardCanvas.prefab requires ItemShopCloseButton as " +
-                        "the authored source for the full-map close control.");
-                }
-
-                var closeObject = Object.Instantiate(
-                    source.gameObject,
-                    fullMapPanel.transform,
-                    false);
-                closeObject.name = "Full Map Close Button";
-                closeButton = closeObject.GetComponent<Button>();
-                var rect = closeObject.GetComponent<RectTransform>();
-                rect.anchorMin = Vector2.one;
-                rect.anchorMax = Vector2.one;
-                rect.pivot = Vector2.one;
-                rect.anchoredPosition = new Vector2(-16f, -16f);
-                rect.sizeDelta = new Vector2(120f, 44f);
-                closeObject.transform.SetAsLastSibling();
-            }
-
+            var closeButton = existing != null
+                ? existing.GetComponent<Button>()
+                : null;
             if (closeButton == null)
             {
                 throw new System.InvalidOperationException(
-                    "Full Map Close Button must have a Button component.");
+                    "BoardMapCanvas.prefab requires an authored Full Map Close " +
+                    "Button under Board Full Map. Map setup no longer copies " +
+                    "visual controls from the item Canvas.");
             }
 
             closeButton.gameObject.SetActive(false);

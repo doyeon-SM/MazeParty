@@ -174,7 +174,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void EveryPlayerFacingTextPrefab_HasRootFontScope()
+        public void EveryPlayerFacingTextPrefab_HasFontScopeForEveryText()
         {
             var paths = AssetDatabase.FindAssets(
                     "t:Prefab",
@@ -184,26 +184,44 @@ namespace MazeParty.Multiplayer.Tests
                 .OrderBy(path => path)
                 .ToArray();
 
-            var missing = new List<string>();
+            var uncovered = new List<string>();
             foreach (var path in paths)
             {
                 var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab == null ||
-                    (prefab.GetComponentsInChildren<Text>(true).Length == 0 &&
-                     prefab.GetComponentsInChildren<TextMesh>(true).Length == 0))
+                if (prefab == null)
                 {
                     continue;
                 }
 
-                if (prefab.GetComponent<LocalizedFontScope>() == null)
+                var texts = prefab.GetComponentsInChildren<Text>(true)
+                    .Cast<Component>()
+                    .Concat(
+                        prefab.GetComponentsInChildren<TextMesh>(true)
+                            .Cast<Component>());
+                foreach (var text in texts)
                 {
-                    missing.Add(path);
+                    if (text.GetComponentInParent<LocalizedFontScope>(true) !=
+                        null)
+                    {
+                        continue;
+                    }
+
+                    var transformPath =
+                        AnimationUtility.CalculateTransformPath(
+                            text.transform,
+                            prefab.transform);
+                    uncovered.Add(
+                        path + " :: " + prefab.name +
+                        (string.IsNullOrEmpty(transformPath)
+                            ? string.Empty
+                            : "/" + transformPath));
                 }
             }
 
-            Assert.That(missing, Is.Empty,
-                "Text prefabs without a root LocalizedFontScope:\n" +
-                string.Join("\n", missing));
+            Assert.That(uncovered, Is.Empty,
+                "Player-facing Text without an ancestor " +
+                "LocalizedFontScope:\n" +
+                string.Join("\n", uncovered));
         }
 
         private static void AssertFallbacks(string assetPath, params string[] expectedPaths)

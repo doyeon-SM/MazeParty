@@ -65,7 +65,29 @@ namespace MazeParty.Editor
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             if (existing != null)
             {
-                return existing.GetComponent<BoardTombstoneMarker>();
+                if (existing.transform.Find("Gold Label") == null)
+                {
+                    return existing.GetComponent<BoardTombstoneMarker>();
+                }
+
+                var contents = PrefabUtility.LoadPrefabContents(PrefabPath);
+                try
+                {
+                    var label = contents.transform.Find("Gold Label");
+                    if (label != null)
+                    {
+                        Object.DestroyImmediate(label.gameObject);
+                    }
+
+                    PrefabUtility.SaveAsPrefabAsset(contents, PrefabPath);
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(contents);
+                }
+
+                return AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath)
+                    .GetComponent<BoardTombstoneMarker>();
             }
 
             EnsureFolder("Assets/MazeParty/Prefabs/Board", "World");
@@ -99,19 +121,6 @@ namespace MazeParty.Editor
             crown.transform.localScale = new Vector3(0.58f, 0.17f, 0.27f);
             Object.DestroyImmediate(crown.GetComponent<Collider>());
             crown.GetComponent<MeshRenderer>().sharedMaterial = material;
-
-            var labelObject = new GameObject("Gold Label");
-            labelObject.transform.SetParent(root.transform, false);
-            labelObject.transform.localPosition = new Vector3(0f, 1.22f, 0f);
-            labelObject.transform.localRotation = Quaternion.identity;
-            var label = labelObject.AddComponent<TextMesh>();
-            label.anchor = TextAnchor.LowerCenter;
-            label.alignment = TextAlignment.Center;
-            label.characterSize = 0.11f;
-            label.fontSize = 48;
-            label.color = new Color(1f, 0.84f, 0.33f);
-            label.text = "+GOLD\nRMB";
-            marker.SetGoldLabel(label);
 
             var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             Object.DestroyImmediate(root);

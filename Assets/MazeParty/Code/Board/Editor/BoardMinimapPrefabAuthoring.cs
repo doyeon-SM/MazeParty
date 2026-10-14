@@ -9,7 +9,8 @@ namespace MazeParty.Editor
 {
     public static class BoardMinimapPrefabAuthoring
     {
-        private const string Path = "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string Path =
+            BoardCanvasSplitProjectSetup.MapPrefabPath;
         private static readonly Vector2 PlayerMarkerSize = new Vector2(30f, 30f);
         private static readonly Vector2 PlayerHighlightPosition = new Vector2(0f, 24f);
         private static readonly Vector2 PlayerHighlightSize = new Vector2(40f, 20f);
@@ -57,11 +58,6 @@ namespace MazeParty.Editor
             var title = panel.transform.Find("Minimap Title").GetComponent<Text>();
             Place(title.rectTransform, new Vector2(162f, -23f), new Vector2(292f, 28f));
             title.text = "BOARD / N ^";
-            var legend = panel.transform.Find("Minimap Legend").GetComponent<Text>();
-            Place(legend.rectTransform, new Vector2(162f, -385f), new Vector2(300f, 28f));
-            legend.fontSize = 11;
-            legend.text = "^ YOU   1-4 LIVE   K KEY SHOP   R RESPAWN\nLINE WALL / ARROW EXIT / ORANGE BLOCKED";
-
             // An inscribed square keeps the entire board visible through every heading.
             var surface = Rect("Heading Map", panel.transform);
             Place(surface, new Vector2(162f, -180f), new Vector2(198f, 198f));

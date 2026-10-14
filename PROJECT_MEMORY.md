@@ -154,8 +154,6 @@
   아이템 상점은 프로젝트 전용 WaterShield.prefab, 열쇠상점은 AllIn1VfxToolkit의
   Sand Shield를 기준으로 만든 별도 색의 프로젝트 전용 변형을 사용한다. 위치가 같은 구매
   상태 갱신에는 반복하지 않는다.
-- 상점 안내 텍스트는 개인 카메라에서 로컬 플레이어를 향하도록 Y축으로만 회전한다.
-  상하 각도는 조절하지 않는다.
 - 상점의 넓은 조준·상호작용 영역은 Trigger로 유지하고, 실제 집 모델과 같은 메시를 쓰는
   루트 직속 non-trigger Physical Footprint를 별도로 둔다. Visuals 계층은 충돌 없이 유지해
   상호작용 범위가 플레이어나 주사위를 가두지 않으면서 모델 자체는 통과하지 못하게 한다.
@@ -216,6 +214,23 @@
 
 ### 보드 HUD·착지 효과·아이템
 
+- 보드 플레이 UI는 authored prefab 기반의 `BoardHudCanvas`, `BoardMapCanvas`,
+  `BoardItemCanvas` 세 Canvas로 기능 분리한다. HUD는 Header·플레이어 상태·조준 및 감정표현·
+  준비 및 오버레이, Map은 미니맵·전체 지도·남은 이동 수, Item은 아이템 및 상점·유틸리티
+  아이템·인벤토리·탄약·상점/묘지 상호작용 안내를 소유한다.
+- `Board Overview Map`과 `DiceText`는 삭제한다. 남은 이동 수는 Header 바로 아래에 숫자만,
+  탄약 수는 인벤토리에 숫자만 표시하며 폰트와 크기는 사용자가 프리팹에서 조정한다.
+- 상점과 묘지의 기존 월드 `TextMesh` 안내는 삭제한다. 해당 대상을 조준했을 때만 Item Canvas의
+  인벤토리 바로 위에 직렬화된 안내 텍스트 하나를 대상별로 바꾸어 표시하고, 비대상 시 숨긴다.
+- 조준 안내 대상은 아이템 상점 2곳·열쇠 상점·묘지를 모두 포함한다. 묘지는 실제 획득량 `+N`을
+  함께 표시한다. 남은 이동 수는 Action 상태에서만 숫자로 표시하고 그 외에는 숨긴다. 탄약 수는
+  Pistol·Sniper 같은 총기류를 선택했을 때만 남은 수를 숫자로 표시하고 그 외에는 숨긴다.
+- Dice/Moves/Ammo에 붙은 조작 안내와 사용되지 않는 BoardStatus 계산 경로는 삭제한다.
+  미니맵의 일반 범례와 아이템 선택·상점의 공통 안내는 프리팹에서 제거하고, 감정표현 도움말과
+  아이템별·상품별 툴팁 및 상점 상태 문구는 유지한다. 준비 화면의 CONTROLS 제목과 미니게임별
+  조작 설명은 영어·한국어·일본어·중국어 간체로 현지화하며 기존 키·마우스 아이콘은 유지한다.
+  조작 행의 한글·일본어·중국어 표시에는 프리팹에 연결된 언어별 TMP 폰트 에셋을 사용한다.
+  이미 표시되지 않는 주사위 완료·이동 0·조용히 걷기 등의 구형 안내 번역 행도 정리한다.
 - 플레이 중 Canvas UI의 `UnityEngine.UI.Text`와 `TextMeshProUGUI`는 모두
   Normal/Regular 스타일을 사용한다. 이후 setup으로 생성하는 UI도 같은 스타일로 고정하고,
   중앙 프리팹 계약 테스트로 회귀를 막는다. Gift Grab 기지 표지처럼 Canvas가 아닌 월드
@@ -251,6 +266,10 @@
   시간 안에서 표시 성공까지 같은 revision을 재시도한다.
 - Pistol·Sniper는 화면 조준선 기준 hitscan이고 탄환 오브젝트 없이 짧은 tracer만 표시한다.
   실제 피해 가능한 상대를 조준할 때만 조준선을 빨간색으로 바꾸며 Sniper 확대는 사용하지 않는다.
+- BoardCanvas의 `BoardReticle`과 Arena Combat의 `Aim`은 모두 Modern UI Pack의
+  `Navigation/Add.png` Image를 사용하고 입력을 차단하지 않는다. Arena 에임은 생존한 로컬
+  플레이어의 1인칭 `Playing` 상태이면서 일시정지가 아닐 때만 표시하며, 카운트다운·관전·완료·
+  휴면·컴포넌트 비활성화에서는 즉시 숨긴다.
 - Pistol·Sniper의 서버 승인 발사에는 각각 `item.use.pistol`·`item.use.sniper` 공간 SoundCue를
   한 번 재생한다. 아이템 피해와 보드·Arena 격투 피해를 받은 로컬 소유자 화면에는 격투의
   빨간 피격 플래시를 표시하며, 피해 없는 일반 피격 반응에는 표시하지 않는다.
@@ -448,6 +467,20 @@
   12m/s까지 가속하고 속도 비례 크기·충돌 반동·전용 흰색 눈폭발·충돌 후 크기 보정을
   적용했다. 지속 접촉 pair debounce를 포함한 관련 물리·씬·UI·VFX·문자열 표적 EditMode
   47/47과 전체 EditMode 566/566이 통과했고 최종 Unity 콘솔 오류는 0건이다.
+- 2026-10-15 Arena Combat의 별도 Aim Image를 직렬화된 전용 뷰로 분리해 기본 비활성으로
+  바꾸고, 실제 1인칭 Playing 상태에서만 표시하도록 수명주기를 연결했다. BoardReticle도 같은
+  Add.png Image로 전환했다. 관련 Arena·Board·공통 UI 계약 표적 EditMode 29/29와 전체
+  EditMode 568/568이 통과했고 최종 Unity 콘솔 오류는 0건이다.
+- 2026-10-15 기존 `BoardCanvas`를 비시각 aggregate로 바꾸고 authored HUD·Map·Item Canvas
+  프리팹 3개로 분리했다. Overview와 Dice/상태 안내 경로, 월드 상점·묘지 TextMesh를 삭제하고
+  Action 이동 숫자·총기 탄약 숫자·조준 대상별 Item UI 안내를 연결했다. 보드·지도·공통 UI·
+  폰트·Arena 에임 수명주기를 묶은 요청 범위 EditMode 49/49가 통과했고 최종 Unity 콘솔 오류는
+  0건이다. 최종 구조 보정 이후의 전체 EditMode 재실행은 사용자 요청에 따라 별도로 남긴다.
+- 2026-10-15 미니맵 일반 범례와 아이템 선택·상점 공통 안내를 authored 프리팹에서 제거하고,
+  준비 화면 조작 제목·설명 4개 언어 현지화와 언어별 TMP 글리프 에셋을 적용했다. 아이콘과
+  감정표현·개별 툴팁은 유지하며 구형 주사위·이동·조용히 걷기 번역 행을 삭제했다. 관련 보드
+  UI·지도 UI·번역표 계약의 표적 EditMode 26/26이 통과했다. 전체 EditMode 검증은 사용자
+  요청에 따라 별도로 진행한다.
 
 ## 남은 TODO
 

@@ -11,7 +11,7 @@ namespace MazeParty.Editor
         [MenuItem("MazeParty/Board/Install Map Route Dots")]
         public static void Install()
         {
-            const string path = "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+            const string path = BoardCanvasSplitProjectSetup.MapPrefabPath;
             var root = PrefabUtility.LoadPrefabContents(path);
             try { Ensure(root); PrefabUtility.SaveAsPrefabAsset(root, path); AssetDatabase.SaveAssets(); }
             finally { PrefabUtility.UnloadPrefabContents(root); }

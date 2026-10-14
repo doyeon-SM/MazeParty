@@ -6,16 +6,21 @@ using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
-    /// <summary>Authors the board maps and status badges on BoardCanvas.prefab.</summary>
+    /// <summary>
+    /// Maintains the already-authored map and HUD status-badge prefabs without
+    /// recreating the deleted legacy overview grid.
+    /// </summary>
     public static class BoardMapPrefabAuthoring
     {
-        private const string PrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string MapPrefabPath =
+            BoardCanvasSplitProjectSetup.MapPrefabPath;
+        private const string HudPrefabPath =
+            BoardCanvasSplitProjectSetup.HudPrefabPath;
 
         [MenuItem("MazeParty/Board/Upgrade Board Map UI Prefab")]
         public static void UpgradePrefab()
         {
-            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            var root = PrefabUtility.LoadPrefabContents(MapPrefabPath);
             try
             {
                 var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -26,58 +31,48 @@ namespace MazeParty.Editor
                 }
                 Ensure(root, font);
                 UpgradeExistingMinimapLayout(root);
-                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
-                AssetDatabase.SaveAssets();
+                PrefabUtility.SaveAsPrefabAsset(root, MapPrefabPath);
             }
             finally
             {
                 PrefabUtility.UnloadPrefabContents(root);
             }
+
+            var hud = PrefabUtility.LoadPrefabContents(HudPrefabPath);
+            try
+            {
+                var font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+                Ensure(hud, font);
+                PrefabUtility.SaveAsPrefabAsset(hud, HudPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(hud);
+            }
+
+            AssetDatabase.SaveAssets();
         }
 
         public static void Ensure(GameObject root, Font font)
         {
-            if (root.GetComponent<BoardMapView>() == null)
+            if (root.GetComponent<BoardMapView>() != null)
             {
-                CreateMaps(root, font);
+                BoardMinimapPrefabAuthoring.Ensure(root, font);
+                return;
             }
-            if (root.GetComponent<BoardPlayerStatusBadges>() == null)
-            {
-                CreateStatusBadges(root, font);
-            }
-            BoardMinimapPrefabAuthoring.Ensure(root, font);
-        }
 
-        private static void CreateMaps(GameObject root, Font font)
-        {
-            var overview = CreatePanel(root.transform, "Board Overview Map",
-                new Vector2(1f, 0.5f), new Vector2(1f, 0.5f),
-                new Vector2(-22f, 0f), new Vector2(406f, 456f),
-                new Vector2(1f, 0.5f));
-            var minimap = CreatePanel(root.transform, "Board Action Minimap",
-                new Vector2(1f, 1f), new Vector2(1f, 1f),
-                new Vector2(-22f, -22f), new Vector2(282f, 330f),
-                new Vector2(1f, 1f));
-            var overviewCells = CreateCells(overview.transform, font, 47f, 4f,
-                19f, 62f, 18);
-            var minimapCells = CreateCells(minimap.transform, font, 32f, 3f,
-                19f, 46f, 12);
-            CreateLabel(overview.transform, "Overview Map Title",
-                "NORTH ^  /  BOARD ROUTE", font,
-                new Vector2(203f, -25f), new Vector2(378f, 31f), 19);
-            CreateLabel(overview.transform, "Overview Map Legend",
-                "CYAN  YOU / ROUTE    GOLD  KEY SHOP    1-4  PLAYERS", font,
-                new Vector2(203f, -430f), new Vector2(388f, 31f), 12);
-            CreateLabel(minimap.transform, "Minimap Title",
-                "NORTH ^  /  BOARD", font,
-                new Vector2(141f, -21f), new Vector2(260f, 28f), 16);
-            CreateLabel(minimap.transform, "Minimap Legend",
-                "CYAN YOU LIVE / K SHOP\nOTHER PLAYERS BEFORE MOVE", font,
-                new Vector2(141f, -310f), new Vector2(270f, 24f), 10);
-            overview.SetActive(false);
-            minimap.SetActive(false);
-            root.AddComponent<BoardMapView>().Configure(
-                overview, minimap, overviewCells, minimapCells);
+            if (FindDescendant(root.transform, "PlayerCard0") != null)
+            {
+                if (root.GetComponent<BoardPlayerStatusBadges>() == null)
+                {
+                    CreateStatusBadges(root, font);
+                }
+                return;
+            }
+
+            throw new InvalidOperationException(
+                root.name + " is neither the authored BoardMapCanvas nor " +
+                "BoardHudCanvas prefab.");
         }
 
         private static void UpgradeExistingMinimapLayout(GameObject root)
@@ -104,54 +99,6 @@ namespace MazeParty.Editor
             {
                 label.text = "CYAN YOU LIVE / K SHOP\nOTHER PLAYERS BEFORE MOVE";
             }
-        }
-
-        private static BoardMapView.Cell[] CreateCells(Transform panel,
-            Font font, float size, float gap, float left, float top,
-            int markerFontSize)
-        {
-            var cells = new BoardMapView.Cell[BoardMapView.CellCount];
-            for (var y = 0; y < BoardMapView.GridSize; y++)
-            {
-                for (var x = 0; x < BoardMapView.GridSize; x++)
-                {
-                    var coordinateName = x + "_" + y;
-                    var cell = NewUiObject("Map Cell " + coordinateName,
-                        panel, typeof(Image));
-                    var rect = cell.GetComponent<RectTransform>();
-                    rect.anchorMin = new Vector2(0f, 1f);
-                    rect.anchorMax = rect.anchorMin;
-                    rect.pivot = new Vector2(0f, 1f);
-                    rect.anchoredPosition = new Vector2(
-                        left + x * (size + gap),
-                        -top - (BoardMapView.GridSize - 1 - y) * (size + gap));
-                    rect.sizeDelta = new Vector2(size, size);
-                    var background = cell.GetComponent<Image>();
-                    background.color = new Color(0.15f, 0.23f, 0.31f, 1f);
-                    background.raycastTarget = false;
-
-                    var marker = NewUiObject("Marker " + coordinateName,
-                        cell.transform, typeof(Text)).GetComponent<Text>();
-                    var markerRect = marker.rectTransform;
-                    markerRect.anchorMin = Vector2.zero;
-                    markerRect.anchorMax = Vector2.one;
-                    markerRect.offsetMin = Vector2.zero;
-                    markerRect.offsetMax = Vector2.zero;
-                    marker.font = font;
-                    marker.fontSize = markerFontSize;
-                    marker.fontStyle = FontStyle.Normal;
-                    marker.alignment = TextAnchor.MiddleCenter;
-                    marker.color = Color.white;
-                    marker.raycastTarget = false;
-                    cells[y * BoardMapView.GridSize + x] =
-                        new BoardMapView.Cell
-                        {
-                            Background = background,
-                            Marker = marker
-                        };
-                }
-            }
-            return cells;
         }
 
         private static void CreateStatusBadges(GameObject root, Font font)
@@ -203,43 +150,6 @@ namespace MazeParty.Editor
             label.text = caption;
             label.raycastTarget = false;
             label.gameObject.SetActive(false);
-            return label;
-        }
-
-        private static GameObject CreatePanel(Transform parent, string name,
-            Vector2 anchorMin, Vector2 anchorMax, Vector2 position,
-            Vector2 size, Vector2 pivot)
-        {
-            var panel = NewUiObject(name, parent, typeof(Image));
-            var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = anchorMin;
-            rect.anchorMax = anchorMax;
-            rect.pivot = pivot;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var image = panel.GetComponent<Image>();
-            image.color = new Color(0.025f, 0.045f, 0.08f, 0.93f);
-            image.raycastTarget = false;
-            return panel;
-        }
-
-        private static Text CreateLabel(Transform parent, string name,
-            string caption, Font font, Vector2 position, Vector2 size,
-            int fontSize)
-        {
-            var label = NewUiObject(name, parent, typeof(Text)).GetComponent<Text>();
-            var rect = label.rectTransform;
-            rect.anchorMin = new Vector2(0f, 1f);
-            rect.anchorMax = rect.anchorMin;
-            rect.pivot = new Vector2(0.5f, 0.5f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            label.text = caption;
-            label.font = font;
-            label.fontSize = fontSize;
-            label.alignment = TextAnchor.MiddleCenter;
-            label.color = Color.white;
-            label.raycastTarget = false;
             return label;
         }
 

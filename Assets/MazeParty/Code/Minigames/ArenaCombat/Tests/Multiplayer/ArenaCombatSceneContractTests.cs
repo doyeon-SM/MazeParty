@@ -41,6 +41,12 @@ namespace MazeParty.Multiplayer.Tests
                 var view = state.GetComponent<ArenaCombatNetworkView>();
                 Assert.That(view, Is.Not.Null);
                 Assert.That(view.ArenaPresentation, Is.Not.Null);
+                var aimViews = roots.SelectMany(root =>
+                    root.GetComponentsInChildren<ArenaCombatAimView>(true))
+                    .ToArray();
+                Assert.That(aimViews, Has.Length.EqualTo(1));
+                Assert.That(view.AimView, Is.SameAs(aimViews[0]));
+                Assert.That(view.AimView.HasRequiredReferences, Is.True);
                 var serialized = new SerializedObject(view);
                 var firstPersonCamera = serialized.FindProperty(
                     "firstPersonCamera").objectReferenceValue;

@@ -245,7 +245,7 @@ namespace MazeParty.Editor
         {
             var key = index < 0;
             var name = key ? "KeyShop" : "ItemShop" + (index + 1);
-            return EnsurePrefab(name, () =>
+            var prefab = EnsurePrefab(name, () =>
             {
                 var root = new GameObject(name);
                 var visualRoot = new GameObject("Visuals");
@@ -281,8 +281,6 @@ namespace MazeParty.Editor
                     colliders.Add(baseCollider);
                     physicalColliders.Add(stand.GetComponent<Collider>());
                 }
-                var label = Label(root.transform, "World Label", new Vector3(0,key ? 1.95f : 1.9f,0),
-                    key ? "KEY SHOP\nRMB BUY  20 GOLD" : "ITEM SHOP " + (index + 1) + "\nRMB OPEN");
                 var sharedShield = key
                     ? SharedVfxProjectSetup.EnsureSandShieldPrefab()
                     : SharedVfxProjectSetup.EnsureWaterShieldPrefab();
@@ -291,7 +289,6 @@ namespace MazeParty.Editor
                     sharedShield);
                 var binding = root.AddComponent<BoardShopVisual>();
                 var so = new SerializedObject(binding);
-                so.FindProperty("label").objectReferenceValue = label;
                 so.FindProperty("topViewHighlight").objectReferenceValue =
                     highlight;
                 so.FindProperty("locationHighlightVfx").objectReferenceValue =
@@ -307,6 +304,43 @@ namespace MazeParty.Editor
                 so.ApplyModifiedPropertiesWithoutUndo();
                 return root;
             });
+
+            return RemoveLegacyShopWorldLabel(prefab, name);
+        }
+
+        private static GameObject RemoveLegacyShopWorldLabel(
+            GameObject prefab,
+            string name)
+        {
+            if (prefab == null ||
+                prefab.transform.Find("World Label") == null)
+            {
+                return prefab;
+            }
+
+            var path = Folder + "/" + name + ".prefab";
+            var contents = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                var label = contents.transform.Find("World Label");
+                if (label != null)
+                {
+                    Object.DestroyImmediate(label.gameObject);
+                }
+
+                if (PrefabUtility.SaveAsPrefabAsset(contents, path) == null)
+                {
+                    throw new InvalidOperationException(
+                        "Failed to remove the legacy shop world label from " +
+                        path + ".");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(contents);
+            }
+
+            return AssetDatabase.LoadAssetAtPath<GameObject>(path);
         }
 
         private static void UpgradeShopHighlight(

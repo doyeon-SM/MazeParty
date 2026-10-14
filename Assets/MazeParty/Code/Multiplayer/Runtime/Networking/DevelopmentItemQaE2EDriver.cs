@@ -1123,8 +1123,8 @@ namespace MazeParty.Multiplayer
             var view = BoardFlowView.Instance;
             var bindings = view != null ? view.UiBindings : null;
             var reticle = bindings != null ? bindings.Reticle : null;
-            var text = bindings != null ? bindings.ReticleText : null;
-            if (reticle == null || text == null ||
+            var image = bindings != null ? bindings.ReticleImage : null;
+            if (reticle == null || image == null ||
                 !reticle.activeInHierarchy)
             {
                 throw new InvalidOperationException(
@@ -1134,11 +1134,11 @@ namespace MazeParty.Multiplayer
             var expected = damageable
                 ? bindings.ReticleDamageableTargetColor
                 : bindings.ReticleDefaultColor;
-            if (!Approximately(text.color, expected))
+            if (!Approximately(image.color, expected))
             {
                 throw new InvalidOperationException(
                     label + " reticle color mismatch. Expected " +
-                    expected + ", observed " + text.color + ".");
+                    expected + ", observed " + image.color + ".");
             }
         }
 

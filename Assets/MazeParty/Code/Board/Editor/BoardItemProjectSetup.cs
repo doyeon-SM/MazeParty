@@ -23,10 +23,15 @@ namespace MazeParty.Editor
         public static void Upgrade()
         {
             EnsureAssets();
-            const string canvasPath = "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
-            var canvas = PrefabUtility.LoadPrefabContents(canvasPath);
-            try { EnsureMapBindings(canvas); PrefabUtility.SaveAsPrefabAsset(canvas, canvasPath); }
-            finally { PrefabUtility.UnloadPrefabContents(canvas); }
+            UpgradePresentationPrefab(
+                BoardCanvasSplitProjectSetup.MapPrefabPath,
+                EnsureMapBindings);
+            UpgradePresentationPrefab(
+                BoardCanvasSplitProjectSetup.HudPrefabPath,
+                EnsureReticleBinding);
+            UpgradePresentationPrefab(
+                BoardCanvasSplitProjectSetup.ItemPrefabPath,
+                EnsureUtilityUi);
             const string path = "Assets/MazeParty/Scenes/Board/Board.unity";
             var scene = SceneManager.GetSceneByPath(path);
             bool loaded = scene.IsValid() && scene.isLoaded;
@@ -75,8 +80,6 @@ namespace MazeParty.Editor
 
         public static void EnsureMapBindings(GameObject canvas)
         {
-            EnsureReticleBinding(canvas);
-            EnsureUtilityUi(canvas);
             var helpIcon = AssetDatabase.LoadAssetAtPath<Sprite>(
                 HelpFilledIconPath);
             if (helpIcon == null)
@@ -113,41 +116,58 @@ namespace MazeParty.Editor
 
         private static void EnsureReticleBinding(GameObject canvas)
         {
-            var bindings = canvas.GetComponent<BoardCanvasBindings>();
+            var bindings = canvas.GetComponent<BoardHudCanvasBindings>();
             if (bindings == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab requires BoardCanvasBindings before " +
+                    "BoardHudCanvas.prefab requires BoardHudCanvasBindings before " +
                     "item presentation migration.");
             }
 
             var data = new SerializedObject(bindings);
             var references = data.FindProperty("references");
-            var reticleText = references?.FindPropertyRelative("ReticleText");
-            if (reticleText == null)
+            var reticleImage =
+                references?.FindPropertyRelative("ReticleImage");
+            if (reticleImage == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvasBindings is missing its ReticleText contract.");
+                    "BoardHudCanvasBindings is missing its ReticleImage contract.");
             }
-            if (reticleText.objectReferenceValue != null)
+            if (reticleImage.objectReferenceValue != null)
             {
                 return;
             }
 
             var authoredReticle = canvas
-                .GetComponentsInChildren<UnityEngine.UI.Text>(true)
-                .SingleOrDefault(text =>
-                    text.gameObject.name == "BoardReticle");
+                .GetComponentsInChildren<UnityEngine.UI.Image>(true)
+                .SingleOrDefault(image =>
+                    image.gameObject.name == "BoardReticle");
             if (authoredReticle == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab must author a Text named " +
+                    "BoardHudCanvas.prefab must author an Image named " +
                     "'BoardReticle'.");
             }
 
-            reticleText.objectReferenceValue = authoredReticle;
+            reticleImage.objectReferenceValue = authoredReticle;
             data.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(bindings);
+        }
+
+        private static void UpgradePresentationPrefab(
+            string path,
+            Action<GameObject> upgrade)
+        {
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
+            {
+                upgrade(root);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         public static void EnsureAssets()

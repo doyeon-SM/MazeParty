@@ -36,6 +36,9 @@ namespace MazeParty.Multiplayer.Tests
         private static readonly string[] RequiredPrefabPaths =
         {
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardItemCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
@@ -53,13 +56,16 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"
         };
 
         private static readonly string[] RequiredBindingTypeNames =
         {
             "MazeParty.Multiplayer.BoardCanvasBindings",
+            "MazeParty.Multiplayer.BoardHudCanvasBindings",
+            "MazeParty.Multiplayer.BoardMapCanvasBindings",
+            "MazeParty.Multiplayer.BoardItemCanvasBindings",
             "MazeParty.Multiplayer.AwardCeremonyCanvasBindings",
             "MazeParty.Multiplayer.ArenaCombatHitFlashView",
             "MazeParty.Multiplayer.MinigameCommonHudView",
@@ -98,7 +104,9 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
-                "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardItemCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/AwardCeremonyCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
@@ -277,7 +285,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [TestCase("Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab")]
-        [TestCase("Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab")]
+        [TestCase("Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab")]
         public void HandEmoteWheel_StaticInstructionsRemainLocalized(
             string prefabPath)
         {

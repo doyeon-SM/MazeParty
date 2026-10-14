@@ -23,12 +23,12 @@ namespace MazeParty.Editor
         public const string ControlFontAssetPath =
             "Assets/Ignore/Modern UI Pack/Fonts/OpenSans-Regular SDF.asset";
 
-        private const string BoardCanvasPrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+        private const string BoardHudCanvasPrefabPath =
+            BoardCanvasSplitProjectSetup.HudPrefabPath;
         private const string ModuleObjectName = "MinigameReadyPanel";
         private const int ControlRowCount = 4;
         private static int PreviewClipSlotCount =>
-            BoardCanvasBindings.RequiredMinigamePreviewClipSlotCount;
+            BoardHudCanvasBindings.RequiredMinigamePreviewClipSlotCount;
 
         [MenuItem("MazeParty/UI/Upgrade Minigame Ready Presentation")]
         public static void UpgradeMinigameReadyPresentation()
@@ -40,18 +40,18 @@ namespace MazeParty.Editor
             }
 
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             if (prefab == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab must exist before migrating its ready panel.");
+                    "BoardHudCanvas.prefab must exist before migrating its ready panel.");
             }
 
             EnsureInstalled(prefab);
             AssetDatabase.SaveAssets();
             Debug.Log(
                 "MinigameReadyPanel now uses vertical ready/control lists and " +
-                "an optional VideoPlayer preview without rebuilding BoardCanvas.");
+                "an optional VideoPlayer preview without rebuilding BoardHudCanvas.");
         }
 
         public static GameObject EnsureInstalled(GameObject prefab)
@@ -62,9 +62,9 @@ namespace MazeParty.Editor
             }
 
             EnsureModulePresentation();
-            BindBoardCanvas();
+            BindBoardHudCanvas();
             return AssetDatabase.LoadAssetAtPath<GameObject>(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
         }
 
         private static void EnsureModulePresentation()
@@ -233,6 +233,10 @@ namespace MazeParty.Editor
                 "MinigameControlsTitle",
                 font);
             controlsTitle.text = "CONTROLS";
+            var localizedControlsTitle =
+                controlsTitle.GetComponent<LocalizedText>() ??
+                controlsTitle.gameObject.AddComponent<LocalizedText>();
+            localizedControlsTitle.Configure("CONTROLS");
             controlsTitle.fontSize = 20;
             controlsTitle.alignment = TextAnchor.MiddleLeft;
             SetRect(
@@ -266,18 +270,18 @@ namespace MazeParty.Editor
             }
         }
 
-        private static void BindBoardCanvas()
+        private static void BindBoardHudCanvas()
         {
             var contents = PrefabUtility.LoadPrefabContents(
-                BoardCanvasPrefabPath);
+                BoardHudCanvasPrefabPath);
             try
             {
                 var panel = Require(contents.transform, ModuleObjectName);
-                var bindings = contents.GetComponent<BoardCanvasBindings>();
+                var bindings = contents.GetComponent<BoardHudCanvasBindings>();
                 if (bindings == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvas.prefab requires BoardCanvasBindings.");
+                        "BoardHudCanvas.prefab requires BoardHudCanvasBindings.");
                 }
 
                 var serialized = new SerializedObject(bindings);
@@ -285,7 +289,7 @@ namespace MazeParty.Editor
                 if (references == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvasBindings references are unavailable.");
+                        "BoardHudCanvasBindings references are unavailable.");
                 }
 
                 SetObjectReference(
@@ -311,7 +315,7 @@ namespace MazeParty.Editor
                 if (controlRows == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvasBindings is missing MinigameControlRows.");
+                        "BoardHudCanvasBindings is missing MinigameControlRows.");
                 }
                 controlRows.arraySize = ControlRowCount;
                 for (var row = 0; row < ControlRowCount; row++)
@@ -326,7 +330,7 @@ namespace MazeParty.Editor
                 if (previewClips == null)
                 {
                     throw new InvalidOperationException(
-                        "BoardCanvasBindings is missing minigamePreviewClips.");
+                        "BoardHudCanvasBindings is missing minigamePreviewClips.");
                 }
                 if (previewClips.arraySize < PreviewClipSlotCount)
                 {
@@ -337,10 +341,10 @@ namespace MazeParty.Editor
                 EditorUtility.SetDirty(bindings);
                 if (PrefabUtility.SaveAsPrefabAsset(
                         contents,
-                        BoardCanvasPrefabPath) == null)
+                        BoardHudCanvasPrefabPath) == null)
                 {
                     throw new InvalidOperationException(
-                        "Failed to save BoardCanvas minigame presentation bindings.");
+                        "Failed to save BoardHudCanvas minigame presentation bindings.");
                 }
             }
             finally
@@ -502,7 +506,7 @@ namespace MazeParty.Editor
             if (property == null || value == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas minigame binding is missing: " + name);
+                    "BoardHudCanvas minigame binding is missing: " + name);
             }
             property.objectReferenceValue = value;
         }

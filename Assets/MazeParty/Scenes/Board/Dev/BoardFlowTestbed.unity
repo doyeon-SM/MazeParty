@@ -161,7 +161,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 256402855}
   destination: {fileID: 554222216}
@@ -210,7 +210,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 71999067}
   destination: {fileID: 1672571997}
@@ -302,7 +302,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
 --- !u!1 &46393995
 GameObject:
@@ -346,7 +346,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 90c7f66d24431ce4caf408e02d3eb0da, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardGate
   source: {fileID: 437167068}
   destination: {fileID: 355706550}
@@ -852,6 +852,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
+--- !u!114 &265566886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883905798}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
+  simulator: {fileID: 1548230742}
+  slotIndex: 1
+  shopOffer: 0
 --- !u!1 &278830400
 GameObject:
   m_ObjectHideFlags: 0
@@ -1944,6 +1959,21 @@ MonoBehaviour:
   gateWidth: 8
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
+--- !u!114 &681903661
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883905799}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
+  simulator: {fileID: 1548230742}
+  slotIndex: 0
+  shopOffer: 0
 --- !u!1 &682321845
 GameObject:
   m_ObjectHideFlags: 0
@@ -2080,21 +2110,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
---- !u!114 &742337913
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 883905799}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
-  simulator: {fileID: 1548230742}
-  slotIndex: 1
-  shopOffer: 1
 --- !u!1 &742989739
 GameObject:
   m_ObjectHideFlags: 0
@@ -2465,21 +2480,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
---- !u!114 &812874572
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 883905797}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
-  simulator: {fileID: 1548230742}
-  slotIndex: 3
-  shopOffer: 1
 --- !u!1001 &816283051
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2862,15 +2862,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6788671789804501079, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: m_LocalScale.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6788671789804501079, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: m_LocalScale.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6788671789804501079, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: m_LocalScale.z
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6788671789804501079, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2939,30 +2939,30 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 816283053}
     m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 5775248477693736497, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 4976933432681601931, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 681903661}
+    - targetCorrespondingSourceObject: {fileID: 2226759965403732710, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 265566886}
+    - targetCorrespondingSourceObject: {fileID: 4096315638021238017, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1426295922}
+    - targetCorrespondingSourceObject: {fileID: 7618695093437463498, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 883905808}
-    - targetCorrespondingSourceObject: {fileID: 852122709264381788, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 8671512664383448648, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 883905807}
-    - targetCorrespondingSourceObject: {fileID: 3309400447343542459, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 1558005208797352505, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 883905806}
-    - targetCorrespondingSourceObject: {fileID: 8975491129173972592, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 4970186167578154390, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       insertIndex: -1
       addedObject: {fileID: 883905805}
-    - targetCorrespondingSourceObject: {fileID: 7882202741767670770, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+    - targetCorrespondingSourceObject: {fileID: 2413157867196785395, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 742337913}
-    - targetCorrespondingSourceObject: {fileID: 48262003317243779, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1414349371}
-    - targetCorrespondingSourceObject: {fileID: 5894638579816216620, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 812874572}
-    - targetCorrespondingSourceObject: {fileID: 3767561502642949961, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1580079477}
+      addedObject: {fileID: 1728639247}
   m_SourcePrefab: {fileID: 100100000, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
 --- !u!114 &883905795 stripped
 MonoBehaviour:
@@ -2977,42 +2977,42 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardCanvasBindings
 --- !u!1 &883905796 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 3767561502642949961, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 2413157867196785395, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905797 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 5894638579816216620, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 4096315638021238017, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905798 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 48262003317243779, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 2226759965403732710, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905799 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 7882202741767670770, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 4976933432681601931, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905800 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 8975491129173972592, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 4970186167578154390, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905801 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 3309400447343542459, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 1558005208797352505, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905802 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 852122709264381788, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 8671512664383448648, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &883905803 stripped
 GameObject:
-  m_CorrespondingSourceObject: {fileID: 5775248477693736497, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
+  m_CorrespondingSourceObject: {fileID: 7618695093437463498, guid: 78bf42b34c3478f4ba05feb72d891b3e, type: 3}
   m_PrefabInstance: {fileID: 883905794}
   m_PrefabAsset: {fileID: 0}
 --- !u!224 &883905804 stripped
@@ -3033,7 +3033,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
   simulator: {fileID: 1548230742}
-  slotIndex: 0
+  slotIndex: 3
   shopOffer: 1
 --- !u!114 &883905806
 MonoBehaviour:
@@ -3045,11 +3045,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
   simulator: {fileID: 1548230742}
   slotIndex: 2
-  shopOffer: 0
+  shopOffer: 1
 --- !u!114 &883905807
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3064,7 +3064,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
   simulator: {fileID: 1548230742}
   slotIndex: 1
-  shopOffer: 0
+  shopOffer: 1
 --- !u!114 &883905808
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3079,7 +3079,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
   simulator: {fileID: 1548230742}
   slotIndex: 0
-  shopOffer: 0
+  shopOffer: 1
 --- !u!1 &951461371
 GameObject:
   m_ObjectHideFlags: 0
@@ -4478,21 +4478,6 @@ MonoBehaviour:
   gateWidth: 8
   crossingEpsilon: 0.001
   drawDebugBoundary: 1
---- !u!114 &1414349371
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 883905798}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
-  simulator: {fileID: 1548230742}
-  slotIndex: 2
-  shopOffer: 1
 --- !u!1001 &1419656135
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -4580,6 +4565,21 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
+--- !u!114 &1426295922
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883905797}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
+  simulator: {fileID: 1548230742}
+  slotIndex: 2
+  shopOffer: 0
 --- !u!1 &1436204033
 GameObject:
   m_ObjectHideFlags: 0
@@ -5060,6 +5060,7 @@ MonoBehaviour:
   minigameCamera: {fileID: 82821977}
   playerOverheadCamera: {fileID: 0}
   combatSpectatorCamera: {fileID: 0}
+  boardResourceEventCamera: {fileID: 0}
   localPlayerEye: {fileID: 0}
   activeMode: 1
   boardFramingAnchor: {fileID: 236498970}
@@ -5078,6 +5079,9 @@ MonoBehaviour:
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10
   combatSpectatorFieldOfView: 55
+  boardResourceEventDistance: 3.4
+  boardResourceEventHeightOffset: 0.15
+  boardResourceEventFieldOfView: 60
 --- !u!4 &1548230741
 Transform:
   m_ObjectHideFlags: 0
@@ -5210,21 +5214,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
---- !u!114 &1580079477
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 883905796}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
-  simulator: {fileID: 1548230742}
-  slotIndex: 4
-  shopOffer: 1
 --- !u!1 &1622973990
 GameObject:
   m_ObjectHideFlags: 0
@@ -5754,6 +5743,21 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1349948818}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1728639247
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 883905796}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe99089ffa9aabd438a0d688432681ad, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay.BoardFlowTestbed::MazeParty.Gameplay.BoardFlowTestbed.BoardFlowLocalItemChoiceButton
+  simulator: {fileID: 1548230742}
+  slotIndex: 4
+  shopOffer: 1
 --- !u!1 &1732981727
 GameObject:
   m_ObjectHideFlags: 0
@@ -5787,7 +5791,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe98f8ee61ff5bc45a547c5ee04c1707, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardShopRouteView
-  hemispherePrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
+  routeMarkerPrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
   dotSpacing: 0.8
   surfaceOffset: 0.012
 --- !u!114 &1732981729
@@ -5974,15 +5978,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalPosition.x

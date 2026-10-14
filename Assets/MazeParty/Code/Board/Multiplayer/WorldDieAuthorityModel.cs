@@ -162,8 +162,6 @@ namespace MazeParty.Multiplayer
 
     public static class WorldDieHudPresentationPolicy
     {
-        public static readonly string RollCompleteLabel = GameText.N("DICE  ROLL COMPLETE");
-
         public static int ResolveVisibleRoll(
             bool isOwner,
             int privateRoll,
@@ -195,51 +193,6 @@ namespace MazeParty.Multiplayer
                    publicFace == privateRoll
                 ? privateRoll
                 : 0;
-        }
-
-        public static string ResolveDiceStatusLabel(
-            int visibleRoll,
-            bool hasRolled,
-            bool hasResolvedItemChoice,
-            bool isActionPhase,
-            bool actionWindowOpen,
-            WorldDiePhase diePhase,
-            int publicFace)
-        {
-            var hasSettledPublicFace =
-                diePhase == WorldDiePhase.Settled &&
-                publicFace >= WorldDieAuthorityModel.MinimumFace &&
-                publicFace <= WorldDieAuthorityModel.MaximumFace;
-            if (visibleRoll > 0 &&
-                hasSettledPublicFace &&
-                publicFace == visibleRoll)
-            {
-                return GameText.F("DICE  {0}", visibleRoll);
-            }
-
-            if (!isActionPhase)
-            {
-                return GameText.T("DICE  --");
-            }
-
-            if (diePhase == WorldDiePhase.Rolling)
-            {
-                return GameText.T("DICE  ROLLING...");
-            }
-
-            if (hasRolled || hasSettledPublicFace)
-            {
-                return GameText.T(RollCompleteLabel);
-            }
-
-            if (!actionWindowOpen)
-            {
-                return GameText.T("DICE  TIME EXPIRED");
-            }
-
-            return hasResolvedItemChoice
-                ? GameText.T("RMB  AIM AT YOUR DIE TO ROLL")
-                : GameText.T("DICE  CHOOSE ITEM FIRST");
         }
     }
 

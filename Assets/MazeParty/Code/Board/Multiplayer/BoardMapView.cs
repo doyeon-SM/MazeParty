@@ -42,8 +42,8 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>
-    /// Updates the 7x7 map cells authored in BoardCanvas.prefab. The board is
-    /// north-up in the overview; the live minimap follows the local eye heading.
+    /// Updates the prefab-authored minimap and full map. The live minimap follows
+    /// the local eye heading; the full map is north-up.
     /// </summary>
     public sealed class BoardMapView : MonoBehaviour
     {
@@ -51,15 +51,8 @@ namespace MazeParty.Multiplayer
         public const int CellCount = GridSize * GridSize;
         internal const double PlayerObservationIntervalSeconds = 1d;
         private const int VisionSampleCount = 33;
+        private const int FullMapSortingOrder = 50;
 
-        [Serializable]
-        public sealed class Cell
-        {
-            public Image Background;
-            public Text Marker;
-        }
-
-        [SerializeField] private GameObject overviewPanel;
         [SerializeField] private GameObject minimapPanel;
         [SerializeField] private BoardMinimapView liveMinimap;
         [SerializeField] private GameObject fullMapPanel;
@@ -69,19 +62,12 @@ namespace MazeParty.Multiplayer
         private bool _fullMapOpen;
         private bool _fullMapBoardAvailable;
         private bool _fullMapCloseButtonWired;
+        private Canvas _mapCanvas;
+        private int _defaultSortingOrder;
+        private bool _sortingOrderCaptured;
         public bool FullMapOpen => _fullMapOpen;
-        [SerializeField] private Cell[] overviewCells = Array.Empty<Cell>();
-        [SerializeField] private Cell[] minimapCells = Array.Empty<Cell>();
-        [Header("Map palette")]
-        [SerializeField] private Color emptyColor = new Color(0.045f, 0.065f, 0.09f, 1f);
-        [SerializeField] private Color roomColor = new Color(0.15f, 0.23f, 0.31f, 1f);
-        [SerializeField] private Color startColor = new Color(0.18f, 0.4f, 0.35f, 1f);
-        [SerializeField] private Color respawnColor = new Color(0.22f, 0.33f, 0.44f, 1f);
-        [SerializeField] private Color shopColor = new Color(1f, 0.82f, 0.12f, 1f);
-        [SerializeField] private Color localColor = new Color(0.22f, 0.85f, 0.72f, 1f);
 
         private BoardTopology _topology;
-        private int _lastSignature = int.MinValue;
         private readonly BoardPlayerMapKnowledge _playerKnowledge =
             new BoardPlayerMapKnowledge();
         private readonly RaycastHit[] _playerSightHits = new RaycastHit[32];
@@ -94,24 +80,14 @@ namespace MazeParty.Multiplayer
         private GameplayCameraDirector _cameraDirector;
 
         public bool HasRequiredReferences =>
-            overviewPanel != null && minimapPanel != null &&
-            HasCells(overviewCells) && HasCells(minimapCells) &&
+            minimapPanel != null &&
             liveMinimap != null && liveMinimap.HasRequiredReferences &&
             fullMapPanel != null && fullMap != null && fullMap.HasRequiredReferences &&
             fullMapCloseButton != null;
 
-        public void Configure(GameObject overview, GameObject minimap,
-            Cell[] overviewMapCells, Cell[] minimapMapCells)
-        {
-            overviewPanel = overview;
-            minimapPanel = minimap;
-            overviewCells = overviewMapCells;
-            minimapCells = minimapMapCells;
-            _lastSignature = int.MinValue;
-        }
-
         private void OnEnable()
         {
+            CaptureSortingOrder();
             WireFullMapCloseButton(true);
         }
 
@@ -163,7 +139,6 @@ namespace MazeParty.Multiplayer
             {
                 SuspendPlayerObservation();
                 UpdateFullMapState(false, toggleRequested);
-                SetActive(overviewPanel, false);
                 SetActive(minimapPanel, false);
                 return;
             }
@@ -176,13 +151,11 @@ namespace MazeParty.Multiplayer
             {
                 SuspendPlayerObservation();
                 UpdateFullMapState(false, false);
-                SetActive(overviewPanel, false);
                 SetActive(minimapPanel, false);
                 return;
             }
 
             UpdateFullMapState(true, toggleRequested);
-            SetActive(overviewPanel, false);
             SetActive(minimapPanel, !_fullMapOpen);
 
             var manager = NetworkManager.Singleton;
@@ -193,43 +166,23 @@ namespace MazeParty.Multiplayer
                 ? localObject.GetComponent<NetworkPlayerAvatar>()
                 : null;
             RefreshPlayerKnowledge(match, localAvatar);
-            if (_fullMapOpen || action)
+            if (_fullMapOpen)
             {
-                if (_fullMapOpen)
-                {
-                    fullMap.Refresh(
-                        _topology,
-                        match,
-                        localAvatar,
-                        BoardMinimapDisplayContext.FullMap,
-                        _playerKnowledge);
-                }
-                else
-                {
-                    liveMinimap.Refresh(
-                        _topology,
-                        match,
-                        localAvatar,
-                        BoardMinimapDisplayContext.Minimap,
-                        _playerKnowledge);
-                }
-                return;
+                fullMap.Refresh(
+                    _topology,
+                    match,
+                    localAvatar,
+                    BoardMinimapDisplayContext.FullMap,
+                    _playerKnowledge);
             }
-            var signature = ComputeSignature(match, localAvatar, false);
-            if (signature == _lastSignature)
+            else
             {
-                return;
-            }
-            _lastSignature = signature;
-
-            var cells = minimapCells;
-            for (var y = 0; y < GridSize; y++)
-            {
-                for (var x = 0; x < GridSize; x++)
-                {
-                    RefreshCell(cells[y * GridSize + x], new Vector2Int(x, y),
-                        match, localAvatar, false);
-                }
+                liveMinimap.Refresh(
+                    _topology,
+                    match,
+                    localAvatar,
+                    BoardMinimapDisplayContext.Minimap,
+                    _playerKnowledge);
             }
         }
 
@@ -266,11 +219,13 @@ namespace MazeParty.Multiplayer
                 if (!open)
                 {
                     UiPopupStack.Remove(fullMapPanel);
+                    RestoreMapSortingOrder();
                 }
                 return;
             }
 
             _fullMapOpen = open;
+            ApplyMapSortingOrder(open);
             if (open)
             {
                 if (fullMapPanel != null)
@@ -307,6 +262,55 @@ namespace MazeParty.Multiplayer
             WireFullMapCloseButton(false);
             _fullMapBoardAvailable = false;
             CloseFullMap();
+            RestoreMapSortingOrder();
+        }
+
+        private void CaptureSortingOrder()
+        {
+            if (_sortingOrderCaptured)
+            {
+                return;
+            }
+
+            _mapCanvas = GetComponent<Canvas>();
+            if (_mapCanvas == null)
+            {
+                _mapCanvas = GetComponentInParent<Canvas>();
+            }
+            if (_mapCanvas == null)
+            {
+                var bindings = GetComponentInChildren<BoardMapCanvasBindings>(
+                    true);
+                _mapCanvas = bindings != null ? bindings.RootCanvas : null;
+            }
+            if (_mapCanvas == null)
+            {
+                return;
+            }
+
+            _defaultSortingOrder = _mapCanvas.sortingOrder;
+            _sortingOrderCaptured = true;
+        }
+
+        private void ApplyMapSortingOrder(bool fullMapOpen)
+        {
+            CaptureSortingOrder();
+            if (_mapCanvas == null)
+            {
+                return;
+            }
+
+            _mapCanvas.sortingOrder = fullMapOpen
+                ? Mathf.Max(FullMapSortingOrder, _defaultSortingOrder)
+                : _defaultSortingOrder;
+        }
+
+        private void RestoreMapSortingOrder()
+        {
+            if (_mapCanvas != null && _sortingOrderCaptured)
+            {
+                _mapCanvas.sortingOrder = _defaultSortingOrder;
+            }
         }
 
         private void WireFullMapCloseButton(bool subscribe)
@@ -325,106 +329,6 @@ namespace MazeParty.Multiplayer
             else
             {
                 fullMapCloseButton.onClick.RemoveListener(CloseFullMap);
-            }
-        }
-
-        private void RefreshCell(Cell cell, Vector2Int coordinate,
-            NetworkMatchState match, NetworkPlayerAvatar localAvatar,
-            bool overview)
-        {
-            if (!_topology.TryGetTile(coordinate, out var tile))
-            {
-                cell.Background.color = emptyColor;
-                cell.Marker.text = string.Empty;
-                return;
-            }
-
-            var color = tile.TileType == BoardTileType.Respawn
-                    ? respawnColor
-                    : roomColor;
-            var isShop = match.KeyShopHasLocation &&
-                         match.KeyShopLocation == coordinate;
-            if (localAvatar != null && localAvatar.HasLogicalBoardTile &&
-                localAvatar.LogicalBoardTileCoordinate == coordinate && !isShop)
-            {
-                color = localColor;
-            }
-            if (isShop) color = shopColor;
-            cell.Background.color = color;
-
-            var marker = string.Empty;
-            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
-            {
-                if (TryGetVisiblePosition(match, localAvatar,
-                        slot, out var visibleCoordinate) &&
-                    visibleCoordinate == coordinate)
-                {
-                    marker += (slot + 1).ToString();
-                }
-            }
-            if (overview)
-                marker = ResolveOverviewMarker(
-                    marker,
-                    string.Empty);
-            cell.Marker.text = marker;
-        }
-
-        internal static string ResolveOverviewMarker(
-            string occupiedMarker,
-            string routeMarker)
-        {
-            if (!string.IsNullOrEmpty(occupiedMarker))
-                return occupiedMarker;
-            if (!string.IsNullOrEmpty(routeMarker))
-                return routeMarker;
-            return string.Empty;
-        }
-
-        private bool TryGetVisiblePosition(
-            NetworkMatchState match,
-            NetworkPlayerAvatar localAvatar,
-            int slot,
-            out Vector2Int coordinate)
-        {
-            if (localAvatar != null &&
-                slot == localAvatar.AssignedSlot &&
-                localAvatar.HasLogicalBoardTile)
-            {
-                coordinate = localAvatar.LogicalBoardTileCoordinate;
-                return true;
-            }
-
-            var remoteAvatar = match != null
-                ? match.GetAvatarForSlot(slot)
-                : null;
-            if (remoteAvatar == null || !remoteAvatar.IsSpawned)
-            {
-                coordinate = default;
-                return false;
-            }
-
-            return _playerKnowledge.TryGetLastKnown(slot, out coordinate);
-        }
-
-        private int ComputeSignature(NetworkMatchState match,
-            NetworkPlayerAvatar localAvatar, bool overview)
-        {
-            unchecked
-            {
-                var hash = _topology.GetHashCode();
-                hash = hash * 31 + (overview ? 1 : 0);
-                hash = hash * 31 + match.KeyShopRevision;
-                hash = hash * 31 + (localAvatar != null
-                    ? localAvatar.LogicalBoardTileCoordinate.GetHashCode() : -1);
-                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
-                {
-                    hash = hash * 31 + (TryGetVisiblePosition(
-                            match, localAvatar, slot,
-                            out var visibleCoordinate)
-                        ? visibleCoordinate.GetHashCode() : -1);
-                }
-                hash = hash * 31 + _playerKnowledge.Revision;
-                return hash;
             }
         }
 
@@ -676,20 +580,6 @@ namespace MazeParty.Multiplayer
             var boundaryWall =
                 collider.GetComponentInParent<BoardBoundaryWallVisual>();
             return boundaryWall == null || boundaryWall.IsVisible;
-        }
-
-        private static bool HasCells(Cell[] cells)
-        {
-            if (cells == null || cells.Length != CellCount) return false;
-            for (var index = 0; index < cells.Length; index++)
-            {
-                if (cells[index] == null || cells[index].Background == null ||
-                    cells[index].Marker == null)
-                {
-                    return false;
-                }
-            }
-            return true;
         }
 
         private static void SetActive(GameObject target, bool active)

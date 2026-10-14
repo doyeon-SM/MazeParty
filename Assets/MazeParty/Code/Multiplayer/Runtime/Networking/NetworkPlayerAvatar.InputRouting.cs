@@ -180,27 +180,22 @@ namespace MazeParty.Multiplayer
 
             if (mouse.rightButton.wasPressedThisFrame)
             {
-                if (TryGetAimedBoardShop(out var shopHit))
+                if (TryGetLocalBoardInteraction(out var interaction))
                 {
-                    var tombstone = shopHit.collider.GetComponentInParent<BoardTombstoneMarker>();
-                    if (tombstone != null)
+                    switch (interaction.Kind)
                     {
-                        RequestTombstonePickupRpc(tombstone.Id);
-                        return;
-                    }
-
-                    var keyTarget = shopHit.collider.GetComponentInParent<KeyShopWorldTarget>();
-                    if (keyTarget != null)
-                    {
-                        RequestKeyShopPurchaseRpc(match.KeyShopRevision);
-                        return;
-                    }
-
-                    var itemTarget = shopHit.collider.GetComponentInParent<ItemShopWorldTarget>();
-                    if (itemTarget != null)
-                    {
-                        BoardFlowView.Instance?.OpenItemShop(itemTarget.ShopIndex);
-                        return;
+                        case BoardWorldInteractionKind.Tombstone:
+                            RequestTombstonePickupRpc(
+                                interaction.TargetIndex);
+                            return;
+                        case BoardWorldInteractionKind.KeyShop:
+                            RequestKeyShopPurchaseRpc(
+                                match.KeyShopRevision);
+                            return;
+                        case BoardWorldInteractionKind.ItemShop:
+                            BoardFlowView.Instance?.OpenItemShop(
+                                interaction.TargetIndex);
+                            return;
                     }
                 }
 

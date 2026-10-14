@@ -22,8 +22,16 @@ namespace MazeParty.Multiplayer.Tests
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
             var view = prefab.GetComponent<ArenaCombatHitFlashView>();
+            var aimView = prefab.GetComponent<ArenaCombatAimView>();
             Assert.That(view, Is.Not.Null);
             Assert.That(view.HasRequiredReferences, Is.True);
+            Assert.That(aimView, Is.Not.Null);
+            Assert.That(aimView.HasRequiredReferences, Is.True);
+            Assert.That(aimView.AimImage.gameObject.activeSelf, Is.False);
+            Assert.That(
+                AssetDatabase.GetAssetPath(aimView.AimImage.sprite),
+                Is.EqualTo(
+                    "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png"));
             Assert.That(prefab.GetComponent<GraphicRaycaster>(), Is.Null);
             var graphics = prefab.GetComponentsInChildren<Graphic>(true);
             Assert.That(graphics, Is.Not.Empty);
@@ -34,7 +42,32 @@ namespace MazeParty.Multiplayer.Tests
                 prefab.GetComponentsInChildren<CanvasGroup>(true)
                     .All(group => !group.blocksRaycasts),
                 Is.True);
+        }
 
+        [Test]
+        public void AimView_HidesByDefaultAndRespondsToVisibilityUpdates()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            Assert.That(prefab, Is.Not.Null, PrefabPath);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                var aimView = instance.GetComponent<ArenaCombatAimView>();
+                Assert.That(aimView, Is.Not.Null);
+                Assert.That(aimView.HasRequiredReferences, Is.True);
+                Assert.That(aimView.IsVisible, Is.False);
+
+                aimView.SetVisible(true);
+                Assert.That(aimView.IsVisible, Is.True);
+
+                aimView.SetVisible(false);
+                Assert.That(aimView.IsVisible, Is.False);
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
         }
 
         [Test]

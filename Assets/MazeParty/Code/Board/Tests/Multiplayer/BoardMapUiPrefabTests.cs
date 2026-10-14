@@ -1,3 +1,4 @@
+using System.Linq;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -9,7 +10,7 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardMapUiPrefabTests
     {
         private const string PrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+            "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab";
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string ModernIconRoot =
@@ -37,7 +38,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardMapAndStatusBadges_AreBoundOnPrefabAndBoardSceneInstance()
+        public void BoardMap_IsBoundOnPrefabAndBoardSceneInstance()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null);
@@ -47,38 +48,57 @@ namespace MazeParty.Multiplayer.Tests
             var wasAlreadyLoaded = scene.IsValid() && scene.isLoaded;
             if (!wasAlreadyLoaded)
             {
-                scene = EditorSceneManager.OpenScene(ScenePath,
+                scene = EditorSceneManager.OpenScene(
+                    ScenePath,
                     OpenSceneMode.Additive);
             }
             try
             {
-                BoardMapView sceneMap = null;
-                foreach (var root in scene.GetRootGameObjects())
-                {
-                    var map = root.GetComponentInChildren<BoardMapView>(true);
-                    if (map == null) continue;
-                    Assert.That(sceneMap, Is.Null,
-                        "Board scene should contain exactly one board map.");
-                    sceneMap = map;
-                }
-                Assert.That(sceneMap, Is.Not.Null);
+                var sceneMaps = scene.GetRootGameObjects()
+                    .SelectMany(root =>
+                        root.GetComponentsInChildren<BoardMapView>(true))
+                    .ToArray();
+                Assert.That(
+                    sceneMaps,
+                    Has.Length.EqualTo(1),
+                    "Board scene should contain exactly one board map.");
+                var sceneMap = sceneMaps[0];
                 AssertBound(sceneMap.gameObject);
-                var source = PrefabUtility.GetCorrespondingObjectFromSource(
-                    sceneMap.gameObject);
-                Assert.That(AssetDatabase.GetAssetPath(source),
+                Assert.That(
+                    PrefabUtility.GetCorrespondingObjectFromSource(
+                        sceneMap.gameObject),
+                    Is.Not.Null);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        sceneMap.gameObject),
                     Is.EqualTo(PrefabPath));
             }
             finally
             {
                 if (!wasAlreadyLoaded && scene.IsValid() && scene.isLoaded)
+                {
                     EditorSceneManager.CloseScene(scene, true);
+                }
             }
         }
 
         private static void AssertBound(GameObject root)
         {
+            var binding = root.GetComponent<BoardMapCanvasBindings>();
             var map = root.GetComponent<BoardMapView>();
-            var badges = root.GetComponent<BoardPlayerStatusBadges>();
+            Assert.That(binding, Is.Not.Null);
+            Assert.That(binding.HasRequiredReferences, Is.True);
+            Assert.That(binding.MapView, Is.SameAs(map));
+            Assert.That(binding.RootCanvas, Is.SameAs(
+                root.GetComponent<UnityEngine.Canvas>()));
+            Assert.That(binding.RootRaycaster, Is.SameAs(
+                root.GetComponent<UnityEngine.UI.GraphicRaycaster>()));
+            Assert.That(binding.MovesText, Is.Not.Null);
+            Assert.That(binding.MovesText.name, Is.EqualTo("MovesText"));
+            Assert.That(
+                binding.MovesText.transform.IsChildOf(root.transform),
+                Is.True);
+
             Assert.That(map, Is.Not.Null);
             Assert.That(map.HasRequiredReferences, Is.True);
             var mapData = new SerializedObject(map);
@@ -241,8 +261,6 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(effectColors.GetArrayElementAtIndex(8).colorValue),
                     "Damage and special events use the requested red.");
             }
-            Assert.That(badges, Is.Not.Null);
-            Assert.That(badges.HasRequiredReferences, Is.True);
         }
 
         private static void AssertSpritePath(

@@ -15,7 +15,7 @@ namespace MazeParty.Editor
     public static class BoardMapVisibilityPrefabUpgrade
     {
         private const string PrefabPath =
-            "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab";
+            BoardCanvasSplitProjectSetup.MapPrefabPath;
         private const int CurrentPresentationVersion = 2;
         private static readonly Vector2 FullMapSize = new Vector2(780f, 780f);
         private static readonly Vector2 FullMapSurfaceSize =
@@ -49,7 +49,7 @@ namespace MazeParty.Editor
             if (map == null)
             {
                 throw new InvalidOperationException(
-                    "BoardCanvas.prefab requires BoardMapView.");
+                    "BoardMapCanvas.prefab requires BoardMapView.");
             }
 
             var mapData = new SerializedObject(map);
