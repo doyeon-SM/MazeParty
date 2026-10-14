@@ -203,6 +203,50 @@ namespace MazeParty.Gameplay.Minigames
                     : GameText.N("UNKNOWN");
         }
 
+        public static string GetDescription(ScheduledMinigameId minigame)
+        {
+            return GameText.T(GetDescriptionSource(minigame));
+        }
+
+        public static string GetDescriptionSource(ScheduledMinigameId minigame)
+        {
+            switch (minigame)
+            {
+                case ScheduledMinigameId.Minefield:
+                    return GameText.N("Find and avoid the mines to reach the goal.");
+                case ScheduledMinigameId.WrongWay:
+                    return GameText.N("Enter the direction shown on screen.");
+                case ScheduledMinigameId.RedLightGreenLight:
+                    return GameText.N("Move on green. Stop on red.");
+                case ScheduledMinigameId.StableFooting:
+                    return GameText.N("The safe platform has a green symbol.");
+                case ScheduledMinigameId.BalloonBlow:
+                    return GameText.N("Control your breath to pop the balloon. Push too hard and you may collapse.");
+                case ScheduledMinigameId.GiftGrab:
+                    return GameText.N("Bring more gold bars into your zone. You can steal or throw them.");
+                case ScheduledMinigameId.TerritoryPaint:
+                    return GameText.N("Paint as much territory as you can.");
+                case ScheduledMinigameId.TagChase:
+                    return GameText.N("Run from the tagger until time runs out. If you are the tagger, catch everyone.");
+                case ScheduledMinigameId.Race:
+                    return GameText.N("Press A and D alternately as fast as you can.");
+                case ScheduledMinigameId.SequenceMemory:
+                    return GameText.N("Memorize the notes you hear.");
+                case ScheduledMinigameId.BouncingBalls:
+                    return GameText.N("Keep the ball out of your goal and bounce it into another.");
+                case ScheduledMinigameId.BombPassing:
+                    return GameText.N("Pass the bomb to another player before it explodes.");
+                case ScheduledMinigameId.SnowySpin:
+                    return GameText.N("Roll your snowball and knock others off.");
+                case ScheduledMinigameId.ArenaCombat:
+                    return GameText.N("Become the top fighter in a bare-knuckle brawl.");
+                case ScheduledMinigameId.CliffBarrage:
+                    return GameText.N("Dodge and survive.");
+                default:
+                    return string.Empty;
+            }
+        }
+
         public static bool IsRegistered(ScheduledMinigameId minigame)
         {
             return TryGetDefinition(minigame, out _);

@@ -1391,9 +1391,11 @@ namespace MazeParty.Multiplayer
                     : isSkip
                         ? GameText.T("NO MINIGAME / SKIP")
                         : GameText.T("MINEFIELD / TOP-DOWN"));
-            // Final one- or two-line descriptions are authored from the design
-            // document later. Keep the placeholder explicit until then.
-            SetText(_minigameDescription, "---");
+            SetText(
+                _minigameDescription,
+                revealPending || isSkip
+                    ? string.Empty
+                    : MinigameCatalog.GetDescription(selected));
             SetText(
                 _minigameReadyStatus,
                 revealPending

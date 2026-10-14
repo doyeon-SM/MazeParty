@@ -451,6 +451,44 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void MinigameDescriptions_CoverEveryRegisteredGameAndLanguage()
+        {
+            var tableAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(
+                LocalizationTablePath);
+            Assert.That(tableAsset, Is.Not.Null);
+            var table = StringTable.Parse(tableAsset.text);
+            var previousLanguage = GameText.Language;
+            try
+            {
+                Assert.That(
+                    MinigameCatalog.GetDescription(ScheduledMinigameId.Skip),
+                    Is.Empty);
+                foreach (var game in MinigameCatalog.RegisteredMinigames)
+                {
+                    var source = MinigameCatalog.GetDescriptionSource(game.Id);
+                    Assert.That(source, Is.Not.Empty, game.DisplayName);
+                    foreach (var language in new[]
+                             {
+                                 GameLanguage.Korean,
+                                 GameLanguage.Japanese,
+                                 GameLanguage.ChineseSimplified
+                             })
+                    {
+                        Assert.That(table.TryGet(source, language,
+                            out var translation), Is.True, game.DisplayName);
+                        GameText.SetLanguage(language);
+                        Assert.That(MinigameCatalog.GetDescription(game.Id),
+                            Is.EqualTo(translation), game.DisplayName);
+                    }
+                }
+            }
+            finally
+            {
+                GameText.SetLanguage(previousLanguage);
+            }
+        }
+
+        [Test]
         public void MinigameControlGuides_TranslateDescriptionsAndKeepInputSprites()
         {
             var previousLanguage = GameText.Language;

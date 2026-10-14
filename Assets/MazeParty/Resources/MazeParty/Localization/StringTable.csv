@@ -780,3 +780,18 @@ PUNCH,펀치,パンチ,出拳
 : YOUR MINE,: 내 지뢰,: 自分の地雷,: 自己的地雷
 : ROUTE TO KEY SHOP,: 열쇠 상점 경로,: 鍵ショップへの道,: 前往钥匙商店
 : REACHABLE THIS TURN,: 이번 턴 이동 가능,: このターンに移動可能,: 本回合可到达
+Find and avoid the mines to reach the goal.,"지뢰를 찾고, 피해서 골인지점으로 이동하세요.",地雷を見つけて避けながらゴール地点へ向かってください。,找出并避开地雷，前往终点。
+Enter the direction shown on screen.,화면에 표시되는 방향을 입력하세요.,画面に表示される方向を入力してください。,输入屏幕上显示的方向。
+Move on green. Stop on red.,초록불에는 움직일 수 있습니다. 빨간불에는 움직일 수 없습니다.,緑の光では動けます。赤い光では動けません。,绿灯时可以移动。红灯时不能移动。
+The safe platform has a green symbol.,안전한 발판은 초록색 문양입니다.,安全な足場には緑色の模様があります。,安全的平台带有绿色标记。
+Control your breath to pop the balloon. Push too hard and you may collapse.,숨을 조절하여 풍선을 터트리세요. 너무 무리하면 쓰러질 수 있습니다.,息を調整して風船を割ってください。無理をしすぎると倒れることがあります。,控制呼吸吹爆气球。太用力可能会倒下。
+Bring more gold bars into your zone. You can steal or throw them.,"더 많은 금괴를 내 구역에 넣으세요. 금괴는 뺐을 수 도 있고, 던질 수 도 있습니다.",より多くの金塊を自分のエリアに入れてください。金塊は奪ったり投げたりできます。,把更多金条放进自己的区域。金条可以抢夺或投掷。
+Paint as much territory as you can.,더 넓은 지역을 색칠하세요.,できるだけ広い範囲を塗ってください。,尽可能涂满更大的区域。
+"Run from the tagger until time runs out. If you are the tagger, catch everyone.",술래를 피해 도망다니며 시간을 버티세요. 술래는 도망자를 모두 잡으세요.,鬼から逃げて制限時間まで生き残ってください。鬼は逃げる全員を捕まえてください。,躲避追捕者并坚持到时间结束。追捕者要抓住所有逃跑者。
+Press A and D alternately as fast as you can.,A와 D를 번가라가면서 빠르게 누르세요.,AとDをできるだけ速く交互に押してください。,尽可能快地交替按下 A 和 D。
+Memorize the notes you hear.,들리는 음을 외우세요.,聞こえた音を覚えてください。,记住听到的音符。
+Keep the ball out of your goal and bounce it into another.,공이 골대에 들어가지 못하게 막으세요. 내가 튕긴 공을 다른 골대에 넣으세요.,ボールを自分のゴールに入れさせず跳ね返してほかのゴールに入れてください。,挡住球，别让它进入自己的球门；把弹回的球打进其他球门。
+Pass the bomb to another player before it explodes.,폭탄이 터지기 전에 다른 플레이어에게 넘기세요.,爆弾が爆発する前にほかのプレイヤーへ渡してください。,在炸弹爆炸前把它传给其他玩家。
+Roll your snowball and knock others off.,눈덩이를 굴려서 떨어뜨리세요.,雪玉を転がして相手を落としてください。,滚动雪球，把其他玩家撞下去。
+Become the top fighter in a bare-knuckle brawl.,맨손싸움의 1등이 되세요.,素手の乱闘で1位を目指してください。,在徒手格斗中争夺第一。
+Dodge and survive.,피하고 버티세요.,避けて生き残ってください。,躲避攻击并坚持到最后。
