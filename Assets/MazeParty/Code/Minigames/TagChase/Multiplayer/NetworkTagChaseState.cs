@@ -704,15 +704,19 @@ namespace MazeParty.Multiplayer
                 }
 
                 var forward = DirectionFromYaw(_serverViewYaw[slot]);
+                var displacement = slot == TaggerSlot
+                    ? TagChaseRules.CalculateFirstPersonMovement(
+                        input, _serverViewYaw[slot], deltaSeconds)
+                    : TagChaseRules.CalculateRunnerMovement(
+                        input, deltaSeconds);
                 _playerPositions[slot] =
                     ResolvePlayerMovement(
                         slot,
                         _playerPositions[slot],
-                        TagChaseRules.CalculateFirstPersonMovement(
-                            input,
-                            _serverViewYaw[slot],
-                            deltaSeconds));
-                _playerFacings[slot] = forward;
+                        displacement);
+                _playerFacings[slot] = slot == TaggerSlot
+                    ? forward
+                    : displacement.normalized;
             }
         }
 

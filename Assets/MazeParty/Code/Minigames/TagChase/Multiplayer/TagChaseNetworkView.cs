@@ -6,9 +6,8 @@ using UnityEngine;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Client presentation for Tag Chase. Active players use an owner-only
-    /// first-person view while countdowns and caught players use the shared
-    /// arena camera.
+    /// Client presentation for Tag Chase. The tagger uses first person;
+    /// runners share a fixed vertical arena camera.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class TagChaseNetworkView : MonoBehaviour
@@ -16,6 +15,7 @@ namespace MazeParty.Multiplayer
         public const float PlayerPresentationHeight = 1.18f;
         public const float FirstPersonEyeHeight = 1.62f;
         public const float SharedFieldOfView = 48f;
+        public const float SharedOrthographicSize = 13f;
         public const float TaggerFieldOfView = 68f;
 
         private const float PlayerInterpolationSpeed = 18f;
@@ -63,11 +63,11 @@ namespace MazeParty.Multiplayer
         public static Vector3 InitialSharedCameraPosition =>
             new Vector3(
                 NetworkTagChaseState.ArenaCenterX,
-                21.505125f,
-                -19.443155f);
+                28f,
+                0f);
 
         public static Quaternion InitialSharedCameraRotation =>
-            Quaternion.Euler(50.471f, 0f, 0f);
+            Quaternion.Euler(90f, 0f, 0f);
 
         public void Configure(
             NetworkTagChaseState networkState,
@@ -156,6 +156,10 @@ namespace MazeParty.Multiplayer
                 TaggerFieldOfView);
             if (sharedRunnerCamera != null)
             {
+                var lens = sharedRunnerCamera.Lens;
+                lens.ModeOverride = LensSettings.OverrideModes.Orthographic;
+                lens.OrthographicSize = SharedOrthographicSize;
+                sharedRunnerCamera.Lens = lens;
                 sharedRunnerCamera.ForceCameraPosition(
                     InitialSharedCameraPosition,
                     InitialSharedCameraRotation);
@@ -257,6 +261,7 @@ namespace MazeParty.Multiplayer
                     _localSlot,
                     state.IsMatchActive,
                     state.IsCaught(_localSlot)) &&
+                state.IsTagger(_localSlot) &&
                 !showingRoundCountdown;
             for (var slot = 0;
                  slot < _players.Length;
@@ -324,6 +329,9 @@ namespace MazeParty.Multiplayer
                 player.SetEliminated(state.IsCaught(slot));
                 player.SetOwnerFirstPerson(
                     localUsesFirstPerson && slot == _localSlot);
+                player.Visual.SetTopViewHighlight(
+                    slot == _localSlot && !localUsesFirstPerson &&
+                    !state.IsCaught(slot) && !state.IsTagger(slot));
                 var hideAuraFromFirstPersonOwner =
                     localUsesFirstPerson &&
                     state.IsTagger(slot) &&
@@ -384,6 +392,7 @@ namespace MazeParty.Multiplayer
                     _localSlot,
                     state.IsMatchActive,
                     state.IsCaught(_localSlot)) &&
+                state.IsTagger(_localSlot) &&
                 !showingRoundCountdown;
             var desiredCamera =
                 useFirstPersonCamera

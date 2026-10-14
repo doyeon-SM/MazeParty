@@ -205,6 +205,14 @@ namespace MazeParty.Editor
                     return;
                 }
 
+                if (HasCommonHudCoreReferences(existing) &&
+                    existing.TaggerAimRoot != null &&
+                    existing.SpectatorText == null)
+                {
+                    AddMissingSpectatorLabel();
+                    return;
+                }
+
                 if (!HasCommonHudCoreReferences(existing) ||
                     existing.TaggerAimRoot != null)
                 {
@@ -267,9 +275,10 @@ namespace MazeParty.Editor
                 text.text = "ROUND 1 / 3";
 
                 var taggerAim = CreateTaggerAim(root.transform, font);
+                var spectatorLabel = CreateSpectatorLabel(root.transform, font);
                 var common = root.AddComponent<MinigameCommonHudView>();
                 common.Configure(root.GetComponent<Canvas>(),
-                    timer, round, text, taggerAim);
+                    timer, round, text, taggerAim, spectatorLabel);
                 round.SetActive(false);
                 timer.gameObject.SetActive(false);
                 SetUiLayer(root);
@@ -376,6 +385,64 @@ namespace MazeParty.Editor
 
             aim.SetActive(false);
             return aim;
+        }
+
+        private static Text CreateSpectatorLabel(Transform parent, Font font)
+        {
+            var label = new GameObject("Spectator Label",
+                typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+            label.transform.SetParent(parent, false);
+            var rect = label.GetComponent<RectTransform>();
+            rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 1f);
+            rect.pivot = new Vector2(0.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -26f);
+            rect.sizeDelta = new Vector2(500f, 42f);
+            var text = label.GetComponent<Text>();
+            text.font = font;
+            text.fontSize = 26;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.color = Color.white;
+            text.raycastTarget = false;
+            text.supportRichText = true;
+            label.SetActive(false);
+            return text;
+        }
+
+        private static void AddMissingSpectatorLabel()
+        {
+            var root = PrefabUtility.LoadPrefabContents(PrefabPath);
+            try
+            {
+                var common = root.GetComponent<MinigameCommonHudView>();
+                if (!HasCommonHudCoreReferences(common) ||
+                    common.TaggerAimRoot == null)
+                {
+                    throw new InvalidOperationException(
+                        "Shared minigame HUD core bindings are incomplete.");
+                }
+
+                var existing = FindDescendant(root.transform,
+                    "Spectator Label");
+                var label = existing != null
+                    ? existing.GetComponent<Text>()
+                    : CreateSpectatorLabel(root.transform,
+                        RequireLegacyRuntimeFont());
+                if (label == null)
+                {
+                    throw new InvalidOperationException(
+                        "Spectator Label has no Text component.");
+                }
+                var serialized = new SerializedObject(common);
+                serialized.FindProperty("spectatorText").objectReferenceValue =
+                    label;
+                serialized.ApplyModifiedPropertiesWithoutUndo();
+                SetUiLayer(label.gameObject);
+                PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+            }
         }
 
         private static Font RequireLegacyRuntimeFont()

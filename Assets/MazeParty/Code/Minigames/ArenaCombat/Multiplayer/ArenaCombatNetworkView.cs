@@ -53,6 +53,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform[] spawnMarkers = new Transform[4];
         [SerializeField] private GameObject hitSparkVfxPrefab;
         [SerializeField] private ArenaCombatAimView aimView;
+        [SerializeField] private ArenaCombatHealthBarView healthBarPrefab;
 
         private GameplayCameraDirector _cameraDirector;
         private CinemachineCamera _registeredCamera;
@@ -65,6 +66,8 @@ namespace MazeParty.Multiplayer
         private bool _visibilityInitialized;
         private readonly PresentationEventRevisionGate[] _hitVfxGates =
             new PresentationEventRevisionGate[4];
+        private readonly ArenaCombatHealthBarView[] _healthBars =
+            new ArenaCombatHealthBarView[4];
 
         public NetworkArenaCombatState State => state;
         public CinemachineCamera FirstPersonCamera => firstPersonCamera;
@@ -72,6 +75,7 @@ namespace MazeParty.Multiplayer
         public GameObject ArenaPresentation => arenaPresentation;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
         public ArenaCombatAimView AimView => aimView;
+        public ArenaCombatHealthBarView HealthBarPrefab => healthBarPrefab;
 
         public static Vector3 SharedSpectatorCenter =>
             new Vector3(ArenaCenterX, 0f, 0f);
@@ -128,6 +132,11 @@ namespace MazeParty.Multiplayer
             SetAimVisible(false);
         }
 
+        public void ConfigureHealthBar(ArenaCombatHealthBarView prefab)
+        {
+            healthBarPrefab = prefab;
+        }
+
 
         private void Awake()
         {
@@ -138,6 +147,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            SetHealthBarsVisible(false);
             SetAimVisible(false);
             ReleaseOwnerPresentation();
             ResetHitVfxGates();
@@ -157,6 +167,7 @@ namespace MazeParty.Multiplayer
                 match.CurrentMinigame == ScheduledMinigameId.ArenaCombat;
             var showWorld = state != null && state.IsSpawned && selected;
             SetWorldPresentationActive(showWorld);
+            RefreshHealthBars(match, showWorld);
             if (!showWorld)
             {
                 SetAimVisible(false);
@@ -204,6 +215,56 @@ namespace MazeParty.Multiplayer
 
             // The common menu and the pause release button need a free pointer.
             LocalInputGate.ApplyPointerOverride();
+        }
+
+        private void RefreshHealthBars(NetworkMatchState match,
+            bool showWorld)
+        {
+            for (var slot = 0; slot < _healthBars.Length; slot++)
+            {
+                var avatar = showWorld && match != null
+                    ? match.GetAvatarForSlot(slot)
+                    : null;
+                var anchor = avatar?.AvatarVisual?.Bindings?.NameplateAnchor;
+                var bar = _healthBars[slot];
+                if (bar != null && bar.transform.parent != anchor)
+                {
+                    Destroy(bar.gameObject);
+                    _healthBars[slot] = bar = null;
+                }
+                if (anchor != null && bar == null && healthBarPrefab != null)
+                {
+                    bar = Instantiate(healthBarPrefab, anchor, false);
+                    bar.transform.localPosition = new Vector3(0f, -0.22f, 0f);
+                    bar.transform.localRotation = Quaternion.identity;
+                    _healthBars[slot] = bar;
+                }
+                if (bar == null)
+                {
+                    continue;
+                }
+                var visible = showWorld && !state.IsEliminated(slot);
+                if (bar.gameObject.activeSelf != visible)
+                {
+                    bar.gameObject.SetActive(visible);
+                }
+                if (visible)
+                {
+                    bar.SetHealth(avatar.CombatHealth,
+                        BoardCombatRules.TemporaryHealth);
+                }
+            }
+        }
+
+        private void SetHealthBarsVisible(bool visible)
+        {
+            foreach (var bar in _healthBars)
+            {
+                if (bar != null)
+                {
+                    bar.gameObject.SetActive(visible);
+                }
+            }
         }
 
         private void LateUpdate()
@@ -274,7 +335,6 @@ namespace MazeParty.Multiplayer
         {
             ConfigureCamera(firstPersonCamera, FirstPersonFieldOfView);
             ConfigureCamera(spectatorCamera, SpectatorFieldOfView);
-            RefreshStaticSpectatorCamera();
         }
 
         private static void ConfigureCamera(
@@ -310,14 +370,8 @@ namespace MazeParty.Multiplayer
 
         private void RefreshStaticSpectatorCamera()
         {
-            if (spectatorCamera == null)
-            {
-                return;
-            }
-
-            spectatorCamera.ForceCameraPosition(
-                SharedSpectatorCameraPosition,
-                SharedSpectatorCameraRotation);
+            // The scene-authored spectator camera is fixed. Do not overwrite
+            // manually tuned framing when ownership switches.
         }
 
         private void RefreshHitVfx(NetworkMatchState match)

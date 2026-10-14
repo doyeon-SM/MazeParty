@@ -185,10 +185,15 @@ namespace MazeParty.Multiplayer.Tests
                     "Shared camera rotation must remain fixed on the " +
                     "arena center.");
                 Assert.That(
-                    GetLensFieldOfView(sharedRunnerCamera),
-                    Is.EqualTo(TagChaseNetworkView.SharedFieldOfView)
+                    GetLensFieldValue<float>(sharedRunnerCamera,
+                        "OrthographicSize"),
+                    Is.EqualTo(TagChaseNetworkView.SharedOrthographicSize)
                         .Within(GeometryTolerance),
                     "Shared camera zoom must remain fixed.");
+                Assert.That(
+                    GetLensFieldValue<object>(sharedRunnerCamera,
+                        "ModeOverride").ToString(),
+                    Is.EqualTo("Orthographic"));
                 Assert.That(
                     GetLensFieldOfView(firstPersonCamera),
                     Is.EqualTo(TagChaseNetworkView.TaggerFieldOfView)
@@ -350,6 +355,18 @@ namespace MazeParty.Multiplayer.Tests
             var fieldOfView = lens.GetType().GetField("FieldOfView");
             Assert.That(fieldOfView, Is.Not.Null);
             return (float)fieldOfView.GetValue(lens);
+        }
+
+        private static T GetLensFieldValue<T>(Component camera,
+            string fieldName)
+        {
+            var lensField = camera.GetType().GetField("Lens");
+            Assert.That(lensField, Is.Not.Null);
+            var lens = lensField.GetValue(camera);
+            Assert.That(lens, Is.Not.Null);
+            var field = lens.GetType().GetField(fieldName);
+            Assert.That(field, Is.Not.Null);
+            return (T)field.GetValue(lens);
         }
 
         private static Transform FindDescendant(Transform root, string name)

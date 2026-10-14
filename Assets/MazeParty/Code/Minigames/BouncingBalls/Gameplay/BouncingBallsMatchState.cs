@@ -105,6 +105,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             new double[BouncingBallsRules.BallCount];
         private uint _randomState;
         private int _simulatedSteps;
+        private int _activeBallCount;
 
         public BouncingBallsMatchState(int seed)
         {
@@ -121,6 +122,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         public double RoundElapsedSeconds { get; private set; }
         public bool IsRoundComplete { get; private set; }
         public bool IsComplete { get; private set; }
+        public int ActiveBallCount => _activeBallCount;
         public ulong GoalSequence { get; private set; }
         public BouncingBallsGoalEvent? LastGoal { get; private set; }
 
@@ -250,23 +252,48 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             IsRoundComplete = false;
             LastGoal = null;
             _simulatedSteps = 0;
+            _activeBallCount = BouncingBallsRules.InitialBallCount;
             Array.Clear(_shieldCenters, 0, _shieldCenters.Length);
             Array.Clear(_shieldInputs, 0, _shieldInputs.Length);
             for (var id = 0; id < _balls.Length; id++)
             {
-                var angle = NextRandomUnit() * Tau;
-                _balls[id].Set(
-                    0d,
-                    0d,
-                    Math.Cos(angle) * BouncingBallsRules.BallSpeed,
-                    Math.Sin(angle) * BouncingBallsRules.BallSpeed,
-                    BouncingBallsRules.NoOwnerSlot);
+                if (id < _activeBallCount)
+                {
+                    LaunchBall(id, 0d, 0d);
+                }
+                else
+                {
+                    _balls[id].Set(0d, 0d, 0d, 0d,
+                        BouncingBallsRules.NoOwnerSlot);
+                }
             }
+        }
+
+        private void LaunchBall(int id, double x, double y)
+        {
+            var angle = NextRandomUnit() * Tau;
+            _balls[id].Set(
+                x, y,
+                Math.Cos(angle) * BouncingBallsRules.BallSpeed,
+                Math.Sin(angle) * BouncingBallsRules.BallSpeed,
+                BouncingBallsRules.NoOwnerSlot);
         }
 
         private void SimulateStep()
         {
             var dt = BouncingBallsRules.SimulationStepSeconds;
+            var elapsed = (_simulatedSteps + 1) * dt;
+            var expectedBallCount = Math.Min(
+                BouncingBallsRules.BallCount,
+                BouncingBallsRules.InitialBallCount +
+                (int)Math.Floor((elapsed + TimeEpsilon) /
+                    BouncingBallsRules.AdditionalBallIntervalSeconds) *
+                BouncingBallsRules.AdditionalBallsPerWave);
+            while (_activeBallCount < expectedBallCount)
+            {
+                var id = _activeBallCount++;
+                LaunchBall(id, id % 2 == 0 ? -0.6d : 0.6d, 0d);
+            }
             for (var slot = 0; slot < _shieldCenters.Length; slot++)
             {
                 _shieldCenters[slot] = Math.Max(
@@ -278,7 +305,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                          BouncingBallsRules.ShieldSpeed * dt)));
             }
 
-            for (var id = 0; id < _balls.Length; id++)
+            for (var id = 0; id < _activeBallCount; id++)
             {
                 var ball = _balls[id];
                 _previousBallX[id] = ball.X;
@@ -289,7 +316,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
             ResolveBallCollisions();
 
-            for (var id = 0; id < _balls.Length; id++)
+            for (var id = 0; id < _activeBallCount; id++)
             {
                 var ball = _balls[id];
                 for (var slot = 0;
@@ -316,11 +343,11 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
             {
                 var foundOverlap = false;
                 for (var firstId = 0;
-                     firstId < _balls.Length - 1;
+                     firstId < _activeBallCount - 1;
                      firstId++)
                 {
                     for (var secondId = firstId + 1;
-                         secondId < _balls.Length;
+                         secondId < _activeBallCount;
                          secondId++)
                     {
                         var first = _balls[firstId].ToSnapshot();

@@ -399,9 +399,11 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public int PickupLockedPlayerSlot { get; private set; }
         public double PickupLockEndsAtSeconds { get; private set; }
 
-        internal void Spawn()
+        internal void Spawn(double activeElapsedSeconds)
         {
             ResetToNeutralLoose();
+            SetLooseWithGlobalPickupLock(activeElapsedSeconds,
+                GiftGrabRules.SpawnFallSeconds);
         }
 
         internal void Carry(int playerSlot)
@@ -440,10 +442,19 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
 
         internal void LandFromThrow(double activeElapsedSeconds)
         {
-            var throwerSlot = LastThrowerSlot;
-            SetLooseWithRegrabLock(
-                throwerSlot,
-                activeElapsedSeconds);
+            SetLooseWithGlobalPickupLock(activeElapsedSeconds,
+                GiftGrabRules.RegrabLockSeconds);
+        }
+
+        internal void SetLooseWithGlobalPickupLock(
+            double activeElapsedSeconds, double durationSeconds)
+        {
+            State = GiftGrabGiftState.Loose;
+            CarrierSlot = GiftGrabRules.NoPlayerSlot;
+            StoredOwnerSlot = GiftGrabRules.NoPlayerSlot;
+            PickupLockedPlayerSlot = GiftGrabRules.AllPlayersPickupLock;
+            PickupLockEndsAtSeconds = activeElapsedSeconds + durationSeconds;
+            ThrowerImmunityEndsAtSeconds = 0d;
         }
 
         internal void Consume()
@@ -589,7 +600,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                  giftId < targetGiftCount;
                  giftId++)
             {
-                _gifts[giftId].Spawn();
+                _gifts[giftId].Spawn(targetSeconds);
             }
 
             SpawnedGiftCount = targetGiftCount;
@@ -677,7 +688,9 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabPickupStatus.IgnoredOwnStoredGift);
             }
 
-            if (gift.PickupLockedPlayerSlot == playerSlot &&
+            if ((gift.PickupLockedPlayerSlot == playerSlot ||
+                 gift.PickupLockedPlayerSlot ==
+                     GiftGrabRules.AllPlayersPickupLock) &&
                 ElapsedSeconds + TimeEpsilon <
                 gift.PickupLockEndsAtSeconds)
             {
@@ -904,7 +917,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabRules.NoGiftId);
             }
 
-            gift.Consume();
+            gift.LandFromThrow(impactElapsedSeconds);
             var droppedGiftId = DropHeldGift(
                 victim,
                 impactElapsedSeconds);

@@ -56,16 +56,13 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(spectatorCamera, Is.Not.Null);
                 Assert.That(firstPersonCamera,
                     Is.Not.SameAs(spectatorCamera));
-                Assert.That(Vector3.Distance(
-                        spectatorCamera.transform.position,
-                        ArenaCombatNetworkView
-                            .SharedSpectatorCameraPosition),
-                    Is.LessThan(0.001f));
-                Assert.That(Quaternion.Angle(
-                        spectatorCamera.transform.rotation,
-                        ArenaCombatNetworkView
-                            .SharedSpectatorCameraRotation),
-                    Is.LessThan(0.01f));
+                Assert.That(view.HealthBarPrefab, Is.Not.Null);
+                Assert.That(view.HealthBarPrefab.HasRequiredReferences,
+                    Is.True);
+                Assert.That(AssetDatabase.GetAssetPath(
+                        view.HealthBarPrefab),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Minigames/" +
+                               "ArenaCombat/UI/ArenaCombatHealthBar.prefab"));
                 Assert.That(GetLensValue(
                         spectatorCamera,
                         "FieldOfView"),

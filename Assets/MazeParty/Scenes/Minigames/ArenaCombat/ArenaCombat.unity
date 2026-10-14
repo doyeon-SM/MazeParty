@@ -443,6 +443,7 @@ MonoBehaviour:
   - {fileID: 342140975}
   hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
   aimView: {fileID: 71582197}
+  healthBarPrefab: {fileID: 4244892520982058478, guid: 3634ed84f77871c49bbb9bc6d3f4b0d5, type: 3}
 --- !u!114 &765835580
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -720,7 +721,7 @@ Transform:
   m_GameObject: {fileID: 1717902606}
   serializedVersion: 2
   m_LocalRotation: {x: 0.4617486, y: 0, z: 0, w: 0.8870108}
-  m_LocalPosition: {x: 1620, y: 12, z: -7.842324}
+  m_LocalPosition: {x: 1620, y: 18, z: -16}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -96,6 +96,7 @@ namespace MazeParty.Multiplayer
         public byte State;
         public byte CarrierSlot;
         public byte StoredOwnerSlot;
+        public float PickupLockRemainingSeconds;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer)
             where T : IReaderWriter
@@ -104,6 +105,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref State);
             serializer.SerializeValue(ref CarrierSlot);
             serializer.SerializeValue(ref StoredOwnerSlot);
+            serializer.SerializeValue(ref PickupLockRemainingSeconds);
         }
 
         public bool Equals(GiftGrabGiftNetworkSnapshot other)
@@ -111,7 +113,9 @@ namespace MazeParty.Multiplayer
             return Position == other.Position &&
                    State == other.State &&
                    CarrierSlot == other.CarrierSlot &&
-                   StoredOwnerSlot == other.StoredOwnerSlot;
+                   StoredOwnerSlot == other.StoredOwnerSlot &&
+                   PickupLockRemainingSeconds.Equals(
+                       other.PickupLockRemainingSeconds);
         }
 
         public override bool Equals(object obj)
@@ -127,6 +131,7 @@ namespace MazeParty.Multiplayer
             hash.Add(State);
             hash.Add(CarrierSlot);
             hash.Add(StoredOwnerSlot);
+            hash.Add(PickupLockRemainingSeconds);
             return hash.ToHashCode();
         }
     }
@@ -612,6 +617,12 @@ namespace MazeParty.Multiplayer
             return GetGiftOwnerSlot(giftId);
         }
 
+        public float GetGiftPickupLockRemaining(int giftId)
+        {
+            return TryGetGiftSnapshot(giftId, out var snapshot)
+                ? snapshot.PickupLockRemainingSeconds : 0f;
+        }
+
         public void PauseOnServer(double now)
         {
             if (!IsServer || !_matchActive.Value || _paused.Value ||
@@ -1015,11 +1026,21 @@ namespace MazeParty.Multiplayer
                      giftId++)
                 {
                     var gift = _roundState.GetGift(giftId);
-                    if ((gift.State != GiftGrabGiftState.Loose &&
-                         gift.State != GiftGrabGiftState.Stored) ||
-                        (_giftPositions[giftId] -
-                         _playerPositions[slot]).sqrMagnitude >
-                        pickupRadiusSquared)
+                    if (gift.State != GiftGrabGiftState.Loose &&
+                        gift.State != GiftGrabGiftState.Stored)
+                    {
+                        continue;
+                    }
+
+                    var canReach = gift.State == GiftGrabGiftState.Stored
+                        ? gift.StoredOwnerSlot != slot &&
+                          Vector2.Distance(_playerPositions[slot],
+                              GetBaseCenter(gift.StoredOwnerSlot)) <=
+                          BaseRadius
+                        : (_giftPositions[giftId] -
+                           _playerPositions[slot]).sqrMagnitude <=
+                          pickupRadiusSquared;
+                    if (!canReach)
                     {
                         continue;
                     }
@@ -1300,15 +1321,14 @@ namespace MazeParty.Multiplayer
                 {
                     var throwerSlot = gift.LastThrowerSlot;
                     _giftPositions[giftId] = boundaryImpact;
-                    var consumed = _roundState.ResolveThrownConsumed(
-                        giftId,
-                        elapsed);
-                    if (consumed.WasConsumed)
+                    var landed = _roundState.ResolveGiftLanded(
+                        giftId, elapsed);
+                    if (landed.WasLanded)
                     {
                         _thrownVelocities[giftId] = Vector2.zero;
                         _thrownEndsAt[giftId] = 0d;
                         RecordAction(
-                            GiftGrabNetworkActionType.Destroyed,
+                            GiftGrabNetworkActionType.Drop,
                             throwerSlot,
                             GiftGrabRules.NoPlayerSlot,
                             giftId);
@@ -1547,11 +1567,13 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            var column = stackIndex % 5;
-            var row = (stackIndex / 5) % 4;
+            var outer = stackIndex < 8;
+            var ringIndex = outer ? stackIndex : stackIndex - 8;
+            var ringCount = outer ? 8 : 6;
+            var angle = Mathf.PI * 2f * ringIndex / ringCount;
+            var radius = outer ? 1.12f : 0.61f;
             var offset = new Vector2(
-                (column - 2f) * 0.55f,
-                (row - 1.5f) * 0.55f);
+                Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
             return GetDepositedGiftDisplayCenter(ownerSlot) + offset;
         }
 
@@ -1653,7 +1675,12 @@ namespace MazeParty.Multiplayer
                     StoredOwnerSlot = EncodeIndex(
                         gift != null
                             ? gift.StoredOwnerSlot
-                            : GiftGrabRules.NoPlayerSlot)
+                            : GiftGrabRules.NoPlayerSlot),
+                    PickupLockRemainingSeconds = gift != null
+                        ? (float)Math.Max(0d,
+                            gift.PickupLockEndsAtSeconds -
+                            _simulatedElapsed)
+                        : 0f
                 };
                 if (_giftSnapshots[giftId].Equals(snapshot))
                 {

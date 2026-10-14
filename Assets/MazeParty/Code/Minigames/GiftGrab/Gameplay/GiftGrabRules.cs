@@ -14,7 +14,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const int RoundCount = 2;
         public const double RoundSeconds = 60d;
 
-        public const int InitialGiftCount = 10;
+        public const int InitialGiftCount = 5;
         public const int SpawnBatchSize = 3;
         public const int SpawnBatchCount = 3;
         public const double SpawnIntervalSeconds = 15d;
@@ -34,7 +34,9 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const double PushReuseDelaySeconds = 0.5d;
         public const double PushCooldownSeconds =
             PushCastSeconds + PushReuseDelaySeconds;
-        public const double RegrabLockSeconds = 0.25d;
+        public const double RegrabLockSeconds = 0.5d;
+        public const double SpawnFallSeconds = 0.6d;
+        public const int AllPlayersPickupLock = -2;
 
         public const int NoPlayerSlot = -1;
         public const int NoGiftId = -1;
@@ -109,7 +111,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 throw new ArgumentOutOfRangeException(
                     nameof(value),
                     value,
-                    "Stored gift count must be between 0 and 19.");
+                "Stored gift count must be between 0 and 14.");
             }
         }
 

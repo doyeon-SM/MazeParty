@@ -76,6 +76,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         public int RoundNumber { get; private set; }
         public double RemainingSeconds { get; private set; }
         public int SpawnedGiftCount => _spawnedGiftCount;
+        public double RoundElapsedSeconds => _roundElapsed;
         public uint ActionRevision { get; private set; }
         public GiftGrabSoloActionType LastActionType { get; private set; }
         public int LastActionActorSlot { get; private set; } = -1;
@@ -329,6 +330,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                 gift.StoredOwnerSlot = GiftGrabRules.NoPlayerSlot;
                 gift.ThrowOwnerSlot = GiftGrabRules.NoPlayerSlot;
                 gift.ThrowImmunityUntil = 0d;
+                gift.PickupLockedPlayerSlot =
+                    giftId >= GiftGrabRules.InitialGiftCount
+                        ? GiftGrabRules.AllPlayersPickupLock
+                        : GiftGrabRules.NoPlayerSlot;
+                gift.PickupLockUntil = giftId >=
+                    GiftGrabRules.InitialGiftCount
+                    ? _roundElapsed + GiftGrabRules.SpawnFallSeconds
+                    : 0d;
                 RecordAction(
                     GiftGrabSoloActionType.GiftSpawned,
                     -1,
@@ -505,7 +514,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                             gift.Position + perpendicular.normalized * 0.55f,
                             NetworkGiftGrabState.GiftCollisionRadius);
                     }
-                    ConsumeGift(gift, gift.Position);
+                    LandGift(gift, gift.Position, hitElapsed);
                     LastActionGiftId = giftId;
                     continue;
                 }
@@ -515,9 +524,10 @@ namespace MazeParty.Dev.MinigameSoloTest
                         out var boundaryImpact))
                 {
                     var previousThrower = gift.ThrowOwnerSlot;
-                    ConsumeGift(gift, boundaryImpact);
+                    LandGift(gift, boundaryImpact,
+                        frameStartElapsed + travelDelta);
                     RecordAction(
-                        GiftGrabSoloActionType.Destroyed,
+                        GiftGrabSoloActionType.Drop,
                         previousThrower,
                         -1,
                         giftId);
@@ -529,7 +539,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 {
                     var landedAt = gift.ThrownEndsAt;
                     gift.Velocity = Vector2.zero;
-                    gift.PickupLockedPlayerSlot = gift.ThrowOwnerSlot;
+                    gift.PickupLockedPlayerSlot =
+                        GiftGrabRules.AllPlayersPickupLock;
                     gift.PickupLockUntil = landedAt +
                         GiftGrabRules.RegrabLockSeconds;
                     gift.ThrownEndsAt = 0d;
@@ -589,9 +600,15 @@ namespace MazeParty.Dev.MinigameSoloTest
                     if (!gift.IsActive || gift.CarrierSlot >= 0 ||
                         gift.Velocity.sqrMagnitude > 0.01f ||
                         gift.StoredOwnerSlot == slot ||
-                        (gift.Position - player.Position).sqrMagnitude >
-                        pickupRadiusSquared ||
-                        (gift.PickupLockedPlayerSlot == slot &&
+                        (gift.StoredOwnerSlot >= 0
+                            ? Vector2.Distance(player.Position,
+                                  NetworkGiftGrabState.GetBaseCenter(
+                                      gift.StoredOwnerSlot)) > BaseRadius
+                            : (gift.Position - player.Position).sqrMagnitude >
+                              pickupRadiusSquared) ||
+                        ((gift.PickupLockedPlayerSlot == slot ||
+                          gift.PickupLockedPlayerSlot ==
+                              GiftGrabRules.AllPlayersPickupLock) &&
                          _roundElapsed + 0.000000001d <
                          gift.PickupLockUntil))
                     {
@@ -1053,20 +1070,22 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
             }
 
-            var column = stackIndex % 5;
-            var row = (stackIndex / 5) % 4;
+            var outer = stackIndex < 8;
+            var ringIndex = outer ? stackIndex : stackIndex - 8;
+            var ringCount = outer ? 8 : 6;
+            var angle = Mathf.PI * 2f * ringIndex / ringCount;
+            var radius = outer ? 1.12f : 0.61f;
             var offset = new Vector2(
-                (column - 2f) * 0.55f,
-                (row - 1.5f) * 0.55f);
+                Mathf.Cos(angle), Mathf.Sin(angle)) * radius;
             return NetworkGiftGrabState.GetDepositedGiftDisplayCenter(owner) +
                    offset;
         }
 
-        private static void ConsumeGift(
+        private static void LandGift(
             GiftGrabSoloGift gift,
-            Vector2 impactPosition)
+            Vector2 impactPosition,
+            double impactElapsed)
         {
-            gift.IsActive = false;
             gift.Position = impactPosition;
             gift.Velocity = Vector2.zero;
             gift.CarrierSlot = GiftGrabRules.NoPlayerSlot;
@@ -1074,8 +1093,9 @@ namespace MazeParty.Dev.MinigameSoloTest
             gift.ThrowOwnerSlot = GiftGrabRules.NoPlayerSlot;
             gift.ThrowImmunityUntil = 0d;
             gift.ThrownEndsAt = 0d;
-            gift.PickupLockedPlayerSlot = GiftGrabRules.NoPlayerSlot;
-            gift.PickupLockUntil = 0d;
+            gift.PickupLockedPlayerSlot = GiftGrabRules.AllPlayersPickupLock;
+            gift.PickupLockUntil = impactElapsed +
+                GiftGrabRules.RegrabLockSeconds;
         }
 
         private static void ValidatePlayerSlot(int slot)

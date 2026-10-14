@@ -88,6 +88,29 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     FindDescendant(state.transform, "Crusher Placeholder"),
                     Is.Not.Null);
+                var floor = FindDescendant(state.transform, "Arena Floor");
+                var west = FindDescendant(state.transform, "West Wall");
+                var east = FindDescendant(state.transform, "East Wall");
+                var environment = FindDescendant(state.transform,
+                    "Minefield Environment");
+                Assert.That(floor, Is.Not.Null);
+                Assert.That(west, Is.Not.Null);
+                Assert.That(east, Is.Not.Null);
+                Assert.That(environment, Is.Not.Null);
+                var width = NetworkMinefieldState.ArenaMaxX -
+                            NetworkMinefieldState.ArenaMinX;
+                Assert.That(floor.localScale.x,
+                    Is.EqualTo(width).Within(0.001f));
+                Assert.That(west.position.x,
+                    Is.EqualTo(NetworkMinefieldState.ArenaMinX - 0.25f)
+                        .Within(0.001f));
+                Assert.That(east.position.x,
+                    Is.EqualTo(NetworkMinefieldState.ArenaMaxX + 0.25f)
+                        .Within(0.001f));
+                Assert.That(FindDescendant(environment, "Grid X 1"),
+                    Is.Not.Null);
+                Assert.That(FindDescendant(environment, "Grid X 2"),
+                    Is.Null);
             }
             finally
             {
@@ -100,8 +123,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static void AssertAuthoritativeLayoutContract()
         {
-            Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(3));
-            Assert.That(NetworkMinefieldState.MineCount, Is.EqualTo(35));
+            Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(2));
+            Assert.That(NetworkMinefieldState.MineCount, Is.EqualTo(30));
             Assert.That(NetworkMinefieldState.SonarRadius, Is.EqualTo(3f));
             Assert.That(
                 NetworkMinefieldState.SonarDetectionSeconds,
@@ -115,7 +138,7 @@ namespace MazeParty.Multiplayer.Tests
                     0x123456789ABCDEF0UL,
                     1),
                 Is.EqualTo(positions));
-            Assert.That(positions, Has.Length.EqualTo(35));
+            Assert.That(positions, Has.Length.EqualTo(30));
             for (var index = 0; index < positions.Length; index++)
             {
                 Assert.That(

@@ -48,7 +48,9 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(first.RoundNumber, Is.EqualTo(1));
             Assert.That(first.RoundElapsedSeconds, Is.Zero);
-            for (var id = 0; id < BouncingBallsRules.BallCount; id++)
+            Assert.That(first.ActiveBallCount,
+                Is.EqualTo(BouncingBallsRules.InitialBallCount));
+            for (var id = 0; id < first.ActiveBallCount; id++)
             {
                 var ball = first.GetBall(id);
                 var repeatedBall = repeated.GetBall(id);
@@ -94,19 +96,21 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(resolvedSecond.X,
                 Is.EqualTo(BouncingBallsRules.BallRadius)
                     .Within(0.0000001d));
-            Assert.That(resolvedFirst.VelocityX, Is.EqualTo(-1d));
-            Assert.That(resolvedSecond.VelocityX, Is.EqualTo(1d));
+            Assert.That(resolvedFirst.VelocityX,
+                Is.EqualTo(-BouncingBallsRules.MinimumBallSpeed));
+            Assert.That(resolvedSecond.VelocityX,
+                Is.EqualTo(BouncingBallsRules.MinimumBallSpeed));
             Assert.That(resolvedFirst.OwnerSlot, Is.EqualTo(0));
             Assert.That(resolvedSecond.OwnerSlot, Is.EqualTo(1));
 
             var match = new BouncingBallsMatchState(1701);
             match.AdvanceTo(BouncingBallsRules.SimulationStepSeconds);
             for (var firstId = 0;
-                 firstId < BouncingBallsRules.BallCount - 1;
+                 firstId < match.ActiveBallCount - 1;
                  firstId++)
             {
                 for (var secondId = firstId + 1;
-                     secondId < BouncingBallsRules.BallCount;
+                     secondId < match.ActiveBallCount;
                      secondId++)
                 {
                     var left = match.GetBall(firstId);
@@ -122,6 +126,29 @@ namespace MazeParty.Gameplay.Tests
                             0.0001d));
                 }
             }
+        }
+
+        [Test]
+        public void BallWavesSpawnAtExactTwentySecondBoundaries()
+        {
+            var match = new BouncingBallsMatchState(1701);
+            foreach (var entry in new[]
+                     {
+                         (time: 19.999d, count: 3),
+                         (time: 20d, count: 5),
+                         (time: 39.999d, count: 5),
+                         (time: 40d, count: 7)
+                     })
+            {
+                match.AdvanceTo(entry.time);
+                Assert.That(match.ActiveBallCount,
+                    Is.EqualTo(entry.count), entry.time.ToString());
+            }
+
+            match.AdvanceTo(60d);
+            match.BeginNextRound();
+            Assert.That(match.ActiveBallCount,
+                Is.EqualTo(BouncingBallsRules.InitialBallCount));
         }
 
         [Test]

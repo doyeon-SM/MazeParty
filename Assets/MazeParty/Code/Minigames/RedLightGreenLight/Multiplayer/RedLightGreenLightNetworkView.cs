@@ -52,6 +52,14 @@ namespace MazeParty.Multiplayer
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraConfigured;
         private int _localSlot = -1;
+        private readonly bool[] _watchable =
+            new bool[RedLightGreenLightRules.PlayerCount];
+        private readonly float[] _progress =
+            new float[RedLightGreenLightRules.PlayerCount];
+        private int _spectatedSlot = -1;
+        private int _spectatedRound;
+
+        public int SpectatedSlot => _spectatedSlot;
         private RedLightGreenLightSignalPhase _lastSignalPhase =
             (RedLightGreenLightSignalPhase)byte.MaxValue;
         private bool _signalBaselineInitialized;
@@ -101,6 +109,8 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            _spectatedSlot = -1;
+            _spectatedRound = 0;
             SetWorldPresentationActive(false);
             SetHudActive(false);
             UnregisterCamera();
@@ -409,7 +419,33 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var runner = _runners[_localSlot];
+            if (_spectatedRound != state.RoundNumber)
+            {
+                _spectatedRound = state.RoundNumber;
+                _spectatedSlot = -1;
+            }
+
+            if (state.GetPlayerState(_localSlot) ==
+                RedLightGreenLightPlayerState.Eliminated)
+            {
+                for (var slot = 0; slot < _runners.Length; slot++)
+                {
+                    var playerState = state.GetPlayerState(slot);
+                    _watchable[slot] = slot != _localSlot &&
+                        (playerState == RedLightGreenLightPlayerState.Healthy ||
+                         playerState == RedLightGreenLightPlayerState.Warned);
+                    _progress[slot] = state.GetForwardProgress(slot);
+                }
+                _spectatedSlot = MinigameSpectatorSelection.ChooseTarget(
+                    _spectatedSlot, _watchable, _progress);
+            }
+            else
+            {
+                _spectatedSlot = -1;
+            }
+
+            var runner = _runners[_spectatedSlot >= 0
+                ? _spectatedSlot : _localSlot];
             if (runner?.Root == null)
             {
                 return;

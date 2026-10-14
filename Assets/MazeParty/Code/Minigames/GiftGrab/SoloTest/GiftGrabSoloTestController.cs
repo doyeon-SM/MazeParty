@@ -402,26 +402,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
                 _playerVisuals[slot].SetEliminated(false);
 
-                var playerLabel = _playerLabels[slot];
-                playerLabel.transform.position =
-                    root.position + Vector3.up * 2.9f;
-                playerLabel.SetContent(
-                    GetPlayerName(slot),
-                    player.StunRemaining > 0d
-                        ? "STUN " + player.StunRemaining.ToString("0.0") + "s"
-                        : player.CarriedGiftId >= 0
-                            ? "CARRYING GIFT"
-                            : string.Empty,
-                    slot == GiftGrabSoloSession.LocalPlayerSlot,
-                    PlayerColors[slot]);
-                playerLabel.FaceCamera(_runtimeCamera);
-
-                _baseLabels[slot].SetContent(
-                    GetPlayerName(slot) + " BASE",
-                    player.StoredGiftCount + " GIFTS",
-                    slot == GiftGrabSoloSession.LocalPlayerSlot,
-                    PlayerColors[slot]);
-                _baseLabels[slot].FaceCamera(_runtimeCamera);
+                _playerLabels[slot].gameObject.SetActive(false);
+                _baseLabels[slot].gameObject.SetActive(false);
             }
 
             for (var giftId = 0;
@@ -488,9 +470,16 @@ namespace MazeParty.Dev.MinigameSoloTest
                     GiftGrabNetworkView.GiftPresentationHeight,
                     gift.Position.y);
                 anchor.rotation = Quaternion.Euler(
-                    0f,
-                    Time.unscaledTime * 45f + giftId * 23f,
+                    gift.Velocity.sqrMagnitude > 0.01f
+                        ? Time.unscaledTime * 360f : 0f,
+                    gift.Velocity.sqrMagnitude > 0.01f
+                        ? giftId * 23f : 0f,
                     0f);
+                var locked = gift.PickupLockUntil >
+                             _session.RoundElapsedSeconds;
+                presentation.Visual.gameObject.SetActive(
+                    !locked ||
+                    Mathf.FloorToInt(Time.unscaledTime * 10f) % 2 == 0);
             }
         }
 

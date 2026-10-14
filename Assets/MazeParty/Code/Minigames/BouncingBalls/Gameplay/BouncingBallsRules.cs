@@ -10,7 +10,10 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
     public static class BouncingBallsRules
     {
         public const int PlayerCount = 4;
-        public const int BallCount = 3;
+        public const int InitialBallCount = 3;
+        public const int BallCount = 7;
+        public const int AdditionalBallsPerWave = 2;
+        public const double AdditionalBallIntervalSeconds = 20d;
         public const int RoundCount = 2;
         public const double RoundSeconds = 60d;
         public const double CountdownSeconds = 3d;
@@ -20,12 +23,13 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
         public const double ArenaHalfExtent = 8d;
         public const double GoalHalfWidth = 3.1d;
-        public const double ShieldRailDistance = 7.35d;
+        public const double ShieldRailDistance = 7.5d;
         public const double ShieldHalfWidth = 1.1d;
         public const double ShieldMaximumOffset = GoalHalfWidth;
         public const double ShieldSpeed = 5.4d;
         public const double BallRadius = 0.24d;
-        public const double BallSpeed = 7.5d;
+        public const double BallSpeed = 9d;
+        public const double MinimumBallSpeed = 5d;
         public const double RespawnVariationRadians = 0.35d;
         public const int NoOwnerSlot = -1;
 
@@ -118,6 +122,13 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 secondVelocityY -= relativeNormalVelocity * normalY;
             }
 
+            EnsureMinimumBallSpeed(
+                ref firstVelocityX, ref firstVelocityY,
+                -normalX, -normalY);
+            EnsureMinimumBallSpeed(
+                ref secondVelocityX, ref secondVelocityY,
+                normalX, normalY);
+
             resolvedFirst = new BouncingBallsBallSnapshot(
                 first.Id,
                 firstX,
@@ -133,6 +144,29 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                 secondVelocityY,
                 second.OwnerSlot);
             return true;
+        }
+
+        private static void EnsureMinimumBallSpeed(
+            ref double velocityX, ref double velocityY,
+            double fallbackX, double fallbackY)
+        {
+            var speedSquared = velocityX * velocityX +
+                               velocityY * velocityY;
+            if (speedSquared >= MinimumBallSpeed * MinimumBallSpeed)
+            {
+                return;
+            }
+
+            if (speedSquared <= double.Epsilon)
+            {
+                velocityX = fallbackX * MinimumBallSpeed;
+                velocityY = fallbackY * MinimumBallSpeed;
+                return;
+            }
+
+            var scale = MinimumBallSpeed / Math.Sqrt(speedSquared);
+            velocityX *= scale;
+            velocityY *= scale;
         }
 
         /// <summary>

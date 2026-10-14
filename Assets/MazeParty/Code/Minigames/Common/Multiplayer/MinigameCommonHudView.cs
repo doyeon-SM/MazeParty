@@ -20,34 +20,44 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject roundRoot;
         [SerializeField] private Text roundText;
         [SerializeField] private GameObject taggerAimRoot;
+        [SerializeField] private Text spectatorText;
 
         public Canvas RootCanvas => rootCanvas;
         public MinigameTimerDial TimerDial => timerDial;
         public Text RoundText => roundText;
         public GameObject TaggerAimRoot => taggerAimRoot;
+        public Text SpectatorText => spectatorText;
         public bool HasRequiredReferences =>
             rootCanvas != null && timerDial != null &&
             timerDial.HasRequiredReferences && roundRoot != null &&
             roundText != null && taggerAimRoot != null &&
+            spectatorText != null &&
             timerDial.transform.IsChildOf(transform) &&
             roundRoot.transform.IsChildOf(transform) &&
             roundText.transform.IsChildOf(roundRoot.transform) &&
-            taggerAimRoot.transform.IsChildOf(transform);
+            taggerAimRoot.transform.IsChildOf(transform) &&
+            spectatorText.transform.IsChildOf(transform);
 
         public void Configure(Canvas canvas, MinigameTimerDial timer,
-            GameObject round, Text label, GameObject taggerAim)
+            GameObject round, Text label, GameObject taggerAim,
+            Text spectatorLabel)
         {
             rootCanvas = canvas;
             timerDial = timer;
             roundRoot = round;
             roundText = label;
             taggerAimRoot = taggerAim;
+            spectatorText = spectatorLabel;
         }
 
         private void Awake()
         {
             HideClock();
             SetTaggerAimVisible(false);
+            if (spectatorText != null)
+            {
+                spectatorText.gameObject.SetActive(false);
+            }
         }
 
         public void SetTaggerAimVisible(bool visible)
@@ -62,6 +72,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             var match = NetworkMatchState.Instance;
+            RefreshSpectatorLabel(match);
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
                 match.IsMinigameRoundCountdown ||
@@ -69,6 +80,22 @@ namespace MazeParty.Multiplayer
                     match.CurrentMinigame, out var definition))
             {
                 HideClock();
+                return;
+            }
+
+            if (match.CurrentMinigame == ScheduledMinigameId.BombPassing)
+            {
+                var bomb = NetworkBombPassingState.Instance;
+                if (bomb == null ||
+                    bomb.Phase == NetworkBombPassingPhase.Inactive ||
+                    bomb.Phase == NetworkBombPassingPhase.Complete)
+                {
+                    HideClock();
+                    return;
+                }
+
+                ShowRoundOnly(GameText.F("ROUND {0} / {1}",
+                    bomb.RoundNumber, definition.RoundCount));
                 return;
             }
 
@@ -95,6 +122,53 @@ namespace MazeParty.Multiplayer
                 ? GameText.F("PROBLEM {0} / {1}", round, definition.RoundCount)
                 : GameText.F("ROUND {0} / {1}", round, definition.RoundCount);
             ShowClock(remaining, total, label, hasRounds);
+        }
+
+        private void RefreshSpectatorLabel(NetworkMatchState match)
+        {
+            if (spectatorText == null)
+            {
+                return;
+            }
+
+            var slot = -1;
+            if (match != null &&
+                match.FlowState == BoardFlowState.MinigamePlaying)
+            {
+                if (match.CurrentMinigame == ScheduledMinigameId.Minefield)
+                {
+                    var view = FindFirstObjectByType<MinefieldNetworkView>();
+                    slot = view != null ? view.SpectatedSlot : -1;
+                }
+                else if (match.CurrentMinigame ==
+                         ScheduledMinigameId.RedLightGreenLight)
+                {
+                    var view = FindFirstObjectByType<RedLightGreenLightNetworkView>();
+                    slot = view != null ? view.SpectatedSlot : -1;
+                }
+            }
+
+            var avatar = slot >= 0 ? match.GetAvatarForSlot(slot) : null;
+            var visible = avatar != null;
+            if (spectatorText.gameObject.activeSelf != visible)
+            {
+                spectatorText.gameObject.SetActive(visible);
+            }
+            if (!visible)
+            {
+                return;
+            }
+
+            var safeName = avatar.DisplayName.Replace("<", "‹")
+                .Replace(">", "›");
+            var color = ColorUtility.ToHtmlStringRGB(
+                avatar.Appearance.BodyColor);
+            var label = "<color=#" + color + ">" + safeName +
+                        "</color> " + GameText.T("SPECTATING");
+            if (spectatorText.text != label)
+            {
+                spectatorText.text = label;
+            }
         }
 
         private void ShowClock(double remaining, double total,
@@ -128,6 +202,21 @@ namespace MazeParty.Multiplayer
             if (roundRoot != null)
             {
                 roundRoot.SetActive(false);
+            }
+        }
+
+        private void ShowRoundOnly(string label)
+        {
+            if (!HasRequiredReferences)
+            {
+                return;
+            }
+
+            timerDial.gameObject.SetActive(false);
+            roundRoot.SetActive(true);
+            if (roundText.text != label)
+            {
+                roundText.text = label;
             }
         }
 
@@ -319,21 +408,6 @@ namespace MazeParty.Multiplayer
                             : state.Phase == NetworkBouncingBallsPhase.Complete
                                 ? BouncingBallsRules.ResultSeconds
                             : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.BombPassing:
-                {
-                    var state = NetworkBombPassingState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkBombPassingPhase.Inactive ||
-                        state.Phase == NetworkBombPassingPhase.Complete)
-                        return false;
-                    remaining = state.Phase == NetworkBombPassingPhase.Playing
-                        ? state.BombRemainingSeconds : state.Remaining;
-                    total = state.Phase == NetworkBombPassingPhase.Playing
-                        ? state.BombFuseSeconds
-                        : state.Phase == NetworkBombPassingPhase.Countdown
-                            ? 3d : 4d;
                     return true;
                 }
                 case ScheduledMinigameId.SnowySpin:

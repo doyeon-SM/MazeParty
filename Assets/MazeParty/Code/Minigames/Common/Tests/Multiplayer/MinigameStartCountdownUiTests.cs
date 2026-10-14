@@ -33,6 +33,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(common.TimerDial, Is.Not.Null);
             Assert.That(common.RoundText, Is.Not.Null);
             Assert.That(common.TaggerAimRoot, Is.Not.Null);
+            Assert.That(common.SpectatorText, Is.Not.Null);
+            Assert.That(common.SpectatorText.transform.IsChildOf(
+                prefab.transform), Is.True);
+            Assert.That(common.SpectatorText.raycastTarget, Is.False);
             Assert.That(common.TaggerAimRoot.transform.IsChildOf(
                 prefab.transform), Is.True);
             var aimGraphics = common.TaggerAimRoot
@@ -56,6 +60,8 @@ namespace MazeParty.Multiplayer.Tests
                 var runtimeNumeral = instance.GetComponentsInChildren<Text>(true)
                     .Single(text => text.gameObject.name == "Numeral");
                 Assert.That(runtimeCommon.TaggerAimRoot.activeSelf, Is.False);
+                Assert.That(runtimeCommon.SpectatorText.gameObject.activeSelf,
+                    Is.False);
                 runtimeCommon.SetTaggerAimVisible(true);
                 Assert.That(runtimeCommon.TaggerAimRoot.activeSelf, Is.True);
                 runtimeCommon.SetTaggerAimVisible(false);

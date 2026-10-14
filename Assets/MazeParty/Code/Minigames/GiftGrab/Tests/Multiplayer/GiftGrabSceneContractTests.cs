@@ -41,7 +41,7 @@ namespace MazeParty.Multiplayer.Tests
                     new Vector2(contactX, 0f),
                     out var exactImpact),
                 Is.True,
-                "The gift must be consumed when its edge exactly touches the wall.");
+                "The gift must land when its edge exactly touches the wall.");
             Assert.That(exactImpact.x,
                 Is.EqualTo(contactX).Within(0.0001f));
             Assert.That(exactImpact.y, Is.Zero.Within(0.0001f));
@@ -52,7 +52,7 @@ namespace MazeParty.Multiplayer.Tests
                     new Vector2(contactX - 0.25f, 0f),
                     out _),
                 Is.False,
-                "A gift moving inward from the wall must not be consumed again.");
+                "A gift moving inward from the wall must not land again.");
         }
 
         [Test]
@@ -280,6 +280,12 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(gift, Is.Not.Null, giftId.ToString());
                     Assert.That(gift.Find("Gift Visual"), Is.Not.Null);
                 }
+                var giftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/GiftGrab/Gift.prefab");
+                Assert.That(giftPrefab, Is.Not.Null);
+                Assert.That(giftPrefab.transform.Find("GoldPile"),
+                    Is.Not.Null,
+                    "The authored gold-pile gift art must be preserved.");
 
                 var labels = state.GetComponentsInChildren<
                     GiftGrabBaseLabel>(true);

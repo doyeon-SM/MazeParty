@@ -306,6 +306,18 @@ namespace MazeParty.Multiplayer
             for (var ballId = 0; ballId < BouncingBallsRules.BallCount;
                  ballId++)
             {
+                var ballTransform = GetBallTransform(ballId);
+                var ballActive = ballId < state.ActiveBallCount;
+                if (ballTransform != null &&
+                    ballTransform.gameObject.activeSelf != ballActive)
+                {
+                    ballTransform.gameObject.SetActive(ballActive);
+                }
+                if (!ballActive)
+                {
+                    continue;
+                }
+
                 var xy = state.GetBallPosition(ballId);
                 if (ballTransforms != null &&
                     ballId < ballTransforms.Length &&

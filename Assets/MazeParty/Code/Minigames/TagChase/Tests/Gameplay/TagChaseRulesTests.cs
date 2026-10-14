@@ -32,6 +32,18 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void RunnerMovementUsesFixedMapAxesAndIsSlowerThanTagger()
+        {
+            var runner = TagChaseRules.CalculateRunnerMovement(
+                Vector2.up, 1f);
+            var tagger = TagChaseRules.CalculateFirstPersonMovement(
+                Vector2.up, 0f, 1f);
+            Assert.That(runner.x, Is.Zero.Within(0.0001f));
+            Assert.That(runner.y, Is.EqualTo(2.75f).Within(0.0001f));
+            Assert.That(tagger.y, Is.GreaterThan(runner.y));
+        }
+
+        [Test]
         public void EveryActiveUncaughtSlotUsesFirstPersonControls()
         {
             for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)

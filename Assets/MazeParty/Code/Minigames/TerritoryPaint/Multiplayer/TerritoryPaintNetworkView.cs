@@ -417,6 +417,15 @@ namespace MazeParty.Multiplayer
 
         public static Color32 GetFloorPaintColor(Color source)
         {
+            var sourceColor = (Color32)source;
+            var orange = LobbyColorPalette.GetColor(1);
+            if (sourceColor.r == orange.r &&
+                sourceColor.g == orange.g &&
+                sourceColor.b == orange.b)
+            {
+                return new Color32(174, 76, 28, sourceColor.a);
+            }
+
             Color.RGBToHSV(source, out var hue, out var saturation,
                 out var value);
             var color = Color.HSVToRGB(

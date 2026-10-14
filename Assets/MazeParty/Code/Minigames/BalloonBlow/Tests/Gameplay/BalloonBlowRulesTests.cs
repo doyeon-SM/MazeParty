@@ -27,16 +27,16 @@ namespace MazeParty.Gameplay.Tests
                 BalloonBlowInputStatus.Released));
             Assert.That(
                 player.CooldownEndsAtSeconds,
-                Is.EqualTo(2.5d));
+                Is.EqualTo(2d));
 
-            round.AdvanceTo(2.499d);
+            round.AdvanceTo(1.999d);
             Assert.That(
                 player.Phase,
                 Is.EqualTo(BalloonBlowPlayerPhase.Cooldown));
-            round.AdvanceTo(2.5d);
+            round.AdvanceTo(2d);
             Assert.That(
                 player.ProgressPercent,
-                Is.EqualTo(12f).Within(0.0001f));
+                Is.EqualTo(12.5f).Within(0.0001f));
             Assert.That(
                 player.Phase,
                 Is.EqualTo(BalloonBlowPlayerPhase.Ready));
@@ -58,7 +58,7 @@ namespace MazeParty.Gameplay.Tests
             round.AdvanceTo(4d);
             Assert.That(
                 interruptedPlayer.ProgressPercent,
-                Is.EqualTo(2f).Within(0.0001f));
+                Is.Zero.Within(0.0001f));
         }
 
         [Test]
@@ -108,7 +108,7 @@ namespace MazeParty.Gameplay.Tests
             round.AdvanceTo(4d);
             Assert.That(
                 player.ProgressPercent,
-                Is.EqualTo(14f).Within(0.0001f));
+                Is.EqualTo(10f).Within(0.0001f));
             Assert.That(
                 player.Phase,
                 Is.EqualTo(BalloonBlowPlayerPhase.AwaitingRelease));
@@ -119,7 +119,7 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(
                 player.ProgressPercent,
-                Is.EqualTo(24f).Within(0.0001f));
+                Is.EqualTo(20f).Within(0.0001f));
             Assert.That(
                 player.Phase,
                 Is.EqualTo(BalloonBlowPlayerPhase.Inflating));
@@ -142,14 +142,14 @@ namespace MazeParty.Gameplay.Tests
             }
 
             SetAllHeld(round, true, elapsed);
-            elapsed += 0.4d;
+            elapsed += 1.6d;
             round.AdvanceTo(elapsed);
 
             Assert.That(round.IsComplete, Is.True);
             Assert.That(
                 round.EndReason,
                 Is.EqualTo(BalloonBlowRoundEndReason.AllPopped));
-            Assert.That(round.ElapsedSeconds, Is.EqualTo(17.8d).Within(0.0001d));
+            Assert.That(round.ElapsedSeconds, Is.EqualTo(19d).Within(0.0001d));
             Assert.That(PlayerSlots(round.Result), Is.EqualTo(
                 new[] { 0, 1, 2, 3 }));
             Assert.That(Points(round.Result), Is.EqualTo(

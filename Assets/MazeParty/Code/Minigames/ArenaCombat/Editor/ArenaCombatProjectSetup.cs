@@ -128,6 +128,15 @@ namespace MazeParty.Editor
                 var view = root.AddComponent<ArenaCombatNetworkView>();
                 view.Configure(state, firstPersonCamera,
                     spectatorCamera, arena, spawns);
+                var healthBar = AssetDatabase.LoadAssetAtPath<
+                    ArenaCombatHealthBarView>(
+                    CorePrefabFolder + "/UI/ArenaCombatHealthBar.prefab");
+                if (healthBar == null || !healthBar.HasRequiredReferences)
+                {
+                    throw new InvalidOperationException(
+                        "ArenaCombatHealthBar prefab is missing or unbound.");
+                }
+                view.ConfigureHealthBar(healthBar);
 
                 ValidateScene(root, view);
                 EditorSceneManager.SaveScene(scene, ScenePath);

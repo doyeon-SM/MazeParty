@@ -30,15 +30,15 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkMinefieldState : NetworkBehaviour
     {
-        public const int GridWidth = 3;
+        public const int GridWidth = 2;
         public const int GridHeight = 12;
-        public const int MineCount = 35;
+        public const int MineCount = 30;
         public const double CountdownSeconds = 3d;
         public const double RunSeconds = 40d;
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 300f;
-        public const float ArenaMinX = 290f;
-        public const float ArenaMaxX = 310f;
+        public const float ArenaMinX = 293.33334f;
+        public const float ArenaMaxX = 306.66666f;
         public const float ArenaMinZ = -22f;
         public const float ArenaMaxZ = 22f;
         public const float RunnerSpeed = 5f;
@@ -53,7 +53,10 @@ namespace MazeParty.Multiplayer
         private const float FinishWorldZ = ArenaMaxZ - 0.5f;
         private const float RunnerLaneSpacing = 3f;
         private const float RunnerBoundsPadding = 0.5f;
-        private const float MineTriggerRadius = 1.05f;
+        public const float VisibleMineRadius = 0.23f;
+        public const float MineTriggerRadius = VisibleMineRadius * 0.8f;
+        public const float MineExplosionRadius = 1.05f * 1.2f;
+        private const float RunnerCollisionRadius = 0.45f;
         private const float CrusherStartOffset = 2.5f;
         private const float CrusherCatchPadding = 0.2f;
         private const float CrusherSpeed = 1.1625f;
@@ -688,6 +691,7 @@ namespace MazeParty.Multiplayer
                 ArenaMaxX - RunnerBoundsPadding);
             position.y = 0f;
             position.z = Mathf.Clamp(position.z, RunnerStartZ, ArenaMaxZ);
+            position = ResolveRunnerCollision(slot, position);
             SetRunnerPositionOnServer(slot, position);
 
             ResolveMineContactOnServer(slot, position);
@@ -695,6 +699,42 @@ namespace MazeParty.Multiplayer
             {
                 RecordFinishOnServer(slot);
             }
+        }
+
+        private Vector3 ResolveRunnerCollision(int slot, Vector3 position)
+        {
+            for (var other = 0; other < MinefieldRules.PlayerCount;
+                 other++)
+            {
+                if (other == slot || !CanAcceptInputForSlot(other))
+                {
+                    continue;
+                }
+
+                var otherPosition = GetRunnerPosition(other);
+                var delta = position - otherPosition;
+                delta.y = 0f;
+                var minimumDistance = RunnerCollisionRadius * 2f;
+                if (delta.sqrMagnitude >= minimumDistance * minimumDistance)
+                {
+                    continue;
+                }
+
+                if (delta.sqrMagnitude < 0.000001f)
+                {
+                    delta = new Vector3(slot < other ? -1f : 1f, 0f, 0f);
+                }
+
+                position = otherPosition +
+                           delta.normalized * minimumDistance;
+                position.x = Mathf.Clamp(position.x,
+                    ArenaMinX + RunnerBoundsPadding,
+                    ArenaMaxX - RunnerBoundsPadding);
+                position.z = Mathf.Clamp(position.z,
+                    RunnerStartZ, ArenaMaxZ);
+            }
+
+            return position;
         }
 
         private void ResolveMineContactOnServer(int slot, Vector3 position)
@@ -726,7 +766,24 @@ namespace MazeParty.Multiplayer
                     slot,
                     MinefieldHazardVfxKind.Mine,
                     minePosition);
-                ApplyMineHitOnServer(slot);
+                var explosionRadiusSquared =
+                    MineExplosionRadius * MineExplosionRadius;
+                for (var affected = 0;
+                     affected < MinefieldRules.PlayerCount;
+                     affected++)
+                {
+                    if (!CanAcceptInputForSlot(affected))
+                    {
+                        continue;
+                    }
+
+                    var offset = GetRunnerPosition(affected) - minePosition;
+                    offset.y = 0f;
+                    if (offset.sqrMagnitude <= explosionRadiusSquared)
+                    {
+                        ApplyMineHitOnServer(affected);
+                    }
+                }
                 RefreshSensorReplicationOnServer();
                 return;
             }

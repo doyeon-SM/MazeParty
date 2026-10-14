@@ -31,7 +31,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Scene_HasFourGoalsShieldsThreeBallsAndOneSharedCamera()
+        public void Scene_HasFourGoalsShieldsSevenBallsAndOneSharedCamera()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -66,8 +66,8 @@ namespace MazeParty.Multiplayer.Tests
                 }
                 AssertArray(serialized, "shieldTransforms", 4);
                 AssertArray(serialized, "shieldRenderers", 4);
-                AssertArray(serialized, "ballTransforms", 3);
-                AssertArray(serialized, "ballRenderers", 3);
+                AssertArray(serialized, "ballTransforms", 7);
+                AssertArray(serialized, "ballRenderers", 7);
 
                 var arena = FindDescendant(state.transform, "Arena Presentation");
                 Assert.That(arena, Is.Not.Null);
@@ -77,13 +77,13 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(FindDescendant(arena, "Shields")?.childCount,
                     Is.EqualTo(4));
                 Assert.That(FindDescendant(arena, "Balls")?.childCount,
-                    Is.EqualTo(3));
+                    Is.EqualTo(7));
                 var expectedShieldPositions = new[]
                 {
-                    new Vector3(0f, -7.35f, 0.38f),
-                    new Vector3(7.35f, 0f, 0.38f),
-                    new Vector3(0f, 7.35f, 0.38f),
-                    new Vector3(-7.35f, 0f, 0.38f)
+                    new Vector3(0f, -7.5f, 0.38f),
+                    new Vector3(7.5f, 0f, 0.38f),
+                    new Vector3(0f, 7.5f, 0.38f),
+                    new Vector3(-7.5f, 0f, 0.38f)
                 };
                 for (var slot = 0; slot < expectedShieldPositions.Length; slot++)
                 {

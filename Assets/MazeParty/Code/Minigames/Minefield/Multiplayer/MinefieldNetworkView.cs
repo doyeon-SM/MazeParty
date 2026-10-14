@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Minefield;
 using Unity.Cinemachine;
 using UnityEngine;
@@ -43,6 +44,12 @@ namespace MazeParty.Multiplayer
         private bool _worldVisible;
         private bool _worldVisibilityInitialized;
         private NetworkMinefieldState _subscribedVfxState;
+        private readonly bool[] _watchable = new bool[MinefieldRules.PlayerCount];
+        private readonly float[] _progress = new float[MinefieldRules.PlayerCount];
+        private int _spectatedSlot = -1;
+        private int _spectatedRound;
+
+        public int SpectatedSlot => _spectatedSlot;
 
         public GameObject MineExplosionVfxPrefab => mineExplosionVfxPrefab;
         public GameObject HitSparkVfxPrefab => hitSparkVfxPrefab;
@@ -92,6 +99,8 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            _spectatedSlot = -1;
+            _spectatedRound = 0;
             UnsubscribeFromHazardVfxEvents();
             SetWorldPresentationActive(false);
             if (_cameraDirector != null && topDownCamera != null)
@@ -230,7 +239,32 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var runner = _runners[localSlot];
+            if (_spectatedRound != state.RoundNumber)
+            {
+                _spectatedRound = state.RoundNumber;
+                _spectatedSlot = -1;
+            }
+
+            if (state.GetPlayerState(localSlot) == MinefieldPlayerState.Eliminated)
+            {
+                for (var slot = 0; slot < _runners.Length; slot++)
+                {
+                    var playerState = state.GetPlayerState(slot);
+                    _watchable[slot] = slot != localSlot &&
+                        (playerState == MinefieldPlayerState.Healthy ||
+                         playerState == MinefieldPlayerState.Crippled);
+                    _progress[slot] = state.GetRunnerPosition(slot).z;
+                }
+                _spectatedSlot = MinigameSpectatorSelection.ChooseTarget(
+                    _spectatedSlot, _watchable, _progress);
+            }
+            else
+            {
+                _spectatedSlot = -1;
+            }
+
+            var runner = _runners[_spectatedSlot >= 0
+                ? _spectatedSlot : localSlot];
             if (runner == null || runner.Root == null)
             {
                 return;
@@ -491,7 +525,7 @@ namespace MazeParty.Multiplayer
                             mineExplosionVfxPrefab,
                             position,
                             Quaternion.identity,
-                            0.7f);
+                            0.84f);
                     }
                     break;
                 case MinefieldHazardVfxKind.Crusher:

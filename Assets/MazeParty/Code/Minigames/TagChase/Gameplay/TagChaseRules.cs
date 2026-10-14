@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay;
 using UnityEngine;
 
 namespace MazeParty.Gameplay.Minigames.TagChase
@@ -31,6 +32,8 @@ namespace MazeParty.Gameplay.Minigames.TagChase
         public const int RunnerSurvivalPoints = 2;
         public const int RunnerCaughtPoints = 1;
         public const float PlayerMoveSpeed = 5f;
+        public const float RunnerMoveSpeed =
+            PlayerMoveSpeed * FootstepRules.WalkSpeedMultiplier;
 
         public static bool IsValidPlayerSlot(int slot)
         {
@@ -62,6 +65,13 @@ namespace MazeParty.Gameplay.Minigames.TagChase
                 1f);
             return direction *
                    (PlayerMoveSpeed * Mathf.Max(0f, deltaSeconds));
+        }
+
+        public static Vector2 CalculateRunnerMovement(
+            Vector2 input, float deltaSeconds)
+        {
+            return Vector2.ClampMagnitude(input, 1f) *
+                   (RunnerMoveSpeed * Mathf.Max(0f, deltaSeconds));
         }
 
         public static int[] BuildTaggerOrder(ulong seed)

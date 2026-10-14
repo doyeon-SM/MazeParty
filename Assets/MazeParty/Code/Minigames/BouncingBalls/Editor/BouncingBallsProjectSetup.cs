@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay.Minigames.BouncingBalls;
 using MazeParty.Multiplayer;
 using Unity.Cinemachine;
 using Unity.Netcode;
@@ -37,10 +38,10 @@ namespace MazeParty.Editor
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
         public const float ArenaCenterX = 1260f;
         private const int PlayerCount = 4;
-        private const int BallCount = 3;
+        private const int BallCount = BouncingBallsRules.BallCount;
         private const float Boundary = 8f;
         private const float GoalHalfWidth = 3.1f;
-        private const float ShieldRail = 7.35f;
+        private const float ShieldRail = 7.5f;
 
         private static readonly Color[] PlayerColors =
         {
@@ -234,7 +235,8 @@ namespace MazeParty.Editor
             {
                 var ball = CreatePrimitive("Ball " + (index + 1),
                     PrimitiveType.Sphere, ballRoot,
-                    new Vector3((index - 1) * 0.7f, 0f, 0.12f),
+                    new Vector3((index - (BallCount - 1) * 0.5f) * 0.7f,
+                        0f, 0.12f),
                     Quaternion.identity, Vector3.one * 0.48f,
                     materials.NeutralBall);
                 ball = MinigameCorePrefabUtility.Connect(ball,

@@ -16,9 +16,9 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         public const float MinimumProgressPercent = 0f;
         public const float MaxProgressPercent = 100f;
         public const float InflatePercentPerSecond = 10f;
-        public const float DeflatePercentPerSecond = 3f;
+        public const float DeflatePercentPerSecond = 5f;
         public const double MaxContinuousInflateSeconds = 2d;
-        public const double ReleaseCooldownSeconds = 1d;
+        public const double ReleaseCooldownSeconds = 0.5d;
         public const double OverholdCooldownSeconds = 1.5d;
 
         public static int GetPointsForRank(int rank)

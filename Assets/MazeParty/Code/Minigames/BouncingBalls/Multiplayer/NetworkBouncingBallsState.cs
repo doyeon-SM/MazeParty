@@ -44,8 +44,10 @@ namespace MazeParty.Multiplayer
             CreateULongVariable();
         private readonly NetworkVariable<ulong> _conceded =
             CreateULongVariable();
-        private readonly NetworkVariable<uint> _ballOwners =
-            CreateUIntVariable();
+        private readonly NetworkVariable<ulong> _ballOwners =
+            CreateULongVariable();
+        private readonly NetworkVariable<byte> _activeBallCount =
+            CreateByteVariable();
         private readonly NetworkVariable<uint> _finalRanks =
             CreateUIntVariable();
         private readonly NetworkVariable<uint> _goalSequence =
@@ -57,6 +59,14 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<Vector2> _ball1 =
             CreateVectorVariable();
         private readonly NetworkVariable<Vector2> _ball2 =
+            CreateVectorVariable();
+        private readonly NetworkVariable<Vector2> _ball3 =
+            CreateVectorVariable();
+        private readonly NetworkVariable<Vector2> _ball4 =
+            CreateVectorVariable();
+        private readonly NetworkVariable<Vector2> _ball5 =
+            CreateVectorVariable();
+        private readonly NetworkVariable<Vector2> _ball6 =
             CreateVectorVariable();
         private readonly NetworkVariable<float> _shield0 =
             CreateFloatVariable();
@@ -84,6 +94,7 @@ namespace MazeParty.Multiplayer
         public NetworkBouncingBallsPhase Phase =>
             (NetworkBouncingBallsPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
+        public int ActiveBallCount => _activeBallCount.Value;
         public uint InputEpoch => _inputEpoch.Value;
         public bool IsPaused => _paused.Value;
         public bool IsMatchActive => _matchActive.Value;
@@ -247,6 +258,10 @@ namespace MazeParty.Multiplayer
                 case 0: return _ball0.Value;
                 case 1: return _ball1.Value;
                 case 2: return _ball2.Value;
+                case 3: return _ball3.Value;
+                case 4: return _ball4.Value;
+                case 5: return _ball5.Value;
+                case 6: return _ball6.Value;
                 default: return Vector2.zero;
             }
         }
@@ -254,7 +269,7 @@ namespace MazeParty.Multiplayer
         public int GetBallOwner(int ballId)
         {
             return ballId >= 0 && ballId < BouncingBallsRules.BallCount
-                ? (int)((_ballOwners.Value >> (ballId * 8)) & 0xffU) - 1
+                ? (int)((_ballOwners.Value >> (ballId * 8)) & 0xffUL) - 1
                 : -1;
         }
 
@@ -503,16 +518,26 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var ball0 = _serverMatch.GetBall(0);
-            var ball1 = _serverMatch.GetBall(1);
-            var ball2 = _serverMatch.GetBall(2);
-            _ball0.Value = new Vector2((float)ball0.X, (float)ball0.Y);
-            _ball1.Value = new Vector2((float)ball1.X, (float)ball1.Y);
-            _ball2.Value = new Vector2((float)ball2.X, (float)ball2.Y);
-            _ballOwners.Value =
-                PackOwner(ball0.OwnerSlot, 0) |
-                PackOwner(ball1.OwnerSlot, 1) |
-                PackOwner(ball2.OwnerSlot, 2);
+            ulong packedOwners = 0UL;
+            for (var ballId = 0; ballId < BouncingBallsRules.BallCount;
+                 ballId++)
+            {
+                var ball = _serverMatch.GetBall(ballId);
+                var position = new Vector2((float)ball.X, (float)ball.Y);
+                switch (ballId)
+                {
+                    case 0: _ball0.Value = position; break;
+                    case 1: _ball1.Value = position; break;
+                    case 2: _ball2.Value = position; break;
+                    case 3: _ball3.Value = position; break;
+                    case 4: _ball4.Value = position; break;
+                    case 5: _ball5.Value = position; break;
+                    case 6: _ball6.Value = position; break;
+                }
+                packedOwners |= PackOwner(ball.OwnerSlot, ballId);
+            }
+            _ballOwners.Value = packedOwners;
+            _activeBallCount.Value = (byte)_serverMatch.ActiveBallCount;
             _shield0.Value = (float)_serverMatch.GetShield(0).Center;
             _shield1.Value = (float)_serverMatch.GetShield(1).Center;
             _shield2.Value = (float)_serverMatch.GetShield(2).Center;
@@ -604,7 +629,8 @@ namespace MazeParty.Multiplayer
             _inputEpoch.Value = 0U;
             _scores.Value = 0UL;
             _conceded.Value = 0UL;
-            _ballOwners.Value = 0U;
+            _ballOwners.Value = 0UL;
+            _activeBallCount.Value = 0;
             _finalRanks.Value = 0U;
             _goalSequence.Value = 0U;
             _lastGoalDefenderSlot.Value = byte.MaxValue;
@@ -615,6 +641,10 @@ namespace MazeParty.Multiplayer
             _ball0.Value = Vector2.zero;
             _ball1.Value = Vector2.zero;
             _ball2.Value = Vector2.zero;
+            _ball3.Value = Vector2.zero;
+            _ball4.Value = Vector2.zero;
+            _ball5.Value = Vector2.zero;
+            _ball6.Value = Vector2.zero;
             _shield0.Value = 0f;
             _shield1.Value = 0f;
             _shield2.Value = 0f;
@@ -646,9 +676,9 @@ namespace MazeParty.Multiplayer
             return _phaseEndsAt.Value > 0d && now >= _phaseEndsAt.Value;
         }
 
-        private static uint PackOwner(int slot, int ballId)
+        private static ulong PackOwner(int slot, int ballId)
         {
-            return (uint)(Mathf.Clamp(slot + 1, 0, 255) & 0xff) <<
+            return (ulong)(Mathf.Clamp(slot + 1, 0, 255) & 0xff) <<
                 (ballId * 8);
         }
 

@@ -198,6 +198,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             var localUsesFirstPerson =
                 _session.Phase != TagChaseSoloPhase.Countdown &&
                 _session.Phase != TagChaseSoloPhase.Complete &&
+                localIsTagger &&
                 !_session.IsCaught(TagChaseSoloSession.LocalPlayerSlot);
             for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
             {
@@ -250,6 +251,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             if (localUsesFirstPerson)
             {
+                _runtimeCamera.orthographic = false;
                 var position = _players[
                     TagChaseSoloSession.LocalPlayerSlot].position;
                 _runtimeCamera.fieldOfView =
@@ -267,8 +269,9 @@ namespace MazeParty.Dev.MinigameSoloTest
                     _session.Phase == TagChaseSoloPhase.Running);
                 return;
             }
-            _runtimeCamera.fieldOfView =
-                TagChaseNetworkView.SharedFieldOfView;
+            _runtimeCamera.orthographic = true;
+            _runtimeCamera.orthographicSize =
+                TagChaseNetworkView.SharedOrthographicSize;
             _runtimeCamera.transform.SetPositionAndRotation(
                 TagChaseNetworkView.InitialSharedCameraPosition,
                 TagChaseNetworkView.InitialSharedCameraRotation);

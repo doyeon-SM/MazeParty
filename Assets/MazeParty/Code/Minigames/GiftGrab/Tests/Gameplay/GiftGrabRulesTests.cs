@@ -11,36 +11,38 @@ namespace MazeParty.Gameplay.Tests
         {
             var round = new GiftGrabRoundState(1);
 
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(10));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(5));
             Assert.That(
-                round.GetGift(9).State,
+                round.GetGift(4).State,
                 Is.EqualTo(GiftGrabGiftState.Loose));
             Assert.That(
-                round.GetGift(10).State,
+                round.GetGift(5).State,
                 Is.EqualTo(GiftGrabGiftState.Unspawned));
 
             round.AdvanceTo(14.999d);
             round.InterruptForPause(14.999d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(10));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(5));
 
             round.AdvanceTo(15d);
             round.AdvanceTo(15d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(13));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(8));
             Assert.That(
-                round.GetGift(12).State,
+                round.GetGift(7).State,
                 Is.EqualTo(GiftGrabGiftState.Loose));
             Assert.That(
-                round.GetGift(13).State,
+                round.GetGift(8).State,
                 Is.EqualTo(GiftGrabGiftState.Unspawned));
 
             round.AdvanceTo(29.999d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(13));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(8));
             round.AdvanceTo(30d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(16));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(11));
             round.AdvanceTo(44.999d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(16));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(11));
             round.AdvanceTo(45d);
-            Assert.That(round.SpawnedGiftCount, Is.EqualTo(19));
+            Assert.That(round.SpawnedGiftCount, Is.EqualTo(14));
+            Assert.That(round.ResolvePickup(0, 13, 45.599d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredRegrabLock));
 
             for (var giftId = 0;
                  giftId < GiftGrabRules.TotalGiftCount;
@@ -48,14 +50,14 @@ namespace MazeParty.Gameplay.Tests
             {
                 var slot = giftId % GiftGrabRules.PlayerCount;
                 Assert.That(
-                    round.ResolvePickup(slot, giftId, 45d).WasPickedUp,
+                    round.ResolvePickup(slot, giftId, 45.6d).WasPickedUp,
                     Is.True);
                 Assert.That(
-                    round.ResolveDeposit(slot, 45d).WasDeposited,
+                    round.ResolveDeposit(slot, 45.6d).WasDeposited,
                     Is.True);
             }
 
-            Assert.That(TotalStoredGiftCount(round), Is.EqualTo(19));
+            Assert.That(TotalStoredGiftCount(round), Is.EqualTo(14));
             Assert.That(round.IsComplete, Is.False);
             round.AdvanceTo(50d);
             var storedSeconds =
@@ -69,7 +71,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 round.EndReason,
                 Is.EqualTo(GiftGrabRoundEndReason.TimeLimit));
-            Assert.That(TotalStoredGiftCount(round), Is.EqualTo(19));
+            Assert.That(TotalStoredGiftCount(round), Is.EqualTo(14));
         }
 
         [Test]
@@ -127,21 +129,25 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void ThrowAndPush_ApplyExactImmunityCooldownStunAndDrops()
         {
+            var landingRound = new GiftGrabRoundState(1);
+
+            landingRound.ResolvePickup(2, 2, 0d);
+            landingRound.ResolveThrow(2, 0d);
+            var landed = landingRound.ResolveGiftLanded(2, 0.05d);
+            Assert.That(landed.WasLanded, Is.True);
+            Assert.That(landed.PickupLockedPlayerSlot,
+                Is.EqualTo(GiftGrabRules.AllPlayersPickupLock));
+            Assert.That(landed.PickupLockEndsAtSeconds, Is.EqualTo(0.55d));
+            Assert.That(
+                landingRound.ResolvePickup(1, 2, 0.549d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredRegrabLock));
+            Assert.That(
+                landingRound.ResolvePickup(2, 2, 0.55d).WasPickedUp,
+                Is.True);
+
             var round = new GiftGrabRoundState(1);
 
             round.ResolvePickup(2, 2, 0d);
-            round.ResolveThrow(2, 0d);
-            var landed = round.ResolveGiftLanded(2, 0.05d);
-            Assert.That(landed.WasLanded, Is.True);
-            Assert.That(landed.PickupLockedPlayerSlot, Is.EqualTo(2));
-            Assert.That(landed.PickupLockEndsAtSeconds, Is.EqualTo(0.3d));
-            Assert.That(
-                round.ResolvePickup(2, 2, 0.299d).Status,
-                Is.EqualTo(GiftGrabPickupStatus.IgnoredRegrabLock));
-            Assert.That(
-                round.ResolvePickup(2, 2, 0.3d).WasPickedUp,
-                Is.True);
-
             round.ResolvePickup(0, 0, 0.3d);
             round.ResolveThrow(0, 0.3d);
             Assert.That(
@@ -152,7 +158,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(exactBoundaryHit.WasHit, Is.True);
             Assert.That(
                 round.GetGift(0).State,
-                Is.EqualTo(GiftGrabGiftState.Consumed));
+                Is.EqualTo(GiftGrabGiftState.Loose));
             Assert.That(
                 round.GetPlayer(0).StunnedUntilSeconds,
                 Is.EqualTo(1.05d));
@@ -170,7 +176,7 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(1));
             Assert.That(
                 round.GetGift(3).State,
-                Is.EqualTo(GiftGrabGiftState.Consumed));
+                Is.EqualTo(GiftGrabGiftState.Loose));
 
             var started = round.BeginPushCast(3, 0.6d);
             Assert.That(started.WasStarted, Is.True);
@@ -220,7 +226,7 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(2.6d));
             Assert.That(
                 round.GetGift(2).PickupLockEndsAtSeconds,
-                Is.EqualTo(2.35d));
+                Is.EqualTo(2.6d));
 
             Assert.That(
                 round.BeginPushCast(3, 2.599d).Status,

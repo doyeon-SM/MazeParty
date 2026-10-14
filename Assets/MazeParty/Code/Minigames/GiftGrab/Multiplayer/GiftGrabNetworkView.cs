@@ -55,6 +55,10 @@ namespace MazeParty.Multiplayer
 
         private readonly PlayerView[] _players = new PlayerView[PlayerCount];
         private GiftView[] _gifts = System.Array.Empty<GiftView>();
+        private float[] _spawnFallRemaining = System.Array.Empty<float>();
+        private GiftGrabGiftState[] _previousGiftStates =
+            System.Array.Empty<GiftGrabGiftState>();
+        private MaterialPropertyBlock _baseColorProperties;
         private GameplayCameraDirector _cameraDirector;
         private bool _cameraConfigured;
         private bool _worldVisible;
@@ -195,7 +199,8 @@ namespace MazeParty.Multiplayer
             // marker; this view does not keep a persistent local-player mark.
             RefreshPlayers(match);
             RefreshGifts();
-            RefreshLabels(match);
+            RefreshBaseColors(match);
+            HideLegacyLabels();
             RefreshHud(match);
             RefreshActionVfx();
         }
@@ -285,6 +290,8 @@ namespace MazeParty.Multiplayer
             if (_gifts.Length != giftRoot.childCount)
             {
                 _gifts = new GiftView[giftRoot.childCount];
+                _spawnFallRemaining = new float[giftRoot.childCount];
+                _previousGiftStates = new GiftGrabGiftState[giftRoot.childCount];
             }
             for (var index = 0; index < _gifts.Length; index++)
             {
@@ -355,12 +362,23 @@ namespace MazeParty.Multiplayer
                 {
                     continue;
                 }
+                var giftState = state.GetGiftState(giftId);
                 if (!state.IsGiftActive(giftId))
                 {
                     gift.RestoreAuthoredPresentation();
                     gift.Root.gameObject.SetActive(false);
+                    _previousGiftStates[giftId] = giftState;
                     continue;
                 }
+
+                if (_previousGiftStates[giftId] ==
+                        GiftGrabGiftState.Unspawned &&
+                    giftId >= GiftGrabRules.InitialGiftCount)
+                {
+                    _spawnFallRemaining[giftId] =
+                        (float)GiftGrabRules.SpawnFallSeconds;
+                }
+                _previousGiftStates[giftId] = giftState;
 
                 gift.Root.gameObject.SetActive(true);
                 var carrier = state.GetGiftCarrierSlot(giftId);
@@ -410,14 +428,26 @@ namespace MazeParty.Multiplayer
                 {
                     gift.RestoreAuthoredPresentation();
                     var position = state.GetGiftPosition(giftId);
+                    var falling = _spawnFallRemaining[giftId];
+                    var height = GiftPresentationHeight +
+                        5f * (falling /
+                              (float)GiftGrabRules.SpawnFallSeconds);
                     gift.Root.position = new Vector3(
                         position.x,
-                        GiftPresentationHeight,
+                        height,
                         position.y);
-                    gift.Root.rotation = Quaternion.Euler(
-                        0f,
-                        Time.unscaledTime * 45f + giftId * 23f,
-                        0f);
+                    gift.Root.rotation = giftState ==
+                        GiftGrabGiftState.Thrown
+                        ? Quaternion.Euler(Time.unscaledTime * 360f,
+                            giftId * 23f, 0f)
+                        : Quaternion.identity;
+                    _spawnFallRemaining[giftId] = Mathf.Max(0f,
+                        falling - Time.unscaledDeltaTime);
+                    var lockRemaining =
+                        state.GetGiftPickupLockRemaining(giftId);
+                    gift.Visual.gameObject.SetActive(
+                        lockRemaining <= 0f ||
+                        Mathf.FloorToInt(Time.unscaledTime * 10f) % 2 == 0);
                 }
 
                 // The authoritative enum remains useful to artists/debuggers
@@ -426,49 +456,45 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshLabels(NetworkMatchState match)
+        private void HideLegacyLabels()
         {
-            var outputCamera = Camera.main;
             for (var slot = 0; slot < PlayerCount; slot++)
             {
-                var avatar = match.GetAvatarForSlot(slot);
-                var color = avatar != null
-                    ? avatar.Appearance.BodyColor
-                    : FallbackPlayerColors[slot];
-
                 if (playerLabels != null && slot < playerLabels.Length &&
-                    playerLabels[slot] != null && _players[slot] != null)
+                    playerLabels[slot] != null)
                 {
-                    var label = playerLabels[slot];
-                    label.transform.position = _players[slot].Root.position +
-                                               Vector3.up * LabelHeight;
-                    var carried = state.GetCarriedGiftId(slot);
-                    var stun = state.GetPlayerStunRemaining(slot);
-                    var status =
-                        stun > 0d
-                            ? GameText.F("STUN {0:0.0}s", stun)
-                            : carried >= 0
-                                ? GameText.T("CARRYING GIFT")
-                                : "";
-                    var showStatus = !string.IsNullOrWhiteSpace(status);
-                    label.gameObject.SetActive(showStatus);
-                    if (showStatus)
-                    {
-                        label.SetContent(
-                            status,
-                            "",
-                            false,
-                            color);
-                        label.FaceCamera(outputCamera);
-                    }
+                    playerLabels[slot].gameObject.SetActive(false);
                 }
 
                 if (baseLabels != null && slot < baseLabels.Length &&
                     baseLabels[slot] != null)
                 {
-                    var label = baseLabels[slot];
-                    label.SetNumberOnly(state.GetStoredGiftCount(slot));
-                    label.FaceCamera(outputCamera);
+                    baseLabels[slot].gameObject.SetActive(false);
+                }
+            }
+        }
+
+        private void RefreshBaseColors(NetworkMatchState match)
+        {
+            _baseColorProperties ??= new MaterialPropertyBlock();
+            for (var slot = 0; slot < PlayerCount; slot++)
+            {
+                if (baseAnchors == null || slot >= baseAnchors.Length ||
+                    baseAnchors[slot] == null)
+                {
+                    continue;
+                }
+                var avatar = match.GetAvatarForSlot(slot);
+                var color = avatar != null
+                    ? avatar.Appearance.BodyColor
+                    : FallbackPlayerColors[slot];
+                foreach (var renderer in baseAnchors[slot]
+                             .GetComponentsInChildren<Renderer>(true))
+                {
+                    renderer.GetPropertyBlock(_baseColorProperties);
+                    _baseColorProperties.SetColor("_BaseColor", color);
+                    _baseColorProperties.SetColor("_Color", color);
+                    renderer.SetPropertyBlock(_baseColorProperties);
                 }
             }
         }
