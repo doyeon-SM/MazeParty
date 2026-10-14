@@ -72,6 +72,14 @@ namespace MazeParty.Multiplayer.Tests
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         sceneMap.gameObject),
                     Is.EqualTo(PrefabPath));
+                var guide = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<BoardShopRouteView>(true))
+                    .Single();
+                var marker = new SerializedObject(guide)
+                    .FindProperty("travelMarkerPrefab")
+                    .objectReferenceValue as GameObject;
+                Assert.That(AssetDatabase.GetAssetPath(marker),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/World/TravelRouteHemisphere.prefab"));
             }
             finally
             {
@@ -101,6 +109,18 @@ namespace MazeParty.Multiplayer.Tests
 
             Assert.That(map, Is.Not.Null);
             Assert.That(map.HasRequiredReferences, Is.True);
+            Assert.That(root.GetComponentsInChildren<UnityEngine.UI.Text>(true)
+                    .Count(label => label.name.StartsWith("Marker ")),
+                Is.Zero,
+                "Old numeric route labels must not remain in the map prefab.");
+            var iconInfo = root.GetComponentsInChildren<RectTransform>(true)
+                .Single(rect => rect.name == "BoardMapIconInfo");
+            var legend = iconInfo.GetComponentsInChildren<LocalizedText>(true);
+            Assert.That(legend, Has.Length.EqualTo(14));
+            Assert.That(legend.Select(label => label.SourceText),
+                Does.Contain(": REACHABLE THIS TURN"));
+            Assert.That(legend.Select(label => label.SourceText),
+                Does.Contain(": ROUTE TO KEY SHOP"));
             var mapData = new SerializedObject(map);
             var fullMapPanel = mapData.FindProperty("fullMapPanel")
                 .objectReferenceValue as GameObject;
@@ -157,20 +177,6 @@ namespace MazeParty.Multiplayer.Tests
                         "The full map must not serialize the local camera-vision overlay.");
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Null);
-                    Assert.That(data.FindProperty("showTravelCounts").boolValue,
-                        Is.True);
-                    var rooms = data.FindProperty("rooms");
-                    for (var roomIndex = 0;
-                         roomIndex < rooms.arraySize;
-                         roomIndex++)
-                    {
-                        var symbol = rooms.GetArrayElementAtIndex(roomIndex)
-                            .FindPropertyRelative("Symbol")
-                            .objectReferenceValue as UnityEngine.UI.Text;
-                        Assert.That(symbol, Is.Not.Null);
-                        Assert.That(symbol.alignment,
-                            Is.EqualTo(TextAnchor.UpperLeft));
-                    }
                 }
                 else
                 {
@@ -183,13 +189,23 @@ namespace MazeParty.Multiplayer.Tests
                         "The vision overlay must not intercept UI input.");
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Not.Null);
-                    Assert.That(data.FindProperty("showTravelCounts").boolValue,
-                        Is.False,
-                        "The live minimap must not receive route-count labels.");
                 }
                 var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
                 var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
+                var travel = data.FindProperty("travelRouteGraphic")
+                    .objectReferenceValue as BoardMapRouteGraphic;
+                var preferred = data.FindProperty("preferredTravelRouteGraphic")
+                    .objectReferenceValue as BoardMapRouteGraphic;
                 Assert.That(mines, Is.Not.Null);
+                Assert.That(travel, Is.Not.Null);
+                Assert.That(preferred, Is.Not.Null);
+                Assert.That(travel.transform.parent,
+                    Is.EqualTo(route.transform.parent));
+                Assert.That(preferred.transform.parent,
+                    Is.EqualTo(route.transform.parent));
+                Assert.That(travel.color.b, Is.GreaterThan(travel.color.r));
+                Assert.That(preferred.color.a,
+                    Is.GreaterThan(travel.color.a));
                 Assert.That(AssetDatabase.GetAssetPath(mines.IconSprite),
                     Is.EqualTo(
                         ModernIconRoot + "Navigation/Help Filled.png"));
@@ -204,13 +220,20 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(effectLayer.parent,
                     Is.EqualTo(route.transform.parent));
                 var players = data.FindProperty("players");
+                var directions = data.FindProperty("localDirections");
                 Assert.That(players.arraySize,
                     Is.EqualTo(MultiplayerConstants.MaxPlayers));
+                Assert.That(directions.arraySize, Is.EqualTo(players.arraySize));
                 for (var slot = 0; slot < players.arraySize; slot++)
                 {
                     var marker = players.GetArrayElementAtIndex(slot)
                         .objectReferenceValue as UnityEngine.UI.Image;
                     Assert.That(marker, Is.Not.Null);
+                    var direction = directions.GetArrayElementAtIndex(slot)
+                        .objectReferenceValue as BoardMapPlayerDirectionGraphic;
+                    Assert.That(direction, Is.Not.Null);
+                    Assert.That(direction.transform.parent,
+                        Is.EqualTo(marker.transform));
                     Assert.That(
                         AssetDatabase.GetAssetPath(marker.sprite),
                         Is.EqualTo(

@@ -70,10 +70,8 @@ namespace MazeParty.Editor
                 {
                     var source = originalRooms.GetArrayElementAtIndex(i);
                     var floor = Remap<Image>(source.FindPropertyRelative("Floor"), panel.transform, full.transform);
-                    var symbol = Remap<Text>(source.FindPropertyRelative("Symbol"), panel.transform, full.transform);
                     var walls = new Image[4];
                     var exits = new Text[4];
-                    symbol.fontSize = 17;
                     for (var side = 0; side < 4; side++)
                     {
                         walls[side] = Remap<Image>(source.FindPropertyRelative("Walls").GetArrayElementAtIndex(side), panel.transform, full.transform);
@@ -81,7 +79,7 @@ namespace MazeParty.Editor
                         exits[side].fontSize = 14;
                         exits[side].rectTransform.sizeDelta = new Vector2(16f, 16f);
                     }
-                    rooms[i] = new BoardMinimapView.Room { Floor = floor, Symbol = symbol, Walls = walls, Exits = exits };
+                    rooms[i] = new BoardMinimapView.Room { Floor = floor, Walls = walls, Exits = exits };
                 }
                 var players = new Image[4];
                 var highlights = new GameObject[4];
@@ -119,7 +117,6 @@ namespace MazeParty.Editor
                 fullData.FindProperty("followHeading").boolValue = false;
                 fullData.FindProperty("localPlayerOnly").boolValue = true;
                 fullData.FindProperty("showKeyShopDetails").boolValue = false;
-                fullData.FindProperty("showTravelCounts").boolValue = true;
                 fullData.FindProperty("headingFormat").stringValue = "FULL MAP / NORTH ^";
                 fullData.ApplyModifiedPropertiesWithoutUndo();
                 full.SetActive(false);

@@ -214,6 +214,7 @@ namespace MazeParty.Multiplayer
                     turnOrigin,
                     primaryDestination,
                     _primaryRoute);
+                ExtendPreferredRoute(_primaryRoute);
             }
             var path = new List<RouteNode>
             {
@@ -309,24 +310,85 @@ namespace MazeParty.Multiplayer
             return result;
         }
 
+        /// <summary>Unique directed edges still reachable after the committed
+        /// fork choices and already consumed moves.</summary>
+        public int GetVisibleEdges(
+            IReadOnlyList<BoardRouteChoice> choices,
+            int consumedStep,
+            List<BoardRouteChoice> destination)
+        {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            destination.Clear();
+            var seen = new HashSet<BoardRouteChoice>();
+            for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
+            {
+                var route = _routes[routeIndex];
+                if (!IsCompatible(route, choices))
+                    continue;
+                for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
+                {
+                    if (StartingStep + edge < consumedStep)
+                        continue;
+                    var choice = new BoardRouteChoice(
+                        route.Nodes[edge].Tile.Coordinate,
+                        route.Nodes[edge + 1].Tile.Coordinate);
+                    if (seen.Add(choice))
+                        destination.Add(choice);
+                }
+            }
+            destination.Sort((a, b) =>
+            {
+                var result = a.Source.x.CompareTo(b.Source.x);
+                if (result != 0) return result;
+                result = a.Source.y.CompareTo(b.Source.y);
+                if (result != 0) return result;
+                result = a.Destination.x.CompareTo(b.Destination.x);
+                return result != 0 ? result :
+                    a.Destination.y.CompareTo(b.Destination.y);
+            });
+            return destination.Count;
+        }
+
+        public int GetPreferredEdges(
+            IReadOnlyList<BoardRouteChoice> choices,
+            int consumedStep,
+            List<BoardRouteChoice> destination)
+        {
+            if (destination == null)
+                throw new ArgumentNullException(nameof(destination));
+            destination.Clear();
+            var route = ResolveChoicePrimaryRoute(choices);
+            if (route == null) return 0;
+            for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
+            {
+                if (StartingStep + edge < consumedStep) continue;
+                destination.Add(new BoardRouteChoice(
+                    route.Nodes[edge].Tile.Coordinate,
+                    route.Nodes[edge + 1].Tile.Coordinate));
+            }
+            return destination.Count;
+        }
+
         private CandidateRoute ResolveChoicePrimaryRoute(
             IReadOnlyList<BoardRouteChoice> choices)
         {
-            if (choices == null || choices.Count == 0 ||
-                _primaryDestination == null ||
-                !_topology.TryGetTile(
-                    choices[choices.Count - 1].Destination,
-                    out var current) ||
-                current == null ||
-                !BoardMapRoute.TryFind(
-                    _topology,
-                    current,
-                    _primaryDestination,
-                    _choicePrimaryRoute))
-            {
+            if (_primaryDestination == null)
                 return null;
+            var choiceCount = choices != null ? choices.Count : 0;
+            var preferred = _primaryRoute;
+            if (choiceCount > 0)
+            {
+                if (!_topology.TryGetTile(
+                        choices[choiceCount - 1].Destination,
+                        out var current) || current == null ||
+                    !BoardMapRoute.TryFind(
+                        _topology, current, _primaryDestination,
+                        _choicePrimaryRoute))
+                    return null;
+                ExtendPreferredRoute(_choicePrimaryRoute);
+                preferred = _choicePrimaryRoute;
             }
-
             CandidateRoute best = null;
             var bestPrefixLength = -1;
             for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
@@ -342,9 +404,9 @@ namespace MazeParty.Multiplayer
 
                 var prefixLength = 0;
                 while (choiceEndNode + prefixLength < route.Nodes.Length &&
-                       prefixLength < _choicePrimaryRoute.Count &&
+                       prefixLength < preferred.Count &&
                        route.Nodes[choiceEndNode + prefixLength].Tile ==
-                       _choicePrimaryRoute[prefixLength])
+                       preferred[prefixLength])
                 {
                     prefixLength++;
                 }
@@ -357,6 +419,35 @@ namespace MazeParty.Multiplayer
             }
 
             return best;
+        }
+
+        private void ExtendPreferredRoute(List<BoardTile> route)
+        {
+            if (route.Count == 0 || _primaryDestination == null)
+                return;
+            var maximumNodes = MaximumStep - StartingStep + 1;
+            while (route.Count < maximumNodes &&
+                   route[route.Count - 1] == _primaryDestination)
+            {
+                var outgoing = _topology.GetOutgoingGates(_primaryDestination);
+                List<BoardTile> bestReturn = null;
+                for (var index = 0; index < outgoing.Count; index++)
+                {
+                    var next = outgoing[index]?.Destination;
+                    if (next == null) continue;
+                    var candidate = new List<BoardTile>();
+                    if (!BoardMapRoute.TryFind(
+                            _topology, next, _primaryDestination,
+                            candidate) || candidate.Count == 0)
+                        continue;
+                    if (bestReturn == null || candidate.Count < bestReturn.Count)
+                        bestReturn = candidate;
+                }
+                if (bestReturn == null) break;
+                for (var index = 0; index < bestReturn.Count &&
+                                    route.Count < maximumNodes; index++)
+                    route.Add(bestReturn[index]);
+            }
         }
 
         private void Enumerate(

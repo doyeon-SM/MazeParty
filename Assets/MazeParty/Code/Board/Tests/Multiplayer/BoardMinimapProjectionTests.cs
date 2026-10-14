@@ -233,6 +233,7 @@ namespace MazeParty.Multiplayer.Tests
                     var viewData = new SerializedObject(view);
                     var markers = viewData.FindProperty("players");
                     var highlights = viewData.FindProperty("localHighlights");
+                    var directions = viewData.FindProperty("localDirections");
                     player.transform.position = Vector3.zero;
                     view.PrepareMap(topology, Vector2Int.zero, 2, null, player.transform.position);
                     for (var localSlot = 0; localSlot < MultiplayerConstants.MaxPlayers; localSlot++)
@@ -243,9 +244,12 @@ namespace MazeParty.Multiplayer.Tests
                             view.PresentPlayer(slot, player.transform, Color.white, isLocal);
                             var marker = (Image)markers.GetArrayElementAtIndex(slot).objectReferenceValue;
                             var highlight = (GameObject)highlights.GetArrayElementAtIndex(slot).objectReferenceValue;
+                            var direction = (BoardMapPlayerDirectionGraphic)directions
+                                .GetArrayElementAtIndex(slot).objectReferenceValue;
                             Assert.That(marker.gameObject.activeSelf, Is.True,
                                 "Knowledge filtering happens before a marker position is presented.");
                             Assert.That(highlight.activeSelf, Is.EqualTo(isLocal));
+                            Assert.That(direction.gameObject.activeSelf, Is.EqualTo(isLocal));
                         }
                     }
                     for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)

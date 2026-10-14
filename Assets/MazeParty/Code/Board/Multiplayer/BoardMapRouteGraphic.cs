@@ -23,6 +23,16 @@ namespace MazeParty.Multiplayer
             SetVerticesDirty();
         }
 
+        public void PresentPoints(IReadOnlyList<Vector3> points, Bounds worldBounds)
+        {
+            _worldBounds = worldBounds;
+            _points.Clear();
+            if (points != null)
+                for (var index = 0; index < points.Count; index++)
+                    _points.Add(points[index]);
+            SetVerticesDirty();
+        }
+
         public Vector2 ProjectPoint(int index)
         {
             var point = _points[index] - _worldBounds.center;

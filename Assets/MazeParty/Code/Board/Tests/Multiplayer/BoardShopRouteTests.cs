@@ -11,6 +11,43 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string MarkerPrefabPath =
             "Assets/MazeParty/Prefabs/Board/World/KeyShopRouteHemisphere.prefab";
+        private const string TravelMarkerPrefabPath =
+            "Assets/MazeParty/Prefabs/Board/World/TravelRouteHemisphere.prefab";
+
+        [Test]
+        public void TravelMarker_IsAuthoredBlueAndClientLocal()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                TravelMarkerPrefabPath);
+            Assert.That(prefab, Is.Not.Null);
+            Assert.That(prefab.GetComponentInChildren<NetworkObject>(true), Is.Null);
+            Assert.That(prefab.GetComponentInChildren<Collider>(true), Is.Null);
+            var particle = prefab.GetComponentInChildren<ParticleSystem>(true);
+            Assert.That(particle, Is.Not.Null);
+            var material = particle.GetComponent<ParticleSystemRenderer>()
+                .sharedMaterial;
+            Assert.That(material, Is.Not.Null);
+            var color = material.GetColor("_BaseColor");
+            Assert.That(color.b, Is.GreaterThan(color.r));
+            Assert.That(color.b, Is.GreaterThan(color.g));
+        }
+
+        [Test]
+        public void SharedDots_AlternateYellowAndBlueWithoutOverlapping()
+        {
+            var source = Enumerable.Range(0, 8)
+                .Select(index => new Vector3(index * .8f, 0f, 0f))
+                .ToArray();
+            var yellow = new System.Collections.Generic.List<Vector3>();
+            var blue = new System.Collections.Generic.List<Vector3>();
+            new BoardRouteDotLayout().AlternateOverlap(
+                source, source, yellow, blue);
+            Assert.That(yellow.Count, Is.EqualTo(4));
+            Assert.That(blue.Count, Is.EqualTo(4));
+            Assert.That(yellow.Intersect(blue), Is.Empty);
+            Assert.That(yellow[0], Is.EqualTo(source[0]));
+            Assert.That(blue[0], Is.EqualTo(source[1]));
+        }
 
         [Test]
         public void LocalGuide_FollowsDirectedCentersAndClearsOldRoutesWithoutNetworkingOrCollision()

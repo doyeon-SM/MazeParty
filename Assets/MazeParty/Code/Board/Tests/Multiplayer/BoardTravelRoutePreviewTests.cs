@@ -113,6 +113,13 @@ namespace MazeParty.Multiplayer.Tests
             AssertStep(steps, detour.Coordinate, 2, true);
             Assert.That(steps.Any(step => step.Coordinate == straight.Coordinate), Is.False);
             Assert.That(steps.Any(step => step.Coordinate == other.Coordinate), Is.False);
+
+            var edges = new List<BoardRouteChoice>();
+            preview.GetVisibleEdges(afterSecondChoice, 1, edges);
+            Assert.That(edges, Is.EquivalentTo(new[]
+            {
+                new BoardRouteChoice(first.Coordinate, detour.Coordinate)
+            }), "Committed fork and consumed steps must leave only reachable edges.");
         }
 
         [Test]
@@ -196,6 +203,34 @@ namespace MazeParty.Multiplayer.Tests
                 steps.Any(step => step.Coordinate == shop.Coordinate),
                 Is.False);
             Assert.That(steps.Max(step => step.Step), Is.EqualTo(2));
+        }
+
+        [Test]
+        public void RollPastKeyShop_PrefersDirectedReturnToShop()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var shop = CreateTile("Shop", 1, 0);
+            var far = CreateTile("Far", 2, 0);
+            var turning = CreateTile("Turning", 2, 1);
+            var topology = CreateTopology(
+                new[] { start, shop, far, turning },
+                CreateGate(start, shop),
+                CreateGate(shop, far),
+                CreateGate(far, turning),
+                CreateGate(turning, shop));
+            var preview = new BoardTravelRoutePreview(
+                topology, start, 4, shop);
+            var preferred = new List<BoardRouteChoice>();
+
+            preview.GetPreferredEdges(null, 0, preferred);
+
+            Assert.That(preferred, Is.EqualTo(new[]
+            {
+                new BoardRouteChoice(start.Coordinate, shop.Coordinate),
+                new BoardRouteChoice(shop.Coordinate, far.Coordinate),
+                new BoardRouteChoice(far.Coordinate, turning.Coordinate),
+                new BoardRouteChoice(turning.Coordinate, shop.Coordinate)
+            }));
         }
 
         [Test]

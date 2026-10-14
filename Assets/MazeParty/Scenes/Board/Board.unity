@@ -6077,6 +6077,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardShopRouteView
   routeMarkerPrefab: {fileID: 1049238968583661345, guid: 61951b5be808a3a41b9f761846f2e9f2, type: 3}
+  travelMarkerPrefab: {fileID: 1049238968583661345, guid: 623d8b320807706448dac0ddb5d7b712, type: 3}
   dotSpacing: 0.8
   surfaceOffset: 0.012
 --- !u!114 &1732981729
@@ -6263,15 +6264,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalScale.z
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3074392545490263020, guid: 1989eaf34bffd0947bde375d893765ef, type: 3}
       propertyPath: m_LocalPosition.x

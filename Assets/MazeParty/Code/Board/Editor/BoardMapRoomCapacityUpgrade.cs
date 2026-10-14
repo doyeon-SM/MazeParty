@@ -11,7 +11,7 @@ namespace MazeParty.Editor
     /// </summary>
     public static class BoardMapRoomCapacityUpgrade
     {
-        private static readonly string[] SingleFields = { "Floor", "Symbol", "TypeIcon", "EffectIcon" };
+        private static readonly string[] SingleFields = { "Floor", "TypeIcon", "EffectIcon" };
         private static readonly string[] SideFields = { "Walls", "Exits", "ProgressArrows" };
 
         public static void Ensure(GameObject root)

@@ -72,7 +72,6 @@ namespace MazeParty.Editor
                 rect.anchorMin = rect.anchorMax = rect.pivot = Vector2.one * 0.5f;
                 rect.sizeDelta = Vector2.one * (198f / 7f);
                 rect.anchoredPosition = new Vector2((i % 7 - 3) * 198f / 7f, (i / 7 - 3) * 198f / 7f);
-                symbol.fontSize = 10;
                 var walls = new Image[4];
                 var exits = new Text[4];
                 var arrows = new[] { "^", ">", "v", "<" };
@@ -98,7 +97,8 @@ namespace MazeParty.Editor
                         side == 1 ? new Vector2(-4f, 0f) : side == 2 ? new Vector2(0f, 4f) : new Vector2(4f, 0f);
                     exits[side] = arrow;
                 }
-                rooms[i] = new BoardMinimapView.Room { Floor = floor, Symbol = symbol, Walls = walls, Exits = exits };
+                UnityEngine.Object.DestroyImmediate(symbol.gameObject);
+                rooms[i] = new BoardMinimapView.Room { Floor = floor, Walls = walls, Exits = exits };
             }
             var dots = new Image[4];
             var highlights = new GameObject[4];
