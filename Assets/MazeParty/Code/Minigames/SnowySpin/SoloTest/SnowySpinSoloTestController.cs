@@ -112,6 +112,11 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void OnDestroy()
         {
+            if (_match != null)
+            {
+                _match.CollisionResolved -= HandleCollisionResolved;
+            }
+
             if (_hud != null)
             {
                 _hud.BindActions(null, null, null);
@@ -224,8 +229,14 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private void BeginMatch(int seed)
         {
+            if (_match != null)
+            {
+                _match.CollisionResolved -= HandleCollisionResolved;
+            }
+
             _seed = seed;
             _match = new SnowySpinMatchState(seed);
+            _match.CollisionResolved += HandleCollisionResolved;
             _phase = SoloPhase.Countdown;
             _phaseElapsed = 0d;
             RefreshPresentation();
@@ -359,10 +370,22 @@ namespace MazeParty.Dev.MinigameSoloTest
             for (var slot = 0; slot < _balls.Length; slot++)
             {
                 var ball = _match.GetPlayer(slot);
+                var speed = Math.Sqrt(
+                    ball.VelocityX * ball.VelocityX +
+                    ball.VelocityZ * ball.VelocityZ);
+                var scaleMultiplier =
+                    SnowySpinNetworkView.CalculateBallScaleMultiplier(
+                        (float)speed);
+                _balls[slot].localScale = Vector3.one *
+                    SnowySpinNetworkView.BallPresentationScale *
+                    scaleMultiplier;
                 _balls[slot].position = _arena.TransformPoint(
                     new Vector3((float)ball.X,
-                        ball.IsEliminated ? -2.5f :
-                            SnowySpinNetworkView.BallPresentationHeight,
+                        ball.IsEliminated
+                            ? -2.5f
+                            : SnowySpinNetworkView
+                                .BallPresentationHeight *
+                              scaleMultiplier,
                         (float)ball.Z));
                 if (!ball.IsEliminated &&
                     _phase == SoloPhase.Playing)
@@ -374,7 +397,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                         _balls[slot].Rotate(axis.normalized,
                             axis.magnitude * Mathf.Rad2Deg *
                             Time.unscaledDeltaTime /
-                            (float)SnowySpinRules.BallRadius,
+                            ((float)SnowySpinRules.BallRadius *
+                             scaleMultiplier),
                             Space.World);
                     }
                 }
@@ -514,5 +538,18 @@ namespace MazeParty.Dev.MinigameSoloTest
             public AudioListener Listener { get; }
             public bool WasEnabled { get; }
         }
-    }
+
+
+        private void HandleCollisionResolved(
+            SnowySpinCollisionEvent collision)
+        {
+            _productionView?.PlayCollisionPresentation(
+                collision.FirstSlot,
+                collision.SecondSlot,
+                new Vector2((float)collision.X, (float)collision.Z),
+                (float)collision.ImpactSpeed,
+                (float)collision.FirstPostSpeed,
+                (float)collision.SecondPostSpeed);
+        }
+}
 }

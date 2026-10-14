@@ -145,7 +145,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _productionState.transform,
                 "Runtime Runners")?.gameObject;
             _productionHud = _productionState
-                .GetComponentInChildren<TerritoryPaintHudBindings>(true)
+                .GetComponentInChildren<BouncingBallsHudBindings>(true)
                 ?.gameObject;
             var paintSurface = FindDescendant(
                 _productionState.transform,

@@ -16,10 +16,12 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
         public const double BallRadius = 0.65d;
         public const double SpawnRadius = 4.5d;
         public const double Acceleration = 13d;
-        public const double MaximumSpeed = 6d;
+        public const double BaseSpeed = 6d;
+        public const double MaximumSpeed = BaseSpeed * 2d;
         public const double SteeringDrag = 0.4d;
         public const double CoastingDrag = 2.8d;
         public const double CollisionRestitution = 0.8d;
+        public const double CollisionPresentationCooldownSeconds = 0.5d;
 
         public static bool IsValidPlayerSlot(int slot)
         {

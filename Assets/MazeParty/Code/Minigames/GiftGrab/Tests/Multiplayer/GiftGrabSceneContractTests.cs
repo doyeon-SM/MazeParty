@@ -17,6 +17,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
         private const string LabelPrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
+        private const string HudPrefabPath =
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
 
         [Test]
         public void ThrownGiftBoundary_UsesRadiusAdjustedExactContact()
@@ -156,7 +158,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Scene_PreservesSymmetricArenaGiftAndPrefabPresentationContract()
+        public void Scene_PreservesArenaGiftAndSharedScoreHudContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -188,7 +190,7 @@ namespace MazeParty.Multiplayer.Tests
                              "state", "sharedCamera", "playerRoot",
                              "giftRoot", "pushVfxAnchor", "throwVfxAnchor",
                              "dropVfxAnchor", "arenaPresentation",
-                             "cueAudioSource"
+                             "cueAudioSource", "hud"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -292,11 +294,18 @@ namespace MazeParty.Multiplayer.Tests
                             label.gameObject),
                         Is.EqualTo(LabelPrefabPath));
                 }
+                var hud = state.GetComponentInChildren<
+                    BouncingBallsHudBindings>(true);
+                Assert.That(hud, Is.Not.Null);
+                Assert.That(hud.HasRequiredReferences, Is.True);
+                Assert.That(
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        hud.gameObject),
+                    Is.EqualTo(HudPrefabPath));
                 Assert.That(
                     state.GetComponentsInChildren<Canvas>(true),
-                    Is.Empty,
-                    "Gift Grab keeps only its essential world labels and " +
-                    "owns no dedicated Canvas HUD.");
+                    Has.Length.EqualTo(1),
+                    "Gift Grab must own exactly one shared score HUD Canvas.");
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component => component != null &&

@@ -12,9 +12,9 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Builds Gift Grab's additive production arena and its prefab-owned world
-    /// labels. Existing designer prefabs and prototype materials are never
-    /// overwritten.
+    /// Builds Gift Grab's additive production arena, prefab-owned world labels,
+    /// and shared score HUD. Existing designer prefabs and prototype materials
+    /// are never overwritten.
     /// </summary>
     public static class GiftGrabProjectSetup
     {
@@ -89,14 +89,17 @@ namespace MazeParty.Editor
             EnsureFolders();
             var materials = CreateMaterials();
             var labelPrefab = LoadOrCreateBaseLabelPrefab(materials);
-            BuildGiftGrabScene(materials, labelPrefab);
+            var hudPrefab =
+                BouncingBallsProjectSetup.LoadOrCreateHudPrefab();
+            BuildGiftGrabScene(materials, labelPrefab, hudPrefab);
             MinigameVfxProjectSetup.InstallScene(GiftGrabScenePath);
             AssetDatabase.SaveAssets();
         }
 
         private static void BuildGiftGrabScene(
             GiftGrabMaterials materials,
-            GameObject labelPrefab)
+            GameObject labelPrefab,
+            GameObject hudPrefab)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -162,6 +165,18 @@ namespace MazeParty.Editor
             root.AddComponent<NetworkObject>();
             var state = root.AddComponent<NetworkGiftGrabState>();
             var view = root.AddComponent<GiftGrabNetworkView>();
+            var hudObject = PrefabUtility.InstantiatePrefab(
+                hudPrefab,
+                root.transform) as GameObject;
+            var hud = hudObject != null
+                ? hudObject.GetComponent<BouncingBallsHudBindings>()
+                : null;
+            if (hud == null || !hud.HasRequiredReferences)
+            {
+                throw new InvalidOperationException(
+                    "BouncingBallsHud.prefab is missing required authored " +
+                    "bindings.");
+            }
 
             view.Configure(
                 state,
@@ -178,7 +193,8 @@ namespace MazeParty.Editor
                 arena.DropVfx,
                 arena.StunVfx,
                 arenaPresentation,
-                audioSource);
+                audioSource,
+                hud);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, GiftGrabScenePath);
@@ -838,6 +854,8 @@ namespace MazeParty.Editor
                 "Deposited Gift Display Anchors");
             var gifts = FindDescendant(root.transform, "Gift Anchors");
             var labels = root.GetComponentsInChildren<GiftGrabBaseLabel>(true);
+            var hud = root.GetComponentInChildren<
+                BouncingBallsHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkGiftGrabState>() == null ||
                 root.GetComponent<GiftGrabNetworkView>() == null ||
@@ -847,15 +865,16 @@ namespace MazeParty.Editor
                 deposits.childCount != GiftGrabRules.PlayerCount ||
                 gifts == null || gifts.childCount != GiftGrabRules.TotalGiftCount ||
                 labels.Length != GiftGrabRules.PlayerCount * 2 ||
+                hud == null || !hud.HasRequiredReferences ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
-                FindDescendant(root.transform, "VFX Replacement Anchors") == null ||
-                root.GetComponentInChildren<Canvas>(true) != null)
+                FindDescendant(root.transform, "VFX Replacement Anchors") == null)
             {
                 throw new InvalidOperationException(
                     "Generated Gift Grab scene is missing its state, arena, " +
-                    "gift, label, camera, audio, VFX or art contract.");
+                    "gift, label, score HUD, camera, audio, VFX or art " +
+                    "contract.");
             }
             foreach (var label in labels)
             {
@@ -867,6 +886,13 @@ namespace MazeParty.Editor
                         "Every Gift Grab visible world label must remain a " +
                         "configured prefab instance.");
                 }
+            }
+            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                    hud.gameObject) != BouncingBallsProjectSetup.HudPrefabPath)
+            {
+                throw new InvalidOperationException(
+                    "Gift Grab Canvas must be instantiated from the shared " +
+                    "BouncingBallsHud.prefab.");
             }
             if (root.GetComponentInChildren<Camera>(true) != null ||
                 root.GetComponentInChildren<AudioListener>(true) != null)

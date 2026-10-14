@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity";
         private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab";
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
 
         [Test]
         public void Scene_PreservesPaintArenaCameraAndPrefabHudContract()
@@ -70,7 +70,7 @@ namespace MazeParty.Multiplayer.Tests
                 }
 
                 var hud = state.GetComponentInChildren<
-                    TerritoryPaintHudBindings>(true);
+                    BouncingBallsHudBindings>(true);
                 Assert.That(hud, Is.Not.Null);
                 Assert.That(hud.HasRequiredReferences, Is.True);
                 Assert.That(

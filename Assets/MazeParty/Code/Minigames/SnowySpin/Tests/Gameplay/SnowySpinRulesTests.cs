@@ -7,35 +7,45 @@ namespace MazeParty.Gameplay.Tests
     public sealed class SnowySpinRulesTests
     {
         [Test]
-        public void HeldDirectionAcceleratesAndReleaseCoastsWithDrag()
+        public void HeldDirectionAcceleratesPastBaseSpeedToDoubleSpeedCap()
         {
             var match = new SnowySpinMatchState(82);
             var initial = match.GetPlayer(0);
-            var directionX = -initial.X / SnowySpinRules.SpawnRadius;
-            var directionZ = -initial.Z / SnowySpinRules.SpawnRadius;
-            match.SetMovementInput(0, directionX, directionZ);
+            var radialLength = Math.Sqrt(
+                initial.X * initial.X + initial.Z * initial.Z);
+            var inwardX = -initial.X / radialLength;
+            var inwardZ = -initial.Z / radialLength;
+            var tangentX = -inwardZ;
+            var tangentZ = inwardX;
+            match.SetMovementInput(0,
+                inwardX * 0.95d + tangentX * 0.3122498999d,
+                inwardZ * 0.95d + tangentZ * 0.3122498999d);
 
             match.AdvanceTo(0.2d);
             var early = match.GetPlayer(0);
             match.AdvanceTo(0.4d);
-            var late = match.GetPlayer(0);
-            var earlySpeed = Speed(early);
-            var lateSpeed = Speed(late);
-            Assert.That(lateSpeed, Is.GreaterThan(earlySpeed));
-            Assert.That(lateSpeed,
-                Is.LessThanOrEqualTo(SnowySpinRules.MaximumSpeed));
+            var rolling = match.GetPlayer(0);
+            match.AdvanceTo(1.25d);
+            var boosted = match.GetPlayer(0);
+
+            Assert.That(Speed(rolling), Is.GreaterThan(Speed(early)));
+            Assert.That(Speed(rolling),
+                Is.LessThan(SnowySpinRules.BaseSpeed));
+            Assert.That(Speed(boosted),
+                Is.GreaterThan(SnowySpinRules.BaseSpeed));
+            Assert.That(Speed(boosted),
+                Is.EqualTo(SnowySpinRules.MaximumSpeed).Within(0.000001d));
+            Assert.That(boosted.IsEliminated, Is.False);
 
             match.SetMovementInput(0, 0d, 0d);
-            match.AdvanceTo(0.6d);
+            match.AdvanceTo(1.35d);
             var coast = match.GetPlayer(0);
             Assert.That(Speed(coast), Is.GreaterThan(0d));
-            Assert.That(Speed(coast), Is.LessThan(lateSpeed));
-            Assert.That(Distance(initial, coast),
-                Is.GreaterThan(Distance(initial, late)));
+            Assert.That(Speed(coast), Is.LessThan(Speed(boosted)));
         }
 
         [Test]
-        public void ContactTransfersMomentumToAnUncontrolledBall()
+        public void ContactTransfersSpeedClampsBothBallsAndRaisesOneEvent()
         {
             var match = new SnowySpinMatchState(93);
             var first = match.GetPlayer(0);
@@ -44,11 +54,92 @@ namespace MazeParty.Gameplay.Tests
             var dz = second.Z - first.Z;
             var length = Math.Sqrt(dx * dx + dz * dz);
             match.SetMovementInput(0, dx / length, dz / length);
-            match.AdvanceTo(1.6d);
 
-            var pushed = match.GetPlayer(1);
-            Assert.That(Distance(second, pushed), Is.GreaterThan(0.05d));
-            Assert.That(pushed.IsEliminated, Is.False);
+            SnowySpinCollisionEvent? collision = null;
+            var eventCount = 0;
+            match.CollisionResolved += resolved =>
+            {
+                eventCount++;
+                collision ??= resolved;
+            };
+            for (var step = 1; step <= 120 && !collision.HasValue;
+                 step++)
+            {
+                match.AdvanceTo(
+                    step * SnowySpinRules.SimulationStepSeconds);
+            }
+
+            Assert.That(collision.HasValue, Is.True);
+            var resolved = collision.Value;
+            var postFirst = match.GetPlayer(resolved.FirstSlot);
+            var postSecond = match.GetPlayer(resolved.SecondSlot);
+            Assert.That(resolved.Sequence, Is.EqualTo(1UL));
+            Assert.That(resolved.RoundNumber, Is.EqualTo(1));
+            Assert.That(resolved.ImpactSpeed,
+                Is.GreaterThan(SnowySpinRules.BaseSpeed));
+            Assert.That(Speed(postFirst),
+                Is.LessThanOrEqualTo(SnowySpinRules.MaximumSpeed));
+            Assert.That(Speed(postSecond),
+                Is.LessThanOrEqualTo(SnowySpinRules.MaximumSpeed));
+            Assert.That(resolved.FirstPostSpeed,
+                Is.EqualTo(Speed(postFirst)).Within(0.000001d));
+            Assert.That(resolved.SecondPostSpeed,
+                Is.EqualTo(Speed(postSecond)).Within(0.000001d));
+            Assert.That(Distance(second, postSecond),
+                Is.GreaterThan(0.01d));
+
+            match.AdvanceTo(
+                match.RoundElapsedSeconds +
+                SnowySpinRules.SimulationStepSeconds);
+            Assert.That(eventCount, Is.EqualTo(1));
+        }
+
+        [Test]
+        public void SustainedContactsDebouncePresentationEventsPerPair()
+        {
+            const double simulatedSeconds = 5d;
+            var match = new SnowySpinMatchState(1);
+            var eventCounts = new int[SnowySpinRules.PlayerCount,
+                SnowySpinRules.PlayerCount];
+            for (var slot = 0; slot < SnowySpinRules.PlayerCount;
+                 slot++)
+            {
+                var ball = match.GetPlayer(slot);
+                var length = Math.Sqrt(
+                    ball.X * ball.X + ball.Z * ball.Z);
+                match.SetMovementInput(
+                    slot,
+                    -ball.X / length,
+                    -ball.Z / length);
+            }
+
+            match.CollisionResolved += collision =>
+                eventCounts[collision.FirstSlot,
+                    collision.SecondSlot]++;
+            match.AdvanceTo(simulatedSeconds);
+
+            var maximumPerPair =
+                (int)Math.Ceiling(
+                    simulatedSeconds /
+                    SnowySpinRules.CollisionPresentationCooldownSeconds) +
+                1;
+            var total = 0;
+            for (var first = 0;
+                 first < SnowySpinRules.PlayerCount;
+                 first++)
+            {
+                for (var second = first + 1;
+                     second < SnowySpinRules.PlayerCount;
+                     second++)
+                {
+                    total += eventCounts[first, second];
+                    Assert.That(eventCounts[first, second],
+                        Is.LessThanOrEqualTo(maximumPerPair),
+                        "pair " + first + "-" + second);
+                }
+            }
+
+            Assert.That(total, Is.GreaterThan(0));
         }
 
         [Test]

@@ -15,15 +15,28 @@ namespace MazeParty.Multiplayer
         public const float ArenaCenterX = 1500f;
         public const float SharedCameraOrthographicSize = 11f;
         public const float BallPresentationHeight = 0.65f;
+        public const float BallPresentationScale = 1.3f;
+        public const float MaximumBallScaleMultiplier = 1.35f;
         public const float PlayerPresentationHeight =
             BallPresentationHeight;
 
         private const float InterpolationSpeed = 20f;
+        private const float SpeedSmoothing = 10f;
         private const float FallDurationSeconds = 0.65f;
         private static readonly int BaseColorProperty =
             Shader.PropertyToID("_BaseColor");
         private static readonly int ColorProperty =
             Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorProperty =
+            Shader.PropertyToID("_EmissionColor");
+        private static readonly int GlowColorProperty =
+            Shader.PropertyToID("_GlowColor");
+        private static readonly int DepthGlowColorProperty =
+            Shader.PropertyToID("_DepthGlowColor");
+        private static readonly int ColorRampBlendProperty =
+            Shader.PropertyToID("_ColorRampBlend");
+
+
         private static readonly Color[] FallbackColors =
         {
             new Color(0.18f, 0.58f, 1f),
@@ -40,11 +53,18 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer[] ballRenderers =
             new Renderer[SnowySpinRules.PlayerCount];
         [SerializeField] private GameObject fallImpactVfxPrefab;
+        [SerializeField] private GameObject collisionExplosionVfxPrefab;
+
 
         private readonly float[] _fallStartedAt =
             new float[SnowySpinRules.PlayerCount];
         private readonly bool[] _wasEliminated =
             new bool[SnowySpinRules.PlayerCount];
+        private readonly float[] _smoothedSpeeds =
+            new float[SnowySpinRules.PlayerCount];
+        private readonly float[] _ballScaleMultipliers =
+            new float[SnowySpinRules.PlayerCount];
+        private NetworkSnowySpinState _subscribedCollisionState;
         private GameplayCameraDirector _cameraDirector;
         private MaterialPropertyBlock _colorBlock;
         private bool _cameraRegistered;
@@ -64,6 +84,9 @@ namespace MazeParty.Multiplayer
         public GameObject ArenaPresentation => arenaPresentation;
         public CinemachineCamera SharedCamera => sharedCamera;
         public GameObject FallImpactVfxPrefab => fallImpactVfxPrefab;
+        public GameObject CollisionExplosionVfxPrefab =>
+            collisionExplosionVfxPrefab;
+
 
         public Transform GetPlayerBall(int slot)
         {
@@ -106,16 +129,26 @@ namespace MazeParty.Multiplayer
             fallImpactVfxPrefab = fallImpactPrefab;
         }
 
+        public void ConfigureCollisionVfx(
+            GameObject collisionExplosionPrefab)
+        {
+            collisionExplosionVfxPrefab = collisionExplosionPrefab;
+        }
+
+
         private void Awake()
         {
             state ??= GetComponent<NetworkSnowySpinState>();
             _colorBlock = new MaterialPropertyBlock();
+            ResetBallPresentationState();
             ConfigureCamera();
             SetWorldPresentationActive(false);
+            OneShotVfxPool.Prewarm(collisionExplosionVfxPrefab, 4);
         }
 
         private void OnDisable()
         {
+            UnbindCollisionPresentation();
             SetWorldPresentationActive(false);
             UnregisterCamera();
         }
@@ -123,6 +156,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             state ??= GetComponent<NetworkSnowySpinState>();
+            BindCollisionPresentation();
             var match = NetworkMatchState.Instance;
             var selected = match != null && match.IsSnowySpinPhase;
             var shouldShowWorld = state != null && state.IsSpawned &&
@@ -172,14 +206,10 @@ namespace MazeParty.Multiplayer
             {
                 _lastRoundNumber = state.RoundNumber;
                 _hadVisibleFrame = false;
-                for (var slot = 0; slot < _wasEliminated.Length;
-                     slot++)
-                {
-                    _wasEliminated[slot] = false;
-                    _fallStartedAt[slot] = 0f;
-                }
+                ResetBallPresentationState();
             }
 
+            var deltaTime = Mathf.Max(0f, Time.unscaledDeltaTime);
             for (var slot = 0; slot < SnowySpinRules.PlayerCount;
                  slot++)
             {
@@ -192,7 +222,9 @@ namespace MazeParty.Multiplayer
                 var ball = playerBalls[slot];
                 var position = state.GetPlayerPosition(slot);
                 var eliminated = state.IsEliminated(slot);
-                if (eliminated && !_wasEliminated[slot])
+                var wasEliminated = _wasEliminated[slot];
+                var beganFalling = eliminated && !wasEliminated;
+                if (beganFalling)
                 {
                     _fallStartedAt[slot] = _hadVisibleFrame
                         ? Time.unscaledTime
@@ -227,38 +259,82 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
+                var scaleMultiplier = Mathf.Max(
+                    1f, _ballScaleMultipliers[slot]);
+                var fallOffset =
+                    2.5f * fallProgress * fallProgress;
                 var target = arenaPresentation.transform.TransformPoint(
                     new Vector3(
                         position.x,
-                        BallPresentationHeight -
-                            2.5f * fallProgress * fallProgress,
+                        BallPresentationHeight * scaleMultiplier -
+                            fallOffset,
                         position.y));
                 var previous = ball.position;
-                ball.position = !_hadVisibleFrame ||
-                    (previous - target).sqrMagnitude > 36f
+                var teleported = !_hadVisibleFrame ||
+                    (previous - target).sqrMagnitude > 36f;
+                ball.position = teleported
                     ? target
                     : Vector3.Lerp(
                         previous,
                         target,
                         1f - Mathf.Exp(
                             -InterpolationSpeed *
-                            Time.unscaledDeltaTime));
+                            deltaTime));
 
                 var planarTravel = ball.position - previous;
                 planarTravel.y = 0f;
                 var distance = planarTravel.magnitude;
-                if (_hadVisibleFrame && distance > 0.0001f)
+                var canSampleSpeed = _hadVisibleFrame &&
+                    !teleported && deltaTime > 0.000001f &&
+                    (!eliminated || beganFalling);
+                if (canSampleSpeed)
+                {
+                    var sampledSpeed = Mathf.Min(
+                        distance / deltaTime,
+                        (float)SnowySpinRules.MaximumSpeed);
+                    _smoothedSpeeds[slot] = Mathf.Lerp(
+                        _smoothedSpeeds[slot],
+                        sampledSpeed,
+                        1f - Mathf.Exp(
+                            -SpeedSmoothing * deltaTime));
+                    _ballScaleMultipliers[slot] =
+                        CalculateBallScaleMultiplier(
+                            _smoothedSpeeds[slot]);
+                }
+                else if (!eliminated && teleported)
+                {
+                    _smoothedSpeeds[slot] = 0f;
+                    _ballScaleMultipliers[slot] = 1f;
+                }
+
+                scaleMultiplier = Mathf.Max(
+                    1f, _ballScaleMultipliers[slot]);
+                var groundedTarget =
+                    arenaPresentation.transform.TransformPoint(
+                        new Vector3(
+                            position.x,
+                            BallPresentationHeight * scaleMultiplier -
+                                fallOffset,
+                            position.y));
+                var groundedPosition = ball.position;
+                groundedPosition.y = groundedTarget.y;
+                ball.position = groundedPosition;
+
+                if (_hadVisibleFrame && !teleported &&
+                    distance > 0.0001f)
                 {
                     var axis = Vector3.Cross(
                         Vector3.up,
                         planarTravel / distance);
                     ball.rotation = Quaternion.AngleAxis(
-                        distance / BallPresentationHeight *
+                        distance /
+                            (BallPresentationHeight * scaleMultiplier) *
                             Mathf.Rad2Deg,
                         axis) * ball.rotation;
                 }
                 ball.localScale = Vector3.one *
-                    (BallPresentationHeight * 2f) *
+                    BallPresentationScale *
+                    scaleMultiplier *
                     Mathf.Lerp(1f, 0.15f, fallProgress);
 
                 var avatar = match.GetAvatarForSlot(slot);
@@ -267,6 +343,246 @@ namespace MazeParty.Multiplayer
                     : FallbackColors[slot];
                 ApplyBallColor(slot, color);
             }
+        }
+
+        private void BindCollisionPresentation()
+        {
+            if (_subscribedCollisionState == state)
+            {
+                return;
+            }
+
+            UnbindCollisionPresentation();
+            if (state == null)
+            {
+                return;
+            }
+
+            _subscribedCollisionState = state;
+            _subscribedCollisionState.CollisionPresentationRequested +=
+                HandleNetworkCollisionPresentation;
+        }
+
+        private void UnbindCollisionPresentation()
+        {
+            if (_subscribedCollisionState == null)
+            {
+                return;
+            }
+
+            _subscribedCollisionState.CollisionPresentationRequested -=
+                HandleNetworkCollisionPresentation;
+            _subscribedCollisionState = null;
+        }
+
+        private void HandleNetworkCollisionPresentation(
+            int firstSlot,
+            int secondSlot,
+            Vector2 localCenter,
+            float impactSpeed,
+            float firstPostSpeed,
+            float secondPostSpeed)
+        {
+            if (!_worldVisible)
+            {
+                return;
+            }
+
+            PlayCollisionPresentation(
+                firstSlot,
+                secondSlot,
+                localCenter,
+                impactSpeed,
+                firstPostSpeed,
+                secondPostSpeed);
+        }
+
+        public void PlayCollisionPresentation(
+            int firstSlot,
+            int secondSlot,
+            Vector2 localCenter,
+            float impactSpeed,
+            float firstPostSpeed,
+            float secondPostSpeed)
+        {
+            ApplyAuthoritativeCollisionSpeed(firstSlot, firstPostSpeed);
+            ApplyAuthoritativeCollisionSpeed(secondSlot, secondPostSpeed);
+
+            if (arenaPresentation == null ||
+                collisionExplosionVfxPrefab == null)
+            {
+                return;
+            }
+
+            var normalizedImpact = Mathf.Clamp01(
+                impactSpeed /
+                ((float)SnowySpinRules.MaximumSpeed * 2f));
+            var worldCenter = arenaPresentation.transform.TransformPoint(
+                new Vector3(localCenter.x, 0f, localCenter.y));
+            var centerHeight = 0f;
+            var centerCount = 0;
+            foreach (var slot in new[] { firstSlot, secondSlot })
+            {
+                if (SnowySpinRules.IsValidPlayerSlot(slot) &&
+                    playerBalls != null && slot < playerBalls.Length &&
+                    playerBalls[slot] != null)
+                {
+                    centerHeight += playerBalls[slot].position.y;
+                    centerCount++;
+                }
+            }
+            worldCenter.y = centerCount > 0
+                ? centerHeight / centerCount
+                : arenaPresentation.transform.TransformPoint(
+                    new Vector3(
+                        localCenter.x,
+                        BallPresentationHeight,
+                        localCenter.y)).y;
+
+            var effect = OneShotVfxPool.Play(
+                collisionExplosionVfxPrefab,
+                worldCenter,
+                Quaternion.identity,
+                Mathf.Lerp(0.8f, 1.2f, normalizedImpact));
+            ApplySnowExplosionWhite(effect);
+        }
+
+        private void ApplyAuthoritativeCollisionSpeed(
+            int slot,
+            float speed)
+        {
+            if (!SnowySpinRules.IsValidPlayerSlot(slot))
+            {
+                return;
+            }
+
+            var clampedSpeed = Mathf.Clamp(
+                speed,
+                0f,
+                (float)SnowySpinRules.MaximumSpeed);
+            _smoothedSpeeds[slot] = clampedSpeed;
+            _ballScaleMultipliers[slot] =
+                CalculateBallScaleMultiplier(clampedSpeed);
+        }
+
+        private static void ApplySnowExplosionWhite(
+            PooledOneShotVfx effect)
+        {
+            if (effect == null)
+            {
+                return;
+            }
+
+            foreach (var particles in effect.ParticleSystems)
+            {
+                if (particles == null)
+                {
+                    continue;
+                }
+
+                var main = particles.main;
+                main.startColor = CreateWhiteGradient(
+                    main.startColor);
+
+                var colorOverLifetime = particles.colorOverLifetime;
+                if (colorOverLifetime.enabled)
+                {
+                    colorOverLifetime.color = CreateWhiteGradient(
+                        colorOverLifetime.color);
+                }
+
+                var colorBySpeed = particles.colorBySpeed;
+                if (colorBySpeed.enabled)
+                {
+                    colorBySpeed.color = CreateWhiteGradient(
+                        colorBySpeed.color);
+                }
+            }
+
+            var block = new MaterialPropertyBlock();
+            foreach (var renderer in effect.GetComponentsInChildren<
+                         Renderer>(true))
+            {
+                renderer.GetPropertyBlock(block);
+                block.SetColor(BaseColorProperty, Color.white);
+                block.SetColor(ColorProperty, Color.white);
+                block.SetColor(EmissionColorProperty, Color.white);
+                block.SetColor(GlowColorProperty, Color.white);
+                block.SetColor(DepthGlowColorProperty, Color.white);
+                block.SetFloat(ColorRampBlendProperty, 0f);
+
+                renderer.SetPropertyBlock(block);
+                block.Clear();
+            }
+
+            foreach (var flash in effect.FlashLights)
+            {
+                if (flash != null)
+                {
+                    flash.color = Color.white;
+                }
+            }
+        }
+
+        private static ParticleSystem.MinMaxGradient CreateWhiteGradient(
+            ParticleSystem.MinMaxGradient source)
+        {
+            ParticleSystem.MinMaxGradient result;
+            switch (source.mode)
+            {
+                case ParticleSystemGradientMode.TwoColors:
+                    result = new ParticleSystem.MinMaxGradient(
+                        WithWhiteRgb(source.colorMin),
+                        WithWhiteRgb(source.colorMax));
+                    break;
+                case ParticleSystemGradientMode.Gradient:
+                case ParticleSystemGradientMode.RandomColor:
+                    result = new ParticleSystem.MinMaxGradient(
+                        CreateWhiteGradient(source.gradient));
+                    break;
+                case ParticleSystemGradientMode.TwoGradients:
+                    result = new ParticleSystem.MinMaxGradient(
+                        CreateWhiteGradient(source.gradientMin),
+                        CreateWhiteGradient(source.gradientMax));
+                    break;
+                default:
+                    result = new ParticleSystem.MinMaxGradient(
+                        WithWhiteRgb(source.color));
+                    break;
+            }
+
+            result.mode = source.mode;
+            return result;
+        }
+
+        private static Gradient CreateWhiteGradient(Gradient source)
+        {
+            if (source == null)
+            {
+                return new Gradient();
+            }
+
+            var sourceColorKeys = source.colorKeys;
+            var colorKeys =
+                new GradientColorKey[sourceColorKeys.Length];
+            for (var index = 0; index < colorKeys.Length; index++)
+            {
+                colorKeys[index] = new GradientColorKey(
+                    Color.white,
+                    sourceColorKeys[index].time);
+            }
+
+            var result = new Gradient
+            {
+                mode = source.mode
+            };
+            result.SetKeys(colorKeys, source.alphaKeys);
+            return result;
+        }
+
+        private static Color WithWhiteRgb(Color source)
+        {
+            return new Color(1f, 1f, 1f, source.a);
         }
 
         private void ApplyBallColor(int slot, Color color)
@@ -335,5 +651,34 @@ namespace MazeParty.Multiplayer
                 arenaPresentation.SetActive(active);
             }
         }
-    }
+
+
+        public static float CalculateBallScaleMultiplier(
+            float speed)
+        {
+            var normalizedSpeed = Mathf.Clamp01(
+                Mathf.Max(0f, speed) /
+                (float)SnowySpinRules.MaximumSpeed);
+            return Mathf.Lerp(1f, MaximumBallScaleMultiplier,
+                normalizedSpeed);
+        }
+
+        private void ResetBallPresentationState()
+        {
+            for (var slot = 0; slot < SnowySpinRules.PlayerCount;
+                slot++)
+            {
+                _fallStartedAt[slot] = 0f;
+                _wasEliminated[slot] = false;
+                _smoothedSpeeds[slot] = 0f;
+                _ballScaleMultipliers[slot] = 1f;
+            }
+        }
+
+
+        private void OnEnable()
+        {
+            BindCollisionPresentation();
+        }
+}
 }

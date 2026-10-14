@@ -355,12 +355,11 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
                  slot++)
             {
-                hud.PlayerNameTexts[slot].text =
-                    "P" + (slot + 1);
-                hud.PlayerNameTexts[slot].color =
-                    GetPlayerColor(match, slot);
-                hud.PlayerScoreTexts[slot].text =
-                    state.GetScore(slot).ToString();
+                hud.SetPlayer(
+                    slot,
+                    "P" + (slot + 1),
+                    state.GetScore(slot),
+                    GetPlayerColor(match, slot));
             }
         }
 

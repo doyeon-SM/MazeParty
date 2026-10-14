@@ -392,13 +392,11 @@ namespace MazeParty.Dev.MinigameSoloTest
                  slot < BouncingBallsRules.PlayerCount;
                  slot++)
             {
-                _productionHud.PlayerNameTexts[slot].text =
-                    "P" + (slot + 1);
-                _productionHud.PlayerNameTexts[slot].color =
-                    PlayerColors[slot];
-                var score = _match.GetScore(slot);
-                _productionHud.PlayerScoreTexts[slot].text =
-                    score.ToString();
+                _productionHud.SetPlayer(
+                    slot,
+                    "P" + (slot + 1),
+                    _match.GetScore(slot),
+                    PlayerColors[slot]);
             }
         }
 

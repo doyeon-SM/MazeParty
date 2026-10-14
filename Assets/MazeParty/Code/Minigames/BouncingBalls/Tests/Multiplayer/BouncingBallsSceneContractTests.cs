@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity";
         private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab";
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
 
         [Test]
         public void GoalPresentationRpc_IsReliablePerEvent()

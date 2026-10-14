@@ -1,4 +1,5 @@
 using System.Linq;
+using MazeParty.Gameplay;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -12,6 +13,10 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/SnowySpin/SnowySpin.unity";
+        private const string SnowExplosionPath =
+            "Assets/MazeParty/Prefabs/Minigames/SnowySpin/VFX/" +
+            "SnowExplosion.prefab";
+
 
         [Test]
         public void Scene_BindsNetworkStateFourBallsSharedCameraAndNoCanvas()
@@ -49,6 +54,30 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(property.objectReferenceValue,
                         Is.Not.Null, field);
                 }
+                var collisionVfx = serialized.FindProperty(
+                    "collisionExplosionVfxPrefab");
+                Assert.That(collisionVfx, Is.Not.Null);
+                var collisionPrefab = collisionVfx.objectReferenceValue as
+                    GameObject;
+                Assert.That(collisionPrefab, Is.Not.Null);
+                Assert.That(AssetDatabase.GetAssetPath(collisionPrefab),
+                    Is.EqualTo(SnowExplosionPath));
+                var pooled = collisionPrefab.GetComponent<
+                    PooledOneShotVfx>();
+                Assert.That(pooled, Is.Not.Null);
+                Assert.That(pooled.ParticleSystems, Is.Not.Empty);
+                Assert.That(collisionPrefab.GetComponentsInChildren<
+                    Collider>(true), Is.Empty);
+                Assert.That(collisionPrefab.GetComponentsInChildren<
+                    Collider2D>(true), Is.Empty);
+                Assert.That(collisionPrefab.GetComponentsInChildren<
+                    NetworkObject>(true), Is.Empty);
+                Assert.That(collisionPrefab.GetComponentsInChildren<
+                        Transform>(true)
+                    .Any(item => item.name.Contains("Distort") ||
+                                 item.name.Contains("GrabPass")),
+                    Is.False);
+
                 var arena = serialized.FindProperty("arenaPresentation")
                     .objectReferenceValue as GameObject;
                 Assert.That(arena, Is.Not.Null);

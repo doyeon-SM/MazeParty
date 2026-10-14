@@ -68,6 +68,10 @@ namespace MazeParty.Multiplayer
 
         public static NetworkSnowySpinState Instance { get; private set; }
 
+        public event Action<int, int, Vector2, float, float, float>
+            CollisionPresentationRequested;
+
+
         public NetworkSnowySpinPhase Phase =>
             (NetworkSnowySpinPhase)_phase.Value;
         public int RoundNumber => _roundNumber.Value;
@@ -161,6 +165,9 @@ namespace MazeParty.Multiplayer
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
             _serverMatch = new SnowySpinMatchState(seed);
+            _serverMatch.CollisionResolved +=
+                HandleServerCollisionResolved;
+
             _matchActive.Value = true;
             _roundNumber.Value = (byte)_serverMatch.RoundNumber;
             CacheAndFreezeBoardAvatarsOnServer();
@@ -577,6 +584,12 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalRuntime()
         {
+            if (_serverMatch != null)
+            {
+                _serverMatch.CollisionResolved -=
+                    HandleServerCollisionResolved;
+            }
+
             _serverMatch = null;
             _phaseStartedAt = 0d;
             _phaseElapsedAtPause = 0d;
@@ -648,5 +661,60 @@ namespace MazeParty.Multiplayer
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
         }
-    }
+
+
+        private static bool IsFinite(float value)
+        {
+            return !float.IsNaN(value) && !float.IsInfinity(value);
+        }
+
+
+        private void HandleServerCollisionResolved(
+            SnowySpinCollisionEvent collision)
+        {
+            PlayCollisionPresentationRpc(
+                (byte)collision.FirstSlot,
+                (byte)collision.SecondSlot,
+                new Vector2((float)collision.X, (float)collision.Z),
+                (float)collision.ImpactSpeed,
+                (float)collision.FirstPostSpeed,
+                (float)collision.SecondPostSpeed);
+        }
+
+        [Rpc(
+            SendTo.ClientsAndHost,
+            Delivery = RpcDelivery.Reliable)]
+        private void PlayCollisionPresentationRpc(
+            byte firstSlot,
+            byte secondSlot,
+            Vector2 localCenter,
+            float impactSpeed,
+            float firstPostSpeed,
+            float secondPostSpeed)
+        {
+            if (!SnowySpinRules.IsValidPlayerSlot(firstSlot) ||
+                !SnowySpinRules.IsValidPlayerSlot(secondSlot) ||
+                firstSlot == secondSlot ||
+                !IsFinite(localCenter.x) ||
+                !IsFinite(localCenter.y) ||
+                !IsFinite(impactSpeed) || impactSpeed < 0f ||
+                !IsFinite(firstPostSpeed) || firstPostSpeed < 0f ||
+                !IsFinite(secondPostSpeed) || secondPostSpeed < 0f)
+            {
+                return;
+            }
+
+            CollisionPresentationRequested?.Invoke(
+                firstSlot,
+                secondSlot,
+                localCenter,
+                Mathf.Min(impactSpeed,
+                    (float)SnowySpinRules.MaximumSpeed * 2f),
+                Mathf.Min(firstPostSpeed,
+                    (float)SnowySpinRules.MaximumSpeed),
+                Mathf.Min(secondPostSpeed,
+                    (float)SnowySpinRules.MaximumSpeed));
+        }
+
+}
 }

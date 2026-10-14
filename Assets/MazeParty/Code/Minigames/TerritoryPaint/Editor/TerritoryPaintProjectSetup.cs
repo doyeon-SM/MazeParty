@@ -8,7 +8,6 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Editor
 {
@@ -23,8 +22,6 @@ namespace MazeParty.Editor
             "MazeParty/Minigames/Rebuild Territory Paint";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/TerritoryPaint";
-        private const string UiPrefabFolder =
-            "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI";
         private const string MaterialFolder =
             ProjectRoot +
             "/Art/Minigames/TerritoryPaint/Materials";
@@ -38,7 +35,7 @@ namespace MazeParty.Editor
         public const string TerritoryPaintScenePath =
             "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity";
         public const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab";
+            BouncingBallsProjectSetup.HudPrefabPath;
 
         private static readonly Color[] PlayerColors =
         {
@@ -92,7 +89,8 @@ namespace MazeParty.Editor
                 "TerritoryPaintBoundary",
                 new Color(0.08f, 0.72f, 0.66f),
                 0.22f);
-            var hudPrefab = LoadOrCreateHudPrefab();
+            var hudPrefab =
+                BouncingBallsProjectSetup.LoadOrCreateHudPrefab();
             BuildScene(
                 surfaceMaterial,
                 understructureMaterial,
@@ -172,12 +170,13 @@ namespace MazeParty.Editor
                 hudPrefab,
                 root.transform) as GameObject;
             var hud = hudObject != null
-                ? hudObject.GetComponent<TerritoryPaintHudBindings>()
+                ? hudObject.GetComponent<BouncingBallsHudBindings>()
                 : null;
             if (hud == null || !hud.HasRequiredReferences)
             {
                 throw new InvalidOperationException(
-                    "TerritoryPaintHud.prefab has invalid serialized " +
+                    "The shared BouncingBallsHud.prefab has invalid " +
+                    "serialized " +
                     "bindings.");
             }
 
@@ -452,181 +451,6 @@ namespace MazeParty.Editor
                 false);
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
-        {
-            var prefab =
-                AssetDatabase.LoadAssetAtPath<GameObject>(
-                    HudPrefabPath);
-            var createdDefaultPrefab = prefab == null;
-            if (prefab == null)
-            {
-                var template = CreateHudTemplate();
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            if (createdDefaultPrefab && prefab != null &&
-                prefab.transform.localScale != Vector3.one)
-            {
-                var contents =
-                    PrefabUtility.LoadPrefabContents(HudPrefabPath);
-                try
-                {
-                    contents.transform.localScale = Vector3.one;
-                    PrefabUtility.SaveAsPrefabAsset(
-                        contents,
-                        HudPrefabPath);
-                }
-                finally
-                {
-                    PrefabUtility.UnloadPrefabContents(contents);
-                }
-                prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    HudPrefabPath);
-            }
-
-            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
-            var binding = prefab != null
-                ? prefab.GetComponent<TerritoryPaintHudBindings>()
-                : null;
-            if (binding == null ||
-                !binding.HasRequiredReferences ||
-                prefab.transform.localScale != Vector3.one)
-            {
-                throw new InvalidOperationException(
-                    "TerritoryPaintHud.prefab must have complete " +
-                    "serialized bindings and unit root scale. Repair the " +
-                    "prefab directly; setup will not overwrite it.");
-            }
-
-            return prefab;
-        }
-
-        private static GameObject CreateHudTemplate()
-        {
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity built-in LegacyRuntime.ttf is required.");
-            }
-
-            var root = new GameObject(
-                "TerritoryPaintHud",
-                typeof(RectTransform),
-                typeof(Canvas),
-                typeof(CanvasScaler),
-                typeof(TerritoryPaintHudBindings));
-            root.transform.localScale = Vector3.one;
-            var canvas = root.GetComponent<Canvas>();
-            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 45;
-            var scaler = root.GetComponent<CanvasScaler>();
-            scaler.uiScaleMode =
-                CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(1920f, 1080f);
-            scaler.matchWidthOrHeight = 0.5f;
-
-            var scorePanel = CreatePanel(
-                "Score Panel",
-                root.transform,
-                new Vector2(0f, 1f),
-                new Vector2(18f, -18f),
-                new Vector2(248f, 126f),
-                new Color(0.025f, 0.03f, 0.045f, 0.9f));
-            var rows =
-                new Text[TerritoryPaintRules.PlayerCount];
-            for (var slot = 0; slot < rows.Length; slot++)
-            {
-                rows[slot] = CreateHudText(
-                    "Player " + (slot + 1) + " Row",
-                    scorePanel.transform,
-                    font,
-                    new Vector2(0f, -8f - slot * 28f),
-                    new Vector2(220f, 26f),
-                    16,
-                    "P" + (slot + 1) + "  0");
-                rows[slot].alignment =
-                    TextAnchor.MiddleLeft;
-                rows[slot].color = PlayerColors[slot];
-            }
-
-            root.GetComponent<TerritoryPaintHudBindings>()
-                .Configure(canvas, rows);
-            root.transform.localScale = Vector3.one;
-            return root;
-        }
-
-        private static GameObject CreatePanel(
-            string name,
-            Transform parent,
-            Vector2 anchor,
-            Vector2 position,
-            Vector2 size,
-            Color color)
-        {
-            var panel = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Image));
-            panel.transform.SetParent(parent, false);
-            var rect = panel.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax = anchor;
-            rect.pivot = anchor;
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var image = panel.GetComponent<Image>();
-            image.color = color;
-            image.raycastTarget = false;
-            return panel;
-        }
-
-        private static Text CreateHudText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector2 position,
-            Vector2 size,
-            int fontSize,
-            string sample)
-        {
-            var textObject = new GameObject(
-                name,
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
-            textObject.transform.SetParent(parent, false);
-            var rect = textObject.GetComponent<RectTransform>();
-            rect.anchorMin = rect.anchorMax =
-                new Vector2(0.5f, 1f);
-            rect.pivot = new Vector2(0.5f, 1f);
-            rect.anchoredPosition = position;
-            rect.sizeDelta = size;
-            var text = textObject.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Normal;
-            text.color = Color.white;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.horizontalOverflow =
-                HorizontalWrapMode.Overflow;
-            text.verticalOverflow =
-                VerticalWrapMode.Truncate;
-            text.raycastTarget = false;
-            text.text = sample;
-            return text;
-        }
-
         private static GameObject CreatePrimitive(
             string name,
             PrimitiveType primitive,
@@ -708,7 +532,7 @@ namespace MazeParty.Editor
                 root.GetComponent<NetworkObject>();
             var hud =
                 root.GetComponentInChildren<
-                    TerritoryPaintHudBindings>(true);
+                    BouncingBallsHudBindings>(true);
             var paint = FindDescendant(
                 root.transform,
                 "Paint Surface");
@@ -744,7 +568,7 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Territory Paint Canvas must be instantiated from " +
-                    "TerritoryPaintHud.prefab.");
+                    "the shared BouncingBallsHud.prefab.");
             }
         }
 
@@ -777,7 +601,6 @@ namespace MazeParty.Editor
         {
             EnsureFolder(ProjectRoot);
             EnsureFolder(ScenesFolder);
-            EnsureFolder(UiPrefabFolder);
             EnsureFolder(
                 ProjectRoot + "/Art");
             EnsureFolder(

@@ -28,6 +28,41 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
         public int TotalScore { get; }
     }
 
+    public readonly struct SnowySpinCollisionEvent
+    {
+        internal SnowySpinCollisionEvent(
+            ulong sequence,
+            int roundNumber,
+            int firstSlot,
+            int secondSlot,
+            double x,
+            double z,
+            double impactSpeed,
+            double firstPostSpeed,
+            double secondPostSpeed)
+        {
+            Sequence = sequence;
+            RoundNumber = roundNumber;
+            FirstSlot = firstSlot;
+            SecondSlot = secondSlot;
+            X = x;
+            Z = z;
+            ImpactSpeed = impactSpeed;
+            FirstPostSpeed = firstPostSpeed;
+            SecondPostSpeed = secondPostSpeed;
+        }
+
+        public ulong Sequence { get; }
+        public int RoundNumber { get; }
+        public int FirstSlot { get; }
+        public int SecondSlot { get; }
+        public double X { get; }
+        public double Z { get; }
+        public double ImpactSpeed { get; }
+        public double FirstPostSpeed { get; }
+        public double SecondPostSpeed { get; }
+    }
+
     public readonly struct SnowySpinFallEvent
     {
         internal SnowySpinFallEvent(ulong sequence, int roundNumber,
@@ -90,6 +125,9 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             new int[SnowySpinRules.PlayerCount];
         private readonly int[,] _roundRanks =
             new int[SnowySpinRules.RoundCount, SnowySpinRules.PlayerCount];
+        private readonly double[,] _collisionPresentationReadyAt =
+            new double[SnowySpinRules.PlayerCount,
+                SnowySpinRules.PlayerCount];
         private uint _randomState;
         private int _simulatedSteps;
 
@@ -109,6 +147,9 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
         public bool IsRoundComplete { get; private set; }
         public bool IsComplete { get; private set; }
         public int SurvivorCount { get; private set; }
+        public event Action<SnowySpinCollisionEvent> CollisionResolved;
+
+        public ulong CollisionSequence { get; private set; }
         public ulong FallSequence { get; private set; }
         public SnowySpinFallEvent? LastFall { get; private set; }
         public ulong RoundTransitionSequence { get; private set; }
@@ -252,6 +293,8 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             SurvivorCount = SnowySpinRules.PlayerCount;
             LastFall = null;
             _simulatedSteps = 0;
+            Array.Clear(_collisionPresentationReadyAt, 0,
+                _collisionPresentationReadyAt.Length);
             var rotation = (int)(NextRandom() % SnowySpinRules.PlayerCount);
             for (var slot = 0; slot < _balls.Length; slot++)
             {
@@ -286,14 +329,7 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
                 ball.VelocityZ = (ball.VelocityZ +
                     ball.InputZ * SnowySpinRules.Acceleration * dt) *
                     dragFactor;
-                var speed = Math.Sqrt(ball.VelocityX * ball.VelocityX +
-                    ball.VelocityZ * ball.VelocityZ);
-                if (speed > SnowySpinRules.MaximumSpeed)
-                {
-                    var scale = SnowySpinRules.MaximumSpeed / speed;
-                    ball.VelocityX *= scale;
-                    ball.VelocityZ *= scale;
-                }
+                ClampVelocity(ball);
 
                 ball.X += ball.VelocityX * dt;
                 ball.Z += ball.VelocityZ * dt;
@@ -312,8 +348,18 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
                     if (!_balls[second].IsEliminated)
                     {
                         ResolveCollision(_balls[first], _balls[second],
-                            first, second);
+                            first, second, stepEnd);
                     }
+                }
+            }
+
+            // Sequential multi-ball contacts can concentrate momentum in one
+            // ball, so enforce the same hard cap after collision impulses.
+            foreach (var ball in _balls)
+            {
+                if (!ball.IsEliminated)
+                {
+                    ClampVelocity(ball);
                 }
             }
 
@@ -345,8 +391,9 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             }
         }
 
-        private static void ResolveCollision(BallState first,
-            BallState second, int firstSlot, int secondSlot)
+        private void ResolveCollision(BallState first,
+            BallState second, int firstSlot, int secondSlot,
+            double stepEnd)
         {
             var dx = second.X - first.X;
             var dz = second.Z - first.Z;
@@ -375,12 +422,41 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
                 return;
             }
 
-            var impulse = -(1d + SnowySpinRules.CollisionRestitution) *
-                relativeNormalVelocity * 0.5d;
+            var impactSpeed = -relativeNormalVelocity;
+            var impulse = (1d + SnowySpinRules.CollisionRestitution) *
+                impactSpeed * 0.5d;
             first.VelocityX -= impulse * nx;
             first.VelocityZ -= impulse * nz;
             second.VelocityX += impulse * nx;
             second.VelocityZ += impulse * nz;
+            ClampVelocity(first);
+            ClampVelocity(second);
+
+            // Continuous steering can make the same pair re-contact every
+            // few fixed steps. Keep resolving every impulse, but rate-limit
+            // its reliable presentation event so pooled VFX and RPC traffic
+            // cannot be flooded by one sustained contact.
+            if (stepEnd + Epsilon <
+                _collisionPresentationReadyAt[firstSlot, secondSlot])
+            {
+                return;
+            }
+
+            _collisionPresentationReadyAt[firstSlot, secondSlot] =
+                stepEnd +
+                SnowySpinRules.CollisionPresentationCooldownSeconds;
+
+            CollisionSequence++;
+            CollisionResolved?.Invoke(new SnowySpinCollisionEvent(
+                CollisionSequence,
+                RoundNumber,
+                firstSlot,
+                secondSlot,
+                (first.X + second.X) * 0.5d,
+                (first.Z + second.Z) * 0.5d,
+                impactSpeed,
+                Speed(first),
+                Speed(second)));
         }
 
         private void FinishRound(double elapsedSeconds)
@@ -506,5 +582,33 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
                 RoundRank = 0;
             }
         }
-    }
+
+
+        private static void ClampVelocity(BallState ball)
+        {
+            var speedSquared =
+                ball.VelocityX * ball.VelocityX +
+                ball.VelocityZ * ball.VelocityZ;
+            var maximumSpeedSquared =
+                SnowySpinRules.MaximumSpeed *
+                SnowySpinRules.MaximumSpeed;
+            if (speedSquared <= maximumSpeedSquared)
+            {
+                return;
+            }
+
+            var scale = SnowySpinRules.MaximumSpeed /
+                Math.Sqrt(speedSquared);
+            ball.VelocityX *= scale;
+            ball.VelocityZ *= scale;
+        }
+
+
+        private static double Speed(BallState ball)
+        {
+            return Math.Sqrt(
+                ball.VelocityX * ball.VelocityX +
+                ball.VelocityZ * ball.VelocityZ);
+        }
+}
 }

@@ -22,14 +22,19 @@ later scene rebuilds.
 
 The same contract applies to every minigame that owns a dedicated Canvas HUD:
 edit its prefab to change layout or styling, while the scene keeps only
-serialized gameplay-object references. Minefield, Balloon Blow, and Gift Grab
-intentionally own no dedicated Canvas HUD. Balloon Blow conveys progress
-through authored balloon growth and pop state instead of a separate station
-label.
+serialized gameplay-object references. Minefield and Balloon Blow intentionally
+own no dedicated Canvas HUD. Balloon Blow conveys progress through authored
+balloon growth and pop state instead of a separate station label.
 
-Gift Grab uses `GiftGrabBaseLabel.prefab` for its essential world presentation:
-temporary carry/stun status above players and four base owner/gift-count signs.
-The runtime updates only those serialized labels' content and visibility.
+`Minigames/Common/UI/BouncingBallsHud.prefab` is the shared four-player score
+HUD used by Bouncing Balls, Gift Grab, and Territory Paint. Each runtime view
+updates only the serialized name and score labels, including the authoritative
+player body color.
+
+Gift Grab also uses `GiftGrabBaseLabel.prefab` for its essential world
+presentation: temporary carry/stun status above players and four base
+owner/gift-count signs. The runtime updates only those serialized labels'
+content and visibility.
 
 Scene instances must be created with `PrefabUtility.InstantiatePrefab` so their
 prefab provenance remains inspectable. Editor-only windows are outside the

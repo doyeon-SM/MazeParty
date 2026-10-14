@@ -36,7 +36,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform runnerRoot;
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private Renderer paintSurfaceRenderer;
-        [SerializeField] private TerritoryPaintHudBindings hud;
+        [SerializeField] private BouncingBallsHudBindings hud;
         [SerializeField] private GameObject paintSplashVfxPrefab;
 
         private readonly RunnerView[] _runners =
@@ -81,7 +81,7 @@ namespace MazeParty.Multiplayer
             Transform runners,
             GameObject arena,
             Renderer surfaceRenderer,
-            TerritoryPaintHudBindings hudBindings)
+            BouncingBallsHudBindings hudBindings)
         {
             state = networkState;
             sharedCamera = camera;
@@ -545,16 +545,14 @@ namespace MazeParty.Multiplayer
                  slot++)
             {
                 var avatar = match.GetAvatarForSlot(slot);
-                hud.PlayerRows[slot].text =
+                hud.SetPlayer(
+                    slot,
                     (slot == _localSlot ? "> " : string.Empty) +
-                    GameText.F(
-                        "P{0}  {1}",
-                        slot + 1,
-                        state.GetScore(slot));
-                hud.PlayerRows[slot].color =
+                    "P" + (slot + 1),
+                    state.GetScore(slot),
                     avatar != null
                         ? avatar.Appearance.BodyColor
-                        : hud.GetDefaultPlayerRowColor(slot);
+                        : FallbackPlayerColors[slot]);
             }
         }
 

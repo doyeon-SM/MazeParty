@@ -20,7 +20,8 @@ namespace MazeParty.Editor
         private const string MenuPath = "MazeParty/Minigames/Rebuild Bouncing Balls";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string SceneFolder = "Assets/MazeParty/Scenes/Minigames/BouncingBalls";
-        private const string PrefabFolder = "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI";
+        private const string PrefabFolder =
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/BouncingBalls";
         public const string EnvironmentPrefabPath =
@@ -32,7 +33,8 @@ namespace MazeParty.Editor
             "FS000_Night_01.mat";
 
         public const string ScenePath = "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity";
-        public const string HudPrefabPath = "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab";
+        public const string HudPrefabPath =
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
         public const float ArenaCenterX = 1260f;
         private const int PlayerCount = 4;
         private const int BallCount = 3;
@@ -395,8 +397,9 @@ namespace MazeParty.Editor
             }
         }
 
-        private static GameObject LoadOrCreateHudPrefab()
+        internal static GameObject LoadOrCreateHudPrefab()
         {
+            EnsureFolder(PrefabFolder);
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(HudPrefabPath);
             if (prefab == null)
             {
@@ -476,9 +479,6 @@ namespace MazeParty.Editor
                     new Vector2(-348f + slot * 232f, 20f),
                     new Vector2(220f, 64f),
                     new Color(0.022f, 0.03f, 0.067f, 0.94f));
-                CreatePanel("Player Accent", panel.transform,
-                    new Vector2(0.5f, 1f), Vector2.zero,
-                    new Vector2(220f, 5f), PlayerColors[slot]);
                 names[slot] = CreateText("Player Name", panel.transform,
                     font, new Vector2(-69f, -12f), new Vector2(72f, 28f),
                     15, "P" + (slot + 1));

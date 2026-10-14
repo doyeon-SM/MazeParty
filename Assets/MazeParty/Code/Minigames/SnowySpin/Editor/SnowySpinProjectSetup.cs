@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using MazeParty.Gameplay;
+
 using MazeParty.Multiplayer;
 using Unity.Cinemachine;
 using Unity.Netcode;
@@ -23,6 +26,14 @@ namespace MazeParty.Editor
             ProjectRoot + "/Prefabs/Minigames/SnowySpin";
         private const string MaterialFolder =
             ProjectRoot + "/Art/Minigames/SnowySpin/Materials";
+        private const string VfxPrefabFolder =
+            CorePrefabFolder + "/VFX";
+        public const string SnowExplosionPrefabPath =
+            VfxPrefabFolder + "/SnowExplosion.prefab";
+        public const string SnowExplosionSourcePath =
+            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/" +
+            "Toon Explosion.prefab";
+
         public const string ScenePath = "Assets/MazeParty/Scenes/Minigames/SnowySpin/SnowySpin.unity";
         public const float ArenaCenterX = 1500f;
         public const float ArenaRadius = 8f;
@@ -72,6 +83,9 @@ namespace MazeParty.Editor
             EnsureFolder(SceneFolder);
             EnsureFolder(CorePrefabFolder);
             EnsureFolder(MaterialFolder);
+            EnsureFolder(VfxPrefabFolder);
+            EnsureSnowExplosionPrefab();
+
             var materials = CreateMaterials();
 
             // A scene asset may have been hand-edited after first generation.
@@ -83,6 +97,8 @@ namespace MazeParty.Editor
 
             EnsureInBuildSettings();
             MinigameVfxProjectSetup.InstallScene(ScenePath);
+            InstallSnowExplosion(ScenePath);
+
             AssetDatabase.SaveAssets();
         }
 
@@ -371,5 +387,434 @@ namespace MazeParty.Editor
             public Material[] Spawns;
             public Material[] Balls;
         }
-    }
+
+
+        private static void ConfigureWhiteExplosionMaterial(
+            Material material)
+        {
+            foreach (var property in new[]
+                     {
+                         "_BaseColor",
+                         "_Color",
+                         "_TintColor",
+                         "_EmissionColor",
+                         "_GlowColor",
+                         "_DepthGlowColor"
+                     })
+            {
+                if (!material.HasProperty(property))
+                {
+                    continue;
+                }
+
+                var color = material.GetColor(property);
+                material.SetColor(property,
+                    new Color(1f, 1f, 1f, color.a));
+            }
+
+            if (material.HasProperty("_ColorRampBlend"))
+            {
+                material.SetFloat("_ColorRampBlend", 0f);
+            }
+        }
+
+
+        private static void ConfigureSnowExplosionMaterials(
+            GameObject root)
+        {
+            var clones = new Dictionary<Material, Material>();
+            var materialIndex = 0;
+            foreach (var renderer in root.GetComponentsInChildren<
+                         Renderer>(true))
+            {
+                var materials = renderer.sharedMaterials;
+                for (var index = 0; index < materials.Length; index++)
+                {
+                    var source = materials[index];
+                    if (source == null)
+                    {
+                        continue;
+                    }
+
+                    if (!clones.TryGetValue(source, out var clone))
+                    {
+                        var path = MaterialFolder +
+                            "/SnowExplosionMaterial" +
+                            materialIndex++ + ".mat";
+                        clone = AssetDatabase.LoadAssetAtPath<Material>(
+                            path);
+                        if (clone == null)
+                        {
+                            clone = new Material(source)
+                            {
+                                name = "SnowExplosionMaterial" +
+                                    (materialIndex - 1)
+                            };
+                            ConfigureWhiteExplosionMaterial(clone);
+                            AssetDatabase.CreateAsset(clone, path);
+                        }
+                        else
+                        {
+                            ConfigureWhiteExplosionMaterial(clone);
+                            EditorUtility.SetDirty(clone);
+                        }
+                        clones.Add(source, clone);
+                    }
+
+                    materials[index] = clone;
+                }
+
+                renderer.sharedMaterials = materials;
+            }
+        }
+
+
+        private static void StripUnsupportedExplosionContent(
+            GameObject root)
+        {
+            var unsupported = root.GetComponentsInChildren<Transform>(true)
+                .Where(item => item != root.transform &&
+                    HasUnsupportedExplosionContent(item.name))
+                .OrderByDescending(GetHierarchyDepth)
+                .ToArray();
+            foreach (var item in unsupported)
+            {
+                if (item != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(item.gameObject);
+                }
+            }
+
+            foreach (var renderer in root
+                         .GetComponentsInChildren<Renderer>(true))
+            {
+                renderer.sharedMaterials = renderer.sharedMaterials
+                    .Where(material =>
+                        !UsesUnsupportedExplosionShader(material))
+                    .ToArray();
+            }
+
+            foreach (var behaviour in root
+                         .GetComponentsInChildren<MonoBehaviour>(true)
+                         .Where(item => item != null)
+                         .ToArray())
+            {
+                UnityEngine.Object.DestroyImmediate(behaviour);
+            }
+            foreach (var networkObject in root
+                         .GetComponentsInChildren<NetworkObject>(true)
+                         .Where(item => item != null)
+                         .ToArray())
+            {
+                UnityEngine.Object.DestroyImmediate(networkObject);
+            }
+            foreach (var collider in root
+                         .GetComponentsInChildren<Collider>(true)
+                         .ToArray())
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+            foreach (var collider in root
+                         .GetComponentsInChildren<Collider2D>(true)
+                         .ToArray())
+            {
+                UnityEngine.Object.DestroyImmediate(collider);
+            }
+
+            foreach (var item in root.GetComponentsInChildren<
+                         Transform>(true))
+            {
+                if (GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(
+                        item.gameObject) > 0)
+                {
+                    GameObjectUtility.RemoveMonoBehavioursWithMissingScript(
+                        item.gameObject);
+                }
+            }
+        }
+
+
+        private static void InstallSnowExplosion(string scenePath)
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                SnowExplosionPrefabPath);
+            if (prefab == null ||
+                AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+            {
+                return;
+            }
+
+            var previousActive = SceneManager.GetActiveScene();
+            var scene = SceneManager.GetSceneByPath(scenePath);
+            var openedForSetup = !scene.IsValid() || !scene.isLoaded;
+            if (openedForSetup)
+            {
+                scene = EditorSceneManager.OpenScene(
+                    scenePath,
+                    OpenSceneMode.Additive);
+            }
+
+            try
+            {
+                var views = scene.GetRootGameObjects()
+                    .SelectMany(root => root.GetComponentsInChildren<
+                        SnowySpinNetworkView>(true))
+                    .ToArray();
+                if (views.Length != 1)
+                {
+                    throw new InvalidOperationException(
+                        "Snowy Spin scene requires exactly one network view " +
+                        "before binding its collision explosion.");
+                }
+
+                views[0].ConfigureCollisionVfx(prefab);
+                EditorUtility.SetDirty(views[0]);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene, scenePath);
+            }
+            finally
+            {
+                if (openedForSetup && scene.IsValid() && scene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(scene, true);
+                }
+                if (previousActive.IsValid() && previousActive.isLoaded)
+                {
+                    SceneManager.SetActiveScene(previousActive);
+                }
+            }
+        }
+
+
+        private static void EnsureSnowExplosionPrefab()
+        {
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(
+                    SnowExplosionPrefabPath) != null)
+            {
+                return;
+            }
+
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                SnowExplosionSourcePath);
+            if (source == null)
+            {
+                throw new InvalidOperationException(
+                    "Required Snowy Spin explosion source is missing: " +
+                    SnowExplosionSourcePath);
+            }
+
+            var root = new GameObject("SnowExplosion");
+            try
+            {
+                var nested = PrefabUtility.InstantiatePrefab(
+                    source,
+                    root.transform) as GameObject;
+                if (nested == null)
+                {
+                    throw new InvalidOperationException(
+                        "Could not instantiate Snowy Spin explosion source: " +
+                        SnowExplosionSourcePath);
+                }
+
+                nested.name = "AllIn1 Toon Explosion";
+                nested.transform.SetLocalPositionAndRotation(
+                    Vector3.zero,
+                    Quaternion.identity);
+                nested.transform.localScale = Vector3.one;
+                PrefabUtility.UnpackPrefabInstance(
+                    nested,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+
+                StripUnsupportedExplosionContent(root);
+                ConfigureSnowExplosionMaterials(root);
+
+                var particles = root.GetComponentsInChildren<
+                    ParticleSystem>(true);
+                foreach (var system in particles)
+                {
+                    ConfigureSnowExplosionParticles(system);
+                }
+
+                var lights = root.GetComponentsInChildren<Light>(true);
+                foreach (var light in lights)
+                {
+                    light.color = Color.white;
+                    light.enabled = false;
+                }
+
+                var pooled = root.AddComponent<PooledOneShotVfx>();
+                pooled.Configure(particles, lights, 2f, 0.15f);
+                ValidateSnowExplosionHierarchy(
+                    root,
+                    SnowExplosionSourcePath);
+                PrefabUtility.SaveAsPrefabAsset(
+                    root,
+                    SnowExplosionPrefabPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+
+        private static void ValidateSnowExplosionHierarchy(
+            GameObject root,
+            string context)
+        {
+            var pooled = root != null
+                ? root.GetComponent<PooledOneShotVfx>()
+                : null;
+            if (root == null ||
+                pooled == null ||
+                pooled.ParticleSystems.Length == 0 ||
+                pooled.ParticleSystems.Any(item => item == null) ||
+                root.GetComponentsInChildren<MonoBehaviour>(true)
+                    .Any(item => item == null || item != pooled) ||
+                root.GetComponentsInChildren<NetworkObject>(true).Length > 0 ||
+                root.GetComponentsInChildren<Collider>(true).Length > 0 ||
+                root.GetComponentsInChildren<Collider2D>(true).Length > 0 ||
+                root.GetComponentsInChildren<Transform>(true)
+                    .Any(item =>
+                        HasUnsupportedExplosionContent(item.name)) ||
+                root.GetComponentsInChildren<Renderer>(true)
+                    .SelectMany(item => item.sharedMaterials)
+                    .Any(UsesUnsupportedExplosionShader))
+            {
+                throw new InvalidOperationException(
+                    "Snow explosion must remain a pooled, white, " +
+                    "presentation-only VFX without Distort or GrabPass: " +
+                    context);
+            }
+        }
+
+
+        private static int GetHierarchyDepth(Transform item)
+        {
+            var depth = 0;
+            for (var current = item; current != null;
+                 current = current.parent)
+            {
+                depth++;
+            }
+            return depth;
+        }
+
+
+        private static bool UsesUnsupportedExplosionShader(
+            Material material)
+        {
+            if (material == null || material.shader == null)
+            {
+                return false;
+            }
+
+            var shaderPath =
+                AssetDatabase.GetAssetPath(material.shader);
+            return HasUnsupportedExplosionContent(material.shader.name) ||
+                   HasUnsupportedExplosionContent(shaderPath);
+        }
+
+
+        private static bool HasUnsupportedExplosionContent(string value)
+        {
+            return value.IndexOf(
+                       "Distort",
+                       StringComparison.OrdinalIgnoreCase) >= 0 ||
+                   value.IndexOf(
+                       "GrabPass",
+                       StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+
+        private static Color WithWhiteRgb(Color source)
+        {
+            return new Color(1f, 1f, 1f, source.a);
+        }
+
+
+        private static Gradient CreateWhiteGradient(Gradient source)
+        {
+            if (source == null)
+            {
+                return new Gradient();
+            }
+
+            var sourceColorKeys = source.colorKeys;
+            var colorKeys =
+                new GradientColorKey[sourceColorKeys.Length];
+            for (var index = 0; index < colorKeys.Length; index++)
+            {
+                colorKeys[index] = new GradientColorKey(
+                    Color.white,
+                    sourceColorKeys[index].time);
+            }
+
+            var result = new Gradient
+            {
+                mode = source.mode
+            };
+            result.SetKeys(colorKeys, source.alphaKeys);
+            return result;
+        }
+
+
+        private static ParticleSystem.MinMaxGradient CreateWhiteGradient(
+            ParticleSystem.MinMaxGradient source)
+        {
+            ParticleSystem.MinMaxGradient result;
+            switch (source.mode)
+            {
+                case ParticleSystemGradientMode.TwoColors:
+                    result = new ParticleSystem.MinMaxGradient(
+                        WithWhiteRgb(source.colorMin),
+                        WithWhiteRgb(source.colorMax));
+                    break;
+                case ParticleSystemGradientMode.Gradient:
+                case ParticleSystemGradientMode.RandomColor:
+                    result = new ParticleSystem.MinMaxGradient(
+                        CreateWhiteGradient(source.gradient));
+                    break;
+                case ParticleSystemGradientMode.TwoGradients:
+                    result = new ParticleSystem.MinMaxGradient(
+                        CreateWhiteGradient(source.gradientMin),
+                        CreateWhiteGradient(source.gradientMax));
+                    break;
+                default:
+                    result = new ParticleSystem.MinMaxGradient(
+                        WithWhiteRgb(source.color));
+                    break;
+            }
+
+            result.mode = source.mode;
+            return result;
+        }
+
+
+        private static void ConfigureSnowExplosionParticles(
+            ParticleSystem particles)
+        {
+            var main = particles.main;
+            main.loop = false;
+            main.playOnAwake = false;
+            main.useUnscaledTime = true;
+            main.stopAction = ParticleSystemStopAction.None;
+            main.startColor = CreateWhiteGradient(main.startColor);
+
+            var colorOverLifetime = particles.colorOverLifetime;
+            if (colorOverLifetime.enabled)
+            {
+                colorOverLifetime.color = CreateWhiteGradient(
+                    colorOverLifetime.color);
+            }
+
+            var colorBySpeed = particles.colorBySpeed;
+            if (colorBySpeed.enabled)
+            {
+                colorBySpeed.color = CreateWhiteGradient(
+                    colorBySpeed.color);
+            }
+        }
+}
 }

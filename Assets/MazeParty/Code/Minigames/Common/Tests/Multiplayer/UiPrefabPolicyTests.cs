@@ -46,9 +46,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/RedLightGreenLight/UI/RedLightGreenLightHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab",
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
@@ -71,7 +70,6 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.WrongWayHudBindings",
             "MazeParty.Multiplayer.RedLightGreenLightHudBindings",
             "MazeParty.Multiplayer.GiftGrabBaseLabel",
-            "MazeParty.Multiplayer.TerritoryPaintHudBindings",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
             "MazeParty.Multiplayer.BouncingBallsHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
@@ -118,10 +116,11 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity"),
+                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity",
-                "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab"),
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/TagChase/TagChase.unity",
                 new string[0]),
@@ -133,7 +132,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/BouncingBalls/BouncingBalls.unity",
-                "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab"),
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity",
                 "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab"),
@@ -477,9 +476,8 @@ namespace MazeParty.Multiplayer.Tests
             {
                 "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/RedLightGreenLight/UI/RedLightGreenLightHud.prefab",
-                "Assets/MazeParty/Prefabs/Minigames/TerritoryPaint/UI/TerritoryPaintHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
-                "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/UI/BouncingBallsHud.prefab"
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"
             };
 
             var common = AssetDatabase.LoadAssetAtPath<GameObject>(commonPath);

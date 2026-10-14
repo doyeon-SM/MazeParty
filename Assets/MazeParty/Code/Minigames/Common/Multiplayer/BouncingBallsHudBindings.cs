@@ -1,13 +1,12 @@
 using System;
-using MazeParty.Gameplay.Minigames.BouncingBalls;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// References to the authored Bouncing Balls HUD prefab. Runtime code
-    /// updates these bindings but never builds Canvas elements.
+    /// Shared bindings for the authored four-player score HUD. Runtime code
+    /// updates these references but never builds Canvas elements.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BouncingBallsHudBindings : MonoBehaviour
@@ -15,9 +14,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Canvas rootCanvas;
         [SerializeField] private GameObject root;
         [SerializeField] private Text[] playerNameTexts =
-            new Text[BouncingBallsRules.PlayerCount];
+            new Text[MultiplayerConstants.MaxPlayers];
         [SerializeField] private Text[] scoreTexts =
-            new Text[BouncingBallsRules.PlayerCount];
+            new Text[MultiplayerConstants.MaxPlayers];
 
         public Canvas RootCanvas => rootCanvas;
         public GameObject Root => root;
@@ -43,11 +42,31 @@ namespace MazeParty.Multiplayer
             scoreTexts = scores;
         }
 
+        public void SetPlayer(
+            int slot,
+            string playerName,
+            int score,
+            Color playerColor)
+        {
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers ||
+                !HasRequiredReferences)
+            {
+                throw new ArgumentOutOfRangeException(nameof(slot));
+            }
+
+            playerNameTexts[slot].text = playerName;
+            playerNameTexts[slot].color = playerColor;
+            scoreTexts[slot].text = score.ToString();
+            scoreTexts[slot].color = playerColor;
+        }
+
+
         private static bool HasFourNonNull(Text[] values)
         {
             return values != null &&
-                values.Length == BouncingBallsRules.PlayerCount &&
+                values.Length == MultiplayerConstants.MaxPlayers &&
                 Array.TrueForAll(values, value => value != null);
         }
+
     }
 }
