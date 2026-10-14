@@ -768,7 +768,7 @@ namespace MazeParty.Editor
                 typeof(SpriteRenderer));
             iconObject.transform.SetParent(nameplate, false);
             iconObject.transform.localPosition = new Vector3(-0.95f, 0f, 0f);
-            iconObject.transform.localScale = Vector3.one * 0.28f;
+            iconObject.transform.localScale = Vector3.one * 0.14f;
             var hostIcon = iconObject.GetComponent<SpriteRenderer>();
             hostIcon.sprite = starSprite;
             hostIcon.color = new Color32(255, 214, 86, 255);

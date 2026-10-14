@@ -197,6 +197,9 @@ namespace MazeParty.Multiplayer.Tests
                 var bindings = visual.Bindings;
                 var defaultNameColor = bindings.NameText.color;
                 var nameRenderer = bindings.NameText.GetComponent<Renderer>();
+                var textOcclusion =
+                    bindings.NameText.GetComponent<WorldTextOcclusion>();
+                var fontMaterial = bindings.NameText.font.material;
 
                 visual.SetLobbyIdentityState(true, false);
                 Assert.That(
@@ -211,6 +214,23 @@ namespace MazeParty.Multiplayer.Tests
                 visual.SetNameplateOccluded(true);
                 Assert.That(nameRenderer.forceRenderingOff, Is.True);
                 Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.True);
+
+                visual.SetNameplateCameraPriority(true);
+                Assert.That(textOcclusion.CameraPriorityEnabled, Is.True);
+                Assert.That(nameRenderer.sharedMaterial, Is.SameAs(fontMaterial));
+                Assert.That(nameRenderer.forceRenderingOff, Is.False);
+                Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.False);
+
+                textOcclusion.RefreshMaterial();
+                Assert.That(nameRenderer.sharedMaterial, Is.SameAs(fontMaterial),
+                    "Refreshing a localized font must preserve lobby camera priority.");
+
+                visual.SetNameplateCameraPriority(false);
+                Assert.That(textOcclusion.CameraPriorityEnabled, Is.False);
+                Assert.That(nameRenderer.sharedMaterial, Is.Not.SameAs(fontMaterial));
+                Assert.That(nameRenderer.forceRenderingOff, Is.True);
+                Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.True);
+
                 visual.SetNameplateOccluded(false);
                 Assert.That(nameRenderer.forceRenderingOff, Is.False);
                 Assert.That(bindings.LobbyHostIcon.forceRenderingOff, Is.False);

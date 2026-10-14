@@ -24,6 +24,8 @@ namespace MazeParty.Multiplayer
             new Color(0.3f, 0.82f, 1f, 0.62f);
         [SerializeField] private Color blockedPortalColor =
             new Color(1f, 0.24f, 0.2f, 0.62f);
+        [SerializeField] private Color tilesOnlyColor =
+            new Color(0.82f, 0.9f, 1f, 0.94f);
 
         private readonly List<TileMesh> _tiles = new List<TileMesh>(49);
         private readonly List<PortalMesh> _portals = new List<PortalMesh>(64);
@@ -126,6 +128,79 @@ namespace MazeParty.Multiplayer
                     Project(gate.PlanePoint - halfWidth),
                     Project(gate.PlanePoint + halfWidth),
                     color));
+            }
+
+            SetVerticesDirty();
+        }
+
+        /// <summary>
+        /// Presents the authored board footprint without route, portal, player,
+        /// shop, start, or respawn information. Lobby map previews intentionally
+        /// show only the physical board tiles.
+        /// </summary>
+        public void PresentTilesOnly(BoardTopology topology)
+        {
+            _tiles.Clear();
+            _portals.Clear();
+
+            if (topology == null)
+            {
+                SetVerticesDirty();
+                return;
+            }
+
+            var bounds = new Bounds();
+            var hasBounds = false;
+            for (var index = 0; index < topology.Tiles.Count; index++)
+            {
+                var tile = topology.Tiles[index];
+                if (tile == null)
+                    continue;
+
+                _worldVertices.Clear();
+                tile.GetWorldFootprintVertices(_worldVertices);
+                for (var vertex = 0; vertex < _worldVertices.Count; vertex++)
+                {
+                    if (!hasBounds)
+                    {
+                        bounds = new Bounds(
+                            _worldVertices[vertex],
+                            Vector3.zero);
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        bounds.Encapsulate(_worldVertices[vertex]);
+                    }
+                }
+            }
+
+            if (!hasBounds)
+            {
+                SetVerticesDirty();
+                return;
+            }
+
+            var extent = Mathf.Max(0.1f, Mathf.Max(bounds.size.x, bounds.size.z));
+            extent *= 1.08f;
+            bounds.size = new Vector3(extent, 1f, extent);
+            _worldBounds = bounds;
+
+            for (var index = 0; index < topology.Tiles.Count; index++)
+            {
+                var tile = topology.Tiles[index];
+                if (tile == null)
+                    continue;
+
+                _worldVertices.Clear();
+                tile.GetWorldFootprintVertices(_worldVertices);
+                if (_worldVertices.Count < BoardTileFootprint.MinVertexCount)
+                    continue;
+
+                var points = new Vector2[_worldVertices.Count];
+                for (var vertex = 0; vertex < _worldVertices.Count; vertex++)
+                    points[vertex] = Project(_worldVertices[vertex]);
+                _tiles.Add(new TileMesh(points, tilesOnlyColor));
             }
 
             SetVerticesDirty();

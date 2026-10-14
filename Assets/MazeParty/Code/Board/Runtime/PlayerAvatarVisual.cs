@@ -39,6 +39,7 @@ namespace MazeParty.Gameplay
         private Transform _nameplate;
         private TextMesh _nameText;
         private Renderer _nameRenderer;
+        private WorldTextOcclusion _nameTextOcclusion;
         private SpriteRenderer _lobbyHostIcon;
         private Color _defaultNameColor = Color.white;
         private Transform _firstPersonHands;
@@ -75,6 +76,7 @@ namespace MazeParty.Gameplay
         private bool _hiddenFromViewer;
         private bool _nameplateAllowed = true;
         private bool _nameplateOccluded;
+        private bool _nameplateCameraPriority;
         private bool _boardProtectionVisible;
         private bool _boardTopViewHighlightVisible;
         private bool _minigameLocationHighlightVisible;
@@ -191,13 +193,31 @@ namespace MazeParty.Gameplay
         {
             EnsureBuilt();
             _nameplateOccluded = occluded;
+            RefreshNameplateOcclusion();
+        }
+
+        public void SetNameplateCameraPriority(bool enabled)
+        {
+            EnsureBuilt();
+            _nameplateCameraPriority = enabled;
+            if (_nameTextOcclusion != null)
+            {
+                _nameTextOcclusion.SetCameraPriority(enabled);
+            }
+            RefreshNameplateOcclusion();
+        }
+
+        private void RefreshNameplateOcclusion()
+        {
+            var forceRenderingOff =
+                _nameplateOccluded && !_nameplateCameraPriority;
             if (_nameRenderer != null)
             {
-                _nameRenderer.forceRenderingOff = occluded;
+                _nameRenderer.forceRenderingOff = forceRenderingOff;
             }
             if (_lobbyHostIcon != null)
             {
-                _lobbyHostIcon.forceRenderingOff = occluded;
+                _lobbyHostIcon.forceRenderingOff = forceRenderingOff;
             }
         }
 
@@ -244,19 +264,23 @@ namespace MazeParty.Gameplay
             _nameRenderer = _nameText != null
                 ? _nameText.GetComponent<Renderer>()
                 : null;
+            _nameTextOcclusion = _nameText != null
+                ? _nameText.GetComponent<WorldTextOcclusion>()
+                : null;
             _lobbyHostIcon = bindings.LobbyHostIcon;
             _defaultNameColor = _nameText != null
                 ? _nameText.color
                 : Color.white;
-            if (_nameRenderer != null)
-            {
-                _nameRenderer.forceRenderingOff = _nameplateOccluded;
-            }
             if (_lobbyHostIcon != null)
             {
                 _lobbyHostIcon.gameObject.SetActive(false);
-                _lobbyHostIcon.forceRenderingOff = _nameplateOccluded;
             }
+            if (_nameTextOcclusion != null)
+            {
+                _nameTextOcclusion.SetCameraPriority(
+                    _nameplateCameraPriority);
+            }
+            RefreshNameplateOcclusion();
             _worldItemRoot = bindings.WorldItemRoot;
             _firstPersonPresentation = bindings.FirstPersonPresentation;
             _firstPersonHands = bindings.FirstPersonHands;
@@ -353,7 +377,7 @@ namespace MazeParty.Gameplay
                 ? bindings.LobbyReadyNameColor
                 : _defaultNameColor;
             _lobbyHostIcon.gameObject.SetActive(isHost);
-            _lobbyHostIcon.forceRenderingOff = _nameplateOccluded;
+            RefreshNameplateOcclusion();
             RefreshLobbyNameplateLayout();
         }
 

@@ -543,6 +543,119 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void SelectedBoardMapPreview_UsesAuthoredTileOnlyMapInLobby()
+        {
+            GameText.SetLanguage(GameLanguage.English);
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            try
+            {
+                var view = GetLobbyView(root);
+                var previewRoot = GetField<GameObject>(
+                    view,
+                    "boardMapPreviewRoot");
+                var previewName = GetField<Text>(
+                    view,
+                    "boardMapPreviewNameText");
+                var previewGraphic = GetField<BoardMapTopologyGraphic>(
+                    view,
+                    "boardMapPreviewGraphic");
+
+                Assert.That(previewRoot.transform.parent,
+                    Is.SameAs(root.transform),
+                    "The selected-map display must be authored directly in LobbyCanvas.");
+                Assert.That(previewName.transform.parent,
+                    Is.SameAs(previewRoot.transform));
+                Assert.That(previewGraphic.transform.parent,
+                    Is.SameAs(previewRoot.transform));
+                Assert.That(previewRoot.GetComponent<Image>(), Is.Not.Null);
+                Assert.That(previewRoot.GetComponent<Image>().raycastTarget,
+                    Is.False);
+
+                var catalog = Resources.Load<BoardMapCatalog>(
+                    BoardMapRuntimeLoader.CatalogResourcesPath);
+                Assert.That(catalog, Is.Not.Null);
+                Assert.That(catalog.TryGetMap(
+                    "forest-graybox",
+                    out var forestDefinition), Is.True);
+                Assert.That(catalog.TryGetMap(
+                    "maze-graybox",
+                    out var mazeDefinition), Is.True);
+
+                view.Render(SessionSnapshot.Empty, false, false, string.Empty);
+                Assert.That(previewRoot.activeSelf, Is.False);
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true,
+                        BoardMapSelection.FromDefinition(forestDefinition)),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previewRoot.activeSelf, Is.True);
+                Assert.That(previewName.text,
+                    Is.EqualTo(GameText.T(forestDefinition.DisplayName)));
+                Assert.That(previewGraphic.PresentedTileCount,
+                    Is.EqualTo(forestDefinition.MapRootPrefab
+                        .GetComponent<BoardMapRoot>()
+                        .Topology.Tiles.Count));
+                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero,
+                    "Lobby map information must omit junction and gate lines.");
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        false,
+                        BoardMapSelection.FromDefinition(mazeDefinition)),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previewRoot.activeSelf, Is.True,
+                    "Guests must see the same selected-map information as the host.");
+                Assert.That(previewName.text,
+                    Is.EqualTo(GameText.T(mazeDefinition.DisplayName)));
+                Assert.That(previewGraphic.PresentedTileCount,
+                    Is.EqualTo(mazeDefinition.MapRootPrefab
+                        .GetComponent<BoardMapRoot>()
+                        .Topology.Tiles.Count));
+                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero);
+
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        false,
+                        new BoardMapSelection("maze-graybox", 999)),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previewName.text,
+                    Is.EqualTo(GameText.T("Unavailable Map")));
+                Assert.That(previewGraphic.PresentedTileCount, Is.Zero);
+                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero);
+
+                view.SetRecoveryChoice(true);
+                view.Render(CreateSnapshot(
+                        MultiplayerConstants.LobbyPhase,
+                        true,
+                        BoardMapSelection.FromDefinition(forestDefinition)),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previewRoot.activeSelf, Is.True,
+                    "Recovery choices must not hide the current selected map.");
+
+                view.SetRecoveryChoice(false);
+                view.Render(CreateSnapshot(MultiplayerConstants.PlayingPhase),
+                    true,
+                    false,
+                    string.Empty);
+                Assert.That(previewRoot.activeSelf, Is.False);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(root);
+                GameText.ResetForTests();
+            }
+        }
+
         private static OnlineLobbyView GetLobbyView(GameObject root)
         {
             var view = root.GetComponentInChildren<OnlineLobbyView>(true);

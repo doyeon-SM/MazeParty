@@ -42,6 +42,11 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject runningMessage;
         [SerializeField] private HoldToRevealButton inviteCodeRevealButton;
 
+        [Header("Selected Board Map Preview")]
+        [SerializeField] private GameObject boardMapPreviewRoot;
+        [SerializeField] private Text boardMapPreviewNameText;
+        [SerializeField] private BoardMapTopologyGraphic boardMapPreviewGraphic;
+
         [Header("Feedback")]
         [SerializeField] private Text statusText;
         [SerializeField] private Text buildVersionText;
@@ -107,6 +112,7 @@ namespace MazeParty.Multiplayer
         private string _startButtonTextBeforeRecovery = string.Empty;
         private LocalizedLogo _localizedLogo;
         private bool _localizedLogoLookupCompleted;
+        private BoardMapDefinition _presentedBoardMapDefinition;
 
         public event Action<string> CreateRequested;
         public event Action<string, string> JoinRequested;
@@ -144,6 +150,9 @@ namespace MazeParty.Multiplayer
             previousBoardMapButton != null &&
             nextBoardMapButton != null &&
             boardMapNameText != null &&
+            boardMapPreviewRoot != null &&
+            boardMapPreviewNameText != null &&
+            boardMapPreviewGraphic != null &&
             startHint != null &&
             runningMessage != null &&
             inviteCodeRevealButton != null &&
@@ -224,6 +233,16 @@ namespace MazeParty.Multiplayer
             boardSettingsPanel = configuredBoardSettingsPanel;
             boardSettingsButton = configuredBoardSettingsButton;
             closeBoardSettingsButton = configuredCloseBoardSettingsButton;
+        }
+
+        public void ConfigureBoardMapPreview(
+            GameObject configuredRoot,
+            Text configuredNameText,
+            BoardMapTopologyGraphic configuredGraphic)
+        {
+            boardMapPreviewRoot = configuredRoot;
+            boardMapPreviewNameText = configuredNameText;
+            boardMapPreviewGraphic = configuredGraphic;
         }
 
         public void ConfigureInteractionPanels(
@@ -384,6 +403,7 @@ namespace MazeParty.Multiplayer
                 boardSettingsButton.gameObject.SetActive(false);
                 SetBoardSettingsOpen(false);
                 boardMapSelectionRoot.SetActive(false);
+                boardMapPreviewRoot.SetActive(false);
                 customizationButton.gameObject.SetActive(false);
                 SetCustomizationOpen(false);
                 return;
@@ -395,6 +415,15 @@ namespace MazeParty.Multiplayer
             RefreshInviteCodeText();
 
             var isLobby = snapshot.Phase == MultiplayerConstants.LobbyPhase;
+            var selectableMapCount = 0;
+            BoardMapDefinition selectedMapDefinition = null;
+            if (isLobby)
+            {
+                selectedMapDefinition = ResolveSelectedBoardMap(
+                    snapshot,
+                    out selectableMapCount);
+            }
+            RefreshBoardMapPreview(selectedMapDefinition, isLobby);
             sessionActionsRoot.SetActive(isLobby);
             var showRecoveryChoice =
                 _recoveryChoiceVisible && isLobby && snapshot.IsHost;
@@ -412,7 +441,9 @@ namespace MazeParty.Multiplayer
             RefreshBoardMapSelection(
                 snapshot,
                 isLobby && !_recoveryChoiceVisible,
-                busy);
+                busy,
+                selectedMapDefinition,
+                selectableMapCount);
             if (showRecoveryChoice)
             {
                 CaptureActionLabelsBeforeRecovery();
@@ -476,6 +507,7 @@ namespace MazeParty.Multiplayer
             sessionActionsRoot.SetActive(false);
             boardSettingsPanel.SetActive(false);
             boardMapSelectionRoot.SetActive(false);
+            boardMapPreviewRoot.SetActive(false);
             customizationPanel.SetActive(false);
             RefreshPaletteAvailability();
             ApplyPresentationState();
@@ -515,6 +547,11 @@ namespace MazeParty.Multiplayer
             {
                 boardSettingsPanel.SetActive(false);
                 UiPopupStack.Remove(boardSettingsPanel);
+            }
+
+            if (boardMapPreviewRoot != null)
+            {
+                boardMapPreviewRoot.SetActive(false);
             }
         }
 
@@ -889,7 +926,9 @@ namespace MazeParty.Multiplayer
         private void RefreshBoardMapSelection(
             SessionSnapshot snapshot,
             bool visible,
-            bool busy)
+            bool busy,
+            BoardMapDefinition selectedDefinition,
+            int selectableCount)
         {
             boardMapSelectionRoot.SetActive(visible && _boardSettingsOpen);
             if (!visible)
@@ -897,33 +936,9 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var selectableCount = 0;
-            var selectedName = GameText.T("Unavailable Map");
-            var selected = snapshot != null
-                ? snapshot.BoardMapSelection
-                : BoardMapSelection.Legacy;
-            var catalog = Resources.Load<BoardMapCatalog>(
-                BoardMapRuntimeLoader.CatalogResourcesPath);
-            if (catalog != null)
-            {
-                var definitions = catalog.Maps;
-                for (var index = 0; index < definitions.Count; index++)
-                {
-                    var definition = definitions[index];
-                    if (definition == null || !definition.HasValidIdentity ||
-                        !definition.HasValidPrefab)
-                    {
-                        continue;
-                    }
-
-                    selectableCount++;
-                    if (definition.MapId == selected.MapId &&
-                        definition.ContentVersion == selected.ContentVersion)
-                    {
-                        selectedName = GameText.T(definition.DisplayName);
-                    }
-                }
-            }
+            var selectedName = selectedDefinition != null
+                ? GameText.T(selectedDefinition.DisplayName)
+                : GameText.T("Unavailable Map");
 
             boardMapNameText.text = GameText.F("Map: {0}", selectedName);
             var showHostControls = snapshot != null && snapshot.IsHost;
@@ -933,6 +948,80 @@ namespace MazeParty.Multiplayer
                            !_boardMapSelectionLocked && selectableCount > 1;
             previousBoardMapButton.interactable = canCycle;
             nextBoardMapButton.interactable = canCycle;
+        }
+
+        private void RefreshBoardMapPreview(
+            BoardMapDefinition selectedDefinition,
+            bool visible)
+        {
+            boardMapPreviewRoot.SetActive(visible);
+            if (!visible)
+            {
+                return;
+            }
+
+            boardMapPreviewNameText.text = selectedDefinition != null
+                ? GameText.T(selectedDefinition.DisplayName)
+                : GameText.T("Unavailable Map");
+            if (_presentedBoardMapDefinition == selectedDefinition)
+            {
+                return;
+            }
+
+            _presentedBoardMapDefinition = selectedDefinition;
+            if (selectedDefinition == null)
+            {
+                boardMapPreviewGraphic.Clear();
+                return;
+            }
+
+            var mapRoot = selectedDefinition.MapRootPrefab != null
+                ? selectedDefinition.MapRootPrefab.GetComponent<BoardMapRoot>()
+                : null;
+            if (mapRoot == null || mapRoot.Topology == null)
+            {
+                boardMapPreviewGraphic.Clear();
+                return;
+            }
+
+            boardMapPreviewGraphic.PresentTilesOnly(mapRoot.Topology);
+        }
+
+        private static BoardMapDefinition ResolveSelectedBoardMap(
+            SessionSnapshot snapshot,
+            out int selectableCount)
+        {
+            selectableCount = 0;
+            var selected = snapshot != null
+                ? snapshot.BoardMapSelection
+                : BoardMapSelection.Legacy;
+            var catalog = Resources.Load<BoardMapCatalog>(
+                BoardMapRuntimeLoader.CatalogResourcesPath);
+            if (catalog == null)
+            {
+                return null;
+            }
+
+            BoardMapDefinition selectedDefinition = null;
+            var definitions = catalog.Maps;
+            for (var index = 0; index < definitions.Count; index++)
+            {
+                var definition = definitions[index];
+                if (definition == null || !definition.HasValidIdentity ||
+                    !definition.HasValidPrefab)
+                {
+                    continue;
+                }
+
+                selectableCount++;
+                if (definition.MapId == selected.MapId &&
+                    definition.ContentVersion == selected.ContentVersion)
+                {
+                    selectedDefinition = definition;
+                }
+            }
+
+            return selectedDefinition;
         }
 
         private void CloseJoinPopup(bool clearInput)

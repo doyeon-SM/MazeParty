@@ -173,6 +173,12 @@ namespace MazeParty.Editor
                     out var boardSettingsPanel,
                     out var boardSettingsButton,
                     out var closeBoardSettingsButton);
+                AuthorLobbyBoardMapPreview(
+                    contents.transform,
+                    font,
+                    out var boardMapPreviewRoot,
+                    out var boardMapPreviewNameText,
+                    out var boardMapPreviewGraphic);
                 var closeCustomizationButton =
                     AuthorCustomizationCloseButton(
                         customizationPanel,
@@ -184,6 +190,10 @@ namespace MazeParty.Editor
                     boardSettingsPanel,
                     boardSettingsButton,
                     closeBoardSettingsButton);
+                view.ConfigureBoardMapPreview(
+                    boardMapPreviewRoot,
+                    boardMapPreviewNameText,
+                    boardMapPreviewGraphic);
                 view.ConfigureCustomizationCloseButton(
                     closeCustomizationButton);
                 EditorUtility.SetDirty(view);
@@ -665,6 +675,116 @@ namespace MazeParty.Editor
 
             settingsButton.transform.SetSiblingIndex(wardrobeIndex);
             settingsButton.gameObject.SetActive(false);
+        }
+
+        private static void AuthorLobbyBoardMapPreview(
+            Transform canvasRoot,
+            Font font,
+            out GameObject previewRoot,
+            out Text mapNameText,
+            out BoardMapTopologyGraphic mapGraphic)
+        {
+            previewRoot = FindDirectChild(canvasRoot, "Selected Board Map");
+            var needsDefaultDesign = previewRoot == null;
+            if (previewRoot == null)
+            {
+                previewRoot = CreateUiObject("Selected Board Map", canvasRoot);
+            }
+            else if (previewRoot.transform.parent != canvasRoot)
+            {
+                throw new System.InvalidOperationException(
+                    "Selected Board Map must be authored at the LobbyCanvas root.");
+            }
+
+            if (needsDefaultDesign)
+            {
+                var rect = previewRoot.GetComponent<RectTransform>();
+                rect.anchorMin = new Vector2(0f, 1f);
+                rect.anchorMax = new Vector2(0f, 1f);
+                rect.pivot = new Vector2(0f, 1f);
+                rect.anchoredPosition = new Vector2(24f, -24f);
+                rect.sizeDelta = new Vector2(340f, 340f);
+
+                var panelSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+                    RoundedPanelSpritePath);
+                if (panelSprite == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Lobby map preview panel sprite is missing at " +
+                        RoundedPanelSpritePath + ".");
+                }
+
+                var background = previewRoot.AddComponent<Image>();
+                background.sprite = panelSprite;
+                background.type = Image.Type.Sliced;
+                background.color = new Color(0.025f, 0.04f, 0.075f, 0.9f);
+                background.raycastTarget = false;
+            }
+
+            var nameObject = FindDirectChild(previewRoot.transform, "Map Name");
+            if (nameObject == null)
+            {
+                mapNameText = CreateText(
+                    "Map Name",
+                    previewRoot.transform,
+                    "Unavailable Map",
+                    font,
+                    24,
+                    TextAnchor.MiddleCenter,
+                    44f);
+                Object.DestroyImmediate(
+                    mapNameText.GetComponent<LayoutElement>());
+                mapNameText.fontStyle = FontStyle.Normal;
+                var nameRect = mapNameText.rectTransform;
+                nameRect.anchorMin = new Vector2(0f, 1f);
+                nameRect.anchorMax = new Vector2(1f, 1f);
+                nameRect.pivot = new Vector2(0.5f, 1f);
+                nameRect.anchoredPosition = new Vector2(0f, -18f);
+                nameRect.sizeDelta = new Vector2(-36f, 44f);
+            }
+            else
+            {
+                mapNameText = nameObject.GetComponent<Text>();
+                if (mapNameText == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Selected Board Map/Map Name must have a Text component.");
+                }
+            }
+
+            var surfaceObject = FindDirectChild(
+                previewRoot.transform,
+                "Map Surface");
+            if (surfaceObject == null)
+            {
+                surfaceObject = CreateUiObject(
+                    "Map Surface",
+                    previewRoot.transform);
+                var surfaceRect = surfaceObject.GetComponent<RectTransform>();
+                surfaceRect.anchorMin = new Vector2(0.5f, 0f);
+                surfaceRect.anchorMax = new Vector2(0.5f, 0f);
+                surfaceRect.pivot = new Vector2(0.5f, 0f);
+                surfaceRect.anchoredPosition = new Vector2(0f, 20f);
+                surfaceRect.sizeDelta = new Vector2(280f, 250f);
+                mapGraphic = surfaceObject.AddComponent<BoardMapTopologyGraphic>();
+                mapGraphic.raycastTarget = false;
+                mapGraphic.maskable = false;
+            }
+            else
+            {
+                mapGraphic = surfaceObject.GetComponent<BoardMapTopologyGraphic>();
+                if (mapGraphic == null)
+                {
+                    throw new System.InvalidOperationException(
+                        "Selected Board Map/Map Surface must have a " +
+                        "BoardMapTopologyGraphic component.");
+                }
+            }
+
+            if (needsDefaultDesign)
+            {
+                previewRoot.SetActive(false);
+            }
         }
 
         private static void ConfigureIconOnlyButton(
@@ -1151,6 +1271,12 @@ namespace MazeParty.Editor
                 out var boardSettingsPanel,
                 out var boardSettingsButton,
                 out var closeBoardSettingsButton);
+            AuthorLobbyBoardMapPreview(
+                canvasObject.transform,
+                font,
+                out var boardMapPreviewRoot,
+                out var boardMapPreviewNameText,
+                out var boardMapPreviewGraphic);
 
             var statusText = CreateText(
                 "Status",
@@ -1227,6 +1353,10 @@ namespace MazeParty.Editor
                 boardSettingsPanel,
                 boardSettingsButton,
                 closeBoardSettingsButton);
+            lobbyView.ConfigureBoardMapPreview(
+                boardMapPreviewRoot,
+                boardMapPreviewNameText,
+                boardMapPreviewGraphic);
             PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
             return lobbyView;
         }

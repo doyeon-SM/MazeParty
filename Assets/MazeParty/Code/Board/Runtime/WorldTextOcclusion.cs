@@ -17,6 +17,9 @@ namespace MazeParty.Gameplay
             "MazeParty/Shaders/WorldTextOccluded";
 
         private Material _runtimeMaterial;
+        private bool _cameraPriorityEnabled;
+
+        public bool CameraPriorityEnabled => _cameraPriorityEnabled;
 
         private void Awake()
         {
@@ -63,7 +66,28 @@ namespace MazeParty.Gameplay
                 _runtimeMaterial.mainTexture = textMesh.font.material.mainTexture;
             }
             _runtimeMaterial.color = Color.white;
-            renderer.sharedMaterial = _runtimeMaterial;
+            ApplyDepthMode(textMesh, renderer);
+        }
+
+        /// <summary>
+        /// Uses the font's original always-visible material while a world label
+        /// belongs to the lobby presentation. Disabling this restores the
+        /// build-included material whose shader uses normal LEqual depth testing.
+        /// </summary>
+        public void SetCameraPriority(bool enabled)
+        {
+            _cameraPriorityEnabled = enabled;
+            RefreshMaterial();
+        }
+
+        private void ApplyDepthMode(TextMesh textMesh, MeshRenderer renderer)
+        {
+            var fontMaterial = textMesh.font != null
+                ? textMesh.font.material
+                : null;
+            renderer.sharedMaterial = _cameraPriorityEnabled && fontMaterial != null
+                ? fontMaterial
+                : _runtimeMaterial;
         }
 
         public static void Apply(TextMesh textMesh)

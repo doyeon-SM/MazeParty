@@ -164,7 +164,14 @@ namespace MazeParty.Multiplayer
                         out host);
                 }
 
-                avatar?.AvatarVisual?.SetLobbyIdentityState(ready, host);
+                var visual = avatar != null ? avatar.AvatarVisual : null;
+                if (visual == null)
+                {
+                    continue;
+                }
+
+                visual.SetLobbyIdentityState(ready, host);
+                visual.SetNameplateCameraPriority(showLobbyState);
             }
         }
 
