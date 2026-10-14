@@ -24,6 +24,7 @@ namespace MazeParty.Multiplayer
         public int Slot;
         public byte Kind;
         public int SignedAmount;
+        public byte AffectedMask;
         public byte ItemId;
         public double StartedAt;
 
@@ -39,6 +40,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref Slot);
             serializer.SerializeValue(ref Kind);
             serializer.SerializeValue(ref SignedAmount);
+            serializer.SerializeValue(ref AffectedMask);
             serializer.SerializeValue(ref ItemId);
             serializer.SerializeValue(ref StartedAt);
         }
@@ -50,6 +52,7 @@ namespace MazeParty.Multiplayer
                    Slot == other.Slot &&
                    Kind == other.Kind &&
                    SignedAmount == other.SignedAmount &&
+                   AffectedMask == other.AffectedMask &&
                    ItemId == other.ItemId &&
                    StartedAt.Equals(other.StartedAt);
         }
@@ -68,6 +71,7 @@ namespace MazeParty.Multiplayer
                 Slot,
                 Kind,
                 SignedAmount,
+                AffectedMask,
                 ItemId,
                 StartedAt);
         }
@@ -76,13 +80,17 @@ namespace MazeParty.Multiplayer
     public static class BoardLandingEffectFeedbackRules
     {
         public const double DurationSeconds = 1d;
+        public const double EventDurationSeconds =
+            BoardLandingEffectLayout.SpecialEventResultDurationSeconds;
 
         public static bool IsVisible(
             BoardLandingEffectFeedbackSnapshot snapshot,
             double synchronizedNow)
         {
             return IsValid(snapshot) &&
-                   synchronizedNow < snapshot.StartedAt + DurationSeconds;
+                   synchronizedNow < snapshot.StartedAt +
+                   (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
+                       ? EventDurationSeconds : DurationSeconds);
         }
 
         public static double GetRemainingSeconds(
@@ -92,8 +100,39 @@ namespace MazeParty.Multiplayer
             return IsValid(snapshot)
                 ? Math.Max(
                     0d,
-                    snapshot.StartedAt + DurationSeconds - synchronizedNow)
+                     snapshot.StartedAt +
+                     (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
+                         ? EventDurationSeconds : DurationSeconds) - synchronizedNow)
                 : 0d;
+        }
+
+        public static int GetEventFocusSlot(
+            BoardLandingEffectFeedbackSnapshot snapshot,
+            double synchronizedNow)
+        {
+            if (snapshot.FeedbackKind != BoardLandingEffectFeedbackKind.Event ||
+                !IsVisible(snapshot, synchronizedNow))
+                return -1;
+
+            var count = 0;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                if ((snapshot.AffectedMask & (1 << slot)) != 0)
+                    count++;
+            if (count == 0)
+                return -1;
+
+            var elapsed = Math.Max(0d, synchronizedNow - snapshot.StartedAt);
+            var index = Math.Min(count - 1,
+                (int)Math.Floor(elapsed / EventDurationSeconds * count));
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if ((snapshot.AffectedMask & (1 << slot)) == 0)
+                    continue;
+                if (index-- == 0)
+                    return slot;
+            }
+
+            return -1;
         }
 
         public static bool TryGetContent(

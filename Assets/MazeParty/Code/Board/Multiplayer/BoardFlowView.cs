@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using DG.Tweening;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.BalloonBlow;
@@ -83,8 +84,18 @@ namespace MazeParty.Multiplayer
             new Slider[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _playerHealthFills = new Image[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerHealthDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerKeyTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerKeyDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerGoldTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Text[] _playerGoldDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
+        private readonly Tween[] _healthTweens = new Tween[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _observedHealth = new int[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _observedKeys = new int[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _observedGold = new int[MultiplayerConstants.MaxPlayers];
+        private readonly float[,] _deltaExpiresAt =
+            new float[MultiplayerConstants.MaxPlayers, 3];
+        private readonly bool[] _observedStats = new bool[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _minigameReadyPlayerStates =
@@ -286,6 +297,12 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            for (var slot = 0; slot < _healthTweens.Length; slot++)
+            {
+                _healthTweens[slot]?.Kill();
+                _healthTweens[slot] = null;
+                _observedStats[slot] = false;
+            }
             StopMinigamePreview();
             CloseItemShop();
             SetActive(_boardEventPopupPanel, false);
@@ -535,8 +552,11 @@ namespace MazeParty.Multiplayer
             CopyReferences(hud.PlayerHealthSliders, _playerHealthSliders);
             CopyReferences(hud.PlayerHealthFills, _playerHealthFills);
             CopyReferences(hud.PlayerHealthTexts, _playerHealthTexts);
+            CopyReferences(hud.PlayerHealthDeltaTexts, _playerHealthDeltaTexts);
             CopyReferences(hud.PlayerKeyTexts, _playerKeyTexts);
+            CopyReferences(hud.PlayerKeyDeltaTexts, _playerKeyDeltaTexts);
             CopyReferences(hud.PlayerGoldTexts, _playerGoldTexts);
+            CopyReferences(hud.PlayerGoldDeltaTexts, _playerGoldDeltaTexts);
             CopyReferences(hud.PlayerActionIcons, _playerActionIcons);
             CopyReferences(hud.PlayerRankTexts, _playerRankTexts);
             CopyReferences(
@@ -926,6 +946,101 @@ namespace MazeParty.Multiplayer
         }
 
 
+        private void RefreshLandingHudDeltas(
+            NetworkMatchState match,
+            int slot,
+            NetworkPlayerAvatar avatar,
+            int health,
+            float healthRatio)
+        {
+            if (avatar == null)
+            {
+                _observedStats[slot] = false;
+                HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
+                HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
+                HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                return;
+            }
+
+            var keys = avatar.KeyCount;
+            var gold = avatar.Gold;
+            var presenting = match.FlowState ==
+                             BoardFlowState.LandingEffectResolve &&
+                             !match.IsGlobalSimulationPaused;
+            if (_observedStats[slot] && presenting)
+            {
+                var healthDelta = health - _observedHealth[slot];
+                if (healthDelta != 0)
+                {
+                    ShowDelta(slot, 0, _playerHealthDeltaTexts[slot], healthDelta);
+                    var slider = _playerHealthSliders[slot];
+                    if (slider != null)
+                    {
+                        _healthTweens[slot]?.Kill();
+                        _healthTweens[slot] = DOTween.To(
+                                () => slider.value,
+                                value => slider.SetValueWithoutNotify(value),
+                                healthRatio,
+                                0.65f)
+                            .SetEase(Ease.OutCubic)
+                            .SetUpdate(true);
+                    }
+                }
+
+                var keyDelta = keys - _observedKeys[slot];
+                if (keyDelta != 0)
+                    ShowDelta(slot, 1, _playerKeyDeltaTexts[slot], keyDelta);
+                var goldDelta = gold - _observedGold[slot];
+                if (goldDelta != 0)
+                    ShowDelta(slot, 2, _playerGoldDeltaTexts[slot], goldDelta);
+            }
+
+            _observedHealth[slot] = health;
+            _observedKeys[slot] = keys;
+            _observedGold[slot] = gold;
+            _observedStats[slot] = true;
+            if (!presenting)
+            {
+                HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
+                HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
+                HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+            }
+            else
+            {
+                ExpireDelta(slot, 0, _playerHealthDeltaTexts[slot]);
+                ExpireDelta(slot, 1, _playerKeyDeltaTexts[slot]);
+                ExpireDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+            }
+        }
+
+        private void ShowDelta(int slot, int kind, Text label, int amount)
+        {
+            if (label == null)
+                return;
+
+            label.text = amount > 0
+                ? "+" + amount.ToString("00")
+                : "-" + (-amount).ToString("00");
+            label.color = amount > 0
+                ? uiBindings.Hud.HealthyHealthColor
+                : uiBindings.Hud.CriticalHealthColor;
+            label.gameObject.SetActive(true);
+            _deltaExpiresAt[slot, kind] = Time.unscaledTime + 1.5f;
+        }
+
+        private void ExpireDelta(int slot, int kind, Text label)
+        {
+            if (label != null && Time.unscaledTime >= _deltaExpiresAt[slot, kind])
+                label.gameObject.SetActive(false);
+        }
+
+        private void HideDelta(int slot, int kind, Text label)
+        {
+            _deltaExpiresAt[slot, kind] = 0f;
+            if (label != null)
+                label.gameObject.SetActive(false);
+        }
+
         private void RefreshPlayerRows(NetworkMatchState match)
         {
             var rankingStats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
@@ -975,9 +1090,15 @@ namespace MazeParty.Multiplayer
                 var healthRatio = avatar != null
                     ? Mathf.Clamp01(currentHealth / (float)maxHealth)
                     : 0f;
+                RefreshLandingHudDeltas(
+                    match, slot, avatar,
+                    avatar != null ? avatar.CurrentHealth : 0,
+                    healthRatio);
                 if (_playerHealthSliders[slot] != null)
                 {
-                    _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
+                    if (_healthTweens[slot] == null ||
+                        !_healthTweens[slot].IsActive())
+                        _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
                 }
 
                 if (_playerHealthFills[slot] != null)

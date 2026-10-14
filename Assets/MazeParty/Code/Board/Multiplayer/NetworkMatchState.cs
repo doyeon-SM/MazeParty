@@ -267,6 +267,8 @@ namespace MazeParty.Multiplayer
             LandingEffectMessage.GetEffectType(
                 _lastLandingEffectMessage.Value.ToString());
         public int LastLandingEffectRevision => _lastLandingEffectRevision.Value;
+        public int LastLandingEffectSlot => LandingEffectMessage.GetSlot(
+            _lastLandingEffectMessage.Value.ToString());
         public BoardLandingEffectFeedbackSnapshot LandingEffectFeedback =>
             _landingEffectFeedback.Value;
         public BoardResourceTransferSnapshot ResourceTransferPresentation =>

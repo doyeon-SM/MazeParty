@@ -5236,10 +5236,11 @@ MonoBehaviour:
     fieldOfView: 45
     minimumHeight: 8
     yawDegrees: 0
-  smoothCameraTransitions: 0
+  smoothCameraTransitions: 1
   boardToOverheadDuration: 0.35
+  boardRecenterDuration: 0.3
   overheadToFirstPersonDuration: 0.65
-  directTransitionDuration: 0.4
+  directTransitionDuration: 0.2
   playerOverheadHeight: 8
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10

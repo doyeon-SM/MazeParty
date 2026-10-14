@@ -52,10 +52,13 @@ namespace MazeParty.Multiplayer
             public Slider[] PlayerHealthSliders;
             public Image[] PlayerHealthFills;
             public Text[] PlayerHealthTexts;
+            public Text[] PlayerHealthDeltaTexts;
             public RawImage[] PlayerKeyIcons;
             public Text[] PlayerKeyTexts;
+            public Text[] PlayerKeyDeltaTexts;
             public RawImage[] PlayerGoldIcons;
             public Text[] PlayerGoldTexts;
+            public Text[] PlayerGoldDeltaTexts;
             public Text[] PlayerActionIcons;
             public Text[] PlayerRankTexts;
         }
@@ -143,10 +146,13 @@ namespace MazeParty.Multiplayer
         public Slider[] PlayerHealthSliders => references.PlayerHealthSliders;
         public Image[] PlayerHealthFills => references.PlayerHealthFills;
         public Text[] PlayerHealthTexts => references.PlayerHealthTexts;
+        public Text[] PlayerHealthDeltaTexts => references.PlayerHealthDeltaTexts;
         public RawImage[] PlayerKeyIcons => references.PlayerKeyIcons;
         public Text[] PlayerKeyTexts => references.PlayerKeyTexts;
+        public Text[] PlayerKeyDeltaTexts => references.PlayerKeyDeltaTexts;
         public RawImage[] PlayerGoldIcons => references.PlayerGoldIcons;
         public Text[] PlayerGoldTexts => references.PlayerGoldTexts;
+        public Text[] PlayerGoldDeltaTexts => references.PlayerGoldDeltaTexts;
         public Text[] PlayerActionIcons => references.PlayerActionIcons;
         public Text[] PlayerRankTexts => references.PlayerRankTexts;
 
@@ -237,16 +243,25 @@ namespace MazeParty.Multiplayer
                 references.PlayerHealthTexts,
                 MultiplayerConstants.MaxPlayers) &&
             HasArray(
+                references.PlayerHealthDeltaTexts,
+                MultiplayerConstants.MaxPlayers) &&
+            HasArray(
                 references.PlayerKeyIcons,
                 MultiplayerConstants.MaxPlayers) &&
             HasArray(
                 references.PlayerKeyTexts,
                 MultiplayerConstants.MaxPlayers) &&
             HasArray(
+                references.PlayerKeyDeltaTexts,
+                MultiplayerConstants.MaxPlayers) &&
+            HasArray(
                 references.PlayerGoldIcons,
                 MultiplayerConstants.MaxPlayers) &&
             HasArray(
                 references.PlayerGoldTexts,
+                MultiplayerConstants.MaxPlayers) &&
+            HasArray(
+                references.PlayerGoldDeltaTexts,
                 MultiplayerConstants.MaxPlayers) &&
             HasArray(
                 references.PlayerActionIcons,

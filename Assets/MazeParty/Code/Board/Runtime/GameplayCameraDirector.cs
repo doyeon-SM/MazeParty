@@ -15,6 +15,7 @@ namespace MazeParty.Gameplay
         private const int LivePriority = 100;
         private const int StandbyPriority = 0;
         private const string RuntimeOverheadCameraName = "CM_PlayerOverhead (Runtime)";
+        private const string RuntimePlayerWideCameraName = "CM_PlayerWide (Runtime)";
         private const string RuntimeCombatSpectatorCameraName =
             "CM_CombatSpectator (Runtime)";
         private const string RuntimeBoardResourceEventCameraName =
@@ -28,6 +29,7 @@ namespace MazeParty.Gameplay
         [SerializeField] private CinemachineCamera boardTopDownCamera;
         [SerializeField] private CinemachineCamera minigameCamera;
         [SerializeField] private CinemachineCamera playerOverheadCamera;
+        [SerializeField] private CinemachineCamera playerWideCamera;
         [SerializeField] private CinemachineCamera combatSpectatorCamera;
         [SerializeField] private CinemachineCamera boardResourceEventCamera;
         [SerializeField] private Transform localPlayerEye;
@@ -42,6 +44,7 @@ namespace MazeParty.Gameplay
         [Header("Transition Timing")]
         [SerializeField] private bool smoothCameraTransitions;
         [SerializeField, Min(0f)] private float boardToOverheadDuration = 0.35f;
+        [SerializeField, Min(0f)] private float boardRecenterDuration = 0.3f;
         [SerializeField, Min(0f)] private float overheadToFirstPersonDuration = 0.65f;
         [SerializeField, Min(0f)] private float directTransitionDuration = 0.4f;
 
@@ -118,6 +121,7 @@ namespace MazeParty.Gameplay
             {
                 PrepareFirstPersonPose();
                 PreparePlayerOverheadPose();
+                PreparePlayerWidePose();
             }
         }
 
@@ -323,6 +327,7 @@ namespace MazeParty.Gameplay
             {
                 PrepareFirstPersonPose();
                 PreparePlayerOverheadPose();
+                PreparePlayerWidePose();
             }
         }
 
@@ -350,6 +355,8 @@ namespace MazeParty.Gameplay
             if (previous == GameplayMode.BoardTopDown
                 && target == GameplayMode.FirstPerson)
             {
+                PreparePlayerWidePose();
+                yield return BlendTo(playerWideCamera, boardRecenterDuration);
                 PreparePlayerOverheadPose();
                 yield return BlendTo(
                     playerOverheadCamera,
@@ -368,10 +375,12 @@ namespace MazeParty.Gameplay
                     playerOverheadCamera,
                     overheadToFirstPersonDuration);
 
+                PreparePlayerWidePose();
+                yield return BlendTo(playerWideCamera, boardToOverheadDuration);
                 PrepareBoardPose();
                 yield return BlendTo(
                     boardTopDownCamera,
-                    boardToOverheadDuration);
+                    boardRecenterDuration);
             }
             else
             {
@@ -422,7 +431,7 @@ namespace MazeParty.Gameplay
             }
 
             return !UsesPlayerBridge(previous, target)
-                || playerOverheadCamera != null;
+                || (playerOverheadCamera != null && playerWideCamera != null);
         }
 
         private static bool UsesPlayerBridge(
@@ -465,6 +474,18 @@ namespace MazeParty.Gameplay
                     overheadObject.AddComponent<CinemachineCamera>();
                 playerOverheadCamera.Priority = StandbyPriority;
                 PreparePlayerOverheadPose();
+            }
+
+            if (playerWideCamera == null)
+            {
+                var wideObject = new GameObject(RuntimePlayerWideCameraName)
+                {
+                    hideFlags = HideFlags.DontSave
+                };
+                wideObject.transform.SetParent(transform, false);
+                playerWideCamera = wideObject.AddComponent<CinemachineCamera>();
+                playerWideCamera.Priority = StandbyPriority;
+                PreparePlayerWidePose();
             }
 
             if (combatSpectatorCamera == null)
@@ -563,6 +584,25 @@ namespace MazeParty.Gameplay
                     0.1f,
                     playerOverheadHeight),
                 rotation);
+        }
+
+        private void PreparePlayerWidePose()
+        {
+            var eye = ResolveLocalPlayerEye();
+            if (playerWideCamera == null || eye == null)
+                return;
+
+            var pose = boardFramingAnchor != null
+                ? boardFramingAnchor.Evaluate(GetOutputAspect())
+                : fallbackBoardFraming.Sanitized().Evaluate(
+                    fallbackBoardCenter, GetOutputAspect());
+            var lens = playerWideCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = pose.FieldOfView;
+            playerWideCamera.Lens = lens;
+            playerWideCamera.ForceCameraPosition(
+                eye.position + Vector3.up * pose.Height,
+                pose.Rotation);
         }
 
         private void PrepareBoardPose()
@@ -691,6 +731,7 @@ namespace MazeParty.Gameplay
             SetPriority(boardTopDownCamera, StandbyPriority);
             SetPriority(minigameCamera, StandbyPriority);
             SetPriority(playerOverheadCamera, StandbyPriority);
+            SetPriority(playerWideCamera, StandbyPriority);
             SetPriority(combatSpectatorCamera, StandbyPriority);
             SetPriority(boardResourceEventCamera, StandbyPriority);
             SetPriority(incoming, LivePriority);
@@ -776,6 +817,7 @@ namespace MazeParty.Gameplay
             boardToOverheadDuration = Mathf.Max(
                 0f,
                 boardToOverheadDuration);
+            boardRecenterDuration = Mathf.Max(0f, boardRecenterDuration);
             overheadToFirstPersonDuration = Mathf.Max(
                 0f,
                 overheadToFirstPersonDuration);

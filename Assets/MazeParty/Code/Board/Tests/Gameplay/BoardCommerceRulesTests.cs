@@ -142,6 +142,15 @@ namespace MazeParty.Gameplay.Tests
                 new PlayerRankingStats(1, 10, 2)
             });
             CollectionAssert.AreEqual(new[] { 1, 1, 1, 1 }, allTied);
+
+            var landingOrder = PlayerRankingRules.OrderSlots(new[]
+            {
+                new PlayerRankingStats(0, 10, 0),
+                new PlayerRankingStats(2, 0, 0),
+                new PlayerRankingStats(0, 10, 0),
+                new PlayerRankingStats(1, 100, 0)
+            });
+            CollectionAssert.AreEqual(new[] { 1, 3, 0, 2 }, landingOrder);
         }
     }
 }

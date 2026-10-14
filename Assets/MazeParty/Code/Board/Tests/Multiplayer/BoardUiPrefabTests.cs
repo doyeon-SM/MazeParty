@@ -144,6 +144,7 @@ namespace MazeParty.Multiplayer.Tests
             AssertItemIconBindings(prefab, bindings);
             AssertPlayerCurrencyBindings(prefab, bindings);
             AssertPlayerHealthSliderBindings(prefab, bindings);
+            AssertLandingDeltaBindings(prefab, bindings.Hud);
             AssertBoardEventPopupBindings(prefab, bindings);
             AssertBoardKillFeedBindings(prefab, bindings);
             AssertMinigameReadyPresentationBindings(prefab, bindings);
@@ -197,6 +198,9 @@ namespace MazeParty.Multiplayer.Tests
                 AssertPlayerHealthSliderBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
+                AssertLandingDeltaBindings(
+                    sceneBindings.gameObject,
+                    sceneBindings.Hud);
                 AssertBoardEventPopupBindings(
                     sceneBindings.gameObject,
                     sceneBindings);
@@ -819,6 +823,43 @@ namespace MazeParty.Multiplayer.Tests
                         graphic.raycastTarget,
                         Is.False,
                         graphic.name);
+                }
+            }
+        }
+
+        private static void AssertLandingDeltaBindings(
+            GameObject root,
+            BoardHudCanvasBindings hud)
+        {
+            Assert.That(hud, Is.Not.Null);
+            var groups = new[]
+            {
+                hud.PlayerHealthDeltaTexts,
+                hud.PlayerKeyDeltaTexts,
+                hud.PlayerGoldDeltaTexts
+            };
+            var names = new[]
+            {
+                "PlayerHealthDelta",
+                "PlayerKeyDelta",
+                "PlayerGoldDelta"
+            };
+            for (var kind = 0; kind < groups.Length; kind++)
+            {
+                Assert.That(groups[kind],
+                    Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var label = groups[kind][slot];
+                    Assert.That(label, Is.Not.Null);
+                    Assert.That(label.name, Is.EqualTo(names[kind] + slot));
+                    Assert.That(label.transform.IsChildOf(root.transform), Is.True);
+                    Assert.That(label.raycastTarget, Is.False);
+                    Assert.That(
+                        PrefabUtility.IsPartOfPrefabAsset(label) ||
+                        PrefabUtility.GetCorrespondingObjectFromSource(label) != null,
+                        Is.True,
+                        label.name);
                 }
             }
         }

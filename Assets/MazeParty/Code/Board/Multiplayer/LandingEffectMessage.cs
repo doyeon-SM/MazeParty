@@ -118,6 +118,22 @@ namespace MazeParty.Multiplayer
                 : BoardLandingEffectType.None;
         }
 
+        public static int GetSlot(string encoded)
+        {
+            if (string.IsNullOrEmpty(encoded) ||
+                encoded.IndexOf(Separator) < 0)
+                return -1;
+
+            var separator = encoded.IndexOf(Separator);
+            return int.TryParse(
+                encoded.Substring(0, separator),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out var slot) && slot >= 0 && slot < 4
+                    ? slot
+                    : -1;
+        }
+
         private static bool TryReadEffectType(
             string[] fields,
             out BoardLandingEffectType effectType)

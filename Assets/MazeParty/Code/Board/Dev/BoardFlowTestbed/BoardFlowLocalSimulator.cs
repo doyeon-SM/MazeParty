@@ -157,6 +157,8 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Vector3 _worldDieSuspendedAngularVelocity;
         private BoardLandingEffectLayout _boardEffectLayout;
         private int _nextLandingEffectSlot;
+        private readonly int[] _landingEffectOrder =
+            new int[BoardFlowStateMachine.RequiredPlayerCount];
         private byte _appliedLandingEffectMask;
         private double _landingEffectSlotStartsAt;
         private int _lastLandingEffectPreviewKey = -1;
@@ -2345,6 +2347,12 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void BeginLocalLandingEffects()
         {
+            var stats = new PlayerRankingStats[_landingEffectOrder.Length];
+            for (var slot = 0; slot < stats.Length; slot++)
+                stats[slot] = new PlayerRankingStats(
+                    _keys[slot], _gold[slot], _minigameWins[slot]);
+            var order = PlayerRankingRules.OrderSlots(stats);
+            Array.Copy(order, _landingEffectOrder, order.Length);
             _nextLandingEffectSlot = 0;
             _appliedLandingEffectMask = 0;
             _landingEffectSlotStartsAt = 0d;
@@ -2362,7 +2370,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             var elapsed = Math.Max(0d, _flow.ToFlowTime(_simulationNow) - _flow.StateStartedAt);
             while (_nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount)
             {
-                var slot = _nextLandingEffectSlot;
+                var slot = _landingEffectOrder[_nextLandingEffectSlot];
                 var stageElapsed = elapsed - _landingEffectSlotStartsAt;
                 if (stageElapsed < 0d)
                 {
@@ -2419,7 +2427,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             while (_nextLandingEffectSlot < BoardFlowStateMachine.RequiredPlayerCount)
             {
-                var slot = _nextLandingEffectSlot++;
+                var slot = _landingEffectOrder[_nextLandingEffectSlot++];
                 var effect = GetLocalLandingEffect(slot, out var tile);
                 ApplyLocalLandingEffect(slot, tile, effect);
             }

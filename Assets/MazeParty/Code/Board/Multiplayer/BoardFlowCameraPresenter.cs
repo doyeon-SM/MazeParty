@@ -127,10 +127,17 @@ namespace MazeParty.Multiplayer
             RefreshCombatSpectatorFocus(match);
             var resourceTransferPhase =
                 RefreshResourceTransferPresentation(match);
+            var landingFocus = resourceTransferPhase !=
+                               BoardResourceTransferPhase.Source &&
+                               resourceTransferPhase !=
+                               BoardResourceTransferPhase.Destination &&
+                               RefreshLandingCameraFocus(match);
             var targetMode = match.IsKeyShopRevealActive
                 ? GameplayMode.BoardTopDown
                 : (resourceTransferPhase == BoardResourceTransferPhase.Source ||
                    resourceTransferPhase == BoardResourceTransferPhase.Destination)
+                    ? GameplayMode.BoardResourceEvent
+                    : landingFocus
                     ? GameplayMode.BoardResourceEvent
                     : ModeFor(match, _localAvatar);
             if (!_hasObservedState || _wasReconnectPaused)
@@ -139,7 +146,6 @@ namespace MazeParty.Multiplayer
                 _observedRevision = match.StateRevision;
                 _hasObservedState = true;
                 _wasReconnectPaused = false;
-                ApplyLocalBodyVisibility(targetMode);
             }
             else if (_observedRevision != match.StateRevision ||
                      cameraDirector.ActiveMode != targetMode)
@@ -149,8 +155,13 @@ namespace MazeParty.Multiplayer
                 {
                     cameraDirector.SwitchTo(targetMode);
                 }
-                ApplyLocalBodyVisibility(targetMode);
             }
+
+            ApplyLocalBodyVisibility(
+                cameraDirector.IsTransitioning &&
+                targetMode == GameplayMode.FirstPerson
+                    ? GameplayMode.BoardTopDown
+                    : targetMode);
 
             // Camera movement and obstacle visibility change continuously even
             // while the replicated flow revision remains unchanged.
@@ -202,11 +213,18 @@ namespace MazeParty.Multiplayer
             {
                 if (landingEventLightningPrefab != null)
                 {
-                    OneShotVfxPool.Play(
-                        landingEventLightningPrefab,
-                        avatar.transform.position,
-                        Quaternion.identity,
-                        1f);
+                    for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                    {
+                        if ((snapshot.AffectedMask & (1 << slot)) == 0)
+                            continue;
+                        var affected = match.GetAvatarForSlot(slot);
+                        if (affected != null)
+                            OneShotVfxPool.Play(
+                                landingEventLightningPrefab,
+                                affected.transform.position,
+                                Quaternion.identity,
+                                1f);
+                    }
                     _landingEffectFeedbackRevision = snapshot.Revision;
                 }
                 return;
@@ -242,6 +260,33 @@ namespace MazeParty.Multiplayer
                 label,
                 remaining);
             _landingEffectFeedbackRevision = snapshot.Revision;
+        }
+
+        private bool RefreshLandingCameraFocus(NetworkMatchState match)
+        {
+            if (match.FlowState != BoardFlowState.LandingEffectResolve ||
+                match.IsGlobalSimulationPaused)
+                return false;
+
+            var focusSlot = match.LastLandingEffectSlot;
+            if (focusSlot < 0)
+                return false;
+
+            var feedback = match.LandingEffectFeedback;
+            var eventFocus = BoardLandingEffectFeedbackRules.GetEventFocusSlot(
+                feedback, match.SynchronizedNow);
+            if (eventFocus >= 0)
+                focusSlot = eventFocus;
+
+            var avatar = match.GetAvatarForSlot(focusSlot);
+            if (avatar == null)
+                return false;
+
+            cameraDirector.SetBoardResourceEventFocus(
+                avatar.transform,
+                ResolveHeadAnchor(avatar),
+                0f);
+            return true;
         }
 
         private BoardResourceTransferPhase RefreshResourceTransferPresentation(

@@ -288,6 +288,20 @@ namespace MazeParty.Gameplay
 
     public static class PlayerRankingRules
     {
+        public static int[] OrderSlots(IReadOnlyList<PlayerRankingStats> players)
+        {
+            var ranks = Calculate(players);
+            var order = new int[ranks.Length];
+            for (var slot = 0; slot < order.Length; slot++)
+                order[slot] = slot;
+            Array.Sort(order, (left, right) =>
+            {
+                var comparison = ranks[left].CompareTo(ranks[right]);
+                return comparison != 0 ? comparison : left.CompareTo(right);
+            });
+            return order;
+        }
+
         /// <summary>
         /// Returns competition ranks in input order: equal scores produce 1,1,3,4.
         /// </summary>

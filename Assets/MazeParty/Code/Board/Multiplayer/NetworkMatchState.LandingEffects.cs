@@ -17,6 +17,8 @@ namespace MazeParty.Multiplayer
             new BoardSpecialEventRules.Resolution[MultiplayerConstants.MaxPlayers];
         private readonly double[] _landingEffectDurations =
             new double[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _landingEffectOrder =
+            new int[MultiplayerConstants.MaxPlayers];
         private bool _landingEffectPlanReady;
         private byte _landingEffectAppliedMask;
         private double _landingEffectSlotStartsAt;
@@ -26,9 +28,15 @@ namespace MazeParty.Multiplayer
         {
             var hasLayout = IsServer && EnsureBoardLandingEffectLayout();
             var totalDuration = 0d;
+            var rankingStats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 var avatar = GetAvatarForSlot(slot);
+                _landingEffectOrder[slot] = slot;
+                rankingStats[slot] = avatar != null
+                    ? new PlayerRankingStats(
+                        avatar.KeyCount, avatar.Gold, avatar.MinigameWins)
+                    : default;
                 var tile = avatar != null ? avatar.CurrentBoardTileOnServer : null;
                 var effect = BoardLandingEffectType.None;
                 if (hasLayout && tile != null)
@@ -55,6 +63,9 @@ namespace MazeParty.Multiplayer
                     : BoardLandingEffectLayout.GetDurationSeconds(effect);
                 totalDuration += _landingEffectDurations[slot];
             }
+
+            var order = PlayerRankingRules.OrderSlots(rankingStats);
+            Array.Copy(order, _landingEffectOrder, order.Length);
 
             _landingEffectPlanReady = true;
             return totalDuration;
@@ -99,7 +110,7 @@ namespace MazeParty.Multiplayer
                 _flow.ToFlowTime(now) - _flow.StateStartedAt);
             while (_nextLandingEffectSlot < MultiplayerConstants.MaxPlayers)
             {
-                var slot = _nextLandingEffectSlot;
+                var slot = _landingEffectOrder[_nextLandingEffectSlot];
                 var stageElapsed = elapsed - _landingEffectSlotStartsAt;
                 if (stageElapsed < 0d)
                 {
@@ -180,9 +191,10 @@ namespace MazeParty.Multiplayer
 
             while (_nextLandingEffectSlot < MultiplayerConstants.MaxPlayers)
             {
-                ApplyLandingEffectForSlotOnServer(_nextLandingEffectSlot);
+                var slot = _landingEffectOrder[_nextLandingEffectSlot];
+                ApplyLandingEffectForSlotOnServer(slot);
                 if ((_landingEffectAppliedMask &
-                     (1 << _nextLandingEffectSlot)) == 0)
+                     (1 << slot)) == 0)
                 {
                     return;
                 }
@@ -444,7 +456,8 @@ namespace MazeParty.Multiplayer
                 GetSpecialEventResourceLabel(resolution));
             PublishLandingEffectFeedbackOnServer(
                 actorSlot,
-                BoardLandingEffectFeedbackKind.Event);
+                BoardLandingEffectFeedbackKind.Event,
+                affectedMask: (byte)targetMask);
         }
 
         private bool AreSpecialEventParticipantsAvailableOnServer(
@@ -534,7 +547,9 @@ namespace MazeParty.Multiplayer
                 transferred.ToString(CultureInfo.InvariantCulture));
             PublishLandingEffectFeedbackOnServer(
                 actorSlot,
-                BoardLandingEffectFeedbackKind.Event);
+                BoardLandingEffectFeedbackKind.Event,
+                affectedMask: (byte)((1 << sourceSlot) |
+                                     (1 << destinationSlot)));
         }
 
         private static int GetSpecialEventResourceBalance(
@@ -702,7 +717,8 @@ namespace MazeParty.Multiplayer
             int slot,
             BoardLandingEffectFeedbackKind kind,
             int signedAmount = 0,
-            PrototypeItemId itemId = PrototypeItemId.None)
+            PrototypeItemId itemId = PrototypeItemId.None,
+            byte affectedMask = 0)
         {
             var current = _landingEffectFeedback.Value;
             _landingEffectFeedback.Value =
@@ -713,6 +729,7 @@ namespace MazeParty.Multiplayer
                     Slot = slot,
                     Kind = (byte)kind,
                     SignedAmount = signedAmount,
+                    AffectedMask = affectedMask,
                     ItemId = (byte)itemId,
                     StartedAt = ServerNow
                 };
