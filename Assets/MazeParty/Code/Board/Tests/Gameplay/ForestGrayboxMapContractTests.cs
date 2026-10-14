@@ -177,7 +177,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void ForestGraybox_GeneratedGroundExistsAndHasNoColliders()
+        public void ForestGraybox_GeneratedGroundKeepsAuthoredTerrainCollision()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
             Assert.That(prefab, Is.Not.Null, PrefabPath);
@@ -194,10 +194,12 @@ namespace MazeParty.Gameplay.Tests
                 Is.False,
                 "Runtime-loaded Unity 6 URP board Terrain must use the " +
                 "stable Player rendering path.");
-            Assert.That(
-                generatedGround.GetComponentsInChildren<Collider>(true),
-                Is.Empty,
-                "Generated ground is visual-only and must not alter board physics.");
+            var terrainCollider = generatedGround.GetComponentInChildren<
+                TerrainCollider>(true);
+            Assert.That(terrainCollider, Is.Not.Null,
+                "The authored forest terrain provides intentional obstacle collision.");
+            Assert.That(terrainCollider.terrainData,
+                Is.SameAs(terrain.terrainData));
         }
 
         private static void AssertDirectedPath(

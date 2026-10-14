@@ -116,7 +116,7 @@ namespace MazeParty.Editor
                 }
             }
 
-            NormalizeRootScale();
+            NormalizePrefabState();
             resultPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PrefabPath);
             ValidatePrefab(resultPrefab);
@@ -187,6 +187,22 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     scene.path + " has an invalid result Canvas instance.");
+            }
+
+            if (result.transform.localScale != Vector3.one)
+            {
+                result.transform.localScale = Vector3.one;
+                PrefabUtility.RecordPrefabInstancePropertyModifications(
+                    result.transform);
+                EditorUtility.SetDirty(result.transform);
+            }
+
+            if (result.ResultPanel.activeSelf)
+            {
+                result.ResultPanel.SetActive(false);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(
+                    result.ResultPanel);
+                EditorUtility.SetDirty(result.ResultPanel);
             }
 
             foreach (var root in scene.GetRootGameObjects())
@@ -294,11 +310,19 @@ namespace MazeParty.Editor
             return root;
         }
 
-        private static void NormalizeRootScale()
+        private static void NormalizePrefabState()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 PrefabPath);
-            if (prefab == null || prefab.transform.localScale == Vector3.one)
+            var bindings = prefab != null
+                ? prefab.GetComponent<MinigameResultCanvasBindings>()
+                : null;
+            var needsScaleRepair = prefab != null &&
+                                   prefab.transform.localScale != Vector3.one;
+            var needsVisibilityRepair = bindings != null &&
+                                        bindings.ResultPanel != null &&
+                                        bindings.ResultPanel.activeSelf;
+            if (!needsScaleRepair && !needsVisibilityRepair)
             {
                 return;
             }
@@ -307,6 +331,13 @@ namespace MazeParty.Editor
             try
             {
                 contents.transform.localScale = Vector3.one;
+                var contentBindings = contents.GetComponent<
+                    MinigameResultCanvasBindings>();
+                if (contentBindings != null &&
+                    contentBindings.ResultPanel != null)
+                {
+                    contentBindings.ResultPanel.SetActive(false);
+                }
                 PrefabUtility.SaveAsPrefabAsset(contents, PrefabPath);
             }
             finally
@@ -322,7 +353,9 @@ namespace MazeParty.Editor
                 : null;
             if (bindings == null || !bindings.HasRequiredReferences ||
                 prefab.GetComponent<Canvas>() != bindings.RootCanvas ||
-                prefab.GetComponentsInChildren<Canvas>(true).Length != 1)
+                prefab.GetComponentsInChildren<Canvas>(true).Length != 1 ||
+                prefab.transform.localScale != Vector3.one ||
+                bindings.ResultPanel.activeSelf)
             {
                 throw new InvalidOperationException(
                     "MinigameResultCanvas.prefab has incomplete bindings.");

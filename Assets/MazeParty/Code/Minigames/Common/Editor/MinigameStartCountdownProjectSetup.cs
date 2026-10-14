@@ -476,7 +476,7 @@ namespace MazeParty.Editor
             numeralRect.offsetMax = new Vector2(-12f, -12f);
             var numeral = numeralObject.GetComponent<Text>();
             numeral.font = font;
-            numeral.fontSize = 158;
+            numeral.fontSize = 120;
             numeral.fontStyle = FontStyle.Normal;
             numeral.alignment = TextAnchor.MiddleCenter;
             numeral.color = Color.white;

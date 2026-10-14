@@ -39,6 +39,8 @@ namespace MazeParty.Multiplayer.Tests
                 Has.Length.EqualTo(1));
             Assert.That(resultPrefab.GetComponent<CanvasScaler>(),
                 Is.Not.Null);
+            Assert.That(resultPrefab.transform.localScale,
+                Is.EqualTo(Vector3.one));
             Assert.That(result.ResultPanel.activeSelf, Is.False);
             Assert.That(result.ResultPanel.name, Is.EqualTo("MinigameResultPanel"));
             Assert.That(result.ResultSummary.supportRichText, Is.True,
@@ -81,6 +83,9 @@ namespace MazeParty.Multiplayer.Tests
                 var result = results[0];
                 Assert.That(result.HasRequiredReferences, Is.True);
                 Assert.That(result.transform.parent, Is.Null);
+                Assert.That(result.transform.localScale,
+                    Is.EqualTo(Vector3.one));
+                Assert.That(result.ResultPanel.activeSelf, Is.False);
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         result.gameObject),

@@ -120,12 +120,25 @@
 - Forest는 콘텐츠 버전 4, 42칸·49개 일방통행 연결을 사용한다. 시작은 03, 리스폰은
   02, 13, 슬롯별 시작은 03, 09, 14, 19다. authored Terrain·식생·환경 배치는
   사용자 요청 없이 재생성·정규화하지 않는다.
-- Forest Terrain은 80×10×73m, 원점 Y -0.12다. 잔디·흙길·48그루 식생을 유지하고
-  visual Terrain과 식생에는 Collider를 두지 않는다. 높이맵 갱신은 기존 조형을 평탄화하지
-  않으며 런타임 포함용 비활성 참조 placeholder를 유지한다.
+- Forest Terrain은 80×10×73m, 원점 Y -0.12다. 잔디·흙길·48그루 식생을 유지한다.
+  사용자가 직접 배치한 TerrainCollider와 tree collision은 authored 장애물 판정이므로 제거하거나
+  재생성하지 않는다. 높이맵 갱신은 기존 조형을 평탄화하지 않으며 런타임 포함용 비활성 참조
+  placeholder를 유지한다.
 - Maze는 콘텐츠 버전 1, 8×8 격자 64칸·80개 연결이다. 시작은 (0,0), 리스폰은
   (2,2) (2,5) (5,2) (5,5), 슬롯별 시작은 네 모서리다. Maze Ground는 160×153m이고
   MazeGroundTerrain.asset만 사용한다.
+- MazeGrayboxMapRoot의 Wall 계층은 80개 연결 통로마다 중심 간격 4m의 Pilar 한 쌍을 두고,
+  연결이 없는 내부 경계와 외곽은 Wall_3M·2M·1M 원본 프리팹으로 막는다. Wall·Pilar는
+  Collider가 없는 디자인 전용 계층이며, 사용자가 직접 조정한 Wall의 X scale과 현재 배치를
+  authored 기준으로 유지한다. 정수 길이 조각과 scale 보정 뒤 남는 시각적 틈은 수동 디자인
+  보정 대상으로 둔다. Wall 계층의 Wall_Window 10개는 예외로 원본의 좌·우·상단·하단 턱
+  BoxCollider 4개를 유지한다.
+- MazeGrayboxMapRoot 직속 `Wall Colliders`에는 연속 벽 구간을 덮는 별도 BoxCollider 108개
+  (가로 53, 세로 55)를 둔다. 모두 Default layer의 non-trigger이며 Rigidbody·Renderer 없이
+  두께 0.8m, 높이 4.2m(중심 Y 2.1)다. 창문이 있는 10개 구간은 창문 전체 3m 폭을 비우고
+  좌우 두 조각으로 나누며, 창문 원본 프레임이 그 구간의 충돌을 담당한다. 중앙 약 1.7×1.5m
+  개구부(Y 1.25~2.75)는 총알·시야·폭탄을 통과시키고 하단 턱은 플레이어를 막는다. Pilar 중심
+  간격 4m인 일반 통로는 물리적으로 3.2m가 열리고 나머지 내부 경계와 외곽은 닫힌다.
 - Forest·Maze Terrain과 placeholder는 Windows Player 렌더 호환을 위해
   drawInstanced=false를 사용한다. authored 맵 활성 시 레거시 Board Backdrop은 숨긴다.
 - Map Authoring과 지도 UI는 방 100개를 지원하고 자유배치 맵에는 레거시 7×7 개요를
@@ -291,7 +304,8 @@
   강제 회복하는 동안 쓰러진 자세를 사용한다. 두 회복 상태를 시각적으로 구분하고 회복 중
   풍선 입력을 허용하지 않는다. 풍선이 터질 때 도착 ArrivalFireworks VFX를 재사용하고
   `balloon` 큐를 재생한다.
-- Red Light Green Light는 상단의 빨강·초록 3등만 사용한다. 단계는 초록3 → 빨강1 →
+- Red Light Green Light는 HUD의 빨강·초록 3등만 사용하며 Observer·Signal Tower·Green/Red
+  Signal 월드 오브젝트는 두지 않는다. 단계는 초록3 → 빨강1 →
   빨강2 → 빨강3이며 완전한 빨강에서만 이동 금지·위반 판정을 한다. 전환 전 단계는 서버
   시드 0.1~2.0초, 네트워크 보정 유예는 0.15초다. 빨간불 위반으로 체력이 감소할 때마다
   플레이어 위치에 LightningStrike를 재생하고 `lightning` 큐를 낸다. 한 복제 갱신에 여러
@@ -387,24 +401,39 @@
   표현 프리팹에 남아 있던 물리 Collider 소유권 실패는 제거했다. 남은 4건은 Forest visual
   TerrainCollider, Arena Combat HitFlash 비차단 바인딩, Red Light Green Light Signal Tower
   Placeholder, 전용 authored MinigameResultCanvas 출처이며 최종 Unity 콘솔 오류는 0건이다.
+- 2026-10-14 MazeGrayboxMapRoot의 미로 벽을 topology 기준으로 완성했다. Pilar 160개,
+  Wall_3M 347개, Wall_2M 38개, Wall_1M 28개를 원본 프리팹 인스턴스로 배치했고 직렬화된
+  573/573개 위치·회전·부모·원본·Collider 제거를 대조했다. 최초 배치 당시 unit scale과 4m 통로 폭 표적
+  EditMode 1/1이 통과했고 최종 Unity 콘솔 오류·경고는 0건이다.
+- 2026-10-14 사용자가 직접 조정한 Wall scale을 보존한 채 `Wall Colliders` 직속 자식으로
+  연속 벽 구간을 합친 BoxCollider 98개를 추가했다. Wall/Pilar 디자인 계층은 Collider 없이
+  유지했고, 80개 통로 개방·32개 내부 폐쇄 경계·네 외곽·Default layer·non-trigger·무 Rigidbody
+  계약과 맵 로딩·씬·아이템 규칙을 검사하는 관련 EditMode 19/19가 통과했다. 아이템 테스트 중
+  기존 AllIn1VfxToolkit 구버전 Mesh importer 경고 2건을 확인했으며, 재컴파일·최종 계약 재실행 뒤
+  Unity 콘솔 오류·경고는 0건이다.
+- 2026-10-14 사용자가 배치한 Wall_Window 10개에 맞춰 해당 큰 벽 Collider 10개를 창문 전체
+  폭의 좌우 두 조각으로 분할해 `Wall Colliders`를 108개로 갱신했다. 창문 원본의 프레임 Collider
+  4개는 유지해 하단 턱으로 보행을 막고 중앙 개구부로 시야·폭발 LOS·반경 0.12m 수류탄을
+  통과시켰다. 창문 10개와 맵 로딩·씬·아이템 물리를 함께 검사하는 관련 EditMode 19/19가 통과했다.
 - 2026-10-14 보드 총 발사 SoundCue 계약, 아이템·격투 피해의 로컬 빨간 화면 플래시,
   플레이어 손·감정표현 좌우 교체, 미니맵·전체 지도 플레이어 표식 통일을 반영했다. 관련
   프리팹·씬·표현·Sound 계약 표적 EditMode 40/40이 통과했다. 전체 EditMode는 564개 중
   560개가 통과했으며 남은 4건은 위 2026-10-13 기록과 같은 기존 실패이고, 최종 Unity
   콘솔 오류는 0건이다.
+- 2026-10-14 사용자 확인에 따라 Forest TerrainCollider는 직접 배치한 장애물 판정으로,
+  Red Light Green Light의 월드 신호 오브젝트 부재는 HUD-only 최종 설계로 확정했다. 공통
+  카운트다운은 220×220 영역·폰트 120 상태로 실기 확인을 마쳤고, Arena Combat Aim Image는
+  비차단으로 직접 수정됐다. 결과 UI는 authored 프리팹과 Board·Testbed 인스턴스의 루트
+  스케일을 1로 복구하고 패널의 초기 상태를 비활성으로 정규화했다. 관련 프리팹·씬·공통
+  계약 표적 EditMode 16/16과 전체 EditMode 564/564가 통과했고 Unity 콘솔 오류는 0건이다.
 
 ## 남은 TODO
 
 - Windows Development 빌드는 현재 상점 Physical Footprint 메시를 자동 조리하지만 향후 Unity
   버전에서는 pre-baked collision을 요구한다는 경고를 낸다. Unity 업그레이드 전 전역
   `bakeCollisionMeshes` 사용 또는 전용 충돌 메시 asset 생성 방식을 확정한다.
-- 공통 카운트다운 숫자는 값이 갱신되지만 196×196 Rect보다 현지화 폰트 preferred height가
-  커 Vertical Overflow = Truncate에서 보이지 않는 것으로 진단됐다. 사용자 요청에 따라
-  아직 폰트 크기와 프리팹 시각값은 변경하지 않았다.
 - 보드 설정은 현재 맵만 지원한다. 추후 턴 수·열쇠 가격·미니게임 골드 지급량을 추가하고
   SessionSnapshot, MPS 속성, 저장 복원과 서버 검증을 함께 확장한다.
-- Forest Generated Ground에서 visual-only TerrainCollider를 제거하고, 최종 결과 UI를
-  전용 authored MinigameResultCanvas 하나로 통일한다.
 - 15종 캡처 피드백에 따라 게임별 에셋·배치·카메라를 조정한다. 우선 후보는 Bouncing Balls
   실기 화면 재확인, Race 하단 여백, Arena·보드 격투 실제 관전 화면이다.
 - 조기 종료·시간 종료·공동 순위 조합, 수동 조작감, VFX 투명 정렬·Bloom·Soft Particle·
