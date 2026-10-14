@@ -894,7 +894,8 @@ namespace MazeParty.Multiplayer
             {
                 if (attacker != null)
                 {
-                    match?.PublishBoardKillOnServer(attacker, this);
+                    match?.PublishBoardKillOnServer(
+                        attacker, this, request.ItemId);
                 }
                 BeginBoardDeathOnServer();
             }

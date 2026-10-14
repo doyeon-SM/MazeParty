@@ -30,18 +30,21 @@ namespace MazeParty.Gameplay
             int amount,
             DamageKind kind,
             GameObject source,
-            PlayerHitRegion hitRegion = PlayerHitRegion.Body)
+            PlayerHitRegion hitRegion = PlayerHitRegion.Body,
+            PrototypeItemId itemId = PrototypeItemId.None)
         {
             Amount = Mathf.Max(0, amount);
             Kind = kind;
             Source = source;
             HitRegion = hitRegion;
+            ItemId = itemId;
         }
 
         public int Amount { get; }
         public DamageKind Kind { get; }
         public GameObject Source { get; }
         public PlayerHitRegion HitRegion { get; }
+        public PrototypeItemId ItemId { get; }
     }
 
     public readonly struct GameplayHitReport

@@ -74,7 +74,9 @@ namespace MazeParty.Multiplayer
                 {
                     endpoint = hit.point;
                     var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
-                    if (target != null) target.ApplyDamage(new DamageRequest(item.Damage, DamageKind.Item, avatar.gameObject));
+                    if (target != null) target.ApplyDamage(new DamageRequest(
+                        item.Damage, DamageKind.Item, avatar.gameObject,
+                        itemId: id));
                 }
                 PresentBoardShotRpc(origin, endpoint, (byte)id, didHit);
             }
@@ -337,7 +339,10 @@ namespace MazeParty.Multiplayer
                 if (target == null || target.CurrentHealth <= 0 ||
                     Vector3.Distance(position, target.transform.position) > item.BlastRadius ||
                     !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position)) continue;
-                target.ApplyDamage(new DamageRequest(item.Damage, DamageKind.Item, owner != null ? owner.gameObject : null));
+                target.ApplyDamage(new DamageRequest(
+                    item.Damage, DamageKind.Item,
+                    owner != null ? owner.gameObject : null,
+                    itemId: item.Id));
             }
             PresentBoardExplosionRpc(position, (byte)item.Id);
         }

@@ -404,6 +404,7 @@ Preparing WrongWay...,역방향 계단 준비 중...,逆方向階段を準備中
 "Press the shown WASD direction to climb. A wrong key knocks you down for 0.5 seconds. First to step 50 ends the round. Two rounds, 60 seconds each.\nREADY {0} / 4","표시된 WASD 방향키를 눌러 올라가세요. 잘못된 키를 누르면 0.5초 동안 넘어집니다. 가장 먼저 50번째 계단에 도달하면 라운드가 끝납니다. 2라운드, 각 60초.\n준비 {0} / 4",表示されたWASDの方向キーを押して登りましょう。間違ったキーを押すと0.5秒間転倒します。誰かが最初に50段目に到達するとラウンド終了です。全2ラウンド、各60秒。\n準備完了 {0} / 4,按下显示的WASD方向键向上攀爬。按错键会被击倒0.5秒。最先到达第50级台阶时本轮结束。共2轮，每轮60秒。\n准备 {0} / 4
 Press the shown WASD direction. Wrong input locks you for 0.5 seconds.,표시된 WASD 방향키를 누르세요. 잘못 입력하면 0.5초 동안 움직일 수 없습니다.,表示されたWASDの方向キーを押してください。入力を間違えると0.5秒間操作できません。,按下显示的WASD方向键。输入错误会被锁定0.5秒。
 PROBLEM {0} / {1},문제 {0} / {1},問題 {0} / {1},第 {0} / {1} 题
+Punch,주먹,拳,拳头
 Purchase requested. Server stock decides the winner.,구매를 요청했습니다. 서버 재고에 따라 구매자가 결정됩니다.,購入をリクエストしました。サーバーの在庫状況で購入者が決まります。,已请求购买。由服务器库存决定谁能购得。
 Purple,보라,紫,紫
 P{0}  READY,P{0}  준비,P{0}  準備完了,P{0}  准备
@@ -682,6 +683,7 @@ You were removed from the session.,방에서 내보내졌습니다.,ルームか
 {0} COMPLETE: final standings and {1} gold rewards are shown.,{0} 종료: 최종 순위와 {1} 골드 보상이 표시됩니다.,{0} 終了：最終順位と {1} ゴールドの報酬が表示されます。,{0} 结束：显示最终排名和 {1} 金币奖励。
 {0} DAMAGE,피해 {0},{0} ダメージ,{0} 伤害
 {0} eliminated {1},{0}이(가) {1}을(를) 처치,{0}が{1}を撃破,{0} 击败了 {1}
+{0} eliminated {1} with {2}{3}.,{0}이(가) {1}을(를) {2}{3} 처치.,{0}が{1}を{2}で撃破。,{0}用{2}击败了{1}。
 {0} GIFTS,선물 {0}개,プレゼント {0}個,{0} 个礼物
 {0} GOLD,{0} 골드,{0} ゴールド,{0} 金币
 {0} is the tagger. Get ready for the chase.,술래는 {0}입니다. 추격에 대비하세요.,{0}が鬼です。追いかけっこに備えてください。,{0} 是抓人者。准备开始追逐。

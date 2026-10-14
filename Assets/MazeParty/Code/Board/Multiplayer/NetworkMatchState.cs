@@ -2042,7 +2042,8 @@ namespace MazeParty.Multiplayer
 
         internal void PublishBoardKillOnServer(
             NetworkPlayerAvatar killer,
-            NetworkPlayerAvatar victim)
+            NetworkPlayerAvatar victim,
+            PrototypeItemId itemId = PrototypeItemId.None)
         {
             if (!IsServer || !GameplayEnabled || killer == null || victim == null ||
                 killer == victim || !killer.IsSpawned || !victim.IsSpawned)
@@ -2059,15 +2060,26 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            PresentBoardKillRpc(killerSlot, victimSlot);
+            PresentBoardKillRpc(
+                killerSlot, victimSlot, (byte)itemId,
+                victim.KeyCount, victim.Gold, victim.MinigameWins);
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentBoardKillRpc(int killerSlot, int victimSlot)
+        private void PresentBoardKillRpc(
+            int killerSlot,
+            int victimSlot,
+            byte itemId,
+            int victimKeys,
+            int victimGold,
+            int victimMinigameWins)
         {
             BoardFlowView.Instance?.EnqueueBoardKillNotification(
                 killerSlot,
-                victimSlot);
+                victimSlot,
+                (PrototypeItemId)itemId,
+                new PlayerRankingStats(
+                    victimKeys, victimGold, victimMinigameWins));
         }
 
         public bool TryBoardPunchOnServer(

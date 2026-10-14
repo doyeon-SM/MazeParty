@@ -716,6 +716,16 @@ namespace MazeParty.Multiplayer.Tests
                 "The server-owned kill feed must start hidden.");
             Assert.That(message.supportRichText, Is.True);
             Assert.That(message.raycastTarget, Is.False);
+            var view = panel.GetComponent<BoardKillFeedView>();
+            Assert.That(view, Is.Not.Null);
+            Assert.That(view.HasRequiredReferences, Is.True);
+            Assert.That(view.BeforeItem, Is.SameAs(message));
+            Assert.That(view.ItemIcon.transform.IsChildOf(panel.transform), Is.True);
+            Assert.That(view.ItemName.transform.IsChildOf(panel.transform), Is.True);
+            Assert.That(view.AfterItem.transform.IsChildOf(panel.transform), Is.True);
+            Assert.That(view.ItemIcon.raycastTarget, Is.False);
+            Assert.That(view.ItemName.raycastTarget, Is.False);
+            Assert.That(view.AfterItem.raycastTarget, Is.False);
 
             var background = panel.GetComponent<Image>();
             Assert.That(background, Is.Not.Null);
@@ -874,20 +884,88 @@ namespace MazeParty.Multiplayer.Tests
             try
             {
                 GameText.SetLanguage(GameLanguage.Korean);
-                Assert.That(
-                    BoardFlowView.FormatBoardKillFeedMessage(
-                        "A<color=red>",
-                        Color.red,
-                        "B&>",
-                        Color.blue),
-                    Is.EqualTo(
-                        "<color=#FF0000>A＜color=red＞</color>이(가) " +
-                        "<color=#0000FF>B＆＞</color>을(를) 처치"));
+                var korean = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A<color=red>", Color.red,
+                    "B&>", Color.blue,
+                    PrototypeItemId.Pistol);
+                Assert.That(korean.BeforeItem, Is.EqualTo(
+                    "<color=#FF0000>A＜color=red＞</color>이(가) " +
+                    "<color=#0000FF>B＆＞</color>을(를) "));
+                Assert.That(korean.ItemName, Is.EqualTo(GameText.T("Pistol")));
+                Assert.That(korean.AfterItem, Is.EqualTo("으로 처치."));
+                var punch = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A", Color.red, "B", Color.blue,
+                    PrototypeItemId.None);
+                Assert.That(punch.ItemName, Is.EqualTo("주먹"));
+                Assert.That(punch.AfterItem, Is.EqualTo("으로 처치."));
+                var mine = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A", Color.red, "B", Color.blue,
+                    PrototypeItemId.Mine);
+                Assert.That(mine.AfterItem, Is.EqualTo("로 처치."));
+
+                GameText.SetLanguage(GameLanguage.English);
+                var english = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A", Color.red, "B", Color.blue,
+                    PrototypeItemId.Grenade);
+                Assert.That(english.BeforeItem,
+                    Does.EndWith(" eliminated <color=#0000FF>B</color> with "));
+                Assert.That(english.ItemName, Is.EqualTo("Grenade"));
+                Assert.That(english.AfterItem, Is.EqualTo("."));
+
+                GameText.SetLanguage(GameLanguage.Japanese);
+                var japanese = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A", Color.red, "B", Color.blue,
+                    PrototypeItemId.Mine);
+                Assert.That(japanese.BeforeItem, Does.EndWith("を"));
+                Assert.That(japanese.ItemName, Is.EqualTo(GameText.T("Mine")));
+                Assert.That(japanese.AfterItem, Is.EqualTo("で撃破。"));
+
+                GameText.SetLanguage(GameLanguage.ChineseSimplified);
+                var chinese = BoardFlowView.FormatBoardKillFeedMessage(
+                    "A", Color.red, "B", Color.blue,
+                    PrototypeItemId.Sniper);
+                Assert.That(chinese.BeforeItem, Does.EndWith("用"));
+                Assert.That(chinese.ItemName, Is.EqualTo(GameText.T("Sniper")));
+                Assert.That(chinese.AfterItem,
+                    Does.StartWith("击败了<color=#0000FF>B</color>"));
             }
             finally
             {
                 GameText.ResetForTests();
             }
+        }
+
+        [Test]
+        public void BoardKillFeed_OrdersSimultaneousVictimsByRankAndDisplaysTwoSeconds()
+        {
+            Assert.That(BoardFlowView.BoardKillFeedEntrySeconds, Is.EqualTo(2f));
+            var entries = new List<BoardFlowView.BoardKillFeedEntry>
+            {
+                new BoardFlowView.BoardKillFeedEntry(
+                    "killer", Color.white, "low", Color.white,
+                    PrototypeItemId.Mine, 2,
+                    new PlayerRankingStats(0, 100, 0), 10f),
+                new BoardFlowView.BoardKillFeedEntry(
+                    "killer", Color.white, "high", Color.white,
+                    PrototypeItemId.Mine, 1,
+                    new PlayerRankingStats(1, 0, 0), 10.02f),
+                new BoardFlowView.BoardKillFeedEntry(
+                    "killer", Color.white, "later", Color.white,
+                    PrototypeItemId.Mine, 0,
+                    new PlayerRankingStats(9, 999, 9), 10.2f)
+            };
+
+            Assert.That(BoardFlowView.SelectBoardKillIndex(entries, 10.1f),
+                Is.EqualTo(1));
+            entries.RemoveAt(1);
+            Assert.That(BoardFlowView.SelectBoardKillIndex(entries, 10.1f),
+                Is.EqualTo(0));
+            entries.Insert(1, new BoardFlowView.BoardKillFeedEntry(
+                "killer", Color.white, "tie", Color.white,
+                PrototypeItemId.Mine, 1,
+                new PlayerRankingStats(0, 100, 0), 10.04f));
+            Assert.That(BoardFlowView.SelectBoardKillIndex(entries, 10.1f),
+                Is.EqualTo(1));
         }
 
         [TestCase(

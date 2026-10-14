@@ -28,7 +28,9 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public sealed class BoardFlowView : MonoBehaviour
     {
-        private const float BoardKillFeedEntrySeconds = 3.5f;
+        internal const float BoardKillFeedEntrySeconds = 2f;
+        internal const float BoardKillFeedBatchSeconds = 0.1f;
+        private const char BoardKillItemMarker = '\uE000';
         private const string MoveKeys =
             "<sprite name=\"w\"><sprite name=\"a\">" +
             "<sprite name=\"s\"><sprite name=\"d\">";
@@ -104,8 +106,8 @@ namespace MazeParty.Multiplayer
         private readonly Button[] _shopOfferButtons = new Button[ItemShopRules.OfferCount];
         private readonly Image[] _shopOfferIcons = new Image[ItemShopRules.OfferCount];
         private readonly Text[] _shopOfferLabels = new Text[ItemShopRules.OfferCount];
-        private readonly Queue<BoardKillFeedEntry> _pendingBoardKills =
-            new Queue<BoardKillFeedEntry>();
+        private readonly List<BoardKillFeedEntry> _pendingBoardKills =
+            new List<BoardKillFeedEntry>();
 
         private GameObject _selectionPanel;
         private GameObject _readyPanel;
@@ -115,6 +117,7 @@ namespace MazeParty.Multiplayer
         private GameObject _itemShopPanel;
         private GameObject _boardEventPopupPanel;
         private GameObject _boardKillFeedPanel;
+        private BoardKillFeedView _boardKillFeedView;
         private Canvas _hudCanvas;
         private GraphicRaycaster _hudRaycaster;
         private Canvas _mapCanvas;
@@ -271,7 +274,9 @@ namespace MazeParty.Multiplayer
 
         public void EnqueueBoardKillNotification(
             int killerSlot,
-            int victimSlot)
+            int victimSlot,
+            PrototypeItemId itemId,
+            PlayerRankingStats victimRankingStats)
         {
             if (killerSlot < 0 || killerSlot >= MultiplayerConstants.MaxPlayers ||
                 victimSlot < 0 || victimSlot >= MultiplayerConstants.MaxPlayers ||
@@ -283,16 +288,15 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var killer = match != null ? match.GetAvatarForSlot(killerSlot) : null;
             var victim = match != null ? match.GetAvatarForSlot(victimSlot) : null;
-            _pendingBoardKills.Enqueue(new BoardKillFeedEntry(
+            _pendingBoardKills.Add(new BoardKillFeedEntry(
                 ResolveBoardPlayerName(killer, killerSlot),
                 ResolveBoardPlayerTextColor(killer, killerSlot),
                 ResolveBoardPlayerName(victim, victimSlot),
-                ResolveBoardPlayerTextColor(victim, victimSlot)));
-
-            if (_boardKillFeedPanel != null && !_boardKillFeedPanel.activeSelf)
-            {
-                ShowNextBoardKill();
-            }
+                ResolveBoardPlayerTextColor(victim, victimSlot),
+                itemId,
+                victimSlot,
+                victimRankingStats,
+                Time.unscaledTime));
         }
 
         private void OnDisable()
@@ -510,6 +514,9 @@ namespace MazeParty.Multiplayer
             _itemShopPanel = item.ItemShopPanel;
             _boardEventPopupPanel = hud.BoardEventPopupPanel;
             _boardKillFeedPanel = hud.BoardKillFeedPanel;
+            _boardKillFeedView = _boardKillFeedPanel != null
+                ? _boardKillFeedPanel.GetComponent<BoardKillFeedView>()
+                : null;
             _reticleImage = hud.ReticleImage;
             _turnText = hud.TurnText;
             _phaseText = hud.PhaseText;
@@ -2872,7 +2879,8 @@ namespace MazeParty.Multiplayer
 
         private void RefreshBoardKillFeed()
         {
-            if (_boardKillFeedPanel == null || _boardKillFeedMessage == null)
+            if (_boardKillFeedPanel == null || _boardKillFeedView == null ||
+                !_boardKillFeedView.HasRequiredReferences)
             {
                 return;
             }
@@ -2893,34 +2901,48 @@ namespace MazeParty.Multiplayer
 
             if (_pendingBoardKills.Count > 0)
             {
-                ShowNextBoardKill();
-                return;
+                if (ShowNextBoardKill())
+                    return;
             }
 
             SetActive(_boardKillFeedPanel, false);
-            SetText(_boardKillFeedMessage, string.Empty);
+            _boardKillFeedView.Clear();
             _boardKillFeedVisibleUntil = 0f;
         }
 
-        private void ShowNextBoardKill()
+        private bool ShowNextBoardKill()
         {
-            if (_boardKillFeedPanel == null || _boardKillFeedMessage == null ||
+            if (_boardKillFeedPanel == null || _boardKillFeedView == null ||
+                !_boardKillFeedView.HasRequiredReferences ||
                 _pendingBoardKills.Count == 0)
             {
-                return;
+                return false;
             }
 
-            var entry = _pendingBoardKills.Dequeue();
-            SetText(
-                _boardKillFeedMessage,
-                FormatBoardKillFeedMessage(
-                    entry.KillerName,
-                    entry.KillerColor,
-                    entry.VictimName,
-                    entry.VictimColor));
+            var batchEndsAt = _pendingBoardKills[0].ReceivedAt +
+                              BoardKillFeedBatchSeconds;
+            if (Time.unscaledTime < batchEndsAt)
+                return false;
+
+            var best = SelectBoardKillIndex(_pendingBoardKills, batchEndsAt);
+
+            var entry = _pendingBoardKills[best];
+            _pendingBoardKills.RemoveAt(best);
+            var message = FormatBoardKillFeedMessage(
+                entry.KillerName,
+                entry.KillerColor,
+                entry.VictimName,
+                entry.VictimColor,
+                entry.ItemId);
+            _boardKillFeedView.Present(
+                message.BeforeItem,
+                GetBoardKillItemIcon(entry.ItemId),
+                message.ItemName,
+                message.AfterItem);
             SetActive(_boardKillFeedPanel, true);
             _boardKillFeedVisibleUntil =
                 Time.unscaledTime + BoardKillFeedEntrySeconds;
+            return true;
         }
 
         private void ResetBoardKillFeed()
@@ -2928,7 +2950,32 @@ namespace MazeParty.Multiplayer
             _pendingBoardKills.Clear();
             _boardKillFeedVisibleUntil = 0f;
             SetActive(_boardKillFeedPanel, false);
-            SetText(_boardKillFeedMessage, string.Empty);
+            _boardKillFeedView?.Clear();
+        }
+
+        internal static int SelectBoardKillIndex(
+            IReadOnlyList<BoardKillFeedEntry> entries,
+            float batchEndsAt)
+        {
+            if (entries == null || entries.Count == 0)
+                return -1;
+
+            var best = 0;
+            for (var index = 1; index < entries.Count; index++)
+            {
+                var candidate = entries[index];
+                if (candidate.ReceivedAt > batchEndsAt)
+                    break;
+                var current = entries[best];
+                var comparison = PlayerRankingRules.Compare(
+                    candidate.VictimRankingStats,
+                    current.VictimRankingStats);
+                if (comparison < 0 || comparison == 0 &&
+                    candidate.VictimSlot < current.VictimSlot)
+                    best = index;
+            }
+
+            return best;
         }
 
         private static string ResolveBoardPlayerName(
@@ -2973,16 +3020,62 @@ namespace MazeParty.Multiplayer
                 : (Color)LobbyColorPalette.GetColor(slot);
         }
 
-        internal static string FormatBoardKillFeedMessage(
+        internal static BoardKillFeedSegments FormatBoardKillFeedMessage(
             string killerName,
             Color killerColor,
             string victimName,
-            Color victimColor)
+            Color victimColor,
+            PrototypeItemId itemId)
         {
-            return GameText.F(
-                "{0} eliminated {1}",
+            var itemName = itemId == PrototypeItemId.None
+                ? GameText.T("Punch")
+                : IsBoardKillItem(itemId)
+                    ? GameText.T(PrototypeItemCatalog.Get(itemId).DisplayName)
+                    : GameText.T("ITEM");
+            var particle = GameText.Language == GameLanguage.Korean
+                ? KoreanInstrumentParticle(itemName)
+                : string.Empty;
+            var formatted = GameText.F(
+                "{0} eliminated {1} with {2}{3}.",
                 ColorizeBoardPlayerName(killerName, killerColor),
-                ColorizeBoardPlayerName(victimName, victimColor));
+                ColorizeBoardPlayerName(victimName, victimColor),
+                BoardKillItemMarker.ToString(),
+                particle);
+            var marker = formatted.IndexOf(BoardKillItemMarker);
+            return marker >= 0
+                ? new BoardKillFeedSegments(
+                    formatted.Substring(0, marker),
+                    itemName,
+                    formatted.Substring(marker + 1))
+                : new BoardKillFeedSegments(formatted, itemName, string.Empty);
+        }
+
+        private static bool IsBoardKillItem(PrototypeItemId itemId)
+        {
+            return itemId == PrototypeItemId.Pistol ||
+                   itemId == PrototypeItemId.Sniper ||
+                   itemId == PrototypeItemId.Grenade ||
+                   itemId == PrototypeItemId.Mine;
+        }
+
+        private static Sprite GetBoardKillItemIcon(PrototypeItemId itemId)
+        {
+            return IsBoardKillItem(itemId)
+                ? PrototypeItemCatalog.Get(itemId).Icon
+                : null;
+        }
+
+        private static string KoreanInstrumentParticle(string noun)
+        {
+            if (string.IsNullOrEmpty(noun))
+                return "으로";
+            var last = noun[noun.Length - 1];
+            if (last < '\uAC00' || last > '\uD7A3')
+                return "으로";
+            var finalConsonant = (last - '\uAC00') % 28;
+            return finalConsonant == 0 || finalConsonant == 8
+                ? "로"
+                : "으로";
         }
 
         private static string ColorizeBoardPlayerName(
@@ -3047,24 +3140,53 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private readonly struct BoardKillFeedEntry
+        internal readonly struct BoardKillFeedEntry
         {
             public BoardKillFeedEntry(
                 string killerName,
                 Color killerColor,
                 string victimName,
-                Color victimColor)
+                Color victimColor,
+                PrototypeItemId itemId,
+                int victimSlot,
+                PlayerRankingStats victimRankingStats,
+                float receivedAt)
             {
                 KillerName = killerName;
                 KillerColor = killerColor;
                 VictimName = victimName;
                 VictimColor = victimColor;
+                ItemId = itemId;
+                VictimSlot = victimSlot;
+                VictimRankingStats = victimRankingStats;
+                ReceivedAt = receivedAt;
             }
 
             public string KillerName { get; }
             public Color KillerColor { get; }
             public string VictimName { get; }
             public Color VictimColor { get; }
+            public PrototypeItemId ItemId { get; }
+            public int VictimSlot { get; }
+            public PlayerRankingStats VictimRankingStats { get; }
+            public float ReceivedAt { get; }
+        }
+
+        internal readonly struct BoardKillFeedSegments
+        {
+            public BoardKillFeedSegments(
+                string beforeItem,
+                string itemName,
+                string afterItem)
+            {
+                BeforeItem = beforeItem;
+                ItemName = itemName;
+                AfterItem = afterItem;
+            }
+
+            public string BeforeItem { get; }
+            public string ItemName { get; }
+            public string AfterItem { get; }
         }
 
         internal static bool ShouldShowBoardEventPopup(

@@ -334,7 +334,7 @@ namespace MazeParty.Gameplay
             return ranks;
         }
 
-        private static int Compare(PlayerRankingStats left, PlayerRankingStats right)
+        public static int Compare(PlayerRankingStats left, PlayerRankingStats right)
         {
             var keys = right.Keys.CompareTo(left.Keys);
             if (keys != 0)
