@@ -189,12 +189,6 @@ namespace MazeParty.Editor
             string sourcePath,
             GameLanguage language)
         {
-            var existing = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
-            if (existing != null)
-            {
-                return existing;
-            }
-
             var source = AssetDatabase.LoadAssetAtPath<Font>(sourcePath);
             var tableAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(TablePath);
             if (source == null || tableAsset == null)
@@ -223,16 +217,24 @@ namespace MazeParty.Editor
                 AssetDatabase.CreateFolder("Assets/MazeParty", "Fonts");
             }
 
-            var asset = TMP_FontAsset.CreateFontAsset(
-                source, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024,
-                AtlasPopulationMode.Dynamic, true);
+            var asset = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(path);
             if (asset == null)
             {
-                throw new InvalidOperationException(
-                    "Could not create ready control font from " + sourcePath);
+                asset = TMP_FontAsset.CreateFontAsset(
+                    source, 90, 9, GlyphRenderMode.SDFAA, 1024, 1024,
+                    AtlasPopulationMode.Dynamic, true);
+                if (asset == null)
+                {
+                    throw new InvalidOperationException(
+                        "Could not create ready control font from " + sourcePath);
+                }
+
+                asset.name = System.IO.Path.GetFileNameWithoutExtension(path);
+                AssetDatabase.CreateAsset(asset, path);
+                AssetDatabase.AddObjectToAsset(asset.atlasTextures[0], asset);
+                AssetDatabase.AddObjectToAsset(asset.material, asset);
             }
 
-            asset.name = System.IO.Path.GetFileNameWithoutExtension(path);
             if (!asset.TryAddCharacters(characters.ToString(),
                     out var missingCharacters) &&
                 !string.IsNullOrWhiteSpace(missingCharacters))
@@ -242,10 +244,11 @@ namespace MazeParty.Editor
                     language + " / " + missingCharacters);
             }
 
-            AssetDatabase.CreateAsset(asset, path);
-            AssetDatabase.AddObjectToAsset(asset.atlasTextures[0], asset);
-            AssetDatabase.AddObjectToAsset(asset.material, asset);
             EditorUtility.SetDirty(asset);
+            foreach (var atlas in asset.atlasTextures)
+            {
+                EditorUtility.SetDirty(atlas);
+            }
             AssetDatabase.SaveAssets();
             return RequireFontAsset(path);
         }

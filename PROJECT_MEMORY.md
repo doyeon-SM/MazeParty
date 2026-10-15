@@ -235,8 +235,9 @@
   조작 행의 한글·일본어·중국어 표시에는 프리팹에 연결된 언어별 TMP 폰트 에셋을 사용한다.
   이미 표시되지 않는 주사위 완료·이동 0·조용히 걷기 등의 구형 안내 번역 행도 정리한다.
 - 플레이 중 Canvas UI의 `UnityEngine.UI.Text`와 `TextMeshProUGUI`는 모두
-  Normal/Regular 스타일을 사용한다. 이후 setup으로 생성하는 UI도 같은 스타일로 고정하고,
-  중앙 프리팹 계약 테스트로 회귀를 막는다.
+  Normal/Regular 스타일을 기본으로 사용한다. 단, 사용자가 직접 디자인한 BoardMapCanvas의
+  `MovesText` 숫자는 Bold를 유지한다(BoardCanvas의 중첩 인스턴스 포함). 이후 setup으로
+  생성하는 UI도 이 예외를 제외한 기본 스타일을 지키고, 중앙 프리팹 계약 테스트로 회귀를 막는다.
 - BoardCanvas.prefab의 사용자 배치를 유지한다. 삭제된 Players·Inventory 제목,
   인벤토리 라벨, BoardStatusText, BoardChoiceTimerText, BoardShieldText, 지도 Title·Legend와
   Current Tile·Key Shop Distance 바인딩은 선택 사항이며 setup으로 복원하지 않는다.
@@ -251,7 +252,8 @@
   회복은 +20/+10, 피해는 -40/-20 균등 분할이고 Respawn은 제외, Start는 포함한다.
   서버 시드로 결정론적으로 배치하며 저장 복구 호환 버전은 4다.
 - 특별 이벤트 결과는 BoardEventPopupPanel에서 대상·자원·결과를 모든 플레이어에게 먼저
-  3초 동안 보여 준다. 서버 상태 소유 non-dismissible UI라 닫기·ESC·로컬 팝업 스택에
+  3초 동안 보여 준다(2026-10-15 사용자 재확인). 일반 착지 자원 피드백은 1초다.
+  서버 상태 소유 non-dismissible UI라 닫기·ESC·로컬 팝업 스택에
   연결하지 않는다.
 - 플레이어가 아이템 피해로 보드 체력을 0으로 만들거나 보드 격투에서 상대를 탈락시키면
   서버가 모든 클라이언트의 BoardKillFeedPanel에 `{공격자}이(가) {피해자}을(를) 처치`를

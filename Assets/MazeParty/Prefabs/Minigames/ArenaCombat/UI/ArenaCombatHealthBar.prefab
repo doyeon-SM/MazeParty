@@ -164,6 +164,7 @@ GameObject:
   - component: {fileID: 4179976542921217764}
   - component: {fileID: 4598631229586895986}
   - component: {fileID: 3797945182930734209}
+  - component: {fileID: 5515288863181854851}
   m_Layer: 0
   m_Name: Health Slider
   m_TagString: Untagged
@@ -280,3 +281,17 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5515288863181854851
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4361803805726841137}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey:
+  clickKey:

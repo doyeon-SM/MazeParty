@@ -241,6 +241,15 @@ namespace MazeParty.Multiplayer.Tests
                 foreach (var text in
                          prefab.GetComponentsInChildren<Text>(true))
                 {
+                    if (text.name == "MovesText" &&
+                        (path == "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" ||
+                         path == "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"))
+                    {
+                        Assert.That(text.fontStyle, Is.EqualTo(FontStyle.Bold),
+                            path + " :: MovesText is an intentionally bold number.");
+                        continue;
+                    }
+
                     if (text.fontStyle != FontStyle.Normal)
                     {
                         violations.Add(

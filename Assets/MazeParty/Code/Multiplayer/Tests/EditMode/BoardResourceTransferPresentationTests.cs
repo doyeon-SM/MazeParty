@@ -89,7 +89,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void LandingEffectFeedback_UsesSignedMapContentForExactlyOneSecond()
+        public void LandingEffectFeedback_UsesSignedMapContentAndKindSpecificDurations()
         {
             var previousLanguage = GameText.Language;
             GameText.SetLanguage(GameLanguage.English);
@@ -135,32 +135,48 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(label, Is.EqualTo(testCase.Item5));
                 }
 
-                var exactWindow = new BoardLandingEffectFeedbackSnapshot
+                var ordinaryWindow = new BoardLandingEffectFeedbackSnapshot
                 {
                     Active = true,
                     Revision = 9,
+                    Slot = 0,
+                    Kind = (byte)BoardLandingEffectFeedbackKind.Gold,
+                    SignedAmount = 3,
+                    StartedAt = 100d
+                };
+                Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                    ordinaryWindow, 100.999999d), Is.True);
+                Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                    ordinaryWindow, 101d), Is.False);
+                Assert.That(BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                    ordinaryWindow, 100d), Is.EqualTo(1d));
+
+                var eventWindow = new BoardLandingEffectFeedbackSnapshot
+                {
+                    Active = true,
+                    Revision = 10,
                     Slot = 0,
                     Kind = (byte)BoardLandingEffectFeedbackKind.Event,
                     StartedAt = 100d
                 };
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
-                        exactWindow,
-                        100.999999d),
+                        eventWindow,
+                        102.999999d),
                     Is.True);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
-                        exactWindow,
-                        101d),
+                        eventWindow,
+                        103d),
                     Is.False);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.GetRemainingSeconds(
-                        exactWindow,
+                        eventWindow,
                         100d),
-                    Is.EqualTo(1d));
+                    Is.EqualTo(BoardLandingEffectLayout.SpecialEventResultDurationSeconds));
                 Assert.That(
                     BoardLandingEffectFeedbackRules.TryGetContent(
-                        exactWindow,
+                        eventWindow,
                         out _,
                         out _),
                     Is.False,
