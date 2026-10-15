@@ -16,6 +16,8 @@ namespace MazeParty.Multiplayer
         public const int PlayerCount = 4;
         public const float PlayerPresentationHeight = 1.05f;
         public const float GiftPresentationHeight = 0.55f;
+        public static readonly Vector3 CarriedGiftLocalOffset =
+            new Vector3(0f, 0.15f, 0.7f);
         public const float SharedCameraOrthographicSize = 11.5f;
 
         private const float ActionVfxSeconds = 0.38f;
@@ -368,34 +370,12 @@ namespace MazeParty.Multiplayer
                         position.x,
                         GiftPresentationHeight,
                         position.y);
-                    gift.Root.rotation = Quaternion.Euler(
-                        0f,
-                        giftId * 29f,
-                        0f);
+                    gift.Root.rotation = Quaternion.identity;
                 }
                 else if (carrier >= 0 && carrier < PlayerCount &&
                          _players[carrier] != null)
                 {
-                    var rightHand = _players[carrier].RightHandAnchor;
-                    if (rightHand != null)
-                    {
-                        gift.AttachVisualTo(rightHand);
-                    }
-                    else
-                    {
-                        gift.RestoreAuthoredPresentation();
-                        var facing = state.GetPlayerFacing(carrier);
-                        if (facing.sqrMagnitude < 0.001f)
-                        {
-                            facing = Vector2.up;
-                        }
-                        facing.Normalize();
-                        gift.Root.position = _players[carrier].Root.position +
-                            new Vector3(facing.x * 0.65f, 1.25f,
-                                facing.y * 0.65f);
-                        gift.Root.rotation = Quaternion.Euler(0f,
-                            Time.unscaledTime * 90f + giftId * 17f, 0f);
-                    }
+                    gift.AttachVisualTo(_players[carrier].Root);
                 }
                 else
                 {
@@ -409,18 +389,13 @@ namespace MazeParty.Multiplayer
                         position.x,
                         height,
                         position.y);
-                    gift.Root.rotation = giftState ==
-                        GiftGrabGiftState.Thrown
-                        ? Quaternion.Euler(Time.unscaledTime * 360f,
-                            giftId * 23f, 0f)
-                        : Quaternion.identity;
+                    gift.Root.rotation = Quaternion.identity;
                     _spawnFallRemaining[giftId] = Mathf.Max(0f,
                         falling - Time.unscaledDeltaTime);
                     var lockRemaining =
                         state.GetGiftPickupLockRemaining(giftId);
                     gift.Visual.gameObject.SetActive(
-                        lockRemaining <= 0f ||
-                        Mathf.FloorToInt(Time.unscaledTime * 10f) % 2 == 0);
+                        GiftGrabRules.IsDropPickupBlinkVisible(lockRemaining));
                 }
 
                 // The authoritative enum remains useful to artists/debuggers
@@ -683,10 +658,6 @@ namespace MazeParty.Multiplayer
 
             public Transform Root { get; }
             public PlayerAvatarVisual Visual { get; }
-            public Transform RightHandAnchor =>
-                Visual != null && Visual.Bindings != null
-                    ? Visual.Bindings.RightHandAnchor
-                    : null;
         }
 
         private sealed class GiftView
@@ -729,19 +700,19 @@ namespace MazeParty.Multiplayer
                 Visual.gameObject.SetActive(_authoredVisualActive);
             }
 
-            public void AttachVisualTo(Transform rightHandAnchor)
+            public void AttachVisualTo(Transform playerRoot)
             {
-                if (rightHandAnchor == null)
+                if (playerRoot == null)
                 {
                     return;
                 }
 
                 Root.localScale = AuthoredRootLocalScale;
-                if (Visual.parent != rightHandAnchor)
+                if (Visual.parent != playerRoot)
                 {
-                    Visual.SetParent(rightHandAnchor, false);
+                    Visual.SetParent(playerRoot, false);
                 }
-                Visual.localPosition = Vector3.zero;
+                Visual.localPosition = CarriedGiftLocalOffset;
                 Visual.localRotation = Quaternion.identity;
                 Visual.gameObject.SetActive(true);
                 SetWorldScale(Visual, _authoredVisualWorldScale);

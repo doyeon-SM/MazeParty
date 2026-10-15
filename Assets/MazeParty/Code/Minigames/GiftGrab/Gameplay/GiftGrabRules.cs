@@ -24,6 +24,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const float NormalMoveSpeed = 5f;
         public const float CarryMoveSpeed = 2.75f;
         public const float ThrowSpeed = 11f;
+        public const double ThrowRecoverySeconds = 0.5d;
         public const double ThrowStunSeconds = 0.5d;
         public const double ThrowSelfHitImmunitySeconds = 0.25d;
         public const float PushRange = 1.36f;
@@ -34,12 +35,26 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const double PushReuseDelaySeconds = 0.9d;
         public const double PushCooldownSeconds =
             PushCastSeconds + PushReuseDelaySeconds;
-        public const double RegrabLockSeconds = 0.5d;
+        public const double RegrabLockSeconds = 1d;
         public const double SpawnFallSeconds = 0.6d;
         public const int AllPlayersPickupLock = -2;
 
         public const int NoPlayerSlot = -1;
         public const int NoGiftId = -1;
+
+        // The dropped gift is visible, hidden, visible, hidden, then visible
+        // again at unlock: two complete blinks over the one-second lock.
+        public static bool IsDropPickupBlinkVisible(double lockRemainingSeconds)
+        {
+            if (lockRemainingSeconds <= 0d ||
+                lockRemainingSeconds > RegrabLockSeconds)
+            {
+                return true;
+            }
+
+            var elapsed = RegrabLockSeconds - lockRemainingSeconds;
+            return (int)Math.Floor(elapsed * 4d) % 2 == 0;
+        }
 
         public static int GetPointsForRank(int rank)
         {

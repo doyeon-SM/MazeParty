@@ -27,7 +27,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         IgnoredUnavailable,
         IgnoredOwnStoredGift,
         IgnoredRegrabLock,
-        IgnoredPushCasting
+        IgnoredPushCasting,
+        IgnoredThrowRecovery
     }
 
     public enum GiftGrabDepositStatus : byte
@@ -80,7 +81,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         IgnoredCooldown,
         CastStarted,
         IgnoredCastInProgress,
-        IgnoredNotCasting
+        IgnoredNotCasting,
+        IgnoredThrowRecovery
     }
 
     public enum GiftGrabOutOfBoundsStatus : byte
@@ -288,14 +290,19 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public int StoredGiftCount { get; private set; }
         public double CumulativeStoredGiftSeconds { get; private set; }
         public double StunnedUntilSeconds { get; private set; }
+        public double ThrowRecoveryEndsAtSeconds { get; private set; }
         public double PushCooldownEndsAtSeconds { get; private set; }
         public double PushCastEndsAtSeconds { get; private set; }
         public bool IsPushCasting { get; private set; }
         public bool IsCarryingGift => HeldGiftId != GiftGrabRules.NoGiftId;
         public bool IsStunned =>
             _observedAtSeconds + TimeEpsilon < StunnedUntilSeconds;
-        public bool CanMove => !IsStunned && !IsPushCasting;
-        public bool CanAct => !IsStunned && !IsPushCasting;
+        public bool IsThrowRecovering =>
+            _observedAtSeconds + TimeEpsilon < ThrowRecoveryEndsAtSeconds;
+        public bool CanMove =>
+            !IsStunned && !IsPushCasting && !IsThrowRecovering;
+        public bool CanAct =>
+            !IsStunned && !IsPushCasting && !IsThrowRecovering;
         public bool IsPushReady =>
             CanAct &&
             !IsCarryingGift &&
@@ -351,6 +358,12 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             StunnedUntilSeconds = Math.Max(
                 StunnedUntilSeconds,
                 stunnedUntilSeconds);
+        }
+
+        internal void BeginThrowRecovery(double activeElapsedSeconds)
+        {
+            ThrowRecoveryEndsAtSeconds = activeElapsedSeconds +
+                GiftGrabRules.ThrowRecoverySeconds;
         }
 
         internal void BeginPushCast(
@@ -475,7 +488,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             State = GiftGrabGiftState.Loose;
             CarrierSlot = GiftGrabRules.NoPlayerSlot;
             StoredOwnerSlot = GiftGrabRules.NoPlayerSlot;
-            PickupLockedPlayerSlot = playerSlot;
+            PickupLockedPlayerSlot = GiftGrabRules.AllPlayersPickupLock;
             PickupLockEndsAtSeconds = activeElapsedSeconds +
                 GiftGrabRules.RegrabLockSeconds;
             ThrowerImmunityEndsAtSeconds = 0d;
@@ -662,6 +675,14 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabPickupStatus.IgnoredPushCasting);
             }
 
+            if (player.IsThrowRecovering)
+            {
+                return PickupResolution(
+                    playerSlot,
+                    giftId,
+                    GiftGrabPickupStatus.IgnoredThrowRecovery);
+            }
+
             if (player.IsCarryingGift)
             {
                 return PickupResolution(
@@ -795,6 +816,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             var giftId = player.ReleaseHeldGift();
             var gift = _gifts[giftId];
             gift.Throw(playerSlot, ElapsedSeconds);
+            player.BeginThrowRecovery(ElapsedSeconds);
             return new GiftGrabThrowResolution(
                 playerSlot,
                 giftId,
@@ -952,6 +974,16 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     attacker,
                     GiftGrabRules.NoPlayerSlot,
                     GiftGrabPushStatus.IgnoredStunned,
+                    GiftGrabRules.NoGiftId,
+                    0d);
+            }
+
+            if (attacker.IsThrowRecovering)
+            {
+                return PushResolution(
+                    attacker,
+                    GiftGrabRules.NoPlayerSlot,
+                    GiftGrabPushStatus.IgnoredThrowRecovery,
                     GiftGrabRules.NoGiftId,
                     0d);
             }

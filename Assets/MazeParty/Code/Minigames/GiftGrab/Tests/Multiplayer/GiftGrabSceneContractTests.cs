@@ -69,16 +69,23 @@ namespace MazeParty.Multiplayer.Tests
                 Is.EqualTo(typeof(Vector2)));
         }
 
-        [Test]
-        public void ServerSimulation_StunLocksMovementThroughExactBoundary()
+        [TestCase(false)]
+        [TestCase(true)]
+        public void ServerSimulation_ActionLockStopsMovementThroughExactBoundary(
+            bool throwRecovery)
         {
             var round = new GiftGrabRoundState(1);
-            Assert.That(round.ResolvePickup(1, 0, 0d).WasPickedUp,
+            var thrower = throwRecovery ? 0 : 1;
+            Assert.That(round.ResolvePickup(thrower, 0, 0d).WasPickedUp,
                 Is.True);
-            Assert.That(round.ResolveThrow(1, 0d).WasThrown, Is.True);
-            Assert.That(round.ResolveThrownHit(0, 0, 0d).WasHit, Is.True);
+            Assert.That(round.ResolveThrow(thrower, 0d).WasThrown, Is.True);
+            if (!throwRecovery)
+            {
+                Assert.That(round.ResolveThrownHit(0, 0, 0d).WasHit,
+                    Is.True);
+            }
 
-            var root = new GameObject("GiftGrab Stun Boundary Test");
+            var root = new GameObject("GiftGrab Action Lock Boundary Test");
             try
             {
                 var state = root.AddComponent<NetworkGiftGrabState>();
@@ -103,6 +110,17 @@ namespace MazeParty.Multiplayer.Tests
                     NetworkGiftGrabState.ArenaCenterX + 6f,
                     -6f);
                 var start = positions[0];
+                if (throwRecovery)
+                {
+                    // Keep the projectile away from all players so this
+                    // test isolates the thrower's movement deadline.
+                    GetPrivateField<Vector2[]>(state, "_giftPositions")[0] =
+                        new Vector2(
+                            NetworkGiftGrabState.ArenaCenterX + 2f,
+                            2f);
+                    GetPrivateField<double[]>(state, "_thrownEndsAt")[0] =
+                        1d;
+                }
 
                 GetPrivateField<Vector2[]>(state, "_serverInputs")[0] =
                     Vector2.right;
@@ -128,17 +146,21 @@ namespace MazeParty.Multiplayer.Tests
                 NetworkCountdownTestAccess.InvokePrivate(
                     state,
                     "SimulateToOnServer",
-                    GiftGrabRules.ThrowStunSeconds);
+                    throwRecovery
+                        ? GiftGrabRules.ThrowRecoverySeconds
+                        : GiftGrabRules.ThrowStunSeconds);
                 Assert.That(
                     positions[0],
                     Is.EqualTo(start),
-                    "The segment ending exactly at the stun boundary " +
+                    "The segment ending exactly at the action boundary " +
                     "must remain locked.");
 
                 NetworkCountdownTestAccess.InvokePrivate(
                     state,
                     "SimulateToOnServer",
-                    GiftGrabRules.ThrowStunSeconds + 0.01d);
+                    (throwRecovery
+                        ? GiftGrabRules.ThrowRecoverySeconds
+                        : GiftGrabRules.ThrowStunSeconds) + 0.01d);
                 Assert.That(
                     positions[0].x,
                     Is.EqualTo(
@@ -267,13 +289,28 @@ namespace MazeParty.Multiplayer.Tests
                         "Gift Anchor " + giftId.ToString("00"));
                     Assert.That(gift, Is.Not.Null, giftId.ToString());
                     Assert.That(gift.Find("Gift Visual"), Is.Not.Null);
+                    var idleAnimation = gift.GetComponentsInChildren<
+                            MonoBehaviour>(true)
+                        .SingleOrDefault(component => component != null &&
+                            component.GetType().FullName ==
+                            "Benjathemaker.SimpleGemsAnim");
+                    Assert.That(idleAnimation, Is.Not.Null,
+                        "The authored gold-pile art must remain present.");
+                    Assert.That(idleAnimation.enabled, Is.False,
+                        "Idle gifts must not rotate, float or pulse.");
                 }
                 var giftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                     "Assets/MazeParty/Prefabs/Minigames/GiftGrab/Gift.prefab");
                 Assert.That(giftPrefab, Is.Not.Null);
-                Assert.That(giftPrefab.transform.Find("GoldPile"),
-                    Is.Not.Null,
+                var goldPile = giftPrefab.transform.Find("GoldPile");
+                Assert.That(goldPile, Is.Not.Null,
                     "The authored gold-pile gift art must be preserved.");
+                var prefabAnimation = goldPile.GetComponents<MonoBehaviour>()
+                    .SingleOrDefault(component => component != null &&
+                        component.GetType().FullName ==
+                        "Benjathemaker.SimpleGemsAnim");
+                Assert.That(prefabAnimation, Is.Not.Null);
+                Assert.That(prefabAnimation.enabled, Is.False);
 
                 Assert.That(
                     state.GetComponentsInChildren<Canvas>(true),

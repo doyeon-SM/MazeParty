@@ -37,6 +37,7 @@ namespace MazeParty.Multiplayer
         public Vector2 Position;
         public Vector2 Facing;
         public float StunRemainingSeconds;
+        public float ThrowRecoveryRemainingSeconds;
         public float PushCastRemainingSeconds;
         public float ActionCooldownRemainingSeconds;
         public byte CarriedGiftId;
@@ -48,6 +49,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref Position);
             serializer.SerializeValue(ref Facing);
             serializer.SerializeValue(ref StunRemainingSeconds);
+            serializer.SerializeValue(ref ThrowRecoveryRemainingSeconds);
             serializer.SerializeValue(ref PushCastRemainingSeconds);
             serializer.SerializeValue(ref ActionCooldownRemainingSeconds);
             serializer.SerializeValue(ref CarriedGiftId);
@@ -60,6 +62,8 @@ namespace MazeParty.Multiplayer
                    Facing == other.Facing &&
                    StunRemainingSeconds.Equals(
                        other.StunRemainingSeconds) &&
+                   ThrowRecoveryRemainingSeconds.Equals(
+                       other.ThrowRecoveryRemainingSeconds) &&
                    PushCastRemainingSeconds.Equals(
                        other.PushCastRemainingSeconds) &&
                    ActionCooldownRemainingSeconds.Equals(
@@ -80,6 +84,7 @@ namespace MazeParty.Multiplayer
             hash.Add(Position);
             hash.Add(Facing);
             hash.Add(StunRemainingSeconds);
+            hash.Add(ThrowRecoveryRemainingSeconds);
             hash.Add(PushCastRemainingSeconds);
             hash.Add(ActionCooldownRemainingSeconds);
             hash.Add(CarriedGiftId);
@@ -460,6 +465,7 @@ namespace MazeParty.Multiplayer
                    Phase == NetworkGiftGrabPhase.Running &&
                    RemainingSeconds > 0d &&
                    !IsPlayerStunned(slot) &&
+                   GetPlayerThrowRecoveryRemaining(slot) <= 0d &&
                    !IsPlayerPushCasting(slot);
         }
 
@@ -492,6 +498,13 @@ namespace MazeParty.Multiplayer
         public double GetPlayerStunRemainingSeconds(int slot)
         {
             return GetPlayerStunRemaining(slot);
+        }
+
+        public double GetPlayerThrowRecoveryRemaining(int slot)
+        {
+            return TryGetPlayerSnapshot(slot, out var snapshot)
+                ? snapshot.ThrowRecoveryRemainingSeconds
+                : 0d;
         }
 
         public bool IsPlayerPushCasting(int slot)
@@ -1134,6 +1147,13 @@ namespace MazeParty.Multiplayer
                 {
                     next = player.StunnedUntilSeconds;
                 }
+
+                if (player.ThrowRecoveryEndsAtSeconds >
+                    currentElapsed + 0.000000001d &&
+                    player.ThrowRecoveryEndsAtSeconds < next)
+                {
+                    next = player.ThrowRecoveryEndsAtSeconds;
+                }
             }
 
             return next;
@@ -1628,6 +1648,11 @@ namespace MazeParty.Multiplayer
                         ? (float)Math.Max(
                             0d,
                             player.StunnedUntilSeconds - elapsed)
+                        : 0f,
+                    ThrowRecoveryRemainingSeconds = player != null
+                        ? (float)Math.Max(
+                            0d,
+                            player.ThrowRecoveryEndsAtSeconds - elapsed)
                         : 0f,
                     PushCastRemainingSeconds = player != null &&
                                                player.IsPushCasting

@@ -284,6 +284,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                 {
                     next = stunEnd;
                 }
+
+                var throwRecoveryEnd =
+                    currentElapsed + player.ThrowRecoveryRemaining;
+                if (player.ThrowRecoveryRemaining > TimerEpsilonSeconds &&
+                    throwRecoveryEnd < next)
+                {
+                    next = throwRecoveryEnd;
+                }
             }
 
             return next;
@@ -367,6 +375,9 @@ namespace MazeParty.Dev.MinigameSoloTest
                 player.StunRemaining = Math.Max(
                     0d,
                     player.StunRemaining - deltaTime);
+                player.ThrowRecoveryRemaining = Math.Max(
+                    0d,
+                    player.ThrowRecoveryRemaining - deltaTime);
                 player.ActionCooldownRemaining = Math.Max(
                     0d,
                     player.ActionCooldownRemaining - deltaTime);
@@ -709,6 +720,9 @@ namespace MazeParty.Dev.MinigameSoloTest
             gift.PickupLockedPlayerSlot = slot;
             gift.PickupLockUntil = _roundElapsed +
                                    GiftGrabRules.RegrabLockSeconds;
+            player.ThrowRecoveryRemaining =
+                GiftGrabRules.ThrowRecoverySeconds;
+            _moves[slot] = Vector2.zero;
             RecordAction(GiftGrabSoloActionType.Throw, slot, -1, giftId);
         }
 
@@ -856,7 +870,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 gift.Position = player.Position;
                 gift.Velocity = Vector2.zero;
                 gift.ThrowOwnerSlot = GiftGrabRules.NoPlayerSlot;
-                gift.PickupLockedPlayerSlot = target;
+                gift.PickupLockedPlayerSlot =
+                    GiftGrabRules.AllPlayersPickupLock;
                 gift.PickupLockUntil = eventElapsed +
                                        GiftGrabRules.RegrabLockSeconds;
                 player.CarriedGiftId = GiftGrabRules.NoGiftId;
@@ -908,6 +923,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             foreach (var player in _players)
             {
                 player.StunRemaining = 0d;
+                player.ThrowRecoveryRemaining = 0d;
                 player.ActionCooldownRemaining = 0d;
                 player.IsPushCasting = false;
                 player.PushCastRemaining = 0d;
@@ -1120,11 +1136,14 @@ namespace MazeParty.Dev.MinigameSoloTest
         public int CarriedGiftId { get; internal set; }
         public int StoredGiftCount { get; internal set; }
         public double StunRemaining { get; internal set; }
+        public double ThrowRecoveryRemaining { get; internal set; }
         public double ActionCooldownRemaining { get; internal set; }
         public bool IsPushCasting { get; internal set; }
         public double PushCastRemaining { get; internal set; }
         public bool IsActionLocked =>
-            StunRemaining > 0.000001d || IsPushCasting;
+            StunRemaining > 0.000001d ||
+            ThrowRecoveryRemaining > 0.000001d ||
+            IsPushCasting;
         public double CumulativeStoredGiftSeconds { get; internal set; }
         internal Vector2 PushCastFacing { get; set; }
     }

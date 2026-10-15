@@ -6,6 +6,20 @@ namespace MazeParty.Gameplay.Tests
 {
     public sealed class GiftGrabRulesTests
     {
+        [TestCase(1d, true)]
+        [TestCase(0.751d, true)]
+        [TestCase(0.75d, false)]
+        [TestCase(0.5d, true)]
+        [TestCase(0.25d, false)]
+        [TestCase(0d, true)]
+        public void DropPickupBlink_ChangesTwiceDuringOneSecondLock(
+            double remaining, bool visible)
+        {
+            Assert.That(
+                GiftGrabRules.IsDropPickupBlinkVisible(remaining),
+                Is.EqualTo(visible));
+        }
+
         [Test]
         public void ActiveClock_SpawnsAtExactBoundariesAndAlwaysRunsToSixty()
         {
@@ -137,12 +151,12 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(landed.WasLanded, Is.True);
             Assert.That(landed.PickupLockedPlayerSlot,
                 Is.EqualTo(GiftGrabRules.AllPlayersPickupLock));
-            Assert.That(landed.PickupLockEndsAtSeconds, Is.EqualTo(0.55d));
+            Assert.That(landed.PickupLockEndsAtSeconds, Is.EqualTo(1.05d));
             Assert.That(
-                landingRound.ResolvePickup(1, 2, 0.549d).Status,
+                landingRound.ResolvePickup(1, 2, 1.049d).Status,
                 Is.EqualTo(GiftGrabPickupStatus.IgnoredRegrabLock));
             Assert.That(
-                landingRound.ResolvePickup(2, 2, 0.55d).WasPickedUp,
+                landingRound.ResolvePickup(2, 2, 1.05d).WasPickedUp,
                 Is.True);
 
             var round = new GiftGrabRoundState(1);
@@ -173,34 +187,16 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(round.GetPlayer(1).CurrentMoveSpeed, Is.Zero);
             Assert.That(
                 round.GetGift(1).PickupLockedPlayerSlot,
-                Is.EqualTo(1));
+                Is.EqualTo(GiftGrabRules.AllPlayersPickupLock));
+            Assert.That(round.GetGift(1).PickupLockEndsAtSeconds,
+                Is.EqualTo(1.6d).Within(0.000001d));
             Assert.That(
                 round.GetGift(3).State,
                 Is.EqualTo(GiftGrabGiftState.Loose));
 
-            var started = round.BeginPushCast(3, 0.6d);
-            Assert.That(started.WasStarted, Is.True);
-            Assert.That(started.CooldownEndsAtSeconds, Is.EqualTo(1.6d));
             Assert.That(
-                round.GetPlayer(3).PushCastEndsAtSeconds,
-                Is.EqualTo(0.7d).Within(0.000001d));
-            Assert.That(round.GetPlayer(3).CanMove, Is.False);
-            Assert.That(round.GetPlayer(3).CanAct, Is.False);
-            Assert.That(
-                round.ResolvePickup(3, 4, 0.6d).Status,
-                Is.EqualTo(GiftGrabPickupStatus.IgnoredPushCasting));
-            Assert.That(
-                round.BeginPushCast(3, 0.6d).Status,
-                Is.EqualTo(GiftGrabPushStatus.IgnoredCastInProgress));
-            round.InterruptForPause(0.6d);
-            Assert.That(
-                round.ResolvePush(3, -1, 0.699d).Status,
-                Is.EqualTo(GiftGrabPushStatus.IgnoredCastInProgress));
-
-            var missed = round.ResolvePush(3, -1, 0.7d);
-            Assert.That(missed.Status, Is.EqualTo(GiftGrabPushStatus.Missed));
-            Assert.That(missed.CooldownEndsAtSeconds, Is.EqualTo(1.6d));
-            Assert.That(round.GetPlayer(3).CanMove, Is.True);
+                round.BeginPushCast(3, 1.049d).Status,
+                Is.EqualTo(GiftGrabPushStatus.IgnoredThrowRecovery));
             Assert.That(
                 round.ResolvePickup(1, 4, 1.099d).Status,
                 Is.EqualTo(GiftGrabPickupStatus.IgnoredStunned));
@@ -208,32 +204,84 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 round.ResolvePickup(1, 4, 1.1d).WasPickedUp,
                 Is.True);
+
+            var started = round.BeginPushCast(3, 1.1d);
+            Assert.That(started.WasStarted, Is.True);
+            Assert.That(started.CooldownEndsAtSeconds, Is.EqualTo(2.1d));
             Assert.That(
-                round.BeginPushCast(3, 1.599d).Status,
+                round.GetPlayer(3).PushCastEndsAtSeconds,
+                Is.EqualTo(1.2d).Within(0.000001d));
+            Assert.That(round.GetPlayer(3).CanMove, Is.False);
+            Assert.That(round.GetPlayer(3).CanAct, Is.False);
+            Assert.That(
+                round.ResolvePickup(3, 4, 1.1d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredPushCasting));
+            Assert.That(
+                round.BeginPushCast(3, 1.1d).Status,
+                Is.EqualTo(GiftGrabPushStatus.IgnoredCastInProgress));
+            round.InterruptForPause(1.1d);
+            Assert.That(
+                round.ResolvePush(3, -1, 1.199d).Status,
+                Is.EqualTo(GiftGrabPushStatus.IgnoredCastInProgress));
+
+            var missed = round.ResolvePush(3, -1, 1.2d);
+            Assert.That(missed.Status, Is.EqualTo(GiftGrabPushStatus.Missed));
+            Assert.That(missed.CooldownEndsAtSeconds, Is.EqualTo(2.1d));
+            Assert.That(round.GetPlayer(3).CanMove, Is.True);
+            Assert.That(
+                round.ResolvePickup(0, 1, 1.599d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredRegrabLock));
+            Assert.That(
+                round.ResolvePickup(0, 1, 1.6d).WasPickedUp,
+                Is.True);
+            Assert.That(
+                round.BeginPushCast(3, 2.099d).Status,
                 Is.EqualTo(GiftGrabPushStatus.IgnoredCooldown));
 
-            var secondCast = round.BeginPushCast(3, 1.6d);
+            var secondCast = round.BeginPushCast(3, 2.1d);
             Assert.That(secondCast.WasStarted, Is.True);
             Assert.That(
-                round.ResolvePush(3, 2, 1.699d).Status,
+                round.ResolvePush(3, 2, 2.199d).Status,
                 Is.EqualTo(GiftGrabPushStatus.IgnoredCastInProgress));
-            var pushed = round.ResolvePush(3, 2, 1.7d);
+            var pushed = round.ResolvePush(3, 2, 2.2d);
             Assert.That(pushed.WasHit, Is.True);
             Assert.That(pushed.DroppedGiftId, Is.EqualTo(2));
             Assert.That(
                 round.GetPlayer(2).StunnedUntilSeconds,
-                Is.EqualTo(2.2d).Within(0.000001d));
+                Is.EqualTo(2.7d).Within(0.000001d));
             Assert.That(
                 round.GetGift(2).PickupLockEndsAtSeconds,
-                Is.EqualTo(2.2d).Within(0.000001d));
+                Is.EqualTo(3.2d).Within(0.000001d));
 
             Assert.That(
-                round.BeginPushCast(3, 2.599d).Status,
+                round.BeginPushCast(3, 3.099d).Status,
                 Is.EqualTo(GiftGrabPushStatus.IgnoredCooldown));
-            Assert.That(round.BeginPushCast(3, 2.6d).WasStarted, Is.True);
+            Assert.That(round.BeginPushCast(3, 3.1d).WasStarted, Is.True);
             Assert.That(
                 round.GetPlayer(1).CurrentMoveSpeed,
                 Is.EqualTo(GiftGrabRules.CarryMoveSpeed));
+        }
+
+        [Test]
+        public void ThrowRecovery_BlocksMovementPickupAndPushUntilExactBoundary()
+        {
+            var round = new GiftGrabRoundState(1);
+            Assert.That(round.ResolvePickup(0, 0, 0d).WasPickedUp, Is.True);
+            Assert.That(round.ResolveThrow(0, 0d).WasThrown, Is.True);
+            Assert.That(round.GetPlayer(0).IsStunned, Is.False);
+            Assert.That(round.GetPlayer(0).CanMove, Is.False);
+            Assert.That(round.GetPlayer(0).CanAct, Is.False);
+            Assert.That(round.GetPlayer(0).ThrowRecoveryEndsAtSeconds,
+                Is.EqualTo(GiftGrabRules.ThrowRecoverySeconds));
+            Assert.That(round.ResolvePickup(0, 1, 0.499d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredThrowRecovery));
+            Assert.That(round.BeginPushCast(0, 0.499d).Status,
+                Is.EqualTo(GiftGrabPushStatus.IgnoredThrowRecovery));
+            Assert.That(round.GetPlayer(0).CanMove, Is.False);
+            round.AdvanceTo(0.5d);
+            Assert.That(round.GetPlayer(0).CanMove, Is.True);
+            Assert.That(round.ResolvePickup(0, 1, 0.5d).WasPickedUp,
+                Is.True);
         }
 
         [Test]
@@ -292,8 +340,10 @@ namespace MazeParty.Gameplay.Tests
                 round.ResolveGiftLanded(0, 0.1d).Status,
                 Is.EqualTo(GiftGrabGiftLandingStatus.IgnoredNotThrown));
 
-            Assert.That(round.ResolvePickup(0, 1, 0.1d).WasPickedUp, Is.True);
-            Assert.That(round.ResolveThrow(0, 0.1d).WasThrown, Is.True);
+            Assert.That(round.ResolvePickup(0, 1, 0.1d).Status,
+                Is.EqualTo(GiftGrabPickupStatus.IgnoredThrowRecovery));
+            Assert.That(round.ResolvePickup(0, 1, 0.5d).WasPickedUp, Is.True);
+            Assert.That(round.ResolveThrow(0, 0.5d).WasThrown, Is.True);
             var timedOut = round.ResolveGiftLanded(1, 1d);
             Assert.That(timedOut.WasLanded, Is.True);
             Assert.That(

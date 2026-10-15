@@ -404,33 +404,11 @@ namespace MazeParty.Dev.MinigameSoloTest
                     gift.Position.x,
                     GiftGrabNetworkView.GiftPresentationHeight,
                     gift.Position.y);
-                anchor.rotation = Quaternion.Euler(0f, giftId * 29f, 0f);
+                anchor.rotation = Quaternion.identity;
             }
             else if (gift.CarrierSlot >= 0)
             {
-                var visual = _playerVisuals[gift.CarrierSlot];
-                var rightHand = visual != null && visual.Bindings != null
-                    ? visual.Bindings.RightHandAnchor
-                    : null;
-                if (rightHand != null)
-                {
-                    presentation.AttachVisualTo(rightHand);
-                }
-                else
-                {
-                    presentation.RestoreAuthoredPresentation();
-                    var player = _session.GetPlayer(gift.CarrierSlot);
-                    var facing = player.Facing.sqrMagnitude > 0.001f
-                        ? player.Facing.normalized
-                        : Vector2.up;
-                    anchor.position = _players[gift.CarrierSlot].position +
-                        new Vector3(facing.x * 0.65f, 1.25f,
-                            facing.y * 0.65f);
-                    anchor.rotation = Quaternion.Euler(
-                        0f,
-                        Time.unscaledTime * 90f + giftId * 17f,
-                        0f);
-                }
+                presentation.AttachVisualTo(_players[gift.CarrierSlot]);
             }
             else
             {
@@ -439,17 +417,11 @@ namespace MazeParty.Dev.MinigameSoloTest
                     gift.Position.x,
                     GiftGrabNetworkView.GiftPresentationHeight,
                     gift.Position.y);
-                anchor.rotation = Quaternion.Euler(
-                    gift.Velocity.sqrMagnitude > 0.01f
-                        ? Time.unscaledTime * 360f : 0f,
-                    gift.Velocity.sqrMagnitude > 0.01f
-                        ? giftId * 23f : 0f,
-                    0f);
-                var locked = gift.PickupLockUntil >
-                             _session.RoundElapsedSeconds;
+                anchor.rotation = Quaternion.identity;
+                var lockRemaining = gift.PickupLockUntil -
+                                    _session.RoundElapsedSeconds;
                 presentation.Visual.gameObject.SetActive(
-                    !locked ||
-                    Mathf.FloorToInt(Time.unscaledTime * 10f) % 2 == 0);
+                    GiftGrabRules.IsDropPickupBlinkVisible(lockRemaining));
             }
         }
 
@@ -993,19 +965,20 @@ namespace MazeParty.Dev.MinigameSoloTest
                 Visual.gameObject.SetActive(_authoredVisualActive);
             }
 
-            public void AttachVisualTo(Transform rightHandAnchor)
+            public void AttachVisualTo(Transform playerRoot)
             {
-                if (rightHandAnchor == null)
+                if (playerRoot == null)
                 {
                     return;
                 }
 
                 Root.localScale = AuthoredRootLocalScale;
-                if (Visual.parent != rightHandAnchor)
+                if (Visual.parent != playerRoot)
                 {
-                    Visual.SetParent(rightHandAnchor, false);
+                    Visual.SetParent(playerRoot, false);
                 }
-                Visual.localPosition = Vector3.zero;
+                Visual.localPosition =
+                    GiftGrabNetworkView.CarriedGiftLocalOffset;
                 Visual.localRotation = Quaternion.identity;
                 Visual.gameObject.SetActive(true);
                 SetWorldScale(Visual, _authoredVisualWorldScale);
