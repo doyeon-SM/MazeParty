@@ -539,6 +539,10 @@ namespace MazeParty.Editor
                 vendor.transform.localPosition = Vector3.zero;
                 vendor.transform.localRotation = Quaternion.identity;
                 vendor.transform.localScale = Vector3.one * 0.25f;
+                // Vendor demo controllers repeatedly fade the entire shield out.
+                // Shader UV animation supplies movement; lifetime belongs to the owner.
+                foreach (var animator in vendor.GetComponentsInChildren<Animator>(true))
+                    animator.enabled = false;
 
                 var result = PrefabUtility.SaveAsPrefabAsset(
                     root,
@@ -569,6 +573,7 @@ namespace MazeParty.Editor
             if (prefab == null ||
                 prefab.GetComponentsInChildren<Renderer>(true).Length == 0 ||
                 prefab.GetComponentsInChildren<Animator>(true).Length == 0 ||
+                prefab.GetComponentsInChildren<Animator>(true).Any(item => item.enabled) ||
                 prefab.GetComponentsInChildren<Collider>(true).Length > 0 ||
                 prefab.GetComponentsInChildren<Transform>(true).Any(item =>
                     GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(

@@ -167,6 +167,10 @@ namespace MazeParty.Gameplay.Tests
                     Is.Not.Empty,
                     shield.Path);
                 Assert.That(
+                    prefab.GetComponentsInChildren<Animator>(true).Any(item => item.enabled),
+                    Is.False,
+                    "Persistent shields must not run demo controllers that fade them out on a timer.");
+                Assert.That(
                     prefab.GetComponentsInChildren<Collider>(true),
                     Is.Empty,
                     "The shared shield must never participate in gameplay physics.");

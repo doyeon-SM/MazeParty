@@ -44,6 +44,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: AllIn1 Water Shield
       objectReference: {fileID: 0}
+    - target: {fileID: 5950102653247709590, guid: 862784398b0561347ac1540ebfa9cf4c, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5950102653247709591, guid: 862784398b0561347ac1540ebfa9cf4c, type: 3}
       propertyPath: m_LocalScale.x
       value: 0.25
