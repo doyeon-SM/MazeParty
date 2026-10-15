@@ -6,6 +6,11 @@ namespace MazeParty.Multiplayer
         public const string SessionType = "mazeparty.online";
         public const string LobbyPhase = "lobby";
         public const string PlayingPhase = "playing";
+        public const string HostRecoveryPhase = "host-recovery";
+        public const string OriginalHostProperty = "originalHost";
+        public const string HostRecoveryEpochProperty = "hostRecoveryEpoch";
+        public const string HostReturnRequestProperty = "hostReturnRequest";
+        public const string HostRecoveryReadyProperty = "hostRecoveryReady";
 
         /// <summary>
         /// The only scene that networking code loads by name. Minigame scene

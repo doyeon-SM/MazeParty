@@ -10,17 +10,13 @@ using UnityEngine;
 
 namespace MazeParty.Multiplayer
 {
-    public sealed class MpsRelaySessionProvider : IOnlineSessionProvider
+    public sealed partial class MpsRelaySessionProvider : IOnlineSessionProvider
     {
         private readonly IPlayerIdentityProvider _identity;
         private readonly SemaphoreSlim _hostMutationGate = new SemaphoreSlim(1, 1);
 
-        private const int HostMigrationDeleteWaitMilliseconds = 8000;
-
         private ISession _session;
         private string _originalHostId = string.Empty;
-        private CancellationTokenSource _hostMigrationFallbackSource;
-        private bool _waitingForHostDeletion;
         private bool _ending;
 
         public MpsRelaySessionProvider(IPlayerIdentityProvider identity)
@@ -48,6 +44,8 @@ namespace MazeParty.Multiplayer
 
             var sessionProperties = new Dictionary<string, SessionProperty>
             {
+                [MultiplayerConstants.OriginalHostProperty] =
+                    new SessionProperty(_identity.PlayerId, VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.SlotProperty(0)] =
                     new SessionProperty(_identity.PlayerId, VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.PhaseProperty] =
@@ -114,9 +112,8 @@ namespace MazeParty.Multiplayer
             });
 
             // MPS applies Relay connection data and calls NetworkManager.StartClient.
-            var joinedSession = await MultiplayerService.Instance.JoinSessionByCodeAsync(
-                normalizedCode,
-                options);
+            var joinedSession = await RetryRateLimitedSessionOperationAsync(() =>
+                MultiplayerService.Instance.JoinSessionByCodeAsync(normalizedCode, options));
 
             if (!HasCompatibleBuild(joinedSession))
             {
@@ -142,64 +139,63 @@ namespace MazeParty.Multiplayer
             }
 
             AttachSession(joinedSession);
+            if (GetSessionPhase(joinedSession) != MultiplayerConstants.LobbyPhase &&
+                !HasReservedSeat(joinedSession, _identity.PlayerId))
+            {
+                await LeaveAsync();
+                throw new InvalidOperationException("This room is reserved for the interrupted game's players.");
+            }
         }
 
         public async Task ReconnectToSessionAsync(string sessionId, string displayName)
         {
             ThrowIfAlreadyInSession();
-
-            var normalizedSessionId = string.IsNullOrWhiteSpace(sessionId)
-                ? string.Empty
-                : sessionId.Trim();
-            if (normalizedSessionId.Length == 0)
-            {
-                throw new ArgumentException("A reconnect session ID is required.", nameof(sessionId));
-            }
-
+            if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("A reconnect session ID is required.");
             await _identity.SignInAsync(displayName);
-
-            var joinedSessionIds = await MultiplayerService.Instance.GetJoinedSessionIdsAsync();
-            if (joinedSessionIds == null ||
-                !joinedSessionIds.Contains(normalizedSessionId, StringComparer.Ordinal))
+            var joinedIds = await RetryRateLimitedSessionOperationAsync(() =>
+                MultiplayerService.Instance.GetJoinedSessionIdsAsync());
+            ISession recovered;
+            if (joinedIds != null && joinedIds.Contains(sessionId, StringComparer.Ordinal))
             {
-                throw new InvalidOperationException(
-                    GameText.T("The saved reconnect session is no longer joined by this authenticated player."));
+                recovered = await RetryRateLimitedSessionOperationAsync(() =>
+                    MultiplayerService.Instance.ReconnectToSessionAsync(sessionId,
+                        new ReconnectSessionOptions { Type = MultiplayerConstants.SessionType }));
             }
-
-            // Reconnect is intentionally distinct from JoinByCode. Playing sessions are
-            // locked, and only the already-authenticated member may reclaim that seat.
-            var options = new ReconnectSessionOptions
+            else
             {
-                Type = MultiplayerConstants.SessionType
-            };
-            var reconnectedSession = await MultiplayerService.Instance.ReconnectToSessionAsync(
-                normalizedSessionId,
-                options);
-
-            if (!HasCompatibleBuild(reconnectedSession))
-            {
-                AttachSession(reconnectedSession);
-                try
-                {
-                    await LeaveAsync();
-                }
-                catch (Exception cleanupException)
-                {
-                    throw new InvalidOperationException(
-                        GameText.T("The reconnect target uses a different game build and automatic cleanup failed."),
-                        cleanupException);
-                }
-
-                throw new InvalidOperationException(
-                    GameText.T("The reconnect target uses a different game build."));
+                // A backend disconnect timeout may have removed membership. The host
+                // retains authenticated seat owners and opens only their recovery path.
+                recovered = await RetryRateLimitedSessionOperationAsync(() =>
+                    MultiplayerService.Instance.JoinSessionByIdAsync(sessionId,
+                    new JoinSessionOptions {
+                        Type = MultiplayerConstants.SessionType,
+                        PlayerProperties = BuildPlayerProperties(_identity.DisplayName)
+                    }.WithNetworkOptions(new NetworkOptions { RelayProtocol = RelayProtocol.DTLS })));
             }
-
-            AttachSession(reconnectedSession);
+            AttachSession(recovered);
+            if (!HasCompatibleBuild(recovered) ||
+                (GetSessionPhase(recovered) != MultiplayerConstants.LobbyPhase &&
+                 !HasReservedSeat(recovered, _identity.PlayerId)))
+            {
+                await LeaveAsync();
+                throw new InvalidOperationException("The saved room does not reserve a seat for this account and game build.");
+            }
+            if (_identity.PlayerId == _originalHostId)
+            {
+                // Also covers restart before backend host election has completed.
+                if (recovered.IsHost && GetSessionPhase(recovered) != MultiplayerConstants.HostRecoveryPhase)
+                    await PrepareWaitingRoomAsync(recovered, CancellationToken.None);
+                StartHostRecoveryIfNeeded();
+            }
         }
 
         public async Task PublishLocalNetworkClientIdAsync(ulong clientId)
         {
             var session = RequireSession();
+            if (session.CurrentPlayer == null) await session.RefreshAsync();
+            if (!ReferenceEquals(session, _session) || _ending) return;
+            if (session.CurrentPlayer == null)
+                throw new InvalidOperationException("The local session member is not available yet.");
             session.CurrentPlayer.SetProperty(
                 MultiplayerConstants.NetworkClientIdProperty,
                 new PlayerProperty(
@@ -338,12 +334,28 @@ namespace MazeParty.Multiplayer
         public async Task SetReadyAsync(bool ready)
         {
             var session = RequireSession();
-            session.CurrentPlayer.SetProperty(
-                MultiplayerConstants.ReadyProperty,
-                new PlayerProperty(ready ? "1" : "0", VisibilityPropertyOptions.Member));
-
-            await SaveCurrentPlayerDataWithRetryAsync(session);
-            RebuildSnapshot();
+            var value = ready ? "1" : "0";
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                if (session.CurrentPlayer == null) await session.RefreshAsync();
+                if (!ReferenceEquals(session, _session) || _ending) return;
+                var player = session.CurrentPlayer;
+                if (player != null)
+                {
+                    player.SetProperty(MultiplayerConstants.ReadyProperty,
+                        new PlayerProperty(value, VisibilityPropertyOptions.Member));
+                    await SaveCurrentPlayerDataWithRetryAsync(session);
+                    if (session.CurrentPlayer != null && GetPlayerProperty(
+                            session.CurrentPlayer, MultiplayerConstants.ReadyProperty, "") == value)
+                    {
+                        RebuildSnapshot();
+                        return;
+                    }
+                }
+                await Task.Delay(300);
+                await session.RefreshAsync();
+            }
+            throw new InvalidOperationException("The local session member is still refreshing. Please retry Ready.");
         }
 
         public async Task SetBoardMapAsync(BoardMapSelection selection)
@@ -497,7 +509,7 @@ namespace MazeParty.Multiplayer
 
         public void Dispose()
         {
-            CancelHostMigrationFallback();
+            CancelHostRecovery();
 
             if (_session != null)
             {
@@ -520,11 +532,14 @@ namespace MazeParty.Multiplayer
 
         private void AttachSession(ISession session)
         {
-            CancelHostMigrationFallback();
+            CancelHostRecovery();
 
             _session = session ?? throw new ArgumentNullException(nameof(session));
-            _originalHostId = session.Host;
+            _originalHostId = GetSessionProperty(
+                session, MultiplayerConstants.OriginalHostProperty, session.Host);
             _ending = false;
+            _sessionPollingSource = new CancellationTokenSource();
+            _ = PollSessionMembershipAsync(session, _sessionPollingSource.Token);
 
             session.Changed += OnSessionChanged;
             session.PlayerJoined += OnPlayerJoined;
@@ -536,14 +551,18 @@ namespace MazeParty.Multiplayer
             session.RemovedFromSession += OnRemovedFromSession;
 
             RebuildSnapshot();
-            if (session.IsHost)
+            if (session.IsHost && GetSessionPhase(session) == MultiplayerConstants.LobbyPhase)
             {
                 RunSeatAssignment();
             }
+            StartHostRecoveryIfNeeded();
         }
 
         private void DetachSession(ISession session)
         {
+            _sessionPollingSource?.Cancel();
+            _sessionPollingSource?.Dispose();
+            _sessionPollingSource = null;
             session.Changed -= OnSessionChanged;
             session.PlayerJoined -= OnPlayerJoined;
             session.PlayerHasLeft -= OnPlayerHasLeft;
@@ -557,18 +576,25 @@ namespace MazeParty.Multiplayer
         private void OnSessionChanged()
         {
             RebuildSnapshot();
+            StartHostRecoveryIfNeeded();
         }
 
-        private void OnPlayerJoined(string _)
+        private void OnPlayerJoined(string playerId)
         {
             RebuildSnapshot();
+            if (_session != null && GetSessionPhase(_session) != MultiplayerConstants.LobbyPhase)
+            {
+                if (_session.IsHost && !HasReservedSeat(_session, playerId))
+                    _ = RemoveUnreservedPlayerAsync(_session, playerId);
+                return;
+            }
             if (_session != null && _session.IsHost)
             {
                 RunSeatAssignment();
             }
         }
 
-        private void OnPlayerHasLeft(string _)
+        private void OnPlayerHasLeft(string playerId)
         {
             var session = _session;
             RebuildSnapshot();
@@ -588,94 +614,21 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
-                // A normal Leave reaches this event after the departing client has
-                // completed its backend removal, so deleting here cannot race that leave.
-                EndFromRemote(GameText.T("A player left. The active four-player session is ending."));
+                // Backend removal can also follow a crash or a connection timeout.
+                // The server's reconnect timer owns match disposition; never delete
+                // the shared room because one member disappeared.
+                _ = OpenReservedSeatForReconnectAsync(session);
                 return;
             }
 
-            RunSeatAssignment();
+            if (Current.Phase == MultiplayerConstants.LobbyPhase) RunSeatAssignment();
         }
 
         private void OnSessionHostChanged(string newHostId)
         {
-            var session = _session;
-            if (_ending ||
-                session == null ||
-                string.IsNullOrEmpty(_originalHostId) ||
-                string.Equals(newHostId, _originalHostId, StringComparison.Ordinal))
-            {
-                return;
-            }
-
-            var currentPlayerId = session.CurrentPlayer?.Id ?? string.Empty;
-            if (session.IsHost &&
-                string.Equals(newHostId, currentPlayerId, StringComparison.Ordinal))
-            {
-                CancelHostMigrationFallback();
-                EndFromRemote(GameText.T("The host disconnected. The session is closing."));
-                return;
-            }
-
-            if (_waitingForHostDeletion)
-            {
-                return;
-            }
-
-            _waitingForHostDeletion = true;
-            _hostMigrationFallbackSource = new CancellationTokenSource();
-            Ended?.Invoke(GameText.T("The host disconnected. Waiting for the session to close."));
-            _ = WaitForHostDeletionOrLeaveAsync(
-                session,
-                _hostMigrationFallbackSource);
+            RebuildSnapshot();
+            StartHostRecoveryIfNeeded();
         }
-
-        private async Task WaitForHostDeletionOrLeaveAsync(
-            ISession observedSession,
-            CancellationTokenSource fallbackSource)
-        {
-            try
-            {
-                await Task.Delay(
-                    HostMigrationDeleteWaitMilliseconds,
-                    fallbackSource.Token);
-            }
-            catch (OperationCanceledException)
-            {
-                return;
-            }
-
-            if (!ReferenceEquals(fallbackSource, _hostMigrationFallbackSource) ||
-                !ReferenceEquals(observedSession, _session) ||
-                _ending ||
-                !_waitingForHostDeletion)
-            {
-                return;
-            }
-
-            _hostMigrationFallbackSource = null;
-            _waitingForHostDeletion = false;
-            fallbackSource.Dispose();
-            EndFromRemote(GameText.T(
-                "The replacement host did not close the session. Leaving locally."));
-        }
-
-        private void CancelHostMigrationFallback()
-        {
-            var fallbackSource = _hostMigrationFallbackSource;
-            _hostMigrationFallbackSource = null;
-            _waitingForHostDeletion = false;
-
-            if (fallbackSource == null)
-            {
-                return;
-            }
-
-            fallbackSource.Cancel();
-            fallbackSource.Dispose();
-        }
-
-
 
         private void OnSessionDeleted()
         {
@@ -814,7 +767,8 @@ namespace MazeParty.Multiplayer
             if (observedSession == null ||
                 !ReferenceEquals(observedSession, _session) ||
                 !observedSession.IsHost ||
-                _ending)
+                _ending ||
+                GetSessionPhase(observedSession) != MultiplayerConstants.LobbyPhase)
             {
                 return;
             }
@@ -873,6 +827,19 @@ namespace MazeParty.Multiplayer
             if (ReferenceEquals(observedSession, _session))
             {
                 RebuildSnapshot();
+            }
+        }
+
+        private static async Task<T> RetryRateLimitedSessionOperationAsync<T>(Func<Task<T>> operation)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                try { return await operation(); }
+                catch (SessionException exception) when (
+                    exception.Error == SessionError.RateLimitExceeded && attempt < 3)
+                {
+                    await Task.Delay(1500 << attempt);
+                }
             }
         }
 
@@ -983,9 +950,9 @@ namespace MazeParty.Multiplayer
 
             Current = new SessionSnapshot(
                 session.Code,
-                session.IsHost,
-                phase,
-                session.CurrentPlayer.Id,
+                session.IsHost && session.Host == _originalHostId,
+                IsWaitingForOriginalHost(session) ? MultiplayerConstants.HostRecoveryPhase : phase,
+                _identity.PlayerId,
                 players,
                 boardMapSelection);
             Changed?.Invoke();
@@ -1102,7 +1069,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearSession()
         {
-            CancelHostMigrationFallback();
+            CancelHostRecovery();
 
             var session = _session;
             if (session != null)
@@ -1126,9 +1093,12 @@ namespace MazeParty.Multiplayer
                        buildProperty.Value);
         }
 
-        private static async Task EndSessionWithRetryAsync(ISession session)
+        private async Task EndSessionWithRetryAsync(ISession session)
         {
-            var deleteAsHost = session.IsHost;
+            // A backend-elected caretaker must leave without deleting the room.
+            var deleteAsHost = SessionRecoveryRules.ShouldDeleteRoomOnExplicitLeave(
+                session.IsHost, _identity.PlayerId,
+                GetSessionProperty(session, MultiplayerConstants.OriginalHostProperty, session.Host));
             var terminal = session.State == SessionState.Deleted ||
                            (!deleteAsHost &&
                             session.State == SessionState.Disconnected);

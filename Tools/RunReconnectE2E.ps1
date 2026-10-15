@@ -2,11 +2,16 @@
 param(
     [string]$Executable,
     [string]$RunDirectory,
+    [switch]$HostRecovery,
+    [switch]$ReconnectTimeout,
+    [ValidateRange(0, 145)]
+    [int]$HostReturnDelaySeconds = 0,
     [ValidateRange(120, 1200)]
     [int]$TimeoutSeconds = 420
 )
 
 $ErrorActionPreference = 'Stop'
+if ($HostRecovery -and $ReconnectTimeout) { throw 'Choose one recovery scenario per run.' }
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($Executable)) {
     $Executable = Join-Path $repoRoot 'Builds\Windows-Development\MazeParty.exe'
@@ -49,8 +54,10 @@ function Start-ReconnectPlayer {
         '-screen-height', '720',
         '-logFile', ('"' + $logPath + '"')
     )
+    if ($HostRecovery) { $arguments += '-e2e-host-recovery' }
+    if ($ReconnectTimeout) { $arguments += '-e2e-reconnect-timeout' }
     return Start-Process -FilePath $Executable -ArgumentList $arguments `
-        -PassThru -WindowStyle Normal
+        -PassThru -WindowStyle Hidden
 }
 
 function Assert-NoUnexpectedProcessExit {
@@ -94,22 +101,40 @@ try {
         Start-Sleep -Milliseconds 300
     }
 
-    Wait-ForFile -Path (Join-Path $RunDirectory 'kill-client-1.request') `
-        -Deadline $deadline -Description 'client 1 hard-disconnect request'
+    $victim = if ($HostRecovery) { 0 } else { 1 }
+    $killRequest = if ($HostRecovery) { 'kill-host.request' } else { 'kill-client-1.request' }
+    Wait-ForFile -Path (Join-Path $RunDirectory $killRequest) `
+        -Deadline $deadline -Description 'hard-disconnect request'
 
-    $disconnecting = $processes[1]
+    $disconnecting = $processes[$victim]
     if (!$disconnecting.HasExited) {
         Stop-Process -Id $disconnecting.Id -Force
         $disconnecting.WaitForExit()
     }
-    [void]$processes.Remove(1)
-    Set-Content -LiteralPath (Join-Path $RunDirectory 'client-1-killed.marker') `
-        -Value 'KILLED' -NoNewline
-
-    Wait-ForFile -Path (Join-Path $RunDirectory 'reconnect-pause-observed.marker') `
-        -Deadline $deadline -Description 'host reconnect-pause validation'
-
-    $processes[1] = Start-ReconnectPlayer -Index 1 -Stage resume
+    [void]$processes.Remove($victim)
+    if ($HostRecovery) {
+        for ($index = 1; $index -lt 4; $index++) {
+            Wait-ForFile -Path (Join-Path $RunDirectory "host-waiting-$index.marker") `
+                -Deadline $deadline -Description "client $index waiting in the original room"
+        }
+    } else {
+        Set-Content -LiteralPath (Join-Path $RunDirectory 'client-1-killed.marker') `
+            -Value 'KILLED' -NoNewline
+        Wait-ForFile -Path (Join-Path $RunDirectory 'reconnect-pause-observed.marker') `
+            -Deadline $deadline -Description 'host reconnect-pause validation'
+    }
+    if ($HostRecovery -and $HostReturnDelaySeconds -gt 0) {
+        $returnAt = (Get-Date).AddSeconds($HostReturnDelaySeconds)
+        while ((Get-Date) -lt $returnAt) {
+            Assert-NoUnexpectedProcessExit
+            Start-Sleep -Milliseconds 500
+        }
+    }
+    if ($ReconnectTimeout) {
+        Wait-ForFile -Path (Join-Path $RunDirectory 'timeout-lobby-ready.marker') `
+            -Deadline $deadline -Description '60-second timeout and retained checkpoint'
+    }
+    $processes[$victim] = Start-ReconnectPlayer -Index $victim -Stage resume
 
     for ($index = 0; $index -lt 4; $index++) {
         Wait-ForFile -Path (Join-Path $RunDirectory "passed-$index.marker") `

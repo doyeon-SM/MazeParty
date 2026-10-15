@@ -317,7 +317,10 @@ namespace MazeParty.Multiplayer
             lobbyView?.SetEmoteExpressions(_localProfile.EmoteFaces);
 
             _identity = new UnityAnonymousIdentityProvider();
-            _sessions = new MpsRelaySessionProvider(_identity);
+            var relaySessions = new MpsRelaySessionProvider(_identity);
+            relaySessions.PrepareHostRecoveryAsync = PrepareOriginalHostRecoveryAsync;
+            relaySessions.HostNetworkRestored += OnOriginalHostNetworkRestored;
+            _sessions = relaySessions;
             _sessions.KeepRoomOnPlayingDeparture = ShouldKeepRoomOnPlayingDeparture;
             _sessions.Changed += OnSessionChanged;
             _sessions.Ended += OnSessionEnded;
@@ -1241,19 +1244,12 @@ namespace MazeParty.Multiplayer
             try
             {
                 await _sessions.ReconnectToSessionAsync(sessionId, displayName);
-                var snapshot = _sessions.Current;
-                if (snapshot.IsHost || snapshot.Phase != MultiplayerConstants.PlayingPhase)
-                {
-                    await _sessions.LeaveAsync();
-                    throw new InvalidOperationException(
-                        GameText.T("The saved reconnect target is no longer an active client game."));
-                }
-
-                await PublishLocalNetworkClientIdWhenReadyAsync();
+                if (_sessions.Current.Phase != MultiplayerConstants.HostRecoveryPhase)
+                    await PublishLocalNetworkClientIdWhenReadyAsync();
             }
             catch (Exception exception)
             {
-                ClearPlayingReconnectTicket();
+                // Preserve the only recovery route after transient service failures.
                 if (WasRejectedForBuildVersion())
                 {
                     throw new InvalidOperationException(
@@ -1522,7 +1518,7 @@ namespace MazeParty.Multiplayer
         /// cleanup so the room, connected roster and invite code survive.
         /// Repeated calls are safe while the return is already in progress.
         /// </summary>
-        public bool VoidActiveMatchToLobbyOnServer(string reason)
+        public bool VoidActiveMatchToLobbyOnServer(string reason, bool preserveRecovery = false)
         {
             var manager = _networkManager != null
                 ? _networkManager
@@ -1572,7 +1568,7 @@ namespace MazeParty.Multiplayer
             {
                 try
                 {
-                    if (!match.VoidActiveMatchOnServer(lobbyReturnPrepared: true))
+                    if (!match.VoidActiveMatchOnServer(lobbyReturnPrepared: true, preserveRecovery: preserveRecovery))
                     {
                         _completedMatchSceneUnloadQueue.Clear();
                         return false;
@@ -1598,12 +1594,12 @@ namespace MazeParty.Multiplayer
             _voidedMatchLobbyReturnPending = true;
             _voidedMatchLobbyReturnReason = reason ?? string.Empty;
 
-            // The persistent session is invalidated before starting any async
-            // phase or scene work. A crash during lobby return must never offer
-            // this voided match as recoverable on the next launch.
+            // A disconnect timeout preserves the last stable checkpoint. Explicit
+            // abandonment still discards it before asynchronous scene cleanup.
+            _preserveRecoveryOnLobbyReturn = preserveRecovery;
             try
             {
-                new HostMinigameScheduleSession().CompleteActive();
+                if (!preserveRecovery) new HostMinigameScheduleSession().CompleteActive();
             }
             catch (Exception exception)
             {
@@ -2189,18 +2185,23 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private bool _preserveRecoveryOnLobbyReturn;
+
         private void CompleteCompletedMatchLobbyReturn()
         {
-            new HostMinigameScheduleSession().CompleteActive();
+            var preserveRecovery = _preserveRecoveryOnLobbyReturn;
+            if (!preserveRecovery) new HostMinigameScheduleSession().CompleteActive();
             ResetHostMatchRecoveryChoice();
             ResetCompletedMatchLobbyReturnState();
             _sessionOperations.TryTransition(SessionLifecycleState.Lobby);
             SetLobbyRendering(true);
             SetLocalizedStatus("Returned to the player ready screen.");
+            if (preserveRecovery) PrepareHostMatchRecoveryChoice();
         }
 
         private void ResetCompletedMatchLobbyReturnState()
         {
+            _preserveRecoveryOnLobbyReturn = false;
             _completedMatchSceneUnloadQueue.Clear();
             _completedMatchPendingUnloadClients.Clear();
             _completedMatchDisconnectedClients.Clear();
@@ -2240,6 +2241,11 @@ namespace MazeParty.Multiplayer
             }
 
             UpdatePlayingReconnectTicket();
+            if (_sessions.IsInSession && _sessions.Current.Phase == MultiplayerConstants.HostRecoveryPhase)
+            {
+                SetLocalizedStatus("Waiting for the original host. The room and saved match are preserved.");
+                return;
+            }
             QueueCompletedMatchDisconnectedLobbyCleanups();
             if (_networkManager != null)
             {
@@ -2392,7 +2398,7 @@ namespace MazeParty.Multiplayer
 
             _pendingBoardLoadVoidRequested = true;
             if (VoidActiveMatchToLobbyOnServer(GameText.T(
-                    "A player did not reconnect within 60 seconds. The match was voided and everyone is returning to the waiting room.")))
+                    "A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
             {
                 ResetPendingBoardLoadReconnect();
             }
@@ -2794,6 +2800,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            (_sessions as MpsRelaySessionProvider)?.NotifyTransportConnected();
+            _networkIdentityPublished = false;
             _sessionOperations.TryEnqueue(PublishLocalNetworkClientIdSafelyAsync);
         }
 
@@ -2950,6 +2958,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            (_sessions as MpsRelaySessionProvider)?.NotifyTransportStopped();
             SetLocalizedStatus(
                 "Relay connection stopped. Waiting for the host or session service.");
         }
@@ -3144,9 +3153,8 @@ namespace MazeParty.Multiplayer
             EndSessionAfterNetworkFailure(reason);
         }
 
-        // TODO(STEAM-LIFECYCLE): Steam lobby callbacks should forward host departure to
-        // IOnlineSessionProvider.Ended. The fixed-four match ends instead of migrating
-        // hosts. A Steam transport must preserve the same client/member identity mapping.
+        // TODO(STEAM-LIFECYCLE): Preserve original-host recovery and authenticated
+        // seat reservations when replacing MPS with Steam lobby callbacks.
     }
 }
 

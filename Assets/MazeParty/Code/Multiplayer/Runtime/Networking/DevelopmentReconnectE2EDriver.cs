@@ -85,7 +85,9 @@ namespace MazeParty.Multiplayer
                 Log("driver_started");
                 if (string.Equals(_stage, ResumeStage, StringComparison.Ordinal))
                 {
-                    await RunResumedClientAsync();
+                    if (IsHostRecoveryScenario) await RunResumedOriginalHostAsync();
+                    else if (IsReconnectTimeoutScenario) await RunTimeoutReturningClientAsync(await WaitForControllerAsync());
+                    else await RunResumedClientAsync();
                 }
                 else
                 {
@@ -129,17 +131,21 @@ namespace MazeParty.Multiplayer
                 await controller.DevelopmentSelectBoardMapAsync(ForestMapId);
                 ValidateForest(controller.CurrentSession.BoardMapSelection);
                 WriteAtomic(JoinCodePath, controller.CurrentSession.Code.Trim());
+                if (IsHostRecoveryScenario || IsReconnectTimeoutScenario)
+                    WriteAtomic(Path.Combine(_runDirectory, "original-room-code.txt"), controller.CurrentSession.Code.Trim());
                 Log("session_created");
             }
             else
             {
-                await Task.Delay(_playerIndex * 900);
                 await WaitUntilAsync(
                     () => File.Exists(JoinCodePath) &&
                           !string.IsNullOrWhiteSpace(
                               ReadAllTextShared(JoinCodePath)),
                     150d,
                     "join-code handoff");
+                // Start the spacing after the code exists; delaying before this
+                // barrier caused all three clients to burst-join simultaneously.
+                await Task.Delay(_playerIndex * 1500);
                 await controller.DevelopmentJoinSessionAsync(
                     ReadAllTextShared(JoinCodePath).Trim(),
                     displayName,
@@ -214,16 +220,21 @@ namespace MazeParty.Multiplayer
             }
 
             await WaitForBoardAsync();
-            await WaitUntilAsync(
-                () =>
-                {
-                    var match = NetworkMatchState.Instance;
-                    return match != null &&
-                           match.FlowState == BoardFlowState.Action;
-                },
-                90d,
-                "opening action phase");
-
+            if (IsHostRecoveryScenario)
+            {
+                await RunOriginalHostCrashAsync(controller);
+                return;
+            }
+            if (IsReconnectTimeoutScenario)
+            {
+                if (IsHost) await RunReconnectTimeoutHostAsync(controller);
+                else if (_playerIndex == ReconnectingPlayer)
+                    await WaitUntilAsync(() => false, 180d, "external hard disconnect");
+                else await RunTimeoutReturningClientAsync(controller);
+                return;
+            }
+            // Inventory must exist before Action begins: an empty inventory
+            // automatically resolves to NoItem at the action boundary.
             if (IsHost)
             {
                 var reconnectingAvatar = RequireMatch()
@@ -241,6 +252,16 @@ namespace MazeParty.Multiplayer
                     "item_provisioned",
                     "slot=" + _reconnectingSlot + ";item=Pistol");
             }
+
+            await WaitUntilAsync(
+                () =>
+                {
+                    var match = NetworkMatchState.Instance;
+                    return match != null &&
+                           match.FlowState == BoardFlowState.Action;
+                },
+                90d,
+                "opening action phase");
 
             var localAvatar = controller.GetLocalAvatar();
             if (_playerIndex == ReconnectingPlayer)
@@ -277,6 +298,144 @@ namespace MazeParty.Multiplayer
                 () => File.Exists(QuitSignalPath),
                 180d,
                 "reconnect scenario completion");
+        }
+
+        private bool IsReconnectTimeoutScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-reconnect-timeout");
+
+        private async Task RunReconnectTimeoutHostAsync(OnlineSessionController controller)
+        {
+            var code = controller.CurrentSession.Code;
+            var roster = controller.GetMatchRosterKey();
+            WriteAtomic(Path.Combine(_runDirectory, "timeout-roster.txt"), roster);
+            await WaitUntilAsync(() => controller.DevelopmentPeekRecoverySnapshot(out _) == MatchRecoveryLoadStatus.Loaded,
+                30d, "stable checkpoint before reconnect timeout");
+            controller.DevelopmentPeekRecoverySnapshot(out var saved);
+            WriteAtomic(KillRequestPath, "KILL PLAYER 1");
+            await WaitUntilAsync(() => NetworkMatchState.Instance != null && RequireMatch().IsReconnectPaused,
+                45d, "reconnect timer before timeout");
+            var pauseStartedAt = Time.realtimeSinceStartupAsDouble;
+            WriteAtomic(ReconnectPauseObservedPath, "OBSERVED");
+            await WaitUntilAsync(() => controller.IsInSession &&
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.IsMatchRecoveryChoiceVisible,
+                120d, "timeout returns to lobby with saved-game choice");
+            if (Time.realtimeSinceStartupAsDouble - pauseStartedAt < 59d)
+                throw new InvalidOperationException("The reconnect timeout ended before its 60-second boundary.");
+            if (controller.CurrentSession.Code != code ||
+                controller.DevelopmentPeekRecoverySnapshot(out var retained) != MatchRecoveryLoadStatus.Loaded ||
+                retained.turn != saved.turn)
+                throw new InvalidOperationException("Reconnect timeout discarded the room or stable checkpoint.");
+            WriteAtomic(Path.Combine(_runDirectory, "timeout-lobby-ready.marker"), "PRESERVED");
+            Log("timeout_checkpoint_preserved");
+            await WaitUntilAsync(() => controller.GetMatchRosterKey() == roster && controller.DevelopmentHasFourAssignedPlayers(),
+                120d, "same four accounts after reconnect timeout");
+            await controller.DevelopmentSelectSavedMatchAsync();
+            await controller.DevelopmentSetReadyAsync(true);
+            await WaitUntilAsync(() => controller.CurrentSession.CanStart, 90d, "ready after reconnect timeout");
+            await controller.DevelopmentStartGameAsync();
+            await WaitForBoardAsync();
+            if (RequireMatch().Turn != saved.turn)
+                throw new InvalidOperationException("Timeout recovery did not resume the saved turn.");
+            for (var index = 1; index < 4; index++)
+            {
+                var observed = Path.Combine(_runDirectory, "timeout-recovery-observed-" + index + ".marker");
+                await WaitUntilAsync(() => File.Exists(observed), 60d, "timeout recovery observed by client " + index);
+            }
+            WriteAtomic(SummaryPath, "{\"reconnectTimeoutPreservedCheckpoint\":true,\"sameRoomCode\":true,\"sameFourAccounts\":true,\"checkpointResumed\":true}");
+            WriteAtomic(QuitSignalPath, "COMPLETE");
+            Log("reconnect_timeout_recovery_passed");
+        }
+
+        private async Task RunTimeoutReturningClientAsync(OnlineSessionController controller)
+        {
+            if (_stage == ResumeStage)
+            {
+                await WaitUntilAsync(TryLoadReconnectingSlot, 30d, "recorded timeout client slot");
+                _assignedSlot = _reconnectingSlot;
+            }
+            await WaitUntilAsync(() => controller.IsInSession &&
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase &&
+                controller.GetLocalAvatar() != null && controller.LocalSlot == _assignedSlot,
+                180d, "same seat in timeout waiting room");
+            var code = ReadAllTextShared(Path.Combine(_runDirectory, "original-room-code.txt"));
+            if (controller.CurrentSession.Code != code)
+                throw new InvalidOperationException("Reconnect timeout changed the room code.");
+            await Task.Delay(_playerIndex * 1000);
+            await controller.DevelopmentSetReadyAsync(true);
+            await WaitForBoardAsync();
+            if (controller.GetMatchRosterKey() != ReadAllTextShared(Path.Combine(_runDirectory, "timeout-roster.txt")))
+                throw new InvalidOperationException("Reconnect timeout changed the authenticated roster.");
+            WriteAtomic(Path.Combine(_runDirectory, "timeout-recovery-observed-" + _playerIndex + ".marker"), "RESTORED");
+            await WaitUntilAsync(() => File.Exists(QuitSignalPath), 120d, "timeout recovery completion");
+        }
+
+        private bool IsHostRecoveryScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-host-recovery");
+
+        private async Task RunOriginalHostCrashAsync(OnlineSessionController controller)
+        {
+            var code = controller.CurrentSession.Code;
+            var roster = controller.GetMatchRosterKey();
+            if (IsHost)
+            {
+                await WaitUntilAsync(() => controller.DevelopmentPeekRecoverySnapshot(out _) == MatchRecoveryLoadStatus.Loaded,
+                    30d, "stable host checkpoint before crash");
+                controller.DevelopmentPeekRecoverySnapshot(out var snapshot);
+                WriteAtomic(Path.Combine(_runDirectory, "host-checkpoint.json"), JsonUtility.ToJson(snapshot));
+                WriteAtomic(Path.Combine(_runDirectory, "host-roster.txt"), roster);
+                WriteAtomic(Path.Combine(_runDirectory, "kill-host.request"), "KILL ORIGINAL HOST");
+                await WaitUntilAsync(() => false, 180d, "launcher hard-kill of original host");
+                return;
+            }
+
+            await WaitUntilAsync(() => controller.IsInSession &&
+                controller.CurrentSession.Phase == MultiplayerConstants.HostRecoveryPhase,
+                120d, "room retained while original host is absent");
+            if (controller.CurrentSession.Code != code || controller.CurrentSession.IsHost)
+                throw new InvalidOperationException("The room changed or a client became the gameplay host.");
+            WriteAtomic(Path.Combine(_runDirectory, "host-waiting-" + _playerIndex + ".marker"), "WAITING");
+            Log("original_host_wait_verified");
+
+            await WaitUntilAsync(() => controller.IsInSession &&
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase &&
+                controller.GetLocalAvatar() != null && controller.LocalSlot == _assignedSlot,
+                180d, "original host reconnected to the same room");
+            if (controller.CurrentSession.Code != code || controller.GetMatchRosterKey() != roster)
+                throw new InvalidOperationException("The original room or authenticated roster changed.");
+            await Task.Delay(_playerIndex * 1000);
+            await controller.DevelopmentSetReadyAsync(true);
+            await WaitForBoardAsync();
+            WriteAtomic(Path.Combine(_runDirectory, "host-recovery-observed-" + _playerIndex + ".marker"), "RESTORED");
+            await WaitUntilAsync(() => File.Exists(QuitSignalPath), 120d, "host checkpoint recovery completion");
+        }
+
+        private async Task RunResumedOriginalHostAsync()
+        {
+            if (!IsHost) throw new InvalidOperationException("Only the original host resumes this scenario.");
+            var controller = await WaitForControllerAsync();
+            await WaitUntilAsync(() => controller.IsInSession && controller.CurrentSession.IsHost &&
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.IsMatchRecoveryChoiceVisible,
+                180d, "original host authority and saved checkpoint choice");
+            var code = ReadAllTextShared(Path.Combine(_runDirectory, "original-room-code.txt"));
+            var roster = ReadAllTextShared(Path.Combine(_runDirectory, "host-roster.txt"));
+            if (controller.CurrentSession.Code != code)
+                throw new InvalidOperationException("Host recovery replaced the invite code.");
+            await WaitUntilAsync(() => controller.GetMatchRosterKey() == roster && controller.DevelopmentHasFourAssignedPlayers(),
+                90d, "same four accounts and assigned avatars after host recovery");
+            await controller.DevelopmentSelectSavedMatchAsync();
+            await controller.DevelopmentSetReadyAsync(true);
+            await WaitUntilAsync(() => controller.CurrentSession.CanStart, 90d, "same recovered roster ready");
+            await controller.DevelopmentStartGameAsync();
+            await WaitForBoardAsync();
+            var saved = JsonUtility.FromJson<MatchRecoverySnapshot>(ReadAllTextShared(Path.Combine(_runDirectory, "host-checkpoint.json")));
+            if (RequireMatch().Turn != saved.turn)
+                throw new InvalidOperationException("Recovered game did not resume the saved turn.");
+            for (var index = 1; index < 4; index++)
+            {
+                var observed = Path.Combine(_runDirectory, "host-recovery-observed-" + index + ".marker");
+                await WaitUntilAsync(() => File.Exists(observed), 60d, "recovered client " + index);
+            }
+            WriteAtomic(SummaryPath, "{\"originalHostReturned\":true,\"sameRoomCode\":true,\"sameFourAccounts\":true,\"checkpointResumed\":true}");
+            WriteAtomic(QuitSignalPath, "COMPLETE");
+            Log("original_host_recovery_passed");
         }
 
         private async Task RunHostDisconnectObservationAsync()
@@ -396,6 +555,12 @@ namespace MazeParty.Multiplayer
                 },
                 45d,
                 "reconnected player pause release");
+            // Keep the host alive until the released pause has replicated back
+            // to the resumed owner; otherwise shutdown can outrun that update.
+            await WaitUntilAsync(
+                () => File.Exists(ResumeSucceededPath),
+                45d,
+                "resumed client pause-release acknowledgement");
 
             WriteAtomic(
                 SummaryPath,
@@ -597,6 +762,7 @@ namespace MazeParty.Multiplayer
                     }
                 }
 
+                LogSessionProgress("restored player snapshot");
                 await Task.Delay(PollMilliseconds);
             }
 
@@ -828,6 +994,23 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        private double _nextProgressLogAt;
+        private void LogSessionProgress(string waitingFor)
+        {
+            if (Time.realtimeSinceStartupAsDouble < _nextProgressLogAt) return;
+            _nextProgressLogAt = Time.realtimeSinceStartupAsDouble + 10d;
+            var controller = OnlineSessionController.Instance;
+            if (controller == null) return;
+            var snapshot = controller.CurrentSession;
+            var details = new StringBuilder(waitingFor);
+            details.Append(";phase=").Append(snapshot.Phase).Append(";host=").Append(snapshot.IsHost)
+                .Append(";busy=").Append(controller.IsBusy).Append(";canStart=").Append(snapshot.CanStart)
+                .Append(";assignedFour=").Append(controller.DevelopmentHasFourAssignedPlayers());
+            foreach (var player in snapshot.Players)
+                details.Append(";slot=").Append(player.Slot).Append(" ready=").Append(player.IsReady);
+            Log("session_progress", details.ToString());
+        }
+
         private async Task WaitUntilAsync(
             Func<bool> predicate,
             double timeoutSeconds,
@@ -842,6 +1025,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
+                LogSessionProgress(description);
                 await Task.Delay(PollMilliseconds);
             }
 
@@ -884,7 +1068,7 @@ namespace MazeParty.Multiplayer
                 GetArgument(arguments, "-e2e-run-dir"));
             if (IsHost != (_playerIndex == 0) ||
                 (_stage == ResumeStage &&
-                 (IsHost || _playerIndex != ReconnectingPlayer)))
+                 (IsHostRecoveryScenario ? !IsHost : (IsHost || _playerIndex != ReconnectingPlayer))))
             {
                 throw new ArgumentException(
                     "The reconnect role, player, and stage combination is invalid.");

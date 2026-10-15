@@ -26,8 +26,8 @@ namespace MazeParty.Multiplayer
                 !_networkTerminationRequested &&
                 _sessions != null &&
                 _sessions.IsInSession &&
-                !_sessions.Current.IsHost &&
-                _sessions.Current.Phase == MultiplayerConstants.PlayingPhase &&
+                // Hosts and lobby members need the same durable room identity.
+                // A crash can happen before or after the playing phase changes.
                 !string.IsNullOrWhiteSpace(_sessions.CurrentSessionId))
             {
                 PlayerPrefs.SetString(
@@ -37,7 +37,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            ClearPlayingReconnectTicket();
+            // Transient/offline provider snapshots are not proof the room ended.
+            // Explicit Leave and authoritative Deleted/Removed events own clearing.
         }
 
         private bool TryGetPlayingReconnectTicket(out string sessionId)

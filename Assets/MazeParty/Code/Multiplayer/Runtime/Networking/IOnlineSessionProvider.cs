@@ -16,8 +16,9 @@ namespace MazeParty.Multiplayer
         /// <summary>
         /// Host only. Asked when a player leaves while the room is in the
         /// playing phase. True keeps the room open because the match is
-        /// already over (final ranking locked or returning to the lobby);
-        /// null or false ends the fixed four-player session.
+        /// already over (final ranking locked or returning to the lobby).
+        /// Otherwise the live reconnect timer owns match disposition and
+        /// authenticated seats remain reserved; a departure never deletes the room.
         /// </summary>
         Func<bool> KeepRoomOnPlayingDeparture { get; set; }
 

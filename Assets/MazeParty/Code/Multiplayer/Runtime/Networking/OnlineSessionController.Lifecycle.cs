@@ -61,7 +61,9 @@ namespace MazeParty.Multiplayer
                     SetLocalizedStatus(
                         _sessions.Current.Phase == MultiplayerConstants.PlayingPhase
                             ? GameText.N("Connected to the online game.")
-                            : GameText.N("Connected to the online lobby."));
+                            : _sessions.Current.Phase == MultiplayerConstants.HostRecoveryPhase
+                                ? GameText.N("Waiting for the original host. The room and saved match are preserved.")
+                                : GameText.N("Connected to the online lobby."));
                 }
                 else
                 {

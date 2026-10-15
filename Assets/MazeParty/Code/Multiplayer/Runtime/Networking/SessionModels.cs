@@ -78,7 +78,7 @@ namespace MazeParty.Multiplayer
         public string LocalPlayerId { get; }
         public IReadOnlyList<OnlinePlayerSnapshot> Players { get; }
         public BoardMapSelection BoardMapSelection { get; }
-        public bool CanStart => SessionRules.CanStart(Players);
+        public bool CanStart => Phase == MultiplayerConstants.LobbyPhase && SessionRules.CanStart(Players);
 
         public int LocalSlot
         {

@@ -1,4 +1,4 @@
-﻿source,ko,ja,zh-Hans
+source,ko,ja,zh-Hans
 #{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WIN,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜
 #{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WINS,#{0}  {1}     열쇠 {2}  /  골드 {3}  /  {4}승,#{0}  {1}     鍵 {2}  /  ゴールド {3}  /  {4}勝,#{0}  {1}     钥匙 {2}  /  金币 {3}  /  {4}胜
 +1 KEY EACH,각자 열쇠 +1,各自 鍵 +1,每人 钥匙 +1
@@ -795,3 +795,5 @@ Pass the bomb to another player before it explodes.,폭탄이 터지기 전에 �
 Roll your snowball and knock others off.,눈덩이를 굴려서 떨어뜨리세요.,雪玉を転がして相手を落としてください。,滚动雪球，把其他玩家撞下去。
 Become the top fighter in a bare-knuckle brawl.,맨손싸움의 1등이 되세요.,素手の乱闘で1位を目指してください。,在徒手格斗中争夺第一。
 Dodge and survive.,피하고 버티세요.,避けて生き残ってください。,躲避攻击并坚持到最后。
+Waiting for the original host. The room and saved match are preserved.,원래 호스트가 돌아오기를 기다리고 있습니다. 방과 저장 경기는 유지됩니다.,元のホストの復帰を待っています。ルームと保存した試合は維持されます。,正在等待原房主返回。房间和已保存的对局将保留。
+A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved.,플레이어가 60초 안에 복귀하지 않았습니다. 저장 경기를 보존하고 대기방으로 돌아갑니다.,プレイヤーが60秒以内に再接続しませんでした。保存した試合を保持して待機ルームへ戻ります。,玩家未在60秒内重新连接。将保留已保存的对局并返回等候室。

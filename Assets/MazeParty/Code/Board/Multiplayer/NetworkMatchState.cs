@@ -562,7 +562,7 @@ namespace MazeParty.Multiplayer
                     if (controller != null &&
                         controller.VoidActiveMatchToLobbyOnServer(
                             GameText.T(
-                                "A player did not reconnect within 60 seconds. The match was voided and everyone is returning to the waiting room.")))
+                                "A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
                     {
                         _endingForReconnectTimeout = true;
                     }
@@ -747,7 +747,7 @@ namespace MazeParty.Multiplayer
         /// fixed-four match. The latch is set first so callbacks raised while
         /// runtimes are ending cannot settle rewards or write recovery state.
         /// </summary>
-        public bool VoidActiveMatchOnServer(bool lobbyReturnPrepared)
+        public bool VoidActiveMatchOnServer(bool lobbyReturnPrepared, bool preserveRecovery = false)
         {
             if (!IsServer || !lobbyReturnPrepared)
             {
@@ -798,7 +798,7 @@ namespace MazeParty.Multiplayer
 
             try
             {
-                _minigameScheduleSession?.CompleteActive();
+                if (!preserveRecovery) _minigameScheduleSession?.CompleteActive();
             }
             catch (Exception exception)
             {

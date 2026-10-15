@@ -69,7 +69,7 @@ function Start-RecoveryPlayer {
         '-logFile', ('"' + $logPath + '"')
     )
     return Start-Process -FilePath $Executable -ArgumentList $arguments `
-        -PassThru -WindowStyle Normal
+        -PassThru -WindowStyle Hidden
 }
 
 function Assert-NoFailure {
