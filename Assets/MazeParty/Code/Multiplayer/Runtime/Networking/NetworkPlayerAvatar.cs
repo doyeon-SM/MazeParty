@@ -2008,7 +2008,8 @@ namespace MazeParty.Multiplayer
             rotation = Quaternion.identity;
             if (topology == null || mapRoot == null || expectedStart == null ||
                 controller == null || !PlayerSlotRules.IsValid(slot) ||
-                mapRoot.Topology != topology || mapRoot.GetStartTile(slot) != expectedStart)
+                mapRoot.Topology == null ||
+                mapRoot.GetStartTile(slot) != expectedStart)
             {
                 return false;
             }

@@ -25,6 +25,49 @@ namespace MazeParty.Gameplay.Tests
         private const float Tolerance = 0.001f;
 
         [Test]
+        public void MazeGraybox_CameraFramingCoversPlayableTiles()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
+            Assert.That(prefab, Is.Not.Null, PrefabPath);
+            var instance = Object.Instantiate(prefab);
+            var cameraAnchor = new GameObject("Maze Camera Framing Test");
+            try
+            {
+                var mapRoot = instance.GetComponent<BoardMapRoot>();
+                var framing = cameraAnchor.AddComponent<BoardCameraFramingAnchor>();
+                const float aspect = 16f / 9f;
+                var pose = framing.EvaluateForMap(mapRoot, aspect);
+                var tiles = mapRoot.Topology.Tiles;
+                var minX = tiles.Min(tile => tile.WorldCenter.x);
+                var maxX = tiles.Max(tile => tile.WorldCenter.x);
+                var minZ = tiles.Min(tile => tile.WorldCenter.z);
+                var maxZ = tiles.Max(tile => tile.WorldCenter.z);
+                Assert.That(pose.Position.x,
+                    Is.EqualTo((minX + maxX) * 0.5f).Within(Tolerance));
+                Assert.That(pose.Position.z,
+                    Is.EqualTo((minZ + maxZ) * 0.5f).Within(Tolerance));
+
+                var visibleHalfHeight = pose.Height *
+                    Mathf.Tan(pose.FieldOfView * 0.5f * Mathf.Deg2Rad);
+                var visibleHalfWidth = visibleHalfHeight * aspect;
+                foreach (var tile in tiles)
+                {
+                    Assert.That(Mathf.Abs(tile.WorldCenter.x - pose.Position.x) +
+                        BoardTile.HalfRoomSize,
+                        Is.LessThan(visibleHalfWidth), tile.name);
+                    Assert.That(Mathf.Abs(tile.WorldCenter.z - pose.Position.z) +
+                        BoardTile.HalfRoomSize,
+                        Is.LessThan(visibleHalfHeight), tile.name);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(cameraAnchor);
+                Object.DestroyImmediate(instance);
+            }
+        }
+
+        [Test]
         public void MazeGraybox_WallCollisionIsSeparateMinimalAndMatchesTopology()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

@@ -116,6 +116,49 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void SelectedMap_FramingFollowsRuntimeMapAndRestoresLegacyCenter()
+        {
+            var fixture = CreateFixture(includeRuntimeMap: true);
+            var framingObject = new GameObject("Board Framing Anchor");
+            try
+            {
+                foreach (var tile in fixture.Template.GetComponentsInChildren<BoardTile>())
+                {
+                    tile.transform.position += new Vector3(
+                        tile.Coordinate.x * 20f + 40f, 0f, 30f);
+                }
+
+                Assert.That(fixture.Loader.TryResolveFreshSelection(
+                    out var selection, out var selectionError),
+                    Is.True, selectionError);
+                Assert.That(fixture.Loader.TryActivate(selection, out var loadError),
+                    Is.True, loadError);
+
+                var framing = framingObject.AddComponent<BoardCameraFramingAnchor>();
+                var pose = framing.Evaluate(16f / 9f);
+                var centers = fixture.Loader.RuntimeMapRoot.Topology.Tiles
+                    .Select(tile => tile.WorldCenter).ToArray();
+                Assert.That(pose.Position.x,
+                    Is.EqualTo((centers.Min(point => point.x) +
+                                centers.Max(point => point.x)) * 0.5f)
+                        .Within(0.001f));
+                Assert.That(pose.Position.z, Is.EqualTo(30f).Within(0.001f));
+
+                Assert.That(fixture.Loader.TryActivate(
+                    BoardMapSelection.Legacy, out var legacyError),
+                    Is.True, legacyError);
+                var legacyPose = framing.Evaluate(16f / 9f);
+                Assert.That(legacyPose.Position.x, Is.Zero.Within(0.001f));
+                Assert.That(legacyPose.Position.z, Is.Zero.Within(0.001f));
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(framingObject);
+                fixture.Dispose();
+            }
+        }
+
+        [Test]
         public void CatalogMap_HidesLegacySceneBackdropAndLegacySelectionRestoresIt()
         {
             var backdrop = new GameObject(BoardMapRuntimeLoader.LegacyBackdropName);

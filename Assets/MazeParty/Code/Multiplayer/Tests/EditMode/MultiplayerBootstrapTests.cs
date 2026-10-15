@@ -682,6 +682,67 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void MazeStartPose_UsesSlotAnchorsWithMirroredRuntimeTopology()
+        {
+            const string mapPath =
+                "Assets/MazeParty/Resources/MazeParty/Board/Maps/MazeGrayboxMapRoot.prefab";
+            const string playerPath =
+                "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab";
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(mapPath);
+            var playerPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                playerPath);
+            Assert.That(prefab, Is.Not.Null, mapPath);
+            Assert.That(playerPrefab, Is.Not.Null, playerPath);
+            var mapObject = Object.Instantiate(prefab);
+            var proxyObject = new GameObject("Runtime Board Topology Proxy");
+            try
+            {
+                var mapRoot = mapObject.GetComponent<BoardMapRoot>();
+                var topology = proxyObject.AddComponent<BoardTopology>();
+                topology.Configure(
+                    mapRoot.Topology.Tiles.ToArray(),
+                    mapRoot.Topology.Gates.ToArray());
+                var controller = playerPrefab.GetComponent<CharacterController>();
+                Assert.That(controller, Is.Not.Null, playerPath);
+                Physics.SyncTransforms();
+
+                for (var slot = 0; slot < PlayerSlotRules.Count; slot++)
+                {
+                    var start = mapRoot.GetStartTile(slot);
+                    var anchor = mapRoot.GetSpawnAnchor(slot);
+                    Assert.That(
+                        NetworkPlayerAvatar.TryResolveAuthoredBoardStartPose(
+                            topology, mapRoot, slot, start, controller,
+                            out var position, out var rotation),
+                        Is.True, $"P{slot + 1} authored start was rejected.");
+                    Assert.That(start.ContainsHorizontalPoint(position),
+                        Is.True, $"P{slot + 1} spawned outside its start tile.");
+                    Assert.That(Quaternion.Angle(rotation, anchor.rotation),
+                        Is.LessThan(0.001f));
+
+                    var halfSegment = Mathf.Max(
+                        0f, controller.height * 0.5f - controller.radius);
+                    var overlaps = Physics.OverlapCapsule(
+                        position + controller.center + Vector3.down * halfSegment,
+                        position + controller.center + Vector3.up * halfSegment,
+                        controller.radius,
+                        Physics.DefaultRaycastLayers,
+                        QueryTriggerInteraction.Ignore);
+                    Assert.That(overlaps.Any(hit =>
+                        hit.GetComponentInParent<BoardMapRoot>() == mapRoot &&
+                        hit.bounds.max.y > 0.5f),
+                        Is.False, $"P{slot + 1} overlaps maze geometry.");
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(proxyObject);
+                Object.DestroyImmediate(mapObject);
+                Physics.SyncTransforms();
+            }
+        }
+
+        [Test]
         public void AuthoredBoardStartPose_FallsBackForLegacyOutsideMismatchAndHeight()
         {
             var mapObject = new GameObject("Start Pose Validation Map");

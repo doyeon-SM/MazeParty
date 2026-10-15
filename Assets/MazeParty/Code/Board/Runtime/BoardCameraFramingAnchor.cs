@@ -132,7 +132,50 @@ namespace MazeParty.Gameplay
 
         public BoardCameraPose Evaluate(float aspect)
         {
-            return Settings.Evaluate(transform.position, aspect);
+            return EvaluateForMap(BoardMapRuntimeLoader.ActiveMapRoot, aspect);
+        }
+
+        public BoardCameraPose EvaluateForMap(BoardMapRoot mapRoot, float aspect)
+        {
+            if (mapRoot == null || mapRoot.Topology == null)
+            {
+                return Settings.Evaluate(transform.position, aspect);
+            }
+
+            var tiles = mapRoot.Topology.Tiles;
+            var minimum = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            var maximum = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            for (var index = 0; index < tiles.Count; index++)
+            {
+                var tile = tiles[index];
+                if (tile == null)
+                {
+                    continue;
+                }
+
+                var center = tile.WorldCenter;
+                minimum = Vector2.Min(minimum, new Vector2(center.x, center.z));
+                maximum = Vector2.Max(maximum, new Vector2(center.x, center.z));
+            }
+
+            if (!float.IsFinite(minimum.x) || !float.IsFinite(maximum.x))
+            {
+                return Settings.Evaluate(transform.position, aspect);
+            }
+
+            var boundsSize = maximum - minimum +
+                             Vector2.one * BoardTile.RoomSize;
+            var settings = Settings;
+            var mapSettings = new BoardCameraFramingSettings(
+                Vector2.Max(settings.BoardSize, boundsSize),
+                settings.MarginRatio,
+                settings.FieldOfView,
+                settings.MinimumHeight,
+                settings.YawDegrees);
+            var centerPoint = (minimum + maximum) * 0.5f;
+            return mapSettings.Evaluate(
+                new Vector3(centerPoint.x, transform.position.y, centerPoint.y),
+                aspect);
         }
 
         public void Configure(BoardCameraFramingSettings framingSettings)

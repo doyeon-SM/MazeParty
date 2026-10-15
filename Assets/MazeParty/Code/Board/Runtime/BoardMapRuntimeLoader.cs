@@ -281,6 +281,8 @@ namespace MazeParty.Gameplay
                 _activeSelection = BoardMapSelection.Legacy;
                 _isReady = true;
                 _lastFailure = string.Empty;
+                FindAnyObjectByType<GameplayCameraDirector>()?
+                    .RefreshBoardFraming();
                 error = string.Empty;
                 return true;
             }
@@ -325,6 +327,8 @@ namespace MazeParty.Gameplay
             _activeSelection = selection;
             _isReady = true;
             _lastFailure = string.Empty;
+            FindAnyObjectByType<GameplayCameraDirector>()?
+                .RefreshBoardFraming();
             error = string.Empty;
             return true;
         }
