@@ -132,16 +132,16 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(attacker.TryStartPush(10d), Is.True);
             Assert.That(attacker.CanMove(10d), Is.False);
             Assert.That(attacker.TryStartPush(10.5d), Is.False);
-            Assert.That(attacker.TryCompletePush(10.499999d), Is.False);
+            Assert.That(attacker.TryCompletePush(10.099999d), Is.False);
 
-            attacker.Pause(10.25d);
+            attacker.Pause(10.05d);
             Assert.That(attacker.TryCompletePush(20d), Is.False);
             attacker.Resume(20d);
-            Assert.That(attacker.TryCompletePush(20.249999d), Is.False);
-            Assert.That(attacker.TryCompletePush(20.25d), Is.True);
-            Assert.That(attacker.CanMove(20.25d), Is.True);
-            Assert.That(attacker.TryStartPush(20.749999d), Is.False);
-            Assert.That(attacker.TryStartPush(20.75d), Is.True);
+            Assert.That(attacker.TryCompletePush(20.049999d), Is.False);
+            Assert.That(attacker.TryCompletePush(20.05d), Is.True);
+            Assert.That(attacker.CanMove(20.05d), Is.True);
+            Assert.That(attacker.TryStartPush(20.949999d), Is.False);
+            Assert.That(attacker.TryStartPush(20.95d), Is.True);
 
             target.ApplyStun(20.25d);
             Assert.That(target.CanMove(20.749999d), Is.False);

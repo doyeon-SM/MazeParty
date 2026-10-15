@@ -25,8 +25,8 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         public const double BombCollisionRadius = 0.3d;
         public const double AttackDepth = 1.87d;
         public const double AttackHalfWidth = 0.9d;
-        public const double AttackCastSeconds = 0.5d;
-        public const double AttackRecoverySeconds = 0.5d;
+        public const double AttackCastSeconds = 0.1d;
+        public const double AttackRecoverySeconds = 0.9d;
         public const double AttackCooldownSeconds =
             AttackCastSeconds + AttackRecoverySeconds;
         public const double StunSeconds = 0.5d;

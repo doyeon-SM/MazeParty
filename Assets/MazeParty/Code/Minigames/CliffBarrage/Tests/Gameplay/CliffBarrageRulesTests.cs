@@ -149,14 +149,15 @@ namespace MazeParty.Gameplay.Tests
             match.SetMovementInput(0, 0d, 0d);
             attacker = match.GetPlayer(0);
             var before = match.GetPlayer(1);
+            var impactAt = 1d + CliffBarrageRules.PushCastSeconds;
             Assert.That(match.TryPush(0), Is.True);
             Assert.That(match.GetPlayer(0).IsPushCasting, Is.True);
             Assert.That(match.GetPlayer(0).PushCastEndsAt,
-                Is.EqualTo(1.5d));
+                Is.EqualTo(impactAt).Within(0.000001d));
             Assert.That(match.TryPush(0), Is.False);
 
             match.SetMovementInput(0, -headingX, -headingZ);
-            match.AdvanceTo(1.5d -
+            match.AdvanceTo(impactAt -
                 CliffBarrageRules.SimulationStepSeconds);
             Assert.That(match.GetPlayer(0).X,
                 Is.EqualTo(attacker.X).Within(0.000001d));
@@ -165,7 +166,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(Distance(before, match.GetPlayer(1)),
                 Is.EqualTo(0d).Within(0.000001d));
 
-            match.AdvanceTo(1.5d);
+            match.AdvanceTo(impactAt);
             var after = match.GetPlayer(1);
             Assert.That(match.GetPlayer(0).IsPushCasting, Is.False);
             Assert.That(Distance(before, after),
@@ -189,19 +190,21 @@ namespace MazeParty.Gameplay.Tests
                     .Within(0.000001d));
 
             Assert.That(match.CanStartPush(0), Is.False);
-            Assert.That(after.StunnedUntil, Is.EqualTo(2d));
+            var stunEndsAt = impactAt +
+                CliffBarrageRules.PushStunSeconds;
+            Assert.That(after.StunnedUntil,
+                Is.EqualTo(stunEndsAt).Within(0.000001d));
             var moveLength = Math.Sqrt(after.X * after.X +
                                        after.Z * after.Z);
             match.SetMovementInput(
                 1,
                 -after.X / moveLength,
                 -after.Z / moveLength);
-            match.AdvanceTo(1.999d);
+            match.AdvanceTo(stunEndsAt - 0.001d);
             Assert.That(match.CanStartPush(0), Is.False);
             Assert.That(Distance(after, match.GetPlayer(1)),
                 Is.EqualTo(0d).Within(0.000001d));
-            match.AdvanceTo(2d);
-            Assert.That(match.CanStartPush(0), Is.True);
+            match.AdvanceTo(stunEndsAt);
             Assert.That(Distance(after, match.GetPlayer(1)),
                 Is.EqualTo(0d).Within(0.000001d));
 
@@ -209,10 +212,14 @@ namespace MazeParty.Gameplay.Tests
                 1,
                 -after.X / moveLength,
                 -after.Z / moveLength);
-            match.AdvanceTo(2d +
+            match.AdvanceTo(stunEndsAt +
                 CliffBarrageRules.SimulationStepSeconds);
             Assert.That(Distance(after, match.GetPlayer(1)),
                 Is.GreaterThan(0d));
+            match.AdvanceTo(1.999d);
+            Assert.That(match.CanStartPush(0), Is.False);
+            match.AdvanceTo(2d);
+            Assert.That(match.CanStartPush(0), Is.True);
         }
 
         [Test]

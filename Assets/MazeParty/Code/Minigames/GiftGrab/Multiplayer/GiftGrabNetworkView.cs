@@ -19,7 +19,6 @@ namespace MazeParty.Multiplayer
         public const float SharedCameraOrthographicSize = 11.5f;
 
         private const float ActionVfxSeconds = 0.38f;
-        private const float LabelHeight = 2.9f;
 
         private static readonly Color[] FallbackPlayerColors =
         {
@@ -37,12 +36,6 @@ namespace MazeParty.Multiplayer
             new Transform[PlayerCount];
         [SerializeField] private Transform[] baseAnchors =
             new Transform[PlayerCount];
-        [SerializeField] private Transform[] depositedGiftAnchors =
-            new Transform[PlayerCount];
-        [SerializeField] private GiftGrabBaseLabel[] playerLabels =
-            new GiftGrabBaseLabel[PlayerCount];
-        [SerializeField] private GiftGrabBaseLabel[] baseLabels =
-            new GiftGrabBaseLabel[PlayerCount];
         [SerializeField] private Transform pushVfxAnchor;
         [SerializeField] private Transform throwVfxAnchor;
         [SerializeField] private Transform dropVfxAnchor;
@@ -50,7 +43,6 @@ namespace MazeParty.Multiplayer
             new Transform[PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
-        [SerializeField] private BouncingBallsHudBindings hud;
         [SerializeField] private GameObject actionBurstVfxPrefab;
 
         private readonly PlayerView[] _players = new PlayerView[PlayerCount];
@@ -74,11 +66,7 @@ namespace MazeParty.Multiplayer
         public Transform GiftRoot => giftRoot;
         public Transform[] PlayerAnchors => playerAnchors;
         public Transform[] BaseAnchors => baseAnchors;
-        public Transform[] DepositedGiftAnchors => depositedGiftAnchors;
-        public GiftGrabBaseLabel[] PlayerLabels => playerLabels;
-        public GiftGrabBaseLabel[] BaseLabels => baseLabels;
         public GameObject ActionBurstVfxPrefab => actionBurstVfxPrefab;
-        public BouncingBallsHudBindings HudBindings => hud;
 
         public static Vector3 SharedCameraPosition =>
             MinigameCameraFraming.CalculateSharedPosition(
@@ -95,16 +83,12 @@ namespace MazeParty.Multiplayer
             Transform runtimeGifts,
             Transform[] fixedPlayerAnchors,
             Transform[] fixedBaseAnchors,
-            Transform[] fixedDepositedGiftAnchors,
-            GiftGrabBaseLabel[] fixedPlayerLabels,
-            GiftGrabBaseLabel[] fixedBaseLabels,
             Transform pushEffect,
             Transform throwEffect,
             Transform dropEffect,
             Transform[] stunEffects,
             GameObject arena,
-            AudioSource audioSource,
-            BouncingBallsHudBindings hudBindings)
+            AudioSource audioSource)
         {
             state = networkState;
             EnsureActionVfxSubscription();
@@ -113,16 +97,12 @@ namespace MazeParty.Multiplayer
             giftRoot = runtimeGifts;
             playerAnchors = fixedPlayerAnchors;
             baseAnchors = fixedBaseAnchors;
-            depositedGiftAnchors = fixedDepositedGiftAnchors;
-            playerLabels = fixedPlayerLabels;
-            baseLabels = fixedBaseLabels;
             pushVfxAnchor = pushEffect;
             throwVfxAnchor = throwEffect;
             dropVfxAnchor = dropEffect;
             stunVfxAnchors = stunEffects;
             arenaPresentation = arena;
             cueAudioSource = audioSource;
-            hud = hudBindings;
             _cameraConfigured = false;
             ConfigureCamera();
             CacheGiftViews();
@@ -146,7 +126,6 @@ namespace MazeParty.Multiplayer
             EnsurePlayers();
             SetActionVfxActive(false);
             SetWorldPresentationActive(false);
-            SetHudActive(false);
         }
 
         private void OnEnable()
@@ -160,7 +139,6 @@ namespace MazeParty.Multiplayer
             UnsubscribeFromActionVfxEvents();
             RestoreGiftPresentations();
             SetWorldPresentationActive(false);
-            SetHudActive(false);
             UnregisterCamera();
         }
 
@@ -185,9 +163,6 @@ namespace MazeParty.Multiplayer
             var showWorld = state != null && state.IsSpawned && selected &&
                             (match.FlowState == BoardFlowState.MinigamePlaying ||
                              match.FlowState == BoardFlowState.MinigameResult);
-            var showHud = showWorld &&
-                match.FlowState == BoardFlowState.MinigamePlaying;
-            SetHudActive(showHud);
             if (!showWorld)
             {
                 SetWorldPresentationActive(false);
@@ -200,8 +175,6 @@ namespace MazeParty.Multiplayer
             RefreshPlayers(match);
             RefreshGifts();
             RefreshBaseColors(match);
-            HideLegacyLabels();
-            RefreshHud(match);
             RefreshActionVfx();
         }
 
@@ -456,24 +429,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void HideLegacyLabels()
-        {
-            for (var slot = 0; slot < PlayerCount; slot++)
-            {
-                if (playerLabels != null && slot < playerLabels.Length &&
-                    playerLabels[slot] != null)
-                {
-                    playerLabels[slot].gameObject.SetActive(false);
-                }
-
-                if (baseLabels != null && slot < baseLabels.Length &&
-                    baseLabels[slot] != null)
-                {
-                    baseLabels[slot].gameObject.SetActive(false);
-                }
-            }
-        }
-
         private void RefreshBaseColors(NetworkMatchState match)
         {
             _baseColorProperties ??= new MaterialPropertyBlock();
@@ -496,26 +451,6 @@ namespace MazeParty.Multiplayer
                     _baseColorProperties.SetColor("_Color", color);
                     renderer.SetPropertyBlock(_baseColorProperties);
                 }
-            }
-        }
-
-        private void RefreshHud(NetworkMatchState match)
-        {
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                return;
-            }
-
-            for (var slot = 0; slot < PlayerCount; slot++)
-            {
-                var avatar = match.GetAvatarForSlot(slot);
-                hud.SetPlayer(
-                    slot,
-                    "P" + (slot + 1),
-                    state.GetStoredGiftCount(slot),
-                    avatar != null
-                        ? avatar.Appearance.BodyColor
-                        : FallbackPlayerColors[slot]);
             }
         }
 
@@ -683,15 +618,6 @@ namespace MazeParty.Multiplayer
             if (playerRoot != null)
             {
                 playerRoot.gameObject.SetActive(active);
-            }
-        }
-
-        private void SetHudActive(bool active)
-        {
-            if (hud != null && hud.RootCanvas != null &&
-                hud.RootCanvas.gameObject.activeSelf != active)
-            {
-                hud.RootCanvas.gameObject.SetActive(active);
             }
         }
 

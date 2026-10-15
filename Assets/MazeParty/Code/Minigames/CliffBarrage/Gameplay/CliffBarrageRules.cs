@@ -15,9 +15,9 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         public const double PlayerRadius = 0.45d;
         public const double SpawnRadius = 4.5d;
         public const double MovementSpeed = 4.5d;
-        public const double PushCastSeconds = 0.5d;
+        public const double PushCastSeconds = 0.1d;
         public const double PushStunSeconds = 0.5d;
-        public const double PushRecoverySeconds = 0.5d;
+        public const double PushRecoverySeconds = 0.9d;
         public const double PushCooldownSeconds =
             PushCastSeconds + PushRecoverySeconds;
         public const double PushRange = 2.04d;

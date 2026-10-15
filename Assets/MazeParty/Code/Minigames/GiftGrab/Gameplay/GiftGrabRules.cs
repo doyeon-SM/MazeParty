@@ -29,9 +29,9 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const float PushRange = 1.36f;
         public const float PushRadius = 0.7f;
         public const float PushKnockbackDistance = 1.25f;
-        public const double PushCastSeconds = 0.5d;
+        public const double PushCastSeconds = 0.1d;
         public const double PushStunSeconds = 0.5d;
-        public const double PushReuseDelaySeconds = 0.5d;
+        public const double PushReuseDelaySeconds = 0.9d;
         public const double PushCooldownSeconds =
             PushCastSeconds + PushReuseDelaySeconds;
         public const double RegrabLockSeconds = 0.5d;

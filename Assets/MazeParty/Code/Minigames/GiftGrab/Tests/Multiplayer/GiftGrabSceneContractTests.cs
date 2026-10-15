@@ -15,10 +15,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
-        private const string LabelPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
-        private const string HudPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
 
         [Test]
         public void ThrownGiftBoundary_UsesRadiusAdjustedExactContact()
@@ -158,7 +154,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Scene_PreservesArenaGiftAndSharedScoreHudContract()
+        public void Scene_PreservesArenaAndPhysicalGiftContract()
         {
             var scene = SceneManager.GetSceneByPath(ScenePath);
             var openedForTest = !scene.IsValid() || !scene.isLoaded;
@@ -190,7 +186,7 @@ namespace MazeParty.Multiplayer.Tests
                              "state", "sharedCamera", "playerRoot",
                              "giftRoot", "pushVfxAnchor", "throwVfxAnchor",
                              "dropVfxAnchor", "arenaPresentation",
-                             "cueAudioSource", "hud"
+                              "cueAudioSource"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -202,9 +198,8 @@ namespace MazeParty.Multiplayer.Tests
                 }
                 foreach (var propertyName in new[]
                          {
-                             "playerAnchors", "baseAnchors",
-                             "depositedGiftAnchors", "playerLabels",
-                             "baseLabels", "stunVfxAnchors"
+                              "playerAnchors", "baseAnchors",
+                              "stunVfxAnchors"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);
@@ -253,11 +248,8 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(baseAnchor, Is.Not.Null);
                     Assert.That(playerAnchor, Is.Not.Null);
                     var expectedBase = NetworkGiftGrabState.GetBaseCenter(slot);
-                    var expectedDeposit =
-                        NetworkGiftGrabState.GetDepositedGiftDisplayCenter(slot);
                     var expectedStart =
                         NetworkGiftGrabState.GetPlayerStartPosition(slot);
-                    var depositAnchor = view.DepositedGiftAnchors[slot];
                     Assert.That(baseAnchor.position.x,
                         Is.EqualTo(expectedBase.x).Within(0.001f));
                     Assert.That(baseAnchor.position.z,
@@ -266,10 +258,6 @@ namespace MazeParty.Multiplayer.Tests
                         Is.EqualTo(expectedStart.x).Within(0.001f));
                     Assert.That(playerAnchor.position.z,
                         Is.EqualTo(expectedStart.y).Within(0.001f));
-                    Assert.That(depositAnchor.position.x,
-                        Is.EqualTo(expectedDeposit.x).Within(0.001f));
-                    Assert.That(depositAnchor.position.z,
-                        Is.EqualTo(expectedDeposit.y).Within(0.001f));
                 }
                 for (var giftId = 0;
                      giftId < GiftGrabRules.TotalGiftCount;
@@ -287,31 +275,16 @@ namespace MazeParty.Multiplayer.Tests
                     Is.Not.Null,
                     "The authored gold-pile gift art must be preserved.");
 
-                var labels = state.GetComponentsInChildren<
-                    GiftGrabBaseLabel>(true);
-                Assert.That(
-                    labels,
-                    Has.Length.EqualTo(GiftGrabRules.PlayerCount * 2));
-                foreach (var label in labels)
-                {
-                    Assert.That(label.HasRequiredReferences, Is.True);
-                    Assert.That(
-                        PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                            label.gameObject),
-                        Is.EqualTo(LabelPrefabPath));
-                }
-                var hud = state.GetComponentInChildren<
-                    BouncingBallsHudBindings>(true);
-                Assert.That(hud, Is.Not.Null);
-                Assert.That(hud.HasRequiredReferences, Is.True);
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        hud.gameObject),
-                    Is.EqualTo(HudPrefabPath));
                 Assert.That(
                     state.GetComponentsInChildren<Canvas>(true),
-                    Has.Length.EqualTo(1),
-                    "Gift Grab must own exactly one shared score HUD Canvas.");
+                    Is.Empty,
+                    "Stored gifts are shown as physical gifts, not a score Canvas.");
+                Assert.That(FindDescendant(state.transform,
+                    "Player Label Anchors"), Is.Null);
+                Assert.That(FindDescendant(state.transform,
+                    "Base Label Anchors"), Is.Null);
+                Assert.That(FindDescendant(state.transform,
+                    "Deposited Gift Display Anchors"), Is.Null);
 
                 var cameras = state.GetComponentsInChildren<Component>(true)
                     .Where(component => component != null &&

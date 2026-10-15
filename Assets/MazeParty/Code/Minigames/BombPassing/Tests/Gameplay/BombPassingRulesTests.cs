@@ -218,7 +218,7 @@ namespace MazeParty.Gameplay.Tests
             var match = NewMatchWithPositions(
                 new BombPassingPosition(5d, 5d),
                 new BombPassingPosition(-6.5d, -6.5d),
-                new BombPassingPosition(5d, 7.8d),
+                new BombPassingPosition(5d, 6.9d),
                 new BombPassingPosition(-6.5d, 6.5d));
             match.SetMovementInput(0, 1d, 0d);
             match.SetMovementInput(2, 0d, -1d);

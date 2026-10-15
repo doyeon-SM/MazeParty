@@ -48,7 +48,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameTimerDial.prefab",
             "Assets/MazeParty/Prefabs/Minigames/WrongWay/UI/WrongWayHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/RedLightGreenLight/UI/RedLightGreenLightHud.prefab",
-            "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab",
             "Assets/MazeParty/Prefabs/Minigames/SequenceMemory/UI/SequenceMemoryHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
@@ -75,7 +74,6 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinigameTimerDial",
             "MazeParty.Multiplayer.WrongWayHudBindings",
             "MazeParty.Multiplayer.RedLightGreenLightHudBindings",
-            "MazeParty.Multiplayer.GiftGrabBaseLabel",
             "MazeParty.Multiplayer.SequenceMemoryHudBindings",
             "MazeParty.Multiplayer.BouncingBallsHudBindings",
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
@@ -124,8 +122,7 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity",
-                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
+                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),

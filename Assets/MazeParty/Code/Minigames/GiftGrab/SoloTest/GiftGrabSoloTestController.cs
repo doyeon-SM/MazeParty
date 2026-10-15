@@ -35,10 +35,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             new GiftPresentation[GiftGrabRules.TotalGiftCount];
         private readonly TransformSnapshot[] _giftSnapshots =
             new TransformSnapshot[GiftGrabRules.TotalGiftCount];
-        private readonly TransformSnapshot[] _playerLabelSnapshots =
-            new TransformSnapshot[GiftGrabRules.PlayerCount];
-        private readonly TransformSnapshot[] _baseLabelSnapshots =
-            new TransformSnapshot[GiftGrabRules.PlayerCount];
         private readonly List<CameraState> _cameraStates =
             new List<CameraState>();
         private readonly List<ListenerState> _listenerStates =
@@ -54,9 +50,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private GameObject _arenaPresentation;
         private Transform[] _playerAnchors;
         private Transform[] _baseAnchors;
-        private Transform[] _depositAnchors;
-        private GiftGrabBaseLabel[] _playerLabels;
-        private GiftGrabBaseLabel[] _baseLabels;
         private Transform _pushVfx;
         private Transform _throwVfx;
         private Transform _dropVfx;
@@ -239,21 +232,14 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             _playerAnchors = _productionView.PlayerAnchors;
             _baseAnchors = _productionView.BaseAnchors;
-            _depositAnchors = _productionView.DepositedGiftAnchors;
-            _playerLabels = _productionView.PlayerLabels;
-            _baseLabels = _productionView.BaseLabels;
             var giftRoot = _productionView.GiftRoot;
             if (!HasFour(_playerAnchors) ||
                 !HasFour(_baseAnchors) ||
-                !HasFour(_depositAnchors) ||
-                !HasFour(_playerLabels) ||
-                !HasFour(_baseLabels) ||
                 giftRoot == null ||
                 giftRoot.childCount != GiftGrabRules.TotalGiftCount)
             {
                 throw new InvalidOperationException(
-                    "Gift Grab scene has an incomplete player, base, gift or " +
-                    "prefab world-label contract.");
+                    "Gift Grab scene has an incomplete player, base or gift contract.");
             }
 
             for (var giftId = 0;
@@ -274,20 +260,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _giftSnapshots[giftId] =
                     TransformSnapshot.Capture(_giftAnchors[giftId]);
             }
-            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
-            {
-                if (!_playerLabels[slot].HasRequiredReferences ||
-                    !_baseLabels[slot].HasRequiredReferences)
-                {
-                    throw new InvalidOperationException(
-                        "Gift Grab visible label bindings are incomplete.");
-                }
-                _playerLabelSnapshots[slot] =
-                    TransformSnapshot.Capture(_playerLabels[slot].transform);
-                _baseLabelSnapshots[slot] =
-                    TransformSnapshot.Capture(_baseLabels[slot].transform);
-            }
-
             var vfxRoot = FindDescendant(
                 _arenaPresentation.transform,
                 "VFX Replacement Anchors");
@@ -402,8 +374,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
                 _playerVisuals[slot].SetEliminated(false);
 
-                _playerLabels[slot].gameObject.SetActive(false);
-                _baseLabels[slot].gameObject.SetActive(false);
             }
 
             for (var giftId = 0;
@@ -770,19 +740,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _giftPresentations[giftId]
                     ?.RestoreAuthoredPresentation();
                 _giftSnapshots[giftId].Restore(_giftAnchors[giftId]);
-            }
-            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
-            {
-                if (_playerLabels[slot] != null)
-                {
-                    _playerLabelSnapshots[slot].Restore(
-                        _playerLabels[slot].transform);
-                }
-                if (_baseLabels[slot] != null)
-                {
-                    _baseLabelSnapshots[slot].Restore(
-                        _baseLabels[slot].transform);
-                }
             }
             if (_productionState != null)
             {

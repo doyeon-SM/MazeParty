@@ -536,9 +536,8 @@ namespace MazeParty.Gameplay
                 Time.deltaTime * 8f);
             _leftPunchTimer = Mathf.MoveTowards(_leftPunchTimer, 0f, Time.deltaTime * 4.5f);
             _rightPunchTimer = Mathf.MoveTowards(_rightPunchTimer, 0f, Time.deltaTime * 4.5f);
-            // The shared push action deliberately reads for the full cast
-            // window used by the minigame rules (0.5 seconds).
-            _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 2f);
+            // Reach the front of the hit area during the shortened push cast.
+            _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 4f);
             _bodyHitTimer = Mathf.MoveTowards(_bodyHitTimer, 0f, Time.deltaTime * 1.9f);
             _headHitTimer = Mathf.MoveTowards(_headHitTimer, 0f, Time.deltaTime * 1.9f);
             _handHitTimer = Mathf.MoveTowards(_handHitTimer, 0f, Time.deltaTime * 2.5f);
@@ -605,9 +604,11 @@ namespace MazeParty.Gameplay
             var headY = Mathf.Lerp(0.75f, 0.08f, t) + bob;
             var handY = Mathf.Lerp(-0.05f, -0.47f, t) + bob;
             var swing = Mathf.Sin(time * 8.5f) * 0.12f * moving;
-            var leftPunch = PunchAmount(_leftPunchTimer);
-            var rightPunch = PunchAmount(_rightPunchTimer);
-            var push = PunchAmount(_pushTimer);
+            var leftPunch = StrikeAmount(_leftPunchTimer);
+            var rightPunch = StrikeAmount(_rightPunchTimer);
+            var push = StrikeAmount(_pushTimer);
+            var leftStrike = Mathf.Max(leftPunch, push);
+            var rightStrike = Mathf.Max(rightPunch, push);
             var bodyWobble = WobbleAngle(_bodyHitTimer, 22f);
             var headWobble = WobbleAngle(_headHitTimer, 30f);
             var handWobble = WobbleAngle(_handHitTimer, 34f);
@@ -619,8 +620,16 @@ namespace MazeParty.Gameplay
             _head.localPosition = new Vector3(headOffsetX, headY, 0f);
             _head.localScale = Vector3.one * 0.78f;
             _head.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _leftHand.localPosition = new Vector3(0.58f, handY, swing + (leftPunch + push) * 0.62f);
-            _rightHand.localPosition = new Vector3(-0.58f, handY, -swing + (rightPunch + push) * 0.62f);
+            // From above, the hands converge toward the forward tip of a
+            // triangle instead of barely moving along parallel arm lines.
+            _leftHand.localPosition = new Vector3(
+                0.58f - leftStrike * 0.46f,
+                handY,
+                swing + leftStrike * 1.65f);
+            _rightHand.localPosition = new Vector3(
+                -0.58f + rightStrike * 0.46f,
+                handY,
+                -swing + rightStrike * 1.65f);
             _leftHand.localScale = Vector3.one * 0.27f;
             _rightHand.localScale = Vector3.one * 0.27f;
             _leftHand.localRotation = Quaternion.Euler(0f, 0f, -handWobble);
@@ -654,11 +663,11 @@ namespace MazeParty.Gameplay
             if (_firstPersonHands != null)
             {
                 _firstPersonLeftHand.localPosition =
-                    new Vector3(0.27f, -0.24f,
-                        0.52f + (leftPunch + push) * 0.45f);
+                    new Vector3(0.27f - leftStrike * 0.17f, -0.24f,
+                        0.52f + leftStrike * 0.95f);
                 _firstPersonRightHand.localPosition =
-                    new Vector3(-0.27f, -0.24f,
-                        0.52f + (rightPunch + push) * 0.45f);
+                    new Vector3(-0.27f + rightStrike * 0.17f, -0.24f,
+                        0.52f + rightStrike * 0.95f);
             }
             if (_firstPersonItemRoot != null)
             {
@@ -770,9 +779,10 @@ namespace MazeParty.Gameplay
             }
         }
 
-        private static float PunchAmount(float timer)
+        private static float StrikeAmount(float timer)
         {
-            return Mathf.Sin((1f - timer) * Mathf.PI) * timer;
+            return Mathf.Clamp01(
+                Mathf.Sin((1f - timer) * Mathf.PI) * timer * 1.75f);
         }
 
         private static float WobbleAngle(float timer, float maximumAngle)

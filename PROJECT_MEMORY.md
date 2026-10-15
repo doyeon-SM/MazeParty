@@ -233,8 +233,7 @@
   이미 표시되지 않는 주사위 완료·이동 0·조용히 걷기 등의 구형 안내 번역 행도 정리한다.
 - 플레이 중 Canvas UI의 `UnityEngine.UI.Text`와 `TextMeshProUGUI`는 모두
   Normal/Regular 스타일을 사용한다. 이후 setup으로 생성하는 UI도 같은 스타일로 고정하고,
-  중앙 프리팹 계약 테스트로 회귀를 막는다. Gift Grab 기지 표지처럼 Canvas가 아닌 월드
-  `TextMesh`는 이 규칙에서 제외한다.
+  중앙 프리팹 계약 테스트로 회귀를 막는다.
 - BoardCanvas.prefab의 사용자 배치를 유지한다. 삭제된 Players·Inventory 제목,
   인벤토리 라벨, BoardStatusText, BoardChoiceTimerText, BoardShieldText, 지도 Title·Legend와
   Current Tile·Key Shop Distance 바인딩은 선택 사항이며 setup으로 복원하지 않는다.
@@ -310,18 +309,22 @@
 - 게임은 항상 4인 구조이며 첫 시작과 각 라운드 시작마다 서버 기준 공통 HUD에서
   3 → 2 → 1을 표시한다. 같은 시간 동안 로컬 플레이어를 WaterShield.prefab으로
   강조한다. Snowy Spin·Bouncing Balls 전용 표현도 같은 VFX를 균일 스케일로 사용한다.
-- 공격 입력은 기존 한손 공격 모션, 밀기는 0.5초 동안 기존 양손 전진 모션을 재생한다.
+- 보드 일반 공격·격투와 미니게임 공격 입력은 공통 `PlayerAvatarVisual`의 한손 공격
+  모션을, 밀기는 같은 컴포넌트의 양손 전진 모션을 재생한다. 두 동작 모두
+  정수리에서 삼각형으로 보이도록 몸 양옆의 손이 정면 중앙으로 모이며 약 1.65m까지
+  뻗고, 1인칭 손도 같은 방향으로 전진한다.
   Stable Footing·Cliff Barrage·Gift Grab의 밀기와 Bomb Passing의 넘기기 공격은 기존 범위를
-  15% 줄이고, 입력 뒤 0.5초 시전 중 이동·추가 행동을 잠근다. 시전 시작 방향과 완료 시점의
+  15% 줄이고, 입력 뒤 0.1초 시전 중 이동·추가 행동을 잠근다. 시전 시작 방향과 완료 시점의
   플레이어 위치로 대상을 판정하며 실제 밀림은 공격자→피격자 방향을 사용한다. 적중 시
-  0.5초 기절하고 빗나가도 시전 완료 뒤 0.5초의 같은 재사용 대기를 적용한다. 애니메이션은
+  0.5초 기절하고 빗나가도 시전 완료 뒤 0.9초의 같은 재사용 대기를 적용해 입력 간격은
+  기존 1초로 유지한다. 애니메이션은
   시전 시작에 한 번, 피격 모션·VFX는 실제 적중 완료에만 낸다.
 - 화면 HUD에는 현재 판단에 필요한 입력·신호·점수만 둔다. Solo의
   DEVELOPER SOLO TEST 패널은 Editor 전용이며 Player 빌드에는 포함하지 않는다.
 - `Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab`은
-  Bouncing Balls·Gift Grab·Territory Paint가 함께 쓰는 4인 점수 HUD다. 이름과 점수는
-  각 슬롯의 권위 있는 `Appearance.BodyColor`를 사용한다. Gift Grab은 기지에 저장된
-  선물 수, 나머지 두 게임은 각 게임의 기존 점수를 표시한다.
+  Bouncing Balls·Territory Paint가 함께 쓰는 4인 점수 HUD다. 이름과 점수는
+  각 슬롯의 권위 있는 `Appearance.BodyColor`를 사용한다. Gift Grab의 보관 선물 수는
+  숫자 HUD 대신 기지에 놓인 금더미로만 표시한다.
 - Stable Footing은 8×6이다. 공개 전 3초 동안 세 심벌을 0.5초마다 서로 다른 슬롯으로
   섞고 마지막 배치에서 정답 하나만 초록색으로 공개한다. 심벌이 섞이고 공개되는 동안에도
   이동할 수 있지만 밀기는 Move 단계에서만 가능하다. 오답 발판은 일시 하강하고 복원 뒤
@@ -372,6 +375,8 @@
   떨어지고 0.5초 후 다시 주울 수 있다. 기지에 넣은 선물은 크기를 바꾸지 않고
   최대 14개의 원형 위치에 적재해 보여 준다. Network와
   Solo 모두 실제 투사체 충돌 시각부터 정확히 0.5초 동안 기절 이동 잠금을 적용한다.
+  플레이어·기지 월드 라벨, 보관 수 Canvas HUD, 전용 표시 앵커는 사용하지 않으며
+  Solo도 삭제된 라벨 바인딩 없이 실행한다.
 - Sequence Memory의 A/S/D는 도/미/솔이며 Bell 7 원음 G5를 0.6674199/0.8408964/1.0
   피치로 재생한다. 큐 선행 무음 0.21초를 건너뛰고 동시 재생은 8개로 제한한다.
 - 15종의 플레이어 스폰 표시는 숨긴다. Bomb Passing은 중앙 블록만 숨기고 소환 링은

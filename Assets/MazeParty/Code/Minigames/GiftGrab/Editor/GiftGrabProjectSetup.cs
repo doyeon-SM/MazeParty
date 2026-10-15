@@ -12,9 +12,8 @@ using UnityEngine.SceneManagement;
 namespace MazeParty.Editor
 {
     /// <summary>
-    /// Builds Gift Grab's additive production arena, prefab-owned world labels,
-    /// and shared score HUD. Existing designer prefabs and prototype materials
-    /// are never overwritten.
+    /// Builds Gift Grab's additive production arena without score labels.
+    /// Existing designer prefabs and prototype materials are never overwritten.
     /// </summary>
     public static class GiftGrabProjectSetup
     {
@@ -22,7 +21,6 @@ namespace MazeParty.Editor
             "MazeParty/Minigames/Rebuild Gift Grab";
         private const string ProjectRoot = "Assets/MazeParty";
         private const string ScenesFolder = "Assets/MazeParty/Scenes/Minigames/GiftGrab";
-        private const string UiPrefabFolder = "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI";
         private const string CorePrefabFolder =
             ProjectRoot + "/Prefabs/Minigames/GiftGrab";
         public const string EnvironmentPrefabPath =
@@ -34,8 +32,6 @@ namespace MazeParty.Editor
 
         public const string GiftGrabScenePath =
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
-        public const string BaseLabelPrefabPath =
-            "Assets/MazeParty/Prefabs/Minigames/GiftGrab/UI/GiftGrabBaseLabel.prefab";
 
         private static readonly Color[] PlayerColors =
         {
@@ -73,9 +69,8 @@ namespace MazeParty.Editor
             }
 
             Debug.Log(
-                "Gift Grab rebuilt: symmetric arena, 19 reusable gift " +
-                "presentations and prefab world labels. Existing " +
-                "designer prefab styling was preserved.");
+                "Gift Grab rebuilt: symmetric arena and 19 reusable gift " +
+                "presentations. Existing designer prefab styling was preserved.");
         }
 
         [MenuItem(MenuPath, true)]
@@ -88,18 +83,12 @@ namespace MazeParty.Editor
         {
             EnsureFolders();
             var materials = CreateMaterials();
-            var labelPrefab = LoadOrCreateBaseLabelPrefab(materials);
-            var hudPrefab =
-                BouncingBallsProjectSetup.LoadOrCreateHudPrefab();
-            BuildGiftGrabScene(materials, labelPrefab, hudPrefab);
+            BuildGiftGrabScene(materials);
             MinigameVfxProjectSetup.InstallScene(GiftGrabScenePath);
             AssetDatabase.SaveAssets();
         }
 
-        private static void BuildGiftGrabScene(
-            GiftGrabMaterials materials,
-            GameObject labelPrefab,
-            GameObject hudPrefab)
+        private static void BuildGiftGrabScene(GiftGrabMaterials materials)
         {
             var previousActive = SceneManager.GetActiveScene();
             var previousActivePath = previousActive.path;
@@ -133,10 +122,7 @@ namespace MazeParty.Editor
             var root = new GameObject("Gift Grab Network State");
             var arenaPresentation = new GameObject("Arena Presentation");
             arenaPresentation.transform.SetParent(root.transform, false);
-            var arena = CreateArena(
-                arenaPresentation.transform,
-                materials,
-                labelPrefab);
+            var arena = CreateArena(arenaPresentation.transform, materials);
             CreateLighting(arenaPresentation.transform);
             var sharedCamera = CreateSharedCamera(root.transform);
 
@@ -165,19 +151,6 @@ namespace MazeParty.Editor
             root.AddComponent<NetworkObject>();
             var state = root.AddComponent<NetworkGiftGrabState>();
             var view = root.AddComponent<GiftGrabNetworkView>();
-            var hudObject = PrefabUtility.InstantiatePrefab(
-                hudPrefab,
-                root.transform) as GameObject;
-            var hud = hudObject != null
-                ? hudObject.GetComponent<BouncingBallsHudBindings>()
-                : null;
-            if (hud == null || !hud.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "BouncingBallsHud.prefab is missing required authored " +
-                    "bindings.");
-            }
-
             view.Configure(
                 state,
                 sharedCamera,
@@ -185,16 +158,12 @@ namespace MazeParty.Editor
                 arena.GiftRoot,
                 arena.PlayerAnchors,
                 arena.BaseAnchors,
-                arena.DepositedGiftAnchors,
-                arena.PlayerLabels,
-                arena.BaseLabels,
                 arena.PushVfx,
                 arena.ThrowVfx,
                 arena.DropVfx,
                 arena.StunVfx,
                 arenaPresentation,
-                audioSource,
-                hud);
+                audioSource);
 
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, GiftGrabScenePath);
@@ -215,8 +184,7 @@ namespace MazeParty.Editor
 
         private static ArenaReferences CreateArena(
             Transform parent,
-            GiftGrabMaterials materials,
-            GameObject labelPrefab)
+            GiftGrabMaterials materials)
         {
             var centerX = NetworkGiftGrabState.ArenaCenterX;
             CreateAuthorityColliders(parent);
@@ -230,21 +198,8 @@ namespace MazeParty.Editor
             playerRoot.SetParent(parent, false);
             var baseRoot = new GameObject("Base Anchors").transform;
             baseRoot.SetParent(parent, false);
-            var depositRoot = new GameObject(
-                "Deposited Gift Display Anchors").transform;
-            depositRoot.SetParent(parent, false);
-            var playerLabelRoot = new GameObject(
-                "Player Label Anchors").transform;
-            playerLabelRoot.SetParent(parent, false);
-            var baseLabelRoot = new GameObject(
-                "Base Label Anchors").transform;
-            baseLabelRoot.SetParent(parent, false);
-
             var playerAnchors = new Transform[GiftGrabRules.PlayerCount];
             var baseAnchors = new Transform[GiftGrabRules.PlayerCount];
-            var depositAnchors = new Transform[GiftGrabRules.PlayerCount];
-            var playerLabels = new GiftGrabBaseLabel[GiftGrabRules.PlayerCount];
-            var baseLabels = new GiftGrabBaseLabel[GiftGrabRules.PlayerCount];
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
                 var basePosition = NetworkGiftGrabState.GetBaseCenter(slot);
@@ -298,26 +253,6 @@ namespace MazeParty.Editor
                     startPosition.y);
                 playerAnchors[slot] = playerAnchor;
 
-                var deposit = new GameObject(
-                    "Stored Gift Display " + (slot + 1)).transform;
-                deposit.SetParent(depositRoot, false);
-                var towardCenter = new Vector3(
-                    centerX - baseWorld.x,
-                    0f,
-                    -baseWorld.z).normalized;
-                deposit.position = baseWorld + towardCenter * 0.5f;
-                depositAnchors[slot] = deposit;
-
-                playerLabels[slot] = InstantiateLabel(
-                    labelPrefab,
-                    playerLabelRoot,
-                    "Player Label " + (slot + 1),
-                    playerAnchor.position + Vector3.up * 2.9f);
-                baseLabels[slot] = InstantiateLabel(
-                    labelPrefab,
-                    baseLabelRoot,
-                    "Base Label " + (slot + 1),
-                    baseWorld + new Vector3(0f, 0.7f, 0f));
             }
 
             var giftRoot = new GameObject("Gift Anchors").transform;
@@ -344,9 +279,6 @@ namespace MazeParty.Editor
             {
                 PlayerAnchors = playerAnchors,
                 BaseAnchors = baseAnchors,
-                DepositedGiftAnchors = depositAnchors,
-                PlayerLabels = playerLabels,
-                BaseLabels = baseLabels,
                 GiftRoot = giftRoot,
                 PushVfx = effects.Push,
                 ThrowVfx = effects.Throw,
@@ -543,33 +475,6 @@ namespace MazeParty.Editor
             return anchor;
         }
 
-        private static GiftGrabBaseLabel InstantiateLabel(
-            GameObject prefab,
-            Transform parent,
-            string name,
-            Vector3 position)
-        {
-            var instance = PrefabUtility.InstantiatePrefab(
-                prefab,
-                parent) as GameObject;
-            if (instance == null)
-            {
-                throw new InvalidOperationException(
-                    "Could not instantiate GiftGrabBaseLabel.prefab.");
-            }
-            instance.name = name;
-            instance.transform.position = position;
-            instance.transform.rotation =
-                GiftGrabNetworkView.SharedCameraRotation;
-            var label = instance.GetComponent<GiftGrabBaseLabel>();
-            if (label == null || !label.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "Gift Grab world-label prefab bindings are invalid.");
-            }
-            return label;
-        }
-
         private static void CreateLighting(Transform parent)
         {
             var lightObject = new GameObject("Gift Grab Directional Light");
@@ -610,130 +515,6 @@ namespace MazeParty.Editor
             new GameObject("Player Carry Art Anchor").transform.SetParent(
                 root,
                 false);
-        }
-
-        private static GameObject LoadOrCreateBaseLabelPrefab(
-            GiftGrabMaterials materials)
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                BaseLabelPrefabPath);
-            if (prefab == null)
-            {
-                var template = CreateBaseLabelTemplate(materials);
-                try
-                {
-                    prefab = PrefabUtility.SaveAsPrefabAsset(
-                        template,
-                        BaseLabelPrefabPath);
-                }
-                finally
-                {
-                    UnityEngine.Object.DestroyImmediate(template);
-                }
-            }
-
-            var binding = prefab != null
-                ? prefab.GetComponent<GiftGrabBaseLabel>()
-                : null;
-            if (binding == null || !binding.HasRequiredReferences)
-            {
-                throw new InvalidOperationException(
-                    "GiftGrabBaseLabel.prefab is missing its serialized " +
-                    "binding contract. Repair it without rebuilding it.");
-            }
-            return prefab;
-        }
-
-        private static GameObject CreateBaseLabelTemplate(
-            GiftGrabMaterials materials)
-        {
-            var font = RequireBuiltinFont();
-            var root = new GameObject(
-                "GiftGrabBaseLabel",
-                typeof(GiftGrabBaseLabel));
-            var highlight = CreatePrimitive(
-                "Local Highlight",
-                PrimitiveType.Cube,
-                root.transform,
-                new Vector3(0f, 0f, 0.04f),
-                Quaternion.identity,
-                new Vector3(3.05f, 1.02f, 0.035f),
-                materials.Highlight,
-                false);
-            CreatePrimitive(
-                "Label Backing",
-                PrimitiveType.Cube,
-                root.transform,
-                Vector3.zero,
-                Quaternion.identity,
-                new Vector3(2.82f, 0.82f, 0.06f),
-                materials.LabelBack,
-                false);
-            var swatch = CreatePrimitive(
-                "Owner Swatch",
-                PrimitiveType.Cube,
-                root.transform,
-                new Vector3(-1.22f, 0f, -0.05f),
-                Quaternion.identity,
-                new Vector3(0.16f, 0.62f, 0.035f),
-                materials.Highlight,
-                false);
-            var title = CreateWorldText(
-                "Title", root.transform, font,
-                new Vector3(0.06f, 0.18f, -0.055f),
-                58, 0.047f, "PLAYER 1 BASE");
-            var detail = CreateWorldText(
-                "Detail", root.transform, font,
-                new Vector3(0.06f, -0.17f, -0.055f),
-                52, 0.04f, "0 GIFTS");
-            highlight.SetActive(false);
-            root.GetComponent<GiftGrabBaseLabel>().Configure(
-                title,
-                detail,
-                swatch.GetComponent<Renderer>(),
-                highlight.GetComponent<Renderer>());
-            return root;
-        }
-
-        private static TextMesh CreateWorldText(
-            string name,
-            Transform parent,
-            Font font,
-            Vector3 position,
-            int fontSize,
-            float characterSize,
-            string sample)
-        {
-            var textObject = new GameObject(name);
-            textObject.transform.SetParent(parent, false);
-            textObject.transform.localPosition = position;
-            var text = textObject.AddComponent<TextMesh>();
-            text.font = font;
-            text.fontSize = fontSize;
-            text.fontStyle = FontStyle.Bold;
-            text.characterSize = characterSize;
-            text.anchor = TextAnchor.MiddleCenter;
-            text.alignment = TextAlignment.Center;
-            text.color = Color.white;
-            text.text = sample;
-            var renderer = text.GetComponent<MeshRenderer>();
-            if (renderer != null && font.material != null)
-            {
-                renderer.sharedMaterial = font.material;
-            }
-            return text;
-        }
-
-        private static Font RequireBuiltinFont()
-        {
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity built-in LegacyRuntime.ttf could not be loaded.");
-            }
-            return font;
         }
 
         private static GameObject CreatePrimitive(
@@ -784,8 +565,6 @@ namespace MazeParty.Editor
                 GiftRibbon = CreateOrLoadMaterial(
                     "GiftGrabGiftRibbon", new Color(1f, 0.85f, 0.22f),
                     new Color(0.18f, 0.1f, 0.01f)),
-                LabelBack = CreateOrLoadMaterial(
-                    "GiftGrabLabelBack", new Color(0.025f, 0.03f, 0.055f)),
                 Highlight = CreateOrLoadMaterial(
                     "GiftGrabHighlight", new Color(1f, 0.82f, 0.14f),
                     new Color(0.34f, 0.18f, 0.01f)),
@@ -849,23 +628,14 @@ namespace MazeParty.Editor
         {
             var players = FindDescendant(root.transform, "Player Anchors");
             var bases = FindDescendant(root.transform, "Base Anchors");
-            var deposits = FindDescendant(
-                root.transform,
-                "Deposited Gift Display Anchors");
             var gifts = FindDescendant(root.transform, "Gift Anchors");
-            var labels = root.GetComponentsInChildren<GiftGrabBaseLabel>(true);
-            var hud = root.GetComponentInChildren<
-                BouncingBallsHudBindings>(true);
             if (root.GetComponent<NetworkObject>() == null ||
                 root.GetComponent<NetworkGiftGrabState>() == null ||
                 root.GetComponent<GiftGrabNetworkView>() == null ||
                 players == null || players.childCount != GiftGrabRules.PlayerCount ||
                 bases == null || bases.childCount != GiftGrabRules.PlayerCount ||
-                deposits == null ||
-                deposits.childCount != GiftGrabRules.PlayerCount ||
                 gifts == null || gifts.childCount != GiftGrabRules.TotalGiftCount ||
-                labels.Length != GiftGrabRules.PlayerCount * 2 ||
-                hud == null || !hud.HasRequiredReferences ||
+                root.GetComponentsInChildren<Canvas>(true).Length != 0 ||
                 root.GetComponentInChildren<CinemachineCamera>(true) == null ||
                 root.GetComponentInChildren<AudioSource>(true) == null ||
                 FindDescendant(root.transform, "Art Replacement Anchors") == null ||
@@ -873,26 +643,8 @@ namespace MazeParty.Editor
             {
                 throw new InvalidOperationException(
                     "Generated Gift Grab scene is missing its state, arena, " +
-                    "gift, label, score HUD, camera, audio, VFX or art " +
+                    "gift, camera, audio, VFX or art " +
                     "contract.");
-            }
-            foreach (var label in labels)
-            {
-                if (!label.HasRequiredReferences ||
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        label.gameObject) != BaseLabelPrefabPath)
-                {
-                    throw new InvalidOperationException(
-                        "Every Gift Grab visible world label must remain a " +
-                        "configured prefab instance.");
-                }
-            }
-            if (PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                    hud.gameObject) != BouncingBallsProjectSetup.HudPrefabPath)
-            {
-                throw new InvalidOperationException(
-                    "Gift Grab Canvas must be instantiated from the shared " +
-                    "BouncingBallsHud.prefab.");
             }
             if (root.GetComponentInChildren<Camera>(true) != null ||
                 root.GetComponentInChildren<AudioListener>(true) != null)
@@ -929,7 +681,6 @@ namespace MazeParty.Editor
         private static void EnsureFolders()
         {
             EnsureFolder(ScenesFolder);
-            EnsureFolder(UiPrefabFolder);
             EnsureFolder(ProjectRoot + "/Art");
             EnsureFolder(ProjectRoot + "/Art/Minigames");
             EnsureFolder(ProjectRoot + "/Art/Minigames/GiftGrab");
@@ -983,9 +734,6 @@ namespace MazeParty.Editor
         {
             public Transform[] PlayerAnchors;
             public Transform[] BaseAnchors;
-            public Transform[] DepositedGiftAnchors;
-            public GiftGrabBaseLabel[] PlayerLabels;
-            public GiftGrabBaseLabel[] BaseLabels;
             public Transform GiftRoot;
             public Transform PushVfx;
             public Transform ThrowVfx;
@@ -1007,7 +755,6 @@ namespace MazeParty.Editor
             public Material Trim;
             public Material GiftWrap;
             public Material GiftRibbon;
-            public Material LabelBack;
             public Material Highlight;
             public Material PushVfx;
             public Material ThrowVfx;
