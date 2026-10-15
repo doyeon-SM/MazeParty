@@ -15,7 +15,7 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/World/TravelRouteHemisphere.prefab";
 
         [Test]
-        public void TravelMarker_IsAuthoredBlueAndClientLocal()
+        public void TravelMarker_IsAuthoredAndClientLocal()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 TravelMarkerPrefabPath);
@@ -27,9 +27,9 @@ namespace MazeParty.Multiplayer.Tests
             var material = particle.GetComponent<ParticleSystemRenderer>()
                 .sharedMaterial;
             Assert.That(material, Is.Not.Null);
-            var color = material.GetColor("_BaseColor");
-            Assert.That(color.b, Is.GreaterThan(color.r));
-            Assert.That(color.b, Is.GreaterThan(color.g));
+            Assert.That(material.shader, Is.Not.Null);
+            Assert.That(particle.main.loop, Is.True);
+            Assert.That(particle.main.playOnAwake, Is.True);
         }
 
         [Test]

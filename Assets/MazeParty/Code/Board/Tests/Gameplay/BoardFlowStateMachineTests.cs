@@ -361,6 +361,60 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(restarted.ActionClock.IsRunning, Is.False);
         }
 
+        [Test]
+        public void DelayedCombatEntry_LeavesLandingCompletionToTheNextGuardedTick()
+        {
+            foreach (var pauseSeconds in new[] { 0d, 120d })
+            {
+                var flow = StartInAction();
+                flow.Pause(7d);
+                flow.Resume(7d + pauseSeconds);
+                ReportAllPlayersArrived(flow, 10d + pauseSeconds);
+                var observedServerNow = 30d + pauseSeconds;
+                flow.Transitioned += transition =>
+                {
+                    if (transition.Current == BoardFlowState.CombatResolve)
+                        // Reproduce a callback entering a phase whose nominal time has elapsed.
+                        flow.TryCompleteCombat(15d + pauseSeconds, 2d);
+                };
+
+                flow.Tick(observedServerNow);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+                Assert.That(flow.StateStartedAt, Is.EqualTo(15d));
+                Assert.That(flow.GetStateRemaining(observedServerNow), Is.Zero);
+                flow.Tick(observedServerNow + 80d, false, false, true);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+                flow.Tick(observedServerNow + 81d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+                Assert.That(flow.GetStateRemaining(observedServerNow + 81d), Is.EqualTo(60d));
+            }
+        }
+
+        [Test]
+        public void StalePhaseCommands_CannotBypassPendingLandingEffects()
+        {
+            var flow = StartInCombat();
+            flow.TryCompleteCombat(15d, 2d);
+            flow.Tick(100d, false, false, true);
+            Assert.That(flow.TryReportPlayerArrived(0, 100d), Is.False);
+            Assert.That(flow.TrySkipMinigame(100d), Is.False);
+            Assert.That(flow.TryBeginMinigameLoading(100d), Is.False);
+            Assert.That(flow.TryBeginMinigame(100d), Is.False);
+            Assert.That(flow.TryCompleteMinigame(100d), Is.False);
+            Assert.That(flow.TryCompleteCombat(100d), Is.False);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.LandingEffectResolve));
+        }
+
+        [Test]
+        public void DelayedLandingCompletion_GivesTheReadyScreenItsFullDeadline()
+        {
+            var flow = StartInCombat();
+            flow.TryCompleteCombat(15d, 2d);
+            flow.Tick(100d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameIntroReady));
+            Assert.That(flow.GetStateRemaining(100d), Is.EqualTo(60d));
+        }
+
         private static BoardFlowStateMachine StartInAction()
         {
             var flow = new BoardFlowStateMachine();

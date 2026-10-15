@@ -1,4 +1,5 @@
 using System;
+using TMPro;
 using MazeParty.Multiplayer;
 using UnityEditor;
 using UnityEngine;
@@ -102,14 +103,6 @@ namespace MazeParty.Editor
             }
 
             EnsureFolder(ModuleFolder);
-            var font = Resources.GetBuiltinResource<Font>(
-                "LegacyRuntime.ttf");
-            if (font == null)
-            {
-                throw new InvalidOperationException(
-                    "Unity LegacyRuntime.ttf was not found.");
-            }
-
             var root = new GameObject(
                 ModuleObjectName,
                 typeof(RectTransform),
@@ -133,7 +126,7 @@ namespace MazeParty.Editor
                     MessageObjectName,
                     typeof(RectTransform),
                     typeof(CanvasRenderer),
-                    typeof(Text));
+                    typeof(TextMeshProUGUI));
                 SetUiLayer(messageObject);
                 messageObject.transform.SetParent(root.transform, false);
                 var messageRect = (RectTransform)messageObject.transform;
@@ -143,15 +136,17 @@ namespace MazeParty.Editor
                 messageRect.offsetMin = new Vector2(36f, 28f);
                 messageRect.offsetMax = new Vector2(-36f, -28f);
 
-                var message = messageObject.GetComponent<Text>();
-                message.font = font;
+                var message = messageObject.GetComponent<TextMeshProUGUI>();
+                message.font = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
+                    "Assets/MazeParty/Fonts/BoardReadyKorean SDF.asset");
                 message.text = string.Empty;
                 message.fontSize = 28;
                 message.color = new Color(0.93f, 0.96f, 1f, 1f);
-                message.alignment = TextAnchor.MiddleCenter;
-                message.horizontalOverflow = HorizontalWrapMode.Wrap;
-                message.verticalOverflow = VerticalWrapMode.Overflow;
+                message.alignment = TextAlignmentOptions.Center;
+                message.textWrappingMode = TextWrappingModes.Normal;
+                message.overflowMode = TextOverflowModes.Overflow;
                 message.raycastTarget = false;
+                BoardEventPopupPresentationUpgrade.ConfigureNewMessage(root, message);
 
                 root.SetActive(false);
                 var created = PrefabUtility.SaveAsPrefabAsset(
@@ -215,7 +210,7 @@ namespace MazeParty.Editor
             var bindings = root.GetComponent<BoardHudCanvasBindings>();
             var message = FindDescendant(
                 panel.transform,
-                MessageObjectName)?.GetComponent<Text>();
+                MessageObjectName)?.GetComponent<TMP_Text>();
             if (bindings == null || message == null)
             {
                 throw new InvalidOperationException(
@@ -253,7 +248,7 @@ namespace MazeParty.Editor
 
             var message = FindDescendant(
                 panel,
-                MessageObjectName)?.GetComponent<Text>();
+                MessageObjectName)?.GetComponent<TMP_Text>();
             var bindings = prefab.GetComponent<BoardHudCanvasBindings>();
             if (bindings == null || message == null)
             {

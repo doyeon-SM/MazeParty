@@ -33,7 +33,7 @@ namespace MazeParty.Multiplayer
             public Text PhaseTimerText;
             public Text StatusText;
             public Text ReconnectText;
-            public Text BoardEventPopupMessage;
+            public TMP_Text BoardEventPopupMessage;
             public Text BoardKillFeedMessage;
             public Text MinigameReadyTitle;
             public Text MinigameDescription;
@@ -125,7 +125,7 @@ namespace MazeParty.Multiplayer
         public Text PhaseTimerText => references.PhaseTimerText;
         public Text StatusText => references.StatusText;
         public Text ReconnectText => references.ReconnectText;
-        public Text BoardEventPopupMessage =>
+        public TMP_Text BoardEventPopupMessage =>
             references.BoardEventPopupMessage;
         public Text BoardKillFeedMessage => references.BoardKillFeedMessage;
         public Text MinigameReadyTitle => references.MinigameReadyTitle;

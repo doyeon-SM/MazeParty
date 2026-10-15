@@ -58,7 +58,7 @@ namespace MazeParty.Multiplayer
             item != null ? item.ItemShopTooltip : null;
         public Text ItemShopStatus =>
             item != null ? item.ItemShopStatus : null;
-        public Text BoardEventPopupMessage =>
+        public TMP_Text BoardEventPopupMessage =>
             hud != null ? hud.BoardEventPopupMessage : null;
         public Text BoardKillFeedMessage =>
             hud != null ? hud.BoardKillFeedMessage : null;

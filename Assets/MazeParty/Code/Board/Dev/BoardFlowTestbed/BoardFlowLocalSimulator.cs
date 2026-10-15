@@ -2351,7 +2351,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             for (var slot = 0; slot < stats.Length; slot++)
                 stats[slot] = new PlayerRankingStats(
                     _keys[slot], _gold[slot], _minigameWins[slot]);
-            var order = PlayerRankingRules.OrderSlots(stats);
+            var effects = new BoardLandingEffectType[stats.Length];
+            for (var slot = 0; slot < effects.Length; slot++)
+                effects[slot] = GetLocalLandingEffect(slot, out _);
+            var order = BoardLandingEffectLayout.OrderResolutionSlots(stats, effects);
             Array.Copy(order, _landingEffectOrder, order.Length);
             _nextLandingEffectSlot = 0;
             _appliedLandingEffectMask = 0;

@@ -3862,7 +3862,7 @@ MonoBehaviour:
     PhaseTimerText: {fileID: 2265626090355326490}
     StatusText: {fileID: 0}
     ReconnectText: {fileID: 3766223560357808653}
-    BoardEventPopupMessage: {fileID: 7794569397785683271}
+    BoardEventPopupMessage: {fileID: 1827979717383270912}
     BoardKillFeedMessage: {fileID: 5044966523118538984}
     MinigameReadyTitle: {fileID: 857227605046387987}
     MinigameDescription: {fileID: 4752112107107332157}
@@ -11191,22 +11191,22 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 5350620893518986820, guid: 21e306ce9ab905c4b96a57e762949ff6, type: 3}
   m_PrefabInstance: {fileID: 5985119603290929550}
   m_PrefabAsset: {fileID: 0}
---- !u!224 &5392923157964380510 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 1862495300515537104, guid: 21e306ce9ab905c4b96a57e762949ff6, type: 3}
-  m_PrefabInstance: {fileID: 5985119603290929550}
-  m_PrefabAsset: {fileID: 0}
---- !u!114 &7794569397785683271 stripped
+--- !u!114 &1827979717383270912 stripped
 MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 4549960537039215817, guid: 21e306ce9ab905c4b96a57e762949ff6, type: 3}
+  m_CorrespondingSourceObject: {fileID: 5355100257273138062, guid: 21e306ce9ab905c4b96a57e762949ff6, type: 3}
   m_PrefabInstance: {fileID: 5985119603290929550}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
+  m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
+--- !u!224 &5392923157964380510 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1862495300515537104, guid: 21e306ce9ab905c4b96a57e762949ff6, type: 3}
+  m_PrefabInstance: {fileID: 5985119603290929550}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9062954088161778759
 PrefabInstance:
   m_ObjectHideFlags: 0

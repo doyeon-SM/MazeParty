@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using System.Text.RegularExpressions;
 using MazeParty.Gameplay;
 
 namespace MazeParty.Multiplayer
@@ -70,6 +71,23 @@ namespace MazeParty.Multiplayer
         /// </summary>
         public static string Format(string encoded)
         {
+            return FormatInternal(encoded, null);
+        }
+
+        public static string PlayerToken(int slot) => "@p" + slot;
+        public static string PlayersToken(int mask) => "@m" + mask;
+        public static string ResourceToken(BoardSpecialEventResource resource, int amount) =>
+            (resource == BoardSpecialEventResource.Gold ? "@g" : "@k") +
+            amount.ToString(CultureInfo.InvariantCulture);
+
+        public static string FormatEventPopup(string encoded, Func<int, string> playerLabel)
+        {
+            if (playerLabel == null) throw new ArgumentNullException(nameof(playerLabel));
+            return FormatInternal(encoded, playerLabel);
+        }
+
+        private static string FormatInternal(string encoded, Func<int, string> playerLabel)
+        {
             if (string.IsNullOrEmpty(encoded) || encoded.IndexOf(Separator) < 0)
             {
                 return encoded ?? string.Empty;
@@ -90,11 +108,13 @@ namespace MazeParty.Multiplayer
             var args = new object[fields.Length - argumentIndex];
             for (var index = 0; index < args.Length; index++)
             {
-                // Arguments are numbers or English data names (items).
-                args[index] = GameText.T(fields[argumentIndex + index]);
+                // Resolve compact player/resource tokens locally, retaining item localization.
+                args[index] = FormatArgument(fields[argumentIndex + index], playerLabel);
             }
 
             var detail = GameText.F(fields[detailIndex], args);
+            if (playerLabel != null && slot >= 0 && slot < 4)
+                return playerLabel(slot) + "\n" + detail;
             if (fields[1] == "1" &&
                 int.TryParse(fields[2], NumberStyles.Integer, CultureInfo.InvariantCulture, out var x) &&
                 int.TryParse(fields[3], NumberStyles.Integer, CultureInfo.InvariantCulture, out var y))
@@ -103,6 +123,37 @@ namespace MazeParty.Multiplayer
             }
 
             return GameText.F("P{0}: {1}", slot + 1, detail);
+        }
+
+        private static readonly Regex TokenPattern = new Regex(@"@(p|m|g|k)(\d+)");
+
+        private static string FormatArgument(string value, Func<int, string> playerLabel)
+        {
+            return TokenPattern.Replace(GameText.T(value), match =>
+            {
+                if (!int.TryParse(match.Groups[2].Value, NumberStyles.None,
+                        CultureInfo.InvariantCulture, out var number))
+                    return string.Empty;
+                var kind = match.Groups[1].Value;
+                if (kind == "p")
+                    return number >= 0 && number < 4
+                        ? playerLabel != null ? playerLabel(number) : "P" + (number + 1)
+                        : string.Empty;
+                if (kind == "m")
+                {
+                    var names = new System.Collections.Generic.List<string>();
+                    for (var slot = 0; slot < 4; slot++)
+                        if ((number & (1 << slot)) != 0)
+                            names.Add(playerLabel != null ? playerLabel(slot) : "P" + (slot + 1));
+                    return string.Join(" / ", names);
+                }
+                return playerLabel != null
+                    ? "<color=#FFD11F><sprite name=\"" +
+                      (kind == "g" ? "gold" : "key") + "\" tint=1> " +
+                      number.ToString(CultureInfo.InvariantCulture) + "</color>"
+                    : GameText.T(number.ToString(CultureInfo.InvariantCulture) +
+                                 (kind == "g" ? " GOLD" : " KEY"));
+            });
         }
 
         public static BoardLandingEffectType GetEffectType(string encoded)

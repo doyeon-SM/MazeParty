@@ -225,6 +225,25 @@ namespace MazeParty.Gameplay
                 : 0;
         }
 
+        /// <summary>Resolve every event before ordinary tiles; preserve rank order within each group.</summary>
+        public static int[] OrderResolutionSlots(
+            IReadOnlyList<PlayerRankingStats> rankingStats,
+            IReadOnlyList<BoardLandingEffectType> effects)
+        {
+            if (rankingStats == null || effects == null || rankingStats.Count != effects.Count)
+                throw new ArgumentException("Every ranked player must have one landing effect.");
+            var ranked = PlayerRankingRules.OrderSlots(rankingStats);
+            var ordered = new int[ranked.Length];
+            var next = 0;
+            foreach (var slot in ranked)
+                if (effects[slot] == BoardLandingEffectType.SpecialEvent)
+                    ordered[next++] = slot;
+            foreach (var slot in ranked)
+                if (effects[slot] != BoardLandingEffectType.SpecialEvent)
+                    ordered[next++] = slot;
+            return ordered;
+        }
+
         public static int GetWeight(BoardLandingEffectType effect)
         {
             switch (effect)

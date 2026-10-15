@@ -124,7 +124,7 @@ namespace MazeParty.Editor
                 clone.name = "Travel Route Dots";
                 blue = clone.GetComponent<BoardMapRouteGraphic>();
                 blue.raycastTarget = false;
-                blue.color = new Color(.04f, .32f, .65f, .65f);
+                blue.color = new Color(.48f, .82f, .18f, .8f);
                 clone.transform.SetSiblingIndex(yellow.transform.GetSiblingIndex() + 1);
                 data.FindProperty("travelRouteGraphic").objectReferenceValue = blue;
             }
@@ -137,7 +137,7 @@ namespace MazeParty.Editor
                 clone.name = "Preferred Travel Route Dots";
                 preferred = clone.GetComponent<BoardMapRouteGraphic>();
                 preferred.raycastTarget = false;
-                preferred.color = new Color(.06f, .55f, 1f, 1f);
+                preferred.color = new Color(.65f, 1f, .2f, 1f);
                 clone.transform.SetSiblingIndex(blue.transform.GetSiblingIndex() + 1);
                 data.FindProperty("preferredTravelRouteGraphic")
                     .objectReferenceValue = preferred;
@@ -214,7 +214,7 @@ namespace MazeParty.Editor
                 new Color(.35f, 1f, .5f), new Color(1f, .2f, .18f),
                 new Color(1f, .2f, .18f), new Color(.35f, .8f, 1f),
                 new Color(1f, .2f, .18f), new Color(1f, .82f, .12f),
-                new Color(.06f, .55f, 1f)
+                new Color(.65f, 1f, .2f)
             };
             var sourceFont = panel.GetComponentInParent<Canvas>()
                 .GetComponentInChildren<Text>(true).font;

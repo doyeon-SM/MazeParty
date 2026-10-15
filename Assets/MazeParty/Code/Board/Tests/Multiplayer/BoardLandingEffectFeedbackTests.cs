@@ -6,6 +6,32 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardLandingEffectFeedbackTests
     {
         [Test]
+        public void EventTokens_KeepAllTargetsAndResourcesInsideTheNetworkPayload()
+        {
+            var names = new[] { "도연", "Alex", "ユウ", "小明" };
+            for (var mask = 1; mask < 16; mask++)
+            {
+                foreach (var resource in new[] { BoardSpecialEventResource.Gold, BoardSpecialEventResource.Key })
+                {
+                    var payload = LandingEffectMessage.Encode(0, true, -100, 100,
+                        BoardLandingEffectType.SpecialEvent,
+                        "EVENT RESULT: {0} RECEIVES UP TO {1}",
+                        LandingEffectMessage.PlayersToken(mask),
+                        LandingEffectMessage.ResourceToken(resource, 30));
+                    Assert.That(System.Text.Encoding.UTF8.GetByteCount(payload), Is.LessThan(125));
+                    var formatted = LandingEffectMessage.FormatEventPopup(payload,
+                        slot => "<color=#00FF00>" + names[slot] + "</color>");
+                    for (var slot = 0; slot < 4; slot++)
+                        if ((mask & (1 << slot)) != 0) Assert.That(formatted, Does.Contain(names[slot]));
+                    Assert.That(formatted, Does.Contain(resource == BoardSpecialEventResource.Gold
+                        ? "<sprite name=\"gold\"" : "<sprite name=\"key\""));
+                    Assert.That(formatted, Does.Not.Contain("@m"));
+                    Assert.That(formatted, Does.Not.Contain("@p"));
+                }
+            }
+        }
+
+        [Test]
         public void EventFocus_VisitsEveryAffectedPlayerAtExactBoundaries()
         {
             var snapshot = new BoardLandingEffectFeedbackSnapshot

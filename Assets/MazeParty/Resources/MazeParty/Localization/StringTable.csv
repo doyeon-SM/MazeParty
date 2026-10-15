@@ -815,3 +815,6 @@ Create,생성하기,作成,创建
 Go to Waiting Room,대기실로 이동하기,待機室へ移動,前往等候室
 A player disconnected. Gameplay is paused for the 3-minute reconnect window.,플레이어의 연결이 끊겼습니다. 재접속을 기다리며 게임을 3분간 일시정지합니다.,プレイヤーの接続が切れました。再接続を3分間待機し、ゲームを一時停止します。,玩家已断开连接。游戏暂停，等待重连3分钟。
 A player did not reconnect within 3 minutes. Returning to the waiting room with the saved match preserved.,플레이어가 3분 안에 재접속하지 않았습니다. 저장된 게임을 보존하고 대기실로 돌아갑니다.,プレイヤーが3分以内に再接続しませんでした。保存済みゲームを保持して待機室に戻ります。,玩家未在3分钟内重新连接。将保留游戏存档并返回等候室。
+
+EVENT RESULT: {0} GIVES {1} {2},이벤트 결과: {0} → {1} {2} 지급,イベント結果：{0} → {1} {2}を渡す,事件结果：{0} → {1} 交付{2}
+EVENT RESULT: {0} STEALS {2} FROM {1},이벤트 결과: {0} ← {1} {2} 강탈,イベント結果：{0} ← {1} {2}を奪う,事件结果：{0} ← {1} 夺取{2}

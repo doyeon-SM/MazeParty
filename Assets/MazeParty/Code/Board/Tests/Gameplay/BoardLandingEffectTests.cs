@@ -8,6 +8,47 @@ namespace MazeParty.Gameplay.Tests
     {
         private readonly List<GameObject> _objects = new List<GameObject>();
 
+        [Test]
+        public void ResolutionOrder_AlwaysFinishesEventsBeforeOrdinaryEffectsInRankOrder()
+        {
+            var stats = new[]
+            {
+                new PlayerRankingStats(1, 10, 0),
+                new PlayerRankingStats(3, 10, 0),
+                new PlayerRankingStats(1, 10, 0),
+                new PlayerRankingStats(2, 10, 0)
+            };
+            var ranked = PlayerRankingRules.OrderSlots(stats);
+            for (var eventMask = 0; eventMask < 16; eventMask++)
+            {
+                var effects = new BoardLandingEffectType[4];
+                for (var slot = 0; slot < 4; slot++)
+                    effects[slot] = (eventMask & (1 << slot)) != 0
+                        ? BoardLandingEffectType.SpecialEvent : BoardLandingEffectType.GoldGain;
+                var actual = BoardLandingEffectLayout.OrderResolutionSlots(stats, effects);
+                Assert.That(actual, Is.EquivalentTo(new[] { 0, 1, 2, 3 }));
+                var seenOrdinary = false;
+                var lastEventRank = -1;
+                var lastOrdinaryRank = -1;
+                foreach (var slot in actual)
+                {
+                    var rank = System.Array.IndexOf(ranked, slot);
+                    if (effects[slot] == BoardLandingEffectType.SpecialEvent)
+                    {
+                        Assert.That(seenOrdinary, Is.False, "event mask=" + eventMask);
+                        Assert.That(rank, Is.GreaterThan(lastEventRank));
+                        lastEventRank = rank;
+                    }
+                    else
+                    {
+                        seenOrdinary = true;
+                        Assert.That(rank, Is.GreaterThan(lastOrdinaryRank));
+                        lastOrdinaryRank = rank;
+                    }
+                }
+            }
+        }
+
         [TearDown]
         public void TearDown()
         {

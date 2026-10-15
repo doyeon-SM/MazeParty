@@ -373,7 +373,7 @@ namespace MazeParty.Editor
                 PhaseTimerText = Require<Text>(root, "PhaseTimerText"),
                 StatusText = null,
                 ReconnectText = Require<Text>(root, "ReconnectText"),
-                BoardEventPopupMessage = Require<Text>(
+                BoardEventPopupMessage = Require<TMP_Text>(
                     root,
                     BoardEventPopupProjectSetup.MessageObjectName),
                 BoardKillFeedMessage = Require<Text>(

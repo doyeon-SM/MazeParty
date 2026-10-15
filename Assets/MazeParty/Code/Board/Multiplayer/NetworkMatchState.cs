@@ -261,6 +261,7 @@ namespace MazeParty.Multiplayer
         public int BoardEffectSeed => _boardEffectSeed.Value;
         public int BoardEffectRevision => _boardEffectRevision.Value;
         /// <summary>The last landing-effect line, formatted in the local language.</summary>
+        public string LastLandingEffectEncodedMessage => _lastLandingEffectMessage.Value.ToString();
         public string LastLandingEffectMessage =>
             LandingEffectMessage.Format(_lastLandingEffectMessage.Value.ToString());
         public BoardLandingEffectType LastLandingEffectType =>
@@ -1288,9 +1289,12 @@ namespace MazeParty.Multiplayer
                     {
                         SettleTimedOutPlayersOnServer();
                     }
-                    FillMissingArrivalTimes(transition.OccurredAt);
+                    // Transition timestamps are pause-adjusted flow time. Combat
+                    // deadlines and TryCompleteCombat require synchronized server time.
+                    var combatStartedAt = ServerNow;
+                    FillMissingArrivalTimes(combatStartedAt);
                     ForEachAvatar(avatar => avatar.EndActionOnServer());
-                    BeginCombatSequenceOnServer(transition.OccurredAt);
+                    BeginCombatSequenceOnServer(combatStartedAt);
                     break;
                 case BoardFlowState.LandingEffectResolve:
                     BeginLandingEffectsOnServer();
@@ -1846,6 +1850,9 @@ namespace MazeParty.Multiplayer
 
         private void BeginCombatSequenceOnServer(double now)
         {
+            // A reconnect/lookup refresh can temporarily omit a player. Missing
+            // participants are not an empty fight queue or a tile with no effect.
+            if (!AreBoardResolutionPlayersAvailableOnServer()) return;
             ResetCombatRuntimeOnServer();
             FillMissingArrivalTimes(now);
             CalculateOverallRanksOnServer();
@@ -1897,6 +1904,7 @@ namespace MazeParty.Multiplayer
 
         private void BeginNextCombatOrFinishOnServer(double now)
         {
+            if (!AreBoardResolutionPlayersAvailableOnServer()) return;
             while (_combatQueue.Count > 0 &&
                    _fightsResolvedThisTurn < BoardCombatRules.MaximumFightsPerTurn)
             {
@@ -2177,15 +2185,36 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        private bool AreBoardResolutionPlayersAvailableOnServer()
+        {
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                var avatar = GetAvatarForSlot(slot);
+                if (avatar == null || !avatar.HasLogicalBoardTile ||
+                    avatar.CurrentBoardTileOnServer == null)
+                    return false;
+            }
+            return true;
+        }
+
         private void AdvanceCombatOnServer(double now)
         {
-            if (!IsServer || !_combatActive.Value || IsGlobalSimulationPaused ||
-                _combatEndsAt.Value <= 0d || now < _combatEndsAt.Value)
+            if (!IsServer || IsGlobalSimulationPaused || _flow == null ||
+                _flow.State != BoardFlowState.CombatResolve ||
+                !AreBoardResolutionPlayersAvailableOnServer())
+                return;
+
+            if (!_combatActive.Value)
             {
+                if (_combatSequenceIndex.Value == 0)
+                    BeginCombatSequenceOnServer(now);
+                else
+                    BeginNextCombatOrFinishOnServer(now);
                 return;
             }
 
-            ResolveCurrentCombatOnServer(now);
+            if (_combatEndsAt.Value > 0d && now >= _combatEndsAt.Value)
+                ResolveCurrentCombatOnServer(now);
         }
 
         private void ResolveCurrentCombatOnServer(double now)

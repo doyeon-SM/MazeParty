@@ -15,6 +15,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject travelMarkerPrefab;
         [SerializeField, Min(.1f)] private float dotSpacing = .8f;
         [SerializeField, Min(0f)] private float surfaceOffset = .012f;
+        [SerializeField, Range(0f, 1f)] private float branchOpacity = .65f;
         private readonly List<BoardTile> _route = new List<BoardTile>();
         private readonly List<Vector3> _points = new List<Vector3>();
         private readonly List<GameObject> _dots = new List<GameObject>();
@@ -93,6 +94,7 @@ namespace MazeParty.Multiplayer
                 _travelStateValid = false;
                 return;
             }
+            if (match.ActiveBoardTopology != null) _topology = match.ActiveBoardTopology;
             if (_topology == null) _topology = GetComponent<BoardTopology>();
             if (_topology == null) _topology = FindAnyObjectByType<BoardTopology>();
             if (_topology == null || !_topology.TryGetTile(local.LogicalBoardTileCoordinate, out var source))
@@ -236,10 +238,21 @@ namespace MazeParty.Multiplayer
             {
                 var dot = Instantiate(prefab, transform);
                 dot.name = prefix + pool.Count;
-                if (dim && dot.TryGetComponent<ParticleSystem>(out var particles))
+                dot.SetActive(false);
+                if (dim)
                 {
-                    var main = particles.main;
-                    main.startColor = new Color(.04f, .4f, 1f, .17f);
+                    foreach (var particles in dot.GetComponentsInChildren<ParticleSystem>(true))
+                    {
+                        var main = particles.main;
+                        var tint = main.startColor;
+                        var low = tint.colorMin;
+                        var high = tint.colorMax;
+                        low.a *= branchOpacity;
+                        high.a *= branchOpacity;
+                        tint.colorMin = low;
+                        tint.colorMax = high;
+                        main.startColor = tint;
+                    }
                 }
                 pool.Add(dot);
             }
@@ -333,6 +346,7 @@ namespace MazeParty.Multiplayer
             var floor = tile.GetComponent<Collider>();
             // Read the authored box top directly; Collider.bounds can lag behind
             // a transform update until the next physics synchronization.
+            if (floor != null && floor.isTrigger) floor = null;
             if (floor is BoxCollider box)
                 point.y = box.transform.TransformPoint(box.center + Vector3.up * (box.size.y * .5f)).y;
             else if (floor != null) point.y = floor.bounds.max.y;

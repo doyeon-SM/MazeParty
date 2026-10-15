@@ -64,7 +64,8 @@ namespace MazeParty.Multiplayer
                 totalDuration += _landingEffectDurations[slot];
             }
 
-            var order = PlayerRankingRules.OrderSlots(rankingStats);
+            var order = BoardLandingEffectLayout.OrderResolutionSlots(
+                rankingStats, _landingEffectPlan);
             Array.Copy(order, _landingEffectOrder, order.Length);
 
             _landingEffectPlanReady = true;
@@ -528,23 +529,16 @@ namespace MazeParty.Multiplayer
             {
                 ShortenEmptyTransferPresentationOnServer(actorSlot);
             }
-            var detailFormat = resolution.Resource == BoardSpecialEventResource.Gold
-                ? opponentGives
-                    ? GameText.N("EVENT RESULT: P{0} GIVES P{1} {2} GOLD")
-                    : GameText.N("EVENT RESULT: P{0} STEALS {2} GOLD FROM P{1}")
-                : opponentGives
-                    ? GameText.N("EVENT RESULT: P{0} GIVES P{1} {2} KEY")
-                    : GameText.N("EVENT RESULT: P{0} STEALS {2} KEY FROM P{1}");
             PublishLandingEffectOnServer(
                 actorSlot,
                 tile,
                 BoardLandingEffectType.SpecialEvent,
-                detailFormat,
-                ((opponentGives ? sourceSlot : destinationSlot) + 1)
-                    .ToString(CultureInfo.InvariantCulture),
-                ((opponentGives ? destinationSlot : sourceSlot) + 1)
-                    .ToString(CultureInfo.InvariantCulture),
-                transferred.ToString(CultureInfo.InvariantCulture));
+                opponentGives
+                    ? GameText.N("EVENT RESULT: {0} GIVES {1} {2}")
+                    : GameText.N("EVENT RESULT: {0} STEALS {2} FROM {1}"),
+                LandingEffectMessage.PlayerToken(opponentGives ? sourceSlot : destinationSlot),
+                LandingEffectMessage.PlayerToken(opponentGives ? destinationSlot : sourceSlot),
+                LandingEffectMessage.ResourceToken(resolution.Resource, transferred));
             PublishLandingEffectFeedbackOnServer(
                 actorSlot,
                 BoardLandingEffectFeedbackKind.Event,
@@ -608,19 +602,19 @@ namespace MazeParty.Multiplayer
             var opponentSlot = GetPreviewOpponentSlot(actorSlot, previewTick);
             if (resolution.Family == BoardSpecialEventFamily.Transfer)
             {
-                return "P" + (opponentSlot + 1) + " / P" + (actorSlot + 1);
+                return LandingEffectMessage.PlayerToken(opponentSlot) + " / " + LandingEffectMessage.PlayerToken(actorSlot);
             }
 
             switch (previewTick % 4)
             {
                 case 0:
-                    return GameText.N("SELF");
+                    return LandingEffectMessage.PlayerToken(actorSlot);
                 case 1:
-                    return "P" + (opponentSlot + 1);
+                    return LandingEffectMessage.PlayerToken(opponentSlot);
                 case 2:
-                    return GameText.N("ALL PLAYERS");
+                    return LandingEffectMessage.PlayersToken(15);
                 default:
-                    return GameText.N("EVERYONE ELSE");
+                    return LandingEffectMessage.PlayersToken(15 & ~(1 << actorSlot));
             }
         }
 
@@ -630,22 +624,22 @@ namespace MazeParty.Multiplayer
         {
             if (resolution.Family == BoardSpecialEventFamily.Transfer)
             {
-                return "P" + (resolution.OpponentSlot + 1) +
-                       " / P" + (actorSlot + 1);
+                return LandingEffectMessage.PlayerToken(resolution.OpponentSlot) +
+                       " / " + LandingEffectMessage.PlayerToken(actorSlot);
             }
 
             switch (resolution.Audience)
             {
                 case BoardSpecialEventAudience.Self:
-                    return GameText.N("SELF");
+                    return LandingEffectMessage.PlayerToken(actorSlot);
                 case BoardSpecialEventAudience.OneOpponent:
-                    return "P" + (resolution.OpponentSlot + 1);
+                    return LandingEffectMessage.PlayerToken(resolution.OpponentSlot);
                 case BoardSpecialEventAudience.Everyone:
-                    return GameText.N("ALL PLAYERS");
+                    return LandingEffectMessage.PlayersToken(15);
                 case BoardSpecialEventAudience.EveryoneExceptSelf:
-                    return GameText.N("EVERYONE ELSE");
+                    return LandingEffectMessage.PlayersToken(15 & ~(1 << actorSlot));
                 default:
-                    return GameText.N("SELF");
+                    return LandingEffectMessage.PlayerToken(actorSlot);
             }
         }
 
@@ -656,17 +650,17 @@ namespace MazeParty.Multiplayer
                 case 0:
                 case 1:
                 case 2:
-                    return GameText.N("30 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 30);
                 case 3:
                 case 4:
                 case 5:
-                    return GameText.N("20 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 20);
                 case 6:
                 case 7:
                 case 8:
-                    return GameText.N("10 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 10);
                 default:
-                    return GameText.N("1 KEY");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Key, 1);
             }
         }
 
@@ -675,17 +669,17 @@ namespace MazeParty.Multiplayer
         {
             if (resolution.Resource == BoardSpecialEventResource.Key)
             {
-                return GameText.N("1 KEY");
+                return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Key, 1);
             }
 
             switch (resolution.Amount)
             {
                 case 30:
-                    return GameText.N("30 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 30);
                 case 20:
-                    return GameText.N("20 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 20);
                 default:
-                    return GameText.N("10 GOLD");
+                    return LandingEffectMessage.ResourceToken(BoardSpecialEventResource.Gold, 10);
             }
         }
 

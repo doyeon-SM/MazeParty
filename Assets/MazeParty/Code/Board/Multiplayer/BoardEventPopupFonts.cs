@@ -1,0 +1,35 @@
+using MazeParty.Gameplay;
+using TMPro;
+using UnityEngine;
+
+namespace MazeParty.Multiplayer
+{
+    /// <summary>Authored event message and language fonts; no runtime UI creation.</summary>
+    [DisallowMultipleComponent]
+    public sealed class BoardEventPopupFonts : MonoBehaviour
+    {
+        [SerializeField] private TMP_Text message;
+        [SerializeField] private TMP_FontAsset englishKoreanFont;
+        [SerializeField] private TMP_FontAsset japaneseFont;
+        [SerializeField] private TMP_FontAsset chineseFont;
+
+        public bool HasRequiredReferences => message != null &&
+            message.spriteAsset != null && englishKoreanFont != null &&
+            japaneseFont != null && chineseFont != null;
+
+        private void OnEnable()
+        {
+            GameText.LanguageChanged += Apply;
+            Apply();
+        }
+
+        private void OnDisable() => GameText.LanguageChanged -= Apply;
+
+        public void Apply()
+        {
+            if (!HasRequiredReferences) return;
+            message.font = GameText.Language == GameLanguage.Japanese ? japaneseFont :
+                GameText.Language == GameLanguage.ChineseSimplified ? chineseFont : englishKoreanFont;
+        }
+    }
+}

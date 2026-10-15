@@ -203,9 +203,8 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(route.transform.parent));
                 Assert.That(preferred.transform.parent,
                     Is.EqualTo(route.transform.parent));
-                Assert.That(travel.color.b, Is.GreaterThan(travel.color.r));
-                Assert.That(preferred.color.a,
-                    Is.GreaterThan(travel.color.a));
+                Assert.That(travel.raycastTarget, Is.False);
+                Assert.That(preferred.raycastTarget, Is.False);
                 Assert.That(AssetDatabase.GetAssetPath(mines.IconSprite),
                     Is.EqualTo(
                         ModernIconRoot + "Navigation/Help Filled.png"));

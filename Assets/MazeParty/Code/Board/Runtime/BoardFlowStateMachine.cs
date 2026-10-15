@@ -47,6 +47,7 @@ namespace MazeParty.Gameplay
         public BoardFlowState Previous { get; }
         public BoardFlowState Current { get; }
         public int Turn { get; }
+        /// <summary>Pause-adjusted flow time, not a synchronized server deadline.</summary>
         public double OccurredAt { get; }
     }
 
@@ -79,7 +80,6 @@ namespace MazeParty.Gameplay
             LandingEffectResolveDurationSeconds;
         private bool _actionTimeoutDeferred;
         private bool _ascendingResolveDeferred;
-        private bool _landingEffectResolveDeferred;
 
         public BoardFlowStateMachine(
             GameplayPhaseClock actionClock = null,
@@ -139,7 +139,6 @@ namespace MazeParty.Gameplay
                 LandingEffectResolveDurationSeconds;
             _actionTimeoutDeferred = false;
             _ascendingResolveDeferred = false;
-            _landingEffectResolveDeferred = false;
         }
 
         /// <summary>
@@ -188,7 +187,6 @@ namespace MazeParty.Gameplay
                 LandingEffectResolveDurationSeconds;
             _actionTimeoutDeferred = false;
             _ascendingResolveDeferred = false;
-            _landingEffectResolveDeferred = false;
         }
 
         public void Tick(
@@ -272,7 +270,10 @@ namespace MazeParty.Gameplay
                                     BoardFlowState.CombatResolve,
                                     _ascendingResolveDeferred ? logicalNow : boundary);
                                 _ascendingResolveDeferred = false;
-                                keepAdvancing = true;
+                                // Entering combat invokes server callbacks, which can
+                                // finish an empty combat queue and enter landing effects.
+                                // Their completion guards must be sampled on the next tick.
+                                keepAdvancing = false;
                             }
                         }
 
@@ -282,22 +283,11 @@ namespace MazeParty.Gameplay
                     {
                         var boundary =
                             _stateStartedAt + _landingEffectResolveDurationSeconds;
-                        if (logicalNow >= boundary)
+                        if (logicalNow >= boundary && !deferLandingEffectResolve)
                         {
-                            if (deferLandingEffectResolve)
-                            {
-                                _landingEffectResolveDeferred = true;
-                            }
-                            else
-                            {
-                                TransitionTo(
-                                    BoardFlowState.MinigameIntroReady,
-                                    _landingEffectResolveDeferred
-                                        ? logicalNow
-                                        : boundary);
-                                _landingEffectResolveDeferred = false;
-                                keepAdvancing = true;
-                            }
+                            // A late frame must not consume the next screen's ready time.
+                            TransitionTo(BoardFlowState.MinigameIntroReady, logicalNow);
+                            keepAdvancing = true;
                         }
 
                         break;
@@ -333,7 +323,7 @@ namespace MazeParty.Gameplay
             ValidateTimestamp(synchronizedNow);
             if (playerSlot < 0 || playerSlot >= RequiredPlayerCount)
                 throw new ArgumentOutOfRangeException(nameof(playerSlot));
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.Action)
                 return false;
 
             Tick(synchronizedNow);
@@ -354,7 +344,7 @@ namespace MazeParty.Gameplay
         public bool TrySkipMinigame(double synchronizedNow)
         {
             ValidateTimestamp(synchronizedNow);
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.MinigameIntroReady)
                 return false;
 
             Tick(synchronizedNow);
@@ -372,7 +362,7 @@ namespace MazeParty.Gameplay
         public bool TryBeginMinigameLoading(double synchronizedNow)
         {
             ValidateTimestamp(synchronizedNow);
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.MinigameIntroReady)
                 return false;
 
             Tick(synchronizedNow);
@@ -386,7 +376,7 @@ namespace MazeParty.Gameplay
         public bool TryBeginMinigame(double synchronizedNow)
         {
             ValidateTimestamp(synchronizedNow);
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.MinigameLoading)
                 return false;
 
             Tick(synchronizedNow);
@@ -400,7 +390,7 @@ namespace MazeParty.Gameplay
         public bool TryCompleteMinigame(double synchronizedNow)
         {
             ValidateTimestamp(synchronizedNow);
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.MinigamePlaying)
                 return false;
 
             Tick(synchronizedNow);
@@ -423,7 +413,7 @@ namespace MazeParty.Gameplay
             ValidateDuration(
                 landingEffectDurationSeconds,
                 nameof(landingEffectDurationSeconds));
-            if (!IsStarted || IsPaused)
+            if (!IsStarted || IsPaused || State != BoardFlowState.CombatResolve)
             {
                 return false;
             }
@@ -435,7 +425,6 @@ namespace MazeParty.Gameplay
             }
 
             _landingEffectResolveDurationSeconds = landingEffectDurationSeconds;
-            _landingEffectResolveDeferred = false;
             TransitionTo(BoardFlowState.LandingEffectResolve, ToFlowTime(synchronizedNow));
             return true;
         }

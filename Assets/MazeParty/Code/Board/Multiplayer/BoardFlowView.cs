@@ -136,7 +136,7 @@ namespace MazeParty.Multiplayer
         private Text _itemShopTitle;
         private Text _itemShopTooltip;
         private Text _itemShopStatus;
-        private Text _boardEventPopupMessage;
+        private TMP_Text _boardEventPopupMessage;
         private Text _boardKillFeedMessage;
         private Text _minigameReadyTitle;
         private Text _minigameDescription;
@@ -662,7 +662,11 @@ namespace MazeParty.Multiplayer
                 match.ResourceTransferPresentationPhase);
             SetText(
                 _boardEventPopupMessage,
-                showBoardEventPopup ? landingEffectMessage : string.Empty);
+                showBoardEventPopup
+                    ? LandingEffectMessage.FormatEventPopup(
+                        match.LastLandingEffectEncodedMessage,
+                        slot => FormatMinigameResultPlayerName(match.GetAvatarForSlot(slot), slot))
+                    : string.Empty);
             SetActive(_boardEventPopupPanel, showBoardEventPopup);
             var showReticle =
                 ((match.FlowState == BoardFlowState.Action && !choicePending &&
@@ -3115,6 +3119,11 @@ namespace MazeParty.Multiplayer
             {
                 destination[index] = source[index];
             }
+        }
+
+        private static void SetText(TMP_Text target, string value)
+        {
+            if (target != null) target.text = value;
         }
 
         private static void SetText(Text target, string value)

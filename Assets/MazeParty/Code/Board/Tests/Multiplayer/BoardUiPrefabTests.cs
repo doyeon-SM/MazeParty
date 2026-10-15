@@ -539,11 +539,11 @@ namespace MazeParty.Multiplayer.Tests
                     .sourceFontFile),
                 Is.EqualTo(GameFonts.ChineseSimplifiedAssetPath));
             Assert.That(controlFonts.GetFont(GameLanguage.Korean)
-                .HasCharacter('조', false, false), Is.True);
+                .HasCharacter('조', true, true), Is.True);
             Assert.That(controlFonts.GetFont(GameLanguage.Japanese)
-                .HasCharacter('作', false, false), Is.True);
+                .HasCharacter('作', true, true), Is.True);
             Assert.That(controlFonts.GetFont(GameLanguage.ChineseSimplified)
-                .HasCharacter('说', false, false), Is.True);
+                .HasCharacter('说', true, true), Is.True);
 
             var previousLanguage = GameText.Language;
             var instance = Object.Instantiate(ready);
@@ -685,6 +685,15 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(panel.name, Is.EqualTo("BoardEventPopupPanel"));
             Assert.That(message.name, Is.EqualTo("BoardEventPopupMessage"));
             Assert.That(message.transform.IsChildOf(panel.transform), Is.True);
+            var eventFonts = panel.GetComponent<BoardEventPopupFonts>();
+            Assert.That(eventFonts, Is.Not.Null);
+            Assert.That(eventFonts.HasRequiredReferences, Is.True);
+            Assert.That(message.spriteAsset, Is.Not.Null);
+            Assert.That(message.spriteAsset.GetSpriteIndexFromName("gold"), Is.GreaterThanOrEqualTo(0));
+            Assert.That(message.spriteAsset.GetSpriteIndexFromName("key"), Is.GreaterThanOrEqualTo(0));
+            Assert.That(AssetDatabase.GetAssetPath(message.spriteAsset),
+                Is.EqualTo("Assets/MazeParty/Fonts/BoardEventResources.asset"));
+
             Assert.That(panel.activeSelf, Is.False,
                 "The server-owned event popup must start hidden.");
             Assert.That(message.raycastTarget, Is.False);
