@@ -9,10 +9,10 @@ namespace MazeParty.Multiplayer
         [SerializeField] private OnlineLobbyView lobby;
         [SerializeField] private Button previous;
         [SerializeField] private Button next;
-        [SerializeField] private Text title;
+        [SerializeField] private Image preview;
 
         public bool HasRequiredReferences =>
-            lobby != null && previous != null && next != null && title != null;
+            lobby != null && previous != null && next != null && preview != null;
 
         private void Awake()
         {
@@ -71,9 +71,7 @@ namespace MazeParty.Multiplayer
             }
 
             var id = PlayerExpressionCatalog.SanitizeHat(lobby.SelectedHat);
-            title.text = id == 0
-                ? GameText.T("None")
-                : GameText.T(catalog.Hats[id - 1].Name);
+            preview.sprite = id == 0 ? catalog.NoHatPreview : catalog.Hats[id - 1].Preview;
         }
     }
 }

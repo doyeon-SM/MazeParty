@@ -72,11 +72,6 @@ namespace MazeParty.Multiplayer
         private string _currentInviteCode = string.Empty;
         public byte SelectedHat { get; private set; }
         public byte SelectedExpression { get; private set; }
-        public HandEmoteFaceSelections SelectedEmoteExpressions
-        {
-            get;
-            private set;
-        }
 
         public void SelectHat(byte id)
         {
@@ -90,18 +85,6 @@ namespace MazeParty.Multiplayer
             PublishAppearance(_selectedPaletteIndex);
         }
 
-        public void SelectEmoteExpression(byte gestureId, byte expressionId)
-        {
-            if (!PlayerExpressionCatalog.HasGesture(gestureId))
-            {
-                return;
-            }
-
-            SelectedEmoteExpressions = SelectedEmoteExpressions.With(
-                gestureId,
-                PlayerExpressionCatalog.SanitizeFace(expressionId));
-            EmoteExpressionsChanged?.Invoke(SelectedEmoteExpressions);
-        }
         private float _nextPaletteAvailabilityRefresh;
         private bool _suppressAppearanceEvents;
         private bool _presentationVisible = true;
@@ -118,7 +101,6 @@ namespace MazeParty.Multiplayer
         public event Action StartRequested;
         public event Action<int> MapSelectionDeltaRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
-        public event Action<HandEmoteFaceSelections> EmoteExpressionsChanged;
 
         public bool HasRequiredReferences =>
             recoveryView != null && recoveryView.HasRequiredReferences &&
@@ -631,10 +613,6 @@ namespace MazeParty.Multiplayer
                 SelectedExpression));
         }
 
-        public void SetEmoteExpressions(HandEmoteFaceSelections selections)
-        {
-            SelectedEmoteExpressions = selections.Sanitized(SelectedExpression);
-        }
 
         private void RefreshPaletteAvailability()
         {

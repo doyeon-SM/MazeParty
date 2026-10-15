@@ -55,7 +55,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
-            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
@@ -83,7 +82,6 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.MinigameScheduleTowerView",
             "MazeParty.Multiplayer.LobbyHatView",
             "MazeParty.Multiplayer.LobbyExpressionView",
-            "MazeParty.Multiplayer.LobbyEmoteExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.GameMenuBindings",
@@ -223,6 +221,26 @@ namespace MazeParty.Multiplayer.Tests
                     requiredReferences.GetValue(binding),
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
+            }
+        }
+
+        [Test]
+        public void WardrobeCatalog_HasSavedPreviewsAndValidFixedEmoteFaces()
+        {
+            var catalog = MazeParty.Gameplay.PlayerExpressionCatalog.Instance;
+            Assert.That(catalog, Is.Not.Null);
+            Assert.That(catalog.NoHatPreview, Is.Not.Null);
+            foreach (var hat in catalog.Hats)
+            {
+                Assert.That(hat.Prefab, Is.Not.Null);
+                Assert.That(hat.Preview, Is.Not.Null, hat.Name);
+                Assert.That(AssetDatabase.GetAssetPath(hat.Preview), Does.StartWith("Assets/MazeParty/Art/Player/HatPreviews/"));
+            }
+            Assert.That(catalog.Gestures.Length, Is.EqualTo(MazeParty.Gameplay.HandEmoteRules.GestureCount));
+            foreach (var gesture in catalog.Gestures)
+            {
+                Assert.That(gesture.ExpressionId, Is.LessThan(catalog.Faces.Length), gesture.Name);
+                Assert.That(catalog.Faces[gesture.ExpressionId].Sprite, Is.Not.Null, gesture.Name);
             }
         }
 
@@ -459,8 +477,6 @@ namespace MazeParty.Multiplayer.Tests
                         { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
                         if (component is LobbyExpressionView faces)
                         { Assert.That(faces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(faces), Is.Not.Null); }
-                        if (component is LobbyEmoteExpressionView emoteFaces)
-                        { Assert.That(emoteFaces.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(emoteFaces), Is.Not.Null); }
                         if (component is LobbyHatView hats)
                         { Assert.That(hats.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(hats), Is.Not.Null); }
                     }

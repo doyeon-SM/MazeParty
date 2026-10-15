@@ -1382,46 +1382,46 @@ MonoBehaviour:
   handEmoteRotations:
     schemaVersion: 1
     greeting:
-      worldLeftEuler: {x: 0, y: 0, z: 0}
+      worldLeftEuler: {x: 282, y: 90, z: 270}
       worldRightEuler: {x: 0, y: 0, z: 0}
-      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
+      firstPersonLeftEuler: {x: 282, y: 90, z: 270}
       firstPersonRightEuler: {x: 0, y: 0, z: 0}
-    greetingWaveDegrees: -22
+    greetingWaveDegrees: 22
     salute:
-      worldLeftEuler: {x: 0, y: 0, z: 0}
-      worldRightEuler: {x: 0, y: 0, z: 32}
-      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
-      firstPersonRightEuler: {x: 0, y: 0, z: 32}
-    insult:
-      worldLeftEuler: {x: 0, y: 0, z: 0}
+      worldLeftEuler: {x: -26.05, y: -90, z: 0}
       worldRightEuler: {x: 0, y: 0, z: 0}
-      firstPersonLeftEuler: {x: 0, y: 0, z: 0}
+      firstPersonLeftEuler: {x: -26.05, y: -90, z: 0}
       firstPersonRightEuler: {x: 0, y: 0, z: 0}
+    insult:
+      worldLeftEuler: {x: -90, y: 180, z: 0}
+      worldRightEuler: {x: -90, y: 180, z: 0}
+      firstPersonLeftEuler: {x: -90, y: 180, z: 0}
+      firstPersonRightEuler: {x: -90, y: 180, z: 0}
     heart:
-      worldLeftEuler: {x: 0, y: 0, z: 42}
-      worldRightEuler: {x: 0, y: 0, z: -42}
-      firstPersonLeftEuler: {x: 0, y: 0, z: 42}
-      firstPersonRightEuler: {x: 0, y: 0, z: -42}
+      worldLeftEuler: {x: 270, y: 0, z: 0}
+      worldRightEuler: {x: 270, y: 0, z: 0}
+      firstPersonLeftEuler: {x: 270, y: 0, z: 0}
+      firstPersonRightEuler: {x: 270, y: 0, z: 0}
     surprise:
-      worldLeftEuler: {x: 0, y: 0, z: -18}
-      worldRightEuler: {x: 0, y: 0, z: 18}
-      firstPersonLeftEuler: {x: 0, y: 0, z: -18}
-      firstPersonRightEuler: {x: 0, y: 0, z: 18}
+      worldLeftEuler: {x: 289.99997, y: 90, z: 270}
+      worldRightEuler: {x: 289.99997, y: 270, z: 90}
+      firstPersonLeftEuler: {x: 289.99997, y: 90, z: 270}
+      firstPersonRightEuler: {x: 289.99997, y: 270, z: 90}
     surrender:
-      worldLeftEuler: {x: 0, y: 0, z: -10}
-      worldRightEuler: {x: 0, y: 0, z: 10}
-      firstPersonLeftEuler: {x: 0, y: 0, z: -10}
-      firstPersonRightEuler: {x: 0, y: 0, z: 10}
+      worldLeftEuler: {x: 280, y: 90, z: 270}
+      worldRightEuler: {x: 280, y: 270, z: 90}
+      firstPersonLeftEuler: {x: 280, y: 90, z: 270}
+      firstPersonRightEuler: {x: 280, y: 270, z: 90}
     pleading:
-      worldLeftEuler: {x: 0, y: 0, z: 82}
-      worldRightEuler: {x: 0, y: 0, z: -82}
-      firstPersonLeftEuler: {x: 0, y: 0, z: 82}
-      firstPersonRightEuler: {x: 0, y: 0, z: -82}
+      worldLeftEuler: {x: -90, y: -90, z: 0}
+      worldRightEuler: {x: -90, y: 90, z: 0}
+      firstPersonLeftEuler: {x: -90, y: -90, z: 0}
+      firstPersonRightEuler: {x: -90, y: 90, z: 0}
     eyesCover:
-      worldLeftEuler: {x: 0, y: 0, z: -8}
-      worldRightEuler: {x: 0, y: 0, z: 8}
-      firstPersonLeftEuler: {x: 0, y: 0, z: -8}
-      firstPersonRightEuler: {x: 0, y: 0, z: 8}
+      worldLeftEuler: {x: -90, y: 180, z: -10}
+      worldRightEuler: {x: -90, y: 180, z: 10}
+      firstPersonLeftEuler: {x: -90, y: 180, z: -10}
+      firstPersonRightEuler: {x: -90, y: 180, z: 10}
   bodyHitbox: {fileID: 5860220839409240717}
   headHitbox: {fileID: 2216382201012399365}
   leftHandHitbox: {fileID: 2648129941403236258}

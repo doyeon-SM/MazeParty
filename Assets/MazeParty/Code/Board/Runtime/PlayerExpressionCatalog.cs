@@ -25,6 +25,7 @@ namespace MazeParty.Gameplay
         {
             public string Name;
             public GameObject Prefab;
+            public Sprite Preview;
             public Vector3 LocalPosition;
             public Vector3 LocalEulerAngles;
             public Vector3 LocalScale = Vector3.one;
@@ -33,9 +34,11 @@ namespace MazeParty.Gameplay
         public class Gesture
         {
             public string Name;
+            public byte ExpressionId;
             [HideInInspector] public GameObject HandsPrefab;
         }
         public Face[] Faces = Array.Empty<Face>();
+        public Sprite NoHatPreview;
         public Hat[] Hats = Array.Empty<Hat>();
         public Gesture[] Gestures = Array.Empty<Gesture>();
         private static PlayerExpressionCatalog _instance;
@@ -45,6 +48,15 @@ namespace MazeParty.Gameplay
         public static byte SanitizeFace(byte id) => id == 0 ? (byte)0 : Instance != null && id < Instance.Faces.Length ? id : (byte)0;
         public static byte SanitizeHat(byte id) => id > 0 && Instance != null && Instance.Hats != null && id <= Instance.Hats.Length &&
             Instance.Hats[id - 1] != null && Instance.Hats[id - 1].Prefab != null ? id : (byte)0;
+        // The server selects the authored face; saved per-player emote faces are legacy data only.
+        public byte ResolveGestureExpression(byte id, byte fallback)
+        {
+            var safeFallback = Faces != null && fallback < Faces.Length ? fallback : (byte)0;
+            if (id == 0 || Gestures == null || id > Gestures.Length || Gestures[id - 1] == null)
+                return safeFallback;
+            var face = Gestures[id - 1].ExpressionId;
+            return Faces != null && face < Faces.Length ? face : safeFallback;
+        }
         public static bool HasGesture(byte id) => Instance != null && id > 0 &&
             id <= Instance.Gestures.Length && Instance.Gestures[id - 1] != null;
     }
@@ -56,20 +68,6 @@ namespace MazeParty.Gameplay
         public static bool CanStart(double now, double previousEnd, bool allowed, bool validGesture) =>
             allowed && validGesture && !double.IsNaN(now) && !double.IsInfinity(now) && now >= previousEnd;
         public static bool IsActive(byte id, double end, double now) => id > 0 && now < end;
-        public static byte ResolveExpression(
-            byte gestureId,
-            byte requestedExpression,
-            byte fallbackExpression,
-            int faceCount)
-        {
-            if ((HandEmoteId)gestureId == HandEmoteId.EyesCover ||
-                requestedExpression >= faceCount)
-            {
-                return fallbackExpression;
-            }
-
-            return requestedExpression;
-        }
         // Clockwise from the top; the center cancels selection.
         public static int Select(Vector2 offset, float deadZone, int count)
         {

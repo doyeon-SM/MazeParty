@@ -118,6 +118,7 @@ namespace MazeParty.Editor
         }
         static void ConfigurePartyPackAppearance(PlayerExpressionCatalog catalog)
         {
+            catalog.NoHatPreview = RequiredAsset<Sprite>("Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Close.png");
             var names = Enumerable.Range(1, 15).Select(index => "Face" + index).ToArray();
             catalog.Faces = new PlayerExpressionCatalog.Face[names.Length];
             for (int i = 0; i < names.Length; i++)
@@ -147,6 +148,7 @@ namespace MazeParty.Editor
                 catalog.Hats[i] = new PlayerExpressionCatalog.Hat
                 {
                     Name = hatNames[i],
+                    Preview = AssetDatabase.LoadAssetAtPath<Sprite>(WardrobePreviewBaker.PreviewFolder + "/Hat" + (i + 1).ToString("00") + ".png"),
                     Prefab = RequiredAsset<GameObject>(PartyPack + "/Prefabs/Hats/" + hatFiles[i] + ".prefab"),
                     LocalPosition = new Vector3(0f, hatY[i], 0f),
                     LocalScale = Vector3.one
@@ -155,8 +157,9 @@ namespace MazeParty.Editor
         }
         static void ConfigureGestures(PlayerExpressionCatalog catalog)
         {
-            catalog.Gestures = GestureNames.Select(name =>
-                new PlayerExpressionCatalog.Gesture { Name = name }).ToArray();
+            var faces = new byte[] { 0, 3, 1, 7, 9, 8, 2, 5 };
+            catalog.Gestures = GestureNames.Select((name, index) =>
+                new PlayerExpressionCatalog.Gesture { Name = name, ExpressionId = faces[index] }).ToArray();
         }
         static Sprite Sprite(string name, Func<float,float,Color> pixel)
         {
@@ -431,68 +434,71 @@ namespace MazeParty.Editor
                             label.gameObject.AddComponent<LocalizedText>();
             localized.Configure(source);
         }
-        static void EnsureFaceSelector(GameObject canvas)
-        {
-            if(canvas.GetComponentInChildren<LobbyExpressionView>(true)!=null)return;
-            var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            SectionLabel(footer,"Face");
-            var row=Rect(footer,"Face Expression",new Vector2(472,48),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=48;
-            var view=row.gameObject.AddComponent<LobbyExpressionView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
-            foreach(bool previous in new[]{true,false})
-            {
-                var r=Rect(row,previous?"Previous":"Next",new Vector2(40,36),new Vector2(previous?-204:204,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
-                Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
-            }
-            var previewBackground=Rect(row,"Face Preview Background",new Vector2(34,32),new Vector2(-65,0)).gameObject.AddComponent<Image>();previewBackground.color=new Color(.82f,.86f,.9f);previewBackground.raycastTarget=false;
-            var preview=Rect(row,"Face Preview",new Vector2(32,32),new Vector2(-65,0)).gameObject.AddComponent<Image>();preview.color=Color.white;preview.raycastTarget=false;Bind(data,"preview",preview);
-            Bind(data,"title",Label(row,"Face Name","Face1",new Vector2(125,30),new Vector2(17,0),16));data.ApplyModifiedPropertiesWithoutUndo();
-        }
         internal static void EnsureLobbySelectors(GameObject canvas)
         {
-            EnsureFaceSelector(canvas);
-            EnsureHatSelector(canvas);
-            EnsureEmoteFaceSelector(canvas);
+            EnsureImageSelector(canvas, false);
+            EnsureImageSelector(canvas, true);
         }
-        static void EnsureEmoteFaceSelector(GameObject canvas)
+
+        static void EnsureImageSelector(GameObject canvas, bool hat)
         {
-            var existing=canvas.GetComponentInChildren<LobbyEmoteExpressionView>(true);
-            if(existing!=null){if(!existing.HasRequiredReferences)throw new InvalidOperationException("Incomplete emote face selector bindings");return;}
-            var lobby=canvas.GetComponent<OnlineLobbyView>();var panel=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Player Customization");var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            var panelRect=(RectTransform)panel;panelRect.sizeDelta=new Vector2(520,520);
-            var footerSize=footer.GetComponent<LayoutElement>();if(footerSize!=null)footerSize.preferredHeight=290;
-            SectionLabel(footer,"Emote Faces");
-            var row=Rect(footer,"Emote Face Mapping",new Vector2(472,72),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=72;
-            var view=row.gameObject.AddComponent<LobbyEmoteExpressionView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
-            Button SelectorButton(string name,string arrow,Vector2 position,string binding)
+            var existing = hat ? (MonoBehaviour)canvas.GetComponentInChildren<LobbyHatView>(true)
+                : canvas.GetComponentInChildren<LobbyExpressionView>(true);
+            if (existing != null)
             {
-                var r=Rect(row,name,new Vector2(36,36),position);var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;Label(r,"Arrow",arrow,new Vector2(24,24),Vector2.zero);Bind(data,binding,button);return button;
+                if (hat ? !((LobbyHatView)existing).HasRequiredReferences
+                    : !((LobbyExpressionView)existing).HasRequiredReferences)
+                    throw new InvalidOperationException("Incomplete wardrobe image selector bindings");
+                return;
             }
-            SelectorButton("Previous Emote","<",new Vector2(-218,0),"previousEmote");
-            SelectorButton("Next Emote",">",new Vector2(-82,0),"nextEmote");
-            Bind(data,"emoteTitle",Label(row,"Emote Name",GestureNames[0],new Vector2(96,32),new Vector2(-150,0),14));
-            SelectorButton("Previous Face","<",new Vector2(-42,0),"previousFace");
-            var previewBackground=Rect(row,"Emote Face Preview Background",new Vector2(34,32),new Vector2(8,0)).gameObject.AddComponent<Image>();previewBackground.color=new Color(.82f,.86f,.9f);previewBackground.raycastTarget=false;
-            var preview=Rect(row,"Emote Face Preview",new Vector2(32,32),new Vector2(8,0)).gameObject.AddComponent<Image>();preview.color=Color.white;preview.raycastTarget=false;Bind(data,"preview",preview);
-            Bind(data,"faceTitle",Label(row,"Emote Face Name","Face1",new Vector2(128,32),new Vector2(106,0),14));
-            SelectorButton("Next Face",">",new Vector2(218,0),"nextFace");
-            data.ApplyModifiedPropertiesWithoutUndo();
+            var footer = canvas.GetComponentsInChildren<Transform>(true).Single(x => x.name == "Customization Footer");
+            var row = Rect(footer, hat ? "Hat Selection" : "Face Expression", new Vector2(472, 100), Vector2.zero);
+            row.gameObject.AddComponent<LayoutElement>().preferredHeight = 100;
+            var view = hat ? (MonoBehaviour)row.gameObject.AddComponent<LobbyHatView>()
+                : row.gameObject.AddComponent<LobbyExpressionView>();
+            var data = new SerializedObject(view);
+            Bind(data, "lobby", canvas.GetComponent<OnlineLobbyView>());
+            foreach (bool previous in new[] { true, false })
+            {
+                var r = Rect(row, previous ? "Previous" : "Next", new Vector2(48, 48), new Vector2(previous ? -150 : 150, 0));
+                var image = r.gameObject.AddComponent<Image>(); image.color = new Color(.12f, .25f, .32f);
+                var button = r.gameObject.AddComponent<Button>(); button.targetGraphic = image;
+                r.gameObject.AddComponent<UiSoundEmitter>().Configure(SoundKeys.UiHover, SoundKeys.UiClick);
+                Label(r, "Arrow", previous ? "<" : ">", new Vector2(28, 28), Vector2.zero);
+                Bind(data, previous ? "previous" : "next", button);
+            }
+            if (!hat)
+            {
+                var background = Rect(row, "Face Preview Background", new Vector2(88, 88), Vector2.zero).gameObject.AddComponent<Image>();
+                background.color = new Color(.82f, .86f, .9f); background.raycastTarget = false;
+            }
+            var preview = Rect(row, hat ? "Hat Preview" : "Face Preview", new Vector2(88, 88), Vector2.zero).gameObject.AddComponent<Image>();
+            preview.preserveAspect = true; preview.raycastTarget = false;
+            var catalog = PlayerExpressionCatalog.Instance;
+            preview.sprite = hat ? catalog.NoHatPreview : catalog.Faces[0].Sprite;
+            Bind(data, "preview", preview); data.ApplyModifiedPropertiesWithoutUndo();
         }
-        static void EnsureHatSelector(GameObject canvas)
+
+        [MenuItem("MazeParty/Player/Apply Image Wardrobe Layout")]
+        public static void ApplyImageWardrobeLayout()
         {
-            var legacy=canvas.GetComponentsInChildren<Transform>(true).FirstOrDefault(x=>x.name=="Test Hat Toggle");
-            if(legacy!=null)UnityEngine.Object.DestroyImmediate(legacy.gameObject);
-            var existing=canvas.GetComponentInChildren<LobbyHatView>(true);
-            if(existing!=null){if(!existing.HasRequiredReferences)throw new InvalidOperationException("Incomplete hat selector bindings");return;}
-            var lobby=canvas.GetComponent<OnlineLobbyView>();var footer=canvas.GetComponentsInChildren<Transform>(true).Single(x=>x.name=="Customization Footer");
-            SectionLabel(footer,"Hat");
-            var row=Rect(footer,"Hat Selection",new Vector2(472,48),Vector2.zero);var layout=row.gameObject.AddComponent<LayoutElement>();layout.preferredHeight=48;
-            var view=row.gameObject.AddComponent<LobbyHatView>();var data=new SerializedObject(view);Bind(data,"lobby",lobby);
-            foreach(bool previous in new[]{true,false})
+            const string path = "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab";
+            var root = PrefabUtility.LoadPrefabContents(path);
+            try
             {
-                var r=Rect(row,previous?"Previous":"Next",new Vector2(40,36),new Vector2(previous?-204:204,0));var image=r.gameObject.AddComponent<Image>();image.color=new Color(.12f,.25f,.32f);var button=r.gameObject.AddComponent<Button>();button.targetGraphic=image;
-                Label(r,"Arrow",previous?"<":">",new Vector2(28,28),Vector2.zero);Bind(data,previous?"previous":"next",button);
+                var footer = root.GetComponentsInChildren<Transform>(true).Single(x => x.name == "Customization Footer");
+                foreach (var name in new[] { "Face Label", "Hat Label", "Emote Faces Label", "Face Expression", "Hat Selection", "Emote Face Mapping" })
+                {
+                    var child = footer.Find(name);
+                    if (child != null) UnityEngine.Object.DestroyImmediate(child.gameObject);
+                }
+                footer.GetComponent<LayoutElement>().preferredHeight = 210;
+                var panel = (RectTransform)root.GetComponentsInChildren<Transform>(true).Single(x => x.name == "Player Customization");
+                panel.sizeDelta = new Vector2(520, 440);
+                EnsureLobbySelectors(root);
+                PrefabUtility.SaveAsPrefabAsset(root, path);
             }
-            Bind(data,"title",Label(row,"Hat Name","None",new Vector2(175,30),Vector2.zero,16));data.ApplyModifiedPropertiesWithoutUndo();
+            finally { PrefabUtility.UnloadPrefabContents(root); }
         }
     }
 }

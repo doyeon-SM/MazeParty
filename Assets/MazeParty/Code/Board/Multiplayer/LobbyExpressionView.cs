@@ -9,8 +9,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private OnlineLobbyView lobby;
         [SerializeField] private Button previous, next;
         [SerializeField] private Image preview;
-        [SerializeField] private Text title;
-        public bool HasRequiredReferences => lobby != null && previous != null && next != null && preview != null && title != null;
+        public bool HasRequiredReferences => lobby != null && previous != null && next != null && preview != null;
         private void Awake()
         {
             if (!HasRequiredReferences) { Debug.LogError("Expression selector bindings missing.", this); enabled = false; return; }
@@ -27,7 +26,7 @@ namespace MazeParty.Multiplayer
             var catalog = PlayerExpressionCatalog.Instance;
             if (catalog == null || catalog.Faces.Length == 0) return;
             var face = catalog.Faces[PlayerExpressionCatalog.SanitizeFace(lobby.SelectedExpression)];
-            preview.sprite = face.Sprite; title.text = GameText.T(face.Name);
+            preview.sprite = face.Sprite;
         }
     }
 }

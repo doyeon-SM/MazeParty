@@ -12438,6 +12438,7 @@ GameObject:
   - component: {fileID: 47573022116853686}
   - component: {fileID: 2747861980784480726}
   - component: {fileID: 6957848097172074842}
+  - component: {fileID: 7314292943391214889}
   m_Layer: 0
   m_Name: Return to Waiting Room
   m_TagString: Untagged
@@ -12640,3 +12641,17 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedText
   sourceText: Go to Waiting Room
+--- !u!114 &7314292943391214889
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3320310149813527457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click

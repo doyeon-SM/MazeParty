@@ -75,6 +75,12 @@ namespace MazeParty.Gameplay
             return pose != null;
         }
 
+        private static Vector3 UprightPalm(float tilt)
+        {
+            return (Quaternion.AngleAxis(tilt, Vector3.forward) *
+                    Quaternion.Euler(-90f, 0f, 0f)).eulerAngles;
+        }
+
         public bool EnsureDefaults()
         {
             if (schemaVersion >= CurrentSchemaVersion)
@@ -83,39 +89,15 @@ namespace MazeParty.Gameplay
             }
 
             var zero = Vector3.zero;
-            greeting = HandEmoteRotationPose.Create(zero, zero, zero, zero);
-            greetingWaveDegrees = -22f;
-            salute = HandEmoteRotationPose.Create(
-                zero,
-                new Vector3(0f, 0f, 32f),
-                zero,
-                new Vector3(0f, 0f, 32f));
-            insult = HandEmoteRotationPose.Create(zero, zero, zero, zero);
-            heart = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, 42f),
-                new Vector3(0f, 0f, -42f),
-                new Vector3(0f, 0f, 42f),
-                new Vector3(0f, 0f, -42f));
-            surprise = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, -18f),
-                new Vector3(0f, 0f, 18f),
-                new Vector3(0f, 0f, -18f),
-                new Vector3(0f, 0f, 18f));
-            surrender = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, -10f),
-                new Vector3(0f, 0f, 10f),
-                new Vector3(0f, 0f, -10f),
-                new Vector3(0f, 0f, 10f));
-            pleading = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, 82f),
-                new Vector3(0f, 0f, -82f),
-                new Vector3(0f, 0f, 82f),
-                new Vector3(0f, 0f, -82f));
-            eyesCover = HandEmoteRotationPose.Create(
-                new Vector3(0f, 0f, -8f),
-                new Vector3(0f, 0f, 8f),
-                new Vector3(0f, 0f, -8f),
-                new Vector3(0f, 0f, 8f));
+            greeting = HandEmoteRotationPose.Create(UprightPalm(-12f), zero, UprightPalm(-12f), zero);
+            greetingWaveDegrees = 22f;
+            salute = HandEmoteRotationPose.Create(new Vector3(-26.05f, -90f, 0f), zero, new Vector3(-26.05f, -90f, 0f), zero);
+            insult = HandEmoteRotationPose.Create(new Vector3(-90, 180, 0), new Vector3(-90, 180, 0), new Vector3(-90, 180, 0), new Vector3(-90, 180, 0));
+            heart = HandEmoteRotationPose.Create(UprightPalm(0f), UprightPalm(0f), UprightPalm(0f), UprightPalm(0f));
+            surprise = HandEmoteRotationPose.Create(UprightPalm(-20f), UprightPalm(20f), UprightPalm(-20f), UprightPalm(20f));
+            surrender = HandEmoteRotationPose.Create(UprightPalm(-10f), UprightPalm(10f), UprightPalm(-10f), UprightPalm(10f));
+            pleading = HandEmoteRotationPose.Create(new Vector3(-90, -90, 0), new Vector3(-90, 90, 0), new Vector3(-90, -90, 0), new Vector3(-90, 90, 0));
+            eyesCover = HandEmoteRotationPose.Create(new Vector3(-90, 180, -10), new Vector3(-90, 180, 10), new Vector3(-90, 180, -10), new Vector3(-90, 180, 10));
             schemaVersion = CurrentSchemaVersion;
             return true;
         }

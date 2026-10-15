@@ -43,171 +43,210 @@ MonoBehaviour:
     Sprite: {fileID: 21300000, guid: 342a5e6e0bdc94e43824f2c41951b61b, type: 3}
   - Name: Face15
     Sprite: {fileID: 21300000, guid: 94aadf064dcc16040a5d4fa471cba733, type: 3}
+  NoHatPreview: {fileID: 21300002, guid: 88dca061d041a2a4596563e6a38f66c8, type: 3}
   Hats:
   - Name: Hat1
     Prefab: {fileID: 146017364229632897, guid: 626e34c7a8deb5149bebf15aa340beef, type: 3}
+    Preview: {fileID: 21300000, guid: c927daeb4889217499c2cf64f5adad8c, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat2
     Prefab: {fileID: 3191636596567119608, guid: 7db39e4ec1d64474792240c07ca0f25b, type: 3}
+    Preview: {fileID: 21300000, guid: 0e28bcfb713436a4090563a48b117134, type: 3}
     LocalPosition: {x: 0, y: -0.31, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat3
     Prefab: {fileID: 5654781738647655668, guid: 00cc8517c2dd87a49b38849902894917, type: 3}
+    Preview: {fileID: 21300000, guid: 85d532a0e1d2ceb47854c358237d9e7c, type: 3}
     LocalPosition: {x: 0, y: -0.34, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat4
     Prefab: {fileID: 984455003330145051, guid: 59e9f72f18de26043b2149d8bc82bce8, type: 3}
+    Preview: {fileID: 21300000, guid: efd6cd41bbe5f6348840c893f8f58d94, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat5
     Prefab: {fileID: 6768321221827082680, guid: bd50baa57071d1f4e99ddaf027e5d15d, type: 3}
+    Preview: {fileID: 21300000, guid: 08efc7b034a4ca94d9330cd984055017, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat6
     Prefab: {fileID: 1776612124167631118, guid: 274b25363844cee478c35df780867861, type: 3}
+    Preview: {fileID: 21300000, guid: ec59a40ff85892b4689a50ea68ac97c8, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat7
     Prefab: {fileID: 4815060549070780232, guid: f9fbb56a99222404f9ccb690e8ca8bc2, type: 3}
+    Preview: {fileID: 21300000, guid: 60281a726e892314ca6bf3f298dab9b6, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat8
     Prefab: {fileID: 3898290349597930763, guid: 1b20333b2c955be4b8d25c9324f02778, type: 3}
+    Preview: {fileID: 21300000, guid: 6de09722e7c0767419fd2cab41d305f2, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat9
     Prefab: {fileID: 326941230481271024, guid: fb4fc130da23796438f6e3f71cb34990, type: 3}
+    Preview: {fileID: 21300000, guid: 71d29fcf73acc3246a2967a6f0a0fc44, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat10
     Prefab: {fileID: 2173583313931122146, guid: d325686e696e59e4f9599930263921ca, type: 3}
+    Preview: {fileID: 21300000, guid: 8a6c32a9be14315419a227c745aaf636, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat11
     Prefab: {fileID: 4732725423045848054, guid: 2651286c8815b4c43901c85ea4522ab7, type: 3}
+    Preview: {fileID: 21300000, guid: d2df7bb736c14424e8f69efc8a6796ea, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat12
     Prefab: {fileID: 8982626705942335288, guid: 6a0fc4016b3d79046be910fe431615b2, type: 3}
+    Preview: {fileID: 21300000, guid: 647060cab6247d544a57d84649c137c3, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat13
     Prefab: {fileID: 8371612044684148355, guid: 81d003914f563c44d81a158a01770d2a, type: 3}
+    Preview: {fileID: 21300000, guid: 550969a60b9930a488944f8f7b51893e, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat14
     Prefab: {fileID: 4181508565887847698, guid: 29af8a2c57688ff4c94dc5d05bf419d5, type: 3}
+    Preview: {fileID: 21300000, guid: 9ebb87873a1edc540b5de35eaad09f05, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat15
     Prefab: {fileID: 100322315100841972, guid: 35c21ad5dc2dab74bbcbf4b1f88f33c3, type: 3}
+    Preview: {fileID: 21300000, guid: 97de5d07e699a0c46b45b9f2c80dc781, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat16
     Prefab: {fileID: 5638983235683167489, guid: 205f05e7b2baeaf4d81b04cfab45aa6b, type: 3}
+    Preview: {fileID: 21300000, guid: 53fbf4bcec0275d44b7f337ce355144b, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat17
     Prefab: {fileID: 8020449699920074320, guid: 8de0a19eabf8a8f49b7c425427944a04, type: 3}
+    Preview: {fileID: 21300000, guid: c2d677a049e76f648af1035e162077ca, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat18
     Prefab: {fileID: 3534764461917186111, guid: 1f23d4e757c6aad41b79f11d16ce457d, type: 3}
+    Preview: {fileID: 21300000, guid: 5923cb7ee6b2b2542a2fa32a5d185349, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat19
     Prefab: {fileID: 4378357935111522139, guid: baa356b0be7293e449ef42b11b3db96b, type: 3}
+    Preview: {fileID: 21300000, guid: 42292c73a47d3284086e8a1f702c487b, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat20
     Prefab: {fileID: 5132314746888202024, guid: 96d8fc72aa6c5cf40ab35620b57253b6, type: 3}
+    Preview: {fileID: 21300000, guid: c5e8e119caf07e44a8c807f9c82a7fcf, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat21
     Prefab: {fileID: 2799200344423399355, guid: 1f26d85df95505b4593e4a85d0cbea18, type: 3}
+    Preview: {fileID: 21300000, guid: f16218bfd0fca9640b6d8a2353e4f41b, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat22
     Prefab: {fileID: 4981962104565070058, guid: 538454aa954b0884fb9ee847cf30ca7f, type: 3}
+    Preview: {fileID: 21300000, guid: 200fe7c6cf1a4644fb05d8e5c6f63b07, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat23
     Prefab: {fileID: 528211449415089340, guid: 23a494afe02fa6648a8af4756ada43f1, type: 3}
+    Preview: {fileID: 21300000, guid: 70d41bd08fdd94845ab8cadac5d5909b, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat24
     Prefab: {fileID: 5344138205338662114, guid: 06ea834d0cf45ff47ab8a9d70acbc017, type: 3}
+    Preview: {fileID: 21300000, guid: 829dd32747182c94cab9ec2d3e2fa80d, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat25
     Prefab: {fileID: 475101780775754472, guid: f58609f118910154c8b389b85cec9250, type: 3}
+    Preview: {fileID: 21300000, guid: 49e5123b5e7bfa14c91c5f4408aee2ca, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat26
     Prefab: {fileID: 8567930024857385488, guid: b6bcbc7127272424fadce6976ce65e54, type: 3}
+    Preview: {fileID: 21300000, guid: 364b0955b9ccfc444abc16c12e75ddf0, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat27
     Prefab: {fileID: 1852838183572564145, guid: f0def66303bebdd4db67e6204c5bde83, type: 3}
+    Preview: {fileID: 21300000, guid: dc57af82b76bd3242a4e9e07257177cd, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat28
     Prefab: {fileID: 2693717523652064697, guid: 2337fab7af9c8ea47968e46c2f11ab82, type: 3}
+    Preview: {fileID: 21300000, guid: 67e9d0c35c9668141b5d06a004d47f2b, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat29
     Prefab: {fileID: 5522826986954093192, guid: 03c77ee9a67557444878646a1146f33e, type: 3}
+    Preview: {fileID: 21300000, guid: c0f9ea4dca862b94c88b4ea6ba695594, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   - Name: Hat30
     Prefab: {fileID: 7059980121976081558, guid: 5b72bcce0e560964cb1a1aafe397e986, type: 3}
+    Preview: {fileID: 21300000, guid: b33a703391958a24f8b9d753f2209087, type: 3}
     LocalPosition: {x: 0, y: -0.33, z: 0}
     LocalEulerAngles: {x: 0, y: 0, z: 0}
     LocalScale: {x: 1, y: 1, z: 1}
   Gestures:
   - Name: GREETING
+    ExpressionId: 0
     HandsPrefab: {fileID: 0}
   - Name: SALUTE
+    ExpressionId: 3
     HandsPrefab: {fileID: 0}
   - Name: INSULT
+    ExpressionId: 1
     HandsPrefab: {fileID: 0}
   - Name: HEART
+    ExpressionId: 7
     HandsPrefab: {fileID: 0}
   - Name: SURPRISE
+    ExpressionId: 9
     HandsPrefab: {fileID: 0}
   - Name: SURRENDER
+    ExpressionId: 8
     HandsPrefab: {fileID: 0}
   - Name: PLEADING
+    ExpressionId: 2
     HandsPrefab: {fileID: 0}
   - Name: EYES COVER
+    ExpressionId: 5
     HandsPrefab: {fileID: 0}

@@ -88,7 +88,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(emoteRoundTrip.EmoteFaces, Is.EqualTo(selectedEmotes));
         }
         [Test]
-        public void HandGesture_UsesEightSectors_TwoSecondLock_AndValidatedWardrobeFace()
+        public void HandGesture_UsesEightSectors_TwoSecondLock_AndAuthoredFace()
         {
             Assert.That(HandEmoteRules.CanStart(10, 10, true, true), Is.True);
             Assert.That(HandEmoteRules.Duration, Is.EqualTo(2d));
@@ -103,18 +103,21 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(HandEmoteRules.Select(Vector2.right*80,32,8), Is.EqualTo(2));
             Assert.That(HandEmoteRules.Select(Vector2.down*80,32,8), Is.EqualTo(4));
             Assert.That(HandEmoteRules.Select(Vector2.left*80,32,8), Is.EqualTo(6));
-            Assert.That(
-                HandEmoteRules.ResolveExpression(
-                    (byte)HandEmoteId.Greeting, 7, 2, 15),
-                Is.EqualTo(7));
-            Assert.That(
-                HandEmoteRules.ResolveExpression(
-                    (byte)HandEmoteId.Greeting, 99, 2, 15),
-                Is.EqualTo(2));
-            Assert.That(
-                HandEmoteRules.ResolveExpression(
-                    (byte)HandEmoteId.EyesCover, 7, 2, 15),
-                Is.EqualTo(2));
+            var catalog = PlayerExpressionCatalog.Instance;
+            for (byte id = 1; id <= HandEmoteRules.GestureCount; id++)
+                for (byte fallback = 0; fallback < catalog.Faces.Length; fallback++)
+                    Assert.That(catalog.ResolveGestureExpression(id, fallback), Is.EqualTo(catalog.Gestures[id - 1].ExpressionId));
+            Assert.That(catalog.ResolveGestureExpression(0, 2), Is.EqualTo(2));
+            Assert.That(catalog.ResolveGestureExpression(255, 2), Is.EqualTo(2));
+            var temporary = ScriptableObject.CreateInstance<PlayerExpressionCatalog>();
+            try
+            {
+                temporary.Faces = catalog.Faces;
+                temporary.Gestures = new[] { new PlayerExpressionCatalog.Gesture { ExpressionId = 255 } };
+                Assert.That(temporary.ResolveGestureExpression(1, 2), Is.EqualTo(2));
+                Assert.That(temporary.ResolveGestureExpression(1, 255), Is.Zero);
+            }
+            finally { Object.DestroyImmediate(temporary); }
         }
     }
 }

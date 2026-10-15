@@ -30,39 +30,25 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var fallback = _appearance.Value.ExpressionId;
-            var controller = OnlineSessionController.Instance;
-            var requestedFace = controller != null
-                ? controller.LocalEmoteFaces.Get(id, fallback)
-                : fallback;
-            HandGestureRpc(id, requestedFace);
+            HandGestureRpc(id);
         }
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
         private void HandGestureRpc(
             byte id,
-            byte requestedFace,
             RpcParams rpc = default)
         {
             if (rpc.Receive.SenderClientId == OwnerClientId)
             {
-                TryStartHandGestureOnServer(id, requestedFace);
+                TryStartHandGestureOnServer(id);
             }
         }
-        public bool TryStartHandGestureOnServer(
-            byte id,
-            byte requestedFace = byte.MaxValue)
+        public bool TryStartHandGestureOnServer(byte id)
         {
             if (!IsServer || !HandEmoteRules.CanStart(GestureNow, _handGestureEndsAt.Value, CanUseHandGestures,
                 PlayerExpressionCatalog.HasGesture(id))) return false;
             var fallback = _appearance.Value.ExpressionId;
             var catalog = PlayerExpressionCatalog.Instance;
-            _handGestureFace.Value = HandEmoteRules.ResolveExpression(
-                id,
-                requestedFace,
-                fallback,
-                catalog != null && catalog.Faces != null
-                    ? catalog.Faces.Length
-                    : 0);
+            _handGestureFace.Value = catalog.ResolveGestureExpression(id, fallback);
             _handGestureEndsAt.Value = GestureNow + HandEmoteRules.Duration;
             _handGesture.Value = id;
             StopServerInputOnServer();

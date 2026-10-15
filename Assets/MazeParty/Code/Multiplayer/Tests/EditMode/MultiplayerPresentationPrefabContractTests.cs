@@ -317,7 +317,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void HandGesture_UsesWardrobeFaceNormalHandsAndRestoresAuthoredPose()
+        public void HandGesture_UsesFixedFaceNormalHandsAndRestoresAuthoredPose()
         {
             var root = new GameObject("Hand Gesture Contract Root");
             try
@@ -331,18 +331,18 @@ namespace MazeParty.Multiplayer.Tests
                     .PresentationPrefab;
 
                 visual.ApplyAppearance(0, 0, 0, 2);
-                visual.SetHandGesture((byte)HandEmoteId.Greeting, 5);
+                visual.SetHandGesture((byte)HandEmoteId.Greeting, catalog.ResolveGestureExpression((byte)HandEmoteId.Greeting, 2));
                 Assert.That(
                     bindings.FaceSprite.sprite,
-                    Is.SameAs(catalog.Faces[5].Sprite));
+                    Is.SameAs(catalog.Faces[catalog.Gestures[0].ExpressionId].Sprite));
                 Assert.That(bindings.LeftHandAnchor.gameObject.activeSelf, Is.True);
                 Assert.That(bindings.RightHandAnchor.gameObject.activeSelf, Is.True);
                 Assert.That(bindings.WorldGestureRoot.gameObject.activeSelf, Is.False);
 
-                visual.SetHandGesture((byte)HandEmoteId.EyesCover, 7);
+                visual.SetHandGesture((byte)HandEmoteId.EyesCover, catalog.ResolveGestureExpression((byte)HandEmoteId.EyesCover, 2));
                 Assert.That(
                     bindings.FaceSprite.sprite,
-                    Is.SameAs(catalog.Faces[2].Sprite));
+                    Is.SameAs(catalog.Faces[catalog.Gestures[7].ExpressionId].Sprite));
 
                 visual.SetHandGesture(0, 2);
                 Assert.That(
@@ -368,7 +368,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void HandLayout_UsesSwappedSidesAndGreetingKeepsRightHandIdentity()
+        public void HandLayout_PreservesCombatAnchorsAndUsesAnatomicalRightHand()
         {
             var root = new GameObject("Hand Layout Contract Root");
             try
@@ -399,21 +399,17 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(updatePose, Is.Not.Null);
                 Assert.That(gestureStartedAt, Is.Not.Null);
 
-                visual.SetHandGesture((byte)HandEmoteId.Greeting, 0);
-                gestureStartedAt.SetValue(
-                    visual,
-                    Time.time - (float)HandEmoteRules.Duration * 0.5f);
-                updatePose.Invoke(visual, new object[] { false });
-
-                Assert.That(bindings.RightHandAnchor.localPosition.y,
-                    Is.GreaterThan(bindings.LeftHandAnchor.localPosition.y));
-                Assert.That(bindings.FirstPersonRightHand.localPosition.y,
-                    Is.GreaterThan(
-                        bindings.FirstPersonLeftHand.localPosition.y));
-                Assert.That(bindings.RightHandAnchor.localPosition.x,
-                    Is.LessThan(0f));
-                Assert.That(bindings.FirstPersonRightHand.localPosition.x,
-                    Is.LessThan(0f));
+                foreach (var gesture in new[] { HandEmoteId.Greeting, HandEmoteId.Salute })
+                {
+                    visual.SetHandGesture((byte)gesture, 0);
+                    gestureStartedAt.SetValue(visual, Time.time - (float)HandEmoteRules.Duration * 0.5f);
+                    updatePose.Invoke(visual, new object[] { false });
+                    // Facing +Z, +X is the character's right; the legacy anchor name is retained.
+                    Assert.That(bindings.LeftHandAnchor.localPosition.y, Is.GreaterThan(bindings.RightHandAnchor.localPosition.y));
+                    Assert.That(bindings.FirstPersonLeftHand.localPosition.y, Is.GreaterThan(bindings.FirstPersonRightHand.localPosition.y));
+                    Assert.That(bindings.LeftHandAnchor.localPosition.x, Is.GreaterThan(0f));
+                    Assert.That(bindings.FirstPersonLeftHand.localPosition.x, Is.GreaterThan(0f));
+                }
             }
             finally
             {

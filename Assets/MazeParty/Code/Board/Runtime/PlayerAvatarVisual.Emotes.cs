@@ -9,6 +9,7 @@ namespace MazeParty.Gameplay
         {
             Closed,
             OpenPalm,
+            Salute,
             MiddleOnly,
             Heart
         }
@@ -90,8 +91,7 @@ namespace MazeParty.Gameplay
             if (_faceSprite == null) return;
             var catalog = PlayerExpressionCatalog.Instance;
             if (catalog == null || catalog.Faces.Length == 0) return;
-            var id = _gesture > 0 &&
-                     (HandEmoteId)_gesture != HandEmoteId.EyesCover
+            var id = _gesture > 0
                 ? _gestureExpression
                 : _baseExpression;
             _faceSprite.sprite = catalog.Faces[
@@ -164,22 +164,19 @@ namespace MazeParty.Gameplay
 
             switch (gesture)
             {
+                // Legacy anchor names were retained after the hand models were mirrored.
+                // The +X anchor is the character's anatomical right hand when facing +Z.
                 case HandEmoteId.Greeting:
-                    rightPosition = firstPerson
-                        ? new Vector3(-0.28f, 0.04f, 0.48f)
-                        : new Vector3(-0.48f, 0.66f, 0.3f);
-                    rightRotation = Quaternion.Euler(
-                        0f,
-                        0f,
-                        Mathf.Sin(progress * Mathf.PI * 4f) * -22f);
-                    rightFingerPose = HandFingerPose.OpenPalm;
+                    leftPosition = firstPerson
+                        ? new Vector3(0.28f, 0.04f, 0.48f)
+                        : new Vector3(0.48f, 0.78f, 0.34f);
+                    leftFingerPose = HandFingerPose.OpenPalm;
                     break;
                 case HandEmoteId.Salute:
-                    rightPosition = firstPerson
-                        ? new Vector3(-0.2f, 0.08f, 0.43f)
-                        : new Vector3(-0.32f, 0.72f, 0.31f);
-                    rightRotation = Quaternion.Euler(0f, 0f, 32f);
-                    rightFingerPose = HandFingerPose.OpenPalm;
+                    leftPosition = firstPerson
+                        ? new Vector3(0.24f, 0.08f, 0.43f)
+                        : new Vector3(0.47f, 0.86f, 0.35f);
+                    leftFingerPose = HandFingerPose.Salute;
                     break;
                 case HandEmoteId.Insult:
                     leftPosition = firstPerson
@@ -229,11 +226,11 @@ namespace MazeParty.Gameplay
                     break;
                 case HandEmoteId.Pleading:
                     leftPosition = firstPerson
-                        ? new Vector3(0.055f, -0.03f, 0.55f)
-                        : new Vector3(0.08f, 0.22f, 0.46f);
+                        ? new Vector3(0.02f, -0.03f, 0.55f)
+                        : new Vector3(0.025f, 0.35f, 0.52f);
                     rightPosition = firstPerson
-                        ? new Vector3(-0.055f, -0.03f, 0.55f)
-                        : new Vector3(-0.08f, 0.22f, 0.46f);
+                        ? new Vector3(-0.02f, -0.03f, 0.55f)
+                        : new Vector3(-0.025f, 0.35f, 0.52f);
                     leftRotation = Quaternion.Euler(0f, 0f, 82f);
                     rightRotation = Quaternion.Euler(0f, 0f, -82f);
                     leftFingerPose = HandFingerPose.OpenPalm;
@@ -242,10 +239,10 @@ namespace MazeParty.Gameplay
                 case HandEmoteId.EyesCover:
                     leftPosition = firstPerson
                         ? new Vector3(0.1f, 0.06f, 0.36f)
-                        : new Vector3(0.16f, 0.7f, 0.38f);
+                        : new Vector3(0.16f, 0.82f, 0.48f);
                     rightPosition = firstPerson
                         ? new Vector3(-0.1f, 0.06f, 0.36f)
-                        : new Vector3(-0.16f, 0.7f, 0.38f);
+                        : new Vector3(-0.16f, 0.82f, 0.48f);
                     leftRotation = Quaternion.Euler(0f, 0f, -8f);
                     rightRotation = Quaternion.Euler(0f, 0f, 8f);
                     leftFingerPose = HandFingerPose.OpenPalm;
@@ -261,13 +258,13 @@ namespace MazeParty.Gameplay
                 var rightEuler = firstPerson
                     ? authoredRotations.FirstPersonRightEuler
                     : authoredRotations.WorldRightEuler;
-                if (gesture == HandEmoteId.Greeting)
-                {
-                    rightEuler.z += Mathf.Sin(
-                        progress * Mathf.PI * 4f) * greetingWaveDegrees;
-                }
                 leftRotation = Quaternion.Euler(leftEuler);
                 rightRotation = Quaternion.Euler(rightEuler);
+                if (gesture == HandEmoteId.Greeting)
+                {
+                    var wave = Mathf.Sin(progress * Mathf.PI * 4f) * greetingWaveDegrees;
+                    leftRotation = Quaternion.AngleAxis(wave, Vector3.forward) * leftRotation;
+                }
             }
 
             left.localPosition = Vector3.Lerp(left.localPosition, leftPosition, blend);
@@ -318,17 +315,26 @@ namespace MazeParty.Gameplay
             for (var index = 0; index < rig.Bones.Length; index++)
             {
                 var bone = rig.Bones[index];
-                var shouldOpen = pose == HandFingerPose.OpenPalm ||
+                var shouldOpen = pose == HandFingerPose.OpenPalm || pose == HandFingerPose.Salute ||
                                  (pose == HandFingerPose.MiddleOnly &&
                                   rig.MiddleFingerBones[index]) ||
                                  (pose == HandFingerPose.Heart &&
                                   IsHeartFingerBone(bone.name));
                 if (shouldOpen && rig.Bones[index] != null)
                 {
+                    var rotation = GetOpenFingerRotation(bone.name);
+                    if (pose == HandFingerPose.Salute && bone.name == "Thumb")
+                        rotation = Quaternion.Euler(0f, 0f, 15f);
+                    if (pose == HandFingerPose.Heart)
+                    {
+                        // Curve both index fingers into the lobes; thumbs meet at the lower tip.
+                        if (bone.name == "Index2" || bone.name == "Index3")
+                            rotation = Quaternion.Euler(0f, 0f, 55f);
+                        else if (bone.name == "Thumb")
+                            rotation = Quaternion.Euler(0f, 0f, 110f);
+                    }
                     rig.Bones[index].localRotation = Quaternion.Slerp(
-                        rig.ClosedRotations[index],
-                        GetOpenFingerRotation(bone.name),
-                        blend);
+                        rig.ClosedRotations[index], rotation, blend);
                 }
             }
         }

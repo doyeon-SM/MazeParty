@@ -104,7 +104,6 @@ namespace MazeParty.Gameplay
         }
         public void SetHandGesture(byte id, byte expressionId)
         {
-            expressionId = PlayerExpressionCatalog.SanitizeFace(expressionId);
             if (_gesture != id)
             {
                 _gesture = id;
@@ -115,7 +114,8 @@ namespace MazeParty.Gameplay
                 }
                 RefreshVisibility();
             }
-            _gestureExpression = expressionId;
+            // This face has already been selected from the fixed catalog by the server.
+            _gestureExpression = PlayerExpressionCatalog.SanitizeFace(expressionId);
             RefreshCurrentFace();
         }
         private void RefreshGestureVisibility(bool showingItem)
