@@ -470,12 +470,6 @@ namespace MazeParty.Multiplayer
 
             _lastCueCycle = state.CycleNumber;
             _lastCuePhase = state.CyclePhase;
-            if (state.Phase == NetworkStableFootingPhase.Running &&
-                cueAudioSource != null &&
-                cueAudioSource.clip != null)
-            {
-                cueAudioSource.Play();
-            }
             if (ShouldPlaySafeSymbolRevealVfx(
                     state.Phase,
                     state.CyclePhase) &&
@@ -580,6 +574,7 @@ namespace MazeParty.Multiplayer
                     (StableFootingCyclePhase)byte.MaxValue;
                 _cueBaselineInitialized = false;
                 cueAudioSource?.Stop();
+                _safeSymbolPresenter?.Hide();
             }
         }
 

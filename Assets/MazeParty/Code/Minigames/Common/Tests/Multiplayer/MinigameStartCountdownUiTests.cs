@@ -42,6 +42,11 @@ namespace MazeParty.Multiplayer.Tests
             var aimGraphics = common.TaggerAimRoot
                 .GetComponentsInChildren<Graphic>(true);
             Assert.That(aimGraphics, Is.Not.Empty);
+            var aimImage = common.TaggerAimRoot.GetComponent<Image>();
+            Assert.That(aimImage, Is.Not.Null);
+            Assert.That(aimImage.sprite, Is.Not.Null);
+            Assert.That(AssetDatabase.GetAssetPath(aimImage.sprite), Is.EqualTo(
+                "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png"));
             Assert.That(aimGraphics.All(graphic => !graphic.raycastTarget),
                 Is.True);
             Assert.That(canvas, Is.Not.Null);

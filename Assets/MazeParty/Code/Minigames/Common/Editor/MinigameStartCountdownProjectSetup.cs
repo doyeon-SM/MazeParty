@@ -358,31 +358,25 @@ namespace MazeParty.Editor
             }
         }
 
-        private static GameObject CreateTaggerAim(
-            Transform parent,
-            Font font)
+        private static GameObject CreateTaggerAim(Transform parent, Font font)
         {
-            var aim = new GameObject(
-                "Tagger Aim",
-                typeof(RectTransform),
-                typeof(CanvasRenderer),
-                typeof(Text));
+            var aim = new GameObject("Tagger Aim", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(Image));
             aim.transform.SetParent(parent, false);
             var rect = aim.GetComponent<RectTransform>();
             rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
             rect.pivot = new Vector2(0.5f, 0.5f);
             rect.anchoredPosition = Vector2.zero;
-            rect.sizeDelta = new Vector2(52f, 52f);
-
-            var text = aim.GetComponent<Text>();
-            text.font = font;
-            text.fontSize = 42;
-            text.fontStyle = FontStyle.Normal;
-            text.alignment = TextAnchor.MiddleCenter;
-            text.color = Color.white;
-            text.raycastTarget = false;
-            text.text = "+";
-
+            rect.sizeDelta = new Vector2(50f, 50f);
+            var image = aim.GetComponent<Image>();
+            foreach (var asset in AssetDatabase.LoadAllAssetsAtPath(
+                         ArenaCombatHitFlashProjectSetup.AimSpritePath))
+                if (asset is Sprite sprite && sprite.name == "Add") image.sprite = sprite;
+            if (image.sprite == null)
+                throw new InvalidOperationException("Tagger Aim requires the first-person Add sprite.");
+            image.color = Color.white;
+            image.raycastTarget = false;
+            image.maskable = false;
             aim.SetActive(false);
             return aim;
         }

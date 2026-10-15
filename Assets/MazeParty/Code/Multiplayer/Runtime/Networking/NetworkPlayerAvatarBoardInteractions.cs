@@ -62,11 +62,9 @@ namespace MazeParty.Multiplayer
                     case BoardWorldInteractionKind.Tombstone:
                         return GameText.F("+{0} GOLD\nRMB", Gold);
                     case BoardWorldInteractionKind.KeyShop:
-                        return GameText.T("KEY SHOP\nRMB BUY  20 GOLD");
+                        return GameText.T("KEY SHOP (RMB TO BUY A KEY -20 GOLD)");
                     case BoardWorldInteractionKind.ItemShop:
-                        return GameText.F(
-                            "ITEM SHOP {0}\nRMB OPEN",
-                            TargetIndex + 1);
+                        return GameText.T("ITEM SHOP (RMB TO OPEN SHOP)");
                     default:
                         return string.Empty;
                 }

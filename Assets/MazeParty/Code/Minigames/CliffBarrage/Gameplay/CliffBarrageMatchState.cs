@@ -88,10 +88,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
     public sealed class CliffBarrageMatchState
     {
         private const double Epsilon = 0.000000001d;
-        private const double ProjectileSpawnMin = 1.5d;
-        private const double ProjectileSpawnMax = 2.5d;
-        private const double LaserSpawnMin = 7d;
-        private const double LaserSpawnMax = 10d;
+        private const double ProjectileSpawnMin = 1.5d / 2d;
+        private const double ProjectileSpawnMax = 2.5d / 2d;
+        private const double LaserSpawnMin = 7d / 1.5d;
+        private const double LaserSpawnMax = 10d / 1.5d;
         private readonly PlayerState[] _players =
             new PlayerState[CliffBarrageRules.PlayerCount];
         private readonly ProjectileState[] _projectiles =

@@ -119,6 +119,9 @@ namespace MazeParty.Editor
                 for (var index = 0; index < projectiles.Length; index++)
                 {
                     var current = view.GetProjectileTransform(index);
+                    if (current == null)
+                        current = AddPoolEntry(projectilePrefab,
+                            view.GetProjectileTransform(0), "Projectile " + (index + 1)).transform;
                     projectiles[index] = ReplaceWithSharedPrefab(
                         current != null ? current.gameObject : null,
                         projectilePrefab,
@@ -131,8 +134,12 @@ namespace MazeParty.Editor
                 var firingBeams = new Transform[laserCount];
                 for (var index = 0; index < laserCount; index++)
                 {
+                    var current = view.GetLaserRoot(index);
+                    if (current == null)
+                        current = AddPoolEntry(laserRigPrefab,
+                            view.GetLaserRoot(0)?.transform, "Laser Rig " + (index + 1));
                     laserRoots[index] = ReplaceWithSharedPrefab(
-                        view.GetLaserRoot(index),
+                        current,
                         laserRigPrefab,
                         LaserRigPrefabPath);
                     warningBeams[index] = laserRoots[index].transform.Find(
@@ -198,6 +205,18 @@ namespace MazeParty.Editor
                     "Could not load shared Cliff Barrage prefab: " + targetPath);
             }
             return prefab;
+        }
+
+        private static GameObject AddPoolEntry(GameObject prefab, Transform template, string name)
+        {
+            if (template == null || template.parent == null)
+                throw new InvalidOperationException("Cliff Barrage needs an authored pool template.");
+            var instance = (GameObject)PrefabUtility.InstantiatePrefab(prefab, template.parent);
+            instance.name = name;
+            instance.transform.SetLocalPositionAndRotation(template.localPosition, template.localRotation);
+            instance.transform.localScale = template.localScale;
+            instance.SetActive(false);
+            return instance;
         }
 
         private static GameObject ReplaceWithSharedPrefab(

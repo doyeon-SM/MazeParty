@@ -818,3 +818,5 @@ A player did not reconnect within 3 minutes. Returning to the waiting room with 
 
 EVENT RESULT: {0} GIVES {1} {2},이벤트 결과: {0} → {1} {2} 지급,イベント結果：{0} → {1} {2}を渡す,事件结果：{0} → {1} 交付{2}
 EVENT RESULT: {0} STEALS {2} FROM {1},이벤트 결과: {0} ← {1} {2} 강탈,イベント結果：{0} ← {1} {2}を奪う,事件结果：{0} ← {1} 夺取{2}
+KEY SHOP (RMB TO BUY A KEY -20 GOLD),열쇠 상점( 우클릭으로 열쇠구매 -20골드),鍵ショップ（右クリックで鍵を購入 -20ゴールド）,钥匙商店（右键购买钥匙 -20金币）
+ITEM SHOP (RMB TO OPEN SHOP),아이템 상점 (우클릭으로 상점 열기),アイテムショップ（右クリックで開く）,道具商店（右键打开商店）

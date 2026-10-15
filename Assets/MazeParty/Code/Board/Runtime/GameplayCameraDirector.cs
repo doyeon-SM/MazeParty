@@ -48,6 +48,8 @@ namespace MazeParty.Gameplay
         [SerializeField, Min(0f)] private float overheadToFirstPersonDuration = 0.65f;
         [SerializeField, Min(0f)] private float directTransitionDuration = 0.4f;
 
+        [SerializeField, Min(30f)] private float boardRotationDegreesPerSecond = 120f;
+
         [Header("Player Overhead")]
         [SerializeField, Min(0.1f)] private float playerOverheadHeight = 8f;
         [SerializeField, Range(10f, 120f)] private float playerOverheadFieldOfView = 50f;
@@ -68,6 +70,10 @@ namespace MazeParty.Gameplay
         private bool _savedIgnoreTimeScale;
         private bool _brainSettingsCaptured;
         private bool _isTransitioning;
+        private bool _drivingBoardPose;
+        private Vector3 _boardTransitionPosition;
+        private Quaternion _boardTransitionRotation;
+        private float _boardTransitionFieldOfView;
         private bool _hasCompletedMode;
         private bool _uiPointerVisible;
         private GameplayMode _completedMode;
@@ -323,12 +329,8 @@ namespace MazeParty.Gameplay
             if (!_isTransitioning)
                 return;
 
-            if (UsesPlayerBridge(_transitionFrom, _transitionTarget))
-            {
-                PrepareFirstPersonPose();
-                PreparePlayerOverheadPose();
-                PreparePlayerWidePose();
-            }
+            if (_drivingBoardPose)
+                ApplyBoardTransitionPose();
         }
 
         private void OnDisable()
@@ -352,35 +354,10 @@ namespace MazeParty.Gameplay
             CaptureBrainSettings();
             TransitionStarted?.Invoke(previous, target);
 
-            if (previous == GameplayMode.BoardTopDown
-                && target == GameplayMode.FirstPerson)
+            if (UsesPlayerBridge(previous, target))
             {
-                PreparePlayerWidePose();
-                yield return BlendTo(playerWideCamera, boardRecenterDuration);
-                PreparePlayerOverheadPose();
-                yield return BlendTo(
-                    playerOverheadCamera,
-                    boardToOverheadDuration);
-
-                PrepareFirstPersonPose();
-                yield return BlendTo(
-                    firstPersonCamera,
-                    overheadToFirstPersonDuration);
-            }
-            else if (previous == GameplayMode.FirstPerson
-                && target == GameplayMode.BoardTopDown)
-            {
-                PreparePlayerOverheadPose();
-                yield return BlendTo(
-                    playerOverheadCamera,
-                    overheadToFirstPersonDuration);
-
-                PreparePlayerWidePose();
-                yield return BlendTo(playerWideCamera, boardToOverheadDuration);
-                PrepareBoardPose();
-                yield return BlendTo(
-                    boardTopDownCamera,
-                    boardRecenterDuration);
+                ApplyCursorPolicy();
+                yield return RunBoardTransition(target);
             }
             else
             {
@@ -396,7 +373,119 @@ namespace MazeParty.Gameplay
             _hasCompletedMode = true;
             RestoreBrainSettings();
             ApplyPriorities(target);
+            ApplyCursorPolicy();
             TransitionCompleted?.Invoke(previous, target);
+        }
+
+        private IEnumerator RunBoardTransition(GameplayMode target)
+        {
+            var eye = ResolveLocalPlayerEye();
+            if (eye == null || outputCamera == null) yield break;
+            PrepareBoardPose();
+            var toFirstPerson = target == GameplayMode.FirstPerson;
+            var sourcePosition = outputCamera.transform.position;
+            var sourceRotation = outputCamera.transform.rotation;
+            var sourceFov = outputCamera.fieldOfView;
+            var sourcePitch = Mathf.Asin(Mathf.Clamp(
+                -(sourceRotation * Vector3.forward).y, -1f, 1f)) * Mathf.Rad2Deg;
+            var sourceYaw = GetCameraHeading(sourceRotation);
+            // Capture the direction once. Cursor confinement prevents mouse look
+            // from moving this target while the camera performs its own motion.
+            var targetYaw = toFirstPerson ? GetCameraHeading(eye.rotation) : 0f;
+            var targetPitch = toFirstPerson
+                ? Mathf.DeltaAngle(0f, eye.eulerAngles.x) : 90f;
+            _boardTransitionPosition = sourcePosition;
+            _boardTransitionRotation = sourceRotation;
+            _boardTransitionFieldOfView = sourceFov;
+            _drivingBoardPose = true;
+            SetBrainBlend(0f);
+            SetLiveCamera(playerOverheadCamera);
+            ApplyBoardTransitionPose();
+            _brain?.ResetState();
+
+            var yawDuration = Mathf.Abs(Mathf.DeltaAngle(sourceYaw, targetYaw)) *
+                              1.5f / Mathf.Max(30f, boardRotationDegreesPerSecond);
+            yield return MoveBoardCamera(sourcePosition, sourcePosition,
+                sourcePitch, sourcePitch, sourceYaw, targetYaw,
+                sourceFov, sourceFov, Mathf.Max(directTransitionDuration, yawDuration));
+
+            PreparePlayerWidePose();
+            var widePosition = playerWideCamera.transform.position;
+            var boardFov = boardTopDownCamera.Lens.FieldOfView;
+            if (toFirstPerson)
+            {
+                // Recenter with heading already aligned, then tilt only in pitch
+                // while approaching the eye. No quaternion roll around the head.
+                yield return MoveBoardCamera(sourcePosition, widePosition,
+                    sourcePitch, sourcePitch, targetYaw, targetYaw,
+                    sourceFov, boardFov, boardRecenterDuration);
+            }
+
+            var zoomStart = toFirstPerson ? widePosition : sourcePosition;
+            var zoomEnd = toFirstPerson ? eye.position : widePosition;
+            var zoomFov = toFirstPerson ? firstPersonCamera.Lens.FieldOfView : boardFov;
+            var pitchDuration = Mathf.Abs(targetPitch - sourcePitch) * 1.5f /
+                                Mathf.Max(30f, boardRotationDegreesPerSecond);
+            yield return MoveBoardCamera(zoomStart, zoomEnd,
+                sourcePitch, targetPitch, targetYaw, targetYaw,
+                toFirstPerson ? boardFov : sourceFov, zoomFov,
+                Mathf.Max(boardToOverheadDuration + overheadToFirstPersonDuration,
+                    pitchDuration), toFirstPerson ? eye : null);
+
+            if (!toFirstPerson)
+            {
+                yield return MoveBoardCamera(widePosition, boardTopDownCamera.transform.position,
+                    90f, 90f, 0f, 0f, boardFov, boardFov, boardRecenterDuration);
+            }
+            PrepareModePose(target);
+            SetLiveCamera(GetModeCamera(target));
+            _brain?.ResetState();
+            _drivingBoardPose = false;
+        }
+
+        private IEnumerator MoveBoardCamera(Vector3 from, Vector3 to,
+            float fromPitch, float toPitch, float fromYaw, float toYaw,
+            float fromFov, float toFov, float duration, Transform followEnd = null)
+        {
+            var startedAt = Time.unscaledTime;
+            float progress;
+            do
+            {
+                progress = duration > 0f
+                    ? Mathf.Clamp01((Time.unscaledTime - startedAt) / duration) : 1f;
+                var eased = progress * progress * (3f - 2f * progress);
+                _boardTransitionPosition = Vector3.Lerp(from,
+                    followEnd != null ? followEnd.position : to, eased);
+                _boardTransitionRotation = Quaternion.Euler(
+                    Mathf.Lerp(fromPitch, toPitch, eased),
+                    Mathf.LerpAngle(fromYaw, toYaw, eased), 0f);
+                _boardTransitionFieldOfView = Mathf.Lerp(fromFov, toFov, eased);
+                ApplyBoardTransitionPose();
+                yield return null;
+            } while (progress < 1f);
+        }
+
+        private void ApplyBoardTransitionPose()
+        {
+            var lens = playerOverheadCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = _boardTransitionFieldOfView;
+            playerOverheadCamera.Lens = lens;
+            playerOverheadCamera.ForceCameraPosition(
+                _boardTransitionPosition, _boardTransitionRotation);
+            // The brain can evaluate earlier in LateUpdate; keep the render pose
+            // in the same frame as the controlled virtual camera.
+            outputCamera.transform.SetPositionAndRotation(
+                _boardTransitionPosition, _boardTransitionRotation);
+            outputCamera.fieldOfView = _boardTransitionFieldOfView;
+        }
+
+        private static float GetCameraHeading(Quaternion rotation)
+        {
+            var forward = rotation * Vector3.forward;
+            if (forward.x * forward.x + forward.z * forward.z < 0.0001f)
+                forward = rotation * Vector3.up;
+            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         }
 
         private IEnumerator BlendTo(
@@ -792,6 +881,7 @@ namespace MazeParty.Gameplay
 
             _transitionCoroutine = null;
             _isTransitioning = false;
+            _drivingBoardPose = false;
             RestoreBrainSettings();
         }
 
@@ -805,7 +895,8 @@ namespace MazeParty.Gameplay
 
             var pointerVisible =
                 _uiPointerVisible
-                || activeMode != GameplayMode.FirstPerson;
+                || activeMode != GameplayMode.FirstPerson
+                || (_isTransitioning && UsesPlayerBridge(_transitionFrom, _transitionTarget));
             Cursor.lockState = pointerVisible
                 ? CursorLockMode.Confined
                 : CursorLockMode.Locked;

@@ -121,6 +121,32 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void Sonar_StaysActiveUntilItsExactExtendedDeadline()
+        {
+            var root = new GameObject("Sonar deadline contract");
+            root.AddComponent<NetworkObject>();
+            var state = root.AddComponent<NetworkMinefieldState>();
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            try
+            {
+                var mask = (NetworkVariable<byte>)typeof(NetworkMinefieldState)
+                    .GetField("_sonarMask", flags).GetValue(state);
+                var ends = (double[])typeof(NetworkMinefieldState)
+                    .GetField("_sonarEndsAt", flags).GetValue(state);
+                mask.Value = 1;
+                ends[0] = 10d + NetworkMinefieldState.SonarDetectionSeconds;
+                var update = typeof(NetworkMinefieldState).GetMethod("UpdateSonarOnServer", flags);
+                foreach (var elapsed in new[] { 0.75d, 1.249999d, 1.25d, 2d })
+                {
+                    update.Invoke(state, new object[] { 10d + elapsed });
+                    Assert.That(state.IsSonarActive(0), Is.EqualTo(elapsed < 1.25d),
+                        "Elapsed seconds: " + elapsed);
+                }
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
         private static void AssertAuthoritativeLayoutContract()
         {
             Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(2));
@@ -128,7 +154,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(NetworkMinefieldState.SonarRadius, Is.EqualTo(3f));
             Assert.That(
                 NetworkMinefieldState.SonarDetectionSeconds,
-                Is.EqualTo(0.75d));
+                Is.EqualTo(1.25d));
 
             var positions = NetworkMinefieldState.GenerateMineWorldPositions(
                 0x123456789ABCDEF0UL,

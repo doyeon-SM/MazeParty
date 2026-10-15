@@ -43,7 +43,7 @@ namespace MazeParty.Multiplayer
         public const float ArenaMaxZ = 22f;
         public const float RunnerSpeed = 5f;
         public const float SonarRadius = 3f;
-        public const double SonarDetectionSeconds = 0.75d;
+        public const double SonarDetectionSeconds = 1.25d;
         public const float MineSafeZoneDepth =
             (ArenaMaxZ - ArenaMinZ) / GridHeight;
         public const float MineSpawnHorizontalPadding = 0.75f;

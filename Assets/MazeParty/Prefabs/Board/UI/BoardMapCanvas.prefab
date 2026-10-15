@@ -881,6 +881,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &36000149075790199
 GameObject:
   m_ObjectHideFlags: 0
@@ -69772,6 +69773,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &2776786972335059748
 GameObject:
   m_ObjectHideFlags: 0
@@ -109323,6 +109325,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &4278546361306822108
 GameObject:
   m_ObjectHideFlags: 0
@@ -130606,6 +130609,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &5142184486200807759
 GameObject:
   m_ObjectHideFlags: 0
@@ -144944,6 +144948,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &5607384183939240758
 GameObject:
   m_ObjectHideFlags: 0
@@ -169260,6 +169265,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &6638395317595414779
 GameObject:
   m_ObjectHideFlags: 0
@@ -181261,6 +181267,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &7104250010403689422
 GameObject:
   m_ObjectHideFlags: 0
@@ -218160,6 +218167,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &8600893901184775074
 GameObject:
   m_ObjectHideFlags: 0
@@ -221541,6 +221549,7 @@ MonoBehaviour:
       m_Calls: []
   ringWidth: 2.5
   pointerLength: 7
+  pointerScale: 1.5
 --- !u!1 &8744743567618594214
 GameObject:
   m_ObjectHideFlags: 0

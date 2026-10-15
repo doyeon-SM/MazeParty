@@ -9,6 +9,7 @@ namespace MazeParty.Multiplayer
     {
         [SerializeField, Range(1f, 8f)] private float ringWidth = 2.5f;
         [SerializeField, Range(2f, 12f)] private float pointerLength = 7f;
+        [SerializeField, Min(0.1f)] private float pointerScale = 1.5f;
 
         protected override void OnPopulateMesh(VertexHelper mesh)
         {
@@ -33,9 +34,11 @@ namespace MazeParty.Multiplayer
                 mesh.AddTriangle(start, start + 1, start + 2);
                 mesh.AddTriangle(start, start + 2, start + 3);
             }
-            var tip = rect.center + Vector2.up * (radius + pointerLength);
-            var left = rect.center + new Vector2(-pointerLength * .65f, radius - 1f);
-            var right = rect.center + new Vector2(pointerLength * .65f, radius - 1f);
+            var baseY = radius - 1f;
+            var tip = rect.center + Vector2.up * (baseY + (pointerLength + 1f) * pointerScale);
+            var halfWidth = pointerLength * .65f * pointerScale;
+            var left = rect.center + new Vector2(-halfWidth, baseY);
+            var right = rect.center + new Vector2(halfWidth, baseY);
             var triangle = mesh.currentVertCount;
             mesh.AddVert(tip, color, Vector2.zero);
             mesh.AddVert(left, color, Vector2.zero);

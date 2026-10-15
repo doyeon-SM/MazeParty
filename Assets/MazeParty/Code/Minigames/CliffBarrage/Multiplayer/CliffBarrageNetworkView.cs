@@ -8,7 +8,7 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Scene-authored, shared-camera presentation of the server-owned cliff match.
-    /// The five shells and two laser rigs are moved and toggled, never replaced.
+    /// The ten shells and three laser rigs are moved and toggled, never replaced.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class CliffBarrageNetworkView : MonoBehaviour

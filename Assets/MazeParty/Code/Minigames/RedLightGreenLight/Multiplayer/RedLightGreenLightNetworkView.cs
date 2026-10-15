@@ -63,6 +63,7 @@ namespace MazeParty.Multiplayer
         private RedLightGreenLightSignalPhase _lastSignalPhase =
             (RedLightGreenLightSignalPhase)byte.MaxValue;
         private bool _signalBaselineInitialized;
+        private SoundHandle _signalTone;
 
         public GameObject SignalPulseVfxPrefab => signalPulseVfxPrefab;
         public GameObject FinishVfxPrefab => finishVfxPrefab;
@@ -516,14 +517,16 @@ namespace MazeParty.Multiplayer
                 return;
             }
             _lastSignalPhase = phase;
-            var clip = phase == RedLightGreenLightSignalPhase.Green
-                ? greenCue
-                : isPartialRed
-                    ? turnWarningCue
-                    : redCue;
-            if (cueAudioSource != null && clip != null)
+            if (phase == RedLightGreenLightSignalPhase.Green)
             {
-                cueAudioSource.PlayOneShot(clip);
+                if (cueAudioSource != null && greenCue != null)
+                    cueAudioSource.PlayOneShot(greenCue);
+            }
+            else
+            {
+                GameSound.Stop(_signalTone, 0f);
+                _signalTone = GameSound.PlaySequenceTone(
+                    phase == RedLightGreenLightSignalPhase.Red);
             }
             if (signalPulseVfxPrefab != null)
             {
@@ -697,6 +700,8 @@ namespace MazeParty.Multiplayer
                     (RedLightGreenLightSignalPhase)byte.MaxValue;
                 _signalBaselineInitialized = false;
                 cueAudioSource?.Stop();
+                GameSound.Stop(_signalTone, 0f);
+                _signalTone = default;
             }
         }
 

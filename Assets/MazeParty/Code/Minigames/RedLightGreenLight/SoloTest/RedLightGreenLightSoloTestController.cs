@@ -437,6 +437,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             if (_lastSignal != phase)
             {
                 _lastSignal = phase;
+                if (phase != RedLightGreenLightSignalPhase.Green)
+                    GameSound.PlaySequenceTone(phase == RedLightGreenLightSignalPhase.Red);
                 Debug.Log(
                     "[Minigame Solo Test] Signal: " +
                     phase.ToString().ToUpperInvariant());

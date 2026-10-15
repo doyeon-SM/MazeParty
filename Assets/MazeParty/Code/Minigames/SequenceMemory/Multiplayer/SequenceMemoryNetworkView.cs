@@ -18,9 +18,6 @@ namespace MazeParty.Multiplayer
         public const float ArenaCenterX = 1140f;
         public const float SharedCameraOrthographicSize = 9.5f;
         // Bell 7 is G5. Pitch it down to a C-major C/E/G triad.
-        private const float DoPitchScale = 0.6674199f;
-        private const float MiPitchScale = 0.8408964f;
-        private const float SolPitchScale = 1f;
 
         private static readonly Color[] FallbackPlayerColors =
         {
@@ -396,11 +393,11 @@ namespace MazeParty.Multiplayer
             switch (input)
             {
                 case SequenceMemoryInput.A:
-                    return DoPitchScale;
+                    return GameSound.DoPitchScale;
                 case SequenceMemoryInput.S:
-                    return MiPitchScale;
+                    return GameSound.MiPitchScale;
                 default:
-                    return SolPitchScale;
+                    return GameSound.SolPitchScale;
             }
         }
 

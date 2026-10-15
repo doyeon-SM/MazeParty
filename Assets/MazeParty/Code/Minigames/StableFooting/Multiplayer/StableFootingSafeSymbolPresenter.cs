@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.StableFooting;
 using UnityEngine;
 
@@ -25,6 +26,9 @@ namespace MazeParty.Multiplayer
         private readonly Vector3[] _slots;
         private readonly Color[] _authoredColors;
         private readonly bool[] _authoredActiveStates;
+        private int _soundCycle = -1;
+        private int _soundStep = -1;
+        private SoundHandle _toneHandle;
 
         public StableFootingSafeSymbolPresenter(
             Renderer cross,
@@ -63,9 +67,9 @@ namespace MazeParty.Multiplayer
             int cycleNumber,
             double shuffleElapsedSeconds)
         {
-            ApplyShuffleLayout(
-                cycleNumber,
-                GetShuffleStep(shuffleElapsedSeconds));
+            var step = GetShuffleStep(shuffleElapsedSeconds);
+            ApplyShuffleLayout(cycleNumber, step);
+            PlaySymbolTone(cycleNumber, step, false);
             for (var symbolIndex = 0;
                  symbolIndex < _renderers.Length;
                  symbolIndex++)
@@ -81,6 +85,7 @@ namespace MazeParty.Multiplayer
             int cycleNumber)
         {
             var safeIndex = ToIndex(safeSymbol);
+            PlaySymbolTone(cycleNumber, StableFootingRules.SymbolShuffleStepCount, true);
             ApplyShuffleLayout(
                 cycleNumber,
                 StableFootingRules.SymbolShuffleStepCount - 1);
@@ -98,6 +103,7 @@ namespace MazeParty.Multiplayer
 
         public void Hide()
         {
+            ResetTone();
             for (var index = 0; index < _roots.Length; index++)
             {
                 _roots[index].gameObject.SetActive(false);
@@ -106,6 +112,7 @@ namespace MazeParty.Multiplayer
 
         public void RestoreAuthoredState()
         {
+            ResetTone();
             for (var index = 0; index < _renderers.Length; index++)
             {
                 _roots[index].localPosition = _authoredPositions[index];
@@ -113,6 +120,22 @@ namespace MazeParty.Multiplayer
                 _roots[index].gameObject.SetActive(
                     _authoredActiveStates[index]);
             }
+        }
+
+        private void PlaySymbolTone(int cycle, int step, bool confirmed)
+        {
+            if (_soundCycle == cycle && _soundStep == step) return;
+            _soundCycle = cycle;
+            _soundStep = step;
+            GameSound.Stop(_toneHandle, 0f);
+            _toneHandle = GameSound.PlaySequenceTone(confirmed);
+        }
+
+        private void ResetTone()
+        {
+            GameSound.Stop(_toneHandle, 0f);
+            _toneHandle = default;
+            _soundCycle = _soundStep = -1;
         }
 
         private static int ToIndex(StableFootingSymbol symbol)

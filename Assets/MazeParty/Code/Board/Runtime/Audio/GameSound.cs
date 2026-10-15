@@ -11,6 +11,14 @@ namespace MazeParty.Gameplay
     /// </summary>
     public static class GameSound
     {
+        public const float DoPitchScale = 0.6674199f;
+        public const float MiPitchScale = 0.8408964f;
+        public const float SolPitchScale = 1f;
+
+        public static SoundHandle PlaySequenceTone(bool confirmed) =>
+            PlayPitched(SoundKeys.MinigameSequenceMemoryTone,
+                confirmed ? SolPitchScale : DoPitchScale);
+
         /// <summary>2D sound (UI, announcements, local feedback).</summary>
         public static SoundHandle Play(string key, float volumeScale = 1f)
         {

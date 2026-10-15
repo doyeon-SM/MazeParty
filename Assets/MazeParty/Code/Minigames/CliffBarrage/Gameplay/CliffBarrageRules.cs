@@ -24,8 +24,8 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
         public const double PushHalfWidth = 0.95d;
         public const double PushDistance = 2.35d;
         public const double HitInvulnerabilitySeconds = 1d;
-        public const int MaximumProjectiles = 5;
-        public const int MaximumLasers = 2;
+        public const int MaximumProjectiles = 10;
+        public const int MaximumLasers = 3;
         public const double ProjectileRadius = 0.32d;
         public const double ProjectileSpeed = 7.5d;
         public const double LaserHalfWidth = 0.32d;

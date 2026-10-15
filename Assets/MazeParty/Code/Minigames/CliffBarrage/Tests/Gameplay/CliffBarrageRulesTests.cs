@@ -350,8 +350,8 @@ namespace MazeParty.Gameplay.Tests
                         activeLasers++;
                     }
                 }
-                Assert.That(activeProjectiles, Is.LessThanOrEqualTo(5));
-                Assert.That(activeLasers, Is.LessThanOrEqualTo(2));
+                Assert.That(activeProjectiles, Is.LessThanOrEqualTo(CliffBarrageRules.MaximumProjectiles));
+                Assert.That(activeLasers, Is.LessThanOrEqualTo(CliffBarrageRules.MaximumLasers));
             }
             for (var slot = 0; slot < 4; slot++)
             {
