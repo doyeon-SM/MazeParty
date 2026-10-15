@@ -16,6 +16,11 @@ namespace MazeParty.Multiplayer
     {
         public const string DevelopmentForestMapId = "forest-graybox";
 
+        public Task DevelopmentLeavePreservingRecoveryAsync() => LeaveSessionAsync();
+
+        public void DevelopmentSetLocalProfile(string name, PlayerAppearanceState appearance) =>
+            SaveLocalProfile(name, appearance);
+
         public async Task DevelopmentCreateSessionAsync(
             string displayName,
             PlayerAppearanceState appearance)

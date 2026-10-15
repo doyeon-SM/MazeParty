@@ -300,7 +300,24 @@ namespace MazeParty.Multiplayer
                 "reconnect scenario completion");
         }
 
-        private bool IsReconnectTimeoutScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-reconnect-timeout");
+        private bool IsManualReturnScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-return-to-lobby");
+        private async Task PressRecoveryEntryAsync(bool restart)
+        {
+            var view = FindFirstObjectByType<SessionRecoveryView>();
+            await WaitUntilAsync(() => view != null && view.ReconnectPopup.activeInHierarchy &&
+                (restart ? view.RestartButton.interactable && OnlineSessionController.Instance.CanRestartSavedGame : view.ReconnectButton.interactable),
+                30d, "authored reconnect popup and saved host ownership");
+            ScreenCapture.CaptureScreenshot(Path.Combine(_runDirectory, "reconnect-popup-" + _playerIndex + ".png"));
+            await Task.Delay(350);
+            if (restart)
+            {
+                UiPopupStack.TryCloseTop();
+                view.RestartButton.onClick.Invoke();
+            }
+            else view.ReconnectButton.onClick.Invoke();
+        }
+
+        private bool IsReconnectTimeoutScenario => IsManualReturnScenario || HasSwitch(Environment.GetCommandLineArgs(), "-e2e-reconnect-timeout");
 
         private async Task RunReconnectTimeoutHostAsync(OnlineSessionController controller)
         {
@@ -314,12 +331,20 @@ namespace MazeParty.Multiplayer
             await WaitUntilAsync(() => NetworkMatchState.Instance != null && RequireMatch().IsReconnectPaused,
                 45d, "reconnect timer before timeout");
             var pauseStartedAt = Time.realtimeSinceStartupAsDouble;
+            if (IsManualReturnScenario)
+            {
+                await WaitUntilAsync(() => controller.CanReturnToLobbyDuringReconnect, 15d, "host return authority");
+                var waitView = FindFirstObjectByType<ReconnectWaitView>();
+                if (waitView == null || !waitView.ReturnToLobbyButton.gameObject.activeInHierarchy)
+                    throw new InvalidOperationException("The authored host return button was unavailable.");
+                waitView.ReturnToLobbyButton.onClick.Invoke();
+            }
             WriteAtomic(ReconnectPauseObservedPath, "OBSERVED");
             await WaitUntilAsync(() => controller.IsInSession &&
-                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.IsMatchRecoveryChoiceVisible,
-                120d, "timeout returns to lobby with saved-game choice");
-            if (Time.realtimeSinceStartupAsDouble - pauseStartedAt < 59d)
-                throw new InvalidOperationException("The reconnect timeout ended before its 60-second boundary.");
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.ShouldResumeSavedMatch,
+                240d, "timeout returns to lobby with the saved game selected");
+            if (!IsManualReturnScenario && Time.realtimeSinceStartupAsDouble - pauseStartedAt < 179d)
+                throw new InvalidOperationException("The reconnect timeout ended before its 180-second boundary.");
             if (controller.CurrentSession.Code != code ||
                 controller.DevelopmentPeekRecoverySnapshot(out var retained) != MatchRecoveryLoadStatus.Loaded ||
                 retained.turn != saved.turn)
@@ -328,7 +353,6 @@ namespace MazeParty.Multiplayer
             Log("timeout_checkpoint_preserved");
             await WaitUntilAsync(() => controller.GetMatchRosterKey() == roster && controller.DevelopmentHasFourAssignedPlayers(),
                 120d, "same four accounts after reconnect timeout");
-            await controller.DevelopmentSelectSavedMatchAsync();
             await controller.DevelopmentSetReadyAsync(true);
             await WaitUntilAsync(() => controller.CurrentSession.CanStart, 90d, "ready after reconnect timeout");
             await controller.DevelopmentStartGameAsync();
@@ -351,11 +375,12 @@ namespace MazeParty.Multiplayer
             {
                 await WaitUntilAsync(TryLoadReconnectingSlot, 30d, "recorded timeout client slot");
                 _assignedSlot = _reconnectingSlot;
+                await PressRecoveryEntryAsync(false);
             }
             await WaitUntilAsync(() => controller.IsInSession &&
                 controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase &&
                 controller.GetLocalAvatar() != null && controller.LocalSlot == _assignedSlot,
-                180d, "same seat in timeout waiting room");
+                300d, "same seat in timeout waiting room");
             var code = ReadAllTextShared(Path.Combine(_runDirectory, "original-room-code.txt"));
             if (controller.CurrentSession.Code != code)
                 throw new InvalidOperationException("Reconnect timeout changed the room code.");
@@ -368,6 +393,38 @@ namespace MazeParty.Multiplayer
             await WaitUntilAsync(() => File.Exists(QuitSignalPath), 120d, "timeout recovery completion");
         }
 
+        private async Task VerifyFreshCreateAsync(OnlineSessionController controller)
+        {
+            await WaitUntilAsync(() => !controller.IsBusy && controller.CanRestartSavedGame, 30d, "saved original host");
+            var view = FindFirstObjectByType<SessionRecoveryView>();
+            UiPopupStack.TryCloseTop();
+            var flags = System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var lobby = FindFirstObjectByType<OnlineLobbyView>();
+            var create = (UnityEngine.UI.Button)typeof(OnlineLobbyView).GetField("createButton", flags).GetValue(lobby);
+            create.onClick.Invoke();
+            if (!view.CreateConfirmationPopup.activeInHierarchy) throw new InvalidOperationException("Missing fresh-create popup.");
+            var cancel = (UnityEngine.UI.Button)typeof(SessionRecoveryView).GetField("cancelCreateButton", flags).GetValue(view);
+            cancel.onClick.Invoke();
+            await Task.Delay(250);
+            if (controller.IsInSession || !controller.CanRestartSavedGame) throw new InvalidOperationException("Cancel changed the saved game.");
+            create.onClick.Invoke();
+            ScreenCapture.CaptureScreenshot(Path.Combine(_runDirectory, "fresh-create-confirmation.png"));
+            await Task.Delay(500);
+            var confirm = (UnityEngine.UI.Button)typeof(SessionRecoveryView).GetField("confirmCreateButton", flags).GetValue(view);
+            confirm.onClick.Invoke();
+            await WaitUntilAsync(() => controller.IsInSession && controller.CurrentSession.IsHost && !controller.IsBusy &&
+                controller.CurrentSession.Code != ReadAllTextShared(Path.Combine(_runDirectory, "original-room-code.txt")),
+                180d, "new room after deleting the previous room");
+            if (controller.DevelopmentPeekRecoverySnapshot(out _) == MatchRecoveryLoadStatus.Loaded)
+                throw new InvalidOperationException("Fresh creation retained the discarded game.");
+            for (var index = 1; index < 4; index++)
+                await WaitUntilAsync(() => File.Exists(Path.Combine(_runDirectory, "old-room-closed-" + index + ".marker")),
+                    60d, "termination notice for player " + index);
+            WriteAtomic(SummaryPath, "{\"freshCreateConfirmation\":true,\"cancelPreservedSave\":true,\"oldRoomDeleted\":true,\"allPlayersNotified\":true}");
+            WriteAtomic(QuitSignalPath, "COMPLETE");
+        }
+
+        private bool IsFreshCreateScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-fresh-create");
         private bool IsHostRecoveryScenario => HasSwitch(Environment.GetCommandLineArgs(), "-e2e-host-recovery");
 
         private async Task RunOriginalHostCrashAsync(OnlineSessionController controller)
@@ -393,6 +450,14 @@ namespace MazeParty.Multiplayer
                 throw new InvalidOperationException("The room changed or a client became the gameplay host.");
             WriteAtomic(Path.Combine(_runDirectory, "host-waiting-" + _playerIndex + ".marker"), "WAITING");
             Log("original_host_wait_verified");
+            if (IsFreshCreateScenario)
+            {
+                await WaitUntilAsync(() => !controller.IsInSession && FindFirstObjectByType<GameMenuView>().IsNoticeOpen,
+                    180d, "old room deletion and termination popup");
+                WriteAtomic(Path.Combine(_runDirectory, "old-room-closed-" + _playerIndex + ".marker"), "NOTIFIED");
+                await WaitUntilAsync(() => File.Exists(QuitSignalPath), 60d, "fresh room scenario completion");
+                return;
+            }
 
             await WaitUntilAsync(() => controller.IsInSession &&
                 controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase &&
@@ -411,8 +476,14 @@ namespace MazeParty.Multiplayer
         {
             if (!IsHost) throw new InvalidOperationException("Only the original host resumes this scenario.");
             var controller = await WaitForControllerAsync();
+            if (IsFreshCreateScenario)
+            {
+                await VerifyFreshCreateAsync(controller);
+                return;
+            }
+            await PressRecoveryEntryAsync(true);
             await WaitUntilAsync(() => controller.IsInSession && controller.CurrentSession.IsHost &&
-                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.IsMatchRecoveryChoiceVisible,
+                controller.CurrentSession.Phase == MultiplayerConstants.LobbyPhase && controller.ShouldResumeSavedMatch,
                 180d, "original host authority and saved checkpoint choice");
             var code = ReadAllTextShared(Path.Combine(_runDirectory, "original-room-code.txt"));
             var roster = ReadAllTextShared(Path.Combine(_runDirectory, "host-roster.txt"));
@@ -420,7 +491,6 @@ namespace MazeParty.Multiplayer
                 throw new InvalidOperationException("Host recovery replaced the invite code.");
             await WaitUntilAsync(() => controller.GetMatchRosterKey() == roster && controller.DevelopmentHasFourAssignedPlayers(),
                 90d, "same four accounts and assigned avatars after host recovery");
-            await controller.DevelopmentSelectSavedMatchAsync();
             await controller.DevelopmentSetReadyAsync(true);
             await WaitUntilAsync(() => controller.CurrentSession.CanStart, 90d, "same recovered roster ready");
             await controller.DevelopmentStartGameAsync();
@@ -636,6 +706,7 @@ namespace MazeParty.Multiplayer
                 60d,
                 "recorded reconnecting slot");
             var controller = await WaitForControllerAsync();
+            await PressRecoveryEntryAsync(false);
             await WaitUntilAsync(
                 () => controller.IsInSession &&
                       controller.CurrentSession.Phase ==
@@ -716,7 +787,7 @@ namespace MazeParty.Multiplayer
         private async Task<OnlineSessionController> WaitForControllerAsync()
         {
             await WaitUntilAsync(
-                () => OnlineSessionController.Instance != null,
+                () => OnlineSessionController.Instance != null && !OnlineSessionController.Instance.IsBusy,
                 60d,
                 "online session controller");
             return OnlineSessionController.Instance;

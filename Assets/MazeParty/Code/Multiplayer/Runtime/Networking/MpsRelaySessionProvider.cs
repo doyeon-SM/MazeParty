@@ -65,6 +65,14 @@ namespace MazeParty.Multiplayer
                         VisibilityPropertyOptions.Member)
             };
 
+            if (_recoveryRosterKeys != null)
+                for (var slot = 0; slot < _recoveryRosterKeys.Length; slot++)
+                    sessionProperties[RecoveryPlayerKeyProperty(slot)] =
+                        new SessionProperty(_recoveryRosterKeys[slot], VisibilityPropertyOptions.Member);
+            if (_recoveryRosterNames != null)
+                for (var slot = 0; slot < _recoveryRosterNames.Length; slot++)
+                    sessionProperties[RecoveryPlayerNameProperty(slot)] = new SessionProperty(
+                        _recoveryRosterNames[slot] ?? "Player " + (slot + 1), VisibilityPropertyOptions.Member);
             var options = new SessionOptions
             {
                 Type = MultiplayerConstants.SessionType,
@@ -139,7 +147,7 @@ namespace MazeParty.Multiplayer
             }
 
             AttachSession(joinedSession);
-            if (GetSessionPhase(joinedSession) != MultiplayerConstants.LobbyPhase &&
+            if ((HasRecoveryRoster(joinedSession) || GetSessionPhase(joinedSession) != MultiplayerConstants.LobbyPhase) &&
                 !HasReservedSeat(joinedSession, _identity.PlayerId))
             {
                 await LeaveAsync();
@@ -148,6 +156,27 @@ namespace MazeParty.Multiplayer
         }
 
         public async Task ReconnectToSessionAsync(string sessionId, string displayName)
+        {
+            for (var attempt = 0; ; attempt++)
+            {
+                try
+                {
+                    await ReconnectToSessionCoreAsync(sessionId, displayName);
+                    return;
+                }
+                catch (SessionException exception) when (!IsInSession && attempt < 5 &&
+                    exception.Error == SessionError.Unknown &&
+                    exception.InnerException is Unity.Services.Relay.RelayServiceException)
+                {
+                    // The room survives while the original host replaces an
+                    // expired Relay allocation. The SDK cleans failed joins;
+                    // refresh membership and retry the same room, never split it.
+                    await Task.Delay(2000 + attempt * 1000);
+                }
+            }
+        }
+
+        private async Task ReconnectToSessionCoreAsync(string sessionId, string displayName)
         {
             ThrowIfAlreadyInSession();
             if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("A reconnect session ID is required.");
@@ -174,7 +203,7 @@ namespace MazeParty.Multiplayer
             }
             AttachSession(recovered);
             if (!HasCompatibleBuild(recovered) ||
-                (GetSessionPhase(recovered) != MultiplayerConstants.LobbyPhase &&
+                ((HasRecoveryRoster(recovered) || GetSessionPhase(recovered) != MultiplayerConstants.LobbyPhase) &&
                  !HasReservedSeat(recovered, _identity.PlayerId)))
             {
                 await LeaveAsync();
@@ -407,7 +436,9 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        public async Task SetPlayingAsync(bool playing)
+        public Task SetPlayingAsync(bool playing) => SetPlayingAsync(playing, true);
+
+        public async Task SetPlayingAsync(bool playing, bool preserveRecoveryRoster)
         {
             await _hostMutationGate.WaitAsync();
             try
@@ -437,6 +468,27 @@ namespace MazeParty.Multiplayer
 
                 var host = session.AsHost();
                 host.IsLocked = playing;
+                if (!playing && !preserveRecoveryRoster)
+                {
+                    // A completed match releases reserved seats. Interrupted
+                    // games retain them until resumed or explicitly discarded.
+                    for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                    {
+                        host.SetProperty(RecoveryPlayerKeyProperty(slot), null);
+                        host.SetProperty(RecoveryPlayerNameProperty(slot), null);
+                    }
+                    ConfigureRecoveryRoster(null);
+                }
+                if (playing)
+                {
+                    foreach (var player in Current.Players)
+                    {
+                        host.SetProperty(RecoveryPlayerKeyProperty(player.Slot), new SessionProperty(
+                            MatchRecoveryFingerprint.CreatePlayerKey(player.PlayerId), VisibilityPropertyOptions.Member));
+                        host.SetProperty(RecoveryPlayerNameProperty(player.Slot), new SessionProperty(
+                            player.DisplayName, VisibilityPropertyOptions.Member));
+                    }
+                }
                 host.SetProperty(
                     MultiplayerConstants.PhaseProperty,
                     new SessionProperty(
@@ -774,6 +826,11 @@ namespace MazeParty.Multiplayer
             }
 
             var host = observedSession.AsHost();
+            if (HasRecoveryRoster(observedSession))
+            {
+                await AssignRecoverySeatsLockedAsync(observedSession);
+                return;
+            }
             var presentPlayerIds = new HashSet<string>(
                 host.Players.Select(player => player.Id));
             var seatOwners = new string[MultiplayerConstants.MaxPlayers];
@@ -948,13 +1005,23 @@ namespace MazeParty.Multiplayer
                 : MultiplayerConstants.LobbyPhase;
             var boardMapSelection = GetSessionBoardMapSelection(session);
 
+            var waitingNames = new List<string>();
+            if (HasRecoveryRoster(session))
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var member = players.FirstOrDefault(p => p.Slot == slot);
+                    if (member == null || !member.IsReady)
+                        waitingNames.Add(member?.DisplayName ?? GetSessionProperty(session,
+                            RecoveryPlayerNameProperty(slot), "Player " + (slot + 1)));
+                }
             Current = new SessionSnapshot(
                 session.Code,
                 session.IsHost && session.Host == _originalHostId,
                 IsWaitingForOriginalHost(session) ? MultiplayerConstants.HostRecoveryPhase : phase,
                 _identity.PlayerId,
                 players,
-                boardMapSelection);
+                boardMapSelection,
+                waitingNames);
             Changed?.Invoke();
         }
 

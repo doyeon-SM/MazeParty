@@ -436,6 +436,7 @@ namespace MazeParty.Editor
                 releaseButton);
             root.GetComponent<GameMenuView>().Configure(bindings);
             SetLayerRecursively(root.transform, LayerMask.NameToLayer("UI"));
+            RecoveryUiProjectSetup.EnsureWait(root);
             return root;
         }
 

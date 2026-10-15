@@ -968,8 +968,8 @@ namespace MazeParty.Editor
             var transport = runtime.AddComponent<UnityTransport>();
             // This limits Relay/UTP disconnect detection for force-closed lobby clients.
             // It is separate from the MPS gameplay reconnection retention window.
-            // Keep the backend Disconnect Removal Time at 75-90 seconds so this
-            // detection delay plus the 60-second gameplay grace cannot evict the seat.
+            // Gameplay holds a reserved account seat for 180 seconds. If the service
+            // removes membership first, reconnect rejoins by room ID and reserved account.
             transport.DisconnectTimeoutMS = 15000;
             var networkManager = runtime.AddComponent<NetworkManager>();
             networkManager.RunInBackground = true;
@@ -1358,6 +1358,7 @@ namespace MazeParty.Editor
                 boardMapPreviewNameText,
                 boardMapPreviewGraphic);
             PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
+            RecoveryUiProjectSetup.EnsureLobby(lobbyView.gameObject);
             return lobbyView;
         }
 

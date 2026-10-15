@@ -8669,6 +8669,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2805153678722631084}
   - component: {fileID: 107287868912872793}
+  - component: {fileID: 2325711909007920865}
   m_Layer: 0
   m_Name: Maze Ground
   m_TagString: Untagged
@@ -8732,6 +8733,26 @@ Terrain:
   m_EnableTreesAndDetailsRayTracing: 0
   m_EnableHeightmapLODFrustumCulling: 1
   m_TreeMotionVectorModeOverride: 3
+--- !u!154 &2325711909007920865
+TerrainCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5637379120471357808}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_TerrainData: {fileID: 15600000, guid: 3c575818eb3687342a61a06916ce08f0, type: 2}
+  m_EnableTreeColliders: 1
 --- !u!1 &5698223355565550715
 GameObject:
   m_ObjectHideFlags: 0

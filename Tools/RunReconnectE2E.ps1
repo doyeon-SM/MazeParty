@@ -4,6 +4,8 @@ param(
     [string]$RunDirectory,
     [switch]$HostRecovery,
     [switch]$ReconnectTimeout,
+    [switch]$ReturnToLobby,
+    [switch]$FreshCreate,
     [ValidateRange(0, 145)]
     [int]$HostReturnDelaySeconds = 0,
     [ValidateRange(120, 1200)]
@@ -11,6 +13,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+if ($ReturnToLobby) { $ReconnectTimeout = $true }
+if ($FreshCreate) { $HostRecovery = $true }
 if ($HostRecovery -and $ReconnectTimeout) { throw 'Choose one recovery scenario per run.' }
 $repoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 if ([string]::IsNullOrWhiteSpace($Executable)) {
@@ -55,7 +59,9 @@ function Start-ReconnectPlayer {
         '-logFile', ('"' + $logPath + '"')
     )
     if ($HostRecovery) { $arguments += '-e2e-host-recovery' }
+    if ($FreshCreate) { $arguments += '-e2e-fresh-create' }
     if ($ReconnectTimeout) { $arguments += '-e2e-reconnect-timeout' }
+    if ($ReturnToLobby) { $arguments += '-e2e-return-to-lobby' }
     return Start-Process -FilePath $Executable -ArgumentList $arguments `
         -PassThru -WindowStyle Hidden
 }
@@ -132,7 +138,7 @@ try {
     }
     if ($ReconnectTimeout) {
         Wait-ForFile -Path (Join-Path $RunDirectory 'timeout-lobby-ready.marker') `
-            -Deadline $deadline -Description '60-second timeout and retained checkpoint'
+            -Deadline $deadline -Description '180-second timeout and retained checkpoint'
     }
     $processes[$victim] = Start-ReconnectPlayer -Index $victim -Stage resume
 

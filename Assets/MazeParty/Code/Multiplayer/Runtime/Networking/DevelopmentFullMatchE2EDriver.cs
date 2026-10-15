@@ -46,6 +46,7 @@ namespace MazeParty.Multiplayer
             None,
             TurnOverview,
             MinigameIntroReady,
+            MinigameSettled,
             MatchComplete
         }
 
@@ -91,22 +92,6 @@ namespace MazeParty.Multiplayer
         private bool _returnRequested;
         private bool _observedMatch;
         private bool _quitting;
-
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
-        private static void PrepareRecoveryResume()
-        {
-            var arguments = Environment.GetCommandLineArgs();
-            if (HasCommandLineSwitch(arguments, EnableArgument) &&
-                !string.IsNullOrWhiteSpace(
-                    GetArgument(arguments, RecoveryCheckpointArgument)) &&
-                string.Equals(
-                    GetArgument(arguments, RecoveryStageArgument),
-                    RecoveryResumeStage,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                OnlineSessionController.DevelopmentClearPlayingReconnectTicket();
-            }
-        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Install()
@@ -204,10 +189,18 @@ namespace MazeParty.Multiplayer
             var controller = await WaitForControllerAsync();
             var appearance = BuildAppearance(_playerIndex);
             var displayName = "E2E Player " + (_playerIndex + 1);
+            // Separate processes share Windows PlayerPrefs; restore this QA
+            // participant's known appearance before using the normal entry UI.
+            controller.DevelopmentSetLocalProfile(displayName, appearance);
 
             if (IsHost)
             {
-                await controller.DevelopmentCreateSessionAsync(displayName, appearance);
+                if (IsRecoveryResume)
+                {
+                    await WaitUntilAsync(() => controller.CanRestartSavedGame && !controller.IsBusy, 60d, "saved host identity");
+                    FindFirstObjectByType<SessionRecoveryView>().RestartButton.onClick.Invoke();
+                }
+                else await controller.DevelopmentCreateSessionAsync(displayName, appearance);
                 await WaitUntilAsync(
                     () => controller.IsInSession &&
                           !string.IsNullOrWhiteSpace(controller.CurrentSession.Code),
@@ -215,10 +208,11 @@ namespace MazeParty.Multiplayer
                     "host session creation");
                 if (IsRecoveryResume)
                 {
+                    WriteAtomic(JoinCodePath, controller.CurrentSession.Code.Trim());
                     await WaitUntilAsync(
-                        () => controller.IsMatchRecoveryChoiceVisible,
-                        60d,
-                        "saved-match recovery choice");
+                        () => controller.ShouldResumeSavedMatch,
+                        180d,
+                        "saved match selected after original peers reconnect");
                     var recoveryStatus =
                         controller.DevelopmentPeekRecoverySnapshot(
                             out _resumeRecoverySnapshot);
@@ -231,7 +225,6 @@ namespace MazeParty.Multiplayer
                             "The expected recovery checkpoint was unavailable.");
                     }
 
-                    await controller.DevelopmentSelectSavedMatchAsync();
                 }
                 else
                 {
@@ -245,6 +238,17 @@ namespace MazeParty.Multiplayer
             }
             else
             {
+                if (IsRecoveryResume)
+                {
+                    await WaitUntilAsync(() => !controller.IsBusy, 60d, "recovery entry initialization");
+                    var view = FindFirstObjectByType<SessionRecoveryView>();
+                    if (view.ReconnectPopup.activeInHierarchy)
+                    {
+                        view.ReconnectButton.onClick.Invoke();
+                        await Task.Delay(250);
+                        await WaitUntilAsync(() => !controller.IsBusy, 120d, "existing room reconnection");
+                    }
+                }
                 await Task.Delay(_playerIndex * 900);
                 await WaitUntilAsync(
                     () => File.Exists(JoinCodePath) &&
@@ -252,7 +256,8 @@ namespace MazeParty.Multiplayer
                     150d,
                     "join-code handoff");
                 var code = ReadAllTextShared(JoinCodePath).Trim();
-                await controller.DevelopmentJoinSessionAsync(code, displayName, appearance);
+                if (!controller.IsInSession)
+                    await controller.DevelopmentJoinSessionAsync(code, displayName, appearance);
                 await WaitUntilAsync(
                     () => controller.IsInSession,
                     120d,
@@ -372,7 +377,7 @@ namespace MazeParty.Multiplayer
         private async Task<OnlineSessionController> WaitForControllerAsync()
         {
             await WaitUntilAsync(
-                () => OnlineSessionController.Instance != null,
+                () => OnlineSessionController.Instance != null && !OnlineSessionController.Instance.IsBusy,
                 60d,
                 "online session controller");
             return OnlineSessionController.Instance;
@@ -492,6 +497,7 @@ namespace MazeParty.Multiplayer
                 // restored snapshots before a slow remote board load can mutate
                 // them, then keep four-client synchronization separate.
                 if (_recoveryTarget == RecoveryTarget.TurnOverview ||
+                    _recoveryTarget == RecoveryTarget.MinigameSettled ||
                     _recoveryTarget == RecoveryTarget.MatchComplete)
                 {
                     ValidateRestoredRecoveryCheckpoint(
@@ -571,6 +577,7 @@ namespace MazeParty.Multiplayer
                     }
                     break;
                 case RecoveryTarget.MinigameIntroReady:
+                case RecoveryTarget.MinigameSettled:
                     await RunToMinigameIntroRecoveryCheckpointAsync(controller);
                     break;
                 case RecoveryTarget.MatchComplete:
@@ -639,6 +646,14 @@ namespace MazeParty.Multiplayer
             }
 
             await WaitForMinigameRevealAndDrainCombatsAsync(1);
+            if (match.CurrentMinigame != ScheduledMinigameId.Skip)
+            {
+                foreach (var avatar in RequireFourAvatars(match)) match.TrySetMinigameReadyOnServer(avatar);
+                await WaitUntilAsync(() => match.FlowState == BoardFlowState.MinigamePlaying, 90d, "minigame running before crash");
+                if (_recoveryTarget == RecoveryTarget.MinigameSettled &&
+                    !match.DevelopmentCompleteCurrentMinigame(BuildPlacements(match.Turn)))
+                    throw new InvalidOperationException("Could not settle the minigame result before crash.");
+            }
             await HoldAtRecoveryCheckpointAsync(controller);
         }
 
@@ -723,6 +738,13 @@ namespace MazeParty.Multiplayer
                     _runDirectory,
                     "recovery-" + RecoveryTargetSlug +
                     "-initial-host.png"));
+            if (HasCommandLineSwitch(Environment.GetCommandLineArgs(), "-e2e-delete-original-room"))
+            {
+                await controller.DevelopmentLeavePreservingRecoveryAsync();
+                if (controller.IsInSession || controller.DevelopmentPeekRecoverySnapshot(out _) != MatchRecoveryLoadStatus.Loaded)
+                    throw new InvalidOperationException("The deleted room did not preserve its recovery journal.");
+                Log("original_room_deleted_with_save_preserved");
+            }
             WriteAtomic(RecoveryCheckpointReadyPath, expected.ToString());
             Log(
                 "recovery_checkpoint_ready",
@@ -748,10 +770,10 @@ namespace MazeParty.Multiplayer
             var snapshot = _resumeRecoverySnapshot;
             if (snapshot == null ||
                 snapshot.checkpoint != ToRecoveryCheckpoint(_recoveryTarget) ||
-                match.Turn != snapshot.turn ||
+                match.Turn != MatchRecoveryResumeRules.Resolve(snapshot).Turn ||
                 match.RemainingMinigameSlots !=
-                    snapshot.remainingMinigameSlots ||
-                (int)match.CurrentMinigame != snapshot.currentMinigame ||
+                    snapshot.remainingMinigameSlots - (_recoveryTarget == RecoveryTarget.MinigameSettled ? 1 : 0) ||
+                (int)match.CurrentMinigame != (_recoveryTarget == RecoveryTarget.MinigameSettled ? (int)ScheduledMinigameId.Skip : snapshot.currentMinigame) ||
                 !string.Equals(
                     match.BoardMapId,
                     snapshot.boardMapId,
@@ -2203,6 +2225,8 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
+        private double _nextRecoveryProgressAt;
+
         private async Task WaitUntilAsync(
             Func<bool> predicate,
             double timeoutSeconds,
@@ -2216,6 +2240,20 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
+                if (IsRecoveryMode && Time.realtimeSinceStartupAsDouble >= _nextRecoveryProgressAt)
+                {
+                    _nextRecoveryProgressAt = Time.realtimeSinceStartupAsDouble + 10d;
+                    var controller = OnlineSessionController.Instance;
+                    if (controller != null)
+                    {
+                        var snapshot = controller.CurrentSession;
+                        var progress = description + ";phase=" + snapshot.Phase + ";host=" + snapshot.IsHost +
+                            ";busy=" + controller.IsBusy + ";saved=" + controller.ShouldResumeSavedMatch +
+                            ";canStart=" + snapshot.CanStart + ";assigned=" + controller.DevelopmentHasFourAssignedPlayers();
+                        foreach (var member in snapshot.Players) progress += ";seat=" + member.Slot + " ready=" + member.IsReady;
+                        Log("recovery_progress", progress);
+                    }
+                }
                 await Task.Delay(PollMilliseconds);
             }
 
@@ -2319,6 +2357,9 @@ namespace MazeParty.Multiplayer
                     case "minigame-intro-ready":
                         _recoveryTarget = RecoveryTarget.MinigameIntroReady;
                         break;
+                    case "minigame-settled":
+                        _recoveryTarget = RecoveryTarget.MinigameSettled;
+                        break;
                     case "match-complete":
                         _recoveryTarget = RecoveryTarget.MatchComplete;
                         break;
@@ -2381,6 +2422,8 @@ namespace MazeParty.Multiplayer
                     return MatchRecoveryCheckpoint.TurnOverview;
                 case RecoveryTarget.MinigameIntroReady:
                     return MatchRecoveryCheckpoint.MinigameIntroReady;
+                case RecoveryTarget.MinigameSettled:
+                    return MatchRecoveryCheckpoint.MinigameSettled;
                 case RecoveryTarget.MatchComplete:
                     return MatchRecoveryCheckpoint.MatchComplete;
                 default:
@@ -2397,6 +2440,8 @@ namespace MazeParty.Multiplayer
                     return BoardFlowState.TurnOverview;
                 case RecoveryTarget.MinigameIntroReady:
                     return BoardFlowState.MinigameIntroReady;
+                case RecoveryTarget.MinigameSettled:
+                    return BoardFlowState.TurnOverview;
                 case RecoveryTarget.MatchComplete:
                     return BoardFlowState.MatchComplete;
                 default:
@@ -2432,6 +2477,8 @@ namespace MazeParty.Multiplayer
                         return "turn-overview";
                     case RecoveryTarget.MinigameIntroReady:
                         return "minigame-intro-ready";
+                    case RecoveryTarget.MinigameSettled:
+                        return "minigame-settled";
                     case RecoveryTarget.MatchComplete:
                         return "match-complete";
                     default:

@@ -142,7 +142,7 @@ namespace MazeParty.Multiplayer
         public SessionLifecycleState LifecycleState => _sessionOperations.State;
         public bool IsVoluntaryLeavePending => _voluntaryLeavePending;
         public bool IsBoardMapSelectionLocked =>
-            _matchRecoveryChoiceVisible || ShouldResumeSavedMatch;
+            _savedMatchSelectionPending || ShouldResumeSavedMatch;
 
         public bool TryGetSelectedBoardMap(out BoardMapSelection selection)
         {
@@ -346,13 +346,9 @@ namespace MazeParty.Multiplayer
             BindLobbyView();
             RenderLobby();
 
-            if (TryGetPlayingReconnectTicket(out var reconnectSessionId))
-            {
-                RunAsync(
-                    () => ReconnectAndPublishAsync(reconnectSessionId, displayName),
-                    GameText.N("Reconnecting to the interrupted online game..."),
-                    SessionLifecycleState.Reconnecting);
-            }
+            lobbyView.RecoveryView.Initialize(TryGetPlayingReconnectTicket(out _));
+            RunAsync(InitializeRecoveryEntryAsync, GameText.N("Checking the saved game..."),
+                SessionLifecycleState.Connecting);
         }
 
         private void Update()
@@ -497,8 +493,9 @@ namespace MazeParty.Multiplayer
             lobbyView.StartRequested += OnStartRequested;
             lobbyView.MapSelectionDeltaRequested +=
                 OnMapSelectionDeltaRequested;
-            lobbyView.RecoveryContinueRequested += OnRecoveryContinueRequested;
-            lobbyView.RecoveryDiscardRequested += OnRecoveryDiscardRequested;
+            lobbyView.RecoveryView.ReconnectRequested += OnReconnectRequested;
+            lobbyView.RecoveryView.RestartRequested += OnRestartRequested;
+            lobbyView.RecoveryView.FreshCreateConfirmed += OnFreshCreateConfirmed;
             lobbyView.AppearanceChanged += OnAppearanceChanged;
             lobbyView.EmoteExpressionsChanged += OnEmoteExpressionsChanged;
             GameText.LanguageChanged += RenderLobby;
@@ -518,8 +515,9 @@ namespace MazeParty.Multiplayer
             lobbyView.StartRequested -= OnStartRequested;
             lobbyView.MapSelectionDeltaRequested -=
                 OnMapSelectionDeltaRequested;
-            lobbyView.RecoveryContinueRequested -= OnRecoveryContinueRequested;
-            lobbyView.RecoveryDiscardRequested -= OnRecoveryDiscardRequested;
+            lobbyView.RecoveryView.ReconnectRequested -= OnReconnectRequested;
+            lobbyView.RecoveryView.RestartRequested -= OnRestartRequested;
+            lobbyView.RecoveryView.FreshCreateConfirmed -= OnFreshCreateConfirmed;
             lobbyView.AppearanceChanged -= OnAppearanceChanged;
             lobbyView.EmoteExpressionsChanged -= OnEmoteExpressionsChanged;
             GameText.LanguageChanged -= RenderLobby;
@@ -528,6 +526,11 @@ namespace MazeParty.Multiplayer
         private void OnCreateRequested(string displayName)
         {
             SaveLocalProfile(displayName, _localProfile.Appearance);
+            if (CanRestartSavedGame)
+            {
+                lobbyView.RecoveryView.ShowCreateConfirmation();
+                return;
+            }
             RunAsync(
                 () => CreateAndPublishAsync(displayName),
                 GameText.N("Creating a private Relay session..."),
@@ -793,7 +796,7 @@ namespace MazeParty.Multiplayer
                 case VoluntaryLeaveDisposition.ReturnRemainingPlayersToLobby:
                     // Start the return before the announcement so the leaving
                     // player's disconnect is deferred to lobby cleanup instead of
-                    // opening the 60-second reconnect pause.
+                    // opening the 180-second reconnect pause.
                     var returning = VoidActiveMatchToLobbyOnServer(string.Empty);
                     avatar.AnnounceMatchEndedByPlayerOnServer();
                     if (!returning)
@@ -1116,16 +1119,24 @@ namespace MazeParty.Multiplayer
 
         private async Task CreateAndPublishAsync(string displayName)
         {
-            ClearPlayingReconnectTicket();
-            ResetHostMatchRecoveryChoice();
-            _networkIdentityPublished = false;
-            var initialBoardMapSelection = ResolveInitialBoardMapSelection();
-            await _sessions.CreateAsync(
-                "MazeParty Room",
-                displayName,
-                initialBoardMapSelection);
-            PrepareHostMatchRecoveryChoice();
-            await PublishLocalNetworkClientIdWhenReadyAsync();
+            var wasCreating = _creatingFreshRoom;
+            _creatingFreshRoom = true;
+            try
+            {
+                ClearPlayingReconnectTicket();
+                ResetHostMatchRecoveryChoice();
+                (_sessions as MpsRelaySessionProvider)?.ConfigureRecoveryRoster(null);
+                _networkIdentityPublished = false;
+                var initialBoardMapSelection = ResolveInitialBoardMapSelection();
+                await _sessions.CreateAsync(
+                    "MazeParty Room",
+                    displayName,
+                    initialBoardMapSelection);
+                new HostMinigameScheduleSession().CompleteActive();
+                RefreshSavedEntry();
+                await PublishLocalNetworkClientIdWhenReadyAsync();
+            }
+            finally { _creatingFreshRoom = wasCreating; }
         }
 
         private async Task ChangeBoardMapSelectionAsync(int delta)
@@ -1166,7 +1177,7 @@ namespace MazeParty.Multiplayer
                    SessionRules.CanChangeBoardMap(
                        _sessions.Current.IsHost,
                        _sessions.Current.Phase) &&
-                   !_matchRecoveryChoiceVisible &&
+                   !_savedMatchSelectionPending &&
                    !ShouldResumeSavedMatch;
         }
 
@@ -1234,7 +1245,8 @@ namespace MazeParty.Multiplayer
                     GameText.T("The host uses a different game build."),
                     exception);
             }
-            await PublishLocalNetworkClientIdWhenReadyAsync();
+            if (_sessions.Current.Phase != MultiplayerConstants.HostRecoveryPhase)
+                await PublishLocalNetworkClientIdWhenReadyAsync();
         }
 
         private async Task ReconnectAndPublishAsync(string sessionId, string displayName)
@@ -1389,17 +1401,12 @@ namespace MazeParty.Multiplayer
         private async Task LeaveSessionAsync()
         {
             ClearPlayingReconnectTicket();
-            var abandonHostSchedule =
-                _sessions != null &&
-                _sessions.IsInSession &&
-                _sessions.Current.IsHost;
             try
             {
                 await _sessions.LeaveAsync();
-                if (abandonHostSchedule)
-                {
-                    new HostMinigameScheduleSession().CompleteActive();
-                }
+                // Leaving the room does not discard an interrupted saved game.
+                // Only successful fresh-room creation or match completion does.
+                RefreshSavedEntry();
             }
             finally
             {
@@ -1410,10 +1417,10 @@ namespace MazeParty.Multiplayer
 
         private async Task StartGameAsync()
         {
-            if (_matchRecoveryChoiceVisible)
+            if (_savedMatchSelectionPending)
             {
                 throw new InvalidOperationException(
-                    GameText.T("Choose whether to continue or discard the saved match first."));
+                    GameText.T("Restoring the saved room..."));
             }
 
             var snapshot = _sessions.Current;
@@ -1747,7 +1754,10 @@ namespace MazeParty.Multiplayer
                 {
                     SetLocalizedStatus(
                         "Returning the match to the player ready screen...");
-                    await _sessions.SetPlayingAsync(false);
+                    if (_sessions is MpsRelaySessionProvider relay)
+                        await relay.SetPlayingAsync(false, _preserveRecoveryOnLobbyReturn);
+                    else
+                        await _sessions.SetPlayingAsync(false);
                     cancellationToken.ThrowIfCancellationRequested();
                     _completedMatchPhaseSaveFailureCount = 0;
                     QueueCompletedMatchDisconnectedLobbyCleanups();
@@ -2293,6 +2303,7 @@ namespace MazeParty.Multiplayer
 
         private void OnSessionEnded(string reason)
         {
+            QueueNotice(reason);
             ClearPlayingReconnectTicket();
             _observedPlayingPhase = false;
             ClearLocalReadyResetRequirement();
@@ -2314,7 +2325,7 @@ namespace MazeParty.Multiplayer
             }
 
             SetLocalizedStatus(
-                "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
+                "A player disconnected. Gameplay is paused for the 3-minute reconnect window.");
         }
 
         private void BeginPendingBoardMapReadinessWait()
@@ -2398,7 +2409,7 @@ namespace MazeParty.Multiplayer
 
             _pendingBoardLoadVoidRequested = true;
             if (VoidActiveMatchToLobbyOnServer(GameText.T(
-                    "A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
+                    "A player did not reconnect within 3 minutes. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
             {
                 ResetPendingBoardLoadReconnect();
             }
@@ -2893,7 +2904,7 @@ namespace MazeParty.Multiplayer
                     {
                         match.PauseForReconnectOnServer(clientId);
                         SetLocalizedStatus(
-                            "A player disconnected. Gameplay is paused for the 60-second reconnect window.");
+                            "A player disconnected. Gameplay is paused for the 3-minute reconnect window.");
                     }
                     else
                     {

@@ -82,7 +82,7 @@ namespace MazeParty.Multiplayer
             return returnQueued && !controllerOwnsReturn;
         }
 
-        public const double ReconnectGraceSeconds = 60d;
+        public const double ReconnectGraceSeconds = 180d;
 
         public static double GetReconnectGraceEndsAt(double disconnectedAt)
         {

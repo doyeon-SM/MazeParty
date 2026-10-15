@@ -12,7 +12,8 @@ namespace MazeParty.Multiplayer
     {
         TurnOverview = 1,
         MinigameIntroReady = 2,
-        MatchComplete = 3
+        MatchComplete = 3,
+        MinigameSettled = 4
     }
 
     [Serializable]
@@ -23,6 +24,8 @@ namespace MazeParty.Multiplayer
         public const int CurrentRecoveryVersion = 3;
 
         public int recoveryVersion = CurrentRecoveryVersion;
+        public string originalHostPlayerKey = string.Empty;
+        public string sessionId = string.Empty;
         public MatchRecoveryCheckpoint checkpoint;
         public int turn;
         public int settledMinigameTurn;
@@ -54,6 +57,7 @@ namespace MazeParty.Multiplayer
     public sealed class MatchRecoveryPlayerSnapshot
     {
         public string playerKey = string.Empty;
+        public string displayName = string.Empty;
         public bool hasLogicalTile;
         public Vector2Int logicalTile;
         public Vector2Int[] traversalHistory = Array.Empty<Vector2Int>();

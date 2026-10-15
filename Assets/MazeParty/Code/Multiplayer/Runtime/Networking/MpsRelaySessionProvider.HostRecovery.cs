@@ -219,6 +219,7 @@ namespace MazeParty.Multiplayer
 
         private static bool HasReservedSeat(ISession session, string playerId)
         {
+            if (HasRecoveryRoster(session)) return GetRecoverySlot(session, playerId) >= 0;
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 if (GetSessionProperty(session, MultiplayerConstants.SlotProperty(slot), "") == playerId)
                     return true;

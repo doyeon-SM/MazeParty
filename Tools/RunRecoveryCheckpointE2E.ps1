@@ -1,10 +1,11 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)]
-    [ValidateSet('turn-overview', 'minigame-intro-ready', 'match-complete')]
+    [ValidateSet('turn-overview', 'minigame-intro-ready', 'minigame-settled', 'match-complete')]
     [string]$Checkpoint,
     [string]$Executable,
     [string]$RunDirectory,
+    [switch]$DeleteOriginalRoom,
     [ValidateSet('forest-graybox', 'maze-graybox')]
     [string]$Map = 'maze-graybox',
     [ValidateRange(600, 7200)]
@@ -36,6 +37,7 @@ if (Test-Path -LiteralPath $RunDirectory) {
 $checkpointProfileCode = switch ($Checkpoint) {
     'turn-overview' { 'turn' }
     'minigame-intro-ready' { 'minigame' }
+    'minigame-settled' { 'settled' }
     'match-complete' { 'complete' }
 }
 $profileStamp = Get-Date -Format 'yyMMddHHmmss'
@@ -68,6 +70,7 @@ function Start-RecoveryPlayer {
         '-screen-height', '720',
         '-logFile', ('"' + $logPath + '"')
     )
+    if ($DeleteOriginalRoom) { $arguments += '-e2e-delete-original-room' }
     return Start-Process -FilePath $Executable -ArgumentList $arguments `
         -PassThru -WindowStyle Hidden
 }

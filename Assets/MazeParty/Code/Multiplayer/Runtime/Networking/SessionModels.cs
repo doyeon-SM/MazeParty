@@ -60,8 +60,10 @@ namespace MazeParty.Multiplayer
             string phase,
             string localPlayerId,
             IReadOnlyList<OnlinePlayerSnapshot> players,
-            BoardMapSelection boardMapSelection)
+            BoardMapSelection boardMapSelection,
+            IReadOnlyList<string> waitingPlayerNames = null)
         {
+            WaitingPlayerNames = waitingPlayerNames ?? Array.Empty<string>();
             Code = code;
             IsHost = isHost;
             Phase = phase;
@@ -72,6 +74,7 @@ namespace MazeParty.Multiplayer
                 : boardMapSelection;
         }
 
+        public IReadOnlyList<string> WaitingPlayerNames { get; }
         public string Code { get; }
         public bool IsHost { get; }
         public string Phase { get; }

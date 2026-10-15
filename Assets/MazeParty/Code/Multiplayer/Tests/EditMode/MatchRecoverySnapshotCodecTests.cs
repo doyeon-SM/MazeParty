@@ -14,6 +14,9 @@ namespace MazeParty.Multiplayer.Tests
             var snapshot = CreateValidSnapshot();
             snapshot.boardMapId = "forest-graybox";
             snapshot.boardMapContentVersion = 7;
+            snapshot.originalHostPlayerKey = snapshot.players[0].playerKey;
+            snapshot.sessionId = "saved-session";
+            snapshot.players[0].displayName = "Original Host";
 
             var payload = codec.Encode(snapshot);
             var decoded = codec.TryDecode(payload, out var restored);
@@ -21,6 +24,9 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(decoded, Is.True);
             Assert.That(restored.checkpoint, Is.EqualTo(snapshot.checkpoint));
             Assert.That(restored.turn, Is.EqualTo(snapshot.turn));
+            Assert.That(restored.originalHostPlayerKey, Is.EqualTo(snapshot.originalHostPlayerKey));
+            Assert.That(restored.sessionId, Is.EqualTo(snapshot.sessionId));
+            Assert.That(restored.players[0].displayName, Is.EqualTo(snapshot.players[0].displayName));
             Assert.That(restored.scheduleEntries, Is.EqualTo(snapshot.scheduleEntries));
             Assert.That(restored.players[0].playerKey, Is.EqualTo("player-0"));
             Assert.That(restored.players[0].pendingCombatProtection, Is.True);
@@ -263,6 +269,7 @@ namespace MazeParty.Multiplayer.Tests
         [TestCase(MatchRecoveryCheckpoint.TurnOverview, 8, 7)]
         [TestCase(MatchRecoveryCheckpoint.MinigameIntroReady, 8, 8)]
         [TestCase(MatchRecoveryCheckpoint.MatchComplete, 15, 15)]
+        [TestCase(MatchRecoveryCheckpoint.MinigameSettled, 8, 8)]
         public void RevealedMinigameHistory_RestoresOnlyPublicTurns(
             MatchRecoveryCheckpoint checkpoint,
             int turn,
@@ -273,6 +280,27 @@ namespace MazeParty.Multiplayer.Tests
                     checkpoint,
                     turn),
                 Is.EqualTo(expectedCount));
+        }
+
+        [Test]
+        public void SettledCheckpoint_RequiresMatchingScheduleAndCompletedRewards()
+        {
+            var snapshot = CreateValidSnapshot();
+            snapshot.checkpoint = MatchRecoveryCheckpoint.MinigameSettled;
+            snapshot.currentMinigame = snapshot.scheduleEntries[snapshot.turn - 1];
+            snapshot.settledMinigameTurn = snapshot.turn;
+            snapshot.players[0].gold = 27;
+            snapshot.players[0].minigameWins = 1;
+            var codec = new MatchRecoverySnapshotCodec();
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.players[0].gold, Is.EqualTo(27));
+            Assert.That(restored.players[0].minigameWins, Is.EqualTo(1));
+            Assert.That(MatchRecoveryResumeRules.Resolve(restored).Turn, Is.EqualTo(3));
+            snapshot.settledMinigameTurn--;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            snapshot.settledMinigameTurn = snapshot.turn;
+            snapshot.currentMinigame = (int)ScheduledMinigameId.Skip;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
         }
 
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(

@@ -129,6 +129,7 @@ namespace MazeParty.Multiplayer
 
             ApplyMatchRecoveryPresentation();
             lobbyView.Render(snapshot, inSession, IsBusy, _status);
+            RenderRecoveryEntry(inSession);
         }
 
         public void RefreshLobbyWorldNameplates()

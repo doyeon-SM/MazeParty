@@ -797,3 +797,21 @@ Become the top fighter in a bare-knuckle brawl.,맨손싸움의 1등이 되세�
 Dodge and survive.,피하고 버티세요.,避けて生き残ってください。,躲避攻击并坚持到最后。
 Waiting for the original host. The room and saved match are preserved.,원래 호스트가 돌아오기를 기다리고 있습니다. 방과 저장 경기는 유지됩니다.,元のホストの復帰を待っています。ルームと保存した試合は維持されます。,正在等待原房主返回。房间和已保存的对局将保留。
 A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved.,플레이어가 60초 안에 복귀하지 않았습니다. 저장 경기를 보존하고 대기방으로 돌아갑니다.,プレイヤーが60秒以内に再接続しませんでした。保存した試合を保持して待機ルームへ戻ります。,玩家未在60秒内重新连接。将保留已保存的对局并返回等候室。
+Checking the saved game...,저장된 게임을 확인하는 중...,保存済みゲームを確認中...,正在检查已保存的游戏…
+Restoring the saved room...,저장된 방을 복구하는 중...,保存済みのルームを復元中...,正在恢复已保存的房间…
+Only the original host can restart this saved game.,이 게임을 시작했던 호스트만 재시작할 수 있습니다.,このゲームを開始したホストだけが再開できます。,只有最初的房主可以重新开始此存档。
+The host ended the reconnect wait. The saved game is preserved.,호스트가 재접속 대기를 종료했습니다. 저장된 게임은 보존됩니다.,ホストが再接続の待機を終了しました。保存済みゲームは保持されます。,房主已结束重连等待。游戏存档将保留。
+An interrupted game was found. Reconnect to return to the waiting players.,중단된 게임이 있습니다. 재접속하여 기다리는 플레이어들과 다시 합류하세요.,中断されたゲームがあります。再接続して待機中のプレイヤーに合流してください。,发现中断的游戏。请重新连接，与等待中的玩家会合。
+Waiting for reconnection: {0},재접속을 기다리는 중: {0},再接続を待っています：{0},等待重连：{0}
+Waiting for {0}.,{0}를 기다리는 중,{0}を待っています。,正在等待{0}。
+Closing the previous room and creating a new room...,이전 방을 종료하고 새 방을 생성하는 중...,前のルームを終了して新しいルームを作成中...,正在关闭之前的房间并创建新房间…
+Waiting for the original host authority. Retry creating the room.,원래 호스트의 권한을 기다리고 있습니다. 방 생성을 다시 시도해주세요.,元のホストの権限を待っています。ルーム作成を再試行してください。,正在等待原房主权限。请重试创建房间。
+Restart,재시작,再開,重新开始
+Reconnect,재접속,再接続,重新连接
+Reconnect to the game,게임 재접속,ゲームに再接続,重新连接游戏
+Create a new room?,새 방을 생성할까요?,新しいルームを作成しますか？,创建新房间？
+You can reconnect to the previous game. Creating a new room ends the previous room and discards its saved game. Create a new room?,이전 게임에 재접속할 수 있습니다. 새 방을 생성하면 이전 방이 종료되고 저장된 게임이 폐기됩니다. 새 방을 생성할까요?,前のゲームに再接続できます。新しいルームを作成すると前のルームが終了し、保存済みゲームが破棄されます。作成しますか？,您可以重新连接之前的游戏。创建新房间会结束之前的房间并丢弃存档。是否创建？
+Create,생성하기,作成,创建
+Go to Waiting Room,대기실로 이동하기,待機室へ移動,前往等候室
+A player disconnected. Gameplay is paused for the 3-minute reconnect window.,플레이어의 연결이 끊겼습니다. 재접속을 기다리며 게임을 3분간 일시정지합니다.,プレイヤーの接続が切れました。再接続を3分間待機し、ゲームを一時停止します。,玩家已断开连接。游戏暂停，等待重连3分钟。
+A player did not reconnect within 3 minutes. Returning to the waiting room with the saved match preserved.,플레이어가 3분 안에 재접속하지 않았습니다. 저장된 게임을 보존하고 대기실로 돌아갑니다.,プレイヤーが3分以内に再接続しませんでした。保存済みゲームを保持して待機室に戻ります。,玩家未在3分钟内重新连接。将保留游戏存档并返回等候室。

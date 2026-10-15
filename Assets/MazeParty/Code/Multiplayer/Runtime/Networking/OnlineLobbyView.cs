@@ -9,6 +9,9 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class OnlineLobbyView : MonoBehaviour
     {
+        [SerializeField] private SessionRecoveryView recoveryView;
+        public SessionRecoveryView RecoveryView => recoveryView;
+
         [Header("Containers")]
         [SerializeField] private CanvasGroup canvasGroup;
         [SerializeField] private GameObject connectionPanel;
@@ -104,12 +107,6 @@ namespace MazeParty.Multiplayer
         private bool _presentationVisible = true;
         private bool _lastBusy;
         private bool _boardMapSelectionLocked;
-        private bool _recoveryChoiceVisible;
-        private bool _recoveryChoiceCanChoose = true;
-        private bool _recoveryChoicePresented;
-        private bool _hasCapturedActionLabels;
-        private string _readyButtonTextBeforeRecovery = string.Empty;
-        private string _startButtonTextBeforeRecovery = string.Empty;
         private LocalizedLogo _localizedLogo;
         private bool _localizedLogoLookupCompleted;
         private BoardMapDefinition _presentedBoardMapDefinition;
@@ -120,12 +117,11 @@ namespace MazeParty.Multiplayer
         public event Action ReadyRequested;
         public event Action StartRequested;
         public event Action<int> MapSelectionDeltaRequested;
-        public event Action RecoveryContinueRequested;
-        public event Action RecoveryDiscardRequested;
         public event Action<PlayerAppearanceState> AppearanceChanged;
         public event Action<HandEmoteFaceSelections> EmoteExpressionsChanged;
 
         public bool HasRequiredReferences =>
+            recoveryView != null && recoveryView.HasRequiredReferences &&
             canvasGroup != null &&
             connectionPanel != null &&
             joinCodePopup != null &&
@@ -323,37 +319,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        public void SetRecoveryChoice(bool visible, bool canChoose = true)
-        {
-            if (visible && !_recoveryChoiceVisible)
-            {
-                CaptureActionLabelsBeforeRecovery();
-            }
-
-            if (visible)
-            {
-                SetCustomizationOpen(false);
-                SetBoardSettingsOpen(false);
-            }
-
-            _recoveryChoiceVisible = visible;
-            _recoveryChoiceCanChoose = canChoose;
-            if (!visible)
-            {
-                _recoveryChoicePresented = false;
-                RestoreActionLabelsAfterRecovery();
-                _hasCapturedActionLabels = false;
-                return;
-            }
-
-            if (_recoveryChoicePresented)
-            {
-                var interactable = !_lastBusy && _recoveryChoiceCanChoose;
-                readyButton.interactable = interactable;
-                startButton.interactable = interactable;
-            }
-        }
-
         public void Render(
             SessionSnapshot snapshot,
             bool isInSession,
@@ -395,8 +360,6 @@ namespace MazeParty.Multiplayer
 
             if (!isInSession)
             {
-                _recoveryChoicePresented = false;
-                RestoreActionLabelsAfterRecovery();
                 sessionActionsRoot.SetActive(false);
                 startHint.SetActive(false);
                 runningMessage.SetActive(false);
@@ -425,44 +388,22 @@ namespace MazeParty.Multiplayer
             }
             RefreshBoardMapPreview(selectedMapDefinition, isLobby);
             sessionActionsRoot.SetActive(isLobby);
-            var showRecoveryChoice =
-                _recoveryChoiceVisible && isLobby && snapshot.IsHost;
-            if (!isLobby || _recoveryChoiceVisible)
+            if (!isLobby)
             {
                 SetCustomizationOpen(false);
                 SetBoardSettingsOpen(false);
             }
 
             boardSettingsButton.gameObject.SetActive(
-                isLobby && !_recoveryChoiceVisible);
+                isLobby);
             boardSettingsPanel.SetActive(
-                isLobby && !_recoveryChoiceVisible && _boardSettingsOpen);
-            _recoveryChoicePresented = showRecoveryChoice;
+                isLobby && _boardSettingsOpen);
             RefreshBoardMapSelection(
                 snapshot,
-                isLobby && !_recoveryChoiceVisible,
+                isLobby,
                 busy,
                 selectedMapDefinition,
                 selectableMapCount);
-            if (showRecoveryChoice)
-            {
-                CaptureActionLabelsBeforeRecovery();
-                readyButton.gameObject.SetActive(true);
-                readyButton.interactable = !busy && _recoveryChoiceCanChoose;
-                readyButtonText.text = GameText.T("Discard Saved Match");
-
-                startButton.gameObject.SetActive(true);
-                startButton.interactable = !busy && _recoveryChoiceCanChoose;
-                startButtonText.text = GameText.T("Continue Saved Match");
-
-                startHint.SetActive(false);
-                runningMessage.SetActive(false);
-                SetCustomizationOpen(false);
-                customizationButton.gameObject.SetActive(false);
-                return;
-            }
-
-            RestoreActionLabelsAfterRecovery();
             readyButton.gameObject.SetActive(isLobby);
             readyButton.interactable = !busy;
             readyButtonText.text = snapshot.LocalReady ? GameText.T("Cancel Ready") : GameText.T("Ready");
@@ -470,6 +411,11 @@ namespace MazeParty.Multiplayer
             startButton.gameObject.SetActive(isLobby && snapshot.IsHost);
             startButton.interactable = !busy && snapshot.CanStart;
 
+            var startHintText = startHint.GetComponent<Text>();
+            if (startHintText != null)
+                startHintText.text = snapshot.WaitingPlayerNames.Count > 0
+                    ? GameText.F("Waiting for {0}.", string.Join(", ", snapshot.WaitingPlayerNames))
+                    : GameText.T("All four players must be ready.");
             startHint.SetActive(isLobby && !snapshot.CanStart);
             runningMessage.SetActive(!isLobby);
             if (!isLobby)
@@ -478,9 +424,9 @@ namespace MazeParty.Multiplayer
             }
 
             customizationButton.gameObject.SetActive(
-                isLobby && !_recoveryChoiceVisible);
+                isLobby);
             customizationPanel.SetActive(
-                isLobby && !_recoveryChoiceVisible && _customizationOpen);
+                isLobby && _customizationOpen);
         }
 
         private void Awake()
@@ -767,23 +713,11 @@ namespace MazeParty.Multiplayer
 
         private void OnReadyClicked()
         {
-            if (_recoveryChoicePresented)
-            {
-                RecoveryDiscardRequested?.Invoke();
-                return;
-            }
-
             ReadyRequested?.Invoke();
         }
 
         private void OnStartClicked()
         {
-            if (_recoveryChoicePresented)
-            {
-                RecoveryContinueRequested?.Invoke();
-                return;
-            }
-
             StartRequested?.Invoke();
         }
 
@@ -1032,37 +966,6 @@ namespace MazeParty.Multiplayer
             if (clearInput)
             {
                 joinCodeInput.SetTextWithoutNotify(string.Empty);
-            }
-        }
-
-        private void CaptureActionLabelsBeforeRecovery()
-        {
-            if (_hasCapturedActionLabels ||
-                readyButtonText == null || startButtonText == null)
-            {
-                return;
-            }
-
-            _readyButtonTextBeforeRecovery = readyButtonText.text;
-            _startButtonTextBeforeRecovery = startButtonText.text;
-            _hasCapturedActionLabels = true;
-        }
-
-        private void RestoreActionLabelsAfterRecovery()
-        {
-            if (!_hasCapturedActionLabels)
-            {
-                return;
-            }
-
-            if (readyButtonText != null)
-            {
-                readyButtonText.text = _readyButtonTextBeforeRecovery;
-            }
-
-            if (startButtonText != null)
-            {
-                startButtonText.text = _startButtonTextBeforeRecovery;
             }
         }
 

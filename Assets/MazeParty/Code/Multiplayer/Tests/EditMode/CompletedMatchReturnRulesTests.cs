@@ -27,29 +27,29 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void ReconnectGrace_ExpiresAtExactlySixtySeconds()
+        public void ReconnectGrace_ExpiresAtExactlyThreeMinutes()
         {
             var endsAt = CompletedMatchReturnRules.GetReconnectGraceEndsAt(25d);
-            Assert.That(endsAt, Is.EqualTo(85d));
+            Assert.That(endsAt, Is.EqualTo(205d));
             Assert.That(CompletedMatchReturnRules.HasReconnectGraceExpired(
                 endsAt,
-                84.999d), Is.False);
+                204.999d), Is.False);
             Assert.That(CompletedMatchReturnRules.HasReconnectGraceExpired(
                 endsAt,
-                85d), Is.True);
+                205d), Is.True);
 
             Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
                 allPlayersReady: true,
                 endsAt,
-                84.999d), Is.True);
+                204.999d), Is.True);
             Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
                 allPlayersReady: true,
                 endsAt,
-                85d), Is.False);
+                205d), Is.False);
             Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
                 allPlayersReady: false,
                 endsAt,
-                84.999d), Is.False);
+                204.999d), Is.False);
             Assert.That(CompletedMatchReturnRules.ShouldResumeReconnect(
                 allPlayersReady: true,
                 endsAt: 0d,

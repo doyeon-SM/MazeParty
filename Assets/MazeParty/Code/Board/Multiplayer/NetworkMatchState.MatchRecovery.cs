@@ -143,10 +143,8 @@ namespace MazeParty.Multiplayer
                         snapshot.checkpoint,
                         snapshot.turn));
                 _selectedMinigameNetworkLoadCompleted = false;
-                _flow.RestoreCheckpoint(
-                    ToBoardFlowState(snapshot.checkpoint),
-                    snapshot.turn,
-                    now);
+                var resume = MatchRecoveryResumeRules.Resolve(snapshot);
+                _flow.RestoreCheckpoint(resume.State, resume.Turn, now);
                 _gameplayEnabled.Value = true;
                 _snapshotRestoredMask.Value = (byte)AllPlayersMask;
                 RefreshPresentMask();
@@ -170,6 +168,13 @@ namespace MazeParty.Multiplayer
                         break;
                 }
 
+                if (snapshot.checkpoint == MatchRecoveryCheckpoint.MinigameSettled)
+                {
+                    // Use the normal next-turn initialization for shops, avatars,
+                    // remaining games and the final ceremony, exactly once.
+                    OnFlowTransitioned(new BoardFlowTransition(BoardFlowState.MinigameResult,
+                        resume.State, resume.Turn, now));
+                }
                 SyncFlowSnapshot(now);
                 if (snapshot.checkpoint == MatchRecoveryCheckpoint.MatchComplete)
                 {
@@ -493,6 +498,7 @@ namespace MazeParty.Multiplayer
                     rosterFingerprint,
                     contentFingerprint,
                     snapshot);
+                controller.NotifySavedRecovery(snapshot, record.SavedUtc);
                 ServerEventTrace.Record(
                     ServerEventCode.PersistenceWrite,
                     snapshot.turn,
@@ -537,6 +543,11 @@ namespace MazeParty.Multiplayer
 
                 players[slot] = avatar.CaptureMatchRecoverySnapshotOnServer(
                     MatchRecoveryFingerprint.CreatePlayerKey(playerId));
+                if (players[slot] != null)
+                {
+                    foreach (var member in controller.CurrentSession.Players)
+                        if (member.Slot == slot) players[slot].displayName = member.DisplayName;
+                }
                 if (players[slot] == null)
                 {
                     throw new InvalidOperationException(
@@ -611,6 +622,8 @@ namespace MazeParty.Multiplayer
 
             return new MatchRecoverySnapshot
             {
+                originalHostPlayerKey = players[0].playerKey,
+                sessionId = controller.RecoverySessionId,
                 checkpoint = checkpoint,
                 turn = Turn,
                 settledMinigameTurn = _settledMinigameTurn,
@@ -822,6 +835,8 @@ namespace MazeParty.Multiplayer
                     return BoardFlowState.TurnOverview;
                 case MatchRecoveryCheckpoint.MinigameIntroReady:
                     return BoardFlowState.MinigameIntroReady;
+                case MatchRecoveryCheckpoint.MinigameSettled:
+                    return BoardFlowState.MinigameResult;
                 case MatchRecoveryCheckpoint.MatchComplete:
                     return BoardFlowState.MatchComplete;
                 default:
@@ -838,6 +853,7 @@ namespace MazeParty.Multiplayer
                 case MatchRecoveryCheckpoint.TurnOverview:
                     return Math.Max(0, turn - 1);
                 case MatchRecoveryCheckpoint.MinigameIntroReady:
+                case MatchRecoveryCheckpoint.MinigameSettled:
                 case MatchRecoveryCheckpoint.MatchComplete:
                     return Math.Max(0, turn);
                 default:

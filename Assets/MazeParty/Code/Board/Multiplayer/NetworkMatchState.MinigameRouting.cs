@@ -476,6 +476,9 @@ namespace MazeParty.Multiplayer
                     placementSet.GetRankForSlot(slot));
             }
 
+            // Commit the completed result only after every reward and statistic
+            // is settled. A crash on the result screen must not replay this game.
+            SaveMatchRecoveryCheckpoint(MatchRecoveryCheckpoint.MinigameSettled);
             return true;
         }
 

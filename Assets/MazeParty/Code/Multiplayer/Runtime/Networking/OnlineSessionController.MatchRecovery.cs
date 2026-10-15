@@ -20,13 +20,10 @@ namespace MazeParty.Multiplayer
     {
         private HostMatchRecoveryChoice _hostMatchRecoveryChoice =
             HostMatchRecoveryChoice.Fresh;
-        private bool _matchRecoveryChoiceVisible;
+        private bool _savedMatchSelectionPending;
 
         public bool ShouldResumeSavedMatch =>
             _hostMatchRecoveryChoice == HostMatchRecoveryChoice.Resume;
-
-        public bool IsMatchRecoveryChoiceVisible =>
-            _matchRecoveryChoiceVisible;
 
         /// <summary>
         /// Resolves the current room's authenticated account identity for a
@@ -59,87 +56,26 @@ namespace MazeParty.Multiplayer
             return false;
         }
 
+        private bool _recoverySelectionQueued;
+
         private void PrepareHostMatchRecoveryChoice()
         {
-            ResetHostMatchRecoveryChoice();
-            if (_sessions == null || !_sessions.IsInSession ||
-                !_sessions.Current.IsHost ||
-                _sessions.Current.Phase != MultiplayerConstants.LobbyPhase)
+            if (_creatingFreshRoom || ShouldResumeSavedMatch || _recoverySelectionQueued || _sessions == null || !_sessions.IsInSession ||
+                !_sessions.Current.IsHost || _sessions.Current.Phase != MultiplayerConstants.LobbyPhase) return;
+            RefreshSavedEntry();
+            if (!CanRestartSavedGame) return;
+            _savedMatchSelectionPending = true;
+            _recoverySelectionQueued = true;
+            _sessionOperations.TryEnqueue(async cancellationToken =>
             {
-                return;
-            }
-
-            var scheduleSession = new HostMinigameScheduleSession();
-            if (!scheduleSession.TryGetSavedMatch(out _, out _))
-            {
-                return;
-            }
-
-            MatchRecoveryLoadStatus status;
-            try
-            {
-                status = scheduleSession.TryPeekRecovery(out _);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogWarning(
-                    "Could not inspect the saved match recovery journal: " +
-                    exception.Message);
-                // A sharing violation or other transient I/O failure does not
-                // prove that the only recovery copy is corrupt. Keep it and
-                // let the host retry Continue or explicitly discard it.
-                _matchRecoveryChoiceVisible = true;
-                ApplyMatchRecoveryPresentation();
-                SetLocalizedStatus(
-                    "The saved match could not be inspected. Continue to retry, or discard it.");
-                return;
-            }
-
-            if (status == MatchRecoveryLoadStatus.Loaded)
-            {
-                _matchRecoveryChoiceVisible = true;
-                ApplyMatchRecoveryPresentation();
-                SetLocalizedStatus(
-                    "A saved match is available. Continue it, or discard it and start a new match.");
-                return;
-            }
-
-            // A schedule without a valid stable checkpoint cannot be resumed.
-            // Discard it explicitly here and tell the host instead of silently
-            // reusing its queue for a fresh board.
-            scheduleSession.CompleteActive();
-            ApplyMatchRecoveryPresentation();
-            if (status == MatchRecoveryLoadStatus.Expired)
-            {
-                SetLocalizedStatus(
-                    "The saved match expired after 72 hours and was discarded.");
-            }
-            else
-            {
-                SetLocalizedStatus(
-                    "The saved match was incomplete or damaged and was discarded.");
-            }
-        }
-
-        private void OnRecoveryContinueRequested()
-        {
-            if (!_matchRecoveryChoiceVisible ||
-                _sessions == null || !_sessions.IsInSession ||
-                !_sessions.Current.IsHost)
-            {
-                return;
-            }
-
-            RunAsync(
-                SelectSavedMatchAsync,
-                GameText.N("Synchronizing the saved board map selection..."),
-                SessionLifecycleState.Lobby);
+                try { await SelectSavedMatchAsync(); }
+                finally { _recoverySelectionQueued = false; RenderLobby(); }
+            });
         }
 
         private async Task SelectSavedMatchAsync()
         {
-            if (!_matchRecoveryChoiceVisible ||
-                _sessions == null || !_sessions.IsInSession ||
+            if (_sessions == null || !_sessions.IsInSession ||
                 !_sessions.Current.IsHost ||
                 _sessions.Current.Phase != MultiplayerConstants.LobbyPhase)
             {
@@ -186,8 +122,13 @@ namespace MazeParty.Multiplayer
                         "The saved match board map was not synchronized to the lobby."));
             }
 
+            if (!MatchRecoveryResumeRules.IsOriginalHost(recoverySnapshot, _identity.PlayerId))
+                throw new InvalidOperationException(GameText.T("Only the original host can restart this saved game."));
+            await ((MpsRelaySessionProvider)_sessions).ApplyRecoveryRosterAsync(
+                System.Array.ConvertAll(recoverySnapshot.players, player => player.playerKey),
+                System.Array.ConvertAll(recoverySnapshot.players, player => player.displayName));
             _hostMatchRecoveryChoice = HostMatchRecoveryChoice.Resume;
-            _matchRecoveryChoiceVisible = false;
+            _savedMatchSelectionPending = false;
             ApplyMatchRecoveryPresentation();
             SetLocalizedStatus(
                 "Saved match selected. The same four accounts must be ready before continuing.");
@@ -259,38 +200,22 @@ namespace MazeParty.Multiplayer
 
         private void RestoreMatchRecoveryChoiceForRetry()
         {
-            _hostMatchRecoveryChoice = HostMatchRecoveryChoice.Fresh;
-            _matchRecoveryChoiceVisible = true;
+            // Preserve the restart intent so joining the missing original accounts
+            // lets the host retry Start without an obsolete choice popup.
+            _hostMatchRecoveryChoice = HostMatchRecoveryChoice.Resume;
+            _savedMatchSelectionPending = false;
             ApplyMatchRecoveryPresentation();
-        }
-
-        private void OnRecoveryDiscardRequested()
-        {
-            if (!_matchRecoveryChoiceVisible ||
-                _sessions == null || !_sessions.IsInSession ||
-                !_sessions.Current.IsHost)
-            {
-                return;
-            }
-
-            new HostMinigameScheduleSession().CompleteActive();
-            ResetHostMatchRecoveryChoice();
-            SetLocalizedStatus(
-                "The saved match was discarded. This room will start a new match.");
         }
 
         private void ResetHostMatchRecoveryChoice()
         {
             _hostMatchRecoveryChoice = HostMatchRecoveryChoice.Fresh;
-            _matchRecoveryChoiceVisible = false;
+            _savedMatchSelectionPending = false;
             ApplyMatchRecoveryPresentation();
         }
 
         private void ApplyMatchRecoveryPresentation()
         {
-            lobbyView?.SetRecoveryChoice(
-                _matchRecoveryChoiceVisible,
-                !IsBusy);
             lobbyView?.SetBoardMapSelectionLocked(
                 IsBoardMapSelectionLocked);
         }

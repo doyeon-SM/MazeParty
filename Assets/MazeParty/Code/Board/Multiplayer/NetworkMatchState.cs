@@ -562,7 +562,7 @@ namespace MazeParty.Multiplayer
                     if (controller != null &&
                         controller.VoidActiveMatchToLobbyOnServer(
                             GameText.T(
-                                "A player did not reconnect within 60 seconds. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
+                                "A player did not reconnect within 3 minutes. Returning to the waiting room with the saved match preserved."), preserveRecovery: true))
                     {
                         _endingForReconnectTimeout = true;
                     }
@@ -1310,6 +1310,11 @@ namespace MazeParty.Multiplayer
                     break;
                 case BoardFlowState.MinigameResult:
                     StopAllAvatarInputOnServer();
+                    if (CurrentMinigame == ScheduledMinigameId.Skip)
+                    {
+                        _settledMinigameTurn = Turn;
+                        SaveMatchRecoveryCheckpoint(MatchRecoveryCheckpoint.MinigameSettled);
+                    }
                     break;
                 case BoardFlowState.MatchComplete:
                     EndAllMinigameRuntimes();

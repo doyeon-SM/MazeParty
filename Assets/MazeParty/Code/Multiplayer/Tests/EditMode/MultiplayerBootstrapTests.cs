@@ -704,6 +704,18 @@ namespace MazeParty.Multiplayer.Tests
                     mapRoot.Topology.Gates.ToArray());
                 var controller = playerPrefab.GetComponent<CharacterController>();
                 Assert.That(controller, Is.Not.Null, playerPath);
+                var corners = new[]
+                {
+                    new Vector2Int(0, 0), new Vector2Int(7, 0),
+                    new Vector2Int(7, 7), new Vector2Int(0, 7)
+                };
+                var terrain = mapObject.GetComponentInChildren<Terrain>();
+                Assert.That(terrain, Is.Not.Null);
+                var ground = terrain.GetComponent<TerrainCollider>();
+                Assert.That(ground, Is.Not.Null,
+                    "Maze terrain must support players; tile triggers cannot prevent falling.");
+                Assert.That(ground.enabled, Is.True);
+                Assert.That(ground.terrainData, Is.SameAs(terrain.terrainData));
                 Physics.SyncTransforms();
 
                 for (var slot = 0; slot < PlayerSlotRules.Count; slot++)
@@ -732,6 +744,41 @@ namespace MazeParty.Multiplayer.Tests
                         hit.GetComponentInParent<BoardMapRoot>() == mapRoot &&
                         hit.bounds.max.y > 0.5f),
                         Is.False, $"P{slot + 1} overlaps maze geometry.");
+                    Assert.That(start.Coordinate, Is.EqualTo(corners[slot]));
+                    Assert.That(ground.Raycast(
+                        new Ray(position + Vector3.up * 2f, Vector3.down),
+                        out var floorHit, 5f), Is.True,
+                        $"P{slot + 1} has no solid ground below its corner spawn.");
+
+                    var probeObject = new GameObject($"P{slot + 1} Grounding Probe");
+                    try
+                    {
+                        probeObject.transform.SetPositionAndRotation(position, rotation);
+                        var probe = probeObject.AddComponent<CharacterController>();
+                        probe.height = controller.height;
+                        probe.radius = controller.radius;
+                        probe.center = controller.center;
+                        probe.skinWidth = controller.skinWidth;
+                        probe.stepOffset = controller.stepOffset;
+                        var verticalVelocity = 0f;
+                        for (var step = 0; step < 150; step++)
+                        {
+                            verticalVelocity = PlayerGroundingRules.AdvanceVerticalVelocity(
+                                verticalVelocity, probe.isGrounded, 0.02f);
+                            probe.Move(Vector3.up * (verticalVelocity * 0.02f));
+                        }
+                        Assert.That(probe.isGrounded, Is.True,
+                            $"P{slot + 1} falls through its corner spawn.");
+                        Assert.That(start.ContainsHorizontalDisc(
+                            probeObject.transform.position, probe.radius), Is.True);
+                        Assert.That(probeObject.transform.position.y + probe.center.y -
+                            probe.height * 0.5f,
+                            Is.EqualTo(floorHit.point.y).Within(probe.skinWidth + 0.02f));
+                    }
+                    finally
+                    {
+                        Object.DestroyImmediate(probeObject);
+                    }
                 }
             }
             finally

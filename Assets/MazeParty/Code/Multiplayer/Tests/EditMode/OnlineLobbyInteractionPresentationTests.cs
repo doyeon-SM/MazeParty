@@ -631,7 +631,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(previewGraphic.PresentedTileCount, Is.Zero);
                 Assert.That(previewGraphic.PresentedPortalCount, Is.Zero);
 
-                view.SetRecoveryChoice(true);
+                view.SetBoardMapSelectionLocked(true);
                 view.Render(CreateSnapshot(
                         MultiplayerConstants.LobbyPhase,
                         true,
@@ -642,7 +642,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(previewRoot.activeSelf, Is.True,
                     "Recovery choices must not hide the current selected map.");
 
-                view.SetRecoveryChoice(false);
+                view.SetBoardMapSelectionLocked(false);
                 view.Render(CreateSnapshot(MultiplayerConstants.PlayingPhase),
                     true,
                     false,

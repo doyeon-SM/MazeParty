@@ -170,11 +170,14 @@ namespace MazeParty.Multiplayer
             {
                 return false;
             }
-            if (snapshot.checkpoint == MatchRecoveryCheckpoint.MinigameIntroReady &&
+            if ((snapshot.checkpoint == MatchRecoveryCheckpoint.MinigameIntroReady ||
+                 snapshot.checkpoint == MatchRecoveryCheckpoint.MinigameSettled) &&
                 snapshot.currentMinigame != snapshot.scheduleEntries[snapshot.turn - 1])
             {
                 return false;
             }
+            if (snapshot.checkpoint == MatchRecoveryCheckpoint.MinigameSettled &&
+                snapshot.settledMinigameTurn != snapshot.turn) return false;
             if (snapshot.checkpoint == MatchRecoveryCheckpoint.MatchComplete &&
                 (snapshot.turn != snapshot.scheduleTurnCount ||
                  snapshot.mines.Length != 0))
@@ -334,7 +337,8 @@ namespace MazeParty.Multiplayer
 
         private static bool IsCheckpoint(MatchRecoveryCheckpoint checkpoint)
         {
-            return checkpoint == MatchRecoveryCheckpoint.TurnOverview ||
+            return checkpoint == MatchRecoveryCheckpoint.MinigameSettled ||
+                   checkpoint == MatchRecoveryCheckpoint.TurnOverview ||
                    checkpoint == MatchRecoveryCheckpoint.MinigameIntroReady ||
                    checkpoint == MatchRecoveryCheckpoint.MatchComplete;
         }

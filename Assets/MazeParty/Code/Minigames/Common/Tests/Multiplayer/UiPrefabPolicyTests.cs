@@ -56,6 +56,8 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"
         };
 
@@ -82,7 +84,9 @@ namespace MazeParty.Multiplayer.Tests
             "MazeParty.Multiplayer.LobbyEmoteExpressionView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
             "MazeParty.Multiplayer.HandEmoteWheelView",
-            "MazeParty.Multiplayer.GameMenuBindings"
+            "MazeParty.Multiplayer.GameMenuBindings",
+            "MazeParty.Multiplayer.SessionRecoveryView",
+            "MazeParty.Multiplayer.ReconnectWaitView"
         };
 
         private static readonly string[] NestedBoardUiModulePaths =
