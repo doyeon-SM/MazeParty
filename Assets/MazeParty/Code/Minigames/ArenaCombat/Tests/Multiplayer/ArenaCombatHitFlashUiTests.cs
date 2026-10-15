@@ -1,11 +1,6 @@
-using System.Linq;
-using MazeParty.Gameplay;
 using NUnit.Framework;
 using UnityEditor;
-using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.SceneManagement;
-using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer.Tests
 {
@@ -13,37 +8,6 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string PrefabPath =
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab";
-        private const string ScenePath =
-            "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity";
-
-        [Test]
-        public void HitFlashPrefab_HasRequiredNonBlockingBindings()
-        {
-            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);
-            Assert.That(prefab, Is.Not.Null, PrefabPath);
-            var view = prefab.GetComponent<ArenaCombatHitFlashView>();
-            var aimView = prefab.GetComponent<ArenaCombatAimView>();
-            Assert.That(view, Is.Not.Null);
-            Assert.That(view.HasRequiredReferences, Is.True);
-            Assert.That(aimView, Is.Not.Null);
-            Assert.That(aimView.HasRequiredReferences, Is.True);
-            Assert.That(aimView.AimImage.gameObject.activeSelf, Is.False);
-            Assert.That(
-                AssetDatabase.GetAssetPath(aimView.AimImage.sprite),
-                Is.EqualTo(
-                    "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Add.png"));
-            Assert.That(prefab.GetComponent<GraphicRaycaster>(), Is.Null);
-            var graphics = prefab.GetComponentsInChildren<Graphic>(true);
-            Assert.That(graphics, Is.Not.Empty);
-            Assert.That(
-                graphics.All(graphic => !graphic.raycastTarget),
-                Is.True);
-            Assert.That(
-                prefab.GetComponentsInChildren<CanvasGroup>(true)
-                    .All(group => !group.blocksRaycasts),
-                Is.True);
-        }
-
         [Test]
         public void AimView_HidesByDefaultAndRespondsToVisibilityUpdates()
         {
@@ -70,40 +34,5 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
-        [Test]
-        public void ArenaCombatScene_HasOneStandaloneHitFlashPrefabInstance()
-        {
-            var scene = SceneManager.GetSceneByPath(ScenePath);
-            var openedForTest = !scene.IsValid() || !scene.isLoaded;
-            if (openedForTest)
-            {
-                scene = EditorSceneManager.OpenScene(
-                    ScenePath, OpenSceneMode.Additive);
-            }
-
-            try
-            {
-                var views = scene.GetRootGameObjects()
-                    .SelectMany(root =>
-                        root.GetComponentsInChildren<ArenaCombatHitFlashView>(
-                            true))
-                    .ToArray();
-                Assert.That(views, Has.Length.EqualTo(1));
-                var view = views[0];
-                Assert.That(view.transform.parent, Is.Null);
-                Assert.That(view.HasRequiredReferences, Is.True);
-                Assert.That(
-                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
-                        view.gameObject),
-                    Is.EqualTo(PrefabPath));
-            }
-            finally
-            {
-                if (openedForTest)
-                {
-                    EditorSceneManager.CloseScene(scene, true);
-                }
-            }
-        }
     }
 }

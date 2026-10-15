@@ -220,6 +220,36 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void HitFlashPrefabs_DoNotBlockPointerInput()
+        {
+            foreach (var path in new[]
+                     {
+                         "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
+                         "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab"
+                     })
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.That(prefab, Is.Not.Null, path);
+                Assert.That(prefab.GetComponent<Canvas>(), Is.Not.Null, path);
+                Assert.That(
+                    prefab.GetComponentsInChildren<GraphicRaycaster>(true),
+                    Is.Empty,
+                    path);
+                var graphics = prefab.GetComponentsInChildren<Graphic>(true);
+                Assert.That(graphics, Is.Not.Empty, path);
+                Assert.That(
+                    graphics.All(graphic => !graphic.raycastTarget),
+                    Is.True,
+                    path);
+                Assert.That(
+                    prefab.GetComponentsInChildren<CanvasGroup>(true)
+                        .All(group => !group.blocksRaycasts),
+                    Is.True,
+                    path);
+            }
+        }
+
+        [Test]
         public void PlayerFacingCanvasText_UsesNormalFontStyle()
         {
             var prefabPaths = AssetDatabase.FindAssets(
@@ -377,6 +407,24 @@ namespace MazeParty.Multiplayer.Tests
                             actualPaths,
                             Does.Contain(expectedPath),
                             contract.Path);
+                    }
+
+                    var hitFlashPath = contract.Path switch
+                    {
+                        "Assets/MazeParty/Scenes/Board/Board.unity" =>
+                            "Assets/MazeParty/Prefabs/Board/UI/BoardHitFlash.prefab",
+                        "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity" =>
+                            "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHitFlash.prefab",
+                        _ => null
+                    };
+                    if (hitFlashPath != null)
+                    {
+                        Assert.That(
+                            scene.GetRootGameObjects().Count(root =>
+                                PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root) ==
+                                hitFlashPath),
+                            Is.EqualTo(1),
+                            contract.Path + " must have one standalone hit flash.");
                     }
 
                     foreach (var component in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<MonoBehaviour>(true)))

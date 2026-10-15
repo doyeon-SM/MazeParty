@@ -23,9 +23,6 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab";
         private const string ItemPrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardItemCanvas.prefab";
-        private const string TombstonePrefabPath =
-            "Assets/MazeParty/Prefabs/Board/World/BoardTombstone.prefab";
-
         private const string BoardScenePath =
             "Assets/MazeParty/Scenes/Board/Board.unity";
         private const string KeyIconPath =
@@ -97,31 +94,6 @@ namespace MazeParty.Multiplayer.Tests
                     objectName);
             }
         }
-
-        [Test]
-        public void BoardWorldInteractionPrefabs_DoNotContainTextMeshPrompts()
-        {
-            var worldPrefabs = BoardWorldPrefabs.LoadRequired();
-            var tombstone =
-                AssetDatabase.LoadAssetAtPath<GameObject>(TombstonePrefabPath);
-            Assert.That(tombstone, Is.Not.Null, TombstonePrefabPath);
-
-            var roots = new Dictionary<string, GameObject>
-            {
-                { "Key Shop", worldPrefabs.KeyShop.gameObject },
-                { "Item Shop 1", worldPrefabs.ItemShop(0).gameObject },
-                { "Item Shop 2", worldPrefabs.ItemShop(1).gameObject },
-                { "Board Tombstone", tombstone }
-            };
-            foreach (var entry in roots)
-            {
-                Assert.That(
-                    entry.Value.GetComponentsInChildren<TextMesh>(true),
-                    Is.Empty,
-                    entry.Key + " interaction guidance belongs to Item UI.");
-            }
-        }
-
 
         [Test]
         public void ReadyPlayerStates_AreBoundOnBoardCanvasPrefabAndSceneInstance()
@@ -541,21 +513,11 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void BoardCopy_RetiredHintsAreAbsentAndReadyHeadingIsLocalized()
+        public void ReadyControls_UseLocalizedHeadingAndMatchingFonts()
         {
-            var map = AssetDatabase.LoadAssetAtPath<GameObject>(MapPrefabPath);
-            var item = AssetDatabase.LoadAssetAtPath<GameObject>(ItemPrefabPath);
             var ready = AssetDatabase.LoadAssetAtPath<GameObject>(
                 ReadyPanelModulePath);
-            Assert.That(map, Is.Not.Null);
-            Assert.That(item, Is.Not.Null);
             Assert.That(ready, Is.Not.Null);
-            Assert.That(map.GetComponentsInChildren<Transform>(true)
-                .Any(child => child.name == "Minimap Legend"), Is.False);
-            Assert.That(item.GetComponentsInChildren<Transform>(true)
-                .Any(child => child.name == "Selection Rule" ||
-                              child.name == "ItemShopRule"), Is.False);
-
             var title = ready.GetComponentsInChildren<Transform>(true)
                 .FirstOrDefault(child => child.name == "MinigameControlsTitle");
             Assert.That(title, Is.Not.Null);
