@@ -187,6 +187,46 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void CameraTransitionVisibility_RestoresCurrentAppearanceWithoutChangingHitZones()
+        {
+            var root = new GameObject("Camera Transition Visibility Contract");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+                var catalog = PlayerExpressionCatalog.Instance;
+                Assert.That(catalog.Hats.Length, Is.GreaterThan(0));
+                visual.ApplyAppearance(0, 0, 1, 0);
+                visual.SetOwnerFirstPerson(false);
+                visual.SetCameraTransitionHidden(true);
+                Assert.That(bindings.FaceSprite.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.HatAnchor.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.HeadHitbox.gameObject.activeInHierarchy, Is.True);
+                Assert.That(bindings.HeadHitbox.enabled, Is.True);
+
+                // A replicated appearance update must not reveal a hat mid-blend.
+                visual.ApplyAppearance(0, 0, 1, 0);
+                Assert.That(bindings.HatAnchor.gameObject.activeInHierarchy, Is.False);
+                visual.SetOwnerFirstPerson(true);
+                visual.SetCameraTransitionHidden(false);
+                Assert.That(bindings.FaceSprite.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.HatAnchor.gameObject.activeInHierarchy, Is.False);
+
+                // Reversing/cancelling the transition restores the current choice.
+                visual.SetCameraTransitionHidden(true);
+                visual.SetOwnerFirstPerson(false);
+                visual.ApplyAppearance(0, 0, 0, 0);
+                visual.SetCameraTransitionHidden(false);
+                Assert.That(bindings.FaceSprite.gameObject.activeInHierarchy, Is.True);
+                Assert.That(bindings.HatAnchor.gameObject.activeInHierarchy, Is.False);
+                visual.ApplyAppearance(0, 0, 1, 0);
+                Assert.That(bindings.HatAnchor.gameObject.activeInHierarchy, Is.True);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
         public void LobbyIdentityAndOcclusion_TrackReadyHostAndExitState()
         {
             var root = new GameObject("Lobby Identity Contract Root");

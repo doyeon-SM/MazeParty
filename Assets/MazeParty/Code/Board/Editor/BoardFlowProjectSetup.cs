@@ -1028,6 +1028,8 @@ namespace MazeParty.Editor
             director.SetBoardFramingAnchor(framing);
             var presenter = root.AddComponent<BoardFlowCameraPresenter>();
             presenter.Configure(director);
+            presenter.ConfigureLocalPlayerMarker(
+                BoardLocalPlayerMarkerProjectSetup.CreateInstance(root.transform));
             presenter.ConfigureResourceTransferAssets(
                 RequireBoardResourceTransferPrefab(
                     ResourceTransferCoinPrefabPath),

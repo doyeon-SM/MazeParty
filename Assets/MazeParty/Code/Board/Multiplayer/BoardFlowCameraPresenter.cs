@@ -13,6 +13,10 @@ namespace MazeParty.Multiplayer
         private const int NameplateOcclusionHitCapacity = 64;
 
         [SerializeField] private GameplayCameraDirector cameraDirector;
+        [SerializeField] private BoardLocalPlayerMarkerView localPlayerMarker;
+        private GameplayCameraDirector _subscribedDirector;
+
+        public BoardLocalPlayerMarkerView LocalPlayerMarker => localPlayerMarker;
         [SerializeField] private GameObject resourceTransferCoinPrefab;
         [SerializeField] private GameObject resourceTransferKeyPrefab;
         [SerializeField] private BoardLandingEffectFeedbackView
@@ -42,6 +46,53 @@ namespace MazeParty.Multiplayer
         public void Configure(GameplayCameraDirector director)
         {
             cameraDirector = director;
+            if (isActiveAndEnabled) BindCameraEvents();
+        }
+
+        public void ConfigureLocalPlayerMarker(BoardLocalPlayerMarkerView marker)
+        {
+            localPlayerMarker = marker;
+            if (localPlayerMarker != null) localPlayerMarker.Hide();
+        }
+
+        private void BindCameraEvents()
+        {
+            if (_subscribedDirector == cameraDirector) return;
+            UnbindCameraEvents();
+            _subscribedDirector = cameraDirector;
+            if (_subscribedDirector == null) return;
+            _subscribedDirector.TransitionStarted += OnCameraTransitionChanged;
+            _subscribedDirector.TransitionCompleted += OnCameraTransitionChanged;
+        }
+
+        private void UnbindCameraEvents()
+        {
+            if (_subscribedDirector != null)
+            {
+                _subscribedDirector.TransitionStarted -= OnCameraTransitionChanged;
+                _subscribedDirector.TransitionCompleted -= OnCameraTransitionChanged;
+            }
+            _subscribedDirector = null;
+        }
+
+        private void OnCameraTransitionChanged(GameplayMode previous, GameplayMode target)
+        {
+            // Completion can run after Update. Restore presentation in that same
+            // frame rather than briefly exposing the face inside the camera.
+            ApplyLocalBodyVisibility(target);
+        }
+
+        private void ClearLocalPresentation()
+        {
+            if (_localAvatar != null && _localAvatar.AvatarVisual != null)
+            {
+                var visual = _localAvatar.AvatarVisual;
+                visual.SetOwnerFirstPerson(false);
+                visual.SetCameraTransitionHidden(false);
+                visual.SetTopViewHighlight(false);
+                visual.SetBoardTopViewHighlightVisible(false);
+            }
+            if (localPlayerMarker != null) localPlayerMarker.Hide();
         }
 
         public void ConfigureResourceTransferAssets(
@@ -63,6 +114,8 @@ namespace MazeParty.Multiplayer
 
         private void OnEnable()
         {
+            BindCameraEvents();
+            if (localPlayerMarker != null) localPlayerMarker.Hide();
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
         }
 
@@ -71,16 +124,8 @@ namespace MazeParty.Multiplayer
             // Player objects persist with the bootstrap scene. Never carry the
             // first-person hidden-body or board top-view highlight presentation
             // out of the Board scene and into the lobby.
-            if (_localAvatar != null)
-            {
-                var visual = _localAvatar.AvatarVisual;
-                if (visual != null)
-                {
-                    visual.SetOwnerFirstPerson(false);
-                    visual.SetTopViewHighlight(false);
-                    visual.SetBoardTopViewHighlightVisible(false);
-                }
-            }
+            UnbindCameraEvents();
+            ClearLocalPresentation();
             ClearNameplateOcclusion();
             ClearResourceTransferVisual();
             ClearLandingEffectFeedbackVisual();
@@ -96,10 +141,12 @@ namespace MazeParty.Multiplayer
                 cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
             }
 
+            BindCameraEvents();
             ResolveLocalAvatar();
             var match = NetworkMatchState.Instance;
             if (cameraDirector == null || match == null || !match.IsSpawned || !match.GameplayEnabled)
             {
+                ClearLocalPresentation();
                 ClearNameplateOcclusion();
                 ClearResourceTransferVisual();
                 ClearLandingEffectFeedbackVisual();
@@ -118,6 +165,7 @@ namespace MazeParty.Multiplayer
             if (match.IsReconnectPaused)
             {
                 _wasReconnectPaused = true;
+                ApplyLocalBodyVisibility(cameraDirector.ActiveMode);
                 RefreshOpponentNameplateOcclusion(
                     match,
                     cameraDirector.ActiveMode);
@@ -157,11 +205,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            ApplyLocalBodyVisibility(
-                cameraDirector.IsTransitioning &&
-                targetMode == GameplayMode.FirstPerson
-                    ? GameplayMode.BoardTopDown
-                    : targetMode);
+            ApplyLocalBodyVisibility(targetMode);
 
             // Camera movement and obstacle visibility change continuously even
             // while the replicated flow revision remains unchanged.
@@ -434,6 +478,16 @@ namespace MazeParty.Multiplayer
                 : avatar.EyePivot;
         }
 
+        private static Transform ResolveMarkerAnchor(NetworkPlayerAvatar avatar)
+        {
+            var bindings = avatar.AvatarVisual != null
+                ? avatar.AvatarVisual.Bindings
+                : null;
+            return bindings != null && bindings.NameplateAnchor != null
+                ? bindings.NameplateAnchor
+                : avatar.EyePivot;
+        }
+
         private static void DisableResourceVisualBehaviours(GameObject visual)
         {
             var behaviours = visual.GetComponentsInChildren<MonoBehaviour>(true);
@@ -478,6 +532,7 @@ namespace MazeParty.Multiplayer
                 if (previous != null && previous != visual)
                 {
                     previous.SetNameplateOccluded(false);
+                    previous.SetBoardNameplateCamera(null);
                 }
                 _observedNameplateVisuals[slot] = visual;
 
@@ -486,6 +541,7 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
+                visual.SetBoardNameplateCamera(canTestLineOfSight ? outputCamera : null);
                 var isLocalAvatar = avatar == _localAvatar || avatar.IsOwner;
                 visual.SetNameplateOccluded(
                     canTestLineOfSight &&
@@ -551,6 +607,7 @@ namespace MazeParty.Multiplayer
                 if (visual != null)
                 {
                     visual.SetNameplateOccluded(false);
+                    visual.SetBoardNameplateCamera(null);
                 }
                 _observedNameplateAvatars[slot] = null;
                 _observedNameplateVisuals[slot] = null;
@@ -564,6 +621,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ClearLocalPresentation();
             var manager = NetworkManager.Singleton;
             var playerObject = manager != null && manager.SpawnManager != null
                 ? manager.SpawnManager.GetLocalPlayerObject()
@@ -577,20 +635,31 @@ namespace MazeParty.Multiplayer
         {
             if (_localAvatar == null)
             {
+                if (localPlayerMarker != null) localPlayerMarker.Hide();
                 return;
             }
 
+            var transitioning = cameraDirector != null && cameraDirector.IsTransitioning;
+            var hideHeadCosmetics = transitioning &&
+                (targetMode == GameplayMode.FirstPerson ||
+                 cameraDirector.CompletedMode == GameplayMode.FirstPerson);
+            var showingTopView = targetMode == GameplayMode.BoardTopDown && !transitioning;
             var visual = _localAvatar.AvatarVisual;
             if (visual != null)
             {
+                visual.SetCameraTransitionHidden(hideHeadCosmetics);
                 visual.SetOwnerFirstPerson(
-                    targetMode == GameplayMode.FirstPerson);
+                    targetMode == GameplayMode.FirstPerson && !transitioning);
                 // Board top view reuses the persistent WaterShield request. The
                 // square highlight remains available to minigames only.
                 visual.SetTopViewHighlight(false);
                 visual.SetBoardTopViewHighlightVisible(
                     targetMode == GameplayMode.BoardTopDown);
             }
+            if (localPlayerMarker != null)
+                localPlayerMarker.Present(ResolveMarkerAnchor(_localAvatar),
+                    cameraDirector != null ? cameraDirector.OutputCamera : null,
+                    showingTopView);
             BoardFlowView.Instance?.SetTopViewShopHighlights(
                 targetMode == GameplayMode.BoardTopDown);
         }

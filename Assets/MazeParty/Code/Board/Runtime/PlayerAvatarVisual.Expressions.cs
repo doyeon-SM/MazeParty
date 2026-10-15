@@ -6,6 +6,7 @@ namespace MazeParty.Gameplay
     {
         private SpriteRenderer _faceSprite;
         private GameObject[] _hatModels;
+        private Renderer[][] _hatRenderers;
         private Transform _worldGestureRoot, _firstGestureRoot;
         private GameObject[] _worldGestures, _firstGestures;
         private byte _gesture;
@@ -20,6 +21,7 @@ namespace MazeParty.Gameplay
             }
             _faceSprite = bindings.FaceSprite;
             _hatModels = new GameObject[catalog.Hats.Length];
+            _hatRenderers = new Renderer[catalog.Hats.Length][];
             _worldGestureRoot = bindings.WorldGestureRoot;
             _firstGestureRoot = bindings.FirstPersonGestureRoot;
             _worldGestureRoot.gameObject.SetActive(false);
@@ -70,6 +72,7 @@ namespace MazeParty.Gameplay
             }
             model.SetActive(false);
             _hatModels[index] = model;
+            _hatRenderers[index] = model.GetComponentsInChildren<Renderer>(true);
             return model;
         }
         private GameObject[] InstantiateGestures(Transform root)
@@ -93,7 +96,7 @@ namespace MazeParty.Gameplay
         {
             _hatId = PlayerExpressionCatalog.SanitizeHat(id);
             if (_hat == null) return;
-            _hat.gameObject.SetActive(_hatId > 0);
+            RefreshHeadCosmeticVisibility();
             if (_hatModels == null) return;
             if (_hatId > 0) EnsureHatModel(_hatId - 1);
             for (int i = 0; i < _hatModels.Length; i++)

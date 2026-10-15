@@ -39,6 +39,9 @@ namespace MazeParty.Gameplay
         private Transform _nameplate;
         private TextMesh _nameText;
         private Renderer _nameRenderer;
+        private Renderer _headRenderer;
+        private Camera _boardNameplateCamera;
+        private Vector3 _nameplatePosePosition;
         private WorldTextOcclusion _nameTextOcclusion;
         private SpriteRenderer _lobbyHostIcon;
         private Color _defaultNameColor = Color.white;
@@ -73,6 +76,7 @@ namespace MazeParty.Gameplay
         private bool _crouching;
         private bool _eliminated;
         private bool _ownerFirstPerson;
+        private bool _cameraTransitionHidden;
         private bool _hiddenFromViewer;
         private bool _nameplateAllowed = true;
         private bool _nameplateOccluded;
@@ -189,6 +193,11 @@ namespace MazeParty.Gameplay
             }
         }
 
+        public void SetBoardNameplateCamera(Camera camera)
+        {
+            _boardNameplateCamera = camera;
+        }
+
         public void SetNameplateOccluded(bool occluded)
         {
             EnsureBuilt();
@@ -252,6 +261,7 @@ namespace MazeParty.Gameplay
             _worldModel = bindings.WorldModel;
             _body = bindings.BodyAnchor;
             _head = bindings.HeadAnchor;
+            _headRenderer = _head.GetComponentInChildren<Renderer>(true);
             _leftHand = bindings.LeftHandAnchor;
             _rightHand = bindings.RightHandAnchor;
             _leftEye = bindings.LeftEyeAnchor;
@@ -398,6 +408,23 @@ namespace MazeParty.Gameplay
             EnsureBuilt();
             _ownerFirstPerson = firstPerson;
             RefreshVisibility();
+        }
+
+        // Only the local viewer sets this. Gameplay colliders and the equipped
+        // appearance remain untouched while the camera passes through the head.
+        public void SetCameraTransitionHidden(bool hidden)
+        {
+            EnsureBuilt();
+            _cameraTransitionHidden = hidden;
+            RefreshHeadCosmeticVisibility();
+        }
+
+        private void RefreshHeadCosmeticVisibility()
+        {
+            if (_faceSprite != null)
+                _faceSprite.gameObject.SetActive(!_cameraTransitionHidden);
+            if (_hat != null)
+                _hat.gameObject.SetActive(_hatId > 0 && !_cameraTransitionHidden);
         }
 
         public void SetTopViewHighlight(bool highlighted)
@@ -558,19 +585,82 @@ namespace MazeParty.Gameplay
                 return;
             }
 
-            var camera = Camera.main;
-            if (camera == null)
-            {
-                return;
-            }
+            var camera = _boardNameplateCamera != null
+                ? _boardNameplateCamera
+                : Camera.main;
+            if (camera == null) return;
 
-            var direction = _nameplate.position - camera.transform.position;
-            if (direction.sqrMagnitude > 0.0001f)
+            if (_boardNameplateCamera != null)
             {
-                _nameplate.rotation = Quaternion.LookRotation(direction.normalized, Vector3.up);
+                // Camera up also works for a vertical top view, where world up
+                // is parallel to the viewing direction and cannot orient text.
+                _nameplate.rotation = camera.transform.rotation;
+                RefreshBoardNameplateLayout(camera);
+            }
+            else
+            {
+                var direction = _nameplate.position - camera.transform.position;
+                if (direction.sqrMagnitude > 0.0001f)
+                    _nameplate.rotation = Quaternion.LookRotation(
+                        direction.normalized, camera.transform.up);
             }
 
             RefreshLobbyNameplateLayout();
+        }
+
+        private void RefreshBoardNameplateLayout(Camera camera)
+        {
+            _nameplate.localPosition = _nameplatePosePosition;
+            if (_nameRenderer == null) return;
+            var anchor = camera.WorldToViewportPoint(_nameplate.position);
+            if (anchor.z <= camera.nearClipPlane) return;
+
+            var top = float.NegativeInfinity;
+            IncludeRendererViewportTop(camera, _headRenderer, ref top);
+            if (_hatId > 0 && _hatRenderers != null &&
+                _hatId <= _hatRenderers.Length)
+            {
+                var renderers = _hatRenderers[_hatId - 1];
+                if (renderers != null)
+                    foreach (var renderer in renderers)
+                        IncludeRendererViewportTop(camera, renderer, ref top);
+            }
+            if (float.IsNegativeInfinity(top)) return;
+
+            // Compare projected bounds, not a fixed world height: tall/wide hats
+            // and perspective/top-down views need different amounts of clearance.
+            var bottom = ViewportBoundsEdge(camera, _nameRenderer.bounds, false);
+            var gap = 6f / Mathf.Max(1f, camera.pixelHeight);
+            if (top + gap > bottom)
+            {
+                anchor.y += top + gap - bottom;
+                _nameplate.position = camera.ViewportToWorldPoint(anchor);
+            }
+        }
+
+        private static void IncludeRendererViewportTop(
+            Camera camera, Renderer renderer, ref float top)
+        {
+            if (renderer == null || !renderer.enabled ||
+                !renderer.gameObject.activeInHierarchy) return;
+            top = Mathf.Max(top, ViewportBoundsEdge(camera, renderer.bounds, true));
+        }
+
+        private static float ViewportBoundsEdge(
+            Camera camera, Bounds bounds, bool maximum)
+        {
+            var edge = maximum ? float.NegativeInfinity : float.PositiveInfinity;
+            for (var corner = 0; corner < 8; corner++)
+            {
+                var point = bounds.center + Vector3.Scale(bounds.extents,
+                    new Vector3((corner & 1) == 0 ? -1f : 1f,
+                        (corner & 2) == 0 ? -1f : 1f,
+                        (corner & 4) == 0 ? -1f : 1f));
+                var viewport = camera.WorldToViewportPoint(point);
+                if (viewport.z <= camera.nearClipPlane) continue;
+                edge = maximum ? Mathf.Max(edge, viewport.y) : Mathf.Min(edge, viewport.y);
+            }
+            return edge;
         }
 
         private void RefreshLobbyNameplateLayout()
@@ -651,7 +741,8 @@ namespace MazeParty.Gameplay
             _outfit.localPosition = new Vector3(0f, bodyY, 0f);
             _outfit.localScale = new Vector3(1f, Mathf.Lerp(1f, 0.62f, t), 1f);
             _outfit.localRotation = Quaternion.Euler(0f, 0f, bodyWobble);
-            _nameplate.localPosition = new Vector3(0f, Mathf.Lerp(1.5f, 0.84f, t), 0f);
+            _nameplatePosePosition = new Vector3(0f, Mathf.Lerp(1.5f, 0.84f, t), 0f);
+            _nameplate.localPosition = _nameplatePosePosition;
             if (_worldItemRoot != null)
             {
                 _worldItemRoot.localPosition = new Vector3(0f, handY + 0.08f, 0.46f);
@@ -728,6 +819,7 @@ namespace MazeParty.Gameplay
 
         private void RefreshVisibility()
         {
+            RefreshHeadCosmeticVisibility();
             var showingItem = IsUsingItem &&
                               PrototypeItemCatalog.IsValid(_activeItemId) &&
                               _worldItemModels[(int)_activeItemId] != null;

@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab",
@@ -63,6 +64,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.BoardLocalPlayerMarkerView",
             "MazeParty.Multiplayer.BoardCanvasBindings",
             "MazeParty.Multiplayer.BoardHudCanvasBindings",
             "MazeParty.Multiplayer.BoardMapCanvasBindings",
@@ -106,6 +108,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardItemCanvas.prefab",
@@ -275,6 +278,17 @@ namespace MazeParty.Multiplayer.Tests
                 foreach (var text in
                          prefab.GetComponentsInChildren<Text>(true))
                 {
+                    var marker = text.GetComponentInParent<BoardLocalPlayerMarkerView>(true);
+                    if (marker != null && marker.Label == text)
+                    {
+                        Assert.That(text.text, Is.EqualTo("ME"));
+                        Assert.That(text.fontStyle, Is.EqualTo(FontStyle.Bold));
+                        Assert.That(text.color, Is.EqualTo(Color.black));
+                        Assert.That(text.GetComponent<Outline>().effectColor, Is.EqualTo(Color.white));
+                        Assert.That(text.GetComponent<LocalizedText>(), Is.Null,
+                            "ME is intentionally identical in every language.");
+                        continue;
+                    }
                     if (text.name == "MovesText" &&
                         (path == "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" ||
                          path == "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"))
@@ -433,6 +447,14 @@ namespace MazeParty.Multiplayer.Tests
 
                     foreach (var component in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<MonoBehaviour>(true)))
                     {
+                        if (component is BoardFlowCameraPresenter presenter)
+                        {
+                            Assert.That(presenter.LocalPlayerMarker, Is.Not.Null);
+                            Assert.That(presenter.LocalPlayerMarker.HasRequiredReferences, Is.True);
+                            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                                presenter.LocalPlayerMarker.gameObject), Is.EqualTo(
+                                "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab"));
+                        }
                         if (component is HandEmoteWheelView wheel)
                         { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
                         if (component is LobbyExpressionView faces)

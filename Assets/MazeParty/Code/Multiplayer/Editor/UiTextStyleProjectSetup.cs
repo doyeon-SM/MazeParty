@@ -47,7 +47,8 @@ namespace MazeParty.Multiplayer.Editor
                     foreach (var text in
                              root.GetComponentsInChildren<Text>(true))
                     {
-                        if (text.fontStyle == FontStyle.Normal)
+                        if (text.GetComponentInParent<BoardLocalPlayerMarkerView>(true) != null ||
+                            text.fontStyle == FontStyle.Normal)
                         {
                             continue;
                         }
