@@ -3,7 +3,7 @@ namespace MazeParty.Multiplayer
     public static class MultiplayerConstants
     {
         public const int MaxPlayers = 4;
-        public const string SessionType = "mazeparty.online";
+        public static string SessionType => PlatformContext.SessionType;
         public const string LobbyPhase = "lobby";
         public const string PlayingPhase = "playing";
         public const string HostRecoveryPhase = "host-recovery";

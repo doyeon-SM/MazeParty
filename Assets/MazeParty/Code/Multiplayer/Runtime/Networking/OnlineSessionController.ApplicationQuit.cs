@@ -52,10 +52,11 @@ namespace MazeParty.Multiplayer
                 await activeOperation;
             }
 
-            if (_sessions != null && _sessions.IsInSession)
+            try
             {
-                await LeaveSessionAsync();
+                if (_sessions != null && _sessions.IsInSession) await LeaveSessionAsync();
             }
+            finally { (_identity as IPlatformIdentityProvider)?.Dispose(); }
         }
 
         private async Task FinishApplicationQuitAsync(

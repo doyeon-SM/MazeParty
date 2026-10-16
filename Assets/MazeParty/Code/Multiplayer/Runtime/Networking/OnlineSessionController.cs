@@ -313,7 +313,7 @@ namespace MazeParty.Multiplayer
             lobbyView?.SetDisplayName(displayName);
             lobbyView?.SetAppearance(_localProfile.Appearance);
 
-            _identity = new UnityAnonymousIdentityProvider();
+            _identity = PlatformContext.CreateIdentity();
             var relaySessions = new MpsRelaySessionProvider(_identity);
             relaySessions.PrepareHostRecoveryAsync = PrepareOriginalHostRecoveryAsync;
             relaySessions.HostNetworkRestored += OnOriginalHostNetworkRestored;
@@ -350,6 +350,7 @@ namespace MazeParty.Multiplayer
 
         private void Update()
         {
+            (_identity as IPlatformIdentityProvider)?.Tick();
             if (_applicationQuitting)
             {
                 return;
@@ -426,6 +427,7 @@ namespace MazeParty.Multiplayer
         private void OnDestroy()
         {
             _destroyed = true;
+            (_identity as IPlatformIdentityProvider)?.Dispose();
             _sessionOperations.BecameIdle -= OnSessionOperationsBecameIdle;
             ResetCompletedMatchLobbyReturnState();
             Application.quitting -= OnApplicationQuitting;

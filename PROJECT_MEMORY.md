@@ -7,7 +7,7 @@
 ## 현재 기준
 
 - 저장소·Unity 프로젝트: C:/Unity/MazeParty
-- 안정 기준 브랜치: main, 현재 작업 브랜치: dev/minigame
+- 안정 기준 브랜치: main, 현재 작업 브랜치: dev/stove (STOVE 전용 출시 준비)
 - 현재 게임 버전은 v0.54, PlayerSettings.bundleVersion은 0.54다.
 - v0.53은 원래 호스트 복귀 프로토콜을 사용한다. 이전 빌드와 같은 방에 접속하지 않는다.
 - 외부 패키지 원본은 Assets/Ignore, 프로젝트 전용 추적 프리팹은 Assets/MazeParty에
@@ -716,10 +716,26 @@
 - 기존 QA 페이지와 사용자 재테스트 상태는 변경하지 않았다. 이전 작업 말미의 미커밋·Notion 미반영 표기는 당시 상태이며 위 성공 커밋과 이번 문서 반영으로 후속 기록을 완료했다.
 - 문서 동기화 전 실제 저장소 작업 트리는 clean이었다. 이번 작업의 로컬 변경은 이 문서 기록뿐이며 새 Git 커밋은 만들지 않았다.
 
-## 2026-10-17 STOVE 출시 준비 문서 (조사·계획)
+## 2026-10-17 STOVE 출시 준비 — 별도 인증 서버 없는 최종 구현
 
-- 사용자 명시 요청으로 Notion에 `MazeParty · STOVE 출시 준비 체크리스트` 새 비공개 페이지를 작성했다. 기획서·회의록은 수정하지 않았다.
-- 문서: https://app.notion.com/p/3fbc227fda0381edbfa1d43003e1b92f
-- 범위: 입점·심사, SDK 준비·UGS 계정 연계, 도전과제 후보, STOVE 친구 초대 지원 확인 및 별도 PC 4인 테스트 계획, 상품 약관·개인정보, README 초안, 폰트·에셋 권리 점검, 출시 QA·운영.
-- 미정: 출시 형태·가격·지역·일정, 스토어 전용 Studio SDK 3.4.2와 통합 SDK 3.5.3 중 적합한 배포본, 친구 초대 API·테스터 권한, STOVE↔UGS 계정 연결 및 기존 익명 계정 처리, 도전과제 최종 기준, Git 공개 범위.
-- 공개 공식 문서와 현재 파일을 확인한 준비 계획이며 SDK 설치·친구 초대 실기·약관 설정·README 생성·Git 커밋을 완료한 것이 아니다. 기존 게임 기획·복구 계약은 유지한다.
+- 작업 브랜치 dev/stove. 사용자는 별도 서버 운영이 불가하므로 기존 UGS/MPS/Relay와 플레이어 호스트-클라이언트, 비공개 4인 방, 코드 입장을 유지한다. STOVE 친구 초대는 사용하지 않는다. STOVE/Steam/Development 방은 분리한다.
+- 다운로드한 SDK는 StovePCSDK_Full_net46_CSharp_3.5.3.0_x64 Full 신규 API다. BaseSDK.dll/BaseSDK_NET.dll을 Assets/Stove&Steam/STOVE/x86_64에 두고 .meta까지 Git 제외한다. 원본 다운로드는 Desktop에 남아 있다. Setup 명령으로 MAZEPARTY_STOVE Windows x64 임포터 제약을 재현한다.
+- STOVE 런처 확인 → SDK 초기화 → 클라이언트 소유권 조회 → 사용자 확인을 통과한 뒤 UGS 익명 로그인한다. SDK 실패 시 UGS로 우회하지 않는다. 계정 변경 시 재시작을 요구한다. 서버 HTTP 교환/Custom ID 토큰 주입/서버 서명 grant 및 STOVE 사용자 토큰 조회를 현재 클라이언트에서 제거했다.
+- UGS 계정은 STOVE 사용자·게임·SDK 환경·UGS 환경·플랫폼으로 분리한 로컬 프로필을 사용한다. 캐시된 세션 토큰을 유지한다. 개발 익명 계정과 과거 서버 연동 프로필/경기 저장은 출시 계정으로 이전하지 않는다. 출시 저장 경로는 release-local-v2다. 같은 기기의 프로필 재사용만 지원하며 다른 PC·캐시 삭제 후 동일 STOVE 계정 복원은 보장하지 않는다.
+- 접속 보안: 프로세스별 RSA-2048 개인키는 메모리에만 두고 공개키는 자신의 UGS 멤버 속성 mpAdmissionKey에 등록한다. 호스트는 실제 UGS 멤버와 등록 키를 대조하고 방/플랫폼/환경/버전/계정/시각/nonce 서명을 검증한다. 재전송, 중복 활성 연결, 예약되지 않은 경기 좌석, 변조, 유효기간 초과를 거부한다. 토큰/개인키는 호스트에 보내지 않는다. 호스트가 승인된 연결과 좌석의 대응을 기록한다.
+- 새 프로세스의 재접속은 기존 멤버에 한해 LobbyService.UpdatePlayerAsync로 자기 공개키만 먼저 갱신한다. 현재 MPS 2.3.1의 세션 ID=Lobby ID 및 ReconnectSessionOptions에 PlayerProperties가 없는 점을 설치된 패키지 소스로 확인했다. 이후 기존 MPS/NGO 재접속·원래 호스트 복귀 흐름을 사용한다.
+- STOVE 소유권은 클라이언트 검사이며 서버가 검증한 STOVE↔UGS 연결이 아니다. UGS 멤버 공개키/서명 검증은 계정의 방 연결을 확인하지만 플랫폼 구매 권한을 독립 검증하지 못한다. 변조 클라이언트, 코드 유출로 인한 정상 계정의 임의 참가, 악의적 호스트의 게임 조작까지 막는다고 주장하지 않는다.
+- stove.json은 Assets/Stove&Steam/.local에 있고 ugsEnvironment=production, stoveEnvironment=real, stoveGameId, stoveAppKey 네 필드만 둔다. 2026-10-17 사용자가 Game ID/AppKey 입력을 완료했다. 값 노출 없이 JSON 파싱, 필수 네 필드의 존재·비어 있지 않음, 환경 문자열 형식을 확인했다. 키의 실제 유효성·상품 매칭·런처 로그인은 아직 검증하지 않았다. 상품 No./Application Secret은 사용하지 않는다. 기존 서버 URL/공개키/채널/스키마 필드는 제거했다. Steam 로컬 JSON에는 ugsEnvironment만 둔다.
+- SDK 환경은 공식 신규 PC SDK 예시의 real을 기본값으로 삼는다. Sandbox/Live라는 설명용 명칭을 SDK 문자열로 그대로 전달하지 않는다. 발급받은 별도 테스트 환경은 담당자의 실제 SDK 문자열에 맞춘다.
+- 기존 UGS production을 그대로 사용할 수 있으며 플랫폼별 환경을 새로 만들도록 강제하지 않는다. 플랫폼별 컴파일 정의, 세션 타입, 호스트 방 속성(mpa2), 연결 프로토콜(MPA3), 계정/저장 범위를 구분한다. 별도 UGS 환경을 구성하면 JSON에 존재하는 환경명을 넣을 수 있다.
+- Steam SDK 인증은 아직 미구현이며 온라인 접속·Release는 계속 차단한다. STOVE 없는 Steam Integration Check와 Windows x64 IL2CPP 프로필은 유지한다. STOVE Release는 유효한 Game ID/AppKey가 필요하고 Integration Check는 설정을 출력하지 않는다.
+- Backend/StoveAuthBridge 소스는 원위치에 보존하고 README에 현재 사용하지 않는 이전 구현임을 표시했다. 현재 런타임은 인증 브리지를 호출하지 않으며 배포가 필요하지 않다.
+- 혼자 4인 테스트: Select Development → Windows Development (Mono x64)로 한 번 빌드 → Tools/StartFourPlayerTest.ps1. 서로 다른 local4-p1~p4 프로필로 수동 조작용 창 4개를 열고 같은 방 코드로 입장한다. 실제 STOVE 로그인/소유권 검증과 별개다.
+- 사용자 요청으로 이전에 최신화한 출시 체크리스트는 https://app.notion.com/p/3fbc227fda0381edbfa1d43003e1b92f 이며 이번 구현 중에는 Notion을 수정하지 않는다. 확정 구현/사용 방법은 Docs/STOVE_SETUP.md에 기록한다.
+- 남은 작업: 키 입력 후 실제 STOVE 런처·소유권·UGS 로그인, 서로 다른 계정/PC의 4인·재접속·원래 호스트 복귀, Steam SDK 인증, 도전과제, 약관, Git README, 폰트/에셋 권리 점검. 출시 형태·가격·지역·일정은 미정이다.
+- 이번 변경 검증 결과는 아래에 추가한다. Git 커밋/푸시는 요청받지 않았다.
+- 검증: 관련 EditMode 16/16 통과(UGS 멤버 키/서명·플랫폼/환경/방·시각 경계·변조/재전송·좌석 권한·로컬 계정 분리·설정의 서버 비밀값 제외·기존 버전/저장/복구). STOVE 프로필 컴파일 오류 0개. 비어 있는 JSON으로 실제 StovePlayerIdentityProvider를 호출했을 때 UGS State=Uninitialized를 유지하며 접속을 거부했다.
+- STOVE IL2CPP 통합 검증 빌드 성공: Builds/stove-integration-20261017-043217/MazeParty.exe. 상품키 미입력 상태라 로그인 설정을 포함하지 않은 패키징 검증용 출력이다.
+- Steam IL2CPP 통합 검증 빌드 성공: Builds/steam-integration-20261017-043620/MazeParty.exe. STOVE 로그인 타입 제외 및 출력 BaseSDK DLL 0개 확인. 이번 변경 후 양쪽 스토어 빌드 성공.
+
+- Development Mono 개발 빌드도 현재 코드로 갱신했다: Builds/Windows-Development/MazeParty.exe. 에디터는 작업 시작 시와 같은 Development 프로필로 복원했다. STOVE 상품키가 비어 있어 실제 SDK 로그인·소유권 확인과 4인 네트워크/원래 호스트 복귀는 미검증이다. 최종 컴파일 오류 0개, Git diff --check 통과. 커밋·푸시·Notion 수정은 하지 않았다.

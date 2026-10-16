@@ -55,8 +55,8 @@ namespace MazeParty.Multiplayer
         // TODO(STEAM-AUTH): Replace or decorate this provider when Steam is enabled.
         // Obtain a Web API session ticket via Steamworks GetAuthTicketForWebApi, convert it
         // to the format required by Unity Authentication, and call SignInWithSteamAsync.
-        // Use LinkWithSteamAsync when upgrading an existing anonymous player. The Steam
-        // ticket identity must match the identity configured in the Unity Dashboard.
+        // Release accounts start fresh in a separate platform profile; do not link development
+        // anonymous accounts. The ticket must match the Unity Dashboard Steam identity.
 
         private static string GetCommandLineProfile()
         {

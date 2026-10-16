@@ -99,6 +99,12 @@ namespace MazeParty.Multiplayer
                     token.ThrowIfCancellationRequested();
                     try
                     {
+                        // Refresh the proof before MPS can start a replacement connection.
+                        if (PlatformContext.IsStoreBuild && preparedEpoch != null)
+                        {
+                            await _identity.SignInAsync(_identity.DisplayName);
+                            PrepareConnectionPayload("id:" + session.Id);
+                        }
                         await session.RefreshAsync();
                         if (!OwnsSession(session)) return;
                         if (!IsWaitingForOriginalHost(session))
@@ -120,6 +126,8 @@ namespace MazeParty.Multiplayer
                             if (preparedEpoch != epoch)
                             {
                                 if (PrepareHostRecoveryAsync != null) await PrepareHostRecoveryAsync();
+                                await _identity.SignInAsync(_identity.DisplayName);
+                                PrepareConnectionPayload("id:" + session.Id);
                                 token.ThrowIfCancellationRequested();
                                 if (!OwnsSession(session)) return;
                                 if (_identity.PlayerId == _originalHostId)
@@ -184,6 +192,9 @@ namespace MazeParty.Multiplayer
                 token.ThrowIfCancellationRequested();
                 if (!OwnsSession(session) || !session.IsHost) return;
                 host.SetProperty(NetworkMetadataProperty, null);
+                if (PlatformContext.IsStoreBuild)
+                    host.SetProperty(PlatformSessionAdmission.Property, new SessionProperty(
+                        PlatformSessionAdmission.Empty(PlatformContext.Channel, PlatformContext.EnvironmentName), VisibilityPropertyOptions.Member));
                 host.SetProperty(MultiplayerConstants.PhaseProperty,
                     new SessionProperty(MultiplayerConstants.HostRecoveryPhase, VisibilityPropertyOptions.Member));
                 host.SetProperty(MultiplayerConstants.HostRecoveryEpochProperty,
@@ -203,7 +214,7 @@ namespace MazeParty.Multiplayer
                 if (!OwnsSession(session) || !session.IsHost || session.Host != _originalHostId) return;
                 var host = session.AsHost();
                 if (host.Network.State != NetworkState.Started)
-                    await host.Network.StartRelayNetworkAsync(new RelayNetworkOptions());
+                    await host.Network.StartRelayNetworkAsync(new RelayNetworkOptions(RelayProtocol.DTLS));
                 token.ThrowIfCancellationRequested();
                 if (!OwnsSession(session) || !session.IsHost) return;
                 host.SetProperty(MultiplayerConstants.PhaseProperty,

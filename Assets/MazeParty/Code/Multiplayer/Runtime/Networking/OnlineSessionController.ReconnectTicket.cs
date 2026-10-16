@@ -61,7 +61,7 @@ namespace MazeParty.Multiplayer
             PlayerPrefs.Save();
         }
 
-        private static string BuildPlayingReconnectTicketKey()
+        private static string BuildPlayingReconnectTicketKey(string playerId = null)
         {
             var profile = "default";
             var arguments = Environment.GetCommandLineArgs();
@@ -83,7 +83,8 @@ namespace MazeParty.Multiplayer
                 break;
             }
 
-            return PlayingReconnectTicketPrefix + Hash128.Compute(profile);
+            return PlayingReconnectTicketPrefix + Hash128.Compute(PlatformContext.IsStoreBuild
+                ? PlatformContext.StorageScope + ":" + (playerId ?? "unsigned") + ":" + profile : profile);
         }
     }
 }

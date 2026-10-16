@@ -44,6 +44,8 @@ namespace MazeParty.Multiplayer
 
             var sessionProperties = new Dictionary<string, SessionProperty>
             {
+                [PlatformSessionAdmission.Property] = new SessionProperty(PlatformSessionAdmission.Empty(
+                    PlatformContext.Channel, PlatformContext.EnvironmentName), VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.OriginalHostProperty] =
                     new SessionProperty(_identity.PlayerId, VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.SlotProperty(0)] =
@@ -90,6 +92,7 @@ namespace MazeParty.Multiplayer
 
             // MPS owns NGO lifecycle here. CreateSessionAsync configures Relay and calls
             // NetworkManager.StartHost internally; do not call StartHost or Shutdown here.
+            PrepareConnectionPayload("create");
             var createdSession = await MultiplayerService.Instance.CreateSessionAsync(options);
             AttachSession(createdSession);
             await EnsureSeatAssignmentsAsync();
@@ -102,7 +105,9 @@ namespace MazeParty.Multiplayer
             var normalizedCode = string.IsNullOrWhiteSpace(code)
                 ? string.Empty
                 : code.Trim().ToUpperInvariant();
-            if (normalizedCode.Length == 0)
+            ThrottleJoinAttempt();
+            if (normalizedCode.Length < 4 || normalizedCode.Length > 16 || normalizedCode.Any(character =>
+                    !((character >= 'A' && character <= 'Z') || (character >= '0' && character <= '9'))))
             {
                 throw new ArgumentException(GameText.T("Enter an invite code."), nameof(code));
             }
@@ -119,6 +124,7 @@ namespace MazeParty.Multiplayer
                 RelayProtocol = RelayProtocol.DTLS
             });
 
+            PrepareConnectionPayload("code:" + normalizedCode);
             // MPS applies Relay connection data and calls NetworkManager.StartClient.
             var joinedSession = await RetryRateLimitedSessionOperationAsync(() =>
                 MultiplayerService.Instance.JoinSessionByCodeAsync(normalizedCode, options));
@@ -181,11 +187,13 @@ namespace MazeParty.Multiplayer
             ThrowIfAlreadyInSession();
             if (string.IsNullOrWhiteSpace(sessionId)) throw new ArgumentException("A reconnect session ID is required.");
             await _identity.SignInAsync(displayName);
+            PrepareConnectionPayload("id:" + sessionId);
             var joinedIds = await RetryRateLimitedSessionOperationAsync(() =>
                 MultiplayerService.Instance.GetJoinedSessionIdsAsync());
             ISession recovered;
             if (joinedIds != null && joinedIds.Contains(sessionId, StringComparer.Ordinal))
             {
+                await RefreshAdmissionKeyBeforeReconnectAsync(sessionId);
                 recovered = await RetryRateLimitedSessionOperationAsync(() =>
                     MultiplayerService.Instance.ReconnectToSessionAsync(sessionId,
                         new ReconnectSessionOptions { Type = MultiplayerConstants.SessionType }));
@@ -225,11 +233,11 @@ namespace MazeParty.Multiplayer
             if (!ReferenceEquals(session, _session) || _ending) return;
             if (session.CurrentPlayer == null)
                 throw new InvalidOperationException("The local session member is not available yet.");
-            session.CurrentPlayer.SetProperty(
-                MultiplayerConstants.NetworkClientIdProperty,
-                new PlayerProperty(
-                    clientId.ToString(CultureInfo.InvariantCulture),
-                    VisibilityPropertyOptions.Member));
+            if (PlatformContext.IsStoreBuild)
+                await PublishVerifiedHostConnectionAsync(clientId);
+            else
+                session.CurrentPlayer.SetProperty(MultiplayerConstants.NetworkClientIdProperty,
+                    new PlayerProperty(clientId.ToString(CultureInfo.InvariantCulture), VisibilityPropertyOptions.Member));
             session.CurrentPlayer.SetProperty(
                 MultiplayerConstants.LeavingProperty,
                 new PlayerProperty("0", VisibilityPropertyOptions.Member));
@@ -243,6 +251,7 @@ namespace MazeParty.Multiplayer
 
         public bool TryGetAuthoritativeSlot(ulong clientId, out int slot)
         {
+            if (PlatformContext.IsStoreBuild) return TryGetVerifiedSlot(clientId, out slot);
             slot = -1;
             var session = _session;
             if (session == null)
@@ -314,10 +323,8 @@ namespace MazeParty.Multiplayer
                 var matches = session.Players
                     .Where(player =>
                         player.Id != session.CurrentPlayer.Id &&
-                        GetPlayerProperty(
-                            player,
-                            MultiplayerConstants.NetworkClientIdProperty,
-                            string.Empty) == clientIdText)
+                        (PlatformContext.IsStoreBuild ? player.Id == VerifiedPlayerForClient(clientId) :
+                         GetPlayerProperty(player, MultiplayerConstants.NetworkClientIdProperty, string.Empty) == clientIdText))
                     .ToArray();
 
                 if (matches.Length == 0)
@@ -569,17 +576,20 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static Dictionary<string, PlayerProperty> BuildPlayerProperties(string displayName)
+        private Dictionary<string, PlayerProperty> BuildPlayerProperties(string displayName)
         {
-            return new Dictionary<string, PlayerProperty>
+            var properties = new Dictionary<string, PlayerProperty>
             {
-                [MultiplayerConstants.DisplayNameProperty] =
-                    new PlayerProperty(displayName, VisibilityPropertyOptions.Member),
-                [MultiplayerConstants.ReadyProperty] =
-                    new PlayerProperty("0", VisibilityPropertyOptions.Member),
-                [MultiplayerConstants.LeavingProperty] =
-                    new PlayerProperty("0", VisibilityPropertyOptions.Member)
+                [MultiplayerConstants.DisplayNameProperty] = new PlayerProperty(displayName, VisibilityPropertyOptions.Member),
+                [MultiplayerConstants.ReadyProperty] = new PlayerProperty("0", VisibilityPropertyOptions.Member),
+                [MultiplayerConstants.LeavingProperty] = new PlayerProperty("0", VisibilityPropertyOptions.Member)
             };
+            if (PlatformContext.IsStoreBuild)
+            {
+                var identity = RequirePlatformIdentity();
+                properties[AdmissionProof.PlayerKeyProperty] = new PlayerProperty(identity.Proof.PublicKey, VisibilityPropertyOptions.Member);
+            }
+            return properties;
         }
 
         private void AttachSession(ISession session)
@@ -1136,6 +1146,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearSession()
         {
+            _admissionReplay.Clear();
             CancelHostRecovery();
 
             var session = _session;
@@ -1152,7 +1163,9 @@ namespace MazeParty.Multiplayer
 
         private static bool HasCompatibleBuild(ISession session)
         {
-            return session.Properties.TryGetValue(
+            return PlatformSessionAdmission.HasScope(GetSessionProperty(session, PlatformSessionAdmission.Property, ""),
+                       PlatformContext.Channel, PlatformContext.EnvironmentName) &&
+                   session.Properties.TryGetValue(
                        MultiplayerConstants.BuildVersionProperty,
                        out var buildProperty) &&
                    buildProperty != null &&

@@ -68,6 +68,7 @@ namespace MazeParty.Multiplayer
         private async Task InitializeRecoveryEntryAsync()
         {
             await _identity.SignInAsync(_localProfile.DisplayName);
+            _playingReconnectTicketKey = BuildPlayingReconnectTicketKey(_identity.PlayerId);
             RefreshSavedEntry();
         }
 

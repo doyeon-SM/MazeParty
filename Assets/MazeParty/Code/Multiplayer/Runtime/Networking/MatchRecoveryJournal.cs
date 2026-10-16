@@ -77,6 +77,7 @@ namespace MazeParty.Multiplayer
             : this(Path.Combine(
                 Application.persistentDataPath,
                 ProductDirectoryName,
+                PlatformContext.StorageScope,
                 HostStateDirectoryName,
                 RecoveryDirectoryName))
         {

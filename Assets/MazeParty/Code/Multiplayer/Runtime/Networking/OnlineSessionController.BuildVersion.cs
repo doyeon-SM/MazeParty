@@ -10,6 +10,7 @@ namespace MazeParty.Multiplayer
         private void ConfigureBuildVersionApproval()
         {
             _networkManager.NetworkConfig.ConnectionApproval = true;
+            _networkManager.NetworkConfig.ClientConnectionBufferTimeout = 25;
             _networkManager.NetworkConfig.ConnectionData =
                 BuildVersionCompatibility.CreateConnectionPayload();
             _networkManager.ConnectionApprovalCallback = ApproveBuildVersion;
@@ -53,10 +54,40 @@ namespace MazeParty.Multiplayer
             return false;
         }
 
+        private async System.Threading.Tasks.Task ApproveStorePlayerAsync(
+            NetworkManager.ConnectionApprovalRequest request, NetworkManager.ConnectionApprovalResponse response)
+        {
+            try
+            {
+                var approved = _sessions is MpsRelaySessionProvider provider &&
+                    await provider.ApproveStoreConnectionAsync(request.ClientNetworkId, request.Payload);
+                response.Approved = approved && !_destroyed && !_applicationQuitting;
+                response.CreatePlayerObject = response.Approved;
+                response.Reason = response.Approved ? string.Empty : "MazeParty.AdmissionDenied";
+                if (!response.Approved) _buildVersionRejections.RecordServerRejectedClient(request.ClientNetworkId);
+            }
+            finally { response.Pending = false; }
+        }
+
         private void ApproveBuildVersion(
             NetworkManager.ConnectionApprovalRequest request,
             NetworkManager.ConnectionApprovalResponse response)
         {
+            if (PlatformContext.IsStoreBuild)
+            {
+                if (request.ClientNetworkId == NetworkManager.ServerClientId)
+                {
+                    response.Approved = _identity.IsSignedIn;
+                    response.CreatePlayerObject = response.Approved;
+                    response.Pending = false;
+                    return;
+                }
+                response.Pending = true;
+                response.Approved = false;
+                response.CreatePlayerObject = false;
+                _ = ApproveStorePlayerAsync(request, response);
+                return;
+            }
             var approved =
                 BuildVersionCompatibility.IsCompatiblePayload(request.Payload);
             response.Approved = approved;

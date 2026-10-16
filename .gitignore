@@ -116,3 +116,12 @@ Assets/Ignore/UnitySimpleMiniMap/*
 !Assets/Ignore/UnitySimpleMiniMap/LICENSE
 !Assets/Ignore/UnitySimpleMiniMap/LICENSE.meta
 Build.zip
+
+# STOVE SDK binaries are restored from the licensed local download.
+/Assets/Plugins/STOVE/**/*.dll
+/Backend/StoveAuthBridge/.env
+/Backend/StoveAuthBridge/*.pem
+/Assets/StreamingAssets/mazeparty-platform.json*
+# Local store SDKs and settings, including Unity metadata.
+/Assets/Stove&Steam/
+/Assets/Stove&Steam.meta

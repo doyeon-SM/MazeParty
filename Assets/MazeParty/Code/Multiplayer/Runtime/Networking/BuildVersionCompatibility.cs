@@ -23,7 +23,7 @@ namespace MazeParty.Multiplayer
 
         internal static byte[] CreateConnectionPayload(string version)
         {
-            return StrictUtf8.GetBytes(PayloadPrefix + (version ?? string.Empty));
+            return StrictUtf8.GetBytes(PayloadPrefix + PlatformContext.Channel + ":" + (version ?? string.Empty));
         }
 
         public static bool IsCompatibleVersion(string remoteVersion)
