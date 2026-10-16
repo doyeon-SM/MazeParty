@@ -31,7 +31,6 @@ namespace MazeParty.Multiplayer
         // detection plus this grace. Configure 75-90 seconds, not exactly 60.
         public const double ReconnectGraceSeconds =
             CompletedMatchReturnRules.ReconnectGraceSeconds;
-        public const double KeyShopRevealSeconds = 5d;
         public const double AllPlayersArrivalGraceSeconds = 3d;
         public const double SkipRevealSeconds = 2d;
         private const int AllPlayersMask = (1 << MultiplayerConstants.MaxPlayers) - 1;
@@ -89,6 +88,11 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<bool> _keyShopRevealActive = new NetworkVariable<bool>();
         private readonly NetworkVariable<double> _keyShopRevealEndsAt = new NetworkVariable<double>();
         private readonly NetworkVariable<int> _keyShopRevealRevision = new NetworkVariable<int>();
+        private readonly NetworkVariable<int> _keyShopBuyerSlot = new NetworkVariable<int>(-1);
+        private readonly NetworkVariable<double> _keyShopTransitionSeconds =
+            new NetworkVariable<double>(KeyPurchasePresentationRules.DefaultTransitionSeconds);
+        private readonly NetworkVariable<double> _keyShopRevealPausedRemaining = new NetworkVariable<double>();
+        private bool _keyShopRelocationPublished;
         private readonly NetworkVariable<ItemShopSnapshot> _itemShop0 =
             new NetworkVariable<ItemShopSnapshot>();
         private readonly NetworkVariable<ItemShopSnapshot> _itemShop1 =
@@ -145,7 +149,6 @@ namespace MazeParty.Multiplayer
         private KeyShopRuntimeState _keyShopRuntime;
         private BoardTopology _boardTopology;
         private double _keyShopAppearanceEndsAt;
-        private double _keyShopRevealRemainingDuringReconnect;
         private readonly ItemShopStock[] _itemShopStocks =
             new ItemShopStock[ItemShopRules.ShopCount];
         private NetworkWorldDiceCoordinator _diceCoordinator;
@@ -428,10 +431,21 @@ namespace MazeParty.Multiplayer
             : 0d;
         public double KeyShopRevealRemaining => _keyShopRevealActive.Value
             ? IsSimulationSuspended
-                ? Math.Max(0d, _keyShopRevealRemainingDuringReconnect)
+                ? Math.Max(0d, _keyShopRevealPausedRemaining.Value)
                 : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
             : 0d;
         public double SynchronizedNow => ServerNow;
+        public int KeyShopBuyerSlot => _keyShopBuyerSlot.Value;
+        public KeyPurchasePresentationPhase KeyPurchasePhase => GetKeyPurchasePhase(out _);
+
+        public KeyPurchasePresentationPhase GetKeyPurchasePhase(out float acquisitionMotion)
+        {
+            acquisitionMotion = 0f;
+            if (!IsKeyShopRevealActive) return KeyPurchasePresentationPhase.None;
+            return KeyPurchasePresentationRules.GetPhase(
+                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value) -
+                KeyShopRevealRemaining, _keyShopTransitionSeconds.Value, out acquisitionMotion);
+        }
 
         public BoardResourceTransferPhase GetResourceTransferPresentationPhase(
             out float phaseProgress,
@@ -579,11 +593,7 @@ namespace MazeParty.Multiplayer
             if (_keyShopRevealActive.Value)
             {
                 StopAllAvatarInputOnServer();
-                AdvanceKeyShopLifecycleOnServer(now);
-                if (_keyShopRevealEndsAt.Value > 0d && now >= _keyShopRevealEndsAt.Value)
-                {
-                    CompleteKeyShopRevealOnServer(now);
-                }
+                AdvanceKeyShopRevealOnServer(now);
 
                 return;
             }
@@ -699,7 +709,7 @@ namespace MazeParty.Multiplayer
             _keyShopAppearanceEndsAt = 0d;
             _keyShopRevealActive.Value = false;
             _keyShopRevealEndsAt.Value = 0d;
-            _keyShopRevealRemainingDuringReconnect = 0d;
+            _keyShopRevealPausedRemaining.Value = 0d;
             _itemShopStocks[0] = null;
             _itemShopStocks[1] = null;
             _itemShop0.Value = default;
@@ -780,7 +790,7 @@ namespace MazeParty.Multiplayer
             _keyShopAppearanceEndsAt = 0d;
             _keyShopRevealActive.Value = false;
             _keyShopRevealEndsAt.Value = 0d;
-            _keyShopRevealRemainingDuringReconnect = 0d;
+            _keyShopRevealPausedRemaining.Value = 0d;
             _scheduledSkipAt = 0d;
             _scheduledSkipPaused = false;
             _pausedScheduledSkipRemaining = 0d;
@@ -980,7 +990,7 @@ namespace MazeParty.Multiplayer
             PauseCombatAndPersonalProtectionOnServer(now);
             if (_keyShopRevealActive.Value)
             {
-                _keyShopRevealRemainingDuringReconnect =
+                _keyShopRevealPausedRemaining.Value =
                     Math.Max(0d, _keyShopRevealEndsAt.Value - now);
                 _keyShopRevealEndsAt.Value = 0d;
                 // The flow was already paused for the reveal. Preserve the
@@ -1426,8 +1436,8 @@ namespace MazeParty.Multiplayer
             if (_keyShopRevealActive.Value)
             {
                 _keyShopRevealEndsAt.Value = now +
-                                             Math.Max(0d, _keyShopRevealRemainingDuringReconnect);
-                _keyShopRevealRemainingDuringReconnect = 0d;
+                                             Math.Max(0d, _keyShopRevealPausedRemaining.Value);
+                _keyShopRevealPausedRemaining.Value = 0d;
             }
             else
             {

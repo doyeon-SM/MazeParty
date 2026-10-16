@@ -39,6 +39,7 @@ namespace MazeParty.Multiplayer
         private GameObject _resourceTransferVisual;
         private int _resourceTransferVisualRevision = -1;
         private BoardResourceTransferPhase _resourceTransferVisualPhase;
+        private KeyPurchasePresentationPhase _observedKeyPurchasePhase;
         private BoardLandingEffectFeedbackView _landingEffectFeedbackVisual;
         private int _landingEffectFeedbackRevision = -1;
         private bool _landingEffectFeedbackInitialized;
@@ -173,15 +174,21 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshCombatSpectatorFocus(match);
-            var resourceTransferPhase =
-                RefreshResourceTransferPresentation(match);
-            var landingFocus = resourceTransferPhase !=
+            var purchasePhase = match.KeyPurchasePhase;
+            var resourceTransferPhase = match.IsKeyShopRevealActive
+                ? RefreshKeyPurchasePresentation(match)
+                : RefreshResourceTransferPresentation(match);
+            var landingFocus = !match.IsKeyShopRevealActive && resourceTransferPhase !=
                                BoardResourceTransferPhase.Source &&
                                resourceTransferPhase !=
                                BoardResourceTransferPhase.Destination &&
                                RefreshLandingCameraFocus(match);
             var targetMode = match.IsKeyShopRevealActive
-                ? GameplayMode.BoardTopDown
+                ? purchasePhase == KeyPurchasePresentationPhase.AcquireKey
+                    ? GameplayMode.BoardResourceEvent
+                    : purchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson
+                        ? GameplayMode.FirstPerson
+                        : GameplayMode.BoardTopDown
                 : (resourceTransferPhase == BoardResourceTransferPhase.Source ||
                    resourceTransferPhase == BoardResourceTransferPhase.Destination)
                     ? GameplayMode.BoardResourceEvent
@@ -201,10 +208,15 @@ namespace MazeParty.Multiplayer
                 _observedRevision = match.StateRevision;
                 if (cameraDirector.ActiveMode != targetMode)
                 {
-                    cameraDirector.SwitchTo(targetMode);
+                    if (purchasePhase == KeyPurchasePresentationPhase.RevealShop &&
+                        _observedKeyPurchasePhase != KeyPurchasePresentationPhase.RevealShop)
+                        cameraDirector.SnapTo(targetMode);
+                    else
+                        cameraDirector.SwitchTo(targetMode);
                 }
             }
 
+            _observedKeyPurchasePhase = purchasePhase;
             ApplyLocalBodyVisibility(targetMode);
 
             // Camera movement and obstacle visibility change continuously even
@@ -377,6 +389,30 @@ namespace MazeParty.Multiplayer
                 avatar.transform,
                 head);
             return phase;
+        }
+
+        private BoardResourceTransferPhase RefreshKeyPurchasePresentation(NetworkMatchState match)
+        {
+            var phase = match.GetKeyPurchasePhase(out var motion);
+            var avatar = match.GetAvatarForSlot(match.KeyShopBuyerSlot);
+            if (phase != KeyPurchasePresentationPhase.AcquireKey || avatar == null)
+            {
+                ClearResourceTransferVisual();
+                return BoardResourceTransferPhase.None;
+            }
+
+            var head = ResolveHeadAnchor(avatar);
+            cameraDirector.SetBoardResourceEventFocus(avatar.transform, head,
+                resourceTransferHeadOffset + resourceTransferTravelHeight * 0.5f);
+            RefreshResourceTransferVisual(new BoardResourceTransferSnapshot
+            {
+                Active = true,
+                Revision = match.KeyShopRevealRevision,
+                Resource = (byte)BoardSpecialEventResource.Key,
+                DestinationSlot = match.KeyShopBuyerSlot,
+                Amount = 1
+            }, BoardResourceTransferPhase.Destination, motion, avatar.transform, head);
+            return BoardResourceTransferPhase.Destination;
         }
 
         private void RefreshResourceTransferVisual(

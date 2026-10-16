@@ -94,6 +94,13 @@ namespace MazeParty.Gameplay
         public BoardCameraFramingAnchor BoardFramingAnchor => boardFramingAnchor;
         public bool IsTransitioning => _isTransitioning;
         public bool SmoothCameraTransitions => smoothCameraTransitions;
+        // Both directions share this upper bound. Reserve the slowest possible
+        // yaw/pitch plus a few render frames so the server never resumes mid-zoom.
+        public double BoardTransitionBudgetSeconds => !smoothCameraTransitions ? 0.25d :
+            Mathf.Max(directTransitionDuration, 270f / Mathf.Max(30f, boardRotationDegreesPerSecond)) +
+            Mathf.Max(boardToOverheadDuration + overheadToFirstPersonDuration,
+                270f / Mathf.Max(30f, boardRotationDegreesPerSecond)) +
+            boardRecenterDuration + 0.25d;
 
         public void Configure(
             Camera cameraOutput,

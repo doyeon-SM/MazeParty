@@ -44,10 +44,10 @@ namespace MazeParty.Multiplayer
                     "A validated key purchase failed after reserving its relocation.");
             }
 
-            SyncKeyShopSnapshot();
-            var now = ServerNow;
-            _keyShopAppearanceEndsAt = now + 0.75d;
-            BeginKeyShopRevealOnServer(now);
+            // Reserve the destination with the purchase, but keep the old
+            // replicated shop visible until the acquisition shot has finished.
+            _keyShopAppearanceEndsAt = 0d;
+            BeginKeyShopRevealOnServer(ServerNow, avatar.AssignedSlot);
             return true;
         }
 
@@ -331,7 +331,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void BeginKeyShopRevealOnServer(double now)
+        private void BeginKeyShopRevealOnServer(double now, int buyerSlot)
         {
             EnsureFlowModel();
             ResolveWorldDiceCoordinator();
@@ -351,11 +351,37 @@ namespace MazeParty.Multiplayer
             _pausedChoiceRemaining.Value = GetPersonalChoiceRemainingOnServer(now);
             _pausedShieldRemaining.Value = _flow.GetOpeningProtectionRemaining(now);
             PauseCombatAndPersonalProtectionOnServer(now);
+            _keyShopBuyerSlot.Value = buyerSlot;
+            _keyShopRelocationPublished = false;
+            var director = FindAnyObjectByType<GameplayCameraDirector>();
+            _keyShopTransitionSeconds.Value = director != null
+                ? director.BoardTransitionBudgetSeconds
+                : KeyPurchasePresentationRules.DefaultTransitionSeconds;
+            _keyShopRevealPausedRemaining.Value = 0d;
             _keyShopRevealActive.Value = true;
-            _keyShopRevealEndsAt.Value = now + KeyShopRevealSeconds;
+            _keyShopRevealEndsAt.Value = now +
+                KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value);
             _keyShopRevealRevision.Value++;
             StopAllAvatarInputOnServer();
             SyncFlowSnapshot(now);
+        }
+
+        private void AdvanceKeyShopRevealOnServer(double now)
+        {
+            if (!IsServer || !_keyShopRevealActive.Value || IsSimulationSuspended) return;
+            var elapsed = KeyPurchasePresentationRules.TotalDuration(_keyShopTransitionSeconds.Value) -
+                          Math.Max(0d, _keyShopRevealEndsAt.Value - now);
+            var phase = KeyPurchasePresentationRules.GetPhase(
+                elapsed, _keyShopTransitionSeconds.Value, out _);
+            if (!_keyShopRelocationPublished && phase >= KeyPurchasePresentationPhase.RevealShop)
+            {
+                _keyShopRelocationPublished = true;
+                SyncKeyShopSnapshot();
+                _keyShopAppearanceEndsAt = now + 0.75d;
+            }
+            AdvanceKeyShopLifecycleOnServer(now);
+            if (phase == KeyPurchasePresentationPhase.Complete)
+                CompleteKeyShopRevealOnServer(now);
         }
 
         private void CompleteKeyShopRevealOnServer(double now)
@@ -367,7 +393,8 @@ namespace MazeParty.Multiplayer
 
             _keyShopRevealActive.Value = false;
             _keyShopRevealEndsAt.Value = 0d;
-            _keyShopRevealRemainingDuringReconnect = 0d;
+            _keyShopRevealPausedRemaining.Value = 0d;
+            _keyShopBuyerSlot.Value = -1;
             _flow.Resume(now);
             ResumeCombatAndPersonalProtectionOnServer(now);
             SyncFlowSnapshot(now);

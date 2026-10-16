@@ -282,6 +282,7 @@ Key purchased. The new shop location is shown; play resumes when the countdown e
 KEY SHOP,열쇠 상점,鍵ショップ,钥匙商店
 KEY SHOP\nRMB BUY  20 GOLD,열쇠 상점\n우클릭 구매  20 골드,鍵ショップ\n右クリックで購入  20ゴールド,钥匙商店\n右键购买  20金币
 KEY SHOP MOVING,열쇠 상점 이동 중,鍵ショップ移動中,钥匙商店移动中
+KEY PURCHASE,열쇠 구매,鍵の購入,购买钥匙
 KNOCKED OUT: respawning at the nearest marked room. Input is locked.,녹아웃: 가장 가까운 표시된 방에서 부활합니다. 입력이 잠겨 있습니다.,ノックアウト：最寄りのマーク付きの部屋でリスポーンします。入力はロックされています。,被击倒：将在最近的标记房间复活。输入已锁定。
 LANDING EFFECTS,착지 효과,着地効果,落地效果
 Landing: Gold +3,도착 효과: 골드 +3,到着効果: ゴールド +3,停留效果: 金币 +3

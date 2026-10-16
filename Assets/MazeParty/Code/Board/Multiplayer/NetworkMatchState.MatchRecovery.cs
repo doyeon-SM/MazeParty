@@ -673,7 +673,9 @@ namespace MazeParty.Multiplayer
             _keyShopAppearanceEndsAt = 0d;
             _keyShopRevealActive.Value = false;
             _keyShopRevealEndsAt.Value = 0d;
-            _keyShopRevealRemainingDuringReconnect = 0d;
+            _keyShopRevealPausedRemaining.Value = 0d;
+            _keyShopBuyerSlot.Value = -1;
+            _keyShopRelocationPublished = false;
             _scheduledSkipAt = 0d;
             _scheduledSkipPaused = false;
             _pausedScheduledSkipRemaining = 0d;

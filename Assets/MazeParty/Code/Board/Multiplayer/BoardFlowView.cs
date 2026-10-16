@@ -311,6 +311,7 @@ namespace MazeParty.Multiplayer
                 _deathGoldDeltaUntil[slot] = 0f;
                 _deathGoldDeltaTotal[slot] = 0;
             }
+            _keyShopMarker?.SetAcquisitionCameraHidden(false);
             StopMinigamePreview();
             CloseItemShop();
             SetActive(_boardEventPopupPanel, false);
@@ -713,7 +714,7 @@ namespace MazeParty.Multiplayer
             SetText(_phaseText, match.IsArrivalGraceActive
                 ? GameText.T("ARRIVAL COMPLETE")
                 : match.IsKeyShopRevealActive
-                ? GameText.T("KEY SHOP MOVING")
+                ? GameText.T("KEY PURCHASE")
                 : match.IsCombatPhase && match.IsCombatActive
                     ? GameText.F("FIGHT {0}  /  {1}", match.CombatSequenceIndex,
                       match.CombatSequenceIndex + match.CombatQueueCount)
@@ -1222,6 +1223,10 @@ namespace MazeParty.Multiplayer
                 _topology = FindAnyObjectByType<BoardTopology>();
             }
 
+            // The buyer faces the shop, so the shared front camera can sit
+            // behind its roof. Hide only its presentation during acquisition.
+            _keyShopMarker?.SetAcquisitionCameraHidden(
+                match.KeyPurchasePhase == KeyPurchasePresentationPhase.AcquireKey);
             _keyShopMarker?.ApplyReplicatedState(
                 match.KeyShopLifecycle,
                 match.KeyShopHasLocation,

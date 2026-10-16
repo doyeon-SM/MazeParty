@@ -42,6 +42,7 @@ namespace MazeParty.Gameplay
         private BoardShopVisual _visual;
         private GameObject _markerObject;
         private bool _topViewHighlightRequested;
+        private bool _acquisitionCameraHidden;
         private bool _hasAppliedSnapshot;
         private KeyShopLifecycleState _appliedState = KeyShopLifecycleState.Inactive;
         private bool _appliedHasLocation;
@@ -64,6 +65,15 @@ namespace MazeParty.Gameplay
         public Vector2Int AppliedCoordinate => _appliedCoordinate;
         public int LastAppliedRevision => _lastAppliedRevision;
         public bool IsVisible => _markerObject != null && _markerObject.activeSelf;
+
+        public void SetAcquisitionCameraHidden(bool hidden)
+        {
+            _acquisitionCameraHidden = hidden;
+            if (_markerObject != null)
+                _markerObject.SetActive(!hidden && _appliedHasLocation &&
+                    (_appliedState == KeyShopLifecycleState.Appearing ||
+                     _appliedState == KeyShopLifecycleState.Active));
+        }
 
         public void SetTopViewHighlight(bool highlighted)
         {
@@ -114,7 +124,7 @@ namespace MazeParty.Gameplay
             {
                 EnsureMarker();
                 _markerObject.transform.position = resolvedTile.WorldCenter;
-                _markerObject.SetActive(true);
+                _markerObject.SetActive(!_acquisitionCameraHidden);
                 PlayLocationHighlightOnce(revision, coordinate);
                 locationResolved = true;
             }
