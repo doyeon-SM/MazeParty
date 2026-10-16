@@ -441,6 +441,36 @@ namespace MazeParty.Multiplayer
                 : Math.Max(0d, _keyShopRevealEndsAt.Value - ServerNow)
             : 0d;
         public double SynchronizedNow => ServerNow;
+
+        // Elapsed presentation time is derived from replicated deadlines, not
+        // when an individual client first receives a state change.
+        public double GetBoardCameraTransitionElapsed()
+        {
+            if (IsKeyShopRevealActive)
+            {
+                var elapsed = KeyPurchasePresentationRules.TotalDuration(
+                    _keyShopTransitionSeconds.Value) - KeyShopRevealRemaining;
+                if (KeyPurchasePhase == KeyPurchasePresentationPhase.ToTopView)
+                    return Math.Max(0d, elapsed);
+                if (KeyPurchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson)
+                    return Math.Max(0d, elapsed - _keyShopTransitionSeconds.Value -
+                        KeyPurchasePresentationRules.AcquisitionSeconds -
+                        KeyPurchasePresentationRules.ShopRevealSeconds);
+                return double.NaN;
+            }
+            switch (FlowState)
+            {
+                case BoardFlowState.Descending:
+                    return Math.Max(0d, BoardFlowStateMachine.DescendingDurationSeconds - StateRemaining);
+                case BoardFlowState.Action:
+                    return BoardFlowStateMachine.DescendingDurationSeconds +
+                        Math.Max(0d, GameplayPhaseClock.DefaultActionDurationSeconds - ActionRemaining);
+                case BoardFlowState.AscendingResolve:
+                    return Math.Max(0d, BoardFlowStateMachine.AscendingResolveDurationSeconds - StateRemaining);
+                default:
+                    return double.NaN;
+            }
+        }
         public int KeyShopBuyerSlot => _keyShopBuyerSlot.Value;
         public KeyPurchasePresentationPhase KeyPurchasePhase => GetKeyPurchasePhase(out _);
 

@@ -210,6 +210,9 @@ namespace MazeParty.Editor
                 if (floor == null || effect == null)
                     continue;
 
+                // A completed icon-layout upgrade owns this authored position.
+                if (room.FindPropertyRelative("EffectBackdrop").objectReferenceValue != null)
+                    continue;
                 var rect = effect.rectTransform;
                 if (rect.parent != layer)
                     rect.SetParent(layer, false);

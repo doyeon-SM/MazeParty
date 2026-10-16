@@ -94,13 +94,15 @@ namespace MazeParty.Gameplay
         public BoardCameraFramingAnchor BoardFramingAnchor => boardFramingAnchor;
         public bool IsTransitioning => _isTransitioning;
         public bool SmoothCameraTransitions => smoothCameraTransitions;
-        // Both directions share this upper bound. Reserve the slowest possible
-        // yaw/pitch plus a few render frames so the server never resumes mid-zoom.
-        public double BoardTransitionBudgetSeconds => !smoothCameraTransitions ? 0.25d :
-            Mathf.Max(directTransitionDuration, 270f / Mathf.Max(30f, boardRotationDegreesPerSecond)) +
+        // Reserve the same phases for every look direction. Smoothstep's peak
+        // angular speed is 1.5x its average, including the worst 180-degree turn.
+        private float BoardRotationDuration =>
+            Mathf.Max(directTransitionDuration, 270f / Mathf.Max(30f, boardRotationDegreesPerSecond));
+        private float BoardZoomDuration =>
             Mathf.Max(boardToOverheadDuration + overheadToFirstPersonDuration,
-                270f / Mathf.Max(30f, boardRotationDegreesPerSecond)) +
-            boardRecenterDuration + 0.25d;
+                270f / Mathf.Max(30f, boardRotationDegreesPerSecond));
+        public double BoardTransitionBudgetSeconds => !smoothCameraTransitions ? 0.25d :
+            BoardRotationDuration + BoardZoomDuration + boardRecenterDuration + 0.25d;
 
         public void Configure(
             Camera cameraOutput,
@@ -207,7 +209,9 @@ namespace MazeParty.Gameplay
             minigameCamera = null;
         }
 
-        public void SwitchTo(GameplayMode mode)
+        public void SwitchTo(GameplayMode mode) => SwitchTo(mode, null);
+
+        public void SwitchTo(GameplayMode mode, Func<double> boardTransitionElapsed)
         {
             if (!Application.isPlaying)
             {
@@ -258,7 +262,7 @@ namespace MazeParty.Gameplay
             }
 
             _transitionCoroutine = StartCoroutine(
-                RunTransition(previous, mode));
+                RunTransition(previous, mode, boardTransitionElapsed));
         }
 
         public void SnapTo(GameplayMode mode)
@@ -353,7 +357,8 @@ namespace MazeParty.Gameplay
 
         private IEnumerator RunTransition(
             GameplayMode previous,
-            GameplayMode target)
+            GameplayMode target,
+            Func<double> boardTransitionElapsed)
         {
             _transitionFrom = previous;
             _transitionTarget = target;
@@ -364,7 +369,7 @@ namespace MazeParty.Gameplay
             if (UsesPlayerBridge(previous, target))
             {
                 ApplyCursorPolicy();
-                yield return RunBoardTransition(target);
+                yield return RunBoardTransition(target, boardTransitionElapsed);
             }
             else
             {
@@ -384,7 +389,7 @@ namespace MazeParty.Gameplay
             TransitionCompleted?.Invoke(previous, target);
         }
 
-        private IEnumerator RunBoardTransition(GameplayMode target)
+        private IEnumerator RunBoardTransition(GameplayMode target, Func<double> synchronizedElapsed)
         {
             var eye = ResolveLocalPlayerEye();
             if (eye == null || outputCamera == null) yield break;
@@ -410,11 +415,14 @@ namespace MazeParty.Gameplay
             ApplyBoardTransitionPose();
             _brain?.ResetState();
 
-            var yawDuration = Mathf.Abs(Mathf.DeltaAngle(sourceYaw, targetYaw)) *
-                              1.5f / Mathf.Max(30f, boardRotationDegreesPerSecond);
+            var localStartedAt = Time.unscaledTimeAsDouble;
+            Func<double> elapsed = synchronizedElapsed ??
+                (() => Time.unscaledTimeAsDouble - localStartedAt);
+            var phaseStartedAt = 0d;
             yield return MoveBoardCamera(sourcePosition, sourcePosition,
                 sourcePitch, sourcePitch, sourceYaw, targetYaw,
-                sourceFov, sourceFov, Mathf.Max(directTransitionDuration, yawDuration));
+                sourceFov, sourceFov, BoardRotationDuration, elapsed, phaseStartedAt);
+            phaseStartedAt += BoardRotationDuration;
 
             PreparePlayerWidePose();
             var widePosition = playerWideCamera.transform.position;
@@ -425,24 +433,23 @@ namespace MazeParty.Gameplay
                 // while approaching the eye. No quaternion roll around the head.
                 yield return MoveBoardCamera(sourcePosition, widePosition,
                     sourcePitch, sourcePitch, targetYaw, targetYaw,
-                    sourceFov, boardFov, boardRecenterDuration);
+                    sourceFov, boardFov, boardRecenterDuration, elapsed, phaseStartedAt);
+                phaseStartedAt += boardRecenterDuration;
             }
 
             var zoomStart = toFirstPerson ? widePosition : sourcePosition;
             var zoomEnd = toFirstPerson ? eye.position : widePosition;
             var zoomFov = toFirstPerson ? firstPersonCamera.Lens.FieldOfView : boardFov;
-            var pitchDuration = Mathf.Abs(targetPitch - sourcePitch) * 1.5f /
-                                Mathf.Max(30f, boardRotationDegreesPerSecond);
             yield return MoveBoardCamera(zoomStart, zoomEnd,
                 sourcePitch, targetPitch, targetYaw, targetYaw,
                 toFirstPerson ? boardFov : sourceFov, zoomFov,
-                Mathf.Max(boardToOverheadDuration + overheadToFirstPersonDuration,
-                    pitchDuration), toFirstPerson ? eye : null);
+                BoardZoomDuration, elapsed, phaseStartedAt, toFirstPerson ? eye : null);
+            phaseStartedAt += BoardZoomDuration;
 
             if (!toFirstPerson)
             {
                 yield return MoveBoardCamera(widePosition, boardTopDownCamera.transform.position,
-                    90f, 90f, 0f, 0f, boardFov, boardFov, boardRecenterDuration);
+                    90f, 90f, 0f, 0f, boardFov, boardFov, boardRecenterDuration, elapsed, phaseStartedAt);
             }
             PrepareModePose(target);
             SetLiveCamera(GetModeCamera(target));
@@ -452,14 +459,15 @@ namespace MazeParty.Gameplay
 
         private IEnumerator MoveBoardCamera(Vector3 from, Vector3 to,
             float fromPitch, float toPitch, float fromYaw, float toYaw,
-            float fromFov, float toFov, float duration, Transform followEnd = null)
+            float fromFov, float toFov, float duration,
+            Func<double> elapsed, double phaseStartedAt, Transform followEnd = null)
         {
-            var startedAt = Time.unscaledTime;
             float progress;
             do
             {
-                progress = duration > 0f
-                    ? Mathf.Clamp01((Time.unscaledTime - startedAt) / duration) : 1f;
+                var now = elapsed();
+                progress = duration > 0f && !double.IsNaN(now)
+                    ? Mathf.Clamp01((float)((now - phaseStartedAt) / duration)) : 1f;
                 var eased = progress * progress * (3f - 2f * progress);
                 _boardTransitionPosition = Vector3.Lerp(from,
                     followEnd != null ? followEnd.position : to, eased);
@@ -468,7 +476,7 @@ namespace MazeParty.Gameplay
                     Mathf.LerpAngle(fromYaw, toYaw, eased), 0f);
                 _boardTransitionFieldOfView = Mathf.Lerp(fromFov, toFov, eased);
                 ApplyBoardTransitionPose();
-                yield return null;
+                if (progress < 1f) yield return null;
             } while (progress < 1f);
         }
 

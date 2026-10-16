@@ -34,6 +34,8 @@ namespace MazeParty.Multiplayer
             public Text[] Exits;
             public BoardMapIcon TypeIcon;
             public BoardMapIcon EffectIcon;
+            public BoardMapCircleGraphic TypeBackdrop;
+            public BoardMapCircleGraphic EffectBackdrop;
             public BoardMapIcon[] ProgressArrows;
         }
 
@@ -57,6 +59,7 @@ namespace MazeParty.Multiplayer
             Array.Empty<BoardMapPlayerDirectionGraphic>();
         private float _localFacingYaw;
         [SerializeField] private RectTransform landingEffectLayer;
+        [SerializeField] private Vector2 roomIconOffset = new Vector2(-22f, -22f);
         [SerializeField] private Text currentTile;
         [SerializeField] private Text heading;
         [SerializeField] private BoardMapIcon shopDistanceIcon;
@@ -192,7 +195,8 @@ namespace MazeParty.Multiplayer
                 foreach (var room in rooms)
                 {
                     if (room == null || room.Floor == null || room.TypeIcon == null ||
-                        room.EffectIcon == null || room.ProgressArrows == null || room.ProgressArrows.Length != 4 ||
+                        room.EffectIcon == null || room.TypeBackdrop == null ||
+                        room.EffectBackdrop == null || room.ProgressArrows == null || room.ProgressArrows.Length != 4 ||
                         room.Walls == null || room.Exits == null || room.Walls.Length != 4 || room.Exits.Length != 4)
                         return false;
                     for (var side = 0; side < 4; side++)
@@ -296,8 +300,7 @@ namespace MazeParty.Multiplayer
             mineGraphic.SetIconRotation(upright);
             foreach (var room in rooms)
             {
-                room.TypeIcon.rectTransform.localRotation = upright;
-                room.EffectIcon.rectTransform.localRotation = upright;
+                PlaceRoomIcons(room);
             }
             foreach (var dot in players) dot.rectTransform.localRotation = upright;
             for (var slot = 0; slot < localDirections.Length; slot++)
@@ -415,7 +418,11 @@ namespace MazeParty.Multiplayer
                 room.Floor.gameObject.SetActive(exists);
                 room.EffectIcon.gameObject.SetActive(exists);
                 if (!exists)
+                {
+                    room.TypeBackdrop.gameObject.SetActive(false);
+                    room.EffectBackdrop.gameObject.SetActive(false);
                     continue;
+                }
 
                 if (freeform)
                 {
@@ -455,7 +462,7 @@ namespace MazeParty.Multiplayer
                 var effectKind = GetEffectIcon(effect);
                 room.EffectIcon.SetIcon(effectKind, GetSprite(effectKind));
                 room.EffectIcon.color = effectIconColors[(int)effect];
-                PlaceEffectIcon(room);
+                PlaceRoomIcons(room);
                 if (freeform)
                 {
                     SetLegacyEdgesVisible(room, false);
@@ -1047,24 +1054,23 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private static void PlaceEffectIcon(Room room)
+        private void PlaceRoomIcons(Room room)
         {
-            var floor = room.Floor.rectTransform;
-            var icon = room.EffectIcon.rectTransform;
-            icon.localRotation = Quaternion.identity;
-            icon.localScale = Vector3.one;
-            if (icon.parent == floor)
-            {
-                icon.anchorMin = icon.anchorMax = icon.pivot =
-                    Vector2.one * 0.5f;
-                icon.anchoredPosition = Vector2.zero;
-                return;
-            }
-
-            icon.anchorMin = icon.anchorMax = icon.pivot =
-                Vector2.one * 0.5f;
-            icon.anchoredPosition = floor.anchoredPosition;
+            PlaceRoomIcon(room, room.TypeIcon, room.TypeBackdrop);
+            PlaceRoomIcon(room, room.EffectIcon, room.EffectBackdrop);
         }
 
+        private void PlaceRoomIcon(Room room, BoardMapIcon graphic, BoardMapCircleGraphic backdrop)
+        {
+            var floor = room.Floor.rectTransform;
+            var icon = graphic.rectTransform;
+            var upright = Quaternion.Inverse(projection.otherDotCanvas.localRotation);
+            icon.localRotation = upright;
+            icon.anchorMin = icon.anchorMax = icon.pivot = Vector2.one * 0.5f;
+            icon.anchoredPosition = (icon.parent == floor ? Vector2.zero : floor.anchoredPosition) +
+                                    (Vector2)(upright * roomIconOffset);
+            backdrop.rectTransform.anchoredPosition = icon.anchoredPosition;
+            backdrop.gameObject.SetActive(graphic.isActiveAndEnabled);
+        }
     }
 }

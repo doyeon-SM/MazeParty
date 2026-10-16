@@ -40,6 +40,7 @@ namespace MazeParty.Editor
                 BoardItemProjectSetup.EnsureMapBindings(root);
                 EnsureTopologyGraphics(root);
                 BoardMapVisibilityPrefabUpgrade.Ensure(root);
+                BoardMapIconBackdropUpgrade.Ensure(root);
                 foreach (var currentView in root.GetComponentsInChildren<BoardMinimapView>(true))
                 {
                     if (!currentView.HasRequiredReferences)
@@ -151,6 +152,7 @@ namespace MazeParty.Editor
             BoardItemProjectSetup.EnsureMapBindings(root);
             EnsureTopologyGraphics(root);
             BoardMapVisibilityPrefabUpgrade.Ensure(root);
+            BoardMapIconBackdropUpgrade.Ensure(root);
             if (!view.HasRequiredReferences) throw new InvalidOperationException("Minimap setup failed.");
         }
 

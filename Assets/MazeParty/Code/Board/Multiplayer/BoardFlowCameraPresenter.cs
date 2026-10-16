@@ -222,7 +222,12 @@ namespace MazeParty.Multiplayer
                         _observedKeyPurchasePhase != KeyPurchasePresentationPhase.RevealShop)
                         cameraDirector.SnapTo(targetMode);
                     else
-                        cameraDirector.SwitchTo(targetMode);
+                    {
+                        System.Func<double> transitionElapsed =
+                            double.IsNaN(match.GetBoardCameraTransitionElapsed())
+                                ? null : match.GetBoardCameraTransitionElapsed;
+                        cameraDirector.SwitchTo(targetMode, transitionElapsed);
+                    }
                 }
             }
 
@@ -724,7 +729,12 @@ namespace MazeParty.Multiplayer
             var hideHeadCosmetics = transitioning &&
                 (targetMode == GameplayMode.FirstPerson ||
                  cameraDirector.CompletedMode == GameplayMode.FirstPerson);
-            var showingTopView = targetMode == GameplayMode.BoardTopDown && !transitioning;
+            var match = NetworkMatchState.Instance;
+            var preparingMinigame = match != null &&
+                (match.FlowState == BoardFlowState.MinigameIntroReady ||
+                 match.FlowState == BoardFlowState.MinigameLoading);
+            var showingTopView = targetMode == GameplayMode.BoardTopDown &&
+                                 !transitioning && !preparingMinigame;
             var visual = _localAvatar.AvatarVisual;
             if (visual != null)
             {
@@ -741,7 +751,6 @@ namespace MazeParty.Multiplayer
             {
                 var output = cameraDirector != null ? cameraDirector.OutputCamera : null;
                 localPlayerMarker.Present(ResolveHeadAnchor(_localAvatar), output, showingTopView);
-                var match = NetworkMatchState.Instance;
                 for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 {
                     var avatar = match != null ? match.GetAvatarForSlot(slot) : null;

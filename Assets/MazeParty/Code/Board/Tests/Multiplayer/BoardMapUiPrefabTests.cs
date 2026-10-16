@@ -190,6 +190,26 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(data.FindProperty("heading").objectReferenceValue,
                         Is.Not.Null);
                 }
+                var roomBindings = data.FindProperty("rooms");
+                var backdrops = new System.Collections.Generic.HashSet<BoardMapCircleGraphic>();
+                for (var index = 0; index < roomBindings.arraySize; index++)
+                {
+                    var room = roomBindings.GetArrayElementAtIndex(index);
+                    foreach (var prefix in new[] { "Type", "Effect" })
+                    {
+                        var icon = room.FindPropertyRelative(prefix + "Icon")
+                            .objectReferenceValue as BoardMapIcon;
+                        var backdrop = room.FindPropertyRelative(prefix + "Backdrop")
+                            .objectReferenceValue as BoardMapCircleGraphic;
+                        Assert.That(backdrop, Is.Not.Null, "Every map tile icon needs its authored backdrop.");
+                        Assert.That(backdrops.Add(backdrop), Is.True,
+                            "Tile backdrop bindings must not be shared between rooms.");
+                        Assert.That(backdrop.transform.parent, Is.SameAs(icon.transform.parent));
+                        Assert.That(backdrop.transform.GetSiblingIndex(),
+                            Is.LessThan(icon.transform.GetSiblingIndex()));
+                        Assert.That(backdrop.raycastTarget, Is.False);
+                    }
+                }
                 var mines = data.FindProperty("mineGraphic").objectReferenceValue as BoardMapMineGraphic;
                 var route = data.FindProperty("shopRouteGraphic").objectReferenceValue as BoardMapRouteGraphic;
                 var travel = data.FindProperty("travelRouteGraphic")
