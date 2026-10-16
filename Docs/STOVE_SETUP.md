@@ -21,9 +21,17 @@ Steam은 별도 컴파일 정의와 방 구분을 유지한다. Steam SDK 인증
 - 설정 폴더는 `MazeParty > Platform > Open local settings folder`로 연다.
 - 다운로드 원본과 `Builds/` 출력은 기존 위치에 유지한다. 실행 파일을 Assets로 복사하지 않는다.
 
+## 로컬 폴더가 없어졌을 때 복구
+
+저장소 루트 PowerShell에서 `& '.\Tools\RestorePlatformLocal.ps1'`을 실행한다. 기본 원본은 바탕화면의 `StovePCSDK_Full_net46_CSharp_3.5.3.0_x64` 폴더이며, 다른 위치라면 `-SdkSourcePath '압축 해제 폴더 전체 경로'`를 지정한다.
+
+이 도구는 3.5.3.0 DLL 2개의 버전·SHA-256을 확인하고 누락된 DLL·원래 GUID의 임포트 설정·빈 JSON만 복원한다. 기존 JSON과 메타데이터는 덮어쓰지 않는다. Unity 임포트가 끝나면 `MazeParty > Platform > Set up profiles and local settings`를 실행한다. 이전 키는 복원하지 않으므로 `stoveGameId`, `stoveAppKey`를 다시 입력한다.
+
+`.gitignore` 외에 해당 저장소의 `.git/info/exclude`에도 폴더와 루트 `.meta` 제외 규칙을 추가한다. 이는 오래된 브랜치로 바뀌어도 실수로 Git에 추가되는 것을 막기 위한 로컬 규칙이며 다른 PC에 전달되지 않는다. Git 제외는 백업이나 삭제 방지 기능이 아니다. `git clean -fdx` 또는 Git 앱의 ignored 파일 삭제 옵션은 로컬 SDK와 설정도 삭제할 수 있으므로 사용하지 않는다. SDK 원본은 저장소 밖에 유지하고, 입력한 키는 별도의 안전한 보관소에서 관리한다.
+
 ## stove.json 입력
 
-설정에는 다음 네 필드만 사용한다. 아래는 빈 값으로 표시한 입력 예시다. 2026-10-17 사용자가 로컬 파일 입력을 완료했으며, 필수 값의 존재와 형식만 확인했다. 실제 상품키의 유효성은 런처에서 검증해야 한다.
+설정에는 다음 네 필드만 사용한다. 2026-10-17 로컬 폴더 유실 후 SDK와 빈 설정을 복원했다. Game ID/Application Key는 사용자가 다시 입력해야 한다. 실제 상품키의 유효성은 런처에서 검증해야 한다.
 
 ```json
 {

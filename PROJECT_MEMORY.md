@@ -725,7 +725,7 @@
 - 접속 보안: 프로세스별 RSA-2048 개인키는 메모리에만 두고 공개키는 자신의 UGS 멤버 속성 mpAdmissionKey에 등록한다. 호스트는 실제 UGS 멤버와 등록 키를 대조하고 방/플랫폼/환경/버전/계정/시각/nonce 서명을 검증한다. 재전송, 중복 활성 연결, 예약되지 않은 경기 좌석, 변조, 유효기간 초과를 거부한다. 토큰/개인키는 호스트에 보내지 않는다. 호스트가 승인된 연결과 좌석의 대응을 기록한다.
 - 새 프로세스의 재접속은 기존 멤버에 한해 LobbyService.UpdatePlayerAsync로 자기 공개키만 먼저 갱신한다. 현재 MPS 2.3.1의 세션 ID=Lobby ID 및 ReconnectSessionOptions에 PlayerProperties가 없는 점을 설치된 패키지 소스로 확인했다. 이후 기존 MPS/NGO 재접속·원래 호스트 복귀 흐름을 사용한다.
 - STOVE 소유권은 클라이언트 검사이며 서버가 검증한 STOVE↔UGS 연결이 아니다. UGS 멤버 공개키/서명 검증은 계정의 방 연결을 확인하지만 플랫폼 구매 권한을 독립 검증하지 못한다. 변조 클라이언트, 코드 유출로 인한 정상 계정의 임의 참가, 악의적 호스트의 게임 조작까지 막는다고 주장하지 않는다.
-- stove.json은 Assets/Stove&Steam/.local에 있고 ugsEnvironment=production, stoveEnvironment=real, stoveGameId, stoveAppKey 네 필드만 둔다. 2026-10-17 사용자가 Game ID/AppKey 입력을 완료했다. 값 노출 없이 JSON 파싱, 필수 네 필드의 존재·비어 있지 않음, 환경 문자열 형식을 확인했다. 키의 실제 유효성·상품 매칭·런처 로그인은 아직 검증하지 않았다. 상품 No./Application Secret은 사용하지 않는다. 기존 서버 URL/공개키/채널/스키마 필드는 제거했다. Steam 로컬 JSON에는 ugsEnvironment만 둔다.
+- stove.json은 Assets/Stove&Steam/.local에 있고 ugsEnvironment=production, stoveEnvironment=real, stoveGameId, stoveAppKey 네 필드만 둔다. 2026-10-17 키 입력 이후 브랜치 이동 과정에서 로컬 폴더 유실을 사용자가 보고했다. SDK·설정 복구 시 Game ID/AppKey는 사용자 요청대로 빈 값으로 다시 만들었으며 재입력이 필요하다. 실제 상품키·런처 로그인 검증은 아직 하지 않았다. 상품 No./Application Secret은 사용하지 않는다. 기존 서버 URL/공개키/채널/스키마 필드는 제거했다. Steam 로컬 JSON에는 ugsEnvironment만 둔다.
 - SDK 환경은 공식 신규 PC SDK 예시의 real을 기본값으로 삼는다. Sandbox/Live라는 설명용 명칭을 SDK 문자열로 그대로 전달하지 않는다. 발급받은 별도 테스트 환경은 담당자의 실제 SDK 문자열에 맞춘다.
 - 기존 UGS production을 그대로 사용할 수 있으며 플랫폼별 환경을 새로 만들도록 강제하지 않는다. 플랫폼별 컴파일 정의, 세션 타입, 호스트 방 속성(mpa2), 연결 프로토콜(MPA3), 계정/저장 범위를 구분한다. 별도 UGS 환경을 구성하면 JSON에 존재하는 환경명을 넣을 수 있다.
 - Steam SDK 인증은 아직 미구현이며 온라인 접속·Release는 계속 차단한다. STOVE 없는 Steam Integration Check와 Windows x64 IL2CPP 프로필은 유지한다. STOVE Release는 유효한 Game ID/AppKey가 필요하고 Integration Check는 설정을 출력하지 않는다.
@@ -739,3 +739,13 @@
 - Steam IL2CPP 통합 검증 빌드 성공: Builds/steam-integration-20261017-043620/MazeParty.exe. STOVE 로그인 타입 제외 및 출력 BaseSDK DLL 0개 확인. 이번 변경 후 양쪽 스토어 빌드 성공.
 
 - Development Mono 개발 빌드도 현재 코드로 갱신했다: Builds/Windows-Development/MazeParty.exe. 에디터는 작업 시작 시와 같은 Development 프로필로 복원했다. STOVE 상품키가 비어 있어 실제 SDK 로그인·소유권 확인과 4인 네트워크/원래 호스트 복귀는 미검증이다. 최종 컴파일 오류 0개, Git diff --check 통과. 커밋·푸시·Notion 수정은 하지 않았다.
+
+## 2026-10-17 플랫폼 로컬 폴더 유실 복구
+
+- 작업 시작: dev/stove와 main은 b5e7254를 가리키며 추적 파일은 clean이었다. dev/steam은 이전 70760ab 상태다. 연동·빌드·입장 보안 소스와 STOVE/Steam 프로필은 남아 있었고, Git에서 제외한 Assets/Stove&Steam과 루트 .meta만 사라진 것을 확인했다. 삭제 원인은 현재 이력으로 특정하지 않는다.
+- 바탕화면의 원본 3.5.3.0 Full x64 SDK에서 DLL 두 개를 복원하고 원래 DLL GUID와 Windows x64·MAZEPARTY_STOVE 임포트 조건을 복구했다. 다운로드 원본은 유지한다. 서버리스 UGS·호스트/클라이언트·코드 입장 및 플랫폼별 분리 코드는 기존 커밋 그대로 유지한다.
+- stove.json은 ugsEnvironment=production, stoveEnvironment=real, 빈 stoveGameId/stoveAppKey 네 필드로, steam.json은 ugsEnvironment=production으로 복원했다. 이전 민감정보는 복구하지 않으며 사용자가 재입력한다.
+- Tools/RestorePlatformLocal.ps1을 추가했다. SDK 버전·해시를 확인하고 누락 파일만 생성하며 기존 JSON·메타데이터를 보존한다. 재실행 시 JSON의 바이트가 그대로 유지되는 것을 확인했다. 이전 dev/steam에 폴더 제외 규칙이 없어 .git/info/exclude에도 로컬 제외 규칙을 추가했다. 이는 Git 추가 방지이며 파일 삭제나 백업을 보장하지 않는다.
+- 복구 검증: 관련 EditMode 16/16 통과. STOVE 프로필 컴파일 및 Windows x64 IL2CPP Integration Check 빌드 성공(Builds/stove-integration-20261017-051349/MazeParty.exe). 출력의 BaseSDK.dll 해시가 원본과 일치하고 설정 파일이 포함되지 않은 검증 전용 출력임을 확인했다. 빈 Game ID/AppKey는 출시 설정 검사를 통과하지 못한다.
+- Steam 프로필 컴파일 오류 없이 완료했고 플레이어 어셈블리의 BaseSDK_NET 참조와 StovePlayerIdentityProvider 타입이 제외된 것을 확인했다. SDK DLL 두 개의 원래 GUID·Win64/Windows Editor x64·MAZEPARTY_STOVE 제약 및 .local의 Unity 임포트 제외도 확인했다. 실제 STOVE 로그인·소유권·멀티플레이 실행은 키 재입력 후 검증해야 한다.
+- 최종 상태: 에디터를 작업 시작 시와 같은 Development(Windows)/Mono2x로 복원했으며 컴파일 오류·콘솔 오류 0건이다. Assets/ProjectSettings/Packages의 추적 변경은 없고 SDK·JSON·메타데이터는 Git 제외 상태다. 커밋·푸시·브랜치 병합·Notion 수정은 하지 않았다.
