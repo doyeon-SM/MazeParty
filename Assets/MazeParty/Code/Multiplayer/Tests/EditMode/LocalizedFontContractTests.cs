@@ -200,6 +200,15 @@ namespace MazeParty.Multiplayer.Tests
                             .Cast<Component>());
                 foreach (var text in texts)
                 {
+                    var marker = text.GetComponentInParent<BoardLocalPlayerMarkerView>(true);
+                    if (marker != null && marker.IsFixedLabel(text as Text))
+                    {
+                        Assert.That(text.GetComponentInParent<LocalizedFontScope>(true), Is.Null,
+                            "ME and P1-P4 intentionally retain their authored font in every language.");
+                        Assert.That(text.GetComponent<LocalizedText>(), Is.Null,
+                            "Player markers are fixed identifiers, not translated copy.");
+                        continue;
+                    }
                     if (text.GetComponentInParent<LocalizedFontScope>(true) !=
                         null)
                     {

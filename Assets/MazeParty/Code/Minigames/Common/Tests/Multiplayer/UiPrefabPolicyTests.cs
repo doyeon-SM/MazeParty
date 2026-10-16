@@ -297,14 +297,15 @@ namespace MazeParty.Multiplayer.Tests
                          prefab.GetComponentsInChildren<Text>(true))
                 {
                     var marker = text.GetComponentInParent<BoardLocalPlayerMarkerView>(true);
-                    if (marker != null && marker.Label == text)
+                    if (marker != null && marker.IsFixedLabel(text))
                     {
-                        Assert.That(text.text, Is.EqualTo("ME"));
+                        Assert.That(text.text, marker.Label == text
+                            ? Is.EqualTo("ME") : Is.EqualTo("P1").Or.EqualTo("P2").Or.EqualTo("P3").Or.EqualTo("P4"));
                         Assert.That(text.fontStyle, Is.EqualTo(FontStyle.Bold));
                         Assert.That(text.color, Is.EqualTo(Color.black));
                         Assert.That(text.GetComponent<Outline>().effectColor, Is.EqualTo(Color.white));
                         Assert.That(text.GetComponent<LocalizedText>(), Is.Null,
-                            "ME is intentionally identical in every language.");
+                            "ME and P1-P4 are intentionally identical in every language.");
                         continue;
                     }
                     if (text.name == "MovesText" &&

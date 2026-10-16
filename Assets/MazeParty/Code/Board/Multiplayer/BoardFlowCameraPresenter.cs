@@ -569,16 +569,6 @@ namespace MazeParty.Multiplayer
                 : avatar.EyePivot;
         }
 
-        private static Transform ResolveMarkerAnchor(NetworkPlayerAvatar avatar)
-        {
-            var bindings = avatar.AvatarVisual != null
-                ? avatar.AvatarVisual.Bindings
-                : null;
-            return bindings != null && bindings.NameplateAnchor != null
-                ? bindings.NameplateAnchor
-                : avatar.EyePivot;
-        }
-
         private static void DisableResourceVisualBehaviours(GameObject visual)
         {
             var behaviours = visual.GetComponentsInChildren<MonoBehaviour>(true);
@@ -748,9 +738,21 @@ namespace MazeParty.Multiplayer
                     targetMode == GameplayMode.BoardTopDown);
             }
             if (localPlayerMarker != null)
-                localPlayerMarker.Present(ResolveMarkerAnchor(_localAvatar),
-                    cameraDirector != null ? cameraDirector.OutputCamera : null,
-                    showingTopView);
+            {
+                var output = cameraDirector != null ? cameraDirector.OutputCamera : null;
+                localPlayerMarker.Present(ResolveHeadAnchor(_localAvatar), output, showingTopView);
+                var match = NetworkMatchState.Instance;
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var avatar = match != null ? match.GetAvatarForSlot(slot) : null;
+                    var showOther = showingTopView && avatar != null &&
+                                    avatar.IsSpawned && avatar != _localAvatar;
+                    localPlayerMarker.PresentPlayer(slot,
+                        avatar != null ? ResolveHeadAnchor(avatar) : null,
+                        output, showOther,
+                        avatar != null ? avatar.Appearance.BodyColor : Color.white);
+                }
+            }
             BoardFlowView.Instance?.SetTopViewShopHighlights(
                 targetMode == GameplayMode.BoardTopDown);
         }

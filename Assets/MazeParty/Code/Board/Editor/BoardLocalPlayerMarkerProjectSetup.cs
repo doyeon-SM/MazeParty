@@ -91,7 +91,19 @@ namespace MazeParty.Editor
                 var outline = labelObject.GetComponent<Outline>();
                 outline.effectColor = Color.white;
                 outline.effectDistance = new Vector2(2f, -2f);
-                root.GetComponent<BoardLocalPlayerMarkerView>().Configure(canvas, label);
+                var view = root.GetComponent<BoardLocalPlayerMarkerView>();
+                view.Configure(canvas, label);
+                var playerLabels = new Text[MultiplayerConstants.MaxPlayers];
+                var playerOutlines = new Outline[MultiplayerConstants.MaxPlayers];
+                for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+                {
+                    var playerLabel = UnityEngine.Object.Instantiate(labelObject, root.transform, false);
+                    playerLabel.name = "P" + (slot + 1) + "Label";
+                    playerLabels[slot] = playerLabel.GetComponent<Text>();
+                    playerLabels[slot].text = "P" + (slot + 1);
+                    playerOutlines[slot] = playerLabel.GetComponent<Outline>();
+                }
+                view.ConfigurePlayerMarkers(playerLabels, playerOutlines);
                 PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
