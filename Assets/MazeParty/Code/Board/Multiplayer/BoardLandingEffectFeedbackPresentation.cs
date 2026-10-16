@@ -11,7 +11,8 @@ namespace MazeParty.Multiplayer
         Gold,
         Health,
         Item,
-        Event
+        Event,
+        EventIntro
     }
 
     [Serializable]
@@ -26,11 +27,13 @@ namespace MazeParty.Multiplayer
         public int SignedAmount;
         public byte AffectedMask;
         public byte ItemId;
+        public byte Resource;
         public double StartedAt;
 
         public BoardLandingEffectFeedbackKind FeedbackKind =>
             (BoardLandingEffectFeedbackKind)Kind;
         public PrototypeItemId RewardItem => (PrototypeItemId)ItemId;
+        public BoardSpecialEventResource ResourceKind => (BoardSpecialEventResource)Resource;
 
         public void NetworkSerialize<T>(BufferSerializer<T> serializer)
             where T : IReaderWriter
@@ -42,6 +45,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref SignedAmount);
             serializer.SerializeValue(ref AffectedMask);
             serializer.SerializeValue(ref ItemId);
+            serializer.SerializeValue(ref Resource);
             serializer.SerializeValue(ref StartedAt);
         }
 
@@ -53,7 +57,7 @@ namespace MazeParty.Multiplayer
                    Kind == other.Kind &&
                    SignedAmount == other.SignedAmount &&
                    AffectedMask == other.AffectedMask &&
-                   ItemId == other.ItemId &&
+                   ItemId == other.ItemId && Resource == other.Resource &&
                    StartedAt.Equals(other.StartedAt);
         }
 
@@ -65,7 +69,7 @@ namespace MazeParty.Multiplayer
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(
+            return HashCode.Combine(Resource, HashCode.Combine(
                 Active,
                 Revision,
                 Slot,
@@ -73,13 +77,13 @@ namespace MazeParty.Multiplayer
                 SignedAmount,
                 AffectedMask,
                 ItemId,
-                StartedAt);
+                StartedAt));
         }
     }
 
     public static class BoardLandingEffectFeedbackRules
     {
-        public const double DurationSeconds = 1d;
+        public const double DurationSeconds = BoardEffectShotTiming.Duration;
         public const double EventDurationSeconds =
             BoardLandingEffectLayout.SpecialEventResultDurationSeconds;
 
@@ -103,7 +107,7 @@ namespace MazeParty.Multiplayer
         {
             return IsValid(snapshot) &&
                    synchronizedNow < snapshot.StartedAt +
-                   GetDurationSeconds(snapshot.FeedbackKind);
+                   GetDurationSeconds(snapshot);
         }
 
         public static double GetRemainingSeconds(
@@ -114,36 +118,44 @@ namespace MazeParty.Multiplayer
                 ? Math.Max(
                     0d,
                      snapshot.StartedAt +
-                     GetDurationSeconds(snapshot.FeedbackKind) - synchronizedNow)
+                     GetDurationSeconds(snapshot) - synchronizedNow)
                 : 0d;
         }
 
+        public static double GetEventDuration(byte affectedMask) =>
+            EventDurationSeconds + (affectedMask != 0 ? BoardEffectShotTiming.Duration : 0d);
+
+        public static double GetDurationSeconds(BoardLandingEffectFeedbackSnapshot snapshot) =>
+            snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
+                ? GetEventDuration(snapshot.AffectedMask) : GetDurationSeconds(snapshot.FeedbackKind);
+
+        public static double GetShotElapsed(BoardLandingEffectFeedbackSnapshot snapshot, double now) =>
+            now - snapshot.StartedAt - (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
+                ? EventDurationSeconds : 0d);
+
+        public static byte GetEventFocusMask(BoardLandingEffectFeedbackSnapshot snapshot, double now) =>
+            snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event &&
+            IsVisible(snapshot, now) && GetShotElapsed(snapshot, now) >= 0d
+                ? snapshot.AffectedMask : (byte)0;
+
+        public static bool IsEffectVisible(BoardLandingEffectFeedbackSnapshot snapshot, double now) =>
+            IsVisible(snapshot, now) &&
+            (snapshot.FeedbackKind != BoardLandingEffectFeedbackKind.Event ||
+             GetEventFocusMask(snapshot, now) != 0) &&
+            BoardEffectShotTiming.IsEffectVisible(GetShotElapsed(snapshot, now));
+
+        public static double GetEffectRemainingSeconds(
+            BoardLandingEffectFeedbackSnapshot snapshot, double now) =>
+            IsEffectVisible(snapshot, now)
+                ? BoardEffectShotTiming.Lead + BoardEffectShotTiming.Motion -
+                  GetShotElapsed(snapshot, now) : 0d;
+
         public static int GetEventFocusSlot(
-            BoardLandingEffectFeedbackSnapshot snapshot,
-            double synchronizedNow)
+            BoardLandingEffectFeedbackSnapshot snapshot, double synchronizedNow)
         {
-            if (snapshot.FeedbackKind != BoardLandingEffectFeedbackKind.Event ||
-                !IsVisible(snapshot, synchronizedNow))
-                return -1;
-
-            var count = 0;
+            var mask = GetEventFocusMask(snapshot, synchronizedNow);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
-                if ((snapshot.AffectedMask & (1 << slot)) != 0)
-                    count++;
-            if (count == 0)
-                return -1;
-
-            var elapsed = Math.Max(0d, synchronizedNow - snapshot.StartedAt);
-            var index = Math.Min(count - 1,
-                (int)Math.Floor(elapsed / EventDurationSeconds * count));
-            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
-            {
-                if ((snapshot.AffectedMask & (1 << slot)) == 0)
-                    continue;
-                if (index-- == 0)
-                    return slot;
-            }
-
+                if ((mask & (1 << slot)) != 0) return slot;
             return -1;
         }
 

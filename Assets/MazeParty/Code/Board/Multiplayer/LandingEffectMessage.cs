@@ -127,7 +127,7 @@ namespace MazeParty.Multiplayer
 
         private static readonly Regex TokenPattern = new Regex(@"@(p|m|g|k)(\d+)");
 
-        private static string FormatArgument(string value, Func<int, string> playerLabel)
+        public static string FormatArgument(string value, Func<int, string> playerLabel)
         {
             return TokenPattern.Replace(GameText.T(value), match =>
             {
@@ -145,6 +145,9 @@ namespace MazeParty.Multiplayer
                     for (var slot = 0; slot < 4; slot++)
                         if ((number & (1 << slot)) != 0)
                             names.Add(playerLabel != null ? playerLabel(slot) : "P" + (slot + 1));
+                    if (playerLabel != null && names.Count >= 3)
+                        return "<color=#FFFFFF>" + GameText.T(number == 15
+                            ? "EVERYONE" : "EVERYONE EXCEPT ME") + "</color>";
                     return string.Join(" / ", names);
                 }
                 return playerLabel != null

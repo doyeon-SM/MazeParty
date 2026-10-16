@@ -489,7 +489,7 @@ namespace MazeParty.Multiplayer
         {
             return BoardResourceTransferPresentationRules.GetPhase(
                 _resourceTransferPresentation.Value,
-                ServerNow,
+                LandingFeedbackPresentationNow,
                 out phaseProgress,
                 out motionProgress);
         }

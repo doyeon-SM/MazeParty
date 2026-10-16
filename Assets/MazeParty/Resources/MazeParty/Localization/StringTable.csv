@@ -821,3 +821,11 @@ EVENT RESULT: {0} GIVES {1} {2},이벤트 결과: {0} → {1} {2} 지급,イベ�
 EVENT RESULT: {0} STEALS {2} FROM {1},이벤트 결과: {0} ← {1} {2} 강탈,イベント結果：{0} ← {1} {2}を奪う,事件结果：{0} ← {1} 夺取{2}
 KEY SHOP (RMB TO BUY A KEY -20 GOLD),열쇠 상점( 우클릭으로 열쇠구매 -20골드),鍵ショップ（右クリックで鍵を購入 -20ゴールド）,钥匙商店（右键购买钥匙 -20金币）
 ITEM SHOP (RMB TO OPEN SHOP),아이템 상점 (우클릭으로 상점 열기),アイテムショップ（右クリックで開く）,道具商店（右键打开商店）
+EVERYONE,모두에게,全員に,所有人
+EVERYONE EXCEPT ME,나만빼고,自分以外,除我以外
+TARGET,대상,対象,目标
+RESOURCE,자원,資源,资源
+METHOD,방식,方式,方式
+SPECIAL EVENT,이벤트,イベント,事件
+
+EVENT RESULT,이벤트 결과,イベント結果,事件结果

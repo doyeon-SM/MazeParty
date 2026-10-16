@@ -91,12 +91,14 @@ namespace MazeParty.Multiplayer
         private readonly Text[] _playerKeyDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerGoldTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerGoldDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Tween[] _healthTweens = new Tween[MultiplayerConstants.MaxPlayers];
+        private readonly BoardHudStatFeedbackView[] _statFeedback =
+            new BoardHudStatFeedbackView[MultiplayerConstants.MaxPlayers];
+        private readonly int[,] _pendingHudDeltas = new int[MultiplayerConstants.MaxPlayers, 3];
+        private readonly bool[] _observedCombatHealth = new bool[MultiplayerConstants.MaxPlayers];
+        private double _hudFeedbackNow;
         private readonly int[] _observedHealth = new int[MultiplayerConstants.MaxPlayers];
         private readonly int[] _observedKeys = new int[MultiplayerConstants.MaxPlayers];
         private readonly int[] _observedGold = new int[MultiplayerConstants.MaxPlayers];
-        private readonly float[,] _deltaExpiresAt =
-            new float[MultiplayerConstants.MaxPlayers, 3];
         private readonly bool[] _observedStats = new bool[MultiplayerConstants.MaxPlayers];
         private readonly float[] _deathGoldDeltaUntil = new float[MultiplayerConstants.MaxPlayers];
         private readonly int[] _deathGoldDeltaTotal = new int[MultiplayerConstants.MaxPlayers];
@@ -303,10 +305,13 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
-            for (var slot = 0; slot < _healthTweens.Length; slot++)
+            for (var slot = 0; slot < _statFeedback.Length; slot++)
             {
-                _healthTweens[slot]?.Kill();
-                _healthTweens[slot] = null;
+                for (var kind = 0; kind < 3; kind++)
+                {
+                    _statFeedback[slot]?.HideDelta(kind);
+                    _pendingHudDeltas[slot, kind] = 0;
+                }
                 _observedStats[slot] = false;
                 _deathGoldDeltaUntil[slot] = 0f;
                 _deathGoldDeltaTotal[slot] = 0;
@@ -340,6 +345,7 @@ namespace MazeParty.Multiplayer
             RefreshLocalPlayer(match);
             RefreshInventory();
             RefreshInteractionPrompt();
+            if (!match.IsSimulationSuspended) _hudFeedbackNow += Time.unscaledDeltaTime;
             RefreshPlayerRows(match);
             RefreshBoardEffects(match);
             RefreshKeyShop(match);
@@ -569,6 +575,7 @@ namespace MazeParty.Multiplayer
             CopyReferences(hud.PlayerKeyDeltaTexts, _playerKeyDeltaTexts);
             CopyReferences(hud.PlayerGoldTexts, _playerGoldTexts);
             CopyReferences(hud.PlayerGoldDeltaTexts, _playerGoldDeltaTexts);
+            CopyReferences(hud.PlayerStatFeedback, _statFeedback);
             CopyReferences(hud.PlayerActionIcons, _playerActionIcons);
             CopyReferences(hud.PlayerRankTexts, _playerRankTexts);
             CopyReferences(
@@ -665,6 +672,12 @@ namespace MazeParty.Multiplayer
                 match.LastLandingEffectType,
                 landingEffectMessage,
                 match.ResourceTransferPresentationPhase);
+            var landingFeedback = match.LandingEffectFeedback;
+            showBoardEventPopup &= !(landingFeedback.FeedbackKind == BoardLandingEffectFeedbackKind.EventIntro &&
+                BoardLandingEffectFeedbackRules.IsVisible(landingFeedback, match.LandingFeedbackPresentationNow)) &&
+                !(landingFeedback.FeedbackKind == BoardLandingEffectFeedbackKind.Event &&
+                  match.LandingFeedbackPresentationNow >= landingFeedback.StartedAt +
+                  BoardLandingEffectFeedbackRules.EventDurationSeconds);
             SetText(
                 _boardEventPopupMessage,
                 showBoardEventPopup
@@ -672,6 +685,9 @@ namespace MazeParty.Multiplayer
                         match.LastLandingEffectEncodedMessage,
                         slot => FormatMinigameResultPlayerName(match.GetAvatarForSlot(slot), slot))
                     : string.Empty);
+            if (showBoardEventPopup)
+                uiBindings.Hud.EventPanelView.Present(match.LastLandingEffectEncodedMessage,
+                    slot => FormatMinigameResultPlayerName(match.GetAvatarForSlot(slot), slot));
             SetActive(_boardEventPopupPanel, showBoardEventPopup);
             var showReticle =
                 ((match.FlowState == BoardFlowState.Action && !choicePending &&
@@ -963,113 +979,96 @@ namespace MazeParty.Multiplayer
 
 
         private void RefreshLandingHudDeltas(
-            NetworkMatchState match,
-            int slot,
-            NetworkPlayerAvatar avatar,
-            int health,
-            float healthRatio)
+            NetworkMatchState match, int slot, NetworkPlayerAvatar avatar,
+            int health, int maxHealth, bool combatHealth)
         {
+            var feedback = _statFeedback[slot];
+            if (feedback == null) return;
             if (avatar == null)
             {
                 _observedStats[slot] = false;
                 _deathGoldDeltaUntil[slot] = 0f;
                 _deathGoldDeltaTotal[slot] = 0;
-                HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
-                HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
-                HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                for (var kind = 0; kind < 3; kind++)
+                {
+                    _pendingHudDeltas[slot, kind] = 0;
+                    feedback.HideDelta(kind);
+                }
+                feedback.ResetHealth(0f);
                 return;
             }
 
             var keys = avatar.KeyCount;
             var gold = avatar.Gold;
-            var presenting = match.FlowState ==
-                             BoardFlowState.LandingEffectResolve &&
-                             !match.IsGlobalSimulationPaused;
+            var presenting = match.FlowState == BoardFlowState.LandingEffectResolve;
+            var resetHealth = !_observedStats[slot] || _observedCombatHealth[slot] != combatHealth;
+            if (resetHealth) feedback.ResetHealth(health / (float)Mathf.Max(1, maxHealth));
+            else if (health != _observedHealth[slot])
+            {
+                feedback.PresentHealth(_observedHealth[slot], health, maxHealth, _hudFeedbackNow);
+                if (presenting) _pendingHudDeltas[slot, 0] += health - _observedHealth[slot];
+            }
             if (_observedStats[slot] && presenting)
             {
-                var healthDelta = health - _observedHealth[slot];
-                if (healthDelta != 0)
-                {
-                    ShowDelta(slot, 0, _playerHealthDeltaTexts[slot], healthDelta);
-                    var slider = _playerHealthSliders[slot];
-                    if (slider != null)
-                    {
-                        _healthTweens[slot]?.Kill();
-                        _healthTweens[slot] = DOTween.To(
-                                () => slider.value,
-                                value => slider.SetValueWithoutNotify(value),
-                                healthRatio,
-                                0.65f)
-                            .SetEase(Ease.OutCubic)
-                            .SetUpdate(true);
-                    }
-                }
-
-                var keyDelta = keys - _observedKeys[slot];
-                if (keyDelta != 0)
-                    ShowDelta(slot, 1, _playerKeyDeltaTexts[slot], keyDelta);
-                var goldDelta = gold - _observedGold[slot];
-                if (goldDelta != 0 && !match.HasDeathGoldInFlight(slot))
-                    ShowDelta(slot, 2, _playerGoldDeltaTexts[slot], goldDelta);
+                _pendingHudDeltas[slot, 1] += keys - _observedKeys[slot];
+                if (!match.HasDeathGoldInFlight(slot))
+                    _pendingHudDeltas[slot, 2] += gold - _observedGold[slot];
             }
-
             _observedHealth[slot] = health;
             _observedKeys[slot] = keys;
             _observedGold[slot] = gold;
+            _observedCombatHealth[slot] = combatHealth;
             _observedStats[slot] = true;
-            if (!presenting)
+
+            if (presenting && !match.IsSimulationSuspended &&
+                ShouldPresentLandingHudDelta(match, slot))
             {
-                HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
-                HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
-                if (Time.unscaledTime < _deathGoldDeltaUntil[slot])
-                    ExpireDelta(slot, 2, _playerGoldDeltaTexts[slot]);
-                else
-                    HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                for (var kind = 0; kind < 3; kind++)
+                {
+                    var amount = _pendingHudDeltas[slot, kind];
+                    if (amount != 0) feedback.PresentDelta(kind, amount, _hudFeedbackNow);
+                    _pendingHudDeltas[slot, kind] = 0;
+                }
             }
-            else
+            else if (!presenting)
             {
-                ExpireDelta(slot, 0, _playerHealthDeltaTexts[slot]);
-                ExpireDelta(slot, 1, _playerKeyDeltaTexts[slot]);
-                ExpireDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                for (var kind = 0; kind < 3; kind++)
+                    _pendingHudDeltas[slot, kind] = 0;
             }
+        }
+
+        private static bool ShouldPresentLandingHudDelta(NetworkMatchState match, int slot)
+        {
+            var transfer = match.ResourceTransferPresentation;
+            var phase = match.GetResourceTransferPresentationPhase(out var progress, out _);
+            if (transfer.Active && phase != BoardResourceTransferPhase.Complete)
+            {
+                var target = phase == BoardResourceTransferPhase.Source ? transfer.SourceSlot :
+                    phase == BoardResourceTransferPhase.Destination ? transfer.DestinationSlot : -1;
+                var elapsed = progress * (phase == BoardResourceTransferPhase.Source
+                    ? BoardResourceTransferPresentationRules.SourceDurationSeconds
+                    : BoardResourceTransferPresentationRules.DestinationDurationSeconds);
+                return target == slot && (phase == BoardResourceTransferPhase.Destination ||
+                       elapsed >= BoardEffectShotTiming.Lead);
+            }
+            var snapshot = match.LandingEffectFeedback;
+            if (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event &&
+                BoardLandingEffectFeedbackRules.IsVisible(snapshot, match.LandingFeedbackPresentationNow))
+                return (BoardLandingEffectFeedbackRules.GetEventFocusMask(
+                           snapshot, match.LandingFeedbackPresentationNow) & (1 << slot)) != 0 &&
+                       BoardLandingEffectFeedbackRules.IsEffectVisible(
+                           snapshot, match.LandingFeedbackPresentationNow);
+            return true;
         }
 
         public void PresentDeathGoldArrival(int slot, int amount)
         {
             if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers || amount <= 0 ||
-                uiBindings == null || _playerGoldDeltaTexts[slot] == null) return;
-            if (Time.unscaledTime >= _deathGoldDeltaUntil[slot]) _deathGoldDeltaTotal[slot] = 0;
+                _statFeedback[slot] == null) return;
+            if (_hudFeedbackNow >= _deathGoldDeltaUntil[slot]) _deathGoldDeltaTotal[slot] = 0;
             _deathGoldDeltaTotal[slot] += amount;
-            _deathGoldDeltaUntil[slot] = Time.unscaledTime + 1.5f;
-            ShowDelta(slot, 2, _playerGoldDeltaTexts[slot], _deathGoldDeltaTotal[slot]);
-        }
-
-        private void ShowDelta(int slot, int kind, Text label, int amount)
-        {
-            if (label == null)
-                return;
-
-            label.text = amount > 0
-                ? "+" + amount.ToString("00")
-                : "-" + (-amount).ToString("00");
-            label.color = amount > 0
-                ? uiBindings.Hud.HealthyHealthColor
-                : uiBindings.Hud.CriticalHealthColor;
-            label.gameObject.SetActive(true);
-            _deltaExpiresAt[slot, kind] = Time.unscaledTime + 1.5f;
-        }
-
-        private void ExpireDelta(int slot, int kind, Text label)
-        {
-            if (label != null && Time.unscaledTime >= _deltaExpiresAt[slot, kind])
-                label.gameObject.SetActive(false);
-        }
-
-        private void HideDelta(int slot, int kind, Text label)
-        {
-            _deltaExpiresAt[slot, kind] = 0f;
-            if (label != null)
-                label.gameObject.SetActive(false);
+            _deathGoldDeltaUntil[slot] = (float)(_hudFeedbackNow + 1d);
+            _statFeedback[slot].PresentDelta(2, _deathGoldDeltaTotal[slot], _hudFeedbackNow);
         }
 
         private void RefreshPlayerRows(NetworkMatchState match)
@@ -1121,16 +1120,10 @@ namespace MazeParty.Multiplayer
                 var healthRatio = avatar != null
                     ? Mathf.Clamp01(currentHealth / (float)maxHealth)
                     : 0f;
-                RefreshLandingHudDeltas(
-                    match, slot, avatar,
-                    avatar != null ? avatar.CurrentHealth : 0,
-                    healthRatio);
+                RefreshLandingHudDeltas(match, slot, avatar,
+                    currentHealth, maxHealth, showCombatHealth);
                 if (_playerHealthSliders[slot] != null)
-                {
-                    if (_healthTweens[slot] == null ||
-                        !_healthTweens[slot].IsActive())
-                        _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
-                }
+                    _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
 
                 if (_playerHealthFills[slot] != null)
                 {
@@ -1142,6 +1135,7 @@ namespace MazeParty.Multiplayer
                             ? uiBindings.Hud.WoundedHealthColor
                             : uiBindings.Hud.CriticalHealthColor;
                 }
+                _statFeedback[slot]?.Tick(_hudFeedbackNow, !match.IsArenaCombatPhase);
                 SetText(_playerHealthTexts[slot], avatar != null
                     ? currentHealth + "/" + maxHealth
                     : "--/--");

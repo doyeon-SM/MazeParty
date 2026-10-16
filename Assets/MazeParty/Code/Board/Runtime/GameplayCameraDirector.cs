@@ -755,36 +755,41 @@ namespace MazeParty.Gameplay
                 return;
             }
 
-            var focus = _boardResourceEventHead != null
-                ? _boardResourceEventHead.position
-                : _boardResourceEventFacing.position +
+            CalculateBoardResourceEventPose(_boardResourceEventFacing, _boardResourceEventHead,
+                _boardResourceEventFocusHeight, out var position, out var rotation, out var fieldOfView);
+            var lens = boardResourceEventCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = fieldOfView;
+            boardResourceEventCamera.Lens = lens;
+            boardResourceEventCamera.ForceCameraPosition(position, rotation);
+        }
+
+        public void CalculateBoardResourceEventPose(Transform facing, Transform head, float focusHeight,
+            out Vector3 position, out Quaternion rotation, out float fieldOfView)
+        {
+            var focus = head != null
+                ? head.position
+                : facing.position +
                   Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
-            focus += Vector3.up * _boardResourceEventFocusHeight;
+            focus += Vector3.up * focusHeight;
             var forward = Vector3.ProjectOnPlane(
-                _boardResourceEventFacing.forward,
+                facing.forward,
                 Vector3.up);
             if (forward.sqrMagnitude < 0.0001f)
             {
                 forward = Vector3.forward;
             }
 
-            var position = focus +
+            position = focus +
                            forward.normalized * Mathf.Max(
                                0.5f,
                                boardResourceEventDistance) +
                            Vector3.up * boardResourceEventHeightOffset;
             var direction = focus - position;
-            var rotation = direction.sqrMagnitude > 0.0001f
+            rotation = direction.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
                 : Quaternion.identity;
-            var lens = boardResourceEventCamera.Lens;
-            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
-            lens.FieldOfView = Mathf.Clamp(
-                boardResourceEventFieldOfView,
-                10f,
-                120f);
-            boardResourceEventCamera.Lens = lens;
-            boardResourceEventCamera.ForceCameraPosition(position, rotation);
+            fieldOfView = Mathf.Clamp(boardResourceEventFieldOfView, 10f, 120f);
         }
 
         private float GetOutputAspect()

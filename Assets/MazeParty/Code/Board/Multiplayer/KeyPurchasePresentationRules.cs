@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer
@@ -18,7 +19,7 @@ namespace MazeParty.Multiplayer
         public const double DefaultTransitionSeconds = 5d;
         public const double ShopRevealSeconds = 3d;
         public const double AcquisitionSeconds =
-            BoardResourceTransferPresentationRules.DestinationDurationSeconds;
+            BoardEffectShotTiming.Duration;
 
         public static double TotalDuration(double transitionSeconds) =>
             transitionSeconds * 2d + AcquisitionSeconds + ShopRevealSeconds;
@@ -31,9 +32,7 @@ namespace MazeParty.Multiplayer
             elapsed -= transitionSeconds;
             if (elapsed < AcquisitionSeconds)
             {
-                acquisitionMotion = Mathf.Clamp01((float)(
-                    Math.Max(0d, elapsed - BoardResourceTransferPresentationRules.CameraLeadSeconds) /
-                    (AcquisitionSeconds - BoardResourceTransferPresentationRules.CameraLeadSeconds)));
+                acquisitionMotion = BoardEffectShotTiming.MotionProgress(elapsed);
                 return KeyPurchasePresentationPhase.AcquireKey;
             }
             elapsed -= AcquisitionSeconds;

@@ -688,6 +688,10 @@ namespace MazeParty.Multiplayer.Tests
             var eventFonts = panel.GetComponent<BoardEventPopupFonts>();
             Assert.That(eventFonts, Is.Not.Null);
             Assert.That(eventFonts.HasRequiredReferences, Is.True);
+            var eventView = panel.GetComponent<BoardEventPanelView>();
+            Assert.That(eventView, Is.Not.Null);
+            Assert.That(eventView.HasRequiredReferences, Is.True);
+            Assert.That(bindings.Hud.EventPanelView, Is.SameAs(eventView));
             Assert.That(message.spriteAsset, Is.Not.Null);
             Assert.That(message.spriteAsset.GetSpriteIndexFromName("gold"), Is.GreaterThanOrEqualTo(0));
             Assert.That(message.spriteAsset.GetSpriteIndexFromName("key"), Is.GreaterThanOrEqualTo(0));
@@ -851,6 +855,15 @@ namespace MazeParty.Multiplayer.Tests
             BoardHudCanvasBindings hud)
         {
             Assert.That(hud, Is.Not.Null);
+            Assert.That(hud.PlayerStatFeedback, Has.Length.EqualTo(4));
+            foreach (var feedback in hud.PlayerStatFeedback)
+            {
+                Assert.That(feedback, Is.Not.Null);
+                Assert.That(feedback.HasRequiredReferences, Is.True);
+                Assert.That(feedback.transform.IsChildOf(root.transform), Is.True);
+                Assert.That(PrefabUtility.IsPartOfPrefabAsset(feedback) ||
+                    PrefabUtility.GetCorrespondingObjectFromSource(feedback) != null, Is.True);
+            }
             var groups = new[]
             {
                 hud.PlayerHealthDeltaTexts,

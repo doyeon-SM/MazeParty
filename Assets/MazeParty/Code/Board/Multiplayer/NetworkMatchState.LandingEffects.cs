@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer
         private byte _landingEffectAppliedMask;
         private double _landingEffectSlotStartsAt;
         private int _lastLandingEffectPreviewKey = -1;
+        private int _landingCameraSlot = -1;
 
         private double PrepareLandingEffectPlanOnServer()
         {
@@ -57,10 +58,13 @@ namespace MazeParty.Multiplayer
                 var isTransfer = effect == BoardLandingEffectType.SpecialEvent &&
                                  _specialEventPlan[slot].Family ==
                                      BoardSpecialEventFamily.Transfer;
-                _landingEffectDurations[slot] = isTransfer
-                    ? BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
-                      BoardResourceTransferPresentationRules.TotalDurationSeconds
-                    : BoardLandingEffectLayout.GetDurationSeconds(effect);
+                _landingEffectDurations[slot] = effect != BoardLandingEffectType.SpecialEvent
+                    ? BoardLandingEffectLayout.GetDurationSeconds(effect)
+                    : BoardEffectShotTiming.Duration + BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
+                      (isTransfer ? BoardResourceTransferPresentationRules.TotalDurationSeconds :
+                       BoardLandingEffectFeedbackRules.GetEventDuration((byte)
+                           BoardSpecialEventRules.GetTargetMask(_specialEventPlan[slot],
+                               slot, MultiplayerConstants.MaxPlayers)));
                 totalDuration += _landingEffectDurations[slot];
             }
 
@@ -87,6 +91,7 @@ namespace MazeParty.Multiplayer
             _nextLandingEffectSlot = 0;
             _landingEffectAppliedMask = 0;
             _landingEffectSlotStartsAt = 0d;
+            _landingCameraSlot = -1;
             _lastLandingEffectPreviewKey = -1;
             ClearLandingEffectPresentationOnServer();
             ClearResourceTransferPresentationOnServer();
@@ -122,12 +127,24 @@ namespace MazeParty.Multiplayer
                 var duration = _landingEffectDurations[slot];
                 var wasApplied =
                     (_landingEffectAppliedMask & (1 << slot)) != 0;
+                if (_landingCameraSlot != slot)
+                {
+                    _landingCameraSlot = slot;
+                    ClearLandingEffectFeedbackOnServer();
+                    PublishLandingEffectOnServer(slot, _landingEffectTiles[slot], effect, string.Empty);
+                    if (effect == BoardLandingEffectType.SpecialEvent)
+                        PublishLandingEffectFeedbackOnServer(slot, BoardLandingEffectFeedbackKind.EventIntro);
+                    _landingEffectSlotStartsAt = elapsed;
+                    return;
+                }
                 if (effect == BoardLandingEffectType.SpecialEvent)
                 {
-                    AdvanceSpecialEventRouletteOnServer(slot, stageElapsed);
+                    if (stageElapsed < BoardEffectShotTiming.Duration) return;
+                    AdvanceSpecialEventRouletteOnServer(slot, stageElapsed - BoardEffectShotTiming.Duration);
                 }
                 else
                 {
+                    if (stageElapsed < BoardEffectShotTiming.Lead) return;
                     ApplyLandingEffectForSlotOnServer(slot);
                 }
 
@@ -145,8 +162,8 @@ namespace MazeParty.Multiplayer
                 {
                     var expectedApplyOffset =
                         effect == BoardLandingEffectType.SpecialEvent
-                            ? BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds
-                            : 0d;
+                            ? BoardEffectShotTiming.Duration + BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds
+                            : BoardEffectShotTiming.Lead;
                     if (stageElapsed > expectedApplyOffset)
                     {
                         // A stalled server frame must not collapse this result
@@ -209,6 +226,17 @@ namespace MazeParty.Multiplayer
         {
             var tile = _landingEffectTiles[slot];
             var resolution = _specialEventPlan[slot];
+            if (stageElapsed < BoardLandingEffectLayout.SpecialEventPanelLeadSeconds)
+            {
+                if (_lastLandingEffectPreviewKey != -2)
+                {
+                    _lastLandingEffectPreviewKey = -2;
+                    PublishLandingEffectOnServer(slot, tile, BoardLandingEffectType.SpecialEvent,
+                        GameText.N("SPECIAL EVENT  TARGET > {0}"), "?");
+                }
+                return;
+            }
+            stageElapsed -= BoardLandingEffectLayout.SpecialEventPanelLeadSeconds;
             if (stageElapsed >=
                 BoardLandingEffectLayout.SpecialEventTargetDurationSeconds +
                 BoardLandingEffectLayout.SpecialEventResourceDurationSeconds +
@@ -457,7 +485,7 @@ namespace MazeParty.Multiplayer
             PublishLandingEffectFeedbackOnServer(
                 actorSlot,
                 BoardLandingEffectFeedbackKind.Event,
-                affectedMask: (byte)targetMask);
+                signedAmount: delta, affectedMask: (byte)targetMask, resource: resolution.Resource);
         }
 
         private bool AreSpecialEventParticipantsAvailableOnServer(
@@ -541,8 +569,7 @@ namespace MazeParty.Multiplayer
             PublishLandingEffectFeedbackOnServer(
                 actorSlot,
                 BoardLandingEffectFeedbackKind.Event,
-                affectedMask: (byte)((1 << sourceSlot) |
-                                     (1 << destinationSlot)));
+                affectedMask: 0);
         }
 
         private static int GetSpecialEventResourceBalance(
@@ -562,7 +589,7 @@ namespace MazeParty.Multiplayer
         private void ShortenEmptyTransferPresentationOnServer(int actorSlot)
         {
             var resultOnlyDuration =
-                BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
+                BoardEffectShotTiming.Duration + BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
                 BoardResourceTransferPresentationRules.ResultDurationSeconds;
             var reduction = Math.Max(
                 0d,
@@ -711,7 +738,8 @@ namespace MazeParty.Multiplayer
             BoardLandingEffectFeedbackKind kind,
             int signedAmount = 0,
             PrototypeItemId itemId = PrototypeItemId.None,
-            byte affectedMask = 0)
+            byte affectedMask = 0,
+            BoardSpecialEventResource resource = BoardSpecialEventResource.Gold)
         {
             var current = _landingEffectFeedback.Value;
             _landingEffectFeedback.Value =
@@ -724,13 +752,17 @@ namespace MazeParty.Multiplayer
                     SignedAmount = signedAmount,
                     AffectedMask = affectedMask,
                     ItemId = (byte)itemId,
-                    StartedAt = ServerNow
+                    Resource = (byte)resource,
+                    StartedAt = kind == BoardLandingEffectFeedbackKind.Event ||
+                                kind == BoardLandingEffectFeedbackKind.EventIntro
+                        ? ServerNow : ServerNow - BoardEffectShotTiming.Lead
                 };
         }
 
         private void ResetLandingEffectRuntimeOnServer(bool clearMessage)
         {
             _landingEffectPlanReady = false;
+            _landingCameraSlot = -1;
             _nextLandingEffectSlot = 0;
             _landingEffectAppliedMask = 0;
             _landingEffectSlotStartsAt = 0d;

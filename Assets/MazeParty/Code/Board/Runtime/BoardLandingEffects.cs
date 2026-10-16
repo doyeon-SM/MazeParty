@@ -91,19 +91,20 @@ namespace MazeParty.Gameplay
             GoldGainWeight + GoldLossWeight + ItemRewardWeight +
             HealingWeight + DamageWeight + SpecialEventWeight;
 
-        public const double StandardEffectDurationSeconds = 1d;
-        public const double ResourceEffectDurationSeconds = 2d;
+        public const double StandardEffectDurationSeconds = BoardEffectShotTiming.Duration;
+        public const double ResourceEffectDurationSeconds = BoardEffectShotTiming.Duration;
         public const double SpecialEventTargetDurationSeconds = 1d;
         public const double SpecialEventResourceDurationSeconds = 1d;
         public const double SpecialEventOperationDurationSeconds = 1d;
-        public const double SpecialEventResultDurationSeconds = 3d;
+        public const double SpecialEventResultDurationSeconds = 2d;
+        public const double SpecialEventPanelLeadSeconds = 0.5d;
         public const double SpecialEventRouletteDurationSeconds =
-            SpecialEventTargetDurationSeconds +
+            SpecialEventPanelLeadSeconds + SpecialEventTargetDurationSeconds +
             SpecialEventResourceDurationSeconds +
             SpecialEventOperationDurationSeconds;
         public const double SpecialEventDurationSeconds =
-            SpecialEventRouletteDurationSeconds +
-            SpecialEventResultDurationSeconds;
+            BoardEffectShotTiming.Duration + SpecialEventRouletteDurationSeconds +
+            SpecialEventResultDurationSeconds + BoardEffectShotTiming.Duration;
 
         private static readonly BoardLandingEffectType[] AssignableEffects =
         {
@@ -233,16 +234,9 @@ namespace MazeParty.Gameplay
         {
             if (rankingStats == null || effects == null || rankingStats.Count != effects.Count)
                 throw new ArgumentException("Every ranked player must have one landing effect.");
-            var ranked = PlayerRankingRules.OrderSlots(rankingStats);
-            var ordered = new int[ranked.Length];
-            var next = 0;
-            foreach (var slot in ranked)
-                if (effects[slot] == BoardLandingEffectType.SpecialEvent)
-                    ordered[next++] = slot;
-            foreach (var slot in ranked)
-                if (effects[slot] != BoardLandingEffectType.SpecialEvent)
-                    ordered[next++] = slot;
-            return ordered;
+            // Encounter an event in the original rank order, resolve it fully,
+            // then continue with the remaining landing tiles.
+            return PlayerRankingRules.OrderSlots(rankingStats);
         }
 
         public static int GetWeight(BoardLandingEffectType effect)

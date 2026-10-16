@@ -9,6 +9,7 @@ namespace MazeParty.Multiplayer
     public sealed class BoardEventPopupFonts : MonoBehaviour
     {
         [SerializeField] private TMP_Text message;
+        [SerializeField] private TMP_Text[] additionalTexts = System.Array.Empty<TMP_Text>();
         [SerializeField] private TMP_FontAsset englishKoreanFont;
         [SerializeField] private TMP_FontAsset japaneseFont;
         [SerializeField] private TMP_FontAsset chineseFont;
@@ -30,6 +31,7 @@ namespace MazeParty.Multiplayer
             if (!HasRequiredReferences) return;
             message.font = GameText.Language == GameLanguage.Japanese ? japaneseFont :
                 GameText.Language == GameLanguage.ChineseSimplified ? chineseFont : englishKoreanFont;
+            foreach (var text in additionalTexts) if (text != null) text.font = message.font;
         }
     }
 }

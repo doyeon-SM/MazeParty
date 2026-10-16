@@ -44,14 +44,15 @@ namespace MazeParty.Multiplayer.Tests
             var cases = new[]
             {
                 (99.5d, BoardResourceTransferPhase.Result, 0f),
-                (102.999d, BoardResourceTransferPhase.Result, 0f),
-                (103d, BoardResourceTransferPhase.Source, 0f),
-                (103.4d, BoardResourceTransferPhase.Source, 0f),
-                (104.999d, BoardResourceTransferPhase.Source, 0.99f),
-                (105d, BoardResourceTransferPhase.Destination, 0f),
-                (105.4d, BoardResourceTransferPhase.Destination, 0f),
-                (106.999d, BoardResourceTransferPhase.Destination, 0.99f),
-                (107d, BoardResourceTransferPhase.Complete, 1f)
+                (101.999d, BoardResourceTransferPhase.Result, 0f),
+                (102d, BoardResourceTransferPhase.Source, 0f),
+                (102.499d, BoardResourceTransferPhase.Source, 0f),
+                (102.5d, BoardResourceTransferPhase.Source, 0f),
+                (103.499d, BoardResourceTransferPhase.Source, 0.99f),
+                (103.5d, BoardResourceTransferPhase.Destination, 0f),
+                (104.499d, BoardResourceTransferPhase.Destination, 0.99f),
+                (104.5d, BoardResourceTransferPhase.Destination, 1f),
+                (105d, BoardResourceTransferPhase.Complete, 1f)
             };
 
             foreach (var testCase in cases)
@@ -173,12 +174,12 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
                         eventWindow,
-                        102.999999d),
+                        101.999999d),
                     Is.True);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
                         eventWindow,
-                        103d),
+                        102d),
                     Is.False);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.GetRemainingSeconds(
@@ -279,6 +280,12 @@ namespace MazeParty.Multiplayer.Tests
                         BoardFlowCameraPresenter>(true))
                     .Single();
                 var serialized = new SerializedObject(presenter);
+                var split = AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Board/World/BoardEventSplitView.prefab")
+                    .GetComponent<BoardEventSplitView>();
+                Assert.That(split.HasRequiredReferences, Is.True);
+                Assert.That(serialized.FindProperty("eventSplitViewPrefab").objectReferenceValue,
+                    Is.SameAs(split));
                 Assert.That(
                     serialized.FindProperty("resourceTransferCoinPrefab")
                         .objectReferenceValue,

@@ -1028,6 +1028,7 @@ namespace MazeParty.Editor
             director.SetBoardFramingAnchor(framing);
             var presenter = root.AddComponent<BoardFlowCameraPresenter>();
             presenter.Configure(director);
+            presenter.ConfigureEventSplitView(BoardEventPresentationProjectSetup.EnsureSplitRig());
             presenter.ConfigureLocalPlayerMarker(
                 BoardLocalPlayerMarkerProjectSetup.CreateInstance(root.transform));
             presenter.ConfigureResourceTransferAssets(

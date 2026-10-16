@@ -78,10 +78,10 @@ namespace MazeParty.Multiplayer
     /// </summary>
     public static class BoardResourceTransferPresentationRules
     {
-        public const double ResultDurationSeconds = 3d;
-        public const double SourceDurationSeconds = 2d;
-        public const double DestinationDurationSeconds = 2d;
-        public const double CameraLeadSeconds = 0.4d;
+        public const double ResultDurationSeconds = BoardLandingEffectLayout.SpecialEventResultDurationSeconds;
+        public const double SourceDurationSeconds = BoardEffectShotTiming.Lead + BoardEffectShotTiming.Motion;
+        public const double DestinationDurationSeconds = BoardEffectShotTiming.Motion + BoardEffectShotTiming.Tail;
+        public const double CameraLeadSeconds = BoardEffectShotTiming.Lead;
         public const double TotalDurationSeconds =
             ResultDurationSeconds +
             SourceDurationSeconds +
@@ -120,9 +120,7 @@ namespace MazeParty.Multiplayer
             if (elapsed < SourceDurationSeconds)
             {
                 phaseProgress = Normalize(elapsed, SourceDurationSeconds);
-                motionProgress = Normalize(
-                    Math.Max(0d, elapsed - CameraLeadSeconds),
-                    SourceDurationSeconds - CameraLeadSeconds);
+                motionProgress = BoardEffectShotTiming.MotionProgress(elapsed);
                 return BoardResourceTransferPhase.Source;
             }
 
@@ -130,9 +128,7 @@ namespace MazeParty.Multiplayer
             if (elapsed < DestinationDurationSeconds)
             {
                 phaseProgress = Normalize(elapsed, DestinationDurationSeconds);
-                motionProgress = Normalize(
-                    Math.Max(0d, elapsed - CameraLeadSeconds),
-                    DestinationDurationSeconds - CameraLeadSeconds);
+                motionProgress = Normalize(elapsed, BoardEffectShotTiming.Motion);
                 return BoardResourceTransferPhase.Destination;
             }
 

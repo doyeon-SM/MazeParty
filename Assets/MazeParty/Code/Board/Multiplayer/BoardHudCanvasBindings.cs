@@ -25,6 +25,7 @@ namespace MazeParty.Multiplayer
             public GameObject ReconnectOverlay;
             public GameObject Reticle;
             public GameObject BoardEventPopupPanel;
+            public BoardEventPanelView EventPanelView;
             public GameObject BoardKillFeedPanel;
 
             public Image ReticleImage;
@@ -50,6 +51,7 @@ namespace MazeParty.Multiplayer
             public Text[] PlayerRows;
             public Image[] PlayerCards;
             public Slider[] PlayerHealthSliders;
+            public BoardHudStatFeedbackView[] PlayerStatFeedback;
             public Image[] PlayerHealthFills;
             public Text[] PlayerHealthTexts;
             public Text[] PlayerHealthDeltaTexts;
@@ -125,6 +127,7 @@ namespace MazeParty.Multiplayer
         public Text PhaseTimerText => references.PhaseTimerText;
         public Text StatusText => references.StatusText;
         public Text ReconnectText => references.ReconnectText;
+        public BoardEventPanelView EventPanelView => references.EventPanelView;
         public TMP_Text BoardEventPopupMessage =>
             references.BoardEventPopupMessage;
         public Text BoardKillFeedMessage => references.BoardKillFeedMessage;
@@ -144,6 +147,7 @@ namespace MazeParty.Multiplayer
         public Text[] PlayerRows => references.PlayerRows;
         public Image[] PlayerCards => references.PlayerCards;
         public Slider[] PlayerHealthSliders => references.PlayerHealthSliders;
+        public BoardHudStatFeedbackView[] PlayerStatFeedback => references.PlayerStatFeedback;
         public Image[] PlayerHealthFills => references.PlayerHealthFills;
         public Text[] PlayerHealthTexts => references.PlayerHealthTexts;
         public Text[] PlayerHealthDeltaTexts => references.PlayerHealthDeltaTexts;
@@ -208,6 +212,7 @@ namespace MazeParty.Multiplayer
             references.ReconnectOverlay != null &&
             references.Reticle != null &&
             references.BoardEventPopupPanel != null &&
+            references.EventPanelView != null && references.EventPanelView.HasRequiredReferences &&
             references.BoardKillFeedPanel != null &&
             references.ReticleImage != null &&
             references.TurnText != null &&
@@ -236,6 +241,8 @@ namespace MazeParty.Multiplayer
             HasArray(
                 references.PlayerHealthSliders,
                 MultiplayerConstants.MaxPlayers) &&
+            HasArray(references.PlayerStatFeedback, MultiplayerConstants.MaxPlayers) &&
+            Array.TrueForAll(references.PlayerStatFeedback, value => value.HasRequiredReferences) &&
             HasArray(
                 references.PlayerHealthFills,
                 MultiplayerConstants.MaxPlayers) &&

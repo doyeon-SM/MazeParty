@@ -85,6 +85,7 @@ namespace MazeParty.Editor
 
         public static GameObject EnsureInstalled()
         {
+            BoardHudFeedbackProjectSetup.EnsureInstalled();
             var aggregate = AssetDatabase.LoadAssetAtPath<GameObject>(
                 AggregatePrefabPath);
             if (aggregate == null)

@@ -9,7 +9,7 @@ namespace MazeParty.Gameplay.Tests
         private readonly List<GameObject> _objects = new List<GameObject>();
 
         [Test]
-        public void ResolutionOrder_AlwaysFinishesEventsBeforeOrdinaryEffectsInRankOrder()
+        public void ResolutionOrder_PreservesRankAndResumesAfterEachEvent()
         {
             var stats = new[]
             {
@@ -26,26 +26,7 @@ namespace MazeParty.Gameplay.Tests
                     effects[slot] = (eventMask & (1 << slot)) != 0
                         ? BoardLandingEffectType.SpecialEvent : BoardLandingEffectType.GoldGain;
                 var actual = BoardLandingEffectLayout.OrderResolutionSlots(stats, effects);
-                Assert.That(actual, Is.EquivalentTo(new[] { 0, 1, 2, 3 }));
-                var seenOrdinary = false;
-                var lastEventRank = -1;
-                var lastOrdinaryRank = -1;
-                foreach (var slot in actual)
-                {
-                    var rank = System.Array.IndexOf(ranked, slot);
-                    if (effects[slot] == BoardLandingEffectType.SpecialEvent)
-                    {
-                        Assert.That(seenOrdinary, Is.False, "event mask=" + eventMask);
-                        Assert.That(rank, Is.GreaterThan(lastEventRank));
-                        lastEventRank = rank;
-                    }
-                    else
-                    {
-                        seenOrdinary = true;
-                        Assert.That(rank, Is.GreaterThan(lastOrdinaryRank));
-                        lastOrdinaryRank = rank;
-                    }
-                }
+                Assert.That(actual, Is.EqualTo(ranked), "event mask=" + eventMask);
             }
         }
 
@@ -198,7 +179,7 @@ namespace MazeParty.Gameplay.Tests
             };
             var duration = BoardLandingEffectLayout
                 .GetTotalDurationSeconds(turnEffects);
-            Assert.That(duration, Is.EqualTo(10d));
+            Assert.That(duration, Is.EqualTo(15.5d));
             Assert.That(
                 BoardLandingEffectLayout.GetTotalDurationSeconds(
                     turnEffects.Length,
