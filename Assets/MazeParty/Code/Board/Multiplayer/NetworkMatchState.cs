@@ -133,12 +133,6 @@ namespace MazeParty.Multiplayer
                 default,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
-        private readonly NetworkList<BoardTombstoneSnapshot> _tombstones =
-            new NetworkList<BoardTombstoneSnapshot>(
-                default,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-        private int _nextTombstoneId;
 
         private readonly ReconnectSnapshot[] _reconnectSnapshots =
             new ReconnectSnapshot[MultiplayerConstants.MaxPlayers];
@@ -184,7 +178,6 @@ namespace MazeParty.Multiplayer
 
         public bool GameplayEnabled => _gameplayEnabled.Value;
         public bool IsMatchVoided => _activeMatchVoidGate.IsVoided;
-        public NetworkList<BoardTombstoneSnapshot> Tombstones => _tombstones;
         public BoardFlowState FlowState => (BoardFlowState)_flowState.Value;
         public int Turn => _turn.Value;
         public int StateRevision => _stateRevision.Value;
@@ -598,6 +591,7 @@ namespace MazeParty.Multiplayer
             EnsureFlowModel();
             var deferActionTimeout =
                 ShouldDeferActionTimeoutForWorldDie();
+            AdvanceDeathGoldPresentationOnServer(now);
             ForEachAvatar(avatar => avatar.AdvanceBoardDeathOnServer(now));
             if (_flow.State == BoardFlowState.LandingEffectResolve)
             {
@@ -712,9 +706,8 @@ namespace MazeParty.Multiplayer
             _itemShop1.Value = default;
             ResetCombatRuntimeOnServer();
             ResetLandingEffectRuntimeOnServer(true);
-            _tombstones.Clear();
+            ResetDeathGoldPresentationOnServer();
             _revealedMinigames.Clear();
-            _nextTombstoneId = 0;
             SyncKeyShopSnapshot();
             InitializeBoardLandingEffectsOnServer();
             _flow.Start(now, 1);
@@ -1613,81 +1606,9 @@ namespace MazeParty.Multiplayer
             return accepted;
         }
 
-        public void PlaceTombstoneOnServer(Vector3 deathPosition, int gold)
-        {
-            if (!IsServer || !_gameplayEnabled.Value || gold <= 0 ||
-                !IsFinite(deathPosition))
-            {
-                return;
-            }
-
-            _tombstones.Add(new BoardTombstoneSnapshot
-            {
-                Id = ++_nextTombstoneId,
-                Position = deathPosition,
-                Gold = gold
-            });
-        }
-
-        public bool TryCollectTombstoneOnServer(NetworkPlayerAvatar avatar, int id)
-        {
-            if (!CanProcessActionRequest(avatar) || avatar.CurrentHealth <= 0)
-            {
-                return false;
-            }
-
-            for (var index = 0; index < _tombstones.Count; index++)
-            {
-                var tombstone = _tombstones[index];
-                if (tombstone.Id != id)
-                {
-                    continue;
-                }
-
-                var position = GetTombstoneDisplayPosition(index);
-                var eye = avatar.EyePivot != null
-                    ? avatar.EyePivot.position
-                    : avatar.transform.position + Vector3.up * 0.75f;
-                var toward = position + Vector3.up * 0.5f - eye;
-                if (toward.magnitude > BoardTombstoneRules.InteractionDistance ||
-                    toward.sqrMagnitude < 0.001f ||
-                    Vector3.Dot(
-                        avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward,
-                        toward.normalized) < 0.9f)
-                {
-                    return false;
-                }
-
-                _tombstones.RemoveAt(index);
-                avatar.ApplyGoldDeltaOnServer(tombstone.Gold);
-                return true;
-            }
-
-            return false;
-        }
-
-        public Vector3 GetTombstoneDisplayPosition(int index)
-        {
-            if (index < 0 || index >= _tombstones.Count)
-            {
-                return Vector3.zero;
-            }
-
-            var tombstone = _tombstones[index];
-            var ordinal = 0;
-            for (var previous = 0; previous < index; previous++)
-            {
-                if ((_tombstones[previous].Position - tombstone.Position).sqrMagnitude < 0.04f)
-                {
-                    ordinal++;
-                }
-            }
-            return BoardTombstoneRules.DisplayPosition(tombstone.Position, ordinal);
-        }
-
         private bool HasBoardDeathInProgressOnServer()
         {
-            var pending = false;
+            var pending = HasDeathGoldInFlight();
             ForEachAvatar(avatar => pending |= avatar.IsBoardDeathInProgressOnServer);
             return pending;
         }
@@ -2016,6 +1937,7 @@ namespace MazeParty.Multiplayer
                 closestDistance = hits[i].distance;
             }
 
+            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
             if (target == null)
             {
                 return true;
@@ -2032,7 +1954,8 @@ namespace MazeParty.Multiplayer
 
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
-                knockbackDirection * BoardCombatRules.PunchKnockbackSpeed);
+                knockbackDirection * BoardCombatRules.PunchKnockbackSpeed,
+                damage);
             if (!eliminated)
             {
                 return true;
@@ -2354,6 +2277,7 @@ namespace MazeParty.Multiplayer
 
         private void PauseCombatAndPersonalProtectionOnServer(double now)
         {
+            PauseDeathGoldPresentationOnServer(now);
             if (_combatActive.Value && _combatEndsAt.Value > 0d)
             {
                 _pausedCombatRemaining.Value = Math.Max(
@@ -2361,17 +2285,26 @@ namespace MazeParty.Multiplayer
                     _combatEndsAt.Value - now);
                 _combatEndsAt.Value = 0d;
             }
-            ForEachAvatar(avatar => avatar.PausePersonalProtectionOnServer(now));
+            ForEachAvatar(avatar =>
+            {
+                avatar.PausePersonalProtectionOnServer(now);
+                avatar.PauseCombatPunchOnServer(now);
+            });
         }
 
         private void ResumeCombatAndPersonalProtectionOnServer(double now)
         {
+            ResumeDeathGoldPresentationOnServer(now);
             if (_combatActive.Value && _pausedCombatRemaining.Value > 0d)
             {
                 _combatEndsAt.Value = now + _pausedCombatRemaining.Value;
                 _pausedCombatRemaining.Value = 0d;
             }
-            ForEachAvatar(avatar => avatar.ResumePersonalProtectionOnServer(now));
+            ForEachAvatar(avatar =>
+            {
+                avatar.ResumePersonalProtectionOnServer(now);
+                avatar.ResumeCombatPunchOnServer(now);
+            });
         }
 
         private static bool HasMultipleSlots(byte mask)

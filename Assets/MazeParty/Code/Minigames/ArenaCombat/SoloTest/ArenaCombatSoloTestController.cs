@@ -192,6 +192,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 fighter.Health = BoardCombatRules.TemporaryHealth;
                 fighter.EliminatedAt = double.NaN;
                 fighter.NextPunchAt = 0d;
+                fighter.PunchSequence.Reset();
                 fighter.Knockback = Vector3.zero;
                 fighter.Visual.SetEliminated(false);
                 fighter.Visual.SetOwnerFirstPerson(false);
@@ -326,6 +327,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 bestSlot = slot;
                 bestDistance = forwardDistance;
             }
+            var damage = attacker.PunchSequence.Resolve(
+                bestSlot >= 0, _elapsed, attacker.Health);
             if (bestSlot < 0)
             {
                 return;
@@ -333,8 +336,8 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             var victim = _fighters[bestSlot];
             victim.Health = Mathf.Max(0,
-                victim.Health - BoardCombatRules.PunchDamage);
-            victim.Visual.TriggerHit(PlayerHitRegion.Body);
+                victim.Health - damage);
+            victim.Visual.TriggerHit(PlayerHitRegion.Body, damage);
             victim.Knockback = direction *
                 BoardCombatRules.PunchKnockbackSpeed;
             if (bestSlot == LocalPlayerSlot)
@@ -564,6 +567,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             public int Health { get; set; }
             public double EliminatedAt { get; set; }
             public double NextPunchAt { get; set; }
+            public CombatPunchSequence PunchSequence;
             public Vector3 Knockback { get; set; }
             public bool IsAlive => Health > 0 &&
                                    double.IsNaN(EliminatedAt);

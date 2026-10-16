@@ -133,23 +133,14 @@ namespace MazeParty.Gameplay.Tests
                         BoardMapRuntimeLoader.CatalogResourcesPath),
                     Is.Not.Null,
                     "The production runtime map catalog must stay at its stable Resources path.");
-                var tombstoneView = topology.GetComponents<MonoBehaviour>()
+                var deathGoldView = topology.GetComponents<MonoBehaviour>()
                     .SingleOrDefault(component => component != null &&
-                        component.GetType().FullName ==
-                            "MazeParty.Multiplayer.BoardTombstoneWorldView");
-                Assert.That(tombstoneView, Is.Not.Null);
-                var hasReferences = tombstoneView.GetType()
-                    .GetProperty("HasRequiredReferences")?.GetValue(tombstoneView);
-                Assert.That(hasReferences, Is.EqualTo(true),
-                    "Board tombstones must use the authored world prefab.");
-                var tombstonePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/MazeParty/Prefabs/Board/World/BoardTombstone.prefab");
-                Assert.That(tombstonePrefab, Is.Not.Null);
-                Assert.That(tombstonePrefab.GetComponent<BoxCollider>(), Is.Not.Null);
-                Assert.That(tombstonePrefab.GetComponents<MonoBehaviour>()
-                    .Any(component => component != null &&
-                        component.GetType().FullName ==
-                            "MazeParty.Multiplayer.BoardTombstoneMarker"), Is.True);
+                        component.GetType().FullName == "MazeParty.Multiplayer.BoardKillGoldWorldView");
+                Assert.That(deathGoldView, Is.Not.Null);
+                var coin = new SerializedObject(deathGoldView)
+                    .FindProperty("coinPrefab").objectReferenceValue;
+                Assert.That(AssetDatabase.GetAssetPath(coin),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/World/BoardEventCoin.prefab"));
                 var routeView = topology.GetComponents<MonoBehaviour>().SingleOrDefault(component =>
                     component != null && component.GetType().FullName == "MazeParty.Multiplayer.BoardShopRouteView");
                 Assert.That(routeView, Is.Not.Null, "Board scene must have exactly one local shop guide.");

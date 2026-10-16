@@ -130,9 +130,7 @@ namespace MazeParty.Multiplayer
                 snapshot.players.Length != MultiplayerConstants.MaxPlayers ||
                 snapshot.itemShops == null ||
                 snapshot.itemShops.Length != ItemShopRules.ShopCount ||
-                snapshot.tombstones == null ||
                 snapshot.mines == null ||
-                snapshot.nextTombstoneId < 0 ||
                 !TryDecodeMinigameSeed(snapshot.currentMinigameSeed, out _))
             {
                 return false;
@@ -203,19 +201,6 @@ namespace MazeParty.Multiplayer
             for (var index = 0; index < snapshot.itemShops.Length; index++)
             {
                 if (!IsValidItemShop(snapshot.itemShops[index]))
-                {
-                    return false;
-                }
-            }
-
-            var tombstoneIds = new HashSet<int>();
-            for (var index = 0; index < snapshot.tombstones.Length; index++)
-            {
-                var tombstone = snapshot.tombstones[index];
-                if (tombstone.id < 0 || tombstone.gold < 0 ||
-                    !IsFinite(tombstone.position) ||
-                    !tombstoneIds.Add(tombstone.id) ||
-                    tombstone.id > snapshot.nextTombstoneId)
                 {
                     return false;
                 }

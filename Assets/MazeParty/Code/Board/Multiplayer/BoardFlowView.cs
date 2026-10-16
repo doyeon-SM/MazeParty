@@ -98,6 +98,8 @@ namespace MazeParty.Multiplayer
         private readonly float[,] _deltaExpiresAt =
             new float[MultiplayerConstants.MaxPlayers, 3];
         private readonly bool[] _observedStats = new bool[MultiplayerConstants.MaxPlayers];
+        private readonly float[] _deathGoldDeltaUntil = new float[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _deathGoldDeltaTotal = new int[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _minigameReadyPlayerStates =
@@ -306,6 +308,8 @@ namespace MazeParty.Multiplayer
                 _healthTweens[slot]?.Kill();
                 _healthTweens[slot] = null;
                 _observedStats[slot] = false;
+                _deathGoldDeltaUntil[slot] = 0f;
+                _deathGoldDeltaTotal[slot] = 0;
             }
             StopMinigamePreview();
             CloseItemShop();
@@ -967,6 +971,8 @@ namespace MazeParty.Multiplayer
             if (avatar == null)
             {
                 _observedStats[slot] = false;
+                _deathGoldDeltaUntil[slot] = 0f;
+                _deathGoldDeltaTotal[slot] = 0;
                 HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
                 HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
                 HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
@@ -1002,7 +1008,7 @@ namespace MazeParty.Multiplayer
                 if (keyDelta != 0)
                     ShowDelta(slot, 1, _playerKeyDeltaTexts[slot], keyDelta);
                 var goldDelta = gold - _observedGold[slot];
-                if (goldDelta != 0)
+                if (goldDelta != 0 && !match.HasDeathGoldInFlight(slot))
                     ShowDelta(slot, 2, _playerGoldDeltaTexts[slot], goldDelta);
             }
 
@@ -1014,7 +1020,10 @@ namespace MazeParty.Multiplayer
             {
                 HideDelta(slot, 0, _playerHealthDeltaTexts[slot]);
                 HideDelta(slot, 1, _playerKeyDeltaTexts[slot]);
-                HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                if (Time.unscaledTime < _deathGoldDeltaUntil[slot])
+                    ExpireDelta(slot, 2, _playerGoldDeltaTexts[slot]);
+                else
+                    HideDelta(slot, 2, _playerGoldDeltaTexts[slot]);
             }
             else
             {
@@ -1022,6 +1031,16 @@ namespace MazeParty.Multiplayer
                 ExpireDelta(slot, 1, _playerKeyDeltaTexts[slot]);
                 ExpireDelta(slot, 2, _playerGoldDeltaTexts[slot]);
             }
+        }
+
+        public void PresentDeathGoldArrival(int slot, int amount)
+        {
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers || amount <= 0 ||
+                uiBindings == null || _playerGoldDeltaTexts[slot] == null) return;
+            if (Time.unscaledTime >= _deathGoldDeltaUntil[slot]) _deathGoldDeltaTotal[slot] = 0;
+            _deathGoldDeltaTotal[slot] += amount;
+            _deathGoldDeltaUntil[slot] = Time.unscaledTime + 1.5f;
+            ShowDelta(slot, 2, _playerGoldDeltaTexts[slot], _deathGoldDeltaTotal[slot]);
         }
 
         private void ShowDelta(int slot, int kind, Text label, int amount)

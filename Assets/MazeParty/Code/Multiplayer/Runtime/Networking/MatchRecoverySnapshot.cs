@@ -44,9 +44,6 @@ namespace MazeParty.Multiplayer
         public MatchRecoveryKeyShopSnapshot keyShop;
         public MatchRecoveryItemShopSnapshot[] itemShops =
             Array.Empty<MatchRecoveryItemShopSnapshot>();
-        public MatchRecoveryTombstoneSnapshot[] tombstones =
-            Array.Empty<MatchRecoveryTombstoneSnapshot>();
-        public int nextTombstoneId;
         public MatchRecoveryMineSnapshot[] mines =
             Array.Empty<MatchRecoveryMineSnapshot>();
         public MatchRecoveryPlayerSnapshot[] players =
@@ -100,14 +97,6 @@ namespace MazeParty.Multiplayer
         public int appearedTurn;
         public byte soldMask;
         public int[] offers;
-    }
-
-    [Serializable]
-    public struct MatchRecoveryTombstoneSnapshot
-    {
-        public int id;
-        public Vector3 position;
-        public int gold;
     }
 
     [Serializable]

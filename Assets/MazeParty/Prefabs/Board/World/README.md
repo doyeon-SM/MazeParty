@@ -10,7 +10,7 @@
 | 아이템 상점 2종 | `ItemShop1`, `ItemShop2` |
 | 플레이어별 이동 제한 벽 | `PlayerBoundaryWall` |
 | 보드 배경 바닥 | `BoardBackdrop` |
-| 묘비·열쇠 상점 안내 광점 | `BoardTombstone`, `KeyShopRouteHemisphere` (경로 호환 이름) |
+| 열쇠 상점 안내 광점 | `KeyShopRouteHemisphere` (경로 호환 이름) |
 
 이 폴더의 프리팹을 더블클릭해 Prefab Mode에서 편집한다. 재질은
 `Assets/MazeParty/Board/Materials`에 있다. 주사위 외형은 인접한
@@ -46,7 +46,7 @@
   GUID를 유지하지만 내부는 AllIn1 `OrbSparkGlow` 재질을 쓰는 단일 반복 파티클이다.
   기존 반구와 비슷한 약 0.15m 범위의 작은 노란 광원만 유지하고 실제 Light,
   Collider, NetworkObject, vendor 동작 스크립트는 추가하지 않는다.
-- **묘비·경로·주사위**: 기존 바인딩과 Collider 계약을 유지하며 외형을 편집한다.
+- **경로·주사위**: 기존 바인딩과 Collider 계약을 유지하며 외형을 편집한다.
 
 ## 연결과 재설정
 

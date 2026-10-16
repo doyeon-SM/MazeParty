@@ -262,6 +262,7 @@ namespace MazeParty.Multiplayer
                 closestDistance = hits[index].distance;
             }
 
+            var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
             if (target == null)
             {
                 return true;
@@ -279,7 +280,8 @@ namespace MazeParty.Multiplayer
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
                 knockbackDirection *
-                BoardCombatRules.PunchKnockbackSpeed);
+                BoardCombatRules.PunchKnockbackSpeed,
+                damage);
             IncrementHitSequenceOnServer(target.AssignedSlot);
             if (!eliminated)
             {
@@ -366,6 +368,7 @@ namespace MazeParty.Multiplayer
                 if (avatar != null)
                 {
                     avatar.StopServerInputOnServer();
+                    avatar.PauseCombatPunchOnServer(now);
                 }
             }
             _paused.Value = true;
@@ -389,6 +392,7 @@ namespace MazeParty.Multiplayer
                 _nextPunchAllowedAt[slot] =
                     now + _pausedPunchCooldown[slot];
                 _pausedPunchCooldown[slot] = 0d;
+                _avatars[slot]?.ResumeCombatPunchOnServer(now);
             }
             _paused.Value = false;
             AdvanceInputEpochOnServer();

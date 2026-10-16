@@ -15,6 +15,16 @@ namespace MazeParty.Gameplay
         public const double PunchCooldownSeconds = 0.65d;
         public const float PunchKnockbackSpeed = 3.5f;
         public const int MaximumFightsPerTurn = 32;
+        public const double ComboTimeoutSeconds = 1d;
+
+        public static int GetPunchDamage(int strikeIndex, int attackerHealth)
+        {
+            var baseDamage = strikeIndex == 1 ? 7 : strikeIndex == 2 ? 10 : PunchDamage;
+            var percent = attackerHealth <= TemporaryHealth / 10 ? 150
+                : attackerHealth <= TemporaryHealth / 2 ? 120 : 100;
+            // Positive integer rounding, including 7 * 1.5 = 10.5 -> 11.
+            return (baseDamage * percent + 50) / 100;
+        }
 
         public static IReadOnlyList<BoardCombatGroup> BuildInitialQueue(
             IReadOnlyList<BoardCombatPlacement> placements,
@@ -191,6 +201,48 @@ namespace MazeParty.Gameplay
             return double.IsNaN(value) || double.IsInfinity(value)
                 ? double.MaxValue
                 : value;
+        }
+    }
+
+    /// <summary>One attacker's accepted swings, shared by board and arena combat.</summary>
+    public struct CombatPunchSequence
+    {
+        private int _nextStrike;
+        private double _expiresAt;
+        private double _pausedRemaining;
+        private bool _paused;
+
+        public int Resolve(bool hit, double now, int attackerHealth)
+        {
+            if (_paused) return 0;
+            if (!hit || now >= _expiresAt)
+                _nextStrike = 0;
+            _expiresAt = now + BoardCombatRules.ComboTimeoutSeconds;
+            if (!hit) return 0;
+
+            var damage = BoardCombatRules.GetPunchDamage(_nextStrike, attackerHealth);
+            _nextStrike = (_nextStrike + 1) % 3;
+            return damage;
+        }
+
+        public void Reset()
+        {
+            this = default;
+        }
+
+        public void Pause(double now)
+        {
+            if (_paused) return;
+            _pausedRemaining = Math.Max(0d, _expiresAt - now);
+            _paused = true;
+        }
+
+        public void Resume(double now)
+        {
+            if (!_paused) return;
+            _expiresAt = now + _pausedRemaining;
+            _pausedRemaining = 0d;
+            _paused = false;
         }
     }
 

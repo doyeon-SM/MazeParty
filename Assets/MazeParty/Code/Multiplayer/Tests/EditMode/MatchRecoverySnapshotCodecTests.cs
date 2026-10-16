@@ -33,7 +33,6 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 restored.players[0].personalProtectionRemaining,
                 Is.EqualTo(12.5d));
-            Assert.That(restored.tombstones[0].id, Is.EqualTo(1));
             Assert.That(restored.mines, Has.Length.EqualTo(1));
             Assert.That(restored.mines[0].ownerSlot, Is.EqualTo(2));
             Assert.That(
@@ -128,14 +127,17 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void Decode_AllowsLastAllocatedTombstoneIdButRejectsFutureId()
+        public void Decode_IgnoresRetiredGravesWithoutChangingSettledGold()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            var snapshot = CreateValidSnapshot();
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.True);
-
-            snapshot.nextTombstoneId = 0;
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            var original = CreateValidSnapshot();
+            var payload = JsonUtility.ToJson(original);
+            payload = payload.Insert(payload.Length - 1,
+                ",\"tombstones\":[{\"id\":1,\"gold\":30}],\"nextTombstoneId\":1");
+            Assert.That(codec.TryDecode(payload, out var restored), Is.True);
+            for (var slot = 0; slot < original.players.Length; slot++)
+                Assert.That(restored.players[slot].gold, Is.EqualTo(original.players[slot].gold));
+            Assert.That(codec.Encode(restored), Does.Not.Contain("tombstones"));
         }
 
         [Test]
@@ -371,16 +373,6 @@ namespace MazeParty.Multiplayer.Tests
                     new MatchRecoveryItemShopSnapshot(),
                     new MatchRecoveryItemShopSnapshot()
                 },
-                tombstones = new[]
-                {
-                    new MatchRecoveryTombstoneSnapshot
-                    {
-                        id = 1,
-                        position = new Vector3(1f, 0f, 2f),
-                        gold = 3
-                    }
-                },
-                nextTombstoneId = 1,
                 mines = new[]
                 {
                     new MatchRecoveryMineSnapshot

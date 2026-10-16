@@ -9,6 +9,21 @@ namespace MazeParty.Gameplay
         public const double DeathPresentationSeconds = 1d;
         public const double RespawnProtectionSeconds = 10d;
         public const int DroppedGoldPercent = 30;
+        public const int UncreditedDeathLoss = 6;
+        public const int UncreditedDeathReward = 2;
+
+        public static int GoldLoss(int gold, bool hasKiller) =>
+            hasKiller ? DroppedGold(gold) : Math.Min(Math.Max(0, gold), UncreditedDeathLoss);
+
+        public static int GoldReward(int gold, int victimSlot, int killerSlot, int recipientSlot)
+        {
+            if (victimSlot < 0 || victimSlot >= 4 || recipientSlot < 0 ||
+                recipientSlot >= 4 || recipientSlot == victimSlot) return 0;
+            var hasKiller = killerSlot >= 0 && killerSlot < 4 && killerSlot != victimSlot;
+            return hasKiller
+                ? (recipientSlot == killerSlot ? DroppedGold(gold) : 0)
+                : UncreditedDeathReward;
+        }
 
         public static int DroppedGold(int gold)
         {

@@ -6206,10 +6206,10 @@ MonoBehaviour:
   m_GameObject: {fileID: 1732981727}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7df25e825fa4458428946d912630a072, type: 3}
+  m_Script: {fileID: 11500000, guid: 314a4beffed441889ccac6db30af282a, type: 3}
   m_Name:
-  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardTombstoneWorldView
-  markerPrefab: {fileID: 8281985170450731341, guid: 08a33b2f8f32dfa498c22b7717e9aa54, type: 3}
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardKillGoldWorldView
+  coinPrefab: {fileID: 5484315453847271486, guid: 0446cb893022762499dfef9bd8a80f17, type: 3}
 --- !u!114 &1732981730
 MonoBehaviour:
   m_ObjectHideFlags: 0

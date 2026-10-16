@@ -122,7 +122,6 @@ namespace MazeParty.Multiplayer
                     return false;
                 }
 
-                RestoreTombstones(snapshot);
                 for (var slot = 0; slot < avatars.Length; slot++)
                 {
                     if (!avatars[slot].RestoreMatchRecoverySnapshotOnServer(
@@ -579,18 +578,6 @@ namespace MazeParty.Multiplayer
                 };
             }
 
-            var tombstones = new MatchRecoveryTombstoneSnapshot[_tombstones.Count];
-            for (var index = 0; index < _tombstones.Count; index++)
-            {
-                var tombstone = _tombstones[index];
-                tombstones[index] = new MatchRecoveryTombstoneSnapshot
-                {
-                    id = tombstone.Id,
-                    position = tombstone.Position,
-                    gold = tombstone.Gold
-                };
-            }
-
             var mines = checkpoint == MatchRecoveryCheckpoint.MatchComplete
                 ? Array.Empty<MatchRecoveryMineSnapshot>()
                 : new MatchRecoveryMineSnapshot[_boardMines.Count];
@@ -656,8 +643,6 @@ namespace MazeParty.Multiplayer
                         : 0
                 },
                 itemShops = itemShops,
-                tombstones = tombstones,
-                nextTombstoneId = _nextTombstoneId,
                 mines = mines,
                 players = players
             };
@@ -665,6 +650,7 @@ namespace MazeParty.Multiplayer
 
         private void ResetTransientMatchStateForRecovery()
         {
+            ResetDeathGoldPresentationOnServer();
             EndAllMinigameRuntimes();
             ResetCombatRuntimeOnServer();
             ClearBoardItemWorld();
@@ -807,23 +793,6 @@ namespace MazeParty.Multiplayer
             }
 
             return true;
-        }
-
-        private void RestoreTombstones(MatchRecoverySnapshot snapshot)
-        {
-            _tombstones.Clear();
-            for (var index = 0; index < snapshot.tombstones.Length; index++)
-            {
-                var saved = snapshot.tombstones[index];
-                _tombstones.Add(new BoardTombstoneSnapshot
-                {
-                    Id = saved.id,
-                    Position = saved.position,
-                    Gold = saved.gold
-                });
-            }
-
-            _nextTombstoneId = snapshot.nextTombstoneId;
         }
 
         private static BoardFlowState ToBoardFlowState(

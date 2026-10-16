@@ -69,6 +69,9 @@ namespace MazeParty.Gameplay
         private float _bodyHitTimer;
         private float _headHitTimer;
         private float _handHitTimer;
+        private float _bodyHitScale = 1f;
+        private float _headHitScale = 1f;
+        private float _handHitScale = 1f;
         private float _itemUseTimer;
         private PrototypeItemId _activeItemId;
         private PrototypeItemId _equippedItemId;
@@ -513,18 +516,25 @@ namespace MazeParty.Gameplay
             TriggerHit(PlayerHitRegion.Body);
         }
 
-        public void TriggerHit(PlayerHitRegion region)
+        public void TriggerHit(PlayerHitRegion region, int damage = 0)
         {
             EnsureBuilt();
+            // 0-9 retains the authored reaction; each next 5 damage adds
+            // one step, reaching twice the original angle at 50 damage.
+            var tier = Mathf.Clamp(damage / 5, 1, 10);
+            var scale = 1f + (tier - 1) / 9f;
             switch (region)
             {
                 case PlayerHitRegion.Head:
+                    _headHitScale = scale;
                     _headHitTimer = 1f;
                     break;
                 case PlayerHitRegion.Hand:
+                    _handHitScale = scale;
                     _handHitTimer = 1f;
                     break;
                 default:
+                    _bodyHitScale = scale;
                     _bodyHitTimer = 1f;
                     break;
             }
@@ -699,9 +709,9 @@ namespace MazeParty.Gameplay
             var push = StrikeAmount(_pushTimer);
             var leftStrike = Mathf.Max(leftPunch, push);
             var rightStrike = Mathf.Max(rightPunch, push);
-            var bodyWobble = WobbleAngle(_bodyHitTimer, 22f);
-            var headWobble = WobbleAngle(_headHitTimer, 30f);
-            var handWobble = WobbleAngle(_handHitTimer, 34f);
+            var bodyWobble = WobbleAngle(_bodyHitTimer, 22f * _bodyHitScale);
+            var headWobble = WobbleAngle(_headHitTimer, 30f * _headHitScale);
+            var handWobble = WobbleAngle(_handHitTimer, 34f * _handHitScale);
             var headOffsetX = headWobble / 30f * 0.11f;
 
             _body.localPosition = new Vector3(0f, bodyY, 0f);

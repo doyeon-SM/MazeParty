@@ -169,6 +169,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
         private Vector2Int _localCombatTile;
         private double _localCombatEndsAt;
         private double _nextLocalPunchAllowedAt;
+        private CombatPunchSequence _localPunchSequence;
         private double _nextLocalBoardPunchAllowedAt;
         private double _nextLocalPrimaryRepeatAt;
         private int _localCombatSequenceIndex;
@@ -1917,6 +1918,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 _localCombatEndsAt = _flow.ToFlowTime(_simulationNow) +
                                      BoardCombatRules.FightDurationSeconds;
                 _nextLocalPunchAllowedAt = _flow.ToFlowTime(_simulationNow);
+                _localPunchSequence.Reset();
                 _localCombatSequenceIndex++;
                 for (var slot = 0; slot < _combatHealth.Length; slot++)
                 {
@@ -2010,6 +2012,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                 bestDistance = distance;
             }
 
+            var damage = _localPunchSequence.Resolve(targetSlot >= 0, flowNow, _combatHealth[0]);
             if (targetSlot < 0)
             {
                 LogSimulation("EDITOR FIGHT: punch missed.");
@@ -2026,10 +2029,10 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                     combatTile,
                     0.6f);
             }
-            ApplyLocalCombatDamage(targetSlot);
-            target?.GetComponent<PlayerAvatarVisual>()?.TriggerHit(PlayerHitRegion.Body);
+            ApplyLocalCombatDamage(targetSlot, damage);
+            target?.GetComponent<PlayerAvatarVisual>()?.TriggerHit(PlayerHitRegion.Body, damage);
             LogSimulation("EDITOR FIGHT: P" + (targetSlot + 1) +
-                      " took 5 temporary HP damage.");
+                      " took " + damage + " temporary HP damage.");
         }
 
         private bool ShouldRepeatLocalPrimaryAction(
@@ -2113,7 +2116,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             LogSimulation("EDITOR PUNCH: missed. HP unchanged.");
         }
 
-        private void ApplyLocalCombatDamage(int slot)
+        private void ApplyLocalCombatDamage(int slot, int damage = BoardCombatRules.PunchDamage)
         {
             if (!IsLocalCombatAlive(slot))
             {
@@ -2122,7 +2125,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
             _combatHealth[slot] = Mathf.Max(
                 0,
-                _combatHealth[slot] - BoardCombatRules.PunchDamage);
+                _combatHealth[slot] - damage);
             if (_combatHealth[slot] > 0)
             {
                 return;
@@ -2563,10 +2566,13 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void ResolveLocalLandingDeath(int slot)
         {
-            var droppedGold = BoardDeathRules.DroppedGold(_gold[slot]);
+            var droppedGold = BoardDeathRules.GoldLoss(_gold[slot], false);
             _gold[slot] = PlayerStatRules.ApplyGoldDelta(
-                _gold[slot],
-                -droppedGold);
+                _gold[slot], -droppedGold);
+            for (var recipient = 0; recipient < _gold.Length; recipient++)
+                if (recipient != slot)
+                    _gold[recipient] = PlayerStatRules.ApplyGoldDelta(
+                        _gold[recipient], BoardDeathRules.UncreditedDeathReward);
             var marker = slot == 0 ? null : GetRemoteMarker(slot);
             var deathPosition = slot == 0 && player != null
                 ? player.transform.position

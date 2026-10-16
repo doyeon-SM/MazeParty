@@ -492,7 +492,7 @@ namespace MazeParty.Editor
             var worldPrefabs = BoardWorldPrefabProjectSetup.EnsureAssets();
             BoardWorldPrefabProjectSetup.Bind(root.AddComponent<KeyShopWorldMarker>(), worldPrefabs);
             BoardWorldPrefabProjectSetup.Bind(root.AddComponent<ItemShopWorldMarker>(), worldPrefabs);
-            BoardTombstoneProjectSetup.EnsureView(root);
+            BoardKillGoldProjectSetup.EnsureView(root);
             BoardShopRouteProjectSetup.EnsureView(root);
             EditorUtility.SetDirty(topology);
             return topology;

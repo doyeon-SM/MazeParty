@@ -228,6 +228,7 @@ namespace MazeParty.Multiplayer
         private int _displayedBoundaryMoves = int.MinValue;
         private bool _boundaryWallsActive;
         private Vector3 _combatKnockbackVelocity;
+        private CombatPunchSequence _combatPunchSequence;
         private float _verticalVelocity;
         private readonly Collider[] _standingClearanceHits = new Collider[16];
         private NetworkWorldDie _cachedLocalWorldDie;
@@ -772,7 +773,7 @@ namespace MazeParty.Multiplayer
         {
             if (IsServer)
             {
-                PresentHitRpc((byte)region, false);
+                PresentHitRpc((byte)region, false, 0);
             }
         }
 
@@ -835,6 +836,7 @@ namespace MazeParty.Multiplayer
             _itemCharges.Value = 0;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
             _combatState.Value = (byte)NetworkCombatState.None;
+            _combatPunchSequence.Reset();
             _combatHealth.Value = 0;
             _pendingCombatProtection.Value = false;
             _personalProtectionEndsAt.Value = 0d;
@@ -889,7 +891,8 @@ namespace MazeParty.Multiplayer
             RecordDamageOnServer(appliedDamage, attacker);
             PresentHitRpc(
                 (byte)request.HitRegion,
-                request.Kind == DamageKind.Item);
+                request.Kind == DamageKind.Item,
+                request.Amount);
             if (_currentHealth.Value == 0)
             {
                 if (attacker != null)
@@ -897,7 +900,7 @@ namespace MazeParty.Multiplayer
                     match?.PublishBoardKillOnServer(
                         attacker, this, request.ItemId);
                 }
-                BeginBoardDeathOnServer();
+                BeginBoardDeathOnServer(attacker);
             }
             return DamageResult.Applied;
         }
@@ -942,18 +945,14 @@ namespace MazeParty.Multiplayer
                 CombatState == NetworkCombatState.Eliminated);
         }
 
-        private void BeginBoardDeathOnServer()
+        private void BeginBoardDeathOnServer(NetworkPlayerAvatar killer)
         {
+            if (_boardDeathEndsAt > 0d || _pausedBoardDeathRemaining > 0d) return;
             ClearUtilityEffectsOnServer();
             CancelHandGestureOnServer();
             var match = NetworkMatchState.Instance;
             var now = match != null ? match.SynchronizedNow : Time.unscaledTimeAsDouble;
-            var droppedGold = BoardDeathRules.DroppedGold(_gold.Value);
-            if (droppedGold > 0 && match != null && match.GameplayEnabled)
-            {
-                _gold.Value -= droppedGold;
-                match?.PlaceTombstoneOnServer(transform.position, droppedGold);
-            }
+            match?.GrantBoardDeathGoldOnServer(this, killer);
 
             _boardDeathEndsAt = now + BoardDeathRules.DeathPresentationSeconds;
             _pausedBoardDeathRemaining = 0d;
@@ -1132,6 +1131,7 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _combatKnockbackVelocity = Vector3.zero;
+            _combatPunchSequence.Reset();
             _combatHealth.Value = participating ? BoardCombatRules.TemporaryHealth : 0;
             _combatState.Value = (byte)(participating
                 ? NetworkCombatState.Active
@@ -1161,6 +1161,7 @@ namespace MazeParty.Multiplayer
 
             StopServerInputOnServer();
             _combatKnockbackVelocity = Vector3.zero;
+            _combatPunchSequence.Reset();
             _combatHealth.Value = BoardCombatRules.TemporaryHealth;
             _combatState.Value = (byte)NetworkCombatState.Active;
             _actionState.Value = (byte)PlayerBoardActionState.Fighting;
@@ -1174,22 +1175,39 @@ namespace MazeParty.Multiplayer
             _serverPitch = 0f;
         }
 
+        public int ResolveCombatPunchDamageOnServer(bool hit, double now)
+        {
+            if (!IsServer || !IsCombatAlive) return 0;
+            return _combatPunchSequence.Resolve(hit, now, _combatHealth.Value);
+        }
+
+        public void PauseCombatPunchOnServer(double now)
+        {
+            if (IsServer) _combatPunchSequence.Pause(now);
+        }
+
+        public void ResumeCombatPunchOnServer(double now)
+        {
+            if (IsServer) _combatPunchSequence.Resume(now);
+        }
+
         public bool ApplyCombatPunchOnServer(
             NetworkPlayerAvatar attacker,
-            Vector3 knockbackVelocity)
+            Vector3 knockbackVelocity,
+            int damage)
         {
             if (!IsServer || CombatState != NetworkCombatState.Active ||
-                _combatHealth.Value <= 0)
+                _combatHealth.Value <= 0 || damage <= 0)
             {
                 return false;
             }
 
             var appliedDamage = MatchAwardRules.GetAppliedDamageAmount(
                 _combatHealth.Value,
-                BoardCombatRules.PunchDamage);
+                damage);
             _combatHealth.Value -= appliedDamage;
             RecordDamageOnServer(appliedDamage, attacker);
-            PresentHitRpc((byte)PlayerHitRegion.Body, true);
+            PresentHitRpc((byte)PlayerHitRegion.Body, true, damage);
             if (_combatHealth.Value > 0)
             {
                 _combatKnockbackVelocity += Vector3.ClampMagnitude(
@@ -1262,6 +1280,7 @@ namespace MazeParty.Multiplayer
                 _pendingCombatProtection.Value = true;
             }
             _combatState.Value = (byte)NetworkCombatState.None;
+            _combatPunchSequence.Reset();
             _combatHealth.Value = 0;
             _combatKnockbackVelocity = Vector3.zero;
             _actionState.Value = (byte)PlayerBoardActionState.Hidden;
@@ -2541,9 +2560,9 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentHitRpc(byte region, bool showLocalFlash)
+        private void PresentHitRpc(byte region, bool showLocalFlash, int damage)
         {
-            _avatarVisual?.TriggerHit((PlayerHitRegion)region);
+            _avatarVisual?.TriggerHit((PlayerHitRegion)region, damage);
             GameSound.PlayAt(
                 SoundKeys.CombatHit((PlayerHitRegion)region),
                 transform.position);
@@ -2965,15 +2984,6 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
             {
                 NetworkMatchState.Instance?.TryPurchaseKeyOnServer(this, expectedRevision);
-            }
-        }
-
-        [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]
-        private void RequestTombstonePickupRpc(int tombstoneId, RpcParams rpcParams = default)
-        {
-            if (rpcParams.Receive.SenderClientId == OwnerClientId)
-            {
-                NetworkMatchState.Instance?.TryCollectTombstoneOnServer(this, tombstoneId);
             }
         }
 

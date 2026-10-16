@@ -8,7 +8,6 @@ namespace MazeParty.Multiplayer
         private enum BoardWorldInteractionKind : byte
         {
             None,
-            Tombstone,
             KeyShop,
             ItemShop
         }
@@ -17,50 +16,33 @@ namespace MazeParty.Multiplayer
         {
             private BoardWorldInteractionTarget(
                 BoardWorldInteractionKind kind,
-                int targetIndex,
-                int gold)
+                int targetIndex)
             {
                 Kind = kind;
                 TargetIndex = targetIndex;
-                Gold = gold;
             }
 
             public BoardWorldInteractionKind Kind { get; }
             public int TargetIndex { get; }
-            public int Gold { get; }
-
-            public static BoardWorldInteractionTarget Tombstone(
-                int tombstoneId,
-                int gold)
-            {
-                return new BoardWorldInteractionTarget(
-                    BoardWorldInteractionKind.Tombstone,
-                    tombstoneId,
-                    Mathf.Max(0, gold));
-            }
 
             public static BoardWorldInteractionTarget KeyShop()
             {
                 return new BoardWorldInteractionTarget(
                     BoardWorldInteractionKind.KeyShop,
-                    -1,
-                    0);
+                    -1);
             }
 
             public static BoardWorldInteractionTarget ItemShop(int shopIndex)
             {
                 return new BoardWorldInteractionTarget(
                     BoardWorldInteractionKind.ItemShop,
-                    shopIndex,
-                    0);
+                    shopIndex);
             }
 
             public string ResolvePrompt()
             {
                 switch (Kind)
                 {
-                    case BoardWorldInteractionKind.Tombstone:
-                        return GameText.F("+{0} GOLD\nRMB", Gold);
                     case BoardWorldInteractionKind.KeyShop:
                         return GameText.T("KEY SHOP (RMB TO BUY A KEY -20 GOLD)");
                     case BoardWorldInteractionKind.ItemShop:
@@ -118,16 +100,6 @@ namespace MazeParty.Multiplayer
                 hit.collider == null)
             {
                 return false;
-            }
-
-            var tombstone =
-                hit.collider.GetComponentInParent<BoardTombstoneMarker>();
-            if (tombstone != null)
-            {
-                interaction = BoardWorldInteractionTarget.Tombstone(
-                    tombstone.Id,
-                    tombstone.Gold);
-                return true;
             }
 
             if (hit.collider.GetComponentInParent<KeyShopWorldTarget>() != null)

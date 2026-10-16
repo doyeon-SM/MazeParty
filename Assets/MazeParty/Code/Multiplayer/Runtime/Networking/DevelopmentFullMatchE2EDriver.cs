@@ -1181,7 +1181,7 @@ namespace MazeParty.Multiplayer
                 encounterTile.transform.right.normalized * 0.65f;
 
             var targetStartingGold = target.Gold;
-            var tombstonesBefore = match.Tombstones.Count;
+            var attackerGoldBefore = attacker.Gold;
             var attackerStatsBefore = attacker.CreateMatchAwardStatsOnServer();
             var targetStatsBefore = target.CreateMatchAwardStatsOnServer();
 
@@ -1250,17 +1250,17 @@ namespace MazeParty.Multiplayer
 
             var expectedDroppedGold = BoardDeathRules.DroppedGold(targetStartingGold);
             if (target.Gold != targetStartingGold - expectedDroppedGold ||
-                match.Tombstones.Count != tombstonesBefore + 1)
+                attacker.Gold != attackerGoldBefore + expectedDroppedGold)
             {
                 throw new InvalidOperationException(
-                    "Board death gold/tombstone state was incorrect.");
+                    "Board death immediate gold transfer was incorrect.");
             }
 
             Log(
                 "death_started",
                 "goldBefore=" + targetStartingGold +
                 ";goldAfter=" + target.Gold +
-                ";tombstones=" + match.Tombstones.Count);
+                ";killerGold=" + attacker.Gold);
 
             await WaitUntilAsync(
                 () => !target.IsBoardDeathInProgressOnServer &&

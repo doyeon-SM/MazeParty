@@ -184,10 +184,6 @@ namespace MazeParty.Multiplayer
                 {
                     switch (interaction.Kind)
                     {
-                        case BoardWorldInteractionKind.Tombstone:
-                            RequestTombstonePickupRpc(
-                                interaction.TargetIndex);
-                            return;
                         case BoardWorldInteractionKind.KeyShop:
                             RequestKeyShopPurchaseRpc(
                                 match.KeyShopRevision);
