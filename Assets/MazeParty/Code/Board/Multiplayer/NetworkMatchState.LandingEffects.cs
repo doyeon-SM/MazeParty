@@ -396,8 +396,7 @@ namespace MazeParty.Multiplayer
                     slot,
                     tile,
                     BoardLandingEffectType.ItemReward,
-                    GameText.N("ITEM REWARD +1 {0}"),
-                    PrototypeItemCatalog.Get(reward).DisplayName);
+                    GameText.N("ITEM ACQUIRED"));
                 PublishLandingEffectFeedbackOnServer(
                     slot,
                     BoardLandingEffectFeedbackKind.Item,
@@ -762,6 +761,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearLandingEffectFeedbackOnServer()
         {
+            _landingFeedbackPausedAt.Value = -1d;
             var current = _landingEffectFeedback.Value;
             if (!current.Active)
             {
@@ -817,6 +817,7 @@ namespace MazeParty.Multiplayer
 
         private void PauseResourceTransferPresentationOnServer(double now)
         {
+            _landingFeedbackPausedAt.Value = now;
             _pausedResourceTransferPresentationRemaining =
                 BoardResourceTransferPresentationRules.GetRemainingSeconds(
                     _resourceTransferPresentation.Value,
@@ -825,6 +826,17 @@ namespace MazeParty.Multiplayer
 
         private void ResumeResourceTransferPresentationOnServer(double now)
         {
+            if (_landingFeedbackPausedAt.Value >= 0d)
+            {
+                var feedback = _landingEffectFeedback.Value;
+                if (feedback.Active)
+                {
+                    feedback.StartedAt += Math.Max(0d, now - _landingFeedbackPausedAt.Value);
+                    _landingEffectFeedback.Value = feedback;
+                }
+                _landingFeedbackPausedAt.Value = -1d;
+            }
+
             var snapshot = _resourceTransferPresentation.Value;
             if (!snapshot.Active ||
                 _pausedResourceTransferPresentationRemaining <= 0d)

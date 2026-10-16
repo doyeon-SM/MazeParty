@@ -6,9 +6,7 @@ namespace MazeParty.Multiplayer
     [DisallowMultipleComponent]
     public sealed class BoardLandingEffectFeedbackView : MonoBehaviour
     {
-        [SerializeField] private BoardMapIcon icon;
         [SerializeField] private Text label;
-        [SerializeField] private Sprite moneyFilledIcon;
         [SerializeField, Min(0f)] private float headOffset = 0.55f;
         [SerializeField] private Color goldColor =
             new Color(1f, 0.82f, 0.16f, 1f);
@@ -23,17 +21,11 @@ namespace MazeParty.Multiplayer
         private float _expiresAt;
         private bool _presenting;
 
-        public bool HasRequiredReferences =>
-            icon != null && label != null && moneyFilledIcon != null;
+        public bool HasRequiredReferences => label != null;
 
-        public void Configure(
-            BoardMapIcon targetIcon,
-            Text targetLabel,
-            Sprite goldSprite)
+        public void Configure(Text targetLabel)
         {
-            icon = targetIcon;
             label = targetLabel;
-            moneyFilledIcon = goldSprite;
         }
 
         public void Present(
@@ -54,12 +46,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var usesMoneySprite = iconKind == BoardMapIconKind.GoldGain ||
-                                  iconKind == BoardMapIconKind.GoldLoss;
-            icon.SetIcon(iconKind, usesMoneySprite ? moneyFilledIcon : null);
-            icon.color = ResolveColor(iconKind, valueLabel);
+            label.color = ResolveColor(iconKind, valueLabel);
             label.text = valueLabel ?? string.Empty;
-            label.fontStyle = FontStyle.Normal;
             gameObject.SetActive(true);
             RefreshPose();
         }

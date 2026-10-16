@@ -63,6 +63,55 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void LandingFeedback_PausePreservesRemainingWindowWithoutReplayingTheRevision()
+        {
+            const System.Reflection.BindingFlags flags =
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+            var warning = typeof(Unity.Netcode.NetworkVariableBase).GetField("IgnoreInitializeWarning",
+                System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic);
+            var previousWarning = (bool)warning.GetValue(null);
+            var previousMatch = NetworkMatchState.Instance;
+            var root = new UnityEngine.GameObject("Landing pause fixture", typeof(Unity.Netcode.NetworkObject));
+            try
+            {
+                warning.SetValue(null, true);
+                var match = root.AddComponent<NetworkMatchState>();
+                typeof(Unity.Netcode.NetworkBehaviour).GetProperty("IsServer").SetValue(match, true);
+                var feedback = (Unity.Netcode.NetworkVariable<BoardLandingEffectFeedbackSnapshot>)
+                    typeof(NetworkMatchState).GetField("_landingEffectFeedback", flags).GetValue(match);
+                foreach (var kind in new[] { BoardLandingEffectFeedbackKind.Gold,
+                    BoardLandingEffectFeedbackKind.Item, BoardLandingEffectFeedbackKind.Health,
+                    BoardLandingEffectFeedbackKind.Event })
+                {
+                    feedback.Value = new BoardLandingEffectFeedbackSnapshot {
+                        Active = true, Revision = 7, Slot = 0, Kind = (byte)kind, StartedAt = 0d };
+                    typeof(NetworkMatchState).GetMethod("PauseResourceTransferPresentationOnServer", flags)
+                        .Invoke(match, new object[] { 0.5d });
+                    Assert.That(match.LandingFeedbackPresentationNow, Is.EqualTo(0.5d));
+                    var remaining = BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                        match.LandingEffectFeedback, match.LandingFeedbackPresentationNow);
+                    typeof(NetworkMatchState).GetMethod("ResumeResourceTransferPresentationOnServer", flags)
+                        .Invoke(match, new object[] { 100.5d });
+                    Assert.That(match.LandingEffectFeedback.Revision, Is.EqualTo(7));
+                    Assert.That(match.LandingEffectFeedback.StartedAt, Is.EqualTo(100d));
+                    Assert.That(BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                        match.LandingEffectFeedback, 100.5d), Is.EqualTo(remaining));
+                    var end = 100d + BoardLandingEffectFeedbackRules.GetDurationSeconds(kind);
+                    Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                        match.LandingEffectFeedback, end - 0.000001d), Is.True);
+                    Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                        match.LandingEffectFeedback, end), Is.False);
+                }
+            }
+            finally
+            {
+                typeof(NetworkMatchState).GetProperty(nameof(NetworkMatchState.Instance)).SetValue(null, previousMatch);
+                UnityEngine.Object.DestroyImmediate(root);
+                warning.SetValue(null, previousWarning);
+            }
+        }
+
+        [Test]
         public void LandingMessage_ExposesActorSlotForSharedFrontCamera()
         {
             var message = LandingEffectMessage.Encode(

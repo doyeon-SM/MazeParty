@@ -106,6 +106,8 @@ namespace MazeParty.Multiplayer
         private readonly NetworkVariable<BoardLandingEffectFeedbackSnapshot>
             _landingEffectFeedback =
                 new NetworkVariable<BoardLandingEffectFeedbackSnapshot>();
+        private readonly NetworkVariable<double> _landingFeedbackPausedAt =
+            new NetworkVariable<double>(-1d);
         private readonly NetworkVariable<BoardResourceTransferSnapshot>
             _resourceTransferPresentation =
                 new NetworkVariable<BoardResourceTransferSnapshot>();
@@ -268,6 +270,10 @@ namespace MazeParty.Multiplayer
             _lastLandingEffectMessage.Value.ToString());
         public BoardLandingEffectFeedbackSnapshot LandingEffectFeedback =>
             _landingEffectFeedback.Value;
+        public double LandingFeedbackPresentationNow =>
+            _landingFeedbackPausedAt.Value >= 0d
+                ? _landingFeedbackPausedAt.Value
+                : SynchronizedNow;
         public BoardResourceTransferSnapshot ResourceTransferPresentation =>
             _resourceTransferPresentation.Value;
         public BoardResourceTransferPhase ResourceTransferPresentationPhase =>

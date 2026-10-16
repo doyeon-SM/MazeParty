@@ -92,6 +92,7 @@ namespace MazeParty.Gameplay
             HealingWeight + DamageWeight + SpecialEventWeight;
 
         public const double StandardEffectDurationSeconds = 1d;
+        public const double ResourceEffectDurationSeconds = 2d;
         public const double SpecialEventTargetDurationSeconds = 1d;
         public const double SpecialEventResourceDurationSeconds = 1d;
         public const double SpecialEventOperationDurationSeconds = 1d;
@@ -301,9 +302,17 @@ namespace MazeParty.Gameplay
 
         public static double GetDurationSeconds(BoardLandingEffectType effect)
         {
-            return effect == BoardLandingEffectType.SpecialEvent
-                ? SpecialEventDurationSeconds
-                : StandardEffectDurationSeconds;
+            switch (effect)
+            {
+                case BoardLandingEffectType.SpecialEvent:
+                    return SpecialEventDurationSeconds;
+                case BoardLandingEffectType.GoldGain:
+                case BoardLandingEffectType.GoldLoss:
+                case BoardLandingEffectType.ItemReward:
+                    return ResourceEffectDurationSeconds;
+                default:
+                    return StandardEffectDurationSeconds;
+            }
         }
 
         public static double GetTotalDurationSeconds(

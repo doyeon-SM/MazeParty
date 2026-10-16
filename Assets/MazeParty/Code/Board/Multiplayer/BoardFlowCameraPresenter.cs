@@ -22,6 +22,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardLandingEffectFeedbackView
             landingEffectFeedbackPrefab;
         [SerializeField] private GameObject landingEventLightningPrefab;
+        [SerializeField] private GameObject landingGiftPrefab;
+        [SerializeField] private GameObject landingHealingShieldPrefab;
         [SerializeField, Min(0f)] private float resourceTransferHeadOffset = 0.3f;
         [SerializeField, Min(0.1f)] private float resourceTransferTravelHeight = 1.5f;
 
@@ -37,6 +39,8 @@ namespace MazeParty.Multiplayer
         private bool _wasReconnectPaused;
         private bool _hasObservedState;
         private GameObject _resourceTransferVisual;
+        private GameObject _resourceTransferVisualPrefab;
+        private GameObject _landingHealingShieldVisual;
         private int _resourceTransferVisualRevision = -1;
         private BoardResourceTransferPhase _resourceTransferVisualPhase;
         private KeyPurchasePresentationPhase _observedKeyPurchasePhase;
@@ -111,6 +115,12 @@ namespace MazeParty.Multiplayer
             landingEffectFeedbackPrefab = feedbackPrefab;
             landingEventLightningPrefab = lightningPrefab;
             OneShotVfxPool.Prewarm(landingEventLightningPrefab, 4);
+        }
+
+        public void ConfigureLandingRewardAssets(GameObject giftPrefab, GameObject healingShieldPrefab)
+        {
+            landingGiftPrefab = giftPrefab;
+            landingHealingShieldPrefab = healingShieldPrefab;
         }
 
         private void OnEnable()
@@ -224,8 +234,7 @@ namespace MazeParty.Multiplayer
             RefreshOpponentNameplateOcclusion(match, targetMode);
         }
 
-        private void RefreshLandingEffectFeedbackPresentation(
-            NetworkMatchState match)
+        private void RefreshLandingEffectFeedbackPresentation(NetworkMatchState match)
         {
             var snapshot = match.LandingEffectFeedback;
             if (!_landingEffectFeedbackInitialized)
@@ -234,40 +243,30 @@ namespace MazeParty.Multiplayer
                 _landingEffectFeedbackRevision = -1;
             }
 
-            if (_landingEffectFeedbackRevision == snapshot.Revision)
-            {
-                return;
-            }
+            var isNew = _landingEffectFeedbackRevision != snapshot.Revision;
+            if (isNew)
+                ClearLandingEffectFeedbackVisual();
 
-            ClearLandingEffectFeedbackVisual();
             if (!BoardLandingEffectFeedbackRules.IsVisible(
-                    snapshot,
-                    match.SynchronizedNow))
+                    snapshot, match.LandingFeedbackPresentationNow))
             {
-                // Inactive, invalid, and expired snapshots cannot become
-                // presentable later. Consume them so they do not retry forever.
+                ClearLandingEffectFeedbackVisual();
                 _landingEffectFeedbackRevision = snapshot.Revision;
                 return;
             }
 
-            if (match.IsReconnectPaused || match.IsGlobalSimulationPaused ||
-                match.FlowState != BoardFlowState.LandingEffectResolve)
-            {
-                // A valid one-second snapshot can arrive before the local flow
-                // and presentation dependencies are ready. Leave its revision
-                // pending so Update retries while the snapshot is still visible.
+            if (match.FlowState != BoardFlowState.LandingEffectResolve)
                 return;
-            }
+            if (isNew && (match.IsReconnectPaused || match.IsGlobalSimulationPaused))
+                return;
 
             var avatar = match.GetAvatarForSlot(snapshot.Slot);
             if (avatar == null)
-            {
                 return;
-            }
 
             if (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event)
             {
-                if (landingEventLightningPrefab != null)
+                if (isNew && landingEventLightningPrefab != null)
                 {
                     for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                     {
@@ -275,11 +274,8 @@ namespace MazeParty.Multiplayer
                             continue;
                         var affected = match.GetAvatarForSlot(slot);
                         if (affected != null)
-                            OneShotVfxPool.Play(
-                                landingEventLightningPrefab,
-                                affected.transform.position,
-                                Quaternion.identity,
-                                1f);
+                            OneShotVfxPool.Play(landingEventLightningPrefab,
+                                affected.transform.position, Quaternion.identity, 1f);
                     }
                     _landingEffectFeedbackRevision = snapshot.Revision;
                 }
@@ -288,33 +284,37 @@ namespace MazeParty.Multiplayer
 
             if (landingEffectFeedbackPrefab == null ||
                 !BoardLandingEffectFeedbackRules.TryGetContent(
-                    snapshot,
-                    out var iconKind,
-                    out var label))
-            {
+                    snapshot, out var iconKind, out var label))
                 return;
-            }
 
             var head = ResolveHeadAnchor(avatar);
             if (head == null)
-            {
                 return;
+
+            if (_landingEffectFeedbackVisual == null)
+            {
+                _landingEffectFeedbackVisual = Instantiate(landingEffectFeedbackPrefab);
+                _landingEffectFeedbackVisual.name = "Board Landing Effect Feedback";
+            }
+            var remaining = (float)BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                snapshot, match.LandingFeedbackPresentationNow);
+            _landingEffectFeedbackVisual.Present(head,
+                cameraDirector != null ? cameraDirector.OutputCamera : null,
+                iconKind, label, remaining);
+
+            // Damage already travels through the shared ApplyDamage / PresentHitRpc path.
+            // A full-health healing tile still shows its shield with a +0 result.
+            if (_landingHealingShieldVisual == null &&
+                snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Health &&
+                (match.LastLandingEffectType == BoardLandingEffectType.Healing20 ||
+                 match.LastLandingEffectType == BoardLandingEffectType.Healing10) &&
+                landingHealingShieldPrefab != null)
+            {
+                _landingHealingShieldVisual = Instantiate(
+                    landingHealingShieldPrefab, avatar.transform, false);
+                _landingHealingShieldVisual.name = "Board Landing Healing Shield";
             }
 
-            var remaining = (float)
-                BoardLandingEffectFeedbackRules.GetRemainingSeconds(
-                    snapshot,
-                    match.SynchronizedNow);
-            _landingEffectFeedbackVisual = Instantiate(
-                landingEffectFeedbackPrefab);
-            _landingEffectFeedbackVisual.name =
-                "Board Landing Effect Feedback";
-            _landingEffectFeedbackVisual.Present(
-                head,
-                cameraDirector != null ? cameraDirector.OutputCamera : null,
-                iconKind,
-                label,
-                remaining);
             _landingEffectFeedbackRevision = snapshot.Revision;
         }
 
@@ -330,7 +330,7 @@ namespace MazeParty.Multiplayer
 
             var feedback = match.LandingEffectFeedback;
             var eventFocus = BoardLandingEffectFeedbackRules.GetEventFocusSlot(
-                feedback, match.SynchronizedNow);
+                feedback, match.LandingFeedbackPresentationNow);
             if (eventFocus >= 0)
                 focusSlot = eventFocus;
 
@@ -361,6 +361,9 @@ namespace MazeParty.Multiplayer
             if (phase != BoardResourceTransferPhase.Source &&
                 phase != BoardResourceTransferPhase.Destination)
             {
+                var landingPhase = RefreshLandingResourcePresentation(match);
+                if (landingPhase != BoardResourceTransferPhase.None)
+                    return landingPhase;
                 ClearResourceTransferVisual();
                 return phase;
             }
@@ -388,6 +391,47 @@ namespace MazeParty.Multiplayer
                 motionProgress,
                 avatar.transform,
                 head);
+            return phase;
+        }
+
+        private BoardResourceTransferPhase RefreshLandingResourcePresentation(NetworkMatchState match)
+        {
+            var feedback = match.LandingEffectFeedback;
+            if (!BoardLandingEffectFeedbackRules.IsVisible(
+                    feedback, match.LandingFeedbackPresentationNow) ||
+                (feedback.FeedbackKind != BoardLandingEffectFeedbackKind.Gold &&
+                 feedback.FeedbackKind != BoardLandingEffectFeedbackKind.Item))
+                return BoardResourceTransferPhase.None;
+
+            var avatar = match.GetAvatarForSlot(feedback.Slot);
+            if (avatar == null)
+                return BoardResourceTransferPhase.None;
+
+            var prefab = feedback.FeedbackKind == BoardLandingEffectFeedbackKind.Item
+                ? landingGiftPrefab : resourceTransferCoinPrefab;
+            if (prefab == null)
+                return BoardResourceTransferPhase.None;
+
+            var head = ResolveHeadAnchor(avatar);
+            var phase = feedback.FeedbackKind == BoardLandingEffectFeedbackKind.Gold &&
+                        match.LastLandingEffectType == BoardLandingEffectType.GoldLoss
+                ? BoardResourceTransferPhase.Source
+                : BoardResourceTransferPhase.Destination;
+            var elapsed = match.LandingFeedbackPresentationNow - feedback.StartedAt;
+            var lead = BoardResourceTransferPresentationRules.CameraLeadSeconds;
+            var duration = BoardLandingEffectFeedbackRules.GetDurationSeconds(feedback.FeedbackKind);
+            var motion = Mathf.Clamp01((float)((elapsed - lead) / (duration - lead)));
+            cameraDirector.SetBoardResourceEventFocus(avatar.transform, head,
+                resourceTransferHeadOffset + resourceTransferTravelHeight * 0.5f);
+            RefreshResourceTransferVisual(new BoardResourceTransferSnapshot
+            {
+                Active = true,
+                Revision = feedback.Revision,
+                Resource = (byte)BoardSpecialEventResource.Gold,
+                SourceSlot = feedback.Slot,
+                DestinationSlot = feedback.Slot,
+                Amount = 1
+            }, phase, motion, avatar.transform, head, prefab);
             return phase;
         }
 
@@ -420,23 +464,25 @@ namespace MazeParty.Multiplayer
             BoardResourceTransferPhase phase,
             float motionProgress,
             Transform avatarRoot,
-            Transform head)
+            Transform head,
+            GameObject prefabOverride = null)
         {
+            var prefab = prefabOverride != null ? prefabOverride :
+                snapshot.ResourceKind == BoardSpecialEventResource.Key
+                    ? resourceTransferKeyPrefab : resourceTransferCoinPrefab;
             if (_resourceTransferVisual == null ||
+                _resourceTransferVisualPrefab != prefab ||
                 _resourceTransferVisualRevision != snapshot.Revision ||
                 _resourceTransferVisualPhase != phase)
             {
                 ClearResourceTransferVisual();
-                var prefab = snapshot.ResourceKind ==
-                             BoardSpecialEventResource.Key
-                    ? resourceTransferKeyPrefab
-                    : resourceTransferCoinPrefab;
                 if (prefab == null)
                 {
                     return;
                 }
 
                 _resourceTransferVisual = Instantiate(prefab);
+                _resourceTransferVisualPrefab = prefab;
                 _resourceTransferVisual.name =
                     "Board Resource Transfer " + snapshot.ResourceKind;
                 DisableResourceVisualBehaviours(_resourceTransferVisual);
@@ -483,6 +529,7 @@ namespace MazeParty.Multiplayer
             }
 
             _resourceTransferVisual = null;
+            _resourceTransferVisualPrefab = null;
             _resourceTransferVisualRevision = -1;
             _resourceTransferVisualPhase = BoardResourceTransferPhase.None;
         }
@@ -502,6 +549,14 @@ namespace MazeParty.Multiplayer
             }
 
             _landingEffectFeedbackVisual = null;
+            if (_landingHealingShieldVisual != null)
+            {
+                if (Application.isPlaying)
+                    Destroy(_landingHealingShieldVisual);
+                else
+                    DestroyImmediate(_landingHealingShieldVisual);
+            }
+            _landingHealingShieldVisual = null;
         }
 
         private static Transform ResolveHeadAnchor(NetworkPlayerAvatar avatar)

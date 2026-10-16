@@ -12,13 +12,17 @@ namespace MazeParty.Editor
     {
         internal const string PrefabPath =
             "Assets/MazeParty/Prefabs/Board/UI/BoardLandingEffectFeedback.prefab";
-        internal const string MoneyIconPath =
-            "Assets/Ignore/Modern UI Pack/Textures/Icon/Business & Commerce/Money Filled.png";
+        internal const string HealingShieldPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/HealingShield.prefab";
+        internal const string GiftPath =
+            "Assets/MazeParty/Prefabs/Board/World/BoardLandingGift.prefab";
 
         [MenuItem("MazeParty/Board/Ensure Landing Effect Feedback Prefab")]
         public static void EnsureFromMenu()
         {
             EnsureInstalled();
+            EnsureHealingShieldPrefab();
+            EnsureGiftPrefab();
             AssetDatabase.SaveAssets();
             Debug.Log("Board landing-effect feedback prefab is ready.");
         }
@@ -37,13 +41,6 @@ namespace MazeParty.Editor
             }
 
             EnsureFolder("Assets/MazeParty/Prefabs/Board/UI");
-            var moneyIcon = AssetDatabase.LoadAssetAtPath<Sprite>(MoneyIconPath);
-            if (moneyIcon == null)
-            {
-                throw new InvalidOperationException(
-                    "Required map money icon is missing: '" + MoneyIconPath + "'.");
-            }
-
             var font = AssetDatabase.LoadAssetAtPath<Font>(
                 GameFonts.EnglishKoreanAssetPath);
             if (font == null)
@@ -72,22 +69,6 @@ namespace MazeParty.Editor
                 var scaler = root.GetComponent<CanvasScaler>();
                 scaler.dynamicPixelsPerUnit = 10f;
 
-                var iconObject = new GameObject(
-                    "EffectIcon",
-                    typeof(RectTransform),
-                    typeof(BoardMapIcon));
-                iconObject.transform.SetParent(root.transform, false);
-                var iconRect = (RectTransform)iconObject.transform;
-                iconRect.anchorMin = new Vector2(0f, 0.5f);
-                iconRect.anchorMax = new Vector2(0f, 0.5f);
-                iconRect.pivot = new Vector2(0.5f, 0.5f);
-                iconRect.anchoredPosition = new Vector2(45f, 0f);
-                iconRect.sizeDelta = new Vector2(64f, 64f);
-                var icon = iconObject.GetComponent<BoardMapIcon>();
-                icon.SetIcon(BoardMapIconKind.GoldGain, moneyIcon);
-                icon.color = new Color(1f, 0.82f, 0.16f, 1f);
-                icon.raycastTarget = false;
-
                 var labelObject = new GameObject(
                     "ValueLabel",
                     typeof(RectTransform),
@@ -97,13 +78,13 @@ namespace MazeParty.Editor
                 var labelRect = (RectTransform)labelObject.transform;
                 labelRect.anchorMin = new Vector2(0f, 0f);
                 labelRect.anchorMax = new Vector2(1f, 1f);
-                labelRect.offsetMin = new Vector2(82f, 0f);
-                labelRect.offsetMax = new Vector2(-4f, 0f);
+                labelRect.offsetMin = Vector2.zero;
+                labelRect.offsetMax = Vector2.zero;
                 var label = labelObject.GetComponent<Text>();
                 label.font = font;
                 label.fontSize = 44;
                 label.fontStyle = FontStyle.Normal;
-                label.alignment = TextAnchor.MiddleLeft;
+                label.alignment = TextAnchor.MiddleCenter;
                 label.color = Color.white;
                 label.raycastTarget = false;
                 label.horizontalOverflow = HorizontalWrapMode.Overflow;
@@ -111,7 +92,7 @@ namespace MazeParty.Editor
                 label.text = "+3";
 
                 var view = root.GetComponent<BoardLandingEffectFeedbackView>();
-                view.Configure(icon, label, moneyIcon);
+                view.Configure(label);
                 var prefab = PrefabUtility.SaveAsPrefabAsset(root, PrefabPath);
                 if (prefab == null)
                 {
@@ -131,6 +112,110 @@ namespace MazeParty.Editor
                 : null;
             Validate(created);
             return created;
+        }
+
+        public static GameObject EnsureGiftPrefab()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(GiftPath);
+            if (existing != null)
+                return existing;
+
+            const string materialFolder = "Assets/MazeParty/Art/Minigames/GiftGrab/Materials/";
+            var wrap = AssetDatabase.LoadAssetAtPath<Material>(materialFolder + "GiftGrabGiftWrap.mat");
+            var ribbon = AssetDatabase.LoadAssetAtPath<Material>(materialFolder + "GiftGrabGiftRibbon.mat");
+            if (wrap == null || ribbon == null)
+                throw new InvalidOperationException("Gift wrap and ribbon materials are required.");
+
+            EnsureFolder("Assets/MazeParty/Prefabs/Board/World");
+            var root = new GameObject("BoardLandingGift");
+            try
+            {
+                CreateGiftPart(root.transform, "Box", PrimitiveType.Cube, Vector3.zero,
+                    new Vector3(0.7f, 0.55f, 0.7f), wrap);
+                CreateGiftPart(root.transform, "Ribbon X", PrimitiveType.Cube, new Vector3(0f, 0.01f, 0f),
+                    new Vector3(0.12f, 0.58f, 0.73f), ribbon);
+                CreateGiftPart(root.transform, "Ribbon Z", PrimitiveType.Cube, new Vector3(0f, 0.01f, 0f),
+                    new Vector3(0.73f, 0.58f, 0.12f), ribbon);
+                CreateGiftPart(root.transform, "Bow Left", PrimitiveType.Sphere, new Vector3(-0.16f, 0.38f, 0f),
+                    new Vector3(0.26f, 0.18f, 0.2f), ribbon);
+                CreateGiftPart(root.transform, "Bow Right", PrimitiveType.Sphere, new Vector3(0.16f, 0.38f, 0f),
+                    new Vector3(0.26f, 0.18f, 0.2f), ribbon);
+                return PrefabUtility.SaveAsPrefabAsset(root, GiftPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        private static void CreateGiftPart(Transform parent, string name, PrimitiveType shape,
+            Vector3 position, Vector3 scale, Material material)
+        {
+            var part = GameObject.CreatePrimitive(shape);
+            part.name = name;
+            part.transform.SetParent(parent, false);
+            part.transform.localPosition = position;
+            part.transform.localScale = scale;
+            part.GetComponent<Renderer>().sharedMaterial = material;
+            UnityEngine.Object.DestroyImmediate(part.GetComponent<Collider>());
+        }
+
+        public static GameObject EnsureHealingShieldPrefab()
+        {
+            var existing = AssetDatabase.LoadAssetAtPath<GameObject>(HealingShieldPath);
+            if (existing != null)
+                return existing;
+
+            var source = SharedVfxProjectSetup.EnsureWaterShieldPrefab();
+            var root = (GameObject)PrefabUtility.InstantiatePrefab(source);
+            const string materialsFolder = "Assets/MazeParty/Materials/HealingShield";
+            EnsureFolder(materialsFolder);
+            try
+            {
+                root.name = "HealingShield";
+                var copies = new System.Collections.Generic.Dictionary<Material, Material>();
+                foreach (var renderer in root.GetComponentsInChildren<Renderer>(true))
+                {
+                    var materials = renderer.sharedMaterials;
+                    for (var index = 0; index < materials.Length; index++)
+                    {
+                        var original = materials[index];
+                        if (original == null)
+                            continue;
+                        if (!copies.TryGetValue(original, out var green))
+                        {
+                            var path = materialsFolder + "/HealingShield_" + copies.Count + ".mat";
+                            green = AssetDatabase.LoadAssetAtPath<Material>(path);
+                            if (green == null)
+                            {
+                                green = new Material(original) { name = "HealingShield_" + copies.Count };
+                                foreach (var property in new[] { "_Color", "_RimColor",
+                                             "_ColorGradingLight", "_ColorGradingMiddle", "_ColorGradingDark" })
+                                {
+                                    if (!green.HasProperty(property))
+                                        continue;
+                                    var color = green.GetColor(property);
+                                    var intensity = Mathf.Max(color.r, Mathf.Max(color.g, color.b));
+                                    green.SetColor(property, new Color(
+                                        intensity * 0.2f, intensity, intensity * 0.35f, color.a));
+                                }
+                                // The source shader applies its blue color ramp after tinting.
+                                // Rotate that final ramp into green as well.
+                                green.SetFloat("_HsvShift", 40f);
+                                AssetDatabase.CreateAsset(green, path);
+                            }
+                            copies.Add(original, green);
+                        }
+                        materials[index] = green;
+                    }
+                    renderer.sharedMaterials = materials;
+                }
+                return PrefabUtility.SaveAsPrefabAsset(root, HealingShieldPath);
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(root);
+            }
         }
 
         private static void Validate(BoardLandingEffectFeedbackView view)

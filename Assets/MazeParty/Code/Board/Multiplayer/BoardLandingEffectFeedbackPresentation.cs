@@ -83,14 +83,27 @@ namespace MazeParty.Multiplayer
         public const double EventDurationSeconds =
             BoardLandingEffectLayout.SpecialEventResultDurationSeconds;
 
+        public static double GetDurationSeconds(BoardLandingEffectFeedbackKind kind)
+        {
+            switch (kind)
+            {
+                case BoardLandingEffectFeedbackKind.Event:
+                    return EventDurationSeconds;
+                case BoardLandingEffectFeedbackKind.Gold:
+                case BoardLandingEffectFeedbackKind.Item:
+                    return BoardLandingEffectLayout.ResourceEffectDurationSeconds;
+                default:
+                    return DurationSeconds;
+            }
+        }
+
         public static bool IsVisible(
             BoardLandingEffectFeedbackSnapshot snapshot,
             double synchronizedNow)
         {
             return IsValid(snapshot) &&
                    synchronizedNow < snapshot.StartedAt +
-                   (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
-                       ? EventDurationSeconds : DurationSeconds);
+                   GetDurationSeconds(snapshot.FeedbackKind);
         }
 
         public static double GetRemainingSeconds(
@@ -101,8 +114,7 @@ namespace MazeParty.Multiplayer
                 ? Math.Max(
                     0d,
                      snapshot.StartedAt +
-                     (snapshot.FeedbackKind == BoardLandingEffectFeedbackKind.Event
-                         ? EventDurationSeconds : DurationSeconds) - synchronizedNow)
+                     GetDurationSeconds(snapshot.FeedbackKind) - synchronizedNow)
                 : 0d;
         }
 
@@ -156,8 +168,7 @@ namespace MazeParty.Multiplayer
                     label = FormatSigned(snapshot.SignedAmount);
                     return true;
                 case BoardLandingEffectFeedbackKind.Health:
-                    // Both healing and damage use the map's health icon; the
-                    // signed value and authored color communicate direction.
+                    // The map kind selects the authored text palette only.
                     iconKind = BoardMapIconKind.Healing;
                     label = FormatSigned(snapshot.SignedAmount);
                     return true;
@@ -168,8 +179,7 @@ namespace MazeParty.Multiplayer
                     }
 
                     iconKind = BoardMapIconKind.Item;
-                    label = "+ " + GameText.T(
-                        PrototypeItemCatalog.Get(snapshot.RewardItem).DisplayName);
+                    label = GameText.T("ITEM ACQUIRED");
                     return true;
                 default:
                     return false;

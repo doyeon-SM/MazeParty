@@ -107,9 +107,7 @@ namespace MazeParty.Multiplayer.Tests
                         PrototypeItemId.None, BoardMapIconKind.Healing, "-40"),
                     (BoardLandingEffectFeedbackKind.Item, 0,
                         PrototypeItemId.Pistol, BoardMapIconKind.Item,
-                        "+ " + GameText.T(
-                            PrototypeItemCatalog.Get(
-                                PrototypeItemId.Pistol).DisplayName))
+                        GameText.T("ITEM ACQUIRED"))
                 };
 
                 for (var index = 0; index < cases.Length; index++)
@@ -144,12 +142,25 @@ namespace MazeParty.Multiplayer.Tests
                     SignedAmount = 3,
                     StartedAt = 100d
                 };
-                Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
-                    ordinaryWindow, 100.999999d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
-                    ordinaryWindow, 101d), Is.False);
-                Assert.That(BoardLandingEffectFeedbackRules.GetRemainingSeconds(
-                    ordinaryWindow, 100d), Is.EqualTo(1d));
+                foreach (var timing in new[]
+                {
+                    (BoardLandingEffectFeedbackKind.Gold, BoardLandingEffectType.GoldGain),
+                    (BoardLandingEffectFeedbackKind.Gold, BoardLandingEffectType.GoldLoss),
+                    (BoardLandingEffectFeedbackKind.Item, BoardLandingEffectType.ItemReward),
+                    (BoardLandingEffectFeedbackKind.Health, BoardLandingEffectType.Healing20),
+                    (BoardLandingEffectFeedbackKind.Health, BoardLandingEffectType.Damage40)
+                })
+                {
+                    ordinaryWindow.Kind = (byte)timing.Item1;
+                    var duration = BoardLandingEffectLayout.GetDurationSeconds(timing.Item2);
+                    Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                        ordinaryWindow, 100d + duration - 0.000001d), Is.True);
+                    Assert.That(BoardLandingEffectFeedbackRules.IsVisible(
+                        ordinaryWindow, 100d + duration), Is.False);
+                    Assert.That(BoardLandingEffectFeedbackRules.GetRemainingSeconds(
+                        ordinaryWindow, 100d), Is.EqualTo(duration),
+                        "Feedback must occupy exactly its server-owned landing slot.");
+                }
 
                 var eventWindow = new BoardLandingEffectFeedbackSnapshot
                 {
@@ -239,6 +250,18 @@ namespace MazeParty.Multiplayer.Tests
                 LightningPrefabPath);
             Assert.That(lightningPrefab, Is.Not.Null, LightningPrefabPath);
 
+            var giftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/World/BoardLandingGift.prefab");
+            var healingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Common/VFX/HealingShield.prefab");
+            foreach (var prefab in new[] { giftPrefab, healingPrefab })
+            {
+                Assert.That(prefab, Is.Not.Null);
+                Assert.That(prefab.GetComponentsInChildren<Renderer>(true), Is.Not.Empty);
+                Assert.That(prefab.GetComponentsInChildren<NetworkObject>(true), Is.Empty);
+                Assert.That(prefab.GetComponentsInChildren<Collider>(true), Is.Empty);
+            }
+
             var previousActiveScene = SceneManager.GetActiveScene();
             var scene = SceneManager.GetSceneByPath(BoardScenePath);
             var wasAlreadyLoaded = scene.IsValid() && scene.isLoaded;
@@ -272,6 +295,10 @@ namespace MazeParty.Multiplayer.Tests
                     serialized.FindProperty("landingEventLightningPrefab")
                         .objectReferenceValue,
                     Is.SameAs(lightningPrefab));
+                Assert.That(serialized.FindProperty("landingGiftPrefab").objectReferenceValue,
+                    Is.SameAs(giftPrefab));
+                Assert.That(serialized.FindProperty("landingHealingShieldPrefab").objectReferenceValue,
+                    Is.SameAs(healingPrefab));
             }
             finally
             {

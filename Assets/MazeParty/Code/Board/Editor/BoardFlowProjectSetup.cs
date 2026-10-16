@@ -1038,6 +1038,9 @@ namespace MazeParty.Editor
             presenter.ConfigureLandingEffectFeedbackAssets(
                 BoardLandingEffectFeedbackProjectSetup.EnsureInstalled(),
                 SharedVfxProjectSetup.EnsureLightningStrikePrefab());
+            presenter.ConfigureLandingRewardAssets(
+                BoardLandingEffectFeedbackProjectSetup.EnsureGiftPrefab(),
+                BoardLandingEffectFeedbackProjectSetup.EnsureHealingShieldPrefab());
             return director;
         }
 
