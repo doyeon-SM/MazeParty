@@ -775,7 +775,8 @@ namespace MazeParty.Multiplayer
             {
                 UiPopupStack.Push(
                     customizationPanel,
-                    OnCloseCustomizationClicked);
+                    OnCloseCustomizationClicked,
+                    allowsMovement: true);
             }
             else
             {

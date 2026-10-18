@@ -4,14 +4,14 @@ using UnityEngine;
 namespace MazeParty.Gameplay
 {
     /// <summary>
-    /// Local-only gate between modal screen UI and gameplay input. While any
-    /// dismissible popup is open the local player sends neutral movement and no
-    /// actions, and every cursor policy keeps the pointer free. Other players
-    /// and the server simulation are unaffected.
+    /// Local-only gate between screen UI and gameplay input. Popups block actions
+    /// and keep the pointer free; selected popups may allow movement. Other
+    /// players and the server simulation are unaffected.
     /// </summary>
     public static class LocalInputGate
     {
         private static int _menuClosedFrame = -1;
+        private static bool _menuBlocksMovement;
 
         public static bool IsMenuOpen { get; private set; }
         public static bool IsPausePointerRequested { get; private set; }
@@ -23,19 +23,26 @@ namespace MazeParty.Gameplay
         public static bool BlocksGameplayInput =>
             IsMenuOpen || _menuClosedFrame == Time.frameCount;
 
+        /// <summary>Movement can continue only when every open popup permits it.</summary>
+        public static bool BlocksMovementInput => IsMenuOpen
+            ? _menuBlocksMovement
+            : _menuClosedFrame == Time.frameCount;
+
         /// <summary>True while a local UI needs a visible, unlocked pointer.</summary>
         public static bool RequestsPointer => IsMenuOpen || IsPausePointerRequested;
 
         public static event Action Changed;
 
-        public static void SetMenuOpen(bool open)
+        public static void SetMenuOpen(bool open, bool blocksMovement = true)
         {
-            if (IsMenuOpen == open)
+            blocksMovement &= open;
+            if (IsMenuOpen == open && _menuBlocksMovement == blocksMovement)
             {
                 return;
             }
 
             IsMenuOpen = open;
+            _menuBlocksMovement = blocksMovement;
             if (!open)
             {
                 _menuClosedFrame = Time.frameCount;
@@ -75,6 +82,7 @@ namespace MazeParty.Gameplay
         private static void ResetStaticState()
         {
             IsMenuOpen = false;
+            _menuBlocksMovement = false;
             IsPausePointerRequested = false;
             _menuClosedFrame = -1;
             Changed = null;

@@ -322,6 +322,11 @@ namespace MazeParty.Multiplayer.Tests
                 wardrobeButton.onClick.Invoke();
                 Assert.That(wardrobePanel.activeSelf, Is.True);
                 Assert.That(UiPopupStack.IsTop(wardrobePanel), Is.True);
+                Assert.That(LocalInputGate.BlocksMovementInput, Is.False,
+                    "The authored wardrobe must allow lobby movement while open.");
+                Assert.That(LocalInputGate.BlocksGameplayInput, Is.True,
+                    "Wardrobe clicks must not trigger gameplay actions.");
+                Assert.That(LocalInputGate.RequestsPointer, Is.True);
                 closeWardrobeButton.onClick.Invoke();
                 Assert.That(wardrobePanel.activeSelf, Is.False);
                 Assert.That(UiPopupStack.Count, Is.Zero);

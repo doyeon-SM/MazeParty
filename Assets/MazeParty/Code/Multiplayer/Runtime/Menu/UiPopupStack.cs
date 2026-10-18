@@ -7,21 +7,23 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Local, presentation-only stack for dismissible screen popups. Popup
-    /// owners keep their own state; the stack only decides which owner receives
-    /// the next Escape/close request.
+    /// owners keep their own state; the stack routes Escape/close requests and
+    /// combines the input restrictions of all open popups.
     /// </summary>
     internal static class UiPopupStack
     {
         private readonly struct Entry
         {
-            public Entry(GameObject root, Action close)
+            public Entry(GameObject root, Action close, bool allowsMovement)
             {
                 Root = root;
                 Close = close;
+                AllowsMovement = allowsMovement;
             }
 
             public GameObject Root { get; }
             public Action Close { get; }
+            public bool AllowsMovement { get; }
         }
 
         private static readonly List<Entry> Entries = new List<Entry>();
@@ -35,7 +37,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        internal static void Push(GameObject root, Action close)
+        internal static void Push(GameObject root, Action close, bool allowsMovement = false)
         {
             if (root == null || close == null)
             {
@@ -43,7 +45,7 @@ namespace MazeParty.Multiplayer
             }
 
             RemoveInternal(root);
-            Entries.Add(new Entry(root, close));
+            Entries.Add(new Entry(root, close, allowsMovement));
             root.transform.SetAsLastSibling();
             RefreshInputGate();
         }
@@ -120,7 +122,16 @@ namespace MazeParty.Multiplayer
 
         private static void RefreshInputGate()
         {
-            LocalInputGate.SetMenuOpen(Entries.Count > 0);
+            var blocksMovement = false;
+            foreach (var entry in Entries)
+            {
+                if (!entry.AllowsMovement)
+                {
+                    blocksMovement = true;
+                    break;
+                }
+            }
+            LocalInputGate.SetMenuOpen(Entries.Count > 0, blocksMovement);
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]

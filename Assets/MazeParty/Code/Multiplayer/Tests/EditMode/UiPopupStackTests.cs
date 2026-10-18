@@ -115,6 +115,33 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(LocalInputGate.IsMenuOpen, Is.False);
         }
 
+        [Test]
+        public void MovementAllowedPopup_PreservesActionsAndPointerGate_AndCannotBypassAnotherPopup()
+        {
+            var wardrobe = CreateRoot("Wardrobe");
+            var menu = CreateRoot("Menu");
+            UiPopupStack.Push(wardrobe, () => wardrobe.SetActive(false), allowsMovement: true);
+            Assert.That(LocalInputGate.BlocksMovementInput, Is.False);
+            Assert.That(LocalInputGate.BlocksGameplayInput, Is.True);
+            Assert.That(LocalInputGate.RequestsPointer, Is.True);
+
+            UiPopupStack.Push(menu, () => menu.SetActive(false));
+            Assert.That(LocalInputGate.BlocksMovementInput, Is.True);
+            // A movement-permitting popup on top must not override a modal popup below.
+            UiPopupStack.Push(wardrobe, () => wardrobe.SetActive(false), allowsMovement: true);
+            Assert.That(LocalInputGate.BlocksMovementInput, Is.True);
+            menu.SetActive(false);
+            UiPopupStack.Refresh();
+            Assert.That(LocalInputGate.BlocksMovementInput, Is.False);
+            Assert.That(LocalInputGate.BlocksGameplayInput, Is.True);
+
+            Assert.That(UiPopupStack.TryCloseTop(), Is.True);
+            Assert.That(wardrobe.activeSelf, Is.False);
+            Assert.That(LocalInputGate.IsMenuOpen, Is.False);
+            Assert.That(LocalInputGate.BlocksMovementInput, Is.True,
+                "The final close still consumes input for its current frame.");
+        }
+
         private GameObject CreateRoot(string name)
         {
             var root = new GameObject(name);
