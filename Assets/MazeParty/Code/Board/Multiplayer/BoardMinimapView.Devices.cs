@@ -11,6 +11,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Color keyShopDeviceColor = new Color(.2f, .55f, 1f);
         [SerializeField] private Color itemShopDeviceColor = new Color(1f, .23f, .2f);
         [SerializeField] private Color chestDeviceColor = Color.white;
+        private readonly Vector2Int[] _deviceCoordinates = new Vector2Int[DeviceMarkerCount];
+        private readonly bool[] _deviceVisible = new bool[DeviceMarkerCount];
         private bool HasDeviceReferences
         {
             get
@@ -36,12 +38,15 @@ namespace MazeParty.Multiplayer
                 PresentDevice(1 + ItemShopRules.ShopCount + i, match.ShouldShowChestOnLocalMap(i),
                     chest.Location, BoardMapIconKind.Chest, chestDeviceColor, topology);
             }
+            foreach (var room in rooms) LayoutRoomMarkers(room);
         }
         private void PresentDevice(int index, bool visible, Vector2Int coordinate,
             BoardMapIconKind kind, Color color, BoardTopology topology)
         {
             var icon = deviceIcons[index];
+            _deviceCoordinates[index] = coordinate;
             visible = visible && topology.TryGetTile(coordinate, out var candidate) && IsPositionVisible(candidate.WorldCenter);
+            _deviceVisible[index] = visible;
             icon.gameObject.SetActive(visible);
             if (!visible || !topology.TryGetTile(coordinate, out var tile)) return;
             icon.SetIcon(kind, kind == BoardMapIconKind.Respawn ? homeFilledIcon : null);
@@ -50,19 +55,6 @@ namespace MazeParty.Multiplayer
             var upright = Quaternion.Inverse(projection.otherDotCanvas.localRotation);
             TranslateWorldPoint(tile.WorldCenter, rect);
             rect.localRotation = upright;
-            // Anchor inside the actual tile corner at every map scale, rather than
-            // using a fixed center offset that drifts on differently sized boards.
-            _footprintVertices.Clear();
-            tile.GetWorldFootprintVertices(_footprintVertices);
-            var tileBounds = new Bounds(tile.WorldCenter, Vector3.zero);
-            foreach (var vertex in _footprintVertices) tileBounds.Encapsulate(vertex);
-            var world = projection.miniMapBounds.GetWorldRect();
-            var halfWidth = tileBounds.size.x * projection.otherDotCanvas.rect.width / world.size.x * .5f;
-            var halfHeight = tileBounds.size.z * projection.otherDotCanvas.rect.height / world.size.z * .5f;
-            var offset = new Vector2(
-                Mathf.Max(0f, halfWidth - rect.rect.width * .5f - deviceIconInset.x),
-                Mathf.Max(0f, halfHeight - rect.rect.height * .5f - deviceIconInset.y));
-            rect.anchoredPosition += (Vector2)(upright * offset);
         }
     }
 }

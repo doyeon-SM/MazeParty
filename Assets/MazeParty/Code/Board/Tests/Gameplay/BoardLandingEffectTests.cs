@@ -188,7 +188,7 @@ namespace MazeParty.Gameplay.Tests
 
             var flow = new BoardFlowStateMachine();
             flow.Start(0d);
-            flow.Tick(6d);
+            flow.Tick(7d);
             Assert.That(flow.TryReportPlayerArrived(0, 9.7d), Is.True);
             Assert.That(flow.TryReportPlayerArrived(1, 9.8d), Is.True);
             Assert.That(flow.TryReportPlayerArrived(2, 9.9d), Is.True);

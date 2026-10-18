@@ -5334,6 +5334,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.GameplayCameraDirector
   outputCamera: {fileID: 642230971}
+  cloudTransition: {fileID: 2013269016}
   firstPersonCamera: {fileID: 1400707255}
   boardTopDownCamera: {fileID: 1830049654}
   minigameCamera: {fileID: 82821977}
@@ -5356,12 +5357,13 @@ MonoBehaviour:
   boardRecenterDuration: 0.3
   overheadToFirstPersonDuration: 0.65
   directTransitionDuration: 0.2
+  boardRotationDegreesPerSecond: 120
   playerOverheadHeight: 8
   playerOverheadFieldOfView: 50
   combatSpectatorHeight: 10
   combatSpectatorFieldOfView: 55
   boardResourceEventDistance: 3.4
-  boardResourceEventHeightOffset: 0.15
+  boardResourceEventHeightOffset: -0.15
   boardResourceEventFieldOfView: 60
 --- !u!4 &1548230741
 Transform:
@@ -6988,6 +6990,114 @@ Transform:
   - {fileID: 682321847}
   m_Father: {fileID: 1732981733}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &2013269015
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: 6059271725855227991, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_Name
+      value: BoardCameraCloudCanvas
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_Pivot.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_Pivot.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchorMax.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchorMin.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6653691305877044774, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+--- !u!114 &2013269016 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 711608704938222956, guid: d2b595d63ae8c4c44b310c9f541e0c26, type: 3}
+  m_PrefabInstance: {fileID: 2013269015}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 916d8d87f41ba3e438e8e5aacd23dd2c, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardCameraCloudView
 --- !u!1 &2028587845
 GameObject:
   m_ObjectHideFlags: 0
@@ -7282,3 +7392,4 @@ SceneRoots:
   - {fileID: 41184314}
   - {fileID: 654440501}
   - {fileID: 564093854}
+  - {fileID: 2013269015}

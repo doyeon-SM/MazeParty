@@ -123,7 +123,7 @@ namespace MazeParty.Gameplay
                 topology.TryGetTile(coordinate, out resolvedTile) && resolvedTile != null)
             {
                 EnsureMarker();
-                _markerObject.transform.position = resolvedTile.WorldCenter;
+                _visual.PlaceOnTile(resolvedTile);
                 _markerObject.SetActive(!_acquisitionCameraHidden);
                 PlayLocationHighlightOnce(revision, coordinate);
                 locationResolved = true;

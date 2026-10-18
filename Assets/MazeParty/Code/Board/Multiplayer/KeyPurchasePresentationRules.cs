@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer
 
     public static class KeyPurchasePresentationRules
     {
-        public const double DefaultTransitionSeconds = 5d;
+        public const double DefaultTransitionSeconds = BoardCameraCloudTiming.Duration;
         public const double ShopRevealSeconds = 3d;
         public const double AcquisitionSeconds =
             BoardEffectShotTiming.Duration;

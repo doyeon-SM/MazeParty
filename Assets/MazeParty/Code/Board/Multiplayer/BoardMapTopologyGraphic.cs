@@ -87,11 +87,8 @@ namespace MazeParty.Multiplayer
                 for (var vertex = 0; vertex < _worldVertices.Count; vertex++)
                     points[vertex] = Project(_worldVertices[vertex]);
 
-                var isShop = keyShop.HasValue && tile.Coordinate == keyShop.Value;
                 var isLocal = tile == localTile;
-                var tileColor = isShop
-                    ? shopColor
-                    : isLocal
+                var tileColor = isLocal
                         ? localFloorColor
                         : tile.TileType == BoardTileType.Start
                             ? startColor

@@ -12,6 +12,15 @@ namespace MazeParty.Gameplay.Tests
         private const string SandShieldPath =
             "Assets/MazeParty/Prefabs/Common/VFX/SandShield.prefab";
 
+        private static void AssertPeripheral(BoardTile tile, Vector3 position)
+        {
+            Assert.That(tile.ContainsHorizontalDisc(position, 1.45f), Is.True,
+                "The shop footprint must remain inside its authoritative tile.");
+            var distance = Vector3.Distance(tile.GetRecoveryCenter(), position);
+            Assert.That(distance, Is.GreaterThan(1.5f));
+            Assert.That(distance, Is.LessThan(ItemShopRules.InteractionDistance));
+        }
+
         [Test]
         public void ShopPrefabs_AuthorSharedShieldForBothHighlightRequests()
         {
@@ -124,7 +133,7 @@ namespace MazeParty.Gameplay.Tests
                 var key = root.AddComponent<KeyShopWorldMarker>();
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.True);
                 var marker = key.MarkerObject;
-                Assert.That(marker.transform.position, Is.EqualTo(first.WorldCenter));
+                AssertPeripheral(first, marker.transform.position);
                 var keyVisual = marker.GetComponent<BoardShopVisual>();
                 Assert.That(keyVisual.HasRequiredReferences, Is.True);
                 AssertRuntimeLocationHighlight(keyVisual, "Key shop marker");
@@ -135,12 +144,12 @@ namespace MazeParty.Gameplay.Tests
                     "A repeated snapshot must not restart the location highlight.");
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, second.Coordinate, topology, 3), Is.True);
                 Assert.That(key.MarkerObject, Is.SameAs(marker));
-                Assert.That(marker.transform.position, Is.EqualTo(second.WorldCenter));
+                AssertPeripheral(second, marker.transform.position);
                 Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.True,
                     "A new key-shop location revision must restart the highlight.");
                 Assert.That(key.ApplyReplicatedState(KeyShopLifecycleState.Active, true, first.Coordinate, topology, 2), Is.False);
                 Assert.That(marker.activeSelf, Is.True);
-                Assert.That(marker.transform.position, Is.EqualTo(second.WorldCenter));
+                AssertPeripheral(second, marker.transform.position);
                 Assert.That(keyVisual.LocationHighlightVfx.activeSelf, Is.True,
                     "A stale key-shop revision must not replace the active presentation state.");
                 key.ApplyReplicatedState(KeyShopLifecycleState.Inactive, false, first.Coordinate, topology, 4);
@@ -152,7 +161,7 @@ namespace MazeParty.Gameplay.Tests
                 {
                     Assert.That(items.ApplyReplicatedState(index, true, first.Coordinate, false, topology, 2), Is.True);
                     var item = items.GetMarkerObject(index);
-                    Assert.That(item.transform.position, Is.EqualTo(first.WorldCenter));
+                    AssertPeripheral(first, item.transform.position);
                     var itemVisual = item.GetComponent<BoardShopVisual>();
                     AssertRuntimeLocationHighlight(
                         itemVisual,
@@ -168,13 +177,13 @@ namespace MazeParty.Gameplay.Tests
                         "A repeated item-shop snapshot must not restart the highlight.");
                     Assert.That(items.ApplyReplicatedState(index, true, second.Coordinate, true, topology, 3), Is.True);
                     Assert.That(items.GetMarkerObject(index), Is.SameAs(item));
-                    Assert.That(item.transform.position, Is.EqualTo(second.WorldCenter));
+                    AssertPeripheral(second, item.transform.position);
                     Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
                         Is.True,
                         "A new item-shop location revision must restart the highlight.");
                     Assert.That(items.ApplyReplicatedState(index, false, first.Coordinate, false, topology, 2), Is.False);
                     Assert.That(item.activeSelf, Is.True);
-                    Assert.That(item.transform.position, Is.EqualTo(second.WorldCenter));
+                    AssertPeripheral(second, item.transform.position);
                     Assert.That(itemVisual.LocationHighlightVfx.activeSelf,
                         Is.True,
                         "A stale item-shop revision must not replace the active presentation state.");

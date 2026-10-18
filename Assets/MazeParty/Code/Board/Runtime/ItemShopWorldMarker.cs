@@ -55,7 +55,7 @@ namespace MazeParty.Gameplay
             }
 
             EnsureMarker(shopIndex);
-            _markers[shopIndex].transform.position = tile.WorldCenter;
+            _visuals[shopIndex].PlaceOnTile(tile);
             _visuals[shopIndex].SetItemState(shopIndex, soldOut);
             _markers[shopIndex].SetActive(true);
             PlayLocationHighlightOnce(shopIndex, revision, coordinate);

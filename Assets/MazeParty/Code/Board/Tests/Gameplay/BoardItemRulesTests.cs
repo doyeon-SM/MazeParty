@@ -10,16 +10,16 @@ namespace MazeParty.Gameplay.Tests
         {
             var cases = new[]
             {
-                (185d, 0.02f, 0.02f),
-                (186.0625d, 0.125f, 0.0625f),
-                (186.125d, 0.125f, 0f)
+                (186d, 0.02f, 0.02f),
+                (187.0625d, 0.125f, 0.0625f),
+                (187.125d, 0.125f, 0f)
             };
 
             foreach (var testCase in cases)
             {
                 var flow = new BoardFlowStateMachine();
                 flow.Start(0d);
-                flow.Tick(6d);
+                flow.Tick(7d);
                 Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
 
                 Assert.That(
@@ -45,7 +45,7 @@ namespace MazeParty.Gameplay.Tests
             {
                 var flow = new BoardFlowStateMachine();
                 flow.Start(0d);
-                flow.Tick(6d);
+                flow.Tick(7d);
 
                 Assert.That(
                     BoardItemLifecycleRules.GetMineSimulationDelta(

@@ -23,6 +23,16 @@ namespace MazeParty.Gameplay
         public Collider[] InteractionColliders => interactionColliders;
         public Collider[] PhysicalColliders => physicalColliders;
 
+        private BoardTile _placedTile;
+        private Vector3 _placedCenter;
+        public void PlaceOnTile(BoardTile tile)
+        {
+            if (tile == null || (_placedTile == tile && _placedCenter == tile.WorldCenter)) return;
+            _placedTile = tile;
+            _placedCenter = tile.WorldCenter;
+            transform.position = BoardTileWorldPlacement.PeripheralPoint(tile, 1.45f);
+        }
+
         private void Awake()
         {
             RefreshHighlightVisibility();

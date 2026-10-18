@@ -129,7 +129,7 @@ namespace MazeParty.Gameplay.Tests
         {
             var flow = new BoardFlowStateMachine();
             flow.Start(0d);
-            flow.Tick(6d);
+            flow.Tick(7d);
             for (var slot = 0; slot < BoardFlowStateMachine.RequiredPlayerCount; slot++)
                 Assert.That(flow.TryReportPlayerArrived(slot, 10d + slot), Is.True);
 

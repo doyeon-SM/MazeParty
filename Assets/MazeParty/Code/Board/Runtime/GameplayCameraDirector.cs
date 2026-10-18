@@ -23,6 +23,8 @@ namespace MazeParty.Gameplay
 
         [Header("Output")]
         [SerializeField] private Camera outputCamera;
+        [SerializeField] private BoardCameraCloudView cloudTransition;
+        public BoardCameraCloudView CloudTransition => cloudTransition;
 
         [Header("Gameplay Cameras")]
         [SerializeField] private CinemachineCamera firstPersonCamera;
@@ -94,15 +96,8 @@ namespace MazeParty.Gameplay
         public BoardCameraFramingAnchor BoardFramingAnchor => boardFramingAnchor;
         public bool IsTransitioning => _isTransitioning;
         public bool SmoothCameraTransitions => smoothCameraTransitions;
-        // Reserve the same phases for every look direction. Smoothstep's peak
-        // angular speed is 1.5x its average, including the worst 180-degree turn.
-        private float BoardRotationDuration =>
-            Mathf.Max(directTransitionDuration, 270f / Mathf.Max(30f, boardRotationDegreesPerSecond));
-        private float BoardZoomDuration =>
-            Mathf.Max(boardToOverheadDuration + overheadToFirstPersonDuration,
-                270f / Mathf.Max(30f, boardRotationDegreesPerSecond));
-        public double BoardTransitionBudgetSeconds => !smoothCameraTransitions ? 0.25d :
-            BoardRotationDuration + BoardZoomDuration + boardRecenterDuration + 0.25d;
+        // Shared presentation deadline, independent of player facing and zoom distance.
+        public double BoardTransitionBudgetSeconds => BoardCameraCloudTiming.Duration;
 
         public void Configure(
             Camera cameraOutput,
@@ -225,7 +220,7 @@ namespace MazeParty.Gameplay
 
             EnsureRuntimeCameraSystem();
 
-            if (!smoothCameraTransitions)
+            if (!smoothCameraTransitions && !UsesPlayerBridge(CompletedMode, mode))
             {
                 SnapTo(mode);
                 return;
@@ -394,18 +389,9 @@ namespace MazeParty.Gameplay
             var eye = ResolveLocalPlayerEye();
             if (eye == null || outputCamera == null) yield break;
             PrepareBoardPose();
-            var toFirstPerson = target == GameplayMode.FirstPerson;
             var sourcePosition = outputCamera.transform.position;
             var sourceRotation = outputCamera.transform.rotation;
             var sourceFov = outputCamera.fieldOfView;
-            var sourcePitch = Mathf.Asin(Mathf.Clamp(
-                -(sourceRotation * Vector3.forward).y, -1f, 1f)) * Mathf.Rad2Deg;
-            var sourceYaw = GetCameraHeading(sourceRotation);
-            // Capture the direction once. Cursor confinement prevents mouse look
-            // from moving this target while the camera performs its own motion.
-            var targetYaw = toFirstPerson ? GetCameraHeading(eye.rotation) : 0f;
-            var targetPitch = toFirstPerson
-                ? Mathf.DeltaAngle(0f, eye.eulerAngles.x) : 90f;
             _boardTransitionPosition = sourcePosition;
             _boardTransitionRotation = sourceRotation;
             _boardTransitionFieldOfView = sourceFov;
@@ -416,68 +402,39 @@ namespace MazeParty.Gameplay
             _brain?.ResetState();
 
             var localStartedAt = Time.unscaledTimeAsDouble;
-            Func<double> elapsed = synchronizedElapsed ??
-                (() => Time.unscaledTimeAsDouble - localStartedAt);
-            var phaseStartedAt = 0d;
-            yield return MoveBoardCamera(sourcePosition, sourcePosition,
-                sourcePitch, sourcePitch, sourceYaw, targetYaw,
-                sourceFov, sourceFov, BoardRotationDuration, elapsed, phaseStartedAt);
-            phaseStartedAt += BoardRotationDuration;
-
-            PreparePlayerWidePose();
-            var widePosition = playerWideCamera.transform.position;
-            var boardFov = boardTopDownCamera.Lens.FieldOfView;
-            if (toFirstPerson)
+            Func<double> clock = synchronizedElapsed ?? (() => Time.unscaledTimeAsDouble - localStartedAt);
+            var switched = false;
+            var coveredFramePresented = false;
+            while (true)
             {
-                // Recenter with heading already aligned, then tilt only in pitch
-                // while approaching the eye. No quaternion roll around the head.
-                yield return MoveBoardCamera(sourcePosition, widePosition,
-                    sourcePitch, sourcePitch, targetYaw, targetYaw,
-                    sourceFov, boardFov, boardRecenterDuration, elapsed, phaseStartedAt);
-                phaseStartedAt += boardRecenterDuration;
-            }
-
-            var zoomStart = toFirstPerson ? widePosition : sourcePosition;
-            var zoomEnd = toFirstPerson ? eye.position : widePosition;
-            var zoomFov = toFirstPerson ? firstPersonCamera.Lens.FieldOfView : boardFov;
-            yield return MoveBoardCamera(zoomStart, zoomEnd,
-                sourcePitch, targetPitch, targetYaw, targetYaw,
-                toFirstPerson ? boardFov : sourceFov, zoomFov,
-                BoardZoomDuration, elapsed, phaseStartedAt, toFirstPerson ? eye : null);
-            phaseStartedAt += BoardZoomDuration;
-
-            if (!toFirstPerson)
-            {
-                yield return MoveBoardCamera(widePosition, boardTopDownCamera.transform.position,
-                    90f, 90f, 0f, 0f, boardFov, boardFov, boardRecenterDuration, elapsed, phaseStartedAt);
+                var elapsed = clock();
+                if (double.IsNaN(elapsed)) elapsed = Time.unscaledTimeAsDouble - localStartedAt;
+                if (!switched && elapsed >= BoardCameraCloudTiming.CoveredAt)
+                {
+                    cloudTransition.Present(elapsed, true);
+                    // Even a delayed snapshot/slow frame must render full coverage
+                    // before changing rotation, position or FOV.
+                    if (!coveredFramePresented)
+                    { coveredFramePresented = true; yield return null; continue; }
+                    PrepareModePose(target);
+                    var destination = GetModeCamera(target);
+                    _boardTransitionPosition = destination.transform.position;
+                    _boardTransitionRotation = destination.transform.rotation;
+                    _boardTransitionFieldOfView = destination.Lens.FieldOfView;
+                    ApplyBoardTransitionPose();
+                    switched = true;
+                    yield return null;
+                    continue;
+                }
+                cloudTransition.Present(elapsed);
+                if (switched && elapsed >= BoardCameraCloudTiming.Duration) break;
+                yield return null;
             }
             PrepareModePose(target);
             SetLiveCamera(GetModeCamera(target));
             _brain?.ResetState();
             _drivingBoardPose = false;
-        }
-
-        private IEnumerator MoveBoardCamera(Vector3 from, Vector3 to,
-            float fromPitch, float toPitch, float fromYaw, float toYaw,
-            float fromFov, float toFov, float duration,
-            Func<double> elapsed, double phaseStartedAt, Transform followEnd = null)
-        {
-            float progress;
-            do
-            {
-                var now = elapsed();
-                progress = duration > 0f && !double.IsNaN(now)
-                    ? Mathf.Clamp01((float)((now - phaseStartedAt) / duration)) : 1f;
-                var eased = progress * progress * (3f - 2f * progress);
-                _boardTransitionPosition = Vector3.Lerp(from,
-                    followEnd != null ? followEnd.position : to, eased);
-                _boardTransitionRotation = Quaternion.Euler(
-                    Mathf.Lerp(fromPitch, toPitch, eased),
-                    Mathf.LerpAngle(fromYaw, toYaw, eased), 0f);
-                _boardTransitionFieldOfView = Mathf.Lerp(fromFov, toFov, eased);
-                ApplyBoardTransitionPose();
-                if (progress < 1f) yield return null;
-            } while (progress < 1f);
+            cloudTransition.Hide();
         }
 
         private void ApplyBoardTransitionPose()
@@ -493,14 +450,6 @@ namespace MazeParty.Gameplay
             outputCamera.transform.SetPositionAndRotation(
                 _boardTransitionPosition, _boardTransitionRotation);
             outputCamera.fieldOfView = _boardTransitionFieldOfView;
-        }
-
-        private static float GetCameraHeading(Quaternion rotation)
-        {
-            var forward = rotation * Vector3.forward;
-            if (forward.x * forward.x + forward.z * forward.z < 0.0001f)
-                forward = rotation * Vector3.up;
-            return Mathf.Atan2(forward.x, forward.z) * Mathf.Rad2Deg;
         }
 
         private IEnumerator BlendTo(
@@ -535,7 +484,7 @@ namespace MazeParty.Gameplay
             }
 
             return !UsesPlayerBridge(previous, target)
-                || (playerOverheadCamera != null && playerWideCamera != null);
+                || (playerOverheadCamera != null && cloudTransition != null && cloudTransition.HasRequiredReferences);
         }
 
         private static bool UsesPlayerBridge(
@@ -767,11 +716,9 @@ namespace MazeParty.Gameplay
         public void CalculateBoardResourceEventPose(Transform facing, Transform head, float focusHeight,
             out Vector3 position, out Quaternion rotation, out float fieldOfView)
         {
-            var focus = head != null
-                ? head.position
-                : facing.position +
-                  Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
-            focus += Vector3.up * focusHeight;
+            // Stable lower frontal shot: animated head bob and reward travel
+            // height must never move the spectator camera up and down.
+            var focus = facing.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
             var forward = Vector3.ProjectOnPlane(
                 facing.forward,
                 Vector3.up);
@@ -784,7 +731,7 @@ namespace MazeParty.Gameplay
                            forward.normalized * Mathf.Max(
                                0.5f,
                                boardResourceEventDistance) +
-                           Vector3.up * boardResourceEventHeightOffset;
+                           Vector3.up * Mathf.Min(0f, boardResourceEventHeightOffset);
             var direction = focus - position;
             rotation = direction.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
@@ -902,6 +849,7 @@ namespace MazeParty.Gameplay
             _transitionCoroutine = null;
             _isTransitioning = false;
             _drivingBoardPose = false;
+            cloudTransition?.Hide();
             RestoreBrainSettings();
         }
 

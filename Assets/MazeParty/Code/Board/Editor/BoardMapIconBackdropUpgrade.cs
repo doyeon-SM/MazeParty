@@ -13,7 +13,7 @@ namespace MazeParty.Editor
             {
                 var data = new SerializedObject(view);
                 var rooms = data.FindProperty("rooms");
-                var offset = data.FindProperty("roomIconOffset").vector2Value;
+                var offset = Vector2.zero;
                 for (var index = 0; index < rooms.arraySize; index++)
                 {
                     var room = rooms.GetArrayElementAtIndex(index);

@@ -53,7 +53,7 @@ namespace MazeParty.Multiplayer.Tests
             var trigger = visual.gameObject.AddComponent<BoxCollider>();
             trigger.center = Vector3.up; trigger.size = Vector3.one * 1.5f; trigger.isTrigger = true;
             var now = _match.SynchronizedNow;
-            var flow = new BoardFlowStateMachine(); flow.Start(now - 7); flow.Tick(now);
+            var flow = new BoardFlowStateMachine(); flow.Start(now - BoardFlowStateMachine.TurnOverviewDurationSeconds - BoardFlowStateMachine.DescendingDurationSeconds - 1d); flow.Tick(now);
             typeof(NetworkMatchState).GetField("_flow", Private).SetValue(_match, flow);
             Invoke("SyncFlowSnapshot", now);
             Set(_match, "_chest0", Chest(0)); Set(_match, "_chest1", Chest(1));

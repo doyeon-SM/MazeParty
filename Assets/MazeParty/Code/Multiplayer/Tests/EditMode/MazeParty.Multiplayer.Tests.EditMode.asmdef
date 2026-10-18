@@ -9,6 +9,7 @@
     "UnityEngine.UI",
     "Unity.TextMeshPro",
     "Unity.InputSystem",
+    "Unity.Cinemachine",
     "Arikan.MiniMap"
   ],
   "includePlatforms": [

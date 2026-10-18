@@ -11,6 +11,78 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardMinimapProjectionTests
     {
         [Test]
+        public void TileMarkers_ReflowWithVisibleOccupants_AndRemainInsideRotatedFootprints()
+        {
+            var ui = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
+            var board = new GameObject("Marker layout contract");
+            try
+            {
+                var tile = board.AddComponent<BoardTile>();
+                tile.Configure(Vector2Int.zero, BoardTileType.Normal);
+                board.transform.position = new Vector3(31, 0, -19);
+                board.transform.rotation = Quaternion.Euler(0, 23, 0);
+                var topology = board.AddComponent<BoardTopology>();
+                topology.Configure(new[] { tile }, new BoardGate[0]);
+                foreach (var view in ui.GetComponentsInChildren<BoardMinimapView>(true))
+                {
+                    var data = new SerializedObject(view);
+                    var projection = (MiniMapView)data.FindProperty("projection").objectReferenceValue;
+                    for (var parent = projection.otherDotCanvas.transform; parent != null; parent = parent.parent)
+                        parent.gameObject.SetActive(true);
+                    Canvas.ForceUpdateCanvases();
+                    var room = data.FindProperty("rooms").GetArrayElementAtIndex(0);
+                    var effect = ((BoardMapIcon)room.FindPropertyRelative("EffectIcon").objectReferenceValue).rectTransform;
+                    var backdrop = ((BoardMapCircleGraphic)room.FindPropertyRelative("EffectBackdrop").objectReferenceValue).rectTransform;
+                    var device = ((BoardMapIcon)data.FindProperty("deviceIcons").GetArrayElementAtIndex(0).objectReferenceValue).rectTransform;
+                    var player = ((Image)data.FindProperty("players").GetArrayElementAtIndex(0).objectReferenceValue).rectTransform;
+                    var presentDevice = typeof(BoardMinimapView).GetMethod("PresentDevice", BindingFlags.Instance | BindingFlags.NonPublic);
+                    foreach (var scenario in new[] { (true, false, false), (false, true, false), (true, true, false), (true, true, true), (false, true, true) })
+                    foreach (var yaw in new[] { 0f, 45f, 180f, 270f })
+                    {
+                        tile.ApplyLandingEffectPresentation(scenario.Item1 ? BoardLandingEffectType.ItemReward : BoardLandingEffectType.None);
+                        view.PrepareMap(topology, null, 0, scenario.Item2 ? tile.Coordinate : (Vector2Int?)null);
+                        view.PresentPlayerAtTile(0, scenario.Item3 ? tile : null, Color.white, true);
+                        presentDevice.Invoke(view, new object[] { 0, scenario.Item2, tile.Coordinate, BoardMapIconKind.Respawn, Color.blue, topology });
+                        view.SetHeading(yaw);
+                        Canvas.ForceUpdateCanvases();
+                        var visible = new System.Collections.Generic.List<RectTransform>();
+                        if (scenario.Item1) visible.Add(backdrop);
+                        if (scenario.Item2) visible.Add(device);
+                        if (scenario.Item3) visible.Add(player);
+                        var bounds = projection.miniMapBounds.GetWorldRect();
+                        foreach (var rect in visible)
+                        {
+                            var corners = new Vector3[4]; rect.GetWorldCorners(corners);
+                            foreach (var corner in corners)
+                            {
+                                var local = projection.otherDotCanvas.InverseTransformPoint(corner);
+                                var point = new Vector3(bounds.center.x + local.x * bounds.size.x / projection.otherDotCanvas.rect.width,
+                                    tile.WorldCenter.y, bounds.center.z + local.y * bounds.size.z / projection.otherDotCanvas.rect.height);
+                                Assert.That(tile.ContainsHorizontalPoint(point, .001f), Is.True, view.name + " / " + yaw + " / " + rect.name);
+                            }
+                        }
+                        if (visible.Count == 1 || scenario.Item3)
+                        {
+                            var centered = scenario.Item3 ? player : visible[0];
+                            Assert.That(projection.otherDotCanvas.InverseTransformPoint(centered.position).sqrMagnitude,
+                                Is.LessThan(.001f), "A single icon or the player remains at the tile center.");
+                        }
+                        for (var first = 0; first < visible.Count; first++)
+                        for (var second = first + 1; second < visible.Count; second++)
+                        {
+                            var a = new Vector3[4]; var b = new Vector3[4];
+                            visible[first].GetWorldCorners(a); visible[second].GetWorldCorners(b);
+                            var separated = a[2].x <= b[0].x || b[2].x <= a[0].x || a[2].y <= b[0].y || b[2].y <= a[0].y;
+                            Assert.That(separated, Is.True, "Player, effect and shop must not overlap.");
+                        }
+                    }
+                }
+            }
+            finally { Object.DestroyImmediate(board); Object.DestroyImmediate(ui); }
+        }
+
+        [Test]
         public void LandingEffect_StaysVisibleOnMapWhileWorldTileStaysHidden()
         {
             var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
@@ -567,7 +639,7 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.That(firstTypeIcon.enabled, Is.False,
                         "Normal and start tiles must not draw the meaningless Room square icon.");
                     Assert.That(secondTypeIcon.enabled, Is.False,
-                        "Both maps mark a key shop only by coloring its tile.");
+                        "Shop markers are presented separately from the underlying tile type.");
                     view.PrepareMap(
                         topology,
                         first.Coordinate,

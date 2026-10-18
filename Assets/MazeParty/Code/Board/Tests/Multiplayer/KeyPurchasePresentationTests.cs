@@ -54,7 +54,7 @@ namespace MazeParty.Multiplayer.Tests
             Invoke("SyncKeyShopSnapshot");
             var now = _match.SynchronizedNow;
             _flow = new BoardFlowStateMachine();
-            _flow.Start(now - 7d);
+            _flow.Start(now - BoardFlowStateMachine.TurnOverviewDurationSeconds - BoardFlowStateMachine.DescendingDurationSeconds - 1d);
             _flow.Tick(now);
             Field("_flow").SetValue(_match, _flow);
             Invoke("SyncFlowSnapshot", now);

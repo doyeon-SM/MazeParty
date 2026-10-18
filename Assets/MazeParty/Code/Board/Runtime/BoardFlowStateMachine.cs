@@ -60,7 +60,8 @@ namespace MazeParty.Gameplay
     {
         public const int RequiredPlayerCount = 4;
         public const double TurnOverviewDurationSeconds = 5d;
-        public const double DescendingDurationSeconds = 1d;
+        public const double DescendingDurationSeconds = BoardCameraCloudTiming.Duration;
+        // Projectile settlement continues after the two-second camera transition.
         public const double AscendingResolveDurationSeconds = 5d;
         public const double LandingEffectResolveDurationSeconds = 4d;
         public const double MinigameIntroReadyDurationSeconds = 60d;

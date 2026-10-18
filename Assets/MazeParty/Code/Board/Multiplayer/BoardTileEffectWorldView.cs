@@ -8,10 +8,11 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Canvas worldCanvas;
         [SerializeField] private BoardMapIcon icon;
         [SerializeField] private BoardMapCircleGraphic backdrop;
-        [SerializeField, Min(0f)] private float height = 2.8f;
-        [SerializeField, Min(0.1f)] private float nearCameraShrinkDistance = 4f;
+        [SerializeField, Min(0f)] private float height = .04f;
         private Vector3 _authoredScale;
         private bool _scaleCaptured;
+        private BoardTile _placedTile;
+        private Vector3 _placedCenter;
         public bool HasRequiredReferences => worldCanvas != null &&
             worldCanvas.renderMode == RenderMode.WorldSpace && icon != null && backdrop != null;
 
@@ -24,14 +25,15 @@ namespace MazeParty.Multiplayer
             appearance.GetEffectAppearance(tile.LandingEffect, out var kind, out var sprite, out var color);
             icon.SetIcon(kind, sprite);
             icon.color = color;
-            transform.position = tile.WorldCenter + Vector3.up * height;
-            if (camera != null)
+            if (_placedTile != tile || _placedCenter != tile.WorldCenter)
             {
-                worldCanvas.worldCamera = camera;
-                transform.rotation = camera.transform.rotation;
-                transform.localScale = _authoredScale * Mathf.Min(1f,
-                    Vector3.Distance(transform.position, camera.transform.position) / nearCameraShrinkDistance);
+                _placedTile = tile; _placedCenter = tile.WorldCenter;
+                transform.position = BoardTileWorldPlacement.GroundPoint(tile, tile.GetRecoveryCenter()) +
+                                     Vector3.up * height;
             }
+            transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+            transform.localScale = _authoredScale;
+            if (camera != null) worldCanvas.worldCamera = camera;
         }
     }
 }

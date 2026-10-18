@@ -29,6 +29,7 @@ namespace MazeParty.Multiplayer
         [Serializable]
         public sealed class Room
         {
+            [NonSerialized] public BoardTile Tile;
             public Image Floor;
             public Image[] Walls;
             public Text[] Exits;
@@ -59,7 +60,6 @@ namespace MazeParty.Multiplayer
             Array.Empty<BoardMapPlayerDirectionGraphic>();
         private float _localFacingYaw;
         [SerializeField] private RectTransform landingEffectLayer;
-        [SerializeField] private Vector2 roomIconOffset = new Vector2(-22f, -22f);
         [SerializeField] private Text currentTile;
         [SerializeField] private Text heading;
         [SerializeField] private BoardMapIcon shopDistanceIcon;
@@ -416,6 +416,7 @@ namespace MazeParty.Multiplayer
                     exists = topology.TryGetTile(coordinate, out tile);
                 }
 
+                room.Tile = exists ? tile : null;
                 room.Floor.gameObject.SetActive(exists);
                 room.EffectIcon.gameObject.SetActive(exists);
                 if (!exists)
@@ -440,14 +441,12 @@ namespace MazeParty.Multiplayer
                     (projection.otherDotCanvas.rect.width * referenceTileSize / extent);
                 var isLocal = localCoordinate.HasValue && coordinate == localCoordinate.Value;
                 var isShop = keyShop.HasValue && coordinate == keyShop.Value;
-                room.Floor.color = isShop ? shopColor : isLocal ? localFloorColor : floorColor;
+                room.Floor.color = isLocal ? localFloorColor : floorColor;
                 room.Floor.enabled = !freeform;
                 // Start tiles intentionally share the normal-room design.
-                var displayedType = isShop ? BoardTileType.KeyShop : tile.TileType;
-                room.TypeIcon.enabled =
-                    displayedType != BoardTileType.Normal &&
-                    displayedType != BoardTileType.Start &&
-                    (!isShop || showKeyShopDetails);
+                var displayedType = tile.TileType;
+                // Dynamic shops have a single blue/red device icon; never add a second key icon.
+                room.TypeIcon.enabled = displayedType == BoardTileType.Respawn;
                 if (room.TypeIcon.enabled)
                 {
                     var typeKind = displayedType == BoardTileType.Respawn
@@ -499,6 +498,7 @@ namespace MazeParty.Multiplayer
             BoardMinimapDisplayContext displayContext =
                 BoardMinimapDisplayContext.Standard)
         {
+            _presentedPlayerTiles[slot] = null;
             PresentPlayerAtWorldPosition(
                 slot,
                 target != null ? target.position : (Vector3?)null,
@@ -515,6 +515,7 @@ namespace MazeParty.Multiplayer
             BoardMinimapDisplayContext displayContext =
                 BoardMinimapDisplayContext.Standard)
         {
+            _presentedPlayerTiles[slot] = tile;
             PresentPlayerAtWorldPosition(
                 slot,
                 tile != null ? tile.GetRecoveryCenter() : (Vector3?)null,
@@ -1063,23 +1064,6 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void PlaceRoomIcons(Room room)
-        {
-            PlaceRoomIcon(room, room.TypeIcon, room.TypeBackdrop);
-            PlaceRoomIcon(room, room.EffectIcon, room.EffectBackdrop);
-        }
-
-        private void PlaceRoomIcon(Room room, BoardMapIcon graphic, BoardMapCircleGraphic backdrop)
-        {
-            var floor = room.Floor.rectTransform;
-            var icon = graphic.rectTransform;
-            var upright = Quaternion.Inverse(projection.otherDotCanvas.localRotation);
-            icon.localRotation = upright;
-            icon.anchorMin = icon.anchorMax = icon.pivot = Vector2.one * 0.5f;
-            icon.anchoredPosition = (icon.parent == floor ? Vector2.zero : floor.anchoredPosition) +
-                                    (Vector2)(upright * roomIconOffset);
-            backdrop.rectTransform.anchoredPosition = icon.anchoredPosition;
-            backdrop.gameObject.SetActive(graphic.isActiveAndEnabled);
-        }
+        private void PlaceRoomIcons(Room room) => LayoutRoomMarkers(room);
     }
 }

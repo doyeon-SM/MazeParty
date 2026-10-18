@@ -125,7 +125,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             var flow = new BoardFlowStateMachine();
             flow.Start(0d);
-            flow.Tick(6d);
+            flow.Tick(7d);
             for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
             flow.Tick(15d);
             flow.TryCompleteCombat(15d, 0.1d);

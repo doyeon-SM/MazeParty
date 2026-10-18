@@ -19,7 +19,7 @@ namespace MazeParty.Multiplayer.Tests
                     .SetValue(match, true);
                 var flow = new BoardFlowStateMachine();
                 flow.Start(0d);
-                flow.Tick(6d);
+                flow.Tick(7d);
                 for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
                 flow.Tick(15d);
                 const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -90,7 +90,7 @@ namespace MazeParty.Multiplayer.Tests
                 typeof(NetworkMatchState).GetField("_avatarLookupCache", flags).SetValue(match, players);
                 typeof(NetworkMatchState).GetField("_landingEffectPlanReady", flags).SetValue(match, true);
                 var flow = new BoardFlowStateMachine();
-                flow.Start(0d); flow.Tick(6d);
+                flow.Start(0d); flow.Tick(7d);
                 for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
                 flow.Tick(15d); flow.TryCompleteCombat(15d, 15.5d);
                 typeof(NetworkMatchState).GetField("_flow", flags).SetValue(match, flow);

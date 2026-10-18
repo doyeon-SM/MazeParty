@@ -68,9 +68,11 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));
             flow.Tick(105d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.Descending));
-            flow.Tick(106d);
+            flow.Tick(106.999d);
+            Assert.That(flow.State, Is.EqualTo(BoardFlowState.Descending));
+            flow.Tick(107d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
-            Assert.That(flow.ActionClock.StartedAt, Is.EqualTo(106d));
+            Assert.That(flow.ActionClock.StartedAt, Is.EqualTo(107d));
 
             ReportAllPlayersArrived(flow, 113d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.AscendingResolve));
@@ -113,7 +115,7 @@ namespace MazeParty.Gameplay.Tests
                 var flow = new BoardFlowStateMachine(
                     totalTurns: testCase.TotalTurns);
                 flow.Start(0d);
-                flow.Tick(6d);
+                flow.Tick(7d);
                 ReportAllPlayersArrived(flow, 10d);
                 flow.Tick(15d);
                 Assert.That(flow.TryCompleteCombat(15d), Is.True);
@@ -248,7 +250,7 @@ namespace MazeParty.Gameplay.Tests
         {
             var flow = new BoardFlowStateMachine();
             flow.Start(100d);
-            flow.Tick(106d);
+            flow.Tick(107d);
             ReportAllPlayersArrived(flow, 113d);
             flow.Tick(118d);
             Assert.That(flow.TryCompleteCombat(118d), Is.True);
@@ -344,9 +346,9 @@ namespace MazeParty.Gameplay.Tests
             var late = new BoardFlowStateMachine();
             late.Start(10d);
             late.Tick(250d);
-            Assert.That(late.ActionClock.StartedAt, Is.EqualTo(16d));
+            Assert.That(late.ActionClock.StartedAt, Is.EqualTo(17d));
             Assert.That(late.State, Is.EqualTo(BoardFlowState.CombatResolve));
-            Assert.That(late.StateStartedAt, Is.EqualTo(201d));
+            Assert.That(late.StateStartedAt, Is.EqualTo(202d));
             Assert.That(late.LastActionEndReason, Is.EqualTo(BoardActionEndReason.TimeExpired));
 
             var restarted = StartInAction();
@@ -418,7 +420,9 @@ namespace MazeParty.Gameplay.Tests
         private static BoardFlowStateMachine StartInAction()
         {
             var flow = new BoardFlowStateMachine();
-            flow.Start(0d);
+            // Pin the Action fixture to t=6 independently of its preceding camera phase.
+            flow.Start(6d - BoardFlowStateMachine.TurnOverviewDurationSeconds -
+                BoardFlowStateMachine.DescendingDurationSeconds);
             flow.Tick(6d);
             Assert.That(flow.State, Is.EqualTo(BoardFlowState.Action));
             return flow;

@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardTileEffectWorld.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
@@ -64,6 +65,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Gameplay.BoardCameraCloudView",
             "MazeParty.Multiplayer.BoardTileEffectWorldView",
             "MazeParty.Multiplayer.BoardLocalPlayerMarkerView",
             "MazeParty.Multiplayer.BoardCanvasBindings",
@@ -108,6 +110,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
+                "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab",
@@ -468,6 +471,14 @@ namespace MazeParty.Multiplayer.Tests
 
                     foreach (var component in scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<MonoBehaviour>(true)))
                     {
+                        if (component is MazeParty.Gameplay.GameplayCameraDirector director)
+                        {
+                            Assert.That(director.CloudTransition, Is.Not.Null);
+                            Assert.That(director.CloudTransition.HasRequiredReferences, Is.True);
+                            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                                director.CloudTransition.gameObject), Is.EqualTo(
+                                "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab"));
+                        }
                         if (component is BoardFlowCameraPresenter presenter)
                         {
                             Assert.That(presenter.LocalPlayerMarker, Is.Not.Null);
