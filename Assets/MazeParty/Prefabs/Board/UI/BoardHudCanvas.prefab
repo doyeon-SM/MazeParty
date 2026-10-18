@@ -1290,6 +1290,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6382390087241769292}
   - component: {fileID: 6253592952367826551}
+  - component: {fileID: 2910816061428416594}
   m_Layer: 5
   m_Name: Health Trail
   m_TagString: Untagged
@@ -1368,6 +1369,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &2910816061428416594
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1083450461281165334}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey:
+  clickKey:
 --- !u!1 &1125894408818714143
 GameObject:
   m_ObjectHideFlags: 0
@@ -3478,6 +3493,7 @@ GameObject:
   m_Component:
   - component: {fileID: 98538227852053843}
   - component: {fileID: 5701845586881171163}
+  - component: {fileID: 14769577182251870}
   m_Layer: 5
   m_Name: Health Trail
   m_TagString: Untagged
@@ -3556,6 +3572,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &14769577182251870
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2462841695341716470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey:
+  clickKey:
 --- !u!1 &2482184390766459550
 GameObject:
   m_ObjectHideFlags: 0
@@ -8576,6 +8606,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8255450206247856638}
   - component: {fileID: 8725878855362276947}
+  - component: {fileID: 3118917069556418101}
   m_Layer: 5
   m_Name: Health Trail
   m_TagString: Untagged
@@ -8654,6 +8685,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &3118917069556418101
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5625947406894425929}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey:
+  clickKey:
 --- !u!1 &5681901002217750267
 GameObject:
   m_ObjectHideFlags: 0
@@ -12739,6 +12784,7 @@ GameObject:
   m_Component:
   - component: {fileID: 60595472961708353}
   - component: {fileID: 6622286520772927669}
+  - component: {fileID: 5521983096088252497}
   m_Layer: 5
   m_Name: Health Trail
   m_TagString: Untagged
@@ -12817,6 +12863,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &5521983096088252497
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9154557803927620041}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey:
+  clickKey:
 --- !u!1 &9199275044569030168
 GameObject:
   m_ObjectHideFlags: 0

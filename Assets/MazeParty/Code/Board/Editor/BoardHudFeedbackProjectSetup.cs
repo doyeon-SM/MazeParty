@@ -16,7 +16,7 @@ namespace MazeParty.Editor
             if (bindings.EventPanelView != null && bindings.EventPanelView.HasRequiredReferences &&
                 bindings.PlayerStatFeedback != null && bindings.PlayerStatFeedback.Length == 4 &&
                 System.Array.TrueForAll(bindings.PlayerStatFeedback, value => value != null &&
-                    value.HasRequiredReferences)) return;
+                    value.HasRequiredReferences && HasHealthTrailSound(value))) return;
             var root = PrefabUtility.LoadPrefabContents(BoardCanvasSplitProjectSetup.HudPrefabPath);
             try { Ensure(root); PrefabUtility.SaveAsPrefabAsset(root, BoardCanvasSplitProjectSetup.HudPrefabPath); }
             finally { PrefabUtility.UnloadPrefabContents(root); }
@@ -38,6 +38,7 @@ namespace MazeParty.Editor
                 if (binding.objectReferenceValue != null)
                 {
                     var existing = new SerializedObject(binding.objectReferenceValue);
+                    EnsureSilentSound(existing.FindProperty("healthTrail").objectReferenceValue as Slider);
                     existing.FindProperty("deltas").GetArrayElementAtIndex(1)
                         .FindPropertyRelative("ValueIcon").objectReferenceValue = hud.PlayerKeyIcons[slot];
                     existing.FindProperty("deltas").GetArrayElementAtIndex(2)
@@ -70,6 +71,7 @@ namespace MazeParty.Editor
                 trailFill.raycastTarget = false;
                 trailFill.color = fill.color * new Color(0.45f, 0.45f, 0.45f, 1f);
                 var trail = trailObject.GetComponent<Slider>();
+                EnsureSilentSound(trail);
                 trail.interactable = false;
                 trail.transition = Selectable.Transition.None;
                 trail.fillRect = trailFill.rectTransform;
@@ -127,6 +129,20 @@ namespace MazeParty.Editor
                 binding.objectReferenceValue = feedback;
             }
             data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static bool HasHealthTrailSound(BoardHudStatFeedbackView feedback)
+        {
+            var data = new SerializedObject(feedback);
+            var trail = data.FindProperty("healthTrail").objectReferenceValue as Slider;
+            return trail != null && trail.GetComponent<UiSoundEmitter>() != null;
+        }
+
+        private static void EnsureSilentSound(Slider slider)
+        {
+            if (slider == null || slider.GetComponent<UiSoundEmitter>() != null) return;
+            // Display-only health bars participate in the UI sound contract without input sounds.
+            slider.gameObject.AddComponent<UiSoundEmitter>().Configure(string.Empty, string.Empty);
         }
     }
 }

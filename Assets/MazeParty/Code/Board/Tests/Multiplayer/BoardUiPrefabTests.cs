@@ -885,6 +885,17 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(feedback.transform.IsChildOf(root.transform), Is.True);
                 Assert.That(PrefabUtility.IsPartOfPrefabAsset(feedback) ||
                     PrefabUtility.GetCorrespondingObjectFromSource(feedback) != null, Is.True);
+                var data = new SerializedObject(feedback);
+                foreach (var property in new[] { "health", "healthTrail" })
+                {
+                    var slider = data.FindProperty(property).objectReferenceValue as Slider;
+                    Assert.That(slider, Is.Not.Null, property);
+                    Assert.That(slider.interactable, Is.False, property);
+                    var emitter = slider.GetComponent<UiSoundEmitter>();
+                    Assert.That(emitter, Is.Not.Null, property);
+                    Assert.That(emitter.HoverKey, Is.Empty, property);
+                    Assert.That(emitter.ClickKey, Is.Empty, property);
+                }
             }
             var groups = new[]
             {
