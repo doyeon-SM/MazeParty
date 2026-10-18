@@ -81,6 +81,7 @@ namespace MazeParty.Gameplay
         private bool _ownerFirstPerson;
         private bool _cameraTransitionHidden;
         private bool _hiddenFromViewer;
+        private bool _ownerHandsHidden;
         private bool _nameplateAllowed = true;
         private bool _nameplateOccluded;
         private bool _nameplateCameraPriority;
@@ -93,6 +94,16 @@ namespace MazeParty.Gameplay
         {
             if (_hiddenFromViewer == hidden) return;
             _hiddenFromViewer = hidden;
+            RefreshVisibility();
+        }
+        public void SetCloakVisibility(bool cloaked, bool viewerIsOwner)
+        {
+            var hiddenFromViewer = cloaked && !viewerIsOwner;
+            var ownerHandsHidden = cloaked && viewerIsOwner;
+            if (_hiddenFromViewer == hiddenFromViewer && _ownerHandsHidden == ownerHandsHidden)
+                return;
+            _hiddenFromViewer = hiddenFromViewer;
+            _ownerHandsHidden = ownerHandsHidden;
             RefreshVisibility();
         }
         private byte _hatId;
@@ -845,19 +856,19 @@ namespace MazeParty.Gameplay
             }
             if (_firstPersonHands != null)
             {
-                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem && !_hiddenFromViewer);
+                _firstPersonHands.gameObject.SetActive(_ownerFirstPerson && !showingItem && !_hiddenFromViewer && !_ownerHandsHidden);
             }
             if (_leftHand != null)
             {
-                _leftHand.gameObject.SetActive(!showingItem);
+                _leftHand.gameObject.SetActive(!showingItem && !_ownerHandsHidden);
             }
             if (_rightHand != null)
             {
-                _rightHand.gameObject.SetActive(!showingItem);
+                _rightHand.gameObject.SetActive(!showingItem && !_ownerHandsHidden);
             }
             if (_worldItemRoot != null)
             {
-                _worldItemRoot.gameObject.SetActive(showingItem);
+                _worldItemRoot.gameObject.SetActive(showingItem && !_hiddenFromViewer);
                 SetItemModelVisibility(_worldItemModels, _activeItemId);
             }
             if (_firstPersonItemRoot != null)

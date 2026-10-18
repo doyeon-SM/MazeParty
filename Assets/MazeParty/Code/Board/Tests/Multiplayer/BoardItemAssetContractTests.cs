@@ -67,6 +67,10 @@ namespace MazeParty.Multiplayer.Tests
             var expectedWeaponModels = new Dictionary<PrototypeItemId, string>
             {
                 {
+                    PrototypeItemId.PositionSwapper,
+                    "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx"
+                },
+                {
                     PrototypeItemId.Pistol,
                     "Assets/Ignore/nappin/WeaponStylizedPack/Models/(Msh)Revolver.fbx"
                 },
@@ -122,7 +126,7 @@ namespace MazeParty.Multiplayer.Tests
                     .Distinct()
                     .ToArray();
                 Assert.That(meshPaths, Does.Contain(expectedModelPath),
-                    definition.Id + " must use its approved WeaponStylizedPack model.");
+                    definition.Id + " must use its approved source model.");
             }
             Assert.That(itemIcons.Count, Is.EqualTo(9));
             var first = new System.Random(901);

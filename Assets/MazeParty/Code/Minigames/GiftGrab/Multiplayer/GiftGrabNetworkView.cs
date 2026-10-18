@@ -175,7 +175,7 @@ namespace MazeParty.Multiplayer
             // MinigameLocalPlayerHighlight owns the brief shared countdown
             // marker; this view does not keep a persistent local-player mark.
             RefreshPlayers(match);
-            RefreshGifts();
+            RefreshGifts(match);
             RefreshBaseColors(match);
             RefreshActionVfx();
         }
@@ -328,7 +328,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshGifts()
+        private void RefreshGifts(NetworkMatchState match)
         {
             for (var giftId = 0; giftId < _gifts.Length; giftId++)
             {
@@ -355,6 +355,7 @@ namespace MazeParty.Multiplayer
                 }
                 _previousGiftStates[giftId] = giftState;
 
+                gift.Variants?.Present(match.CurrentMinigameSeed, state.RoundNumber, giftId);
                 gift.Root.gameObject.SetActive(true);
                 var carrier = state.GetGiftCarrierSlot(giftId);
                 var storedOwner = state.GetGiftStoredOwnerSlot(giftId);
@@ -666,6 +667,7 @@ namespace MazeParty.Multiplayer
             {
                 Root = root;
                 Visual = visual;
+                Variants = visual.GetComponent<GiftVisualVariants>();
                 AuthoredRootLocalScale = root.localScale;
                 _authoredVisualParent = visual.parent;
                 _authoredVisualLocalPosition = visual.localPosition;
@@ -677,6 +679,7 @@ namespace MazeParty.Multiplayer
 
             public Transform Root { get; }
             public Transform Visual { get; }
+            public GiftVisualVariants Variants { get; }
             public Vector3 AuthoredRootLocalScale { get; }
             public string LastStateName { get; set; }
 

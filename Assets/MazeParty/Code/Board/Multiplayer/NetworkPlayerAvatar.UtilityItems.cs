@@ -91,7 +91,7 @@ namespace MazeParty.Multiplayer
                     { _equippedItem.Value = 0; NotifyUtilityOnServer(BoardUtilityNotice.SwapCancelled, slot); }
                 }
             }
-            if (_avatarVisual != null) _avatarVisual.SetHiddenFromViewer(IsCloaked && !IsOwner);
+            if (_avatarVisual != null) _avatarVisual.SetCloakVisibility(IsCloaked, IsOwner);
         }
 
         private bool TryCompleteSwapOnServer(NetworkPlayerAvatar target)

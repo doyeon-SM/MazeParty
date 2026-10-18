@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.GiftGrab;
 using NUnit.Framework;
 using Unity.Netcode;
@@ -15,6 +16,43 @@ namespace MazeParty.Multiplayer.Tests
     {
         private const string ScenePath =
             "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity";
+
+        [Test]
+        public void GiftVariants_UseSharedEventIdentityAndCompleteAuthoredReferences()
+        {
+            foreach (var path in new[] {
+                "Assets/MazeParty/Prefabs/Minigames/GiftGrab/Gift.prefab",
+                "Assets/MazeParty/Prefabs/Board/World/BoardLandingGift.prefab" })
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                Assert.That(prefab, Is.Not.Null, path);
+                var first = Object.Instantiate(prefab);
+                var second = Object.Instantiate(prefab);
+                try
+                {
+                    var a = first.GetComponent<GiftVisualVariants>();
+                    var b = second.GetComponent<GiftVisualVariants>();
+                    Assert.That(a.HasRequiredReferences, Is.True, path);
+                    Assert.That(b.HasRequiredReferences, Is.True, path);
+                    var selected = new System.Collections.Generic.HashSet<int>();
+                    for (var gift = 0; gift < 32; gift++)
+                    {
+                        a.Present(0x123456789ABCDEF0UL, 7, gift);
+                        b.Present(1UL, -1, gift + 10);
+                        b.Present(0x123456789ABCDEF0UL, 7, gift);
+                        var expected = GiftVisualVariants.SelectIndex(0x123456789ABCDEF0UL, 7, gift);
+                        selected.Add(expected);
+                        Assert.That(a.Variants.Count(value => value.activeSelf), Is.EqualTo(1));
+                        Assert.That(b.Variants.Count(value => value.activeSelf), Is.EqualTo(1));
+                        Assert.That(a.Variants[expected].activeSelf, Is.True);
+                        Assert.That(b.Variants[expected].activeSelf, Is.True,
+                            "A late-joining presentation must choose the same model from the shared event.");
+                    }
+                    Assert.That(selected, Is.EquivalentTo(new[] { 0, 1, 2 }));
+                }
+                finally { Object.DestroyImmediate(first); Object.DestroyImmediate(second); }
+            }
+        }
 
         [Test]
         public void ThrownGiftBoundary_UsesRadiusAdjustedExactContact()
@@ -289,28 +327,13 @@ namespace MazeParty.Multiplayer.Tests
                         "Gift Anchor " + giftId.ToString("00"));
                     Assert.That(gift, Is.Not.Null, giftId.ToString());
                     Assert.That(gift.Find("Gift Visual"), Is.Not.Null);
-                    var idleAnimation = gift.GetComponentsInChildren<
-                            MonoBehaviour>(true)
-                        .SingleOrDefault(component => component != null &&
-                            component.GetType().FullName ==
-                            "Benjathemaker.SimpleGemsAnim");
-                    Assert.That(idleAnimation, Is.Not.Null,
-                        "The authored gold-pile art must remain present.");
-                    Assert.That(idleAnimation.enabled, Is.False,
-                        "Idle gifts must not rotate, float or pulse.");
+                    var variants = gift.Find("Gift Visual").GetComponent<GiftVisualVariants>();
+                    Assert.That(variants, Is.Not.Null);
+                    Assert.That(variants.HasRequiredReferences, Is.True);
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        variants.gameObject), Is.EqualTo(
+                        "Assets/MazeParty/Prefabs/Minigames/GiftGrab/Gift.prefab"));
                 }
-                var giftPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-                    "Assets/MazeParty/Prefabs/Minigames/GiftGrab/Gift.prefab");
-                Assert.That(giftPrefab, Is.Not.Null);
-                var goldPile = giftPrefab.transform.Find("GoldPile");
-                Assert.That(goldPile, Is.Not.Null,
-                    "The authored gold-pile gift art must be preserved.");
-                var prefabAnimation = goldPile.GetComponents<MonoBehaviour>()
-                    .SingleOrDefault(component => component != null &&
-                        component.GetType().FullName ==
-                        "Benjathemaker.SimpleGemsAnim");
-                Assert.That(prefabAnimation, Is.Not.Null);
-                Assert.That(prefabAnimation.enabled, Is.False);
 
                 Assert.That(
                     state.GetComponentsInChildren<Canvas>(true),

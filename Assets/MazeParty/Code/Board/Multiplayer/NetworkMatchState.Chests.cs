@@ -76,7 +76,7 @@ namespace MazeParty.Multiplayer
                 if (_chestVisuals[index] == null)
                     _chestVisuals[index] = Instantiate(BoardWorldPrefabs.LoadRequired().Chest, transform);
                 var visual = _chestVisuals[index];
-                visual.transform.position = tile.WorldCenter;
+                visual.PlaceOnTile(tile);
                 visual.gameObject.SetActive(true);
                 visual.Present(index, state.Consumed);
             }

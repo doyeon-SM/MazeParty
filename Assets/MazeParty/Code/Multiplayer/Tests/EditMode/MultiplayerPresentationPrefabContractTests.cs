@@ -286,6 +286,46 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void CloakVisibility_HidesOwnerHandsAndRemoteItems_ThenRestoresCurrentEquipment()
+        {
+            var root = new GameObject("Cloak Visibility Contract");
+            try
+            {
+                var visual = root.AddComponent<PlayerAvatarVisual>();
+                visual.EnsureBuilt();
+                var bindings = visual.Bindings;
+                visual.SetOwnerFirstPerson(true);
+                Assert.That(bindings.FirstPersonHands.gameObject.activeInHierarchy, Is.True);
+
+                visual.SetCloakVisibility(true, true);
+                Assert.That(bindings.FirstPersonHands.gameObject.activeInHierarchy, Is.False);
+                visual.SetEquippedItem(PrototypeItemId.PositionSwapper);
+                Assert.That(bindings.FirstPersonItemRoot.gameObject.activeInHierarchy, Is.True);
+                Assert.That(bindings.FirstPersonItemRoot.Cast<Transform>()
+                    .Count(child => child.gameObject.activeInHierarchy), Is.EqualTo(1));
+                visual.SetEquippedItem(PrototypeItemId.None);
+                Assert.That(bindings.FirstPersonHands.gameObject.activeInHierarchy, Is.False);
+                visual.SetCloakVisibility(false, true);
+                Assert.That(bindings.FirstPersonHands.gameObject.activeInHierarchy, Is.True);
+
+                visual.SetOwnerFirstPerson(false);
+                visual.SetEquippedItem(PrototypeItemId.PositionSwapper);
+                visual.SetCloakVisibility(true, false);
+                Assert.That(bindings.WorldModel.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.WorldItemRoot.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.FirstPersonItemRoot.gameObject.activeInHierarchy, Is.False);
+                Assert.That(bindings.BodyHitbox.gameObject.activeInHierarchy, Is.True,
+                    "Invisibility must not remove damage hit zones.");
+                visual.SetCloakVisibility(false, false);
+                Assert.That(bindings.WorldItemRoot.gameObject.activeInHierarchy, Is.True);
+                visual.SetEquippedItem(PrototypeItemId.None);
+                Assert.That(bindings.LeftHandAnchor.gameObject.activeInHierarchy, Is.True);
+                Assert.That(bindings.RightHandAnchor.gameObject.activeInHierarchy, Is.True);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+        [Test]
         public void EquippedItem_SwitchesHandsAndWorldItemRootThenRestoresNone()
         {
             var root = new GameObject("Equipped Item Contract Root");

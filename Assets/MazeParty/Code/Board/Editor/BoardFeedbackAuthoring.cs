@@ -119,55 +119,9 @@ namespace MazeParty.Editor
 
         private static Renderer MouseIcon(Transform parent, string name, float x, bool right)
         {
-            var path = Dice + (right ? "/MouseRight.asset" : "/MouseLeft.asset");
-            var mesh = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-            if (mesh == null)
-            {
-                var vertices = new List<Vector3>();
-                var triangles = new List<int>();
-                var colors = new List<Color>();
-                Action<Vector3, Vector3, Vector3, Color> triangle = (a, b, c, color) =>
-                {
-                    var start = vertices.Count;
-                    vertices.Add(a); vertices.Add(b); vertices.Add(c);
-                    colors.Add(color); colors.Add(color); colors.Add(color);
-                    triangles.Add(start); triangles.Add(start + 1); triangles.Add(start + 2);
-                };
-                for (var i = 0; i < 48; i++)
-                {
-                    var a = i * Mathf.PI * 2f / 48;
-                    var b = (i + 1) * Mathf.PI * 2f / 48;
-                    var outerA = new Vector3(Mathf.Cos(a) * 0.145f, Mathf.Sin(a) * 0.205f, 0f);
-                    var outerB = new Vector3(Mathf.Cos(b) * 0.145f, Mathf.Sin(b) * 0.205f, 0f);
-                    var innerA = outerA * 0.83f;
-                    var innerB = outerB * 0.83f;
-                    triangle(outerA, outerB, innerA, Color.white);
-                    triangle(innerA, outerB, innerB, Color.white);
-                    var selected = Mathf.Sin(a) > 0 && (right ? Mathf.Cos(a) > 0 : Mathf.Cos(a) < 0);
-                    triangle(Vector3.zero, innerA, innerB,
-                        selected ? new Color(1f, 0.85f, 0.25f) : new Color(0.04f, 0.05f, 0.08f));
-                }
-                mesh = new Mesh { name = name };
-                mesh.SetVertices(vertices); mesh.SetColors(colors); mesh.SetTriangles(triangles, 0);
-                mesh.RecalculateBounds();
-                AssetDatabase.CreateAsset(mesh, path);
-            }
-            var materialPath = Dice + "/MouseIcon.mat";
-            var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
-            if (material == null)
-            {
-                material = new Material(Resources.Load<Shader>(WorldTextOcclusion.TextShaderResource));
-                material.color = Color.white;
-                AssetDatabase.CreateAsset(material, materialPath);
-            }
             var go = Child(parent, name);
             go.transform.localPosition = new Vector3(x, 0f, 0f);
-            go.AddComponent<MeshFilter>().sharedMesh = mesh;
-            var renderer = go.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = material;
-            renderer.shadowCastingMode = ShadowCastingMode.Off;
-            renderer.receiveShadows = false;
-            return renderer;
+            return ItemVisualFeedbackProjectSetup.ApplyInputIcon(go, right ? "mr" : "ml");
         }
 
         private static GameObject EnsureForestLamp()

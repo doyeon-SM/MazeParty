@@ -544,6 +544,10 @@ namespace MazeParty.Multiplayer
                 DestinationSlot = feedback.Slot,
                 Amount = 1
             }, phase, motion, avatar.transform, head, prefab);
+            if (feedback.FeedbackKind == BoardLandingEffectFeedbackKind.Item &&
+                _resourceTransferVisual != null)
+                _resourceTransferVisual.GetComponent<GiftVisualVariants>()?.Present(
+                    (ulong)(uint)match.BoardEffectSeed, feedback.Revision, feedback.Slot);
             return phase;
         }
 

@@ -228,7 +228,8 @@ namespace MazeParty.Editor
             return id == PrototypeItemId.Pistol ||
                    id == PrototypeItemId.Sniper ||
                    id == PrototypeItemId.Grenade ||
-                   id == PrototypeItemId.Mine;
+                   id == PrototypeItemId.Mine ||
+                   id == PrototypeItemId.PositionSwapper;
         }
 
         private static void EnsureIcon(
@@ -248,6 +249,17 @@ namespace MazeParty.Editor
             BoardItemDefinition item,
             PrototypeItemId id)
         {
+            if (id == PrototypeItemId.PositionSwapper)
+            {
+                var model = ItemVisualFeedbackProjectSetup.EnsurePositionSwapper();
+                if (item.HeldPrefab != model || item.WorldPrefab != model)
+                {
+                    item.HeldPrefab = model;
+                    item.WorldPrefab = model;
+                    EditorUtility.SetDirty(item);
+                }
+                return;
+            }
             if (id != PrototypeItemId.Mine)
                 return;
 
@@ -344,6 +356,8 @@ namespace MazeParty.Editor
         }
         private static GameObject EnsureModel(PrototypeItemId id)
         {
+            if (id == PrototypeItemId.PositionSwapper)
+                return ItemVisualFeedbackProjectSetup.EnsurePositionSwapper();
             string path = VisualFolder + "/" + id + ".prefab";
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if (existing != null) return existing;
