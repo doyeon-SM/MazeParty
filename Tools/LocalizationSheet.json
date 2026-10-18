@@ -1,0 +1,9 @@
+{
+  "mode": "on_request",
+  "spreadsheetId": "1uiKBeUpS4oD18SEsxplsJf9O30Kb7hT3Js_x3ikT8Cc",
+  "spreadsheetUrl": "https://docs.google.com/spreadsheets/d/1uiKBeUpS4oD18SEsxplsJf9O30Kb7hT3Js_x3ikT8Cc/edit",
+  "sheetName": "Strings",
+  "sheetId": 483131234,
+  "columns": ["source", "ko", "ja", "zh-Hans"],
+  "localCsvPath": "Assets/MazeParty/Resources/MazeParty/Localization/StringTable.csv"
+}

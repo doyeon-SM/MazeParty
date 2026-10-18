@@ -246,7 +246,7 @@ namespace MazeParty.Multiplayer
     {
         private static readonly Vector2[] OwnerCandidateOffsets =
         {
-            new Vector2(0f, 2f),
+            new Vector2(0f, 1.5f),
             new Vector2(1.5f, 1.5f),
             new Vector2(-1.5f, 1.5f),
             new Vector2(2f, 0f),
@@ -353,6 +353,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            // Preserve the owner's waist plane even when an obstacle requires a tile fallback.
+            tileCenter += up * Vector3.Dot(ownerAnchor - tileCenter, up);
             if (!TryCandidates(ownerAnchor, OwnerCandidateOffsets) &&
                 !TryCandidates(tileCenter, TileCandidateOffsets))
             {
@@ -398,7 +400,7 @@ namespace MazeParty.Multiplayer
         public int DieIndex => dieIndex;
 
         [Header("Placement")]
-        [SerializeField, Min(0.1f)] private float spawnHeight = 0.75f;
+        [SerializeField] private float spawnWaistOffset;
         [SerializeField, Range(0f, 1f)] private float boundaryRestitution = 0.15f;
 
         [Header("Interaction")]
@@ -421,6 +423,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private WorldDieFaceMarker[] faceMarkers =
             Array.Empty<WorldDieFaceMarker>();
         [SerializeField] private TextMesh publicResultText;
+        [SerializeField] private WorldDieReadyHint readyHint;
         [SerializeField] private Color[] slotTints = Array.Empty<Color>();
 
         private readonly NetworkVariable<int> _slot = new NetworkVariable<int>(
@@ -506,6 +509,7 @@ namespace MazeParty.Multiplayer
             get
             {
                 if (slotTintRenderer == null || publicResultText == null ||
+                    readyHint == null || !readyHint.HasRequiredReferences ||
                     dieRenderers == null || dieRenderers.Length == 0 ||
                     faceMarkers == null ||
                     faceMarkers.Length != WorldDieAuthorityModel.MaximumFace ||
@@ -561,6 +565,7 @@ namespace MazeParty.Multiplayer
         {
             CacheComponents();
             _phase.OnValueChanged += OnPhaseChanged;
+            GameText.LanguageChanged += RefreshWorldResultText;
             _publicFace.OnValueChanged += OnPublicFaceChanged;
             _ownerTint.OnValueChanged += OnOwnerTintChanged;
             ApplyVisibility(Phase);
@@ -590,6 +595,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkDespawn()
         {
             _phase.OnValueChanged -= OnPhaseChanged;
+            GameText.LanguageChanged -= RefreshWorldResultText;
             _publicFace.OnValueChanged -= OnPublicFaceChanged;
             _ownerTint.OnValueChanged -= OnOwnerTintChanged;
             ActiveServerDice.Remove(this);
@@ -608,6 +614,13 @@ namespace MazeParty.Multiplayer
             publicResultText = resultText;
             slotTints = playerTints ?? Array.Empty<Color>();
             CacheFaceMarkers();
+            RefreshWorldResultText();
+        }
+
+        public void ConfigureReadyHint(WorldDieReadyHint hint)
+        {
+            readyHint = hint;
+            dieRenderers = GetComponentsInChildren<Renderer>(true);
             RefreshWorldResultText();
         }
 
@@ -724,7 +737,7 @@ namespace MazeParty.Multiplayer
         {
             return PrepareOnServer(
                 tile,
-                tile != null ? tile.WorldCenter : Vector3.zero,
+                tile != null ? tile.GetRecoveryCenter(1f) : Vector3.zero,
                 tile != null ? tile.transform.forward : Vector3.forward);
         }
 
@@ -784,9 +797,6 @@ namespace MazeParty.Multiplayer
                     targetRotation,
                     forward);
 
-            var ownerOffset = ownerPosition - tile.WorldCenter;
-            var ownerHorizontal = right * Vector3.Dot(ownerOffset, right) +
-                                  forward * Vector3.Dot(ownerOffset, forward);
             var projectedForward = Vector3.ProjectOnPlane(ownerForward, up);
             if (projectedForward.sqrMagnitude <= 0.000001f)
             {
@@ -815,12 +825,12 @@ namespace MazeParty.Multiplayer
                 out Vector3 resolved)
             {
                 return WorldDieSpawnPlacementPolicy.TryResolve(
-                    tile.WorldCenter + ownerHorizontal,
+                    ownerPosition,
                     tile.WorldCenter,
                     up,
                     projectedForward,
                     forward,
-                    spawnHeight,
+                    spawnWaistOffset,
                     ConstrainSpawnCandidate,
                     candidate => IsSpawnPositionClear(
                         candidate,
@@ -1544,9 +1554,7 @@ namespace MazeParty.Multiplayer
                 return currentPosition;
             }
 
-            var tileSurfaceHeight = Mathf.Max(
-                0f,
-                spawnHeight - faceCenterDistance - LandingClearance);
+            var tileSurfaceHeight = 0f;
             var tileCollider = _assignedTile != null
                 ? _assignedTile.GetComponent<Collider>()
                 : null;
@@ -2075,13 +2083,17 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            GameFonts.Apply(publicResultText);
+            if (readyHint != null)
+                readyHint.gameObject.SetActive(Phase == WorldDiePhase.Ready);
+
             switch (Phase)
             {
                 case WorldDiePhase.Ready:
-                    publicResultText.text = "?";
+                    publicResultText.text = string.Empty;
                     break;
                 case WorldDiePhase.Rolling:
-                    publicResultText.text = "...";
+                    publicResultText.text = GameText.T("Rolling...");
                     break;
                 case WorldDiePhase.Settled:
                     publicResultText.text = PublicFace.ToString();

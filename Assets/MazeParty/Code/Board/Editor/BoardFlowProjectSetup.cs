@@ -688,6 +688,8 @@ namespace MazeParty.Editor
                         markers,
                         resultText,
                         D12PlayerColors);
+                    BoardFeedbackAuthoring.EnsureDiceHint(temporary);
+                    renderers = temporary.GetComponentsInChildren<Renderer>(true);
                     for (var index = 0; index < renderers.Length; index++)
                     {
                         renderers[index].enabled = false;
@@ -1134,6 +1136,7 @@ namespace MazeParty.Editor
 
             RenderSettings.skybox = skybox;
             RenderSettings.ambientMode = AmbientMode.Skybox;
+            BoardFeedbackAuthoring.ConfigureNightAmbient();
         }
 
         private static CinemachineCamera CreateCinemachineCamera(
@@ -1261,9 +1264,10 @@ namespace MazeParty.Editor
             lightObject.transform.rotation = Quaternion.Euler(52f, -32f, 0f);
             var light = lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
-            light.color = new Color(1f, 0.95f, 0.86f);
-            light.intensity = 1.25f;
+            light.color = new Color(0.57f, 0.69f, 1f);
+            light.intensity = 0.28f;
             light.shadows = LightShadows.Soft;
+            RenderSettings.sun = light;
         }
 
         private static void CreateBoardBackdrop(Material material)

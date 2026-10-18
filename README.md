@@ -94,6 +94,12 @@ SDK와 로컬 설정은 Git에 올리지 않습니다. **Application Secret·개
 
 이 도구는 누락된 파일만 복원하고 기존 JSON을 덮어쓰지 않습니다. `.git/info/exclude`에도 제외 규칙을 적용해 이전 브랜치에서 실수로 추가되는 것을 방지합니다. **Git 제외는 백업이나 삭제 방지 기능이 아닙니다.** SDK 원본과 키의 안전한 보관은 별도로 필요합니다.
 
+## 현지화 번역
+
+[MazeParty 현지화 Google Sheets](https://docs.google.com/spreadsheets/d/1uiKBeUpS4oD18SEsxplsJf9O30Kb7hT3Js_x3ikT8Cc/edit)의 `Strings` 탭에서 한국어·일본어·중국어 간체를 편집합니다. `source`는 영어 원문 겸 코드 조회 키이므로 유지합니다.
+
+편집 후 Codex에 “구글시트 현지화 내용을 프로젝트에 반영해줘”라고 요청하면 검증 후 프로젝트 CSV에 적용합니다. 연결 설정·직접 가져오기·백업 복원은 [Google Sheets 현지화 안내](Docs/LOCALIZATION_GOOGLE_SHEETS.md)를 참조하세요.
+
 ## 저장소 구성과 브랜치
 
 | 경로 | 내용 |

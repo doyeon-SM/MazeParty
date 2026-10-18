@@ -5949,6 +5949,101 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 88, y: 4.2, z: 0.8}
   m_Center: {x: 0, y: 2.1, z: 0}
+--- !u!1 &3867587712867450772
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5260078330377283373}
+  m_Layer: 0
+  m_Name: Night Lighting
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5260078330377283373
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3867587712867450772}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8877739884683735711}
+  - {fileID: 3812007209942152350}
+  - {fileID: 6110969867420397593}
+  - {fileID: 4644941557049922185}
+  - {fileID: 7760901589407754726}
+  - {fileID: 4257942281661072793}
+  - {fileID: 4896658420928159398}
+  - {fileID: 9032566180196105252}
+  - {fileID: 6259950591778737755}
+  - {fileID: 7426974667991995765}
+  - {fileID: 4224071573192180910}
+  - {fileID: 5579752626289292838}
+  - {fileID: 1365679864703938524}
+  - {fileID: 7357868814403982019}
+  - {fileID: 3014342352539764216}
+  - {fileID: 6146624013161014086}
+  - {fileID: 6721097544317567856}
+  - {fileID: 5029322006209791927}
+  - {fileID: 3969739400541259764}
+  - {fileID: 3578191911349641895}
+  - {fileID: 5603695373390716964}
+  - {fileID: 5779720830202460439}
+  - {fileID: 4151529794933446158}
+  - {fileID: 5999477397188042687}
+  - {fileID: 6001612875671045762}
+  - {fileID: 3189803033534654574}
+  - {fileID: 1818024162601831541}
+  - {fileID: 6337095649922854110}
+  - {fileID: 6117739391525980223}
+  - {fileID: 5529697176320674591}
+  - {fileID: 6088789755835081807}
+  - {fileID: 6169081525325840645}
+  - {fileID: 605079249429774888}
+  - {fileID: 4407054515357929157}
+  - {fileID: 7399049187206880198}
+  - {fileID: 7783071651174902783}
+  - {fileID: 3939736205240085135}
+  - {fileID: 4759866291894210131}
+  - {fileID: 6927469780809923958}
+  - {fileID: 1929045489449436830}
+  - {fileID: 3675166180570692738}
+  - {fileID: 9103294967417893508}
+  - {fileID: 8144656888153476911}
+  - {fileID: 7296341172908509113}
+  - {fileID: 2109963795141110450}
+  - {fileID: 6922891031931203359}
+  - {fileID: 7649429615503969642}
+  - {fileID: 7640584889391071287}
+  - {fileID: 892519023392334914}
+  - {fileID: 7353858149045291200}
+  - {fileID: 271793966142318676}
+  - {fileID: 4125672311413232688}
+  - {fileID: 2579046831468703544}
+  - {fileID: 5826004634760188168}
+  - {fileID: 1348545249747166991}
+  - {fileID: 8215266485892790865}
+  - {fileID: 6692111245535922268}
+  - {fileID: 8435401871411677673}
+  - {fileID: 459856324317565834}
+  - {fileID: 1309412319155407546}
+  - {fileID: 3474077402515984167}
+  - {fileID: 3039517464644454156}
+  - {fileID: 2500689800654755465}
+  - {fileID: 3482416236796523788}
+  m_Father: {fileID: 3561716202416923930}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &3881610196597429182
 GameObject:
   m_ObjectHideFlags: 0
@@ -9748,6 +9843,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4077907479819714079}
+  - {fileID: 5260078330377283373}
   m_Father: {fileID: 6082895922323763242}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6585890287205642603
@@ -14992,6 +15088,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 239592191177457976}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &256352150795965128
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 50
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &271793966142318676 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 256352150795965128}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &259749611493335239
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -15931,6 +16089,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
+--- !u!1001 &444335891724527894
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 58
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &459856324317565834 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 444335891724527894}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &445982409552813301
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -16685,6 +16905,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 579810717373231288}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &589559918476982452
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 32
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &605079249429774888 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 589559918476982452}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &599419585244166001
 PrefabInstance:
@@ -17971,6 +18253,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 863277669367661381}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &876504912224853726
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 48
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &892519023392334914 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 876504912224853726}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &881614058218258813
 PrefabInstance:
@@ -20253,6 +20597,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 1323826973069233875}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1324289536894660646
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 59
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &1309412319155407546 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 1324289536894660646}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1338062728381210606
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20320,6 +20726,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4395798041611373594, guid: 9b869531a7c3a5f438f8ed5803a6ee72, type: 3}
   m_PrefabInstance: {fileID: 1338062728381210606}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1349104451239859520
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 12
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &1365679864703938524 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 1349104451239859520}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1363269200209712231
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20384,6 +20852,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 1363269200209712231}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1368490664217566611
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 54
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &1348545249747166991 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 1368490664217566611}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1392967811343989947
 PrefabInstance:
@@ -22425,6 +22955,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 1832550373190215096}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1833473674027316969
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 26
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &1818024162601831541 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 1833473674027316969}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1841655530762798630
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -22926,6 +23518,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 1896260278551877958}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1913604771465149442
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 39
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &1929045489449436830 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 1913604771465149442}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1917944463176659302
 PrefabInstance:
@@ -23623,6 +24277,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 2085051907784686344}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2090581880411394094
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 44
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &2109963795141110450 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 2090581880411394094}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2102832173994274248
 PrefabInstance:
@@ -25601,6 +26317,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4395798041611373594, guid: 9b869531a7c3a5f438f8ed5803a6ee72, type: 3}
   m_PrefabInstance: {fileID: 2491208159433508678}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2521762764282670101
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 62
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &2500689800654755465 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 2521762764282670101}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2533356203516012818
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -25793,6 +26571,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 2541683750598943772}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2558529119064282532
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 52
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &2579046831468703544 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 2558529119064282532}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2567779788193518300
 PrefabInstance:
@@ -27638,6 +28478,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4395798041611373594, guid: 9b869531a7c3a5f438f8ed5803a6ee72, type: 3}
   m_PrefabInstance: {fileID: 2998882548590794540}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &2998902186979917668
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 14
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3014342352539764216 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 2998902186979917668}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3018424940423116973
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -27826,6 +28728,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 3041110495826596688}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3055037896716369296
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 61
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3039517464644454156 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3055037896716369296}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3061846881277947874
 PrefabInstance:
@@ -28141,6 +29105,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 3146827416130593058}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3174845551415120626
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 25
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3189803033534654574 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3174845551415120626}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3199127608612640436
 PrefabInstance:
@@ -29355,6 +30381,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 3461981852253512967}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3467528573698903952
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 63
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3482416236796523788 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3467528573698903952}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3474810811693997095
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -29482,6 +30570,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 3475599885743959991}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3494022819119199675
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 60
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3474077402515984167 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3494022819119199675}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3498650605820801450
 PrefabInstance:
@@ -30044,6 +31194,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 3582925385489758057}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3594839340711401531
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 19
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3578191911349641895 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3594839340711401531}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3609599708109531331
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30284,6 +31496,68 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 81e9882116030a6488d9584dc992bc74, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardTile
+--- !u!1001 &3696318309036836382
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 40
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3675166180570692738 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3696318309036836382}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3699455558035225986
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31469,6 +32743,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 3795575364870245119}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3795933723502595586
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 01
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3812007209942152350 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3795933723502595586}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3822384459149930939
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -31949,6 +33285,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 3939925200319208867}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3956382535089164307
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 36
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3939736205240085135 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3956382535089164307}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &3984335831677295657
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32011,6 +33409,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 3984335831677295657}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &3989201030452247912
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 18
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &3969739400541259764 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 3989201030452247912}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4007363759687039738
 PrefabInstance:
@@ -32583,6 +34043,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 4083008035571386817}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4110221698327604908
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 51
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4125672311413232688 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4110221698327604908}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4111099645898904626
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -32836,6 +34358,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 4157096199053539310}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4167544455855697042
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 22
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4151529794933446158 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4167544455855697042}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4184929349792159005
 PrefabInstance:
@@ -33280,6 +34864,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 4223627675813972020}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4239522735999041074
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 10
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4224071573192180910 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4239522735999041074}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4245633528445308756
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33411,6 +35057,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 4257887574708458269}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4277322549305442053
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 05
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4257942281661072793 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4277322549305442053}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4292841389497832968
 PrefabInstance:
@@ -33788,6 +35496,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 8568324456983940077, guid: d4e577e2f39b1f94ea266cdb4774b5e4, type: 3}
   m_PrefabInstance: {fileID: 4415118985793669786}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4423138995251770457
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 33
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4407054515357929157 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4423138995251770457}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4435057000414836752
 PrefabInstance:
@@ -34929,6 +36699,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 4623429290729677197}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4628856525252798485
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 03
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4644941557049922185 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4628856525252798485}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4642170380681791942
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -35750,6 +37582,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 4737828247994032875}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4775316353075508431
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 37
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4759866291894210131 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4775316353075508431}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4798262504364451186
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -36009,6 +37903,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 4838199038967309072}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &4881700938789758010
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 06
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &4896658420928159398 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 4881700938789758010}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4910632730820417833
 PrefabInstance:
@@ -36454,6 +38410,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4395798041611373594, guid: 9b869531a7c3a5f438f8ed5803a6ee72, type: 3}
   m_PrefabInstance: {fileID: 4994214607082502075}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5008170424797281579
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 17
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5029322006209791927 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5008170424797281579}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5012993206246235247
 PrefabInstance:
@@ -39212,6 +41230,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 5543730046229155311}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5545703041183461763
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 29
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5529697176320674591 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5545703041183461763}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5547996308854228026
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -39341,6 +41421,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 5549022410287028928}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5558680760025517242
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 11
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5579752626289292838 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5558680760025517242}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5569296382516148817
 PrefabInstance:
@@ -39596,6 +41738,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 5585018912878368446}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5588815958776748728
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 20
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5603695373390716964 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5588815958776748728}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5593175799466967237
 PrefabInstance:
@@ -40680,6 +42884,130 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 5787206718747762144}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5800236893878387595
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 21
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5779720830202460439 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5800236893878387595}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5805427550875364244
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 53
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5826004634760188168 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5805427550875364244}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5818511391393960021
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41560,6 +43888,130 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 5981047715987463926}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5981104509081926686
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 24
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6001612875671045762 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5981104509081926686}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &5983394014625850659
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 80.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 23
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &5999477397188042687 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 5983394014625850659}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &5987441256613009200
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -41881,6 +44333,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 6059451660687016141}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6067650269604110035
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 30
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6088789755835081807 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6067650269604110035}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6079109807209814674
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42072,6 +44586,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 6089964448357200675}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6090453805892979333
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 02
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6110969867420397593 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6090453805892979333}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6098638392592242128
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -42134,6 +44710,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 6098638392592242128}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6101733526712496803
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 28
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6117739391525980223 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6101733526712496803}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6102060320740915736
 PrefabInstance:
@@ -42199,6 +44837,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 6102060320740915736}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6126606578561915354
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 15
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6146624013161014086 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6126606578561915354}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6132693898817085324
 PrefabInstance:
@@ -42384,6 +45084,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 8568324456983940077, guid: d4e577e2f39b1f94ea266cdb4774b5e4, type: 3}
   m_PrefabInstance: {fileID: 6141664466865457071}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6185658036688845721
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 31
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6169081525325840645 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6185658036688845721}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6194594356586204754
 PrefabInstance:
@@ -42689,6 +45451,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 6219795372158961250}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6238868832072496327
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 08
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6259950591778737755 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6238868832072496327}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6252262672802182377
 PrefabInstance:
@@ -43256,6 +46080,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 6309853519234916858}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6321584015552484930
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 27
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6337095649922854110 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6321584015552484930}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6326039181619311641
 PrefabInstance:
@@ -44881,6 +47767,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 6668725316829008537}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6670959666254115520
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 56
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6692111245535922268 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6670959666254115520}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6678980699803752772
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -45071,6 +48019,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 6683988737328561586}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6705023508123269612
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 68.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 16
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6721097544317567856 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6705023508123269612}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6734031477053883845
 PrefabInstance:
@@ -46792,6 +49802,68 @@ MonoBehaviour:
   - {x: 4, y: -4}
   - {x: -4, y: -4}
   - {x: -4, y: 4}
+--- !u!1001 &6942344415485040003
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 45
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6922891031931203359 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6942344415485040003}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6945205818651504274
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -46854,6 +49926,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 6945205818651504274}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &6946930860393596906
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 38
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &6927469780809923958 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 6946930860393596906}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &6953523950926687922
 PrefabInstance:
@@ -48928,6 +52062,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 7261770886871332931}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7280889461923970341
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 43
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7296341172908509113 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7280889461923970341}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7317859535565029683
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49377,6 +52573,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 7366036244297703850}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7369299416834699868
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 49
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7353858149045291200 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7369299416834699868}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7372888487338390034
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49495,6 +52753,68 @@ MonoBehaviour:
   - {x: 4, y: -4}
   - {x: -4, y: -4}
   - {x: -4, y: 4}
+--- !u!1001 &7374437078926452831
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 13
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7357868814403982019 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7374437078926452831}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7384754527705421620
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49808,6 +53128,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 7398696488531322047}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7414492653984932186
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 34
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7399049187206880198 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7414492653984932186}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7439643375373403104
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -49926,6 +53308,68 @@ MonoBehaviour:
   - {x: 4, y: -4}
   - {x: -4, y: -4}
   - {x: -4, y: 4}
+--- !u!1001 &7447493477759512553
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 09
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7426974667991995765 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7447493477759512553}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7449167862794051219
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51241,6 +54685,68 @@ MonoBehaviour:
   - {x: 4, y: -4}
   - {x: -4, y: -4}
   - {x: -4, y: 4}
+--- !u!1001 &7657221875537771179
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 40.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 47
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7640584889391071287 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7657221875537771179}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7660966044116654457
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51303,6 +54809,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 7660966044116654457}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7666004477097261046
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 30.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 46
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7649429615503969642 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7666004477097261046}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7679692943844014527
 PrefabInstance:
@@ -51741,6 +55309,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 7777331354144471761}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7782052069144384378
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 23.7389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 04
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7760901589407754726 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7782052069144384378}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7787331557697543415
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -51931,6 +55561,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 7793291836290756402}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7802525586599530851
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 57.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 35
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &7783071651174902783 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 7802525586599530851}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &7812475586579672084
 PrefabInstance:
@@ -53640,6 +57332,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 8154894301948752990}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8164049250390095283
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 50.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 42
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &8144656888153476911 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 8164049250390095283}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8179520294234467314
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -53830,6 +57584,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 8231086569096721620}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8235210803001131213
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.988899
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 61.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 55
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &8215266485892790865 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 8235210803001131213}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8236596219926694885
 PrefabInstance:
@@ -54826,6 +58642,68 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 2018603873683457656, guid: 623bb50d8d0b3d54aa4a8f6566798d70, type: 3}
   m_PrefabInstance: {fileID: 8408160242465997649}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8456551253247308661
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 10.397583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 57
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &8435401871411677673 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 8456551253247308661}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8457484327787472350
 PrefabInstance:
@@ -56447,6 +60325,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 8847620171804290568}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8898889267074041859
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 1.4888992
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.897583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 00
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &8877739884683735711 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 8898889267074041859}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8901828122166348621
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -57063,6 +61003,68 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 4417248129044502496, guid: 54d08ba60661ea943a645c9fdbb4d353, type: 3}
   m_PrefabInstance: {fileID: 8983933118424053619}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &9012049019158103736
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 35.2389
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 20.147583
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 07
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &9032566180196105252 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 9012049019158103736}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9029319604833011266
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -57435,6 +61437,68 @@ MonoBehaviour:
   - {x: 4, y: -4}
   - {x: -4, y: -4}
   - {x: -4, y: 4}
+--- !u!1001 &9087775087265007640
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5260078330377283373}
+    m_Modifications:
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 45.9889
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.2
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 71.64758
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1322075279687203865, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+      propertyPath: m_Name
+      value: Maze Light 41
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+--- !u!4 &9103294967417893508 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 21152131186178716, guid: c75bfe213e6005d40b9d869a3eed3c5a, type: 3}
+  m_PrefabInstance: {fileID: 9087775087265007640}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &9099704156919307409
 PrefabInstance:
   m_ObjectHideFlags: 0

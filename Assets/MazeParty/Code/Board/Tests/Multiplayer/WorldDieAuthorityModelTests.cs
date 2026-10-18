@@ -268,6 +268,27 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void SafeSpawnPlacement_UsesFirstDistinctClearTileCandidate()
         {
+            // The avatar origin is its waist, including elevated/sloped ground.
+            foreach (var yaw in new[] { 0f, 90f, 180f, 270f })
+            {
+                var owner = new Vector3(2f, 1.4f, -1f);
+                var forward = Quaternion.Euler(0f, yaw, 0f) * Vector3.forward;
+                Assert.That(WorldDieSpawnPlacementPolicy.TryResolve(
+                    owner, Vector3.zero, Vector3.up, forward, Vector3.forward,
+                    0f, candidate => candidate, _ => true, out var front), Is.True);
+                Assert.That(front.y, Is.EqualTo(owner.y).Within(0.0001f));
+                Assert.That(Vector3.Dot(front - owner, forward), Is.GreaterThan(0f));
+                Assert.That(Vector3.Cross(front - owner, forward).sqrMagnitude,
+                    Is.LessThan(0.0001f));
+
+                // A tile fallback must stay on the owner's waist plane.
+                Assert.That(WorldDieSpawnPlacementPolicy.TryResolve(
+                    owner, Vector3.zero, Vector3.up, forward, Vector3.forward,
+                    0f, candidate => candidate,
+                    candidate => new Vector2(candidate.x, candidate.z).sqrMagnitude < 0.001f,
+                    out var fallback), Is.True);
+                Assert.That(fallback.y, Is.EqualTo(owner.y).Within(0.0001f));
+            }
             var checkedCandidates = new List<Vector3>();
             Vector3 Constrain(Vector3 candidate)
             {
