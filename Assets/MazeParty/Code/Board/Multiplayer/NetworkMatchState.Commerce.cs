@@ -240,6 +240,7 @@ namespace MazeParty.Multiplayer
                 AddUnique(reserved, snapshot.Location, snapshot.Active);
             }
 
+            AddChestReservations(reserved);
             return reserved;
         }
 
@@ -251,6 +252,7 @@ namespace MazeParty.Multiplayer
                 var snapshot = GetItemShopSnapshot(shopIndex);
                 AddUnique(blocked, snapshot.Location, snapshot.Active);
             }
+            AddChestReservations(blocked);
             return blocked;
         }
 

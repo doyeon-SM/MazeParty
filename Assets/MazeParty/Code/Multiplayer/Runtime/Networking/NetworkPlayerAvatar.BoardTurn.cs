@@ -131,7 +131,7 @@ namespace MazeParty.Multiplayer
             }
 
             StopServerInputOnServer();
-            if (_selectedItemSlot.Value >= 0)
+            if (_equippedItem.Value != 0)
             {
                 ConsumeSelectedItemOnServer();
             }
@@ -192,14 +192,16 @@ namespace MazeParty.Multiplayer
             }
 
             var selected = _selectedItemSlot.Value;
-            if (selected < 0 || selected >= GameplayInventory.Capacity ||
-                (_occupiedItemMask.Value & (1 << selected)) == 0)
+            if (selected >= 0 && selected < GameplayInventory.Capacity &&
+                (_occupiedItemMask.Value & (1 << selected)) != 0)
+            {
+                _occupiedItemMask.Value = (byte)(_occupiedItemMask.Value & ~(1 << selected));
+                SetItemSlotValue(selected, PrototypeItemId.None);
+            }
+            else if (_equippedItem.Value == 0)
             {
                 return false;
             }
-
-            _occupiedItemMask.Value = (byte)(_occupiedItemMask.Value & ~(1 << selected));
-            SetItemSlotValue(selected, PrototypeItemId.None);
             _selectedItemSlot.Value = -1;
             _equippedItem.Value = 0;
             _itemCharges.Value = 0;

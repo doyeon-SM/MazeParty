@@ -305,6 +305,38 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
         }
 
+
+        [Test]
+        public void Chests_RoundTripConsumedState_RejectCorruption_AndMigratePreChestSaves()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.chests = new[]
+            {
+                new BoardChestSnapshot { Active = true, Consumed = true, Location = Vector2Int.zero, AppearedTurn = 2, Revision = 2 },
+                new BoardChestSnapshot { Active = true, Location = Vector2Int.right, AppearedTurn = 2, Revision = 1 }
+            };
+            var payload = codec.Encode(snapshot);
+            Assert.That(codec.TryDecode(payload, out var restored), Is.True);
+            Assert.That(restored.chests, Is.EqualTo(snapshot.chests));
+            for (var invalid = 0; invalid < 5; invalid++)
+            {
+                Assert.That(codec.TryDecode(payload, out restored), Is.True);
+                if (invalid == 0) restored.chests = null;
+                if (invalid == 1) restored.chests[0].Location = restored.chests[1].Location;
+                if (invalid == 2) restored.chests[0].AppearedTurn = 3;
+                if (invalid == 3) restored.chests[0].Revision = -1;
+                if (invalid == 4) restored.chests[0].Active = false;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(restored), out _), Is.False);
+            }
+            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests;
+            snapshot.chests = null;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out restored), Is.True);
+            Assert.That(restored.recoveryVersion, Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+            Assert.That(restored.chests, Has.Length.EqualTo(BoardChestRules.Count));
+            Assert.That(restored.chests[0].Active, Is.False);
+        }
+
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(
             params string[] playerKeys)
         {

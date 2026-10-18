@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -21,7 +22,8 @@ namespace MazeParty.Multiplayer
     {
         public const int LegacyRecoveryVersionWithoutMines = 1;
         public const int LegacyRecoveryVersionWithoutMapIdentity = 2;
-        public const int CurrentRecoveryVersion = 3;
+        public const int LegacyRecoveryVersionWithoutChests = 3;
+        public const int CurrentRecoveryVersion = 4;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
@@ -42,6 +44,7 @@ namespace MazeParty.Multiplayer
         public string boardMapId = string.Empty;
         public int boardMapContentVersion;
         public MatchRecoveryKeyShopSnapshot keyShop;
+        public BoardChestSnapshot[] chests = new BoardChestSnapshot[BoardChestRules.Count];
         public MatchRecoveryItemShopSnapshot[] itemShops =
             Array.Empty<MatchRecoveryItemShopSnapshot>();
         public MatchRecoveryMineSnapshot[] mines =

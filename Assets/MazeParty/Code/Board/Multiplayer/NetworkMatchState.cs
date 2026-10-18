@@ -567,6 +567,7 @@ namespace MazeParty.Multiplayer
             }
 
             TickBoardGrenadePresentation();
+            TickChestPresentation();
             if (!IsServer)
             {
                 return;
@@ -748,6 +749,8 @@ namespace MazeParty.Multiplayer
             _keyShopRevealPausedRemaining.Value = 0d;
             _itemShopStocks[0] = null;
             _itemShopStocks[1] = null;
+            _chest0.Value = default;
+            _chest1.Value = default;
             _itemShop0.Value = default;
             _itemShop1.Value = default;
             ResetCombatRuntimeOnServer();
@@ -1305,6 +1308,7 @@ namespace MazeParty.Multiplayer
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);
                     TryBeginInitialKeyShopPlacementOnServer(transition.Turn);
+                    RefreshChestsForTurnOnServer(transition.Turn);
                     break;
                 case BoardFlowState.Descending:
                     CaptureOverviewEndPositionsOnServer();

@@ -16,7 +16,8 @@ namespace MazeParty.Multiplayer
         Healing = 7,
         Arrow = 8,
         Damage = 9,
-        SpecialEvent = 10
+        SpecialEvent = 10,
+        Chest = 11
     }
 
     /// <summary>Small vector icons authored on the board UI prefab, including stencil clipping.</summary>
@@ -87,6 +88,12 @@ namespace MazeParty.Multiplayer
                     Ring(mesh, Vector2.zero, .78f, .17f, 0f, 360f);
                     Box(mesh, -.42f, -.09f, .84f, .18f);
                     if (kind == BoardMapIconKind.GoldGain) Box(mesh, -.09f, -.42f, .18f, .84f);
+                    break;
+                case BoardMapIconKind.Chest:
+                    Box(mesh, -.8f, -.65f, 1.6f, .85f);
+                    Box(mesh, -.8f, .33f, 1.6f, .28f);
+                    Box(mesh, -.6f, .61f, 1.2f, .16f);
+                    Box(mesh, -.13f, .05f, .26f, .42f);
                     break;
                 case BoardMapIconKind.Item:
                     Box(mesh, -.7f, -.65f, .55f, 1.05f); Box(mesh, .15f, -.65f, .55f, 1.05f);

@@ -173,7 +173,7 @@ namespace MazeParty.Multiplayer
 
             if (!match.CanAcceptActionInput || !HasResolvedItemChoice ||
                 CurrentHealth <= 0 ||
-                (BoardFlowView.IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen || IsSwapping))
+                (BoardFlowView.IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen))
             {
                 return;
             }
@@ -184,6 +184,10 @@ namespace MazeParty.Multiplayer
                 {
                     switch (interaction.Kind)
                     {
+                        case BoardWorldInteractionKind.Chest:
+                            OpenChestRpc(interaction.TargetIndex,
+                                match.GetChestSnapshot(interaction.TargetIndex).Revision);
+                            return;
                         case BoardWorldInteractionKind.KeyShop:
                             RequestKeyShopPurchaseRpc(
                                 match.KeyShopRevision);
@@ -195,6 +199,7 @@ namespace MazeParty.Multiplayer
                     }
                 }
 
+                if (IsSwapping) return;
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay) &&
                     aimedDie.AssignedSlot == AssignedSlot && !HasRolled)
                 {
@@ -202,7 +207,8 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            if (repeatPrimary || (_selectedItemSlot.Value >= 0 && mouse.leftButton.wasPressedThisFrame))
+            if (IsSwapping) return;
+            if (repeatPrimary || (_equippedItem.Value != 0 && mouse.leftButton.wasPressedThisFrame))
             {
                 if (TryGetAimedWorldDie(out var aimedDie, out var aimedRay))
                 {
@@ -213,7 +219,7 @@ namespace MazeParty.Multiplayer
                     return;
                 }
 
-                if (_selectedItemSlot.Value >= 0)
+                if (_equippedItem.Value != 0)
                 {
                     // Item activation remains edge-triggered so holding LMB cannot
                     // consume several inventory slots as replication catches up.

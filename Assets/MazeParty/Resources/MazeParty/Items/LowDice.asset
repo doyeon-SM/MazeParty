@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: LowDice
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 9
+  UseTiming: 1
   DisplayName: Low Dice (1-6)
   Description: One D12 rolls only 1-6, each equally likely. Applied automatically.
   Price: 5

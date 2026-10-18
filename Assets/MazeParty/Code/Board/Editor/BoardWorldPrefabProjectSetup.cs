@@ -167,6 +167,9 @@ namespace MazeParty.Editor
                 if (shops.GetArrayElementAtIndex(index).objectReferenceValue == null)
                     shops.GetArrayElementAtIndex(index).objectReferenceValue = EnsureShop(index).GetComponent<BoardShopVisual>();
             SetMissing(so, "boundaryWall", EnsureWall().GetComponent<BoardBoundaryWallVisual>());
+            BoardChestProjectSetup.EnsureChest();
+            SetMissing(so, "chest", AssetDatabase.LoadAssetAtPath<GameObject>(
+                BoardChestProjectSetup.ChestPath).GetComponent<BoardChestVisual>());
             so.ApplyModifiedPropertiesWithoutUndo();
             if (!assets.HasRequiredReferences) throw new InvalidOperationException("Repair the BoardWorldPrefabs bindings before continuing.");
             return assets;

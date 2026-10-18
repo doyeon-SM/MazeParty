@@ -14,6 +14,23 @@ namespace MazeParty.Multiplayer
         // checkpoint unsafe to replay. Visual and localization changes do not.
         public const int BoardRecoveryCompatibilityVersion = 4;
 
+        public static string[] CreateCompatibleContentFingerprints(
+            BoardTopology topology,
+            HostMinigameSchedule schedule,
+            BoardMapSelection mapSelection)
+        {
+            return new[]
+            {
+                CreateContentFingerprint(topology, schedule, mapSelection),
+                CreateContentFingerprint(topology, schedule,
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests, mapSelection),
+                CreateContentFingerprint(topology, schedule,
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity, BoardMapSelection.Legacy),
+                CreateContentFingerprint(topology, schedule,
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines, BoardMapSelection.Legacy)
+            };
+        }
+
         public static string CreatePlayerKey(string authenticatedPlayerId)
         {
             if (string.IsNullOrWhiteSpace(authenticatedPlayerId))

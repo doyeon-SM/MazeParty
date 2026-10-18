@@ -140,6 +140,17 @@ namespace MazeParty.Multiplayer
             if (!IsServer || slot < 0 || slot >= 4) return false;
             return _started[Index(slot, 0)] || _started[Index(slot, 1)];
         }
+        public void DiscardPreparedDiceOnServer(int slot)
+        {
+            if (!IsServer || slot < 0 || slot >= 4 || IsRollInFlightOnServer(slot)) return;
+            for (var n = 0; n < 2; n++)
+            {
+                var index = Index(slot, n);
+                if (TryGetDie(slot, n, out var die)) die.HideOnServer();
+                _prepared[index] = false;
+                _started[index] = false;
+            }
+        }
         public void HideAllDiceOnServer()
         {
             if (!IsServer) return;

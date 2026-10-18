@@ -55,7 +55,10 @@ namespace MazeParty.Multiplayer
             if (total > 0 && (UsesDoubleDice || HasRangeDie))
             {
                 RecordItemUseOnServer();
-                ConsumeSelectedItemOnServer();
+                var equipped = GetSelectedItemOnServer();
+                if (equipped != PrototypeItemId.None &&
+                    PrototypeItemCatalog.Get(equipped).UseTiming == BoardItemUseTiming.TurnStart)
+                    ConsumeSelectedItemOnServer();
             }
             return total;
         }

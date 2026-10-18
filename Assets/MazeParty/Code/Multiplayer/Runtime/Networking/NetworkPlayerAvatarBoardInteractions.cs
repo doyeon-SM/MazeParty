@@ -9,7 +9,8 @@ namespace MazeParty.Multiplayer
         {
             None,
             KeyShop,
-            ItemShop
+            ItemShop,
+            Chest
         }
 
         private readonly struct BoardWorldInteractionTarget
@@ -39,6 +40,9 @@ namespace MazeParty.Multiplayer
                     shopIndex);
             }
 
+            public static BoardWorldInteractionTarget Chest(int index) =>
+                new BoardWorldInteractionTarget(BoardWorldInteractionKind.Chest, index);
+
             public string ResolvePrompt()
             {
                 switch (Kind)
@@ -47,6 +51,8 @@ namespace MazeParty.Multiplayer
                         return GameText.T("KEY SHOP (RMB TO BUY A KEY -20 GOLD)");
                     case BoardWorldInteractionKind.ItemShop:
                         return GameText.T("ITEM SHOP (RMB TO OPEN SHOP)");
+                    case BoardWorldInteractionKind.Chest:
+                        return GameText.T("CHEST (RMB TO EQUIP ITEM)");
                     default:
                         return string.Empty;
                 }
@@ -81,7 +87,6 @@ namespace MazeParty.Multiplayer
                 CurrentHealth <= 0 ||
                 BoardFlowView.IsItemShopOpen ||
                 BoardUtilityItemView.IsTargetPickerOpen ||
-                IsSwapping ||
                 HandEmoteWheelView.BlocksPointerInput ||
                 IsPointerOverUi() ||
                 LocalMouse == null)
@@ -89,7 +94,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            return TryGetAimedBoardInteraction(out interaction);
+            return TryGetAimedBoardInteraction(out interaction) &&
+                (!IsSwapping || interaction.Kind == BoardWorldInteractionKind.Chest);
         }
 
         private bool TryGetAimedBoardInteraction(
@@ -105,6 +111,13 @@ namespace MazeParty.Multiplayer
             if (hit.collider.GetComponentInParent<KeyShopWorldTarget>() != null)
             {
                 interaction = BoardWorldInteractionTarget.KeyShop();
+                return true;
+            }
+
+            var chest = hit.collider.GetComponentInParent<BoardChestVisual>();
+            if (chest != null)
+            {
+                interaction = BoardWorldInteractionTarget.Chest(chest.ChestIndex);
                 return true;
             }
 

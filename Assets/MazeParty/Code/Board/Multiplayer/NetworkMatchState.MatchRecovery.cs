@@ -38,25 +38,9 @@ namespace MazeParty.Multiplayer
             string[] compatibleContentFingerprints;
             try
             {
-                compatibleContentFingerprints = new[]
-                {
-                    MatchRecoveryFingerprint.CreateContentFingerprint(
-                        _boardTopology,
-                        _minigameSchedule,
-                        CurrentBoardMapSelection),
-                    MatchRecoveryFingerprint.CreateContentFingerprint(
-                        _boardTopology,
-                        _minigameSchedule,
-                        MatchRecoverySnapshot.
-                            LegacyRecoveryVersionWithoutMapIdentity,
-                        BoardMapSelection.Legacy),
-                    MatchRecoveryFingerprint.CreateContentFingerprint(
-                        _boardTopology,
-                        _minigameSchedule,
-                        MatchRecoverySnapshot.
-                            LegacyRecoveryVersionWithoutMines,
-                        BoardMapSelection.Legacy)
-                };
+                compatibleContentFingerprints =
+                    MatchRecoveryFingerprint.CreateCompatibleContentFingerprints(
+                        _boardTopology, _minigameSchedule, CurrentBoardMapSelection);
             }
             catch (Exception exception)
             {
@@ -121,6 +105,8 @@ namespace MazeParty.Multiplayer
                     error = GameText.T("The saved shop state is no longer valid.");
                     return false;
                 }
+
+                for (var i = 0; i < BoardChestRules.Count; i++) SetChestSnapshot(i, snapshot.chests[i]);
 
                 for (var slot = 0; slot < avatars.Length; slot++)
                 {
@@ -418,7 +404,7 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            return true;
+            return ValidateRecoveryChests(snapshot);
         }
 
         private bool ValidateRecoveryMines(MatchRecoverySnapshot snapshot)
@@ -643,6 +629,7 @@ namespace MazeParty.Multiplayer
                         : 0
                 },
                 itemShops = itemShops,
+                chests = CaptureChests(),
                 mines = mines,
                 players = players
             };

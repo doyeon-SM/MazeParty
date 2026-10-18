@@ -954,7 +954,7 @@ namespace MazeParty.Multiplayer
             }
 
             var firearmSelected = _localAvatar != null &&
-                                  _localAvatar.LocalSelectedItemSlot >= 0 &&
+                                  _localAvatar.LocalEquippedItem != PrototypeItemId.None &&
                                   BoardItemPresentationRules.IsFirearm(
                                       _localAvatar.LocalEquippedItem);
             SetTextVisible(

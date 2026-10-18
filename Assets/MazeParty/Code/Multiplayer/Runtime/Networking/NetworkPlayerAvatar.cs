@@ -747,7 +747,7 @@ namespace MazeParty.Multiplayer
             return selected >= 0 && selected < GameplayInventory.Capacity &&
                    (_occupiedItemMask.Value & (1 << selected)) != 0
                 ? GetItemSlotValue(selected)
-                : PrototypeItemId.None;
+                : (PrototypeItemId)_equippedItem.Value;
         }
 
         public void RequestLocalAppearance(PlayerAppearanceState appearance)

@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Pistol
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 5
+  UseTiming: 0
   DisplayName: Pistol
   Description: 7 rounds / 20 damage / 2 tiles. LMB fires through board barriers.
   Price: 10

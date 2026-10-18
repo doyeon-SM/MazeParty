@@ -88,6 +88,34 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void CompatibleFingerprints_AcceptMigratableVersionsButRejectChangedMapOrGeometry()
+        {
+            var tile = CreateTile(Vector2Int.zero);
+            var topology = CreateObject("Topology").AddComponent<BoardTopology>();
+            topology.Configure(new[] { tile }, System.Array.Empty<BoardGate>());
+            var schedule = HostMinigameSchedule.Create(1234);
+            var selection = new BoardMapSelection("forest", 4);
+            var accepted = MatchRecoveryFingerprint.CreateCompatibleContentFingerprints(
+                topology, schedule, selection);
+            for (var version = 1; version <= MatchRecoverySnapshot.CurrentRecoveryVersion; version++)
+            {
+                var map = version <= MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity
+                    ? BoardMapSelection.Legacy : selection;
+                Assert.That(accepted, Does.Contain(MatchRecoveryFingerprint.CreateContentFingerprint(
+                    topology, schedule, version, map)), "Saved version " + version);
+            }
+            Assert.That(accepted, Does.Not.Contain(MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology, schedule, MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests,
+                new BoardMapSelection("maze", 4))));
+            Assert.That(accepted, Does.Not.Contain(MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology, schedule, MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests,
+                new BoardMapSelection("forest", 5))));
+            tile.transform.position = Vector3.right * 8f;
+            Assert.That(accepted, Does.Not.Contain(MatchRecoveryFingerprint.CreateContentFingerprint(
+                topology, schedule, MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests, selection)));
+        }
+
+        [Test]
         public void ContentFingerprint_ChangesWithGateTraversalContractAndOrder()
         {
             var first = CreateTile(new Vector2Int(0, 0));

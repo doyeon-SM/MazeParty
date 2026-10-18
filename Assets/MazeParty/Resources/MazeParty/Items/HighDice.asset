@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: HighDice
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 10
+  UseTiming: 1
   DisplayName: High Dice (7-12)
   Description: One D12 rolls only 7-12, each equally likely. Applied automatically.
   Price: 8

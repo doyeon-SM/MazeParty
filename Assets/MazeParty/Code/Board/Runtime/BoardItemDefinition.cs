@@ -2,10 +2,17 @@ using UnityEngine;
 
 namespace MazeParty.Gameplay
 {
+    public enum BoardItemUseTiming : byte
+    {
+        Immediate = 0,
+        TurnStart = 1
+    }
+
     [CreateAssetMenu(menuName = "MazeParty/Items/Board Item")]
     public sealed class BoardItemDefinition : ScriptableObject
     {
         public PrototypeItemId Id;
+        public BoardItemUseTiming UseTiming;
         public string DisplayName;
         [TextArea] public string Description;
         [Min(0)] public int Price;

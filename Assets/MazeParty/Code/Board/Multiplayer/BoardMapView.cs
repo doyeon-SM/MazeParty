@@ -380,6 +380,7 @@ namespace MazeParty.Multiplayer
 
             var outputCamera = _cameraDirector.OutputCamera;
             RefreshVisionMask(outputCamera);
+            match.ObserveChestsOnLocalMap(outputCamera, _playerSightHits);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
             {
                 if (slot == localAvatar.AssignedSlot)

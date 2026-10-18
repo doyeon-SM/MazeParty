@@ -74,16 +74,16 @@ namespace MazeParty.Multiplayer
                     MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity;
             }
 
-            if (snapshot.recoveryVersion !=
-                MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity)
+            if (snapshot.recoveryVersion == MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity)
             {
-                return false;
+                snapshot.boardMapId = string.Empty;
+                snapshot.boardMapContentVersion = 0;
+                snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests;
             }
-
-            snapshot.boardMapId = string.Empty;
-            snapshot.boardMapContentVersion = 0;
-            snapshot.recoveryVersion =
-                MatchRecoverySnapshot.CurrentRecoveryVersion;
+            if (snapshot.recoveryVersion != MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests)
+                return false;
+            snapshot.chests = new BoardChestSnapshot[BoardChestRules.Count];
+            snapshot.recoveryVersion = MatchRecoverySnapshot.CurrentRecoveryVersion;
             return true;
         }
 
@@ -131,6 +131,7 @@ namespace MazeParty.Multiplayer
                 snapshot.itemShops == null ||
                 snapshot.itemShops.Length != ItemShopRules.ShopCount ||
                 snapshot.mines == null ||
+                !NetworkMatchState.AreChestSnapshotsValid(snapshot.chests, snapshot.turn) ||
                 !TryDecodeMinigameSeed(snapshot.currentMinigameSeed, out _))
             {
                 return false;

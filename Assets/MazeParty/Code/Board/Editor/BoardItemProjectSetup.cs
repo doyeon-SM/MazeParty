@@ -208,6 +208,8 @@ namespace MazeParty.Editor
                 return;
             }
             var item = ScriptableObject.CreateInstance<BoardItemDefinition>();
+            item.UseTiming = id == PrototypeItemId.DoubleDice || id == PrototypeItemId.LowDice ||
+                id == PrototypeItemId.HighDice ? BoardItemUseTiming.TurnStart : BoardItemUseTiming.Immediate;
             item.Id = id; item.DisplayName = title; item.Description = description; item.Price = price;
             item.Charges = charges; item.Damage = damage; item.Range = range; item.FireInterval = interval;
             item.BlastRadius = blast; item.TriggerRadius = trigger; item.ArmingDelay = delay;

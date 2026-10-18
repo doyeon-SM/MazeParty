@@ -11,10 +11,12 @@ namespace MazeParty.Gameplay
         [SerializeField] private BoardShopVisual keyShop;
         [SerializeField] private BoardShopVisual[] itemShops = new BoardShopVisual[2];
         [SerializeField] private BoardBoundaryWallVisual boundaryWall;
+        [SerializeField] private BoardChestVisual chest;
+        public BoardChestVisual Chest => chest;
         public BoardShopVisual KeyShop => keyShop;
         public BoardShopVisual ItemShop(int index) => itemShops[index];
         public BoardBoundaryWallVisual BoundaryWall => boundaryWall;
-        public bool HasRequiredReferences => keyShop != null && keyShop.HasRequiredReferences &&
+        public bool HasRequiredReferences => chest != null && chest.HasRequiredReferences && keyShop != null && keyShop.HasRequiredReferences &&
             itemShops != null && itemShops.Length == 2 &&
             itemShops[0] != null && itemShops[0].HasRequiredReferences &&
             itemShops[1] != null && itemShops[1].HasRequiredReferences &&

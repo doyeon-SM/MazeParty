@@ -54,6 +54,8 @@ namespace MazeParty.Multiplayer
                 new Color(0.1f, 0.12f, 0.16f, 0.88f);
         }
 
+        [SerializeField] private BoardChestNoticeView chestNotice;
+        public BoardChestNoticeView ChestNotice => chestNotice;
         [SerializeField] private References references = new References();
         [SerializeField] private StatePalette statePalette = new StatePalette();
 
@@ -87,6 +89,7 @@ namespace MazeParty.Multiplayer
         public Color InventoryEmptyColor => statePalette.InventoryEmpty;
 
         public bool HasRequiredReferences =>
+            chestNotice != null && chestNotice.HasRequiredReferences &&
             references != null &&
             statePalette != null &&
             references.RootCanvas != null &&

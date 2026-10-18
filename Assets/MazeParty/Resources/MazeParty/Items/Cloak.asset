@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Cloak
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 12
+  UseTiming: 0
   DisplayName: Invisibility Cloak
   Description: 'LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.'
   Price: 10

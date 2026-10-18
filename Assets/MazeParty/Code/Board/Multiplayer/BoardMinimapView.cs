@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>Heading-up board projection using UnitySimpleMiniMap and authored UI only.</summary>
-    public sealed class BoardMinimapView : MonoBehaviour
+    public sealed partial class BoardMinimapView : MonoBehaviour
     {
         private const int LandingEffectCount = 9;
 
@@ -163,7 +163,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-                if (mineGraphic == null || shopRouteGraphic == null ||
+                if (!HasDeviceReferences || mineGraphic == null || shopRouteGraphic == null ||
                     travelRouteGraphic == null ||
                     preferredTravelRouteGraphic == null ||
                     topologyGraphic == null ||
@@ -288,6 +288,7 @@ namespace MazeParty.Multiplayer
             _localFacingYaw = eye != null ? eye.eulerAngles.y :
                 local != null ? local.transform.eulerAngles.y : 0f;
             SetHeading(_localFacingYaw);
+            RefreshDeviceMarkers(topology, match);
         }
 
         public void SetHeading(float yaw)

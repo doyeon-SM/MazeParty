@@ -58,6 +58,9 @@ namespace MazeParty.Multiplayer.Tests
             }
             foreach (var gesture in expressions.Gestures)
                 Assert.That(gesture, Is.Not.Null);
+            var world = BoardWorldPrefabs.LoadRequired();
+            Assert.That(world.Chest.HasRequiredReferences, Is.True);
+            Assert.That(PrefabUtility.IsPartOfPrefabAsset(world.Chest), Is.True);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
                 PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.LowDice, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak }));

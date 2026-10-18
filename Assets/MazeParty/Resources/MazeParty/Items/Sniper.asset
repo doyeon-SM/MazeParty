@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Sniper
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 6
+  UseTiming: 0
   DisplayName: Sniper
   Description: 5 rounds / 50 damage / 7 tiles. LMB fires.
   Price: 15

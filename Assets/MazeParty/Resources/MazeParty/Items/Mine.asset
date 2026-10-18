@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: Mine
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 8
+  UseTiming: 0
   DisplayName: Mine
   Description: Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.
   Price: 6

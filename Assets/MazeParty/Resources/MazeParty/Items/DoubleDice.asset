@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: DoubleDice
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 4
+  UseTiming: 1
   DisplayName: Double Dice
   Description: Roll two D12s with RMB. Move after both settle.
   Price: 8

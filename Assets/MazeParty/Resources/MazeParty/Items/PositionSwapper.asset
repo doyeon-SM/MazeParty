@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: PositionSwapper
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
   Id: 11
+  UseTiming: 0
   DisplayName: Position Swapper
   Description: 'LMB: select a player. Channel for 2s; damage interrupts. Swap positions without spending moves.'
   Price: 12
