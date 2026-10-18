@@ -1,0 +1,5 @@
+Package: com.unity.services.authentication
+Version: 3.7.4
+Source directory: Library/PackageCache/com.unity.services.authentication@39eab783227c
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

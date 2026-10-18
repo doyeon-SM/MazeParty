@@ -1,0 +1,5 @@
+Package: com.unity.ext.nunit
+Version: 2.1.0
+Source directory: Library/PackageCache/com.unity.ext.nunit@0198eae3b53e
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

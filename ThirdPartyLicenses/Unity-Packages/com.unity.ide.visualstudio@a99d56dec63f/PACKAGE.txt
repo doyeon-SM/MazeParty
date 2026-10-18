@@ -1,0 +1,5 @@
+Package: com.unity.ide.visualstudio
+Version: 2.0.26
+Source directory: Library/PackageCache/com.unity.ide.visualstudio@a99d56dec63f
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

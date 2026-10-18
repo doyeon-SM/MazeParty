@@ -1,0 +1,5 @@
+Package: com.unity.multiplayer.tools
+Version: 2.2.11
+Source directory: Library/PackageCache/com.unity.multiplayer.tools@8da038ed3f29
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

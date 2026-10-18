@@ -1,0 +1,5 @@
+Package: com.unity.nuget.mono-cecil
+Version: 1.11.6
+Source directory: Library/PackageCache/com.unity.nuget.mono-cecil@ecb9724e46ff
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

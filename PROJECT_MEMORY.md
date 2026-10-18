@@ -7,7 +7,7 @@
 ## 현재 기준
 
 - 저장소·Unity 프로젝트: C:/Unity/MazeParty
-- 안정 기준 브랜치: main, 현재 작업 브랜치: dev/stove (STOVE 전용 출시 준비)
+- 안정 기준 브랜치: main. 2026-10-18 dev/stove에서 STOVE Release 빌드 후 main으로 돌아와 README·저작권·수동 테스트 안내를 작성했다.
 - 현재 게임 버전은 v0.54, PlayerSettings.bundleVersion은 0.54다.
 - v0.53은 원래 호스트 복귀 프로토콜을 사용한다. 이전 빌드와 같은 방에 접속하지 않는다.
 - 외부 패키지 원본은 Assets/Ignore, 프로젝트 전용 추적 프리팹은 Assets/MazeParty에
@@ -725,7 +725,7 @@
 - 접속 보안: 프로세스별 RSA-2048 개인키는 메모리에만 두고 공개키는 자신의 UGS 멤버 속성 mpAdmissionKey에 등록한다. 호스트는 실제 UGS 멤버와 등록 키를 대조하고 방/플랫폼/환경/버전/계정/시각/nonce 서명을 검증한다. 재전송, 중복 활성 연결, 예약되지 않은 경기 좌석, 변조, 유효기간 초과를 거부한다. 토큰/개인키는 호스트에 보내지 않는다. 호스트가 승인된 연결과 좌석의 대응을 기록한다.
 - 새 프로세스의 재접속은 기존 멤버에 한해 LobbyService.UpdatePlayerAsync로 자기 공개키만 먼저 갱신한다. 현재 MPS 2.3.1의 세션 ID=Lobby ID 및 ReconnectSessionOptions에 PlayerProperties가 없는 점을 설치된 패키지 소스로 확인했다. 이후 기존 MPS/NGO 재접속·원래 호스트 복귀 흐름을 사용한다.
 - STOVE 소유권은 클라이언트 검사이며 서버가 검증한 STOVE↔UGS 연결이 아니다. UGS 멤버 공개키/서명 검증은 계정의 방 연결을 확인하지만 플랫폼 구매 권한을 독립 검증하지 못한다. 변조 클라이언트, 코드 유출로 인한 정상 계정의 임의 참가, 악의적 호스트의 게임 조작까지 막는다고 주장하지 않는다.
-- stove.json은 Assets/Stove&Steam/.local에 있고 ugsEnvironment=production, stoveEnvironment=real, stoveGameId, stoveAppKey 네 필드만 둔다. 2026-10-17 키 입력 이후 브랜치 이동 과정에서 로컬 폴더 유실을 사용자가 보고했다. SDK·설정 복구 시 Game ID/AppKey는 사용자 요청대로 빈 값으로 다시 만들었으며 재입력이 필요하다. 실제 상품키·런처 로그인 검증은 아직 하지 않았다. 상품 No./Application Secret은 사용하지 않는다. 기존 서버 URL/공개키/채널/스키마 필드는 제거했다. Steam 로컬 JSON에는 ugsEnvironment만 둔다.
+- stove.json은 Assets/Stove&Steam/.local에 있고 ugsEnvironment=production, stoveEnvironment=real, stoveGameId, stoveAppKey 네 필드만 둔다. 2026-10-17 폴더 복구 뒤 2026-10-18 사용자가 Game ID/AppKey 재입력을 완료했다. 네 필드의 형식과 Release 출력에 원본과 같은 값이 포함된 것을 민감정보 출력 없이 확인했다. 실제 상품키·런처 로그인 검증은 사용자가 진행한다. 상품 No./Application Secret은 사용하지 않는다. 기존 서버 URL/공개키/채널/스키마 필드는 제거했다. Steam 로컬 JSON에는 ugsEnvironment만 둔다.
 - SDK 환경은 공식 신규 PC SDK 예시의 real을 기본값으로 삼는다. Sandbox/Live라는 설명용 명칭을 SDK 문자열로 그대로 전달하지 않는다. 발급받은 별도 테스트 환경은 담당자의 실제 SDK 문자열에 맞춘다.
 - 기존 UGS production을 그대로 사용할 수 있으며 플랫폼별 환경을 새로 만들도록 강제하지 않는다. 플랫폼별 컴파일 정의, 세션 타입, 호스트 방 속성(mpa2), 연결 프로토콜(MPA3), 계정/저장 범위를 구분한다. 별도 UGS 환경을 구성하면 JSON에 존재하는 환경명을 넣을 수 있다.
 - Steam SDK 인증은 아직 미구현이며 온라인 접속·Release는 계속 차단한다. STOVE 없는 Steam Integration Check와 Windows x64 IL2CPP 프로필은 유지한다. STOVE Release는 유효한 Game ID/AppKey가 필요하고 Integration Check는 설정을 출력하지 않는다.
@@ -749,3 +749,14 @@
 - 복구 검증: 관련 EditMode 16/16 통과. STOVE 프로필 컴파일 및 Windows x64 IL2CPP Integration Check 빌드 성공(Builds/stove-integration-20261017-051349/MazeParty.exe). 출력의 BaseSDK.dll 해시가 원본과 일치하고 설정 파일이 포함되지 않은 검증 전용 출력임을 확인했다. 빈 Game ID/AppKey는 출시 설정 검사를 통과하지 못한다.
 - Steam 프로필 컴파일 오류 없이 완료했고 플레이어 어셈블리의 BaseSDK_NET 참조와 StovePlayerIdentityProvider 타입이 제외된 것을 확인했다. SDK DLL 두 개의 원래 GUID·Win64/Windows Editor x64·MAZEPARTY_STOVE 제약 및 .local의 Unity 임포트 제외도 확인했다. 실제 STOVE 로그인·소유권·멀티플레이 실행은 키 재입력 후 검증해야 한다.
 - 최종 상태: 에디터를 작업 시작 시와 같은 Development(Windows)/Mono2x로 복원했으며 컴파일 오류·콘솔 오류 0건이다. Assets/ProjectSettings/Packages의 추적 변경은 없고 SDK·JSON·메타데이터는 Git 제외 상태다. 커밋·푸시·브랜치 병합·Notion 수정은 하지 않았다.
+
+## 2026-10-18 STOVE Release 빌드·README
+
+- 사용자 확정: MazeParty(미로파티)의 제작자는 훈연구이팀(HYGY). README의 자체 제작물 저작권은 Copyright © 2026 훈연구이팀(HYGY). All rights reserved.로 표시하며 제3자 폰트·에셋·SDK의 권리와 별도 라이선스는 구분한다.
+- main과 dev/stove는 작업 시작 시 동일한 803d9cd였다. 깨끗한 작업 트리에서 dev/stove로 전환해 Release를 빌드하고 main으로 돌아왔다. 입력한 stove.json과 SDK는 전환 전후 유지했고 민감값을 출력하지 않았다.
+- 출력: C:/Unity/MazeParty/Builds/stove-release-20261018-172140/MazeParty.exe. Unity BuildReport Succeeded, Windows x64, BuildOptions.None, 오류 0건, 보고 크기 1,982,548,651바이트. GameAssembly.dll·UnityPlayer.dll·원본과 같은 BaseSDK.dll 및 최소 네 필드의 클라이언트 설정 포함을 확인했다. 상품키의 실제 유효성·소유권·온라인 접속은 아직 검증하지 않았다.
+- README.md에 게임 개요·환경·외부 에셋 복원·플랫폼별 상태·빌드·개인 4인 테스트·브랜치·저작권을 작성했다. THIRD_PARTY_NOTICES.md와 ThirdPartyLicenses에 실제 폰트 메타데이터·로컬 원문·공식 자료로 확인한 고지를 보존했다. 로컬 에셋별 구매·배포권 확인이 남은 항목은 별도로 표시했다.
+- 확인된 원문 복사 62개, 패키지 고지 35개 패키지. Release 폴더에도 고지 문서와 라이선스 폴더의 동일 사본을 포함했다. 현재 빌드 메뉴는 이 고지를 자동 복사하지 않으므로 이후 배포 빌드에는 별도 포함해야 한다.
+- Docs/STOVE_LAUNCHER_TEST.md에 Studio 업로드·실행 파일 지정·권한 있는 계정의 런처 설치·로그인·2/4인 코드 입장·재접속·플랫폼 거부 확인 방법을 기록했다. 사용자가 직접 수행한다. 런처 로그인·업로드·게임 실행·공개 배포는 이 작업에서 하지 않았다.
+- ProjectSettings.companyName은 DefaultCompany 그대로 유지했다. README 제작자 변경만으로 실행 파일의 저장·로그 경로를 바꾸지 않는다. 게임 런타임 코드와 SDK 동작은 변경하지 않았다.
+- 최종 검증: 작성 문서의 상대 링크·인코딩·키 비노출 확인, Release 고지 파일 98개의 사본 일치 확인, Git diff --check 통과. main 유지, Unity Development(Windows)/Mono2x 복원, 컴파일·콘솔 오류 0건. Assets/ProjectSettings/Packages 추적 변경 없음. 코드 변경이 없어 추가 EditMode 전체 실행은 하지 않았으며 커밋·푸시·Notion 수정은 하지 않았다.

@@ -1,0 +1,5 @@
+Package: com.unity.collab-proxy
+Version: 2.13.6
+Source directory: Library/PackageCache/com.unity.collab-proxy@4628d2ba6ea4
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

@@ -1,0 +1,5 @@
+Package: com.unity.profiling.core
+Version: 1.0.3
+Source directory: Library/PackageCache/com.unity.profiling.core@8a49f7027d06
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

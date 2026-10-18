@@ -1,0 +1,5 @@
+Package: com.unity.collections
+Version: 6.6.0
+Source directory: Library/PackageCache/com.unity.collections@10fff0607388
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

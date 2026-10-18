@@ -1,0 +1,5 @@
+Package: com.unity.multiplayer.playmode
+Version: 3.0.0
+Source directory: Library/PackageCache/com.unity.multiplayer.playmode@29d317c343be
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

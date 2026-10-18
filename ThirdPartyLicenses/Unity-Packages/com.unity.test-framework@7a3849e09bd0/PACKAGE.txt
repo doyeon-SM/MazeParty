@@ -1,0 +1,5 @@
+Package: com.unity.test-framework
+Version: 1.8.0
+Source directory: Library/PackageCache/com.unity.test-framework@7a3849e09bd0
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

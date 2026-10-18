@@ -1,0 +1,5 @@
+Package: com.unity.ide.rider
+Version: 3.0.38
+Source directory: Library/PackageCache/com.unity.ide.rider@1f60b3138684
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

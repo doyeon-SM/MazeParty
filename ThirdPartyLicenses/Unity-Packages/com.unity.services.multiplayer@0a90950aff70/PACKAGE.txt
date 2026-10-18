@@ -1,0 +1,5 @@
+Package: com.unity.services.multiplayer
+Version: 2.3.1
+Source directory: Library/PackageCache/com.unity.services.multiplayer@0a90950aff70
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

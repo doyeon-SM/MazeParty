@@ -1,0 +1,5 @@
+Package: com.unity.services.deployment.api
+Version: 1.1.3
+Source directory: Library/PackageCache/com.unity.services.deployment.api@9becf6da0f1a
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

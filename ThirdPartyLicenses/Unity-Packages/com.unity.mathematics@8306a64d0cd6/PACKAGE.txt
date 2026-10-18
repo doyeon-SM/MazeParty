@@ -1,0 +1,5 @@
+Package: com.unity.mathematics
+Version: 1.4.0
+Source directory: Library/PackageCache/com.unity.mathematics@8306a64d0cd6
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.

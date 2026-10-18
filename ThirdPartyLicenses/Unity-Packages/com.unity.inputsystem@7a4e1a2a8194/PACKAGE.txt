@@ -1,0 +1,5 @@
+Package: com.unity.inputsystem
+Version: 1.20.0
+Source directory: Library/PackageCache/com.unity.inputsystem@7a4e1a2a8194
+Notice snapshot date: 2026-10-18
+Includes installed dependencies and development tools; presence is not proof of runtime inclusion.
