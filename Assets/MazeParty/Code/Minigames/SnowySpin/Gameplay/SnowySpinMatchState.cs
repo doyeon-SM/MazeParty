@@ -521,25 +521,7 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
 
         private int CompareFinal(int leftSlot, int rightSlot)
         {
-            var score = _scores[rightSlot].CompareTo(_scores[leftSlot]);
-            if (score != 0)
-            {
-                return score;
-            }
-
-            // A tied total favors the better later-round finish, then slot.
-            for (var round = SnowySpinRules.RoundCount - 1;
-                round >= 0; round--)
-            {
-                var result = _roundRanks[round, leftSlot].CompareTo(
-                    _roundRanks[round, rightSlot]);
-                if (result != 0)
-                {
-                    return result;
-                }
-            }
-
-            return leftSlot.CompareTo(rightSlot);
+            return _scores[rightSlot].CompareTo(_scores[leftSlot]);
         }
 
         private uint NextRandom()

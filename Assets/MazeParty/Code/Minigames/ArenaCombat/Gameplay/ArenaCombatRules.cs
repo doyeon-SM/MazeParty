@@ -64,7 +64,7 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
 
         /// <summary>
         /// Survivors rank by remaining HP; defeated players rank by later
-        /// elimination. Equal facts fall back to player slot deterministically.
+        /// elimination. Equal final performance shares the higher rank.
         /// </summary>
         public static int[] ResolveRanks(
             IReadOnlyList<ArenaCombatRankingEntry> entries)
@@ -93,11 +93,16 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
                 ordered[index] = entry;
             }
 
-            Array.Sort(ordered, CompareRankingEntries);
+            Array.Sort(ordered, (left, right) =>
+            {
+                var result = CompareRankingEntries(left, right);
+                return result != 0 ? result : left.Slot.CompareTo(right.Slot);
+            });
             var ranks = new int[PlayerCount];
             for (var index = 0; index < ordered.Length; index++)
             {
-                ranks[ordered[index].Slot] = index + 1;
+                ranks[ordered[index].Slot] = index > 0 && CompareRankingEntries(ordered[index - 1], ordered[index]) == 0
+                    ? ranks[ordered[index - 1].Slot] : index + 1;
             }
             return ranks;
         }
@@ -114,9 +119,7 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
             var primary = left.IsEliminated
                 ? right.EliminatedAt.CompareTo(left.EliminatedAt)
                 : right.RemainingHealth.CompareTo(left.RemainingHealth);
-            return primary != 0
-                ? primary
-                : left.Slot.CompareTo(right.Slot);
+            return primary;
         }
     }
 }

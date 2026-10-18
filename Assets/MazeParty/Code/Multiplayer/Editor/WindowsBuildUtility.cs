@@ -61,12 +61,15 @@ namespace MazeParty.Multiplayer.Editor
             var previousBackend =
                 PlayerSettings.GetScriptingBackend(namedTarget);
             var backendChanged = previousBackend != backend;
+            var previousFrameTiming = PlayerSettings.enableFrameTimingStats;
             try
             {
                 if (backendChanged)
                 {
                     PlayerSettings.SetScriptingBackend(namedTarget, backend);
                 }
+                if ((options & BuildOptions.Development) != 0 && !PlatformContext.IsStoreBuild)
+                    PlayerSettings.enableFrameTimingStats = true;
                 var absoluteOutput = Path.GetFullPath(outputPath);
                 var outputDirectory = Path.GetDirectoryName(absoluteOutput);
                 if (string.IsNullOrEmpty(outputDirectory))
@@ -100,6 +103,7 @@ namespace MazeParty.Multiplayer.Editor
             }
             finally
             {
+                PlayerSettings.enableFrameTimingStats = previousFrameTiming;
                 if (backendChanged)
                 {
                     PlayerSettings.SetScriptingBackend(

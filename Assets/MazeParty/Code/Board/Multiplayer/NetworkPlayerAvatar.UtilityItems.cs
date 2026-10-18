@@ -34,11 +34,23 @@ namespace MazeParty.Multiplayer
         public void ActivateCloakOnServer()
         { if (IsServer) _cloaked.Value = true; }
 
+        private void ActivateSelectedCloakOnServer()
+        {
+            if (GetSelectedItemOnServer() != PrototypeItemId.Cloak ||
+                !SpendItemChargeOnServer(PrototypeItemCatalog.Get(PrototypeItemId.Cloak)))
+                return;
+
+            // Selection and chest acquisition consume and activate the cloak atomically.
+            // The presentation keeps its sound but does not play a use gesture.
+            ActivateCloakOnServer();
+            PresentItemUseOnServer(PrototypeItemId.Cloak);
+        }
+
         public bool BeginSwapOnServer(int targetSlot)
         {
             var match = NetworkMatchState.Instance;
             if (!IsServer || match == null || !match.CanAcceptActionInput || !IsValidSwapTarget(this) || !HasResolvedItemChoice || IsSwapping ||
-                IsBoardDeathInProgressOnServer || !CanUseItemChargeOnServer ||
+                IsBoardDeathInProgressOnServer || IsKnockedDown || !CanUseItemChargeOnServer ||
                 GetSelectedItemOnServer() != PrototypeItemId.PositionSwapper) return false;
             var target = match.GetAvatarForSlot(targetSlot);
             if (!IsValidSwapTarget(target) || target == this)

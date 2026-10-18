@@ -373,7 +373,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 var playerSlot = playerSlots[index];
                 leaderboard[index] = new MinefieldLeaderboardEntry(
                     playerSlot,
-                    index + 1,
+                    CompetitionRanking.Rank(totals, playerSlot),
                     totals[playerSlot]);
             }
 

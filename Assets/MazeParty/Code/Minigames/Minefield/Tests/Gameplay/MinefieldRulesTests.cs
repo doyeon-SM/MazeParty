@@ -89,7 +89,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void MatchLeaderboard_AggregatesExactlyThreeRoundsAndBreaksTiesBySlot()
+        public void MatchLeaderboard_AggregatesExactlyThreeRoundsAndSharesTies()
         {
             var leaderboard = MinefieldMatchScoring.BuildLeaderboard(
                 new[]
@@ -100,7 +100,7 @@ namespace MazeParty.Gameplay.Tests
                 });
 
             Assert.That(LeaderboardSlots(leaderboard), Is.EqualTo(new[] { 0, 1, 2, 3 }));
-            Assert.That(LeaderboardRanks(leaderboard), Is.EqualTo(new[] { 1, 2, 3, 4 }));
+            Assert.That(LeaderboardRanks(leaderboard), Is.EqualTo(new[] { 1, 1, 1, 4 }));
             Assert.That(LeaderboardPoints(leaderboard), Is.EqualTo(new[] { 5, 5, 5, 3 }));
             Assert.Throws<System.ArgumentException>(
                 () => MinefieldMatchScoring.BuildLeaderboard(

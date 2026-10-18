@@ -344,7 +344,7 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
                 leaderboard[index] =
                     new TerritoryPaintLeaderboardEntry(
                         slot,
-                        index + 1,
+                        CompetitionRanking.Rank(ownedCellCounts, slot),
                         TerritoryPaintRules.NormalizeOwnedArea(
                             owned,
                             totalCellCount),

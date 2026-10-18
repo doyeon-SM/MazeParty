@@ -31,6 +31,7 @@ namespace MazeParty.Multiplayer
                 _doubleDice.Value = false;
                 if (!HasRolled) dice?.DiscardPreparedDiceOnServer(AssignedSlot);
             }
+            ActivateSelectedCloakOnServer();
             return true;
         }
         [Rpc(SendTo.Server, InvokePermission = RpcInvokePermission.Owner)]

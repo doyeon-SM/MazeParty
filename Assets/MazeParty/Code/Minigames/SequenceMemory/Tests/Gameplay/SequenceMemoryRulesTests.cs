@@ -205,7 +205,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 PlayerSlots(match.Result),
                 Is.EqualTo(new[] { 3, 0, 1, 2 }));
-            AssertUniqueRanks(match.Result);
+            AssertCompetitionRanks(match.Result);
         }
 
         [Test]
@@ -294,7 +294,7 @@ namespace MazeParty.Gameplay.Tests
                 PlayerSlots(match.Result),
                 Is.EqualTo(new[] { 1, 0, 2, 3 }));
             Assert.That(match.Result.CompletedRoundCount, Is.EqualTo(10));
-            AssertUniqueRanks(match.Result);
+            AssertCompetitionRanks(match.Result);
         }
 
         private static SequenceMemoryMatchState BeginInputMatch(
@@ -389,14 +389,14 @@ namespace MazeParty.Gameplay.Tests
             return slots;
         }
 
-        private static void AssertUniqueRanks(
+        private static void AssertCompetitionRanks(
             SequenceMemoryMatchResult result)
         {
             for (var index = 0; index < result.Standings.Count; index++)
             {
                 Assert.That(
                     result.Standings[index].Rank,
-                    Is.EqualTo(index + 1));
+                    Is.EqualTo(1 + System.Linq.Enumerable.Count(result.Standings, other => other.Rank < result.Standings[index].Rank)));
             }
         }
     }

@@ -202,7 +202,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void MatchLeaderboard_RequiresThreeValidRoundsAndUsesFinalRankTieBreak()
+        public void MatchLeaderboard_RequiresThreeValidRoundsAndSharesEqualTotals()
         {
             var first = ScoreOrder(0, 1, 2, 3);
             var second = ScoreOrder(1, 2, 0, 3);
@@ -213,10 +213,11 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(
                 LeaderboardSlots(leaderboard),
-                Is.EqualTo(new[] { 2, 0, 1, 3 }));
+                Is.EqualTo(new[] { 0, 1, 2, 3 }));
             Assert.That(
                 LeaderboardPoints(leaderboard),
                 Is.EqualTo(new[] { 6, 6, 6, 0 }));
+            for (var i = 0; i < 4; i++) Assert.That(leaderboard[i].Rank, Is.EqualTo(i < 3 ? 1 : 4));
             Assert.Throws<ArgumentException>(
                 () => StableFootingMatchScoring.BuildLeaderboard(
                     new[] { first, second }));

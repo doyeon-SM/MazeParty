@@ -66,6 +66,7 @@ namespace MazeParty.Gameplay
         private float _leftPunchTimer;
         private float _rightPunchTimer;
         private float _pushTimer;
+        private bool _knockedDown;
         private float _bodyHitTimer;
         private float _headHitTimer;
         private float _handHitTimer;
@@ -87,7 +88,6 @@ namespace MazeParty.Gameplay
         private bool _nameplateCameraPriority;
         private bool _boardProtectionVisible;
         private bool _boardTopViewHighlightVisible;
-        private bool _minigameLocationHighlightVisible;
         private bool _missingPresentationReported;
         private bool _destroying;
         public void SetHiddenFromViewer(bool hidden)
@@ -470,13 +470,6 @@ namespace MazeParty.Gameplay
             RefreshShieldVfx();
         }
 
-        public void SetMinigameLocationHighlightVisible(bool visible)
-        {
-            EnsureBuilt();
-            _minigameLocationHighlightVisible = visible;
-            RefreshShieldVfx();
-        }
-
         private void RefreshShieldVfx()
         {
             if (_shieldVfx == null)
@@ -485,8 +478,7 @@ namespace MazeParty.Gameplay
             }
 
             var visible = (_boardProtectionVisible ||
-                           _boardTopViewHighlightVisible ||
-                           _minigameLocationHighlightVisible) &&
+                           _boardTopViewHighlightVisible) &&
                           !_hiddenFromViewer;
             if (_shieldVfx.activeSelf != visible)
             {
@@ -532,8 +524,7 @@ namespace MazeParty.Gameplay
             EnsureBuilt();
             // 0-9 retains the authored reaction; each next 5 damage adds
             // one step, reaching twice the original angle at 50 damage.
-            var tier = Mathf.Clamp(damage / 5, 1, 10);
-            var scale = 1f + (tier - 1) / 9f;
+            var scale = BoardDamageReactionRules.HitScale(damage);
             switch (region)
             {
                 case PlayerHitRegion.Head:
@@ -551,8 +542,11 @@ namespace MazeParty.Gameplay
             }
         }
 
+        public void SetKnockedDown(bool value) => _knockedDown = value;
+
         public void TriggerItemUse(PrototypeItemId itemId)
         {
+            if (itemId == PrototypeItemId.Cloak) return;
             EnsureBuilt();
             if (!PrototypeItemCatalog.IsValid(itemId))
             {
@@ -769,7 +763,7 @@ namespace MazeParty.Gameplay
                 _worldItemRoot.localPosition = new Vector3(0f, handY + 0.08f, 0.46f);
             }
 
-            var eliminatedTilt = _eliminated ? 84f : 0f;
+            var eliminatedTilt = _eliminated || _knockedDown ? 84f : 0f;
             _worldModel.localRotation = Quaternion.Euler(0f, 0f, eliminatedTilt);
 
             if (_firstPersonHands != null)

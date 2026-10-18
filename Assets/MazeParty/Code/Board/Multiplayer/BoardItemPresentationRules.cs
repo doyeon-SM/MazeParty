@@ -121,105 +121,71 @@ namespace MazeParty.Multiplayer
     {
         private sealed class Track
         {
-            public Vector3 PreviousPosition;
-            public Vector3 LatestPosition;
-            public Vector3 LatestVelocity;
-            public double PreviousTime;
-            public double LatestTime;
-            public bool HasLatest;
-            public bool HasPrevious;
-            public bool IsPendingRemoval;
-            public double RemovalTime;
-
-            public void Push(
-                Vector3 position,
-                Vector3 velocity,
-                double snapshotTime)
+            private struct SamplePoint
             {
-                if (IsPendingRemoval && snapshotTime < RemovalTime)
-                {
-                    return;
-                }
+                public Vector3 Position, Velocity;
+                public double Time;
+            }
+            private readonly SamplePoint[] _history = new SamplePoint[16];
+            private int _count;
+            private bool _pendingRemoval;
+            private double _removalTime;
 
-                if (!HasLatest)
-                {
-                    PreviousPosition = position;
-                    LatestPosition = position;
-                    LatestVelocity = velocity;
-                    PreviousTime = snapshotTime;
-                    LatestTime = snapshotTime;
-                    HasLatest = true;
-                    IsPendingRemoval = false;
-                    RemovalTime = 0d;
-                    return;
-                }
-
-                if (snapshotTime < LatestTime)
-                {
-                    return;
-                }
-
-                IsPendingRemoval = false;
-                RemovalTime = 0d;
-
-                if (snapshotTime > LatestTime)
-                {
-                    PreviousPosition = LatestPosition;
-                    PreviousTime = LatestTime;
-                    HasPrevious = true;
-                }
-
-                LatestPosition = position;
-                LatestVelocity = velocity;
-                LatestTime = snapshotTime;
+            public void Push(Vector3 position, Vector3 velocity, double time)
+            {
+                if ((_pendingRemoval && time < _removalTime) ||
+                    (_count > 0 && time < _history[_count - 1].Time)) return;
+                _pendingRemoval = false;
+                var sample = new SamplePoint { Position = position, Velocity = velocity, Time = time };
+                if (_count > 0 && time == _history[_count - 1].Time)
+                { _history[_count - 1] = sample; return; }
+                if (_count == _history.Length)
+                { Array.Copy(_history, 1, _history, 0, --_count); }
+                _history[_count++] = sample;
             }
 
-            public void MarkPendingRemoval(double snapshotTime)
+            public void MarkPendingRemoval(double time)
             {
-                if (IsPendingRemoval || snapshotTime < LatestTime)
-                {
-                    return;
-                }
-
-                IsPendingRemoval = true;
-                RemovalTime = snapshotTime;
+                if (_pendingRemoval || (_count > 0 && time < _history[_count - 1].Time)) return;
+                _pendingRemoval = true;
+                _removalTime = time;
             }
+            public bool IsExpired(double now, double delay) =>
+                _pendingRemoval && now - delay >= _removalTime - 1e-9d;
 
-            public bool IsExpired(double now, double interpolationDelay)
+            public Vector3 Sample(double now, double delay, double maxExtrapolation)
             {
-                return IsPendingRemoval &&
-                       now - interpolationDelay >= RemovalTime - 1e-9d;
-            }
-
-            public Vector3 Sample(
-                double now,
-                double interpolationDelay,
-                double maxExtrapolation)
-            {
-                var presentationTime = now - interpolationDelay;
-                if (HasPrevious && presentationTime < LatestTime)
+                var time = now - delay;
+                if (time <= _history[0].Time) return _history[0].Position;
+                for (var i = 1; i < _count; i++)
                 {
-                    if (presentationTime <= PreviousTime)
-                    {
-                        return PreviousPosition;
-                    }
-
-                    var duration = LatestTime - PreviousTime;
-                    if (duration > 0d)
-                    {
-                        var progress = (float)((presentationTime - PreviousTime) /
-                                               duration);
-                        return Vector3.LerpUnclamped(
-                            PreviousPosition,
-                            LatestPosition,
-                            progress);
-                    }
+                    var b = _history[i];
+                    if (time > b.Time) continue;
+                    var a = _history[i - 1];
+                    var duration = (float)(b.Time - a.Time);
+                    var t = (float)((time - a.Time) / (b.Time - a.Time));
+                    // Pause snapshots have zero velocity. Linear interpolation avoids
+                    // overshooting a stationary endpoint when the game is paused.
+                    if (a.Velocity == Vector3.zero || b.Velocity == Vector3.zero)
+                        return Vector3.LerpUnclamped(a.Position, b.Position, t);
+                    var t2 = t * t;
+                    var t3 = t2 * t;
+                    return (2 * t3 - 3 * t2 + 1) * a.Position +
+                        (t3 - 2 * t2 + t) * duration * a.Velocity +
+                        (-2 * t3 + 3 * t2) * b.Position +
+                        (t3 - t2) * duration * b.Velocity;
                 }
-
-                var extrapolation = Math.Min(
-                    Math.Max(0d, presentationTime - LatestTime),
-                    maxExtrapolation);
-                return LatestPosition + LatestVelocity * (float)extrapolation;
+                var latest = _history[_count - 1];
+                var dt = (float)Math.Min(Math.Max(0d, time - latest.Time), maxExtrapolation);
+                var acceleration = Vector3.zero;
+                if (_count > 1 && latest.Velocity != Vector3.zero)
+                {
+                    var previous = _history[_count - 2];
+                    if (previous.Velocity != Vector3.zero)
+                        acceleration = Vector3.ClampMagnitude((latest.Velocity - previous.Velocity) /
+                            (float)(latest.Time - previous.Time), 30f);
+                }
+                return latest.Position + latest.Velocity * dt + acceleration * (.5f * dt * dt);
             }
         }
 

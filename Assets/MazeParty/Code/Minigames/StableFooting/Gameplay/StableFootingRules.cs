@@ -957,16 +957,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                 {
                     var points = totalPoints[right].CompareTo(
                         totalPoints[left]);
-                    if (points != 0)
-                    {
-                        return points;
-                    }
-
-                    var finalRound = finalRoundRanks[left].CompareTo(
-                        finalRoundRanks[right]);
-                    return finalRound != 0
-                        ? finalRound
-                        : left.CompareTo(right);
+                    return points != 0 ? points : left.CompareTo(right);
                 });
 
             var leaderboard =
@@ -977,7 +968,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                 var slot = slots[index];
                 leaderboard[index] = new StableFootingLeaderboardEntry(
                     slot,
-                    index + 1,
+                    CompetitionRanking.Rank(totalPoints, slot),
                     totalPoints[slot],
                     finalRoundRanks[slot]);
             }

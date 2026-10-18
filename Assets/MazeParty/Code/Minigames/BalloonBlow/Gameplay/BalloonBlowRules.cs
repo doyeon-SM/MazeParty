@@ -387,16 +387,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                 {
                     var points = totalPoints[right].CompareTo(
                         totalPoints[left]);
-                    if (points != 0)
-                    {
-                        return points;
-                    }
-
-                    var finalRound = finalRoundRanks[left].CompareTo(
-                        finalRoundRanks[right]);
-                    return finalRound != 0
-                        ? finalRound
-                        : left.CompareTo(right);
+                    return points != 0 ? points : left.CompareTo(right);
                 });
 
             var leaderboard = new BalloonBlowLeaderboardEntry[
@@ -406,7 +397,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                 var slot = slots[index];
                 leaderboard[index] = new BalloonBlowLeaderboardEntry(
                     slot,
-                    index + 1,
+                    CompetitionRanking.Rank(totalPoints, slot),
                     totalPoints[slot],
                     finalRoundRanks[slot]);
             }

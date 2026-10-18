@@ -58,7 +58,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         public int CompletedRoundCount { get; }
 
         /// <summary>
-        /// Unique standings ordered from rank 1 through rank 4. There is no
+        /// Competition standings ordered from best to worst. There is no
         /// per-round point value in this minigame.
         /// </summary>
         public IReadOnlyList<SequenceMemoryStanding> Standings =>
@@ -92,7 +92,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
     /// Produces the direct single-match ranking without intermediate round
     /// points. Survivors precede eliminated players. Round-ten solvers use
     /// completion time; elimination ties use round, prefix, previous speed,
-    /// then authoritative processing order.
+    /// with equal performance sharing a rank.
     /// </summary>
     public static class SequenceMemoryMatchRanking
     {
@@ -148,10 +148,11 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
 
             Array.Sort(
                 ordered,
-                (left, right) => CompareOutcomes(
-                    left,
-                    right,
-                    completedRoundCount));
+                (left, right) =>
+                {
+                    var result = CompareOutcomes(left, right, completedRoundCount);
+                    return result != 0 ? result : left.PlayerSlot.CompareTo(right.PlayerSlot);
+                });
 
             var standings =
                 new SequenceMemoryStanding[
@@ -159,7 +160,8 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
             for (var index = 0; index < ordered.Length; index++)
             {
                 standings[index] = new SequenceMemoryStanding(
-                    index + 1,
+                    index > 0 && CompareOutcomes(ordered[index - 1], ordered[index], completedRoundCount) == 0
+                        ? standings[index - 1].Rank : index + 1,
                     ordered[index]);
             }
 
@@ -211,11 +213,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 return previousSpeed;
             }
 
-            var eventOrder = left.EliminationEventOrder.CompareTo(
-                right.EliminationEventOrder);
-            return eventOrder != 0
-                ? eventOrder
-                : left.PlayerSlot.CompareTo(right.PlayerSlot);
+            return 0;
         }
 
         private static int CompareSurvivors(
@@ -244,13 +242,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                         return completionTime;
                     }
 
-                    var completionOrder =
-                        left.LastTurnResolutionEventOrder.CompareTo(
-                            right.LastTurnResolutionEventOrder);
-                    if (completionOrder != 0)
-                    {
-                        return completionOrder;
-                    }
+
                 }
                 else
                 {
@@ -270,17 +262,11 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                         return previousSpeed;
                     }
 
-                    var resolutionOrder =
-                        left.LastTurnResolutionEventOrder.CompareTo(
-                            right.LastTurnResolutionEventOrder);
-                    if (resolutionOrder != 0)
-                    {
-                        return resolutionOrder;
-                    }
+
                 }
             }
 
-            return left.PlayerSlot.CompareTo(right.PlayerSlot);
+            return 0;
         }
     }
 

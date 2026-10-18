@@ -865,23 +865,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
 
         private int CompareFinal(int leftSlot, int rightSlot)
         {
-            var score = _scores[rightSlot].CompareTo(
-                _scores[leftSlot]);
-            if (score != 0)
-            {
-                return score;
-            }
-            for (var round = CliffBarrageRules.RoundCount - 1;
-                round >= 0; round--)
-            {
-                var laterRound = _roundRanks[round, leftSlot]
-                    .CompareTo(_roundRanks[round, rightSlot]);
-                if (laterRound != 0)
-                {
-                    return laterRound;
-                }
-            }
-            return leftSlot.CompareTo(rightSlot);
+            return _scores[rightSlot].CompareTo(_scores[leftSlot]);
         }
 
         private static double SegmentDistanceSquared(double px,

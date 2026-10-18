@@ -1243,7 +1243,7 @@ namespace MazeParty.Multiplayer
         public bool CanAvatarUseCombatInput(NetworkPlayerAvatar avatar)
         {
             if (avatar == null || !avatar.IsSpawned ||
-                IsGlobalSimulationPaused || !avatar.IsCombatAlive)
+                IsGlobalSimulationPaused || !avatar.IsCombatAlive || avatar.IsKnockedDown)
             {
                 return false;
             }
@@ -1644,7 +1644,7 @@ namespace MazeParty.Multiplayer
             var accepted = CanProcessAvatarRequest(avatar) &&
                            FlowState == BoardFlowState.Action &&
                            ActionRemaining > 0d &&
-                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping;
+                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping && !avatar.IsKnockedDown;
             if (!accepted)
             {
                 ServerEventTrace.Record(
@@ -2487,6 +2487,7 @@ namespace MazeParty.Multiplayer
         public bool PendingCombatProtection;
         public double PersonalProtectionRemaining;
         public double DeathPresentationRemaining;
+        public double KnockdownRemaining;
         public PlayerAppearanceState Appearance;
         public string DisplayName;
         public bool HasLogicalCurrentTile;

@@ -116,7 +116,7 @@ namespace MazeParty.Multiplayer.Tests
             var iconInfo = root.GetComponentsInChildren<RectTransform>(true)
                 .Single(rect => rect.name == "BoardMapIconInfo");
             var legend = iconInfo.GetComponentsInChildren<LocalizedText>(true);
-            Assert.That(legend, Has.Length.EqualTo(14));
+            Assert.That(legend, Has.Length.EqualTo(16));
             Assert.That(legend.Select(label => label.SourceText),
                 Does.Contain(": REACHABLE THIS TURN"));
             Assert.That(legend.Select(label => label.SourceText),

@@ -695,23 +695,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
                 {
                     var points = totalPoints[right].CompareTo(
                         totalPoints[left]);
-                    if (points != 0)
-                    {
-                        return points;
-                    }
-
-                    var progress = totalProgress[right].CompareTo(
-                        totalProgress[left]);
-                    if (progress != 0)
-                    {
-                        return progress;
-                    }
-
-                    var finalRound = finalRoundRanks[left].CompareTo(
-                        finalRoundRanks[right]);
-                    return finalRound != 0
-                        ? finalRound
-                        : left.CompareTo(right);
+                    return points != 0 ? points : left.CompareTo(right);
                 });
 
             var leaderboard =
@@ -725,7 +709,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
                 leaderboard[index] =
                     new RedLightGreenLightLeaderboardEntry(
                         playerSlot,
-                        index + 1,
+                        CompetitionRanking.Rank(totalPoints, playerSlot),
                         totalPoints[playerSlot],
                         totalProgress[playerSlot],
                         finalRoundRanks[playerSlot]);

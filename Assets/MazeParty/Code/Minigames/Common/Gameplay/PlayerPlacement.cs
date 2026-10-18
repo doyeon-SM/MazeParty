@@ -5,7 +5,7 @@ namespace MazeParty.Gameplay.Minigames
 {
     /// <summary>
     /// Board-facing final placement for one minigame player. Minigame-specific
-    /// scores and tie breakers are resolved before crossing this boundary.
+    /// scores are resolved into competition ranks before crossing this boundary.
     /// </summary>
     public readonly struct PlayerPlacement
     {
@@ -28,7 +28,8 @@ namespace MazeParty.Gameplay.Minigames
         RankOutOfRange = 4,
         DuplicatePlayerSlot = 5,
         DuplicateRank = 6,
-        IncompletePlacements = 7
+        IncompletePlacements = 7,
+        InvalidCompetitionRank = 8
     }
 
     /// <summary>
@@ -79,7 +80,6 @@ namespace MazeParty.Gameplay.Minigames
             }
 
             var seenSlots = 0;
-            var seenRanks = 0;
             uint packedRanks = 0U;
             for (var index = 0; index < placements.Count; index++)
             {
@@ -106,26 +106,29 @@ namespace MazeParty.Gameplay.Minigames
                     return false;
                 }
 
-                var rankBit = 1 << (placement.Rank - 1);
-                if ((seenRanks & rankBit) != 0)
-                {
-                    error = PlayerPlacementValidationError.DuplicateRank;
-                    return false;
-                }
-
                 seenSlots |= slotBit;
-                seenRanks |= rankBit;
                 packedRanks |=
                     (uint)placement.Rank << (placement.PlayerSlot * 8);
             }
 
             var completeMask = (1 << playerCount) - 1;
-            if (seenSlots != completeMask || seenRanks != completeMask)
+            if (seenSlots != completeMask)
             {
                 error = PlayerPlacementValidationError.IncompletePlacements;
                 return false;
             }
 
+            for (var index = 0; index < placements.Count; index++)
+            {
+                var expectedRank = 1;
+                for (var other = 0; other < placements.Count; other++)
+                    if (placements[other].Rank < placements[index].Rank) expectedRank++;
+                if (placements[index].Rank != expectedRank)
+                {
+                    error = PlayerPlacementValidationError.InvalidCompetitionRank;
+                    return false;
+                }
+            }
             placementSet = new PlayerPlacementSet(packedRanks);
             error = PlayerPlacementValidationError.None;
             return true;

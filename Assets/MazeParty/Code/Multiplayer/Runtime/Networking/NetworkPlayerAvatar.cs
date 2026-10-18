@@ -451,6 +451,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            _avatarVisual?.SetKnockedDown(IsKnockedDown);
             TickBoardItems();
             TickHandGestures();
             if (IsServer && _slot.Value < 0 && Time.unscaledTime >= _nextSlotResolveAttempt)
@@ -599,7 +600,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
                                   HasResolvedItemChoice && !IsSwapping &&
-                                  !IsBoardDeathInProgressOnServer &&
+                                  !IsBoardDeathInProgressOnServer && !IsKnockedDown &&
                                   ActiveHandGesture == 0;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
             var canMoveInArenaCombat = canMoveInCombat && match.IsArenaCombatPlaying;
@@ -823,6 +824,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ClearBoardKnockdownOnServer();
             _maxHealth.Value = PlayerStatRules.DefaultMaxHealth;
             _currentHealth.Value = PlayerStatRules.DefaultMaxHealth;
             _keyCount.Value = PlayerStatRules.DefaultStartingKeys;
@@ -891,6 +893,7 @@ namespace MazeParty.Multiplayer
                 ? sourceAvatar
                 : null;
             RecordDamageOnServer(appliedDamage, attacker);
+            BeginBoardKnockdownOnServer(appliedDamage, _currentHealth.Value > 0);
             PresentHitRpc(
                 (byte)request.HitRegion,
                 request.Kind == DamageKind.Item,
@@ -949,6 +952,7 @@ namespace MazeParty.Multiplayer
 
         private void BeginBoardDeathOnServer(NetworkPlayerAvatar killer)
         {
+            ClearBoardKnockdownOnServer();
             if (_boardDeathEndsAt > 0d || _pausedBoardDeathRemaining > 0d) return;
             ClearUtilityEffectsOnServer();
             CancelHandGestureOnServer();
@@ -1209,10 +1213,11 @@ namespace MazeParty.Multiplayer
                 damage);
             _combatHealth.Value -= appliedDamage;
             RecordDamageOnServer(appliedDamage, attacker);
+            BeginBoardKnockdownOnServer(appliedDamage, _combatHealth.Value > 0);
             PresentHitRpc((byte)PlayerHitRegion.Body, true, damage);
             if (_combatHealth.Value > 0)
             {
-                _combatKnockbackVelocity += Vector3.ClampMagnitude(
+                if (!IsKnockedDown) _combatKnockbackVelocity += Vector3.ClampMagnitude(
                     knockbackVelocity,
                     BoardCombatRules.PunchKnockbackSpeed);
                 return false;
@@ -1313,6 +1318,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            PauseBoardKnockdownOnServer(now);
             if (_boardDeathEndsAt > 0d)
             {
                 if (now >= _boardDeathEndsAt)
@@ -1343,6 +1349,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            ResumeBoardKnockdownOnServer(now);
             _personalProtectionEndsAt.Value = _pausedPersonalProtectionRemaining.Value > 0d
                 ? now + _pausedPersonalProtectionRemaining.Value
                 : 0d;
@@ -2474,7 +2481,7 @@ namespace MazeParty.Multiplayer
             var canUseLobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
                                     HasResolvedItemChoice && !IsSwapping &&
-                                    !IsBoardDeathInProgressOnServer;
+                                    !IsBoardDeathInProgressOnServer && !IsKnockedDown;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
             if (ActiveHandGesture != 0 ||
                 (!canUseLobbyInput && !canUseActionInput && !canUseCombatInput))

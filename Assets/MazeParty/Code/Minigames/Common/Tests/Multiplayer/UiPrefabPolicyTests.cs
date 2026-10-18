@@ -35,6 +35,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/DevelopmentDiagnostics.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardTileEffectWorld.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
@@ -65,6 +67,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.MinigameLocalPlayerHighlight",
+            "MazeParty.Multiplayer.DevelopmentDiagnosticsPanel",
             "MazeParty.Gameplay.BoardCameraCloudView",
             "MazeParty.Multiplayer.BoardTileEffectWorldView",
             "MazeParty.Multiplayer.BoardLocalPlayerMarkerView",
@@ -110,6 +114,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",

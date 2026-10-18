@@ -317,25 +317,26 @@ namespace MazeParty.Gameplay.Tests
                     Is.GreaterThanOrEqualTo(0));
             }
 
-            var seenRanks = new bool[BouncingBallsRules.PlayerCount + 1];
             for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
                  slot++)
             {
                 var rank = match.GetFinalRank(slot);
                 Assert.That(rank, Is.InRange(1, 4));
-                Assert.That(seenRanks[rank], Is.False);
-                seenRanks[rank] = true;
+                var higher = 0;
+                for (var other = 0; other < BouncingBallsRules.PlayerCount; other++)
+                    if (match.GetScore(other) > match.GetScore(slot)) higher++;
+                Assert.That(rank, Is.EqualTo(higher + 1));
             }
         }
 
         [Test]
-        public void RankingUsesGoalsThenFewerConcededThenServerSlot()
+        public void RankingUsesGoalsWithSharedRanksRegardlessOfConceded()
         {
             var ranks = BouncingBallsRanking.BuildRanksBySlot(
                 new[] { 5, 5, 2, 2 },
                 new[] { 4, 1, 0, 0 });
 
-            Assert.That(ranks, Is.EqualTo(new[] { 2, 1, 3, 4 }));
+            Assert.That(ranks, Is.EqualTo(new[] { 1, 1, 3, 3 }));
             Assert.Throws<ArgumentException>(() =>
                 BouncingBallsRanking.BuildRanksBySlot(
                     new[] { 1, 2 },

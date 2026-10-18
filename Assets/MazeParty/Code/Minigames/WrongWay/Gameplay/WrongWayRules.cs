@@ -610,24 +610,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
                 {
                     var points = totalPoints[right].CompareTo(
                         totalPoints[left]);
-                    if (points != 0)
-                    {
-                        return points;
-                    }
-
-                    var steps = totalSteps[right].CompareTo(
-                        totalSteps[left]);
-                    if (steps != 0)
-                    {
-                        return steps;
-                    }
-
-                    var secondRound =
-                        secondRoundRanks[left].CompareTo(
-                            secondRoundRanks[right]);
-                    return secondRound != 0
-                        ? secondRound
-                        : left.CompareTo(right);
+                    return points != 0 ? points : left.CompareTo(right);
                 });
 
             var leaderboard =
@@ -641,7 +624,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
                 leaderboard[index] =
                     new WrongWayLeaderboardEntry(
                         playerSlot,
-                        index + 1,
+                        CompetitionRanking.Rank(totalPoints, playerSlot),
                         totalPoints[playerSlot],
                         totalSteps[playerSlot],
                         secondRoundRanks[playerSlot]);

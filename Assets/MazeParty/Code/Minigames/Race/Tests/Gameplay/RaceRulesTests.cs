@@ -68,7 +68,7 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(new[] { 1, 2, 0, 3 }));
             Assert.That(
                 leaderboard.Select(entry => entry.Rank),
-                Is.EqualTo(new[] { 1, 2, 3, 4 }));
+                Is.EqualTo(new[] { 1, 1, 3, 4 }));
         }
     }
 }

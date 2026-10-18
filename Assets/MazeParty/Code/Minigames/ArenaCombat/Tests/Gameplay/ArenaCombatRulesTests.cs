@@ -37,7 +37,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Ranking_UsesSlotWhenFactsTie()
+        public void Ranking_SharesRanksWhenFactsTie()
         {
             var ranks = ArenaCombatRules.ResolveRanks(new[]
             {
@@ -47,7 +47,7 @@ namespace MazeParty.Gameplay.Tests
                 new ArenaCombatRankingEntry(0, 50, double.NaN)
             });
 
-            Assert.That(ranks, Is.EqualTo(new[] { 1, 2, 3, 4 }));
+            Assert.That(ranks, Is.EqualTo(new[] { 1, 1, 3, 3 }));
         }
 
         [Test]

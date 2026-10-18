@@ -174,7 +174,7 @@ namespace MazeParty.Gameplay.Minigames.TagChase
                     new TagChaseLeaderboardEntry(
                         slot,
                         totalPoints[slot],
-                        index + 1);
+                        CompetitionRanking.Rank(totalPoints, slot));
             }
 
             return result;

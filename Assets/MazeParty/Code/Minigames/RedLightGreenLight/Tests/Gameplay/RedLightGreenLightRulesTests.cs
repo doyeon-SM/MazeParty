@@ -258,7 +258,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void MatchLeaderboard_UsesProgressForPointTiesAcrossThreeRounds()
+        public void MatchLeaderboard_SharesPointTiesRegardlessOfProgress()
         {
             var first = ScoreProgress(100f, 90f, 10f, 0f);
             var second = ScoreProgress(50f, 40f, 100f, 0f);
@@ -266,7 +266,7 @@ namespace MazeParty.Gameplay.Tests
 
             var leaderboard = RedLightGreenLightMatchScoring.BuildLeaderboard(new[] { first, second, third });
 
-            Assert.That(LeaderboardSlots(leaderboard), Is.EqualTo(new[] { 1, 2, 0, 3 }));
+            Assert.That(LeaderboardSlots(leaderboard), Is.EqualTo(new[] { 0, 1, 2, 3 }));
             Assert.That(
                 new[]
                 {
@@ -275,7 +275,7 @@ namespace MazeParty.Gameplay.Tests
                     leaderboard[2].Rank,
                     leaderboard[3].Rank
                 },
-                Is.EqualTo(new[] { 1, 2, 3, 4 }));
+                Is.EqualTo(new[] { 1, 1, 1, 4 }));
             Assert.That(
                 new[]
                 {

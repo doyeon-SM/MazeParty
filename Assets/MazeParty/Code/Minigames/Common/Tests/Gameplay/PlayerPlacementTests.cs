@@ -29,6 +29,26 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void TiedScores_UseCompetitionRanksAndTheFullSharedReward()
+        {
+            var cases = new[] { new[] { 9, 6, 6, 2 }, new[] { 0, 0, 0, 0 }, new[] { 9, 9, 2, 2 } };
+            var expected = new[] { new[] { 1, 2, 2, 4 }, new[] { 1, 1, 1, 1 }, new[] { 1, 1, 3, 3 } };
+            var rewards = new[] { new[] { 10, 6, 6, 0 }, new[] { 10, 10, 10, 10 }, new[] { 10, 10, 3, 3 } };
+            for (var c = 0; c < cases.Length; c++)
+            {
+                var placements = new PlayerPlacement[4];
+                for (var slot = 0; slot < 4; slot++)
+                    placements[slot] = new PlayerPlacement(slot, CompetitionRanking.Rank(cases[c], slot));
+                Assert.That(PlayerPlacementSet.TryCreate(placements, out var set, out _), Is.True);
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    Assert.That(set.GetRankForSlot(slot), Is.EqualTo(expected[c][slot]));
+                    Assert.That(MinigameRewardRules.GetFinalPlacementGold(set.GetRankForSlot(slot)), Is.EqualTo(rewards[c][slot]));
+                }
+            }
+        }
+
+        [Test]
         public void TryCreate_RejectsMalformedFinalPlacements()
         {
             (PlayerPlacement[] Placements,
@@ -70,10 +90,10 @@ namespace MazeParty.Gameplay.Tests
                 {
                     new PlayerPlacement(0, 1),
                     new PlayerPlacement(1, 1),
-                    new PlayerPlacement(2, 3),
+                    new PlayerPlacement(2, 2),
                     new PlayerPlacement(3, 4)
                 },
-                PlayerPlacementValidationError.DuplicateRank)
+                PlayerPlacementValidationError.InvalidCompetitionRank)
             };
 
             foreach (var testCase in cases)

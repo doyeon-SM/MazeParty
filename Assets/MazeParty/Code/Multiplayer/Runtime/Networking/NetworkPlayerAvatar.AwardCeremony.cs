@@ -20,6 +20,7 @@ namespace MazeParty.Multiplayer
             _combatKnockbackVelocity = Vector3.zero;
             _combatState.Value = (byte)NetworkCombatState.None;
             _boardDeathEndsAt = _pausedBoardDeathRemaining = 0d;
+            ClearBoardKnockdownOnServer();
             _currentHealth.Value = _maxHealth.Value;
             ApplyCombatColliderState(NetworkCombatState.None);
             HideBoundaryWalls();

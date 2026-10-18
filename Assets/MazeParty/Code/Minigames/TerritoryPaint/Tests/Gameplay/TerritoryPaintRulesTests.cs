@@ -74,7 +74,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Leaderboard_UsesAreaThenStableSlotTieBreak()
+        public void Leaderboard_UsesAreaAndSharedRanks()
         {
             var leaderboard =
                 TerritoryPaintScoring.BuildLeaderboard(
@@ -85,7 +85,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(leaderboard[0].Rank, Is.EqualTo(1));
             Assert.That(leaderboard[0].Score, Is.EqualTo(220));
             Assert.That(leaderboard[1].PlayerSlot, Is.EqualTo(2));
-            Assert.That(leaderboard[1].Rank, Is.EqualTo(2));
+            Assert.That(leaderboard[1].Rank, Is.EqualTo(1));
             Assert.That(leaderboard[2].PlayerSlot, Is.EqualTo(0));
             Assert.That(leaderboard[3].PlayerSlot, Is.EqualTo(3));
         }

@@ -256,17 +256,13 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                         return scoreOrder;
                     }
 
-                    var concededOrder =
-                        conceded[left].CompareTo(conceded[right]);
-                    return concededOrder != 0
-                        ? concededOrder
-                        : left.CompareTo(right);
+                    return left.CompareTo(right);
                 });
 
             var ranks = new int[BouncingBallsRules.PlayerCount];
             for (var index = 0; index < slots.Length; index++)
             {
-                ranks[slots[index]] = index + 1;
+                ranks[slots[index]] = CompetitionRanking.Rank(scores, slots[index]);
             }
 
             return ranks;

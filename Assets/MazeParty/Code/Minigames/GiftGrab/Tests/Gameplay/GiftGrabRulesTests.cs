@@ -352,7 +352,7 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void Scoring_UsesStoredThenGiftSecondsAndTwoRoundTieBreaks()
+        public void Scoring_PreservesRoundRulesAndSharesEqualFinalPoints()
         {
             var scored = GiftGrabRoundScoring.Score(new[]
             {
@@ -375,15 +375,16 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(
                 LeaderboardSlots(leaderboard),
-                Is.EqualTo(new[] { 1, 2, 0, 3 }));
+                Is.EqualTo(new[] { 0, 1, 2, 3 }));
             Assert.That(
                 LeaderboardPoints(leaderboard),
                 Is.EqualTo(new[] { 3, 3, 3, 3 }));
             Assert.That(
                 TotalStoredCounts(leaderboard),
-                Is.EqualTo(new[] { 13, 12, 12, 10 }));
-            Assert.That(leaderboard[1].FinalRoundRank, Is.EqualTo(2));
-            Assert.That(leaderboard[2].FinalRoundRank, Is.EqualTo(4));
+                Is.EqualTo(new[] { 12, 13, 12, 10 }));
+            Assert.That(leaderboard[1].FinalRoundRank, Is.EqualTo(3));
+            Assert.That(leaderboard[2].FinalRoundRank, Is.EqualTo(2));
+            foreach (var entry in leaderboard) Assert.That(entry.Rank, Is.EqualTo(1));
             Assert.Throws<System.ArgumentException>(() =>
                 GiftGrabMatchScoring.BuildLeaderboard(new[] { first }));
         }

@@ -162,7 +162,7 @@ namespace MazeParty.Gameplay.Minigames.Race
                 result[index] = new RaceLeaderboardEntry(
                     slot,
                     totalPoints[slot],
-                    index + 1);
+                    CompetitionRanking.Rank(totalPoints, slot));
             }
             return result;
         }

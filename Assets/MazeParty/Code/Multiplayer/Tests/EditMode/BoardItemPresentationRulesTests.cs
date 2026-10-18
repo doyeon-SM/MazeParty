@@ -197,6 +197,26 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void GrenadePresentationTracks_BatchedSnapshotsRetainTheRenderBracketAndBallisticMotion()
+        {
+            var tracks = new GrenadePresentationTrackSet(.1d, .1d);
+            var added = new List<uint>(); var removed = new List<uint>();
+            for (var i = 0; i < 5; i++)
+            {
+                var t = i * .025f;
+                tracks.ApplySnapshot(new uint[] { 1 },
+                    new[] { new Vector3(t * 10, 5 * t - 4.9f * t * t, 0) },
+                    new[] { new Vector3(10, 5 - 9.8f * t, 0) }, 1d + t, added, removed);
+            }
+            foreach (var t in new[] { .0125f, .04f, .075f, .12f })
+            {
+                Assert.That(tracks.TrySample(1, 1.1d + t, out var position), Is.True);
+                Assert.That(position.x, Is.EqualTo(t * 10).Within(.0001f));
+                Assert.That(position.y, Is.EqualTo(5 * t - 4.9f * t * t).Within(.0001f));
+            }
+        }
+
+        [Test]
         public void GrenadePresentationTracks_ReappearanceInvalidSnapshotsAndClearAreSafe()
         {
             var tracks = new GrenadePresentationTrackSet(.05d, .1d);

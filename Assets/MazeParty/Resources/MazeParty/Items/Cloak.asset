@@ -15,7 +15,7 @@ MonoBehaviour:
   Id: 12
   UseTiming: 0
   DisplayName: Invisibility Cloak
-  Description: 'LMB: hidden from opponents and minimaps until action ends. Ends before combat or on death.'
+  Description: 'Automatically activates when selected or obtained from a chest. Hidden from opponents and minimaps until action ends. Ends before combat or on death.'
   Price: 10
   SpawnWeight: 1
   Charges: 1

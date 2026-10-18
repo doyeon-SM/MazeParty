@@ -474,15 +474,6 @@ namespace MazeParty.Multiplayer.Tests
                 visual.SetBoardProtectionVisible(false);
                 Assert.That(shield.activeSelf, Is.True);
 
-                visual.SetMinigameLocationHighlightVisible(true);
-                visual.SetBoardTopViewHighlightVisible(false);
-                Assert.That(shield.activeSelf, Is.True,
-                    "The minigame request must survive board cleanup.");
-
-                visual.SetBoardTopViewHighlightVisible(true);
-                visual.SetMinigameLocationHighlightVisible(false);
-                Assert.That(shield.activeSelf, Is.True,
-                    "The board request must survive minigame cleanup.");
 
                 visual.SetHiddenFromViewer(true);
                 Assert.That(shield.activeSelf, Is.False);

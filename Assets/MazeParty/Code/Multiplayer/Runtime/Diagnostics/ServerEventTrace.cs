@@ -64,7 +64,7 @@ namespace MazeParty.Multiplayer
     {
         public const int Capacity = 512;
 
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
         private static readonly object Gate = new object();
         private static readonly ServerEventRecord[] Records =
             new ServerEventRecord[Capacity];
@@ -77,7 +77,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
                 return true;
 #else
                 return false;
@@ -87,6 +87,7 @@ namespace MazeParty.Multiplayer
 
         [Conditional("UNITY_EDITOR")]
         [Conditional("UNITY_INCLUDE_INSTRUMENTATION")]
+        [Conditional("DEVELOPMENT_BUILD")]
         public static void Record(
             ServerEventCode code,
             int turn = -1,
@@ -95,7 +96,7 @@ namespace MazeParty.Multiplayer
             long value0 = 0,
             long value1 = 0)
         {
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
             lock (Gate)
             {
                 Records[_nextIndex] = new ServerEventRecord(
@@ -118,7 +119,7 @@ namespace MazeParty.Multiplayer
 
         public static ServerEventRecord[] Snapshot()
         {
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
             lock (Gate)
             {
                 var result = new ServerEventRecord[_count];
@@ -137,7 +138,7 @@ namespace MazeParty.Multiplayer
 
         public static void Clear()
         {
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
             lock (Gate)
             {
                 Array.Clear(Records, 0, Records.Length);
@@ -150,9 +151,10 @@ namespace MazeParty.Multiplayer
 
         [Conditional("UNITY_EDITOR")]
         [Conditional("UNITY_INCLUDE_INSTRUMENTATION")]
+        [Conditional("DEVELOPMENT_BUILD")]
         public static void DumpToLog()
         {
-#if UNITY_EDITOR || UNITY_INCLUDE_INSTRUMENTATION
+#if UNITY_EDITOR || ((DEVELOPMENT_BUILD || UNITY_INCLUDE_INSTRUMENTATION) && !MAZEPARTY_STOVE && !MAZEPARTY_STEAM)
             var snapshot = Snapshot();
             var text = new StringBuilder(
                 Math.Max(64, snapshot.Length * 64));

@@ -261,7 +261,6 @@ namespace MazeParty.Multiplayer
         {
             Instance = this;
             BindUi();
-            MinigameLocalPlayerHighlight.EnsureInstalled(gameObject);
         }
 
         private void OnDestroy()
@@ -1582,6 +1581,21 @@ namespace MazeParty.Multiplayer
             return count;
         }
 
+        private static bool TryGetFinalResultSlots(Func<int, int> getRank, out int[] slots)
+        {
+            slots = new[] { 0, 1, 2, 3 };
+            var placements = new PlayerPlacement[MultiplayerConstants.MaxPlayers];
+            for (var slot = 0; slot < placements.Length; slot++)
+                placements[slot] = new PlayerPlacement(slot, getRank(slot));
+            if (!PlayerPlacementSet.TryCreate(placements, out var validated, out _)) return false;
+            Array.Sort(slots, (left, right) =>
+            {
+                var order = validated.GetRankForSlot(left).CompareTo(validated.GetRankForSlot(right));
+                return order != 0 ? order : left.CompareTo(right);
+            });
+            return true;
+        }
+
         private static string BuildMinefieldResultSummary(
             NetworkMinefieldState minefield)
         {
@@ -1590,24 +1604,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(minefield.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1; rank <= MinefieldRules.PlayerCount; rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0; slot < MinefieldRules.PlayerCount; slot++)
-                {
-                    if (minefield.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = minefield.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1634,24 +1636,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(wrongWay.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1; rank <= WrongWayRules.PlayerCount; rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0; slot < WrongWayRules.PlayerCount; slot++)
-                {
-                    if (wrongWay.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = wrongWay.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1679,28 +1669,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(redLightGreenLight.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= RedLightGreenLightRules.PlayerCount;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < RedLightGreenLightRules.PlayerCount;
-                     slot++)
-                {
-                    if (redLightGreenLight.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = redLightGreenLight.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1728,28 +1702,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(stableFooting.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= StableFootingRules.PlayerCount;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < StableFootingRules.PlayerCount;
-                     slot++)
-                {
-                    if (stableFooting.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = stableFooting.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1777,28 +1735,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(balloonBlow.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= BalloonBlowRules.PlayerCount;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < BalloonBlowRules.PlayerCount;
-                     slot++)
-                {
-                    if (balloonBlow.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = balloonBlow.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1826,24 +1768,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(giftGrab.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1; rank <= GiftGrabRules.PlayerCount; rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
-                {
-                    if (giftGrab.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
-
+                var rank = giftGrab.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1873,27 +1803,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(territoryPaint.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= TerritoryPaintRules.PlayerCount;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < TerritoryPaintRules.PlayerCount;
-                     slot++)
-                {
-                    if (territoryPaint.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = territoryPaint.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1922,23 +1837,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(tagChase.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1; rank <= TagChaseRules.PlayerCount; rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0; slot < TagChaseRules.PlayerCount; slot++)
-                {
-                    if (tagChase.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = tagChase.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -1967,23 +1871,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(race.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1; rank <= RaceRules.PlayerCount; rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0; slot < RaceRules.PlayerCount; slot++)
-                {
-                    if (race.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = race.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2012,27 +1905,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(snowySpin.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= MultiplayerConstants.MaxPlayers;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < MultiplayerConstants.MaxPlayers;
-                     slot++)
-                {
-                    if (snowySpin.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = snowySpin.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2061,27 +1939,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(arenaCombat.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= MultiplayerConstants.MaxPlayers;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < MultiplayerConstants.MaxPlayers;
-                     slot++)
-                {
-                    if (arenaCombat.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = arenaCombat.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2109,27 +1972,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(cliffBarrage.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= MultiplayerConstants.MaxPlayers;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < MultiplayerConstants.MaxPlayers;
-                     slot++)
-                {
-                    if (cliffBarrage.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = cliffBarrage.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2158,27 +2006,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(bombPassing.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= MultiplayerConstants.MaxPlayers;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < MultiplayerConstants.MaxPlayers;
-                     slot++)
-                {
-                    if (bombPassing.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = bombPassing.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2208,27 +2041,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(bouncingBalls.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= MultiplayerConstants.MaxPlayers;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < MultiplayerConstants.MaxPlayers;
-                     slot++)
-                {
-                    if (bouncingBalls.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = bouncingBalls.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();
@@ -2258,27 +2076,12 @@ namespace MazeParty.Multiplayer
                 return GameText.T("Final standings are synchronizing...");
             }
 
+            if (!TryGetFinalResultSlots(sequenceMemory.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
-            for (var rank = 1;
-                 rank <= SequenceMemoryRules.PlayerCount;
-                 rank++)
+            foreach (var rankedSlot in rankedSlots)
             {
-                var rankedSlot = -1;
-                for (var slot = 0;
-                     slot < SequenceMemoryRules.PlayerCount;
-                     slot++)
-                {
-                    if (sequenceMemory.GetFinalRank(slot) == rank)
-                    {
-                        rankedSlot = slot;
-                        break;
-                    }
-                }
-
-                if (rankedSlot < 0)
-                {
-                    return GameText.T("Final standings are synchronizing...");
-                }
+                var rank = sequenceMemory.GetFinalRank(rankedSlot);
                 if (builder.Length > 0)
                 {
                     builder.AppendLine();

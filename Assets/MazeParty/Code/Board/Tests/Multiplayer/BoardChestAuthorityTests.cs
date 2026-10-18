@@ -208,6 +208,78 @@ namespace MazeParty.Multiplayer.Tests
             first.ShouldShow(0, default, false);
             Assert.That(first.ShouldShow(0, Chest(0), false), Is.True);
         }
+        [Test]
+        public void Cloak_SelectionOrChestAcquisition_ActivatesWithoutUseInput_ConsumesOnceOnServer()
+        {
+            var seed = Enumerable.Range(0, 1000).First(value =>
+                BoardChestRules.DrawItem(PrototypeItemCatalog.All, unchecked(value * 397 ^ 2 * 31)) == PrototypeItemId.Cloak);
+            Set(_match, "_boardEffectSeed", seed);
+            Set(_match, "_choiceEndsAt", _match.SynchronizedNow + 30d);
+            foreach (var fromChest in new[] { false, true })
+            {
+                Set(_match, "_chest0", Chest(0));
+                Set(_player, "_cloaked", false);
+                Set(_player, "_occupiedItemMask", (byte)3);
+                Set(_player, "_itemSlot0", (byte)(fromChest ? PrototypeItemId.Pistol : PrototypeItemId.Cloak));
+                Set(_player, "_itemSlot1", (byte)PrototypeItemId.Mine);
+                Set(_player, "_selectedItemSlot", fromChest ? 0 : -1);
+                Set(_player, "_equippedItem", (byte)(fromChest ? PrototypeItemId.Pistol : PrototypeItemId.None));
+                Set(_player, "_itemCharges", fromChest ? 2 : 0);
+                Set(_player, "_firstDieResult", 0);
+                Set(_player, "_choiceResolution", (byte)(fromChest ? ItemChoiceResolution.ItemSelected : ItemChoiceResolution.Pending));
+                Func<bool> request = () => fromChest
+                    ? _match.TryOpenChestOnServer(_player, 0, 1)
+                    : _match.TryResolveItemChoiceOnServer(_player, 0, false);
+
+                Authority(_player, false);
+                Assert.That(request(), Is.False);
+                Assert.That(_player.IsCloaked, Is.False);
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.EqualTo(3));
+                Authority(_player, true);
+                LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                if (fromChest)
+                    LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                Assert.That(request(), Is.True);
+                Assert.That(_player.IsCloaked, Is.True, "No use input, animation or timer is required.");
+                Assert.That(_player.HasResolvedItemChoice, Is.True);
+                Assert.That(Get<int>(_player, "_itemCharges"), Is.Zero);
+                Assert.That(_player.GetSelectedItemOnServer(), Is.EqualTo(PrototypeItemId.None));
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.EqualTo(2));
+                Assert.That(Get<byte>(_player, "_itemSlot1"), Is.EqualTo((byte)PrototypeItemId.Mine));
+                Assert.That(request(), Is.False, "A repeated choice or chest request must not spend another item.");
+                Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, _player.EyePivot.forward), Is.False);
+                Assert.That(_player.RecordDieResultOnServer(0, 6), Is.EqualTo(6));
+            }
+        }
+
+        [Test]
+        public void HeavyHit_KnocksDownOnlySurvivorsAtFifty_PreservesPauseAndExpiresAtOneSecond()
+        {
+            Set(_match, "_shieldEndsAt", 0d);
+            foreach (var damage in new[] { 49, 50, 100 })
+            {
+                Set(_player, "_currentHealth", 100);
+                Set(_player, "_knockdownEndsAt", 0d);
+                LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                _player.ApplyDamage(new DamageRequest(damage, DamageKind.Environment, null));
+                Assert.That(_player.IsKnockedDown, Is.EqualTo(damage == 50));
+                if (damage != 50) continue;
+                var deadline = Get<double>(_player, "_knockdownEndsAt");
+                Assert.That((bool)typeof(NetworkMatchState).GetMethod("CanProcessActionRequest", Private).Invoke(_match, new object[] { _player }), Is.False);
+                var pause = typeof(NetworkPlayerAvatar).GetMethod("PauseBoardKnockdownOnServer", Private);
+                var resume = typeof(NetworkPlayerAvatar).GetMethod("ResumeBoardKnockdownOnServer", Private);
+                pause.Invoke(_player, new object[] { deadline - .5d });
+                Assert.That(_player.KnockdownRemaining, Is.EqualTo(.5d).Within(.00001d));
+                resume.Invoke(_player, new object[] { deadline + 20d });
+                Assert.That(Get<double>(_player, "_knockdownEndsAt"), Is.EqualTo(deadline + 20.5d).Within(.00001d));
+                pause.Invoke(_player, new object[] { deadline + 20.499d });
+                Assert.That(_player.IsKnockedDown, Is.True);
+                resume.Invoke(_player, new object[] { 0d });
+                pause.Invoke(_player, new object[] { Get<double>(_player, "_knockdownEndsAt") });
+                Assert.That(_player.IsKnockedDown, Is.False);
+            }
+        }
+
         private BoardChestSnapshot Chest(int x) => new BoardChestSnapshot
             { Active = true, Location = new Vector2Int(x, 0), Revision = 1, AppearedTurn = 2 };
         private GameObject Child(string name)

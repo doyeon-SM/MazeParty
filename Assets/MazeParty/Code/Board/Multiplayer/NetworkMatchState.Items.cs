@@ -26,7 +26,7 @@ namespace MazeParty.Multiplayer
         private readonly Dictionary<uint, GameObject> _grenadeViews =
             new Dictionary<uint, GameObject>();
         private readonly GrenadePresentationTrackSet _grenadePresentationTracks =
-            new GrenadePresentationTrackSet(.05d, .1d);
+            new GrenadePresentationTrackSet(.1d, .1d);
         private readonly List<uint> _addedGrenadeViewIds = new List<uint>();
         private readonly List<uint> _removedGrenadeViewIds = new List<uint>();
         private float _nextItemSync;
@@ -59,9 +59,9 @@ namespace MazeParty.Multiplayer
                      ground.normal,
                      out minePosition))) return false;
             if (!avatar.SpendItemChargeOnServer(item)) return false;
-            avatar.PresentItemUseOnServer(id);
             if (id == PrototypeItemId.Cloak) avatar.ActivateCloakOnServer();
-            else if (id == PrototypeItemId.Pistol || id == PrototypeItemId.Sniper)
+            avatar.PresentItemUseOnServer(id);
+            if (id == PrototypeItemId.Pistol || id == PrototypeItemId.Sniper)
             {
                 var endpoint = origin + direction * item.Range;
                 var didHit = BoardItemPhysics.Cast(

@@ -48,6 +48,7 @@ namespace MazeParty.Multiplayer
                 CombatHealth = _combatHealth.Value,
                 PendingCombatProtection = _pendingCombatProtection.Value,
                 PersonalProtectionRemaining = PersonalItemProtectionRemaining,
+                KnockdownRemaining = KnockdownRemaining,
                 DeathPresentationRemaining = _pausedBoardDeathRemaining > 0d
                     ? _pausedBoardDeathRemaining
                     : Math.Max(0d, _boardDeathEndsAt -
@@ -150,6 +151,10 @@ namespace MazeParty.Multiplayer
                 snapshot.PersonalProtectionRemaining > 0d
                     ? now + snapshot.PersonalProtectionRemaining
                     : 0d;
+            var knockdown = double.IsNaN(snapshot.KnockdownRemaining) || double.IsInfinity(snapshot.KnockdownRemaining)
+                ? 0d : Math.Max(0d, Math.Min(BoardDamageReactionRules.KnockdownSeconds, snapshot.KnockdownRemaining));
+            _pausedKnockdownRemaining.Value = paused ? knockdown : 0d;
+            _knockdownEndsAt.Value = !paused && knockdown > 0d ? now + knockdown : 0d;
             _pausedBoardDeathRemaining = paused
                 ? snapshot.DeathPresentationRemaining
                 : 0d;

@@ -394,23 +394,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 {
                     var points = totalPoints[right].CompareTo(
                         totalPoints[left]);
-                    if (points != 0)
-                    {
-                        return points;
-                    }
-
-                    var stored = totalStoredGiftCounts[right].CompareTo(
-                        totalStoredGiftCounts[left]);
-                    if (stored != 0)
-                    {
-                        return stored;
-                    }
-
-                    var finalRound = finalRoundRanks[left].CompareTo(
-                        finalRoundRanks[right]);
-                    return finalRound != 0
-                        ? finalRound
-                        : left.CompareTo(right);
+                    return points != 0 ? points : left.CompareTo(right);
                 });
 
             var leaderboard = new GiftGrabLeaderboardEntry[
@@ -420,7 +404,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 var slot = slots[index];
                 leaderboard[index] = new GiftGrabLeaderboardEntry(
                     slot,
-                    index + 1,
+                    CompetitionRanking.Rank(totalPoints, slot),
                     totalPoints[slot],
                     totalStoredGiftCounts[slot],
                     finalRoundRanks[slot]);
