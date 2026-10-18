@@ -5,6 +5,29 @@ namespace MazeParty.Gameplay.Tests
     public sealed class AwardCeremonyFlowRulesTests
     {
         [Test]
+        public void StageMovement_RequiresUnlockedActiveSeatAndStopsOnPauseOrReturn()
+        {
+            foreach (AwardCeremonyPhase phase in System.Enum.GetValues(typeof(AwardCeremonyPhase)))
+            foreach (var paused in new[] { false, true })
+            foreach (var queued in new[] { false, true })
+            foreach (var remaining in new byte[] { 0, 5, 15 })
+            foreach (var ready in new byte[] { 0, 5, 15 })
+            for (var slot = -1; slot <= 4; slot++)
+            {
+                var expected = phase == AwardCeremonyPhase.AwaitingReturn && !paused && !queued &&
+                    slot >= 0 && slot < 4 && (remaining & (1 << slot)) != 0 && (ready & (1 << slot)) == 0;
+                Assert.That(AwardCeremonyFlowRules.CanMoveOnStage(phase, paused, queued, remaining, ready, slot),
+                    Is.EqualTo(expected), $"{phase} paused={paused} queued={queued} remaining={remaining} ready={ready} slot={slot}");
+            }
+            var deadline = 100d + AwardCeremonyFlowRules.GetPhaseDuration(AwardCeremonyPhase.FinalPodiumLocked);
+            Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(AwardCeremonyPhase.FinalPodiumLocked,
+                deadline, 102.999d, out _, out _), Is.False);
+            Assert.That(AwardCeremonyFlowRules.TryGetTimedTransition(AwardCeremonyPhase.FinalPodiumLocked,
+                deadline, 103d, out var unlocked, out _), Is.True);
+            Assert.That(AwardCeremonyFlowRules.CanMoveOnStage(unlocked, false, false, 15, 0, 0), Is.True);
+        }
+
+        [Test]
         public void PhaseDurations_MatchCeremonyContract()
         {
             var cases = new[]
@@ -13,7 +36,7 @@ namespace MazeParty.Gameplay.Tests
                 (AwardCeremonyPhase.BonusAwardOne, 4d),
                 (AwardCeremonyPhase.BonusAwardTwoReady, 2d),
                 (AwardCeremonyPhase.BonusAwardTwo, 4d),
-                (AwardCeremonyPhase.FinalPodiumLocked, 5d),
+                (AwardCeremonyPhase.FinalPodiumLocked, 3d),
                 (AwardCeremonyPhase.AwaitingReturn, 0d)
             };
 
@@ -79,7 +102,7 @@ namespace MazeParty.Gameplay.Tests
                 (AwardCeremonyPhase.BonusAwardTwo, 12d,
                     AwardCeremonyPhase.FinalPodiumLocked,
                     AwardCeremonyServerAction.CalculateFinalRanks),
-                (AwardCeremonyPhase.FinalPodiumLocked, 17d,
+                (AwardCeremonyPhase.FinalPodiumLocked, 15d,
                     AwardCeremonyPhase.AwaitingReturn,
                     AwardCeremonyServerAction.None)
             };

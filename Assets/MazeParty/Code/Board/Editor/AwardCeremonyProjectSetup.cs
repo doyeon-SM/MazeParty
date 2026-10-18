@@ -253,23 +253,14 @@ namespace MazeParty.Editor
                 new Vector2(0.08f, 0.50f),
                 new Vector2(0.92f, 0.68f),
                 TextAnchor.MiddleCenter);
-            var value = CreateText(
-                overlay.transform,
-                "Award Value",
-                "100 GOLD",
-                42,
-                new Color(0.72f, 0.84f, 1f),
-                new Vector2(0.1f, 0.41f),
-                new Vector2(0.9f, 0.51f),
-                TextAnchor.MiddleCenter);
             var winner = CreateText(
                 overlay.transform,
                 "Award Winner",
                 "PLAYER 1",
-                58,
+                42,
                 Color.white,
                 new Vector2(0.08f, 0.24f),
-                new Vector2(0.92f, 0.41f),
+                new Vector2(0.92f, 0.51f),
                 TextAnchor.MiddleCenter);
             var reward = CreateText(
                 overlay.transform,
@@ -282,63 +273,20 @@ namespace MazeParty.Editor
                 TextAnchor.MiddleCenter);
 
             var finalPanel = CreateRect(
-                "Final Ranking Panel",
+                "Return Controls",
                 root.transform,
                 Vector2.zero,
                 Vector2.one,
                 Vector2.zero,
                 Vector2.zero).gameObject;
-            var titleBacking = CreateRect(
-                "Final Title Backing",
-                finalPanel.transform,
-                new Vector2(0.28f, 0.87f),
-                new Vector2(0.72f, 0.98f),
-                Vector2.zero,
-                Vector2.zero).gameObject.AddComponent<Image>();
-            titleBacking.color = new Color(0.025f, 0.045f, 0.1f, 0.90f);
-            var finalTitle = CreateText(
-                titleBacking.transform,
-                "Final Title",
-                "FINAL RANKING",
-                50,
-                new Color(1f, 0.82f, 0.35f),
-                Vector2.zero,
-                Vector2.one,
-                TextAnchor.MiddleCenter);
-
-            var rankingBacking = CreateRect(
-                "Ranking Backing",
-                finalPanel.transform,
-                new Vector2(0.025f, 0.20f),
-                new Vector2(0.40f, 0.68f),
-                Vector2.zero,
-                Vector2.zero).gameObject.AddComponent<Image>();
-            rankingBacking.color = new Color(0.025f, 0.045f, 0.1f, 0.86f);
-            var rankTexts = new Text[MultiplayerConstants.MaxPlayers];
-            for (var row = 0; row < rankTexts.Length; row++)
-            {
-                var upper = 0.94f - row * 0.23f;
-                rankTexts[row] = CreateText(
-                    rankingBacking.transform,
-                    "Final Rank " + (row + 1),
-                    "#" + (row + 1) + "  PLAYER " + (row + 1),
-                    27,
-                    row == 0
-                        ? new Color(1f, 0.82f, 0.35f)
-                        : Color.white,
-                    new Vector2(0.06f, upper - 0.18f),
-                    new Vector2(0.94f, upper),
-                    TextAnchor.MiddleLeft);
-            }
-
             var inputLock = CreateText(
                 finalPanel.transform,
                 "Input Lock",
-                "WINNER REVEAL  -  CONTROLS UNLOCK IN 5",
+                "WINNER REVEAL  -  CONTROLS UNLOCK IN 3",
                 28,
                 Color.white,
-                new Vector2(0.25f, 0.10f),
-                new Vector2(0.75f, 0.17f),
+                new Vector2(0.04f, 0.11f),
+                new Vector2(0.65f, 0.17f),
                 TextAnchor.MiddleCenter);
             var status = CreateText(
                 finalPanel.transform,
@@ -346,8 +294,8 @@ namespace MazeParty.Editor
                 "The first-place podium is in the spotlight.",
                 24,
                 new Color(0.78f, 0.86f, 0.96f),
-                new Vector2(0.58f, 0.20f),
-                new Vector2(0.96f, 0.28f),
+                new Vector2(0.04f, 0.03f),
+                new Vector2(0.65f, 0.11f),
                 TextAnchor.MiddleCenter);
             var leaveButton = CreateButton(
                 finalPanel.transform,
@@ -366,12 +314,9 @@ namespace MazeParty.Editor
                 overlayAnimator,
                 step,
                 category,
-                value,
                 winner,
                 reward,
                 finalPanel,
-                finalTitle,
-                rankTexts,
                 inputLock,
                 leaveButton,
                 leaveButtonText,
@@ -425,119 +370,9 @@ namespace MazeParty.Editor
 
         private static GameObject CreateStageTemplate()
         {
-            var root = new GameObject(
-                "AwardCeremonyStage",
-                typeof(AwardCeremonyStageBindings),
-                typeof(AwardCeremonyPresentation));
-            var presentation = new GameObject("Stage Presentation");
-            presentation.transform.SetParent(root.transform, false);
-
-            var stageMaterial = EnsureMaterial(
-                StageMaterialPath,
-                new Color(0.035f, 0.055f, 0.11f));
-            var podiumMaterial = EnsureMaterial(
-                PodiumMaterialPath,
-                new Color(0.42f, 0.46f, 0.54f));
-            CreatePrimitive(
-                "Stage Floor",
-                PrimitiveType.Cube,
-                presentation.transform,
-                new Vector3(0f, -0.35f, 1f),
-                new Vector3(17f, 0.7f, 10f),
-                stageMaterial);
-            CreatePrimitive(
-                "Stage Backdrop",
-                PrimitiveType.Cube,
-                presentation.transform,
-                new Vector3(0f, 4.2f, 5.3f),
-                new Vector3(17f, 9f, 0.5f),
-                stageMaterial);
-
-            var players = new GameObject("Runtime Players");
-            players.transform.SetParent(presentation.transform, false);
-            var podiums = new Transform[MultiplayerConstants.MaxPlayers];
-            var anchors = new Transform[MultiplayerConstants.MaxPlayers];
-            var labels = new TextMesh[MultiplayerConstants.MaxPlayers];
-            var spotlights = new Light[MultiplayerConstants.MaxPlayers];
-            var xPositions = new[] { -3.75f, -1.25f, 1.25f, 3.75f };
-            for (var index = 0; index < podiums.Length; index++)
-            {
-                var podium = CreatePrimitive(
-                    "Podium " + (index + 1),
-                    PrimitiveType.Cube,
-                    presentation.transform,
-                    new Vector3(xPositions[index], 0.5f, 1.2f),
-                    new Vector3(2.15f, 1f, 2.15f),
-                    podiumMaterial);
-                podiums[index] = podium.transform;
-
-                var anchor = new GameObject(
-                    "Player Anchor " + (index + 1)).transform;
-                anchor.SetParent(podium.transform, false);
-                anchor.localPosition = new Vector3(0f, 0.5f, 0f);
-                anchor.localRotation = Quaternion.Euler(0f, 180f, 0f);
-                anchors[index] = anchor;
-
-                var labelObject = new GameObject(
-                    "Rank Label " + (index + 1),
-                    typeof(TextMesh));
-                labelObject.transform.SetParent(presentation.transform, false);
-                labelObject.transform.localPosition =
-                    new Vector3(xPositions[index], 1f, 0.08f);
-                labelObject.transform.localRotation = Quaternion.identity;
-                var label = labelObject.GetComponent<TextMesh>();
-                label.text = "#" + (index + 1);
-                label.anchor = TextAnchor.MiddleCenter;
-                label.alignment = TextAlignment.Center;
-                label.fontSize = 72;
-                label.characterSize = 0.06f;
-                label.color = Color.white;
-                labels[index] = label;
-
-                var spotlightObject = new GameObject(
-                    "Winner Spotlight " + (index + 1),
-                    typeof(Light));
-                spotlightObject.transform.SetParent(presentation.transform, false);
-                spotlightObject.transform.localPosition =
-                    new Vector3(xPositions[index], 8f, 1.2f);
-                spotlightObject.transform.localRotation =
-                    Quaternion.Euler(90f, 0f, 0f);
-                var spotlight = spotlightObject.GetComponent<Light>();
-                spotlight.type = LightType.Spot;
-                spotlight.color = new Color(1f, 0.84f, 0.46f);
-                spotlight.intensity = 4200f;
-                spotlight.range = 16f;
-                spotlight.spotAngle = 34f;
-                spotlight.shadows = LightShadows.Soft;
-                spotlightObject.SetActive(false);
-                spotlights[index] = spotlight;
-            }
-
-            var cameraObject = new GameObject(
-                "CM_AwardCeremonyShared",
-                typeof(CinemachineCamera));
-            cameraObject.transform.SetParent(root.transform, false);
-            cameraObject.transform.localPosition = new Vector3(0f, 7.8f, -15.5f);
-            cameraObject.transform.localRotation = Quaternion.Euler(17f, 0f, 0f);
-            var camera = cameraObject.GetComponent<CinemachineCamera>();
-            var lens = camera.Lens;
-            lens.FieldOfView = 46f;
-            camera.Lens = lens;
-            camera.Priority = 0;
-
-            var bindings = root.GetComponent<AwardCeremonyStageBindings>();
-            bindings.Configure(
-                presentation,
-                players.transform,
-                podiums,
-                anchors,
-                labels,
-                spotlights,
-                camera);
-            root.GetComponent<AwardCeremonyPresentation>().Configure(bindings);
-            presentation.SetActive(false);
-            cameraObject.SetActive(false);
-            return root;
+            return AwardCeremonyFeedbackAuthoring.CreateStage(
+                EnsureMaterial(StageMaterialPath, new Color(0.035f, 0.055f, 0.11f)),
+                EnsureMaterial(PodiumMaterialPath, new Color(0.42f, 0.46f, 0.54f)));
         }
 
         private static void EnsureAnimationController()

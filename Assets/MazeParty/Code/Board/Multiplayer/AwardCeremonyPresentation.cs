@@ -4,298 +4,137 @@ using UnityEngine;
 
 namespace MazeParty.Multiplayer
 {
-    /// <summary>
-    /// Local-only shared-camera podium presentation for the final ranking.
-    /// Network player objects remain in their authoritative board positions.
-    /// </summary>
+    /// <summary>Shared fixed camera and server placement of the real network players.</summary>
     [DefaultExecutionOrder(-200)]
     [DisallowMultipleComponent]
     public sealed class AwardCeremonyPresentation : MonoBehaviour
     {
-        private static readonly Color[] FallbackPlayerColors =
-        {
-            new Color(0.95f, 0.25f, 0.25f),
-            new Color(0.25f, 0.55f, 1f),
-            new Color(0.25f, 0.85f, 0.4f),
-            new Color(1f, 0.75f, 0.2f)
-        };
-        private static readonly Color[] RankColors =
-        {
-            new Color(1f, 0.72f, 0.12f),
-            new Color(0.72f, 0.78f, 0.86f),
-            new Color(0.75f, 0.38f, 0.14f),
-            new Color(0.23f, 0.28f, 0.36f)
-        };
-
         [SerializeField] private AwardCeremonyStageBindings bindings;
-
-        private readonly PlayerAvatarVisual[] _players =
-            new PlayerAvatarVisual[MultiplayerConstants.MaxPlayers];
-        private readonly bool[] _appearanceApplied =
-            new bool[MultiplayerConstants.MaxPlayers];
+        private readonly NetworkPlayerAvatar[] _placed = new NetworkPlayerAvatar[4];
+        private readonly int[] _keys = new int[4];
         private GameplayCameraDirector _cameraDirector;
         private int _observedRevision = -1;
         private bool _presentationActive;
-
         public AwardCeremonyStageBindings Bindings => bindings;
-
-        public void Configure(AwardCeremonyStageBindings value)
-        {
-            bindings = value;
-        }
+        public void Configure(AwardCeremonyStageBindings value) => bindings = value;
 
         private void Awake()
         {
-            if (bindings == null)
-            {
-                bindings = GetComponent<AwardCeremonyStageBindings>();
-            }
+            if (bindings == null) bindings = GetComponent<AwardCeremonyStageBindings>();
             SetPresentationActive(false);
         }
-
+        private void OnEnable() => GameText.LanguageChanged += RefreshWorldText;
         private void OnDisable()
         {
-            UnregisterCamera();
+            GameText.LanguageChanged -= RefreshWorldText;
             SetPresentationActive(false);
         }
 
         private void Update()
         {
             var match = NetworkMatchState.Instance;
-            var active = match != null &&
-                         match.IsSpawned &&
-                         match.IsAwardCeremonyActive;
+            var active = match != null && match.IsSpawned && match.IsAwardCeremonyActive;
             SetPresentationActive(active);
-            if (!active || bindings == null ||
-                !bindings.HasRequiredReferences)
+            if (!active || bindings == null || !bindings.HasRequiredReferences)
             {
                 _observedRevision = -1;
-                Array.Clear(_appearanceApplied, 0, _appearanceApplied.Length);
+                Array.Clear(_placed, 0, _placed.Length);
+                Array.Clear(_keys, 0, _keys.Length);
                 return;
             }
-
-            RegisterCamera();
-            var showPodium =
-                match.CeremonyPhase == AwardCeremonyPhase.FinalPodiumLocked ||
-                match.CeremonyPhase == AwardCeremonyPhase.AwaitingReturn;
-            SetPodiumPlayersVisible(showPodium);
-            if (showPodium && _observedRevision != match.CeremonyRevision)
+            if (_cameraDirector == null) _cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            if (_cameraDirector != null) _cameraDirector.SetMinigameCamera(bindings.SharedCamera);
+            var show = match.IsFinalRankingLocked;
+            for (var rank = 0; rank < 3; rank++)
+            {
+                bindings.PodiumRoots[rank].gameObject.SetActive(show);
+                bindings.RankLabels[rank].gameObject.SetActive(show);
+                bindings.KeyLabels[rank].gameObject.SetActive(show);
+                bindings.WinnerSpotlights[rank].gameObject.SetActive(show && rank == 0);
+            }
+            if (!show)
+            {
+                Array.Clear(_placed, 0, _placed.Length);
+                return;
+            }
+            for (var slot = 0; slot < 4; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar == null) continue;
+                if (_keys[slot] != avatar.KeyCount) _observedRevision = -1;
+                _keys[slot] = avatar.KeyCount;
+                if (!match.IsServer || _placed[slot] == avatar) continue;
+                var rank = match.GetFinalCeremonyRank(slot);
+                var tiedCount = 0;
+                var tiedIndex = 0;
+                for (var other = 0; other < 4; other++)
+                {
+                    if (match.GetFinalCeremonyRank(other) != rank) continue;
+                    tiedCount++;
+                    if (other < slot) tiedIndex++;
+                }
+                avatar.PrepareForAwardCeremonyOnServer(
+                    bindings.GetPlayerPosition(rank, tiedIndex, tiedCount),
+                    bindings.PlayerAnchors[Mathf.Clamp(rank, 1, 4) - 1].rotation);
+                _placed[slot] = avatar;
+            }
+            if (_observedRevision != match.CeremonyRevision)
             {
                 _observedRevision = match.CeremonyRevision;
-                RefreshPodium(match);
+                RefreshWorldText();
+            }
+        }
+
+        private void LateUpdate()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsFinalRankingLocked) return;
+            for (var slot = 0; slot < 4; slot++)
+            {
+                var visual = match.GetAvatarForSlot(slot)?.AvatarVisual;
+                if (visual == null) continue;
+                visual.SetOwnerFirstPerson(false);
+                visual.SetTopViewHighlight(false);
+                visual.SetHiddenFromViewer(false);
+                visual.SetEliminated(false);
+            }
+        }
+
+        private void RefreshWorldText()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !match.IsFinalRankingLocked || bindings == null ||
+                !bindings.HasRequiredReferences) return;
+            for (var rank = 1; rank <= 3; rank++)
+            {
+                var label = bindings.RankLabels[rank - 1];
+                GameFonts.Apply(label);
+                label.text = rank == 1 ? "1st" : rank == 2 ? "2nd" : "3rd";
+                var keys = bindings.KeyLabels[rank - 1];
+                GameFonts.Apply(keys);
+                keys.text = string.Empty;
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    if (match.GetFinalCeremonyRank(slot) != rank) continue;
+                    keys.text = GameText.F("KEYS: {0}", _keys[slot]);
+                    break;
+                }
             }
         }
 
         private void SetPresentationActive(bool active)
         {
-            if (bindings == null)
-            {
-                return;
-            }
-            if (bindings.PresentationRoot != null &&
-                bindings.PresentationRoot.activeSelf != active)
-            {
+            if (bindings == null) return;
+            if (bindings.PresentationRoot != null && bindings.PresentationRoot.activeSelf != active)
                 bindings.PresentationRoot.SetActive(active);
-            }
-            if (bindings.SharedCamera != null &&
-                bindings.SharedCamera.gameObject.activeSelf != active)
-            {
+            if (bindings.SharedCamera != null && bindings.SharedCamera.gameObject.activeSelf != active)
                 bindings.SharedCamera.gameObject.SetActive(active);
-            }
-            if (_presentationActive && !active)
+            if (_presentationActive && !active && bindings.SharedCamera != null)
             {
-                UnregisterCamera();
-            }
-            _presentationActive = active;
-        }
-
-        private void RegisterCamera()
-        {
-            if (_cameraDirector == null)
-            {
-                _cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
-            }
-            if (_cameraDirector != null && bindings.SharedCamera != null)
-            {
-                _cameraDirector.SetMinigameCamera(bindings.SharedCamera);
-            }
-        }
-
-        private void UnregisterCamera()
-        {
-            if (_cameraDirector != null && bindings != null &&
-                bindings.SharedCamera != null)
-            {
-                _cameraDirector.ClearMinigameCamera(bindings.SharedCamera);
-            }
-            if (bindings != null && bindings.SharedCamera != null)
-            {
+                if (_cameraDirector != null) _cameraDirector.ClearMinigameCamera(bindings.SharedCamera);
                 bindings.SharedCamera.Priority = 0;
             }
-        }
-
-        private void RefreshPodium(NetworkMatchState match)
-        {
-            EnsurePlayers();
-            var slots = new int[MultiplayerConstants.MaxPlayers];
-            for (var slot = 0; slot < slots.Length; slot++)
-            {
-                slots[slot] = slot;
-            }
-            Array.Sort(slots, (left, right) =>
-            {
-                var rank = match.GetFinalCeremonyRank(left).CompareTo(
-                    match.GetFinalCeremonyRank(right));
-                return rank != 0 ? rank : left.CompareTo(right);
-            });
-
-            for (var podiumIndex = 0;
-                 podiumIndex < MultiplayerConstants.MaxPlayers;
-                 podiumIndex++)
-            {
-                var slot = slots[podiumIndex];
-                var rank = Math.Max(1, match.GetFinalCeremonyRank(slot));
-                ConfigurePodium(podiumIndex, rank);
-                var player = _players[slot];
-                var anchor = bindings.PlayerAnchors[podiumIndex];
-                player.transform.position = anchor.position +
-                                            Vector3.up *
-                                            (PlayerAvatarVisual.StandingControllerHeight * 0.5f);
-                player.transform.rotation = anchor.rotation;
-                var avatar = match.GetAvatarForSlot(slot);
-                if (avatar != null)
-                {
-                    var appearance = avatar.Appearance;
-                    player.SetBodyColor(appearance.BodyColor);
-                    player.ApplyAppearance(
-                        appearance.EyeId,
-                        appearance.MouthId,
-                        appearance.HatId,
-                        appearance.ExpressionId);
-                    player.SetDisplayName(
-                        string.IsNullOrWhiteSpace(avatar.DisplayName)
-                            ? GameText.F("Player {0}", slot + 1)
-                            : avatar.DisplayName);
-                    _appearanceApplied[slot] = true;
-                }
-                else if (!_appearanceApplied[slot])
-                {
-                    // A player who already left the room keeps the look they had.
-                    player.SetBodyColor(FallbackPlayerColors[slot]);
-                    player.SetDisplayName(GameText.F("Player {0}", slot + 1));
-                }
-                player.SetOwnerFirstPerson(false);
-                player.SetTopViewHighlight(false);
-                player.SetEliminated(false);
-                player.gameObject.SetActive(true);
-            }
-        }
-
-        private void ConfigurePodium(int podiumIndex, int rank)
-        {
-            var height = HeightForRank(rank);
-            var podium = bindings.PodiumRoots[podiumIndex];
-            var localPosition = podium.localPosition;
-            localPosition.y = height * 0.5f;
-            podium.localPosition = localPosition;
-            var localScale = podium.localScale;
-            localScale.y = height;
-            podium.localScale = localScale;
-
-            var renderer = podium.GetComponent<Renderer>();
-            if (renderer != null)
-            {
-                var properties = new MaterialPropertyBlock();
-                var color = RankColors[Math.Min(rank - 1, RankColors.Length - 1)];
-                properties.SetColor("_BaseColor", color);
-                properties.SetColor("_Color", color);
-                renderer.SetPropertyBlock(properties);
-            }
-
-            var rankLabel = bindings.RankLabels[podiumIndex];
-            rankLabel.text = "#" + rank;
-            var stageTransform = bindings.PresentationRoot.transform;
-            rankLabel.transform.position = podium.position -
-                                           stageTransform.forward * 1.12f;
-            rankLabel.transform.rotation = stageTransform.rotation;
-            var spotlight = bindings.WinnerSpotlights[podiumIndex];
-            spotlight.gameObject.SetActive(rank == 1);
-            if (rank == 1)
-            {
-                spotlight.transform.position =
-                    bindings.PlayerAnchors[podiumIndex].position +
-                    Vector3.up * 7f;
-                spotlight.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-            }
-        }
-
-        private void EnsurePlayers()
-        {
-            if (bindings.RuntimePlayerRoot == null)
-            {
-                return;
-            }
-            for (var slot = 0; slot < _players.Length; slot++)
-            {
-                if (_players[slot] != null)
-                {
-                    continue;
-                }
-                var root = new GameObject(
-                    "Award Ceremony Player " + (slot + 1));
-                root.transform.SetParent(bindings.RuntimePlayerRoot, false);
-                var visual = root.AddComponent<PlayerAvatarVisual>();
-                visual.EnsureBuilt();
-                visual.SetBodyColor(FallbackPlayerColors[slot]);
-                visual.SetDisplayName(GameText.F("Player {0}", slot + 1));
-                foreach (var collider in
-                         root.GetComponentsInChildren<Collider>(true))
-                {
-                    collider.enabled = false;
-                }
-                _players[slot] = visual;
-            }
-        }
-
-        private void SetPodiumPlayersVisible(bool visible)
-        {
-            if (bindings == null || bindings.PodiumRoots == null)
-            {
-                return;
-            }
-            for (var index = 0;
-                 index < bindings.PodiumRoots.Length;
-                 index++)
-            {
-                if (bindings.PodiumRoots[index] != null)
-                {
-                    bindings.PodiumRoots[index].gameObject.SetActive(visible);
-                }
-                if (bindings.WinnerSpotlights != null &&
-                    index < bindings.WinnerSpotlights.Length &&
-                    bindings.WinnerSpotlights[index] != null && !visible)
-                {
-                    bindings.WinnerSpotlights[index].gameObject.SetActive(false);
-                }
-            }
-            for (var slot = 0; slot < _players.Length; slot++)
-            {
-                if (_players[slot] != null)
-                {
-                    _players[slot].gameObject.SetActive(visible);
-                }
-            }
-        }
-
-        private static float HeightForRank(int rank)
-        {
-            switch (rank)
-            {
-                case 1: return 2.4f;
-                case 2: return 1.8f;
-                case 3: return 1.25f;
-                default: return 0.85f;
-            }
+            _presentationActive = active;
         }
     }
 }

@@ -14,12 +14,9 @@ namespace MazeParty.Multiplayer
     public sealed class AwardCeremonyView : MonoBehaviour
     {
         private const string OverlayVisibleState = "Visible";
-        private const string OverlaySlideUpState = "SlideUp";
 
         [SerializeField] private AwardCeremonyCanvasBindings bindings;
 
-        private readonly FinalRankRow[] _finalRows =
-            new FinalRankRow[MultiplayerConstants.MaxPlayers];
         private NetworkPlayerAvatar _localAvatar;
         private AwardCeremonyPhase _observedPhase = AwardCeremonyPhase.None;
         private int _observedRevision = -1;
@@ -48,7 +45,10 @@ namespace MazeParty.Multiplayer
         private void OnEnable()
         {
             WireButton();
+            GameText.LanguageChanged += RefreshLanguage;
         }
+
+        private void RefreshLanguage() => _observedRevision = -1;
 
         private void OnDisable()
         {
@@ -56,6 +56,7 @@ namespace MazeParty.Multiplayer
             _observedPhase = AwardCeremonyPhase.None;
             _observedRevision = -1;
             _wasSimulationSuspended = false;
+            GameText.LanguageChanged -= RefreshLanguage;
             UnwireButton();
         }
 
@@ -83,7 +84,6 @@ namespace MazeParty.Multiplayer
                 _observedPhase = AwardCeremonyPhase.None;
                 _observedRevision = -1;
                 _wasSimulationSuspended = false;
-                Array.Clear(_finalRows, 0, _finalRows.Length);
                 return;
             }
 
@@ -133,9 +133,8 @@ namespace MazeParty.Multiplayer
             var final = phase == AwardCeremonyPhase.FinalPodiumLocked ||
                         phase == AwardCeremonyPhase.AwaitingReturn;
 
-            bindings.BonusAwardOverlay.SetActive(
-                bonus || phase == AwardCeremonyPhase.FinalPodiumLocked);
-            bindings.FinalRankingPanel.SetActive(final);
+            bindings.BonusAwardOverlay.SetActive(bonus);
+            bindings.ReturnControlsRoot.SetActive(final);
             if (ready)
             {
                 bindings.BonusAwardAnimator.Play(
@@ -160,10 +159,6 @@ namespace MazeParty.Multiplayer
             }
             else if (phase == AwardCeremonyPhase.FinalPodiumLocked)
             {
-                bindings.BonusAwardAnimator.Play(
-                    OverlaySlideUpState,
-                    0,
-                    0f);
                 GameSound.Play(SoundKeys.CeremonyFanfare);
                 GameSound.Play(SoundKeys.CeremonyApplause);
             }
@@ -191,7 +186,6 @@ namespace MazeParty.Multiplayer
                     break;
                 case AwardCeremonyPhase.FinalPodiumLocked:
                 case AwardCeremonyPhase.AwaitingReturn:
-                    RefreshFinalRanks(match);
                     break;
             }
         }
@@ -203,62 +197,10 @@ namespace MazeParty.Multiplayer
                 GameText.F("BONUS KEY AWARD {0} / 2", awardIndex + 1);
             bindings.AwardCategoryText.text =
                 GameText.T(MatchAwardRules.GetDisplayName(category));
-            bindings.AwardValueText.text =
-                FormatWinningValue(
-                    category,
-                    match.GetCeremonyAwardWinningValue(awardIndex));
-            bindings.AwardWinnerText.text = BuildWinnerNames(
-                match,
-                match.GetCeremonyAwardWinnerMask(awardIndex));
+            bindings.AwardWinnerText.text = BuildWinnerNames(match,
+                match.GetCeremonyAwardWinnerMask(awardIndex),
+                FormatWinningValue(category, match.GetCeremonyAwardWinningValue(awardIndex)));
             bindings.AwardRewardText.text = GameText.T("+1 KEY EACH");
-        }
-
-        private void RefreshFinalRanks(NetworkMatchState match)
-        {
-            bindings.FinalTitleText.text = GameText.T("FINAL RANKING");
-            var slots = new List<int>(MultiplayerConstants.MaxPlayers);
-            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
-            {
-                slots.Add(slot);
-            }
-            slots.Sort((left, right) =>
-            {
-                var rank = match.GetFinalCeremonyRank(left).CompareTo(
-                    match.GetFinalCeremonyRank(right));
-                return rank != 0 ? rank : left.CompareTo(right);
-            });
-
-            for (var row = 0; row < bindings.FinalRankTexts.Length; row++)
-            {
-                var slot = slots[row];
-                var avatar = match.GetAvatarForSlot(slot);
-                if (avatar != null)
-                {
-                    _finalRows[slot] = new FinalRankRow(
-                        avatar.DisplayName,
-                        avatar.KeyCount,
-                        avatar.Gold,
-                        avatar.MinigameWins);
-                }
-
-                // A player who already left the room keeps the row they had.
-                var cached = _finalRows[slot];
-                var name = cached.Known &&
-                           !string.IsNullOrWhiteSpace(cached.DisplayName)
-                    ? cached.DisplayName
-                    : GameText.F("Player {0}", slot + 1);
-                var rank = match.GetFinalCeremonyRank(slot);
-                var keys = cached.Keys;
-                var gold = cached.Gold;
-                var wins = cached.Wins;
-                bindings.FinalRankTexts[row].text = wins == 1
-                    ? GameText.F(
-                        "#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WIN",
-                        rank, name, keys, gold, wins)
-                    : GameText.F(
-                        "#{0}  {1}     {2} KEY  /  {3} GOLD  /  {4} WINS",
-                        rank, name, keys, gold, wins);
-            }
         }
 
         private void RefreshCountdownAndInteraction(NetworkMatchState match)
@@ -350,7 +292,6 @@ namespace MazeParty.Multiplayer
             bindings.AwardStepText.text =
                 GameText.F("BONUS KEY AWARD {0} / 2", awardIndex + 1);
             bindings.AwardCategoryText.text = GameText.T("GET READY");
-            bindings.AwardValueText.text = string.Empty;
             bindings.AwardWinnerText.text = string.Empty;
             bindings.AwardRewardText.text = string.Empty;
         }
@@ -377,7 +318,7 @@ namespace MazeParty.Multiplayer
                 : null;
         }
 
-        private string BuildWinnerNames(NetworkMatchState match, byte mask)
+        private string BuildWinnerNames(NetworkMatchState match, byte mask, string evidence)
         {
             var names = new List<string>(MultiplayerConstants.MaxPlayers);
             for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
@@ -387,13 +328,17 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
                 var avatar = match.GetAvatarForSlot(slot);
-                names.Add(avatar != null &&
-                          !string.IsNullOrWhiteSpace(avatar.DisplayName)
-                    ? avatar.DisplayName
-                    : GameText.F("Player {0}", slot + 1));
+                var name = avatar != null && !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                    ? avatar.DisplayName : GameText.F("Player {0}", slot + 1);
+                var color = avatar != null ? avatar.Appearance.BodyColor : Color.white;
+                // Player names are data, never rich-text markup. Full-width angle
+                // brackets retain readable names without interpreting user tags.
+                name = name.Replace("<", "＜").Replace(">", "＞");
+                names.Add("<color=#" + ColorUtility.ToHtmlStringRGB(color) + ">" + name +
+                    "</color>  ·  " + evidence);
             }
             return names.Count > 0
-                ? string.Join("  +  ", names)
+                ? string.Join("\n", names)
                 : GameText.T("NO WINNER");
         }
 
@@ -459,23 +404,5 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        /// <summary>Last seen final-ranking values of one seat.</summary>
-        private readonly struct FinalRankRow
-        {
-            public FinalRankRow(string displayName, int keys, int gold, int wins)
-            {
-                Known = true;
-                DisplayName = displayName;
-                Keys = keys;
-                Gold = gold;
-                Wins = wins;
-            }
-
-            public bool Known { get; }
-            public string DisplayName { get; }
-            public int Keys { get; }
-            public int Gold { get; }
-            public int Wins { get; }
-        }
     }
 }

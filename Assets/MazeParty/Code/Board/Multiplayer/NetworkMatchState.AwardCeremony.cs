@@ -93,6 +93,11 @@ namespace MazeParty.Multiplayer
                 IsSimulationSuspended,
                 _completedMatchReturnQueued);
 
+        public bool CanAcceptCeremonyMovement(int slot) => IsAwardCeremonyActive &&
+            AwardCeremonyFlowRules.CanMoveOnStage(CeremonyPhase, IsSimulationSuspended,
+                _completedMatchReturnQueued, _awardCeremonyRemainingMask.Value,
+                _awardCeremonyReturnReadyMask.Value, slot);
+
         public MatchAwardCategory GetCeremonyAwardCategory(int awardIndex)
         {
             switch (awardIndex)

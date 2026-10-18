@@ -561,6 +561,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (SimulateAwardCeremonyOnServer()) return;
+
             if (BoardBoundaryActivationRules.IsLobbyPhase(
                     GetCurrentSessionPhase()))
             {
@@ -2469,7 +2471,7 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
-            var canUseLobbyInput = CanUseLobbyInput();
+            var canUseLobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
                                     HasResolvedItemChoice && !IsSwapping &&
                                     !IsBoardDeathInProgressOnServer;

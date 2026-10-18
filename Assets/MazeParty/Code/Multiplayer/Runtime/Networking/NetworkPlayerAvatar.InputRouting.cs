@@ -276,7 +276,7 @@ namespace MazeParty.Multiplayer
             var quietWalkHeld = false;
             var keyboard = LocalKeyboard;
             var match = NetworkMatchState.Instance;
-            var lobbyInput = CanUseLobbyInput();
+            var lobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
             var canMove = ActiveHandGesture == 0 && (lobbyInput || (match != null &&
                           ((match.CanAcceptActionInput && HasResolvedItemChoice &&
                             CurrentHealth > 0 &&

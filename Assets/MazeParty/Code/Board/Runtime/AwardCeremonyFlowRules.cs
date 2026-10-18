@@ -19,8 +19,22 @@ namespace MazeParty.Gameplay
     {
         public const double BonusAwardReadySeconds = 2d;
         public const double BonusAwardPresentationSeconds = 4d;
-        public const double FinalPodiumInputLockSeconds = 5d;
+        public const double FinalPodiumInputLockSeconds = 3d;
         public const double FinalResultsAutoReturnSeconds = 60d;
+
+        public static bool CanMoveOnStage(AwardCeremonyPhase phase, bool suspended,
+            bool returnQueued, byte remainingMask, byte readyMask, int slot)
+        {
+            return CanSubmitReturn(phase, suspended, returnQueued) && slot >= 0 && slot < 4 &&
+                (remainingMask & (1 << slot)) != 0 && (readyMask & (1 << slot)) == 0;
+        }
+
+        public static float GetTiedPlayerOffset(int index, int count, float spacing)
+        {
+            if (count < 1 || count > 4 || index < 0 || index >= count || spacing <= 0f)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            return (index - (count - 1) * 0.5f) * spacing;
+        }
 
         public static bool IsTimedPhase(AwardCeremonyPhase phase)
         {

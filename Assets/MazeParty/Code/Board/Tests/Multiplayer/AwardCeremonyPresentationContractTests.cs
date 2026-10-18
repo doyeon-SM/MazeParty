@@ -45,9 +45,8 @@ namespace MazeParty.Multiplayer.Tests
                     .animationClips.Select(clip => clip.name).ToArray());
             Assert.That(canvasBindings.RootCanvas.enabled, Is.False);
             Assert.That(canvasBindings.RootRaycaster.enabled, Is.False);
-            Assert.That(
-                canvasBindings.FinalRankTexts,
-                Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+            Assert.That(canvasBindings.ReturnControlsRoot, Is.Not.Null);
+            Assert.That(canvasBindings.AwardWinnerText.supportRichText, Is.True);
 
             var stagePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 StagePrefabPath);
@@ -62,17 +61,24 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(stagePresentation.Bindings, Is.SameAs(stageBindings));
             Assert.That(
                 stageBindings.PodiumRoots,
-                Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+                Has.Length.EqualTo(3));
             Assert.That(
                 stageBindings.PlayerAnchors,
                 Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
             Assert.That(
                 stageBindings.WinnerSpotlights,
-                Has.Length.EqualTo(MultiplayerConstants.MaxPlayers));
+                Has.Length.EqualTo(3));
             Assert.That(
                 stageBindings.WinnerSpotlights.All(light =>
                     light.type == LightType.Spot),
                 Is.True);
+            Assert.That(stageBindings.KeyLabels, Has.Length.EqualTo(3));
+            Assert.That(stageBindings.StageFloor.enabled, Is.True);
+            foreach (var podium in stageBindings.PodiumRoots)
+            {
+                Assert.That(podium.GetComponent<BoxCollider>(), Is.Not.Null);
+                Assert.That(podium.GetComponent<BoxCollider>().isTrigger, Is.False);
+            }
             Assert.That(stageBindings.PresentationRoot.activeSelf, Is.False);
             Assert.That(
                 stagePrefab.GetComponentsInChildren<Camera>(true),
