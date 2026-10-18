@@ -742,6 +742,12 @@ namespace MazeParty.Editor
             button.targetGraphic = image;
             ApplyButtonColors(button);
             labelText = CreateText(rect, "Label", label, font, 24, Color.white, TextAnchor.MiddleCenter, localizedLabel);
+            // A single arrow must survive line-height rounding at fractional
+            // canvas scales (for example 720p and 1440p).
+            if (label == "<" || label == ">")
+            {
+                labelText.verticalOverflow = VerticalWrapMode.Overflow;
+            }
             Stretch(labelText.rectTransform, 8f);
             return button;
         }

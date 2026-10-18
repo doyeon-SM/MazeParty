@@ -1,3 +1,4 @@
+using System;
 using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
@@ -5,14 +6,15 @@ using UnityEngine.UI;
 namespace MazeParty.Multiplayer
 {
     /// <summary>
-    /// Applies the current language font to every authored Text and TextMesh
-    /// below a player-facing prefab root. The hierarchy is authored in the
-    /// prefab; this component only updates its presentation when language
-    /// changes.
+    /// Applies the current language font to authored Text and TextMesh labels,
+    /// and regenerates UI glyphs when their canvas pixel density changes.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class LocalizedFontScope : MonoBehaviour
     {
+        private Text[] _uiTexts = Array.Empty<Text>();
+        private float[] _textScales = Array.Empty<float>();
+
         private void OnEnable()
         {
             GameText.LanguageChanged += Apply;
@@ -22,6 +24,34 @@ namespace MazeParty.Multiplayer
         private void OnDisable()
         {
             GameText.LanguageChanged -= Apply;
+        }
+
+        private void LateUpdate()
+        {
+            // With a fixed aspect ratio, CanvasScaler can change scaleFactor
+            // without changing a label's RectTransform dimensions. Legacy Text
+            // then keeps its old glyph mesh and stretches it at the new scale.
+            // Observe the actual canvas density, after the asynchronous screen
+            // resize, instead of the requested resolution in GameSettings.
+            for (var index = 0; index < _uiTexts.Length; index++)
+            {
+                var text = _uiTexts[index];
+                if (text == null || !text.isActiveAndEnabled)
+                {
+                    continue;
+                }
+
+                var scale = text.pixelsPerUnit;
+                if (Mathf.Approximately(_textScales[index], scale))
+                {
+                    continue;
+                }
+
+                _textScales[index] = scale;
+                // Rebuild layout as well: font hinting and best-fit rounding
+                // may change at the new pixel density.
+                text.SetAllDirty();
+            }
         }
 
         private void OnTransformChildrenChanged()
@@ -40,12 +70,18 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            foreach (var text in GetComponentsInChildren<Text>(true))
+            _uiTexts = GetComponentsInChildren<Text>(true);
+            _textScales = new float[_uiTexts.Length];
+            for (var index = 0; index < _uiTexts.Length; index++)
             {
-                if (text != null && text.font != font)
+                var text = _uiTexts[index];
+                if (text.font != font)
                 {
                     text.font = font;
                 }
+
+                _textScales[index] = text.pixelsPerUnit;
+                text.SetAllDirty();
             }
 
             foreach (var textMesh in GetComponentsInChildren<TextMesh>(true))
