@@ -59,7 +59,11 @@ STOVE 작업 시에는 별도로 발급받은 SDK와 상품 설정이 필요합�
 & '.\Tools\StartFourPlayerTest.ps1'
 ```
 
-기본 실행 파일은 `Builds/Windows-Development/MazeParty.exe`입니다. 다른 빌드를 사용하려면 `-Executable '실행 파일의 전체 경로'`를 지정합니다. 각 창은 서로 다른 익명 프로필을 사용합니다. 한 창에서 방을 만들고 나머지 창에서 같은 코드로 입장합니다. STOVE 인증·소유권 검증은 별도로 수행해야 합니다.
+기본 실행 파일은 `Builds/Windows-Development/MazeParty.exe`입니다. 다른 빌드를 사용하려면 `-Executable '실행 파일의 전체 경로'`를 지정합니다. 각 창은 서로 다른 익명 프로필을 사용하며 로그는 출력된 `Logs/ManualFourPlayer-날짜시각/player-1.log`~`player-4.log`에 분리됩니다. 한 창에서 방을 만들고 나머지 창에서 같은 코드로 입장합니다. STOVE 인증·소유권 검증은 별도로 수행해야 합니다.
+
+렌더링·씬 전환 문제의 자동 재현은 `Tools/RunReconnectE2E.ps1 -ShowWindows`를 사용합니다. 이 옵션은 실제 게임 창을 표시해 4인 게임 시작·보드 로딩·재접속을 확인합니다. 기본 숨김 실행은 GPU 렌더링 경로를 검증하지 못할 수 있습니다.
+
+Unity 6000.6.0f1에서 GPU Resident Drawer를 활성화하면 게임 시작 시 `WorldProcessor`/`ObjectDispatcher` 경로의 네이티브 크래시가 재현되어 PC 렌더 파이프라인에서는 이 옵션을 비활성화했습니다. SRP Batcher와 기존 그래픽 품질 설정은 유지합니다. 다시 활성화하려면 엔진 수정 확인과 화면을 표시한 4인 빌드 검증이 필요합니다.
 
 ### STOVE Release
 

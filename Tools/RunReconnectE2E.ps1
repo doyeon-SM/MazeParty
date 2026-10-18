@@ -6,6 +6,7 @@ param(
     [switch]$ReconnectTimeout,
     [switch]$ReturnToLobby,
     [switch]$FreshCreate,
+    [switch]$ShowWindows,
     [ValidateRange(0, 145)]
     [int]$HostReturnDelaySeconds = 0,
     [ValidateRange(120, 1200)]
@@ -62,8 +63,10 @@ function Start-ReconnectPlayer {
     if ($FreshCreate) { $arguments += '-e2e-fresh-create' }
     if ($ReconnectTimeout) { $arguments += '-e2e-reconnect-timeout' }
     if ($ReturnToLobby) { $arguments += '-e2e-return-to-lobby' }
+    # Rendering crashes require visible windows; hidden runs can skip GPU work.
+    $windowStyle = if ($ShowWindows) { 'Normal' } else { 'Hidden' }
     return Start-Process -FilePath $Executable -ArgumentList $arguments `
-        -PassThru -WindowStyle Hidden
+        -PassThru -WindowStyle $windowStyle
 }
 
 function Assert-NoUnexpectedProcessExit {

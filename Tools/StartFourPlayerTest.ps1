@@ -27,3 +27,4 @@ foreach ($index in 1..4) {
     Start-Process -FilePath $Executable -ArgumentList $arguments -WorkingDirectory (Split-Path -Parent $Executable) -WindowStyle Normal
 }
 Write-Host 'Four game windows opened. Create one room and join it from the other three windows using its code.'
+Write-Host "Per-player logs: $runDirectory"

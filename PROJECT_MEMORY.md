@@ -7,7 +7,7 @@
 ## 프로젝트 기준과 문서
 
 - 실제 저장소·Unity 프로젝트: `C:/Unity/MazeParty`. 보조 작업 폴더를 게임 저장소로 취급하지 않는다.
-- 확인 브랜치 `development`, HEAD `91aa01641cac484db072491bd6e446fd564ea8eb`.
+- 확인 브랜치 `development`, HEAD `0422e20541281faf2021d5490424638a70a7f063`.
   안정 기준은 `main`. 과거 STOVE 빌드 브랜치는 `dev/stove`이며 최신 변경 포함 여부는 실제 커밋으로 판단한다.
 - 기획 버전 v0.55, Unity `bundleVersion=0.0.55`. 로비 표시는 `Application.version`을 따른다.
 - 제작자: 훈연구이팀(HYGY). 자체 제작물과 제3자 폰트·에셋·SDK의 권리를 구분한다.
@@ -248,6 +248,21 @@
   체력 본체와 같은 무음 설정을 사용하고 상호작용 비활성을 유지한다. Editor setup은 기존 누락을 보완하고
   새 잔상 생성 때 무음 연결을 추가한다. 중앙 프리팹 계약에 체력 본체·잔상의 표시 전용/무음 검증을 포함했다.
   사운드·보드 UI·공통 UI 정책 표적 EditMode **31/31** 통과, setup 재실행 프리팹 보존 확인.
-  체력바 후속 수정은 아직 미커밋이다. 전체 EditMode와 실제 빌드 청음 결과로 확대하지 않는다.
+  체력바 후속 수정은 `0422e20`에 포함됐다. 전체 EditMode와 실제 빌드 청음 결과로 확대하지 않는다.
 
 - 10/19 사용자 요청에 따라 Notion 기획서·세부 룰·구현 이력·동일 날짜 회의록을 갱신하고 저장 내용을 확인했다.
+
+## 게임 시작 호스트 크래시 · 2026-10-19 조사
+
+- 사용자 빌드의 게임 시작 시 UnityPlayer.dll 접근 위반(0xc0000005), GPUResidentDrawer → WorldProcessor → ObjectDispatcher 경로를 확인했다.
+- 동일 HEAD의 Mono Development 4인 테스트에서도 실제 창을 표시하면 보드 로딩 직후 호스트가 동일 종료 코드(-1073741819)로 종료됐다.
+  숨김 창 테스트는 4인 시작·재접속까지 통과했지만 GPU Resident Drawer가 생성되지 않아 렌더링 검증을 대체하지 못했다.
+- PC_RPAsset의 GPU Resident Drawer를 비활성화하고 기존 SRP Batcher·그림자·화질은 유지한다. 엔진 수정 후 재검증 전까지 재활성화하지 않는다.
+- RunReconnectE2E.ps1에 명시적 -ShowWindows 옵션을 추가했다. 수동 4인 실행은 기존 StartFourPlayerTest.ps1의 프로필별/로그별 분리를 사용한다.
+- 수정 Mono Development 빌드 성공(오류 0). `Builds/Windows-Development/MazeParty.exe`를 재테스트 기준으로 사용한다.
+  기존 `Build/MazeParty.exe`는 수정 전 출력이므로 혼동하지 않는다.
+- 실제 창 표시·Direct3D11·한 PC 4프로세스에서 방 생성→4인 READY→게임 시작→숲 보드 행동 단계→
+  클라이언트 강제 연결 끊기→타이머 정지→같은 좌석/상태 복구→전원 정상 종료까지 **4/4 PASS**를 확인했다.
+  수정 전 창 표시 테스트는 호스트가 크래시했고 수정 후 크래시는 0건이다. 전체 15턴·별도 PC 검증은 아니다.
+- 근거: `Logs/HostStartCrash-20261019/Verification.json`, `VisibleBaseline`, `VisibleFixed/summary.json` 및 분리된 플레이어 로그.
+  렌더러 최적화를 끈 우회 수정이며 향후 엔진 수정·실기 성능 확인 후 재활성화를 검토한다. 이번 수정은 미커밋 상태다.
