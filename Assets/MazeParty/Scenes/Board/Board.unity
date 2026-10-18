@@ -5313,6 +5313,7 @@ GameObject:
   - component: {fileID: 1548230741}
   - component: {fileID: 1548230740}
   - component: {fileID: 1548230742}
+  - component: {fileID: 1548230743}
   m_Layer: 0
   m_Name: Board Camera Rig
   m_TagString: Untagged
@@ -5406,6 +5407,33 @@ MonoBehaviour:
   landingHealingShieldPrefab: {fileID: 1450662250858090858, guid: b99a68b07069be241881e107e8b308e9, type: 3}
   resourceTransferHeadOffset: 0.3
   resourceTransferTravelHeight: 1.5
+--- !u!114 &1548230743
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1548230739}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8badac2a4a8d4d7fade92a1daf197cfb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardWorldEffectsPresenter
+  markerPrefab: {fileID: 8568224334893010595, guid: 6c4dc0ed1f2661144bb30469a697c356, type: 3}
+  mapAppearance: {fileID: 7694165308968310958, guid: 52feb25700c70d5479f4e0d6f107f74f, type: 3}
+  impacts:
+  - prefab: {fileID: 3105783330803847668, guid: 4fe94004686a85444a6d0d4dfac390bf, type: 3}
+    sound: {fileID: 11400000, guid: 1d24c69a965ee5e4487825e84247d3d1, type: 2}
+    scale: 1
+    height: -1
+  - prefab: {fileID: 4374848859648381583, guid: 4406f2ebf4af00a419646e0df20adbcf, type: 3}
+    sound: {fileID: 11400000, guid: de9c5197acff2a649b23fff4f61f4b26, type: 2}
+    scale: 0.35
+    height: -1
+  - prefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
+    sound: {fileID: 11400000, guid: 244855b3ba22d764cb9645f241b25d4e, type: 2}
+    scale: 1
+    height: 0
 --- !u!1001 &1552949734
 PrefabInstance:
   m_ObjectHideFlags: 0

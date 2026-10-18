@@ -26,6 +26,43 @@ namespace MazeParty.Gameplay.Tests
             "Sand Shield.prefab";
 
         [Test]
+        public void MeshOneShot_WaitsForAuthoredLifetimeAndCanBeReplayed()
+        {
+            const System.Reflection.BindingFlags flags = System.Reflection.BindingFlags.Instance |
+                System.Reflection.BindingFlags.NonPublic;
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Common/VFX/FireTornado.prefab");
+            Assert.That(source, Is.Not.Null);
+            var instance = UnityEngine.Object.Instantiate(source);
+            try
+            {
+                var pooled = instance.GetComponent<PooledOneShotVfx>();
+                var type = typeof(PooledOneShotVfx);
+                Assert.That((float)type.GetField("minimumPlaybackSeconds", flags).GetValue(pooled), Is.GreaterThan(0f));
+                Assert.That(type.GetField("playbackAnimator", flags).GetValue(pooled), Is.Not.Null);
+                Assert.That(instance.GetComponentsInChildren<Collider>(true), Is.Empty);
+                Assert.That(instance.GetComponentsInChildren<MonoBehaviour>(true), Has.Length.EqualTo(1));
+                var returns = 0;
+                type.GetMethod("PrepareForPool", flags).Invoke(pooled,
+                    new object[] { new Action<PooledOneShotVfx>(_ => returns++) });
+                for (var cycle = 0; cycle < 2; cycle++)
+                {
+                    instance.SetActive(true);
+                    type.GetMethod("PlayFromPool", flags).Invoke(pooled, null);
+                    pooled.StopPresentation(pooled.PlaybackRevision - 1);
+                    type.GetMethod("Update", flags).Invoke(pooled, null);
+                    Assert.That(returns, Is.EqualTo(cycle), "Mesh effects must not finish as an empty particle system.");
+                    type.GetField("_timeoutAt", flags).SetValue(pooled, Time.unscaledTime);
+                    type.GetMethod("Update", flags).Invoke(pooled, null);
+                    Assert.That(returns, Is.EqualTo(cycle + 1));
+                    pooled.StopPresentation(pooled.PlaybackRevision);
+                    Assert.That(returns, Is.EqualTo(cycle + 1), "Returning is idempotent.");
+                }
+            }
+            finally { UnityEngine.Object.DestroyImmediate(instance); }
+        }
+
+        [Test]
         public void SharedOneShots_AreAuthoredPooledAndPresentationOnly()
         {
             foreach (var path in new[]

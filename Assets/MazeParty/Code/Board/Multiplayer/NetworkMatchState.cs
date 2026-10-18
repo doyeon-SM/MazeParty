@@ -257,6 +257,7 @@ namespace MazeParty.Multiplayer
         public int KeyShopRevision => _keyShopRevision.Value;
         public int KeyShopRevealRevision => _keyShopRevealRevision.Value;
         public int BoardEffectSeed => _boardEffectSeed.Value;
+        public BoardTopology PresentationTopology => _boardTopology;
         public int BoardEffectRevision => _boardEffectRevision.Value;
         /// <summary>The last landing-effect line, formatted in the local language.</summary>
         public string LastLandingEffectEncodedMessage => _lastLandingEffectMessage.Value.ToString();

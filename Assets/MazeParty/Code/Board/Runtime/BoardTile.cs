@@ -70,9 +70,8 @@ namespace MazeParty.Gameplay
 
         private void HidePersistentWorldPresentation()
         {
-            // Tiles remain authoritative navigation and landing-effect anchors,
-            // but their persistent world geometry is intentionally map-only.
-            // The minimap reads LandingEffect above and renders its own icon.
+            // Hide legacy tile geometry. Authored world Canvas markers are
+            // presented separately from LandingEffect, just like the map icons.
             var renderers = GetComponentsInChildren<Renderer>(true);
             for (var index = 0; index < renderers.Length; index++)
             {

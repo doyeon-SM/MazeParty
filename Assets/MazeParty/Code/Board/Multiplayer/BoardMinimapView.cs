@@ -621,6 +621,14 @@ namespace MazeParty.Multiplayer
             return _shopRoute.Count - 1;
         }
 
+        public void GetEffectAppearance(BoardLandingEffectType effect,
+            out BoardMapIconKind kind, out Sprite sprite, out Color tint)
+        {
+            kind = GetEffectIcon(effect);
+            sprite = GetSprite(kind);
+            tint = effectIconColors[(int)effect];
+        }
+
         private static BoardMapIconKind GetEffectIcon(BoardLandingEffectType effect)
         {
             switch (effect)

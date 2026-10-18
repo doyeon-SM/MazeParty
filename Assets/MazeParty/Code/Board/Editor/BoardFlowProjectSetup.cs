@@ -1044,6 +1044,7 @@ namespace MazeParty.Editor
             presenter.ConfigureLandingRewardAssets(
                 BoardLandingEffectFeedbackProjectSetup.EnsureGiftPrefab(),
                 BoardLandingEffectFeedbackProjectSetup.EnsureHealingShieldPrefab());
+            BoardWorldEffectsProjectSetup.EnsureFor(root);
             return director;
         }
 

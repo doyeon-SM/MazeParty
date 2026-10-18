@@ -183,6 +183,28 @@ namespace MazeParty.Multiplayer.Tests
                     sceneBindings.gameObject,
                     sceneBindings);
 
+                var world = scene.GetRootGameObjects().SelectMany(root =>
+                    root.GetComponentsInChildren<BoardWorldEffectsPresenter>(true)).Single();
+                Assert.That(world.HasRequiredReferences, Is.True);
+                Assert.That(AssetDatabase.GetAssetPath(world.MarkerPrefab),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/UI/BoardTileEffectWorld.prefab"));
+                Assert.That(AssetDatabase.GetAssetPath(world.MapAppearance), Is.EqualTo(MapPrefabPath));
+                foreach (var impact in world.Impacts)
+                {
+                    Assert.That(impact.prefab.GetComponentsInChildren<Collider>(true), Is.Empty);
+                    Assert.That(impact.prefab.GetComponentsInChildren<Unity.Netcode.NetworkObject>(true), Is.Empty);
+                    Assert.That(impact.sound.HasClips, Is.True);
+                    Assert.That(impact.sound.Loop, Is.False);
+                }
+                var marker = (GameObject)PrefabUtility.InstantiatePrefab(world.MarkerPrefab.gameObject, scene);
+                try
+                {
+                    Assert.That(marker.GetComponent<BoardTileEffectWorldView>().HasRequiredReferences, Is.True);
+                    Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(marker),
+                        Is.SameAs(world.MarkerPrefab.gameObject));
+                }
+                finally { Object.DestroyImmediate(marker); }
+
                 var utility =
                     sceneBindings.Item.GetComponent<BoardUtilityItemView>();
                 Assert.That(utility.HasRequiredReferences, Is.True);

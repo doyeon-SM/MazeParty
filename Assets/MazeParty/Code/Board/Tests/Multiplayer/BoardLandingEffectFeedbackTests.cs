@@ -6,6 +6,46 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardLandingEffectFeedbackTests
     {
         [Test]
+        public void DamageImpact_UsesSharedSeedAndPlaysOnceInsideTheUnpausedDamageWindow()
+        {
+            var snapshot = new BoardLandingEffectFeedbackSnapshot { Active = true, Revision = 4,
+                Slot = 2, Kind = (byte)BoardLandingEffectFeedbackKind.Health, SignedAmount = -20, StartedAt = 10d };
+            var choices = new System.Collections.Generic.HashSet<int>();
+            for (var seed = 1; seed <= 90; seed++)
+            {
+                var first = new BoardDamageImpactPlayback();
+                var second = new BoardDamageImpactPlayback();
+                Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, false, seed, 10.499999d, out _), Is.False);
+                Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, true, seed, 10.5d, out _), Is.False);
+                Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, false, seed, 10.5d, out var selected), Is.True);
+                Assert.That(second.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, false, seed, 10.7d, out var other), Is.True);
+                Assert.That(selected, Is.EqualTo(other)); choices.Add(selected);
+                Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, false, seed, 11d, out _), Is.False);
+                first.Reset();
+                Assert.That(first.TryTake(snapshot, BoardLandingEffectType.Damage20,
+                    BoardFlowState.LandingEffectResolve, false, seed, 11.5d, out _), Is.False);
+            }
+            Assert.That(choices, Is.EquivalentTo(new[] { 0, 1, 2 }));
+            var playback = new BoardDamageImpactPlayback();
+            foreach (var effect in new[] { BoardLandingEffectType.Healing10, BoardLandingEffectType.Healing20,
+                BoardLandingEffectType.GoldLoss, BoardLandingEffectType.SpecialEvent })
+                Assert.That(playback.TryTake(snapshot, effect, BoardFlowState.LandingEffectResolve,
+                    false, 1, 10.5d, out _), Is.False);
+            Assert.That(playback.TryTake(snapshot, BoardLandingEffectType.Damage40,
+                BoardFlowState.Action, false, 1, 10.5d, out _), Is.False);
+            Assert.That(playback.TryTake(snapshot, BoardLandingEffectType.Damage40,
+                BoardFlowState.LandingEffectResolve, false, 1, 10.5d, out _), Is.True);
+            snapshot.Revision++; snapshot.StartedAt = 20d;
+            Assert.That(playback.TryTake(snapshot, BoardLandingEffectType.Damage40,
+                BoardFlowState.LandingEffectResolve, false, 1, 20.5d, out _), Is.True);
+        }
+
+        [Test]
         public void EventTokens_KeepCompactGroupsAndResourcesInsideTheNetworkPayload()
         {
             var names = new[] { "도연", "Alex", "ユウ", "小明" };

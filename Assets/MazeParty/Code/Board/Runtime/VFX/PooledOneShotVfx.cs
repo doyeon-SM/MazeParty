@@ -22,6 +22,17 @@ namespace MazeParty.Gameplay
         [SerializeField, Range(0f, 1f)] private float reducedEmissionScale =
             PresentationAccessibility.ReducedFlashIntensityScale;
 
+        [Tooltip("For authored mesh animations with no particle lifetime.")]
+        [SerializeField, Min(0f)] private float minimumPlaybackSeconds;
+        [SerializeField] private Animator playbackAnimator;
+
+        public int PlaybackRevision { get; private set; }
+        public void StopPresentation(int playbackRevision)
+        {
+            // A returned instance may already belong to another presentation.
+            if (playbackRevision == PlaybackRevision) StopAndReturnToPool();
+        }
+
         private ParticleBaseline[] _particleBaselines =
             Array.Empty<ParticleBaseline>();
         private float[] _baseLightIntensities = Array.Empty<float>();
@@ -66,6 +77,7 @@ namespace MazeParty.Gameplay
 
         internal void PlayFromPool()
         {
+            PlaybackRevision++;
             CaptureBaselines();
             ApplyAccessibility();
             _isPlaying = true;
@@ -73,8 +85,14 @@ namespace MazeParty.Gameplay
             _timeoutAt = now + effectLifetime;
             _disableLightsAt = now + flashLightSeconds;
             _earliestReturnAt = Mathf.Max(
-                now + CompletionCheckDelay,
+                now + Mathf.Max(CompletionCheckDelay, minimumPlaybackSeconds),
                 _disableLightsAt);
+            if (playbackAnimator != null)
+            {
+                playbackAnimator.Rebind();
+                playbackAnimator.Play(0, 0, 0f);
+                playbackAnimator.Update(0f);
+            }
 
             for (var index = 0; index < particleSystems.Length; index++)
             {

@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Board/UI/BoardTileEffectWorld.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardHudCanvas.prefab",
@@ -63,6 +64,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.BoardTileEffectWorldView",
             "MazeParty.Multiplayer.BoardLocalPlayerMarkerView",
             "MazeParty.Multiplayer.BoardCanvasBindings",
             "MazeParty.Multiplayer.BoardHudCanvasBindings",

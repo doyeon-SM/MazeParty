@@ -53,6 +53,7 @@ namespace MazeParty.Gameplay
         public const string BoardShopBuy = "board.shop.buy";
         public const string BoardShopFail = "board.shop.fail";
         public const string BoardFootstep = "board.footstep";
+        public const string BoardFireTornado = "board.fire_tornado";
 
         // Items. Per-item use sounds: ItemUse(id).
         public const string ItemExplosion = "item.explosion";
@@ -87,7 +88,7 @@ namespace MazeParty.Gameplay
             CombatKnockOut, CombatRespawn,
             BoardTurnStart, BoardDiceRoll, BoardDiceBounce, BoardDiceResult,
             BoardGoldGain, BoardGoldLoss, BoardKeyBuy, BoardShopBuy, BoardShopFail,
-            BoardFootstep,
+            BoardFootstep, BoardFireTornado,
             ItemExplosion, ItemBulletImpact,
             MinigameReveal, MinigameCountdownTick, MinigameCountdownGo,
             MinigameFinish, MinigameMinefieldExplosion,
