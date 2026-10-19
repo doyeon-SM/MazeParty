@@ -68,7 +68,7 @@ namespace MazeParty.Editor
             return Color.white;
         }
 
-        private static Material Resolve(Material source)
+        internal static Material Resolve(Material source)
         {
             if (!Eligible(source)) return source;
             if (Replacements.TryGetValue(source, out var resolved)) return resolved;

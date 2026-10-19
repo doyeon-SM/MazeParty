@@ -71,6 +71,9 @@ namespace MazeParty.Multiplayer.Tests
                     typeof(SequenceMemoryRuntimeAdapter),
                     (byte)NetworkSequenceMemoryPhase.Countdown);
                 yield return new CountdownAdapterCase(
+                    typeof(NetworkCoinCollectState), typeof(CoinCollectRuntimeAdapter),
+                    (byte)NetworkCoinCollectPhase.Countdown);
+                yield return new CountdownAdapterCase(
                     typeof(NetworkCliffBarrageState),
                     typeof(CliffBarrageRuntimeAdapter),
                     (byte)NetworkCliffBarragePhase.Countdown);

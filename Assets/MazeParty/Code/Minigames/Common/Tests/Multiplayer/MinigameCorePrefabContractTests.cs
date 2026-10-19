@@ -38,6 +38,8 @@ namespace MazeParty.Multiplayer.Tests
                 "BouncingBallsEnvironment.prefab",
                 typeof(NetworkBouncingBallsState),
                 "Goals", "Shields", "Balls"),
+            EnvironmentCase("CoinCollect", "Coin Collect Environment", "CoinCollectEnvironment.prefab",
+                typeof(NetworkCoinCollectState), "Runtime Players", "Runtime Items"),
             EnvironmentCase(
                 "GiftGrab", "Gift Grab Environment",
                 "GiftGrabEnvironment.prefab",
@@ -142,6 +144,26 @@ namespace MazeParty.Multiplayer.Tests
                         Is.Not.Empty,
                         scenePath + " has no scene-connected core world " +
                         "prefab under " + prefabPrefix);
+
+                    if (game == "CoinCollect")
+                    {
+                        var view = scene.GetRootGameObjects().SelectMany(root =>
+                            root.GetComponentsInChildren<CoinCollectNetworkView>(true)).Single();
+                        Assert.That(view.HasRequiredReferences, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().InScenePlaced, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().PrefabIdHash, Is.Not.Zero);
+                        var binding = new SerializedObject(view);
+                        foreach (var pair in new[] { ("coinPrefab", "Coin"), ("moneyPrefab", "Money"), ("bombPrefab", "Bomb") })
+                        {
+                            var prefab = (GameObject)binding.FindProperty(pair.Item1).objectReferenceValue;
+                            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                                "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/" + pair.Item2 + ".prefab");
+                            Assert.That(prefab.GetComponentInChildren<MeshFilter>(true).sharedMesh,
+                                Is.SameAs(source.GetComponentInChildren<MeshFilter>(true).sharedMesh));
+                        }
+                        Assert.That(scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Transform>(true))
+                            .Any(t => t.name.StartsWith("Base Anchor") || t.name.StartsWith("Base Pad")), Is.False);
+                    }
 
                     var stagePrefab = game == "ArenaCombat"
                         ? "ArenaStructure.prefab"

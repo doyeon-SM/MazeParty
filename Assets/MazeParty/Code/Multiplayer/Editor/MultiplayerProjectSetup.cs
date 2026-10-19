@@ -77,6 +77,7 @@ namespace MazeParty.Editor
             StableFootingProjectSetup.BuildStableFootingAssets();
             BalloonBlowProjectSetup.BuildBalloonBlowAssets();
             GiftGrabProjectSetup.BuildGiftGrabAssets();
+            CoinCollectProjectSetup.BuildCoinCollectAssets();
             TerritoryPaintProjectSetup.BuildTerritoryPaintAssets();
             TagChaseProjectSetup.BuildTagChaseAssets();
             RaceProjectSetup.BuildRaceAssets();
@@ -2037,6 +2038,13 @@ namespace MazeParty.Editor
                 new EditorBuildSettingsScene(TagChasePath, true),
                 new EditorBuildSettingsScene(RacePath, true)
             };
+
+            // Keep append-only minigame catalog entries when setup refreshes build settings.
+            foreach (var definition in MazeParty.Gameplay.Minigames.MinigameCatalog.RegisteredMinigames)
+            {
+                var path = "Assets/MazeParty/Scenes/Minigames/" + definition.SceneName + "/" + definition.SceneName + ".unity";
+                if (!scenes.Exists(scene => scene.path == path)) scenes.Add(new EditorBuildSettingsScene(path, true));
+            }
 
             const string originalSample = "Assets/Scenes/SampleScene.unity";
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(originalSample) != null)

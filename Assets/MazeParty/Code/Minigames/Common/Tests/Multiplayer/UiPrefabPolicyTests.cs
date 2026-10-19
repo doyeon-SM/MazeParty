@@ -160,7 +160,9 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity",
                 new string[0]),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/BombPassing/BombPassing.unity"),
-            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/SnowySpin/SnowySpin.unity")
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/SnowySpin/SnowySpin.unity"),
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/CoinCollect/CoinCollect.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab")
         };
 
         private static readonly Regex[] ForbiddenRuntimeUiPatterns =

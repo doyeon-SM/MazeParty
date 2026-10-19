@@ -75,6 +75,9 @@ namespace MazeParty.Gameplay
             "minigame.sequence_memory.tone";
 
         public const string MinigameBombExplosion = "minigame.bomb_passing.explosion";
+        public const string MinigameCoinPickup = "minigame.coin_collect.coin";
+        public const string MinigameMoneyPickup = "minigame.coin_collect.money";
+        public const string MinigameCoinBomb = "minigame.coin_collect.explosion";
         public const string MinigameGiftPickup = "minigame.gift_grab.pickup";
         public const string MinigameGiftDeposit = "minigame.gift_grab.deposit";
         public const string MinigameGiftThrow = "minigame.gift_grab.throw";
@@ -108,6 +111,7 @@ namespace MazeParty.Gameplay
             MinigameMinefieldScan, Balloon, Lightning,
             MinigameSequenceMemoryTone,
             MinigameBombExplosion,
+            MinigameCoinPickup, MinigameMoneyPickup, MinigameCoinBomb,
             MinigameGiftPickup,
             MinigameGiftDeposit,
             MinigameGiftThrow,

@@ -11,8 +11,8 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void Create_CoversCatalogAndRepeatsDeterministicShuffle()
         {
-            var schedule = HostMinigameSchedule.Create(12345);
-            var repeated = HostMinigameSchedule.Create(12345);
+            var schedule = HostMinigameSchedule.Create(12345, MinigameScheduleRules.RegisteredGameCount);
+            var repeated = HostMinigameSchedule.Create(12345, MinigameScheduleRules.RegisteredGameCount);
             var counts = CountEntries(schedule);
 
             AssertSchedulesEqual(schedule, repeated);
@@ -70,10 +70,10 @@ namespace MazeParty.Gameplay.Tests
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(15));
+                Is.EqualTo(16));
             Assert.That(
                 schedule.TurnCount,
-                Is.EqualTo(MinigameScheduleRules.DefaultTurnCount));
+                Is.EqualTo(MinigameScheduleRules.RegisteredGameCount));
             Assert.That(
                 counts[ScheduledMinigameId.Minefield],
                 Is.EqualTo(1));
@@ -119,6 +119,10 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 counts[ScheduledMinigameId.CliffBarrage],
                 Is.EqualTo(1));
+            Assert.That((int)ScheduledMinigameId.CoinCollect, Is.EqualTo(16));
+            Assert.That(counts[ScheduledMinigameId.CoinCollect], Is.EqualTo(1));
+            var defaultCounts = CountEntries(HostMinigameSchedule.Create(12345));
+            Assert.That(defaultCounts.Values, Has.None.GreaterThan(1), "15-turn games sample the expanded catalog without repeats.");
             Assert.That(
                 counts[ScheduledMinigameId.Skip],
                 Is.EqualTo(
@@ -432,7 +436,8 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.BombPassing] = 0,
                 [ScheduledMinigameId.SnowySpin] = 0,
                 [ScheduledMinigameId.ArenaCombat] = 0,
-                [ScheduledMinigameId.CliffBarrage] = 0
+                [ScheduledMinigameId.CliffBarrage] = 0,
+                [ScheduledMinigameId.CoinCollect] = 0
             };
 
             for (var turn = 1; turn <= schedule.TurnCount; turn++)

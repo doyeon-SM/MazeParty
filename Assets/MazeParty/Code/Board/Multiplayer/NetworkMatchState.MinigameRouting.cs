@@ -432,6 +432,11 @@ namespace MazeParty.Multiplayer
                 ProjectRanksBySlot(ranks));
         }
 
+        public bool TryCompleteCoinCollectOnServer(IReadOnlyList<int> ranks)
+        {
+            return TryCompleteMinigameOnServer(ScheduledMinigameId.CoinCollect, ProjectRanksBySlot(ranks));
+        }
+
         internal bool TryCompleteMinigameOnServer(
             ScheduledMinigameId expectedMinigame,
             IReadOnlyList<PlayerPlacement> placements)

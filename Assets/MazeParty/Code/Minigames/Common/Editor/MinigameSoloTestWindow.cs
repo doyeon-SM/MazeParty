@@ -401,6 +401,15 @@ namespace MazeParty.EditorTools
             return CanStart;
         }
 
+        [MenuItem("MazeParty/Minigames/Quick Play/Coin Collect")]
+        private static void QuickPlayCoinCollect()
+        {
+            Start(MinigameSoloTestId.CoinCollect, CreateRandomSeed());
+        }
+
+        [MenuItem("MazeParty/Minigames/Quick Play/Coin Collect", true)]
+        private static bool ValidateQuickPlayCoinCollect() => CanStart;
+
         internal static int CreateRandomSeed()
         {
             return unchecked(
@@ -812,6 +821,24 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Cliff Barrage " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.CoinCollect:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            CoinCollectSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Coin Collect " +
                                 "solo harness.");
                         }
                         controller.ConfigureHud(
@@ -1359,6 +1386,8 @@ namespace MazeParty.EditorTools
             {
                 return snowySpin;
             }
+            var coinCollect = FindRuntimeHarnessOfType<CoinCollectSoloTestController>();
+            if (coinCollect != null) return coinCollect;
             var arenaCombat = FindRuntimeHarnessOfType<
                 ArenaCombatSoloTestController>();
             return arenaCombat != null
@@ -1369,6 +1398,7 @@ namespace MazeParty.EditorTools
 
         private static void DestroyRuntimeHarnesses()
         {
+            DestroyRuntimeHarnessesOfType<CoinCollectSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 MinefieldSoloTestController>();
             DestroyRuntimeHarnessesOfType<

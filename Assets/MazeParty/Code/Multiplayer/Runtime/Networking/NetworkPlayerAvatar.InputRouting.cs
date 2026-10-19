@@ -104,7 +104,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (match != null && match.IsGiftGrabPlaying)
+            if (match != null && (match.IsGiftGrabPlaying || match.IsCoinCollectPlaying))
             {
                 return;
             }
@@ -482,7 +482,7 @@ namespace MazeParty.Multiplayer
         private bool SubmitLocalGiftGrabInput()
         {
             var match = NetworkMatchState.Instance;
-            if (match == null || !match.IsGiftGrabPlaying)
+            if (match == null || (!match.IsGiftGrabPlaying && !match.IsCoinCollectPlaying))
             {
                 _lastSentGiftGrabInput = Vector2.zero;
                 _lastSentGiftGrabRound = -1;

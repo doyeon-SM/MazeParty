@@ -25,7 +25,7 @@ namespace MazeParty.Multiplayer.Tests
             warning.SetValue(null, true);
             var previousMatch = NetworkMatchState.Instance;
             typeof(NetworkMatchState).GetProperty("Instance").SetValue(null, null);
-            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory" };
+            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect" };
             try
             {
                 foreach (var name in names)
@@ -36,13 +36,29 @@ namespace MazeParty.Multiplayer.Tests
                         var type = typeof(NetworkMatchState).Assembly.GetType("MazeParty.Multiplayer.Network" + name + "State");
                         var state = root.AddComponent(type);
                         var field = type.GetField("_finalRanks", flags) ?? type.GetField("_finalRanksPacked", flags);
-                        var ranks = (Unity.Netcode.NetworkVariable<uint>)field.GetValue(state);
+                        System.Action<uint> setRanks;
+                        if (state is NetworkCoinCollectState)
+                        {
+                            var players = (Unity.Netcode.NetworkList<CoinCollectPlayerNetworkSnapshot>)
+                                type.GetField("_players", flags).GetValue(state);
+                            setRanks = packed =>
+                            {
+                                players.Clear();
+                                for (var slot = 0; slot < 4; slot++)
+                                    players.Add(new CoinCollectPlayerNetworkSnapshot { Rank = (byte)(packed >> (slot * 8)) });
+                            };
+                        }
+                        else
+                        {
+                            var ranks = (Unity.Netcode.NetworkVariable<uint>)field.GetValue(state);
+                            setRanks = packed => ranks.Value = packed;
+                        }
                         var method = typeof(BoardFlowView).GetMethod("Build" + name + "ResultSummary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
                         foreach (var input in new[] { new[] { 4, 2, 2, 1 }, new[] { 1, 1, 1, 1 } })
                         {
                             uint packed = 0;
                             for (var slot = 0; slot < 4; slot++) packed |= (uint)input[slot] << (slot * 8);
-                            ranks.Value = packed;
+                            setRanks(packed);
                             var lines = ((string)method.Invoke(null, new object[] { state })).Split('\n');
                             Assert.That(lines.Length, Is.EqualTo(4), name);
                             var expected = input.OrderBy(value => value).ToArray();
@@ -52,7 +68,7 @@ namespace MazeParty.Multiplayer.Tests
                                 Assert.That(lines[row], Does.Contain("+" + MazeParty.Gameplay.Minigames.MinigameRewardRules.GetFinalPlacementGold(expected[row])), name);
                             }
                         }
-                        ranks.Value = 0;
+                        setRanks(0);
                         Assert.That((string)method.Invoke(null, new object[] { state }), Does.Not.Contain("\n"), name + " waits for a complete snapshot");
                     }
                     finally { Object.DestroyImmediate(root); }

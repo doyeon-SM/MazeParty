@@ -186,7 +186,12 @@ namespace MazeParty.Gameplay.Minigames
                 CliffBarrageRules.RoundCount,
                 (float)CliffBarrageRules.RoundDurationSeconds,
                 "CliffBarrage",
-                new Color(0.98f, 0.48f, 0.14f, 1f))
+                new Color(0.98f, 0.48f, 0.14f, 1f)),
+            new MinigameDefinition(
+                ScheduledMinigameId.CoinCollect,
+                GameText.N("COIN COLLECT"),
+                2, 60f, "CoinCollect",
+                new Color(1f, 0.78f, 0.16f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;
@@ -242,6 +247,8 @@ namespace MazeParty.Gameplay.Minigames
                     return GameText.N("Become the top fighter in a bare-knuckle brawl.");
                 case ScheduledMinigameId.CliffBarrage:
                     return GameText.N("Dodge and survive.");
+                case ScheduledMinigameId.CoinCollect:
+                    return GameText.N("Collect falling coins and money across two rounds. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.");
                 default:
                     return string.Empty;
             }

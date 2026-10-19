@@ -453,6 +453,20 @@ namespace MazeParty.Multiplayer
                             ? 4d : runningSeconds;
                     return true;
                 }
+                case ScheduledMinigameId.CoinCollect:
+                {
+                    var state = NetworkCoinCollectState.Instance;
+                    if (state == null ||
+                        state.Phase == NetworkCoinCollectPhase.Inactive ||
+                        state.Phase == NetworkCoinCollectPhase.Complete)
+                        return false;
+                    remaining = state.Remaining;
+                    round = state.RoundNumber;
+                    total = state.Phase == NetworkCoinCollectPhase.Countdown
+                        ? 3d : state.Phase == NetworkCoinCollectPhase.RoundResult
+                            ? 4d : runningSeconds;
+                    return true;
+                }
                 default:
                     return false;
             }

@@ -159,6 +159,9 @@ namespace MazeParty.Editor
             EnsureDefaultClip(
                 SoundKeys.MinigameMinefieldScan,
                 MinefieldScanDefaultClipPath);
+            EnsureDefaultClips(SoundKeys.MinigameCoinPickup, "Assets/Resources/sound/goldgain.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameMoneyPickup, "Assets/Resources/sound/shopbuy.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameCoinBomb, "Assets/Resources/sound/explosion.mp3");
             EnsureDefaultClips(SoundKeys.MinigameBombExplosion, "Assets/Resources/sound/explosion.mp3");
             EnsureDefaultClips(SoundKeys.MinigameGiftPickup, "Assets/Resources/sound/goldgain.mp3");
             EnsureDefaultClips(SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");

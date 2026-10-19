@@ -22,7 +22,8 @@ namespace MazeParty.Multiplayer
             new BombPassingRuntimeAdapter(),
             new SnowySpinRuntimeAdapter(),
             new ArenaCombatRuntimeAdapter(),
-            new CliffBarrageRuntimeAdapter()
+            new CliffBarrageRuntimeAdapter(),
+            new CoinCollectRuntimeAdapter()
         };
 
         private static readonly IReadOnlyList<ScheduledMinigameId>

@@ -19,7 +19,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         BombPassing = 12,
         SnowySpin = 13,
         ArenaCombat = 14,
-        CliffBarrage = 15
+        CliffBarrage = 15,
+        CoinCollect = 16
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -97,6 +98,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             "Assets/MazeParty/Scenes/Minigames/ArenaCombat/ArenaCombat.unity";
         public const string CliffBarrageScenePath =
             "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity";
+
+        public const string CoinCollectScenePath = "Assets/MazeParty/Scenes/Minigames/CoinCollect/CoinCollect.unity";
 
         private static readonly MinigameSoloTestDescriptor[] Descriptors =
         {
@@ -190,7 +193,9 @@ namespace MazeParty.Dev.MinigameSoloTest
                 "Cliff Barrage",
                 CliffBarrageScenePath,
                 "WASD move · LMB push · dodge shells and lasers · " +
-                "R restart · N next seed · Esc stop")
+                "R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(MinigameSoloTestId.CoinCollect, "Coin Collect", CoinCollectScenePath,
+                "WASD move · LMB push · collect coins and money · R restart · N next seed · Esc stop")
         };
 
         public static IReadOnlyList<MinigameSoloTestDescriptor> All =>
