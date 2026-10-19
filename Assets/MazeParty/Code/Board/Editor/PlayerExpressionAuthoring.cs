@@ -181,7 +181,7 @@ namespace MazeParty.Editor
             string path=Models+"/"+new[]{"ThumbsUp","Peace","Heart"}[id]+".prefab";
             var existing=AssetDatabase.LoadAssetAtPath<GameObject>(path);if(existing!=null)return existing;
             var mat=AssetDatabase.LoadAssetAtPath<Material>(Models+"/Hands.mat");
-            if(mat==null){mat=new Material(Shader.Find("Universal Render Pipeline/Lit"));mat.color=Color.white;AssetDatabase.CreateAsset(mat,Models+"/Hands.mat");}
+            if(mat==null){mat=new Material(Shader.Find("MazeParty/Toon Shader FX"));mat.color=Color.white;AssetDatabase.CreateAsset(mat,Models+"/Hands.mat");}
             var root=new GameObject("Gesture Hands");
             for(int side=-1;side<=1;side+=2)
             {

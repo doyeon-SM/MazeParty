@@ -286,7 +286,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 953ee8248d740cb499536b0f182160ff, type: 2}
+  - {fileID: 2100000, guid: d6e814fdaecdf4a4bb877a72d6a287d6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -452,6 +452,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -515,6 +519,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (57)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -578,6 +586,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (73)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -641,6 +653,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (67)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -704,6 +720,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (82)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -767,6 +787,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (29)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -830,6 +854,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04 (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []
@@ -893,6 +921,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (22)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -956,6 +988,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (59)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1019,6 +1055,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (26)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1082,6 +1122,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (53)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1145,6 +1189,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (87)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1208,6 +1256,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1271,6 +1323,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (70)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1334,6 +1390,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1397,6 +1457,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (33)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1460,6 +1524,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (56)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1523,6 +1591,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (39)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1586,6 +1658,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (35)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1649,6 +1725,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (65)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1712,6 +1792,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (28)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1775,6 +1859,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1838,6 +1926,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (78)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1901,6 +1993,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (71)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -1964,6 +2060,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (32)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2027,6 +2127,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2090,6 +2194,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (31)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2153,6 +2261,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (30)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2216,6 +2328,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (55)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2279,6 +2395,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (49)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2342,6 +2462,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (36)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2405,6 +2529,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (64)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2468,6 +2596,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (19)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2531,6 +2663,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04 (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []
@@ -2594,6 +2730,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (20)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2657,6 +2797,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (72)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2720,6 +2864,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2783,6 +2931,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (50)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2846,6 +2998,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (83)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2909,6 +3065,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (76)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -2972,6 +3132,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []
@@ -3035,6 +3199,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (21)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3098,6 +3266,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (88)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3161,6 +3333,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (42)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3224,6 +3400,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (47)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3287,6 +3467,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3350,6 +3534,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (66)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3413,6 +3601,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (62)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3476,6 +3668,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (44)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3539,6 +3735,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (38)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3602,6 +3802,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (89)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3665,6 +3869,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (79)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3728,6 +3936,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (58)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3791,6 +4003,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (24)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3854,6 +4070,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3917,6 +4137,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (69)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -3980,6 +4204,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4043,6 +4271,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (34)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4106,6 +4338,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (63)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4169,6 +4405,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (40)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4232,6 +4472,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (45)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4295,6 +4539,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4358,6 +4606,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (61)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4421,6 +4673,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (80)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4484,6 +4740,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (75)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4547,6 +4807,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (43)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4610,6 +4874,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (25)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4673,6 +4941,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (46)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4736,6 +5008,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (41)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4799,6 +5075,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (27)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4862,6 +5142,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4925,6 +5209,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (52)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -4988,6 +5276,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (51)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5051,6 +5343,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5114,6 +5410,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (77)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5177,6 +5477,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (85)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5240,6 +5544,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5303,6 +5611,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (23)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5370,6 +5682,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04 (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []
@@ -5433,6 +5749,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (48)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5496,6 +5816,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5559,6 +5883,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (84)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5622,6 +5950,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (81)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5685,6 +6017,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (86)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5752,6 +6088,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04 (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []
@@ -5815,6 +6155,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5878,6 +6222,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (54)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -5941,6 +6289,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6004,6 +6356,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6067,6 +6423,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (37)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6130,6 +6490,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6193,6 +6557,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6256,6 +6624,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (74)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6319,6 +6691,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (68)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6382,6 +6758,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_32_Spring (60)
       objectReference: {fileID: 0}
+    - target: {fileID: 1248152226379168705, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 1961310257894072969, guid: e733fd30db8520a4f9563cb987690f8d, type: 3}
     m_RemovedGameObjects: []
@@ -6449,6 +6829,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Log_04 (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 8317585964182923049, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 6596505414075645507, guid: 5778615d7db0bfa46bf5662edb95106c, type: 3}
     m_RemovedGameObjects: []

@@ -876,7 +876,7 @@ namespace MazeParty.Editor
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
-                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                var shader = Shader.Find("MazeParty/Toon Shader FX") ?? Shader.Find("Standard");
                 material = new Material(shader) { name = name };
                 AssetDatabase.CreateAsset(material, path);
             }

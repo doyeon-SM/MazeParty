@@ -1209,7 +1209,7 @@ namespace MazeParty.Editor
             var path = Materials + name + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null) return material;
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit")) { name = name, color = color };
+            material = new Material(Shader.Find("MazeParty/Toon Shader FX")) { name = name, color = color };
             AssetDatabase.CreateAsset(material, path);
             return material;
         }

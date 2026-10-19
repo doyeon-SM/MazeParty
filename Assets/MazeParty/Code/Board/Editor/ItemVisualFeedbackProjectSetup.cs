@@ -82,7 +82,7 @@ namespace MazeParty.Editor
             var path = GiftMaterials + "/" + source.name + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null) return material;
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var shader = Shader.Find("MazeParty/Toon Shader FX");
             if (shader == null) throw new InvalidOperationException("URP Lit shader is missing.");
             material = new Material(shader) { name = source.name };
             material.SetColor("_BaseColor", source.HasProperty("_Color") ? source.GetColor("_Color") : Color.white);

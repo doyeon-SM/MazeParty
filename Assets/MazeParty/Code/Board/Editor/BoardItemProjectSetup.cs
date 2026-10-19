@@ -414,7 +414,7 @@ namespace MazeParty.Editor
             string path = VisualFolder + "/" + name + ".mat";
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material != null) return material;
-            material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            material = new Material(Shader.Find("MazeParty/Toon Shader FX"));
             material.SetColor("_BaseColor", color);
             AssetDatabase.CreateAsset(material, path);
             return material;

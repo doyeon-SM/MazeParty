@@ -292,7 +292,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 953ee8248d740cb499536b0f182160ff, type: 2}
+  - {fileID: 2100000, guid: d6e814fdaecdf4a4bb877a72d6a287d6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -324,6 +324,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.4257
@@ -368,6 +372,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (149)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -388,6 +396,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 694.9257
@@ -432,6 +444,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (87)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -452,6 +468,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 703.9257
@@ -496,6 +516,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (5)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -516,6 +540,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (17)
@@ -583,6 +611,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 695.9257
@@ -627,6 +659,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (126)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -647,6 +683,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (18)
@@ -710,6 +750,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.6757
@@ -754,6 +798,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (136)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -829,7 +877,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -849,6 +897,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (10)
@@ -916,6 +968,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (14)
@@ -983,6 +1039,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (13)
@@ -1105,7 +1165,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -1125,6 +1185,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.1757
@@ -1169,6 +1233,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (150)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1189,6 +1257,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 690.4257
@@ -1233,6 +1305,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (125)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1253,6 +1329,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 713.9257
@@ -1297,6 +1377,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (47)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1317,6 +1401,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 716.1757
@@ -1361,6 +1449,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (96)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1436,7 +1528,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -1456,6 +1548,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.9257
@@ -1500,6 +1596,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (93)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1520,6 +1620,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.9257
@@ -1564,6 +1668,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (41)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1584,6 +1692,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 702.4257
@@ -1628,6 +1740,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (6)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1648,6 +1764,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.6757
@@ -1692,6 +1812,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (29)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1712,6 +1836,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 689.9257
@@ -1756,6 +1884,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (86)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1776,6 +1908,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 695.1757
@@ -1820,6 +1956,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (16)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1840,6 +1980,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.4257
@@ -1884,6 +2028,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (44)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1904,6 +2052,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.6757
@@ -1948,6 +2100,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (137)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -1968,6 +2124,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.1757
@@ -2012,6 +2172,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (143)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2032,6 +2196,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.9257
@@ -2076,6 +2244,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (33)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2096,6 +2268,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.1757
@@ -2140,6 +2316,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (64)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2160,6 +2340,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 685.6757
@@ -2204,6 +2388,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (153)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2224,6 +2412,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (25)
@@ -2291,6 +2483,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 698.1757
@@ -2335,6 +2531,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (21)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2355,6 +2555,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.1757
@@ -2399,6 +2603,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (30)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2419,6 +2627,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (9)
@@ -2486,6 +2698,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.4257
@@ -2530,6 +2746,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (36)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2550,6 +2770,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 705.1757
@@ -2594,6 +2818,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (135)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2614,6 +2842,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 709.1757
@@ -2658,6 +2890,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (89)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2678,6 +2914,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 720.1757
@@ -2722,6 +2962,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (139)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2742,6 +2986,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 702.4257
@@ -2786,6 +3034,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (115)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2806,6 +3058,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (24)
@@ -2869,6 +3125,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 708.1757
@@ -2913,6 +3173,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (138)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2933,6 +3197,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 699.1757
@@ -2977,6 +3245,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (122)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -2997,6 +3269,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.9257
@@ -3041,6 +3317,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (119)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3061,6 +3341,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 706.1757
@@ -3105,6 +3389,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (77)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3180,7 +3468,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -3200,6 +3488,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 693.4257
@@ -3244,6 +3536,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (128)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3264,6 +3560,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 713.6757
@@ -3308,6 +3608,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (26)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3328,6 +3632,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.4257
@@ -3372,6 +3680,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (12)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3392,6 +3704,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.6757
@@ -3436,6 +3752,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (35)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3456,6 +3776,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (22)
@@ -3578,7 +3902,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -3598,6 +3922,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 682.1757
@@ -3642,6 +3970,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (62)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3662,6 +3994,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 704.1757
@@ -3706,6 +4042,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (110)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3726,6 +4066,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 711.9257
@@ -3770,6 +4114,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (38)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3790,6 +4138,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 687.1757
@@ -3834,6 +4186,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (105)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3854,6 +4210,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 694.9257
@@ -3898,6 +4258,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (121)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3918,6 +4282,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.6757
@@ -3962,6 +4330,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (43)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -3982,6 +4354,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.1757
@@ -4026,6 +4402,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (141)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4046,6 +4426,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 682.9257
@@ -4090,6 +4474,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (79)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4110,6 +4498,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 682.4257
@@ -4154,6 +4546,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (61)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4174,6 +4570,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.6757
@@ -4218,6 +4618,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4238,6 +4642,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.9257
@@ -4282,6 +4690,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (23)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4302,6 +4714,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (27)
@@ -4369,6 +4785,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 683.6757
@@ -4413,6 +4833,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (58)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4433,6 +4857,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 709.9257
@@ -4477,6 +4905,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (40)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4497,6 +4929,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.9257
@@ -4541,6 +4977,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (117)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4561,6 +5001,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 701.1757
@@ -4605,6 +5049,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (76)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4625,6 +5073,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.6757
@@ -4669,6 +5121,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (144)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4689,6 +5145,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 695.6757
@@ -4733,6 +5193,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (75)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4753,6 +5217,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 696.9257
@@ -4797,6 +5265,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (3)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4817,6 +5289,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.1757
@@ -4861,6 +5337,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (91)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -4881,6 +5361,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (16)
@@ -4999,7 +5483,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -5066,7 +5550,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -5086,6 +5570,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.9257
@@ -5130,6 +5618,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (100)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5150,6 +5642,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (21)
@@ -5213,6 +5709,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 682.6757
@@ -5257,6 +5757,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (52)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5277,6 +5781,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (19)
@@ -5344,6 +5852,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 716.1757
@@ -5388,6 +5900,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (28)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5408,6 +5924,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.9257
@@ -5452,6 +5972,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (51)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5472,6 +5996,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (3)
@@ -5535,6 +6063,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 713.4257
@@ -5579,6 +6111,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (48)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5599,6 +6135,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 714.6757
@@ -5643,6 +6183,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (146)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5663,6 +6207,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 690.1757
@@ -5707,6 +6255,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (14)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5727,6 +6279,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 714.6757
@@ -5771,6 +6327,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (27)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5791,6 +6351,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 697.6757
@@ -5835,6 +6399,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (123)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5855,6 +6423,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 719.4257
@@ -5899,6 +6471,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (92)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5919,6 +6495,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 683.4257
@@ -5963,6 +6543,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (59)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -5983,6 +6567,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 687.4257
@@ -6027,6 +6615,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (88)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6106,7 +6698,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -6126,6 +6718,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 697.4257
@@ -6170,6 +6766,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (70)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6190,6 +6790,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -6234,6 +6838,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (37)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6254,6 +6862,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (23)
@@ -6321,6 +6933,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 707.9257
@@ -6365,6 +6981,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (116)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6385,6 +7005,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -6429,6 +7053,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (10)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6449,6 +7077,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 700.1757
@@ -6493,6 +7125,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (71)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6513,6 +7149,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 707.9257
@@ -6557,6 +7197,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (94)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6577,6 +7221,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (6)
@@ -6640,6 +7288,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 713.6757
@@ -6684,6 +7336,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (98)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6704,6 +7360,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 687.6757
@@ -6748,6 +7408,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (151)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6768,6 +7432,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.4257
@@ -6812,6 +7480,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (85)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6832,6 +7504,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.1757
@@ -6876,6 +7552,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (39)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6896,6 +7576,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 706.9257
@@ -6940,6 +7624,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (130)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -6960,6 +7648,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 698.4257
@@ -7004,6 +7696,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (107)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7024,6 +7720,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 702.9257
@@ -7068,6 +7768,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (19)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7088,6 +7792,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.4257
@@ -7132,6 +7840,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (104)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7152,6 +7864,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 714.9257
@@ -7196,6 +7912,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (50)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7216,6 +7936,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 692.1757
@@ -7260,6 +7984,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (120)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7280,6 +8008,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (4)
@@ -7347,6 +8079,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 705.4257
@@ -7391,6 +8127,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (118)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7411,6 +8151,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.1757
@@ -7455,6 +8199,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (32)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7475,6 +8223,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 683.9257
@@ -7519,6 +8271,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (56)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7539,6 +8295,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 705.6757
@@ -7583,6 +8343,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (20)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7603,6 +8367,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 706.9257
@@ -7647,6 +8415,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (111)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7722,7 +8494,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -7797,7 +8569,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -7817,6 +8589,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (11)
@@ -7884,6 +8660,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.1757
@@ -7928,6 +8708,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (49)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -7948,6 +8732,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.9257
@@ -7992,6 +8780,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (9)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8012,6 +8804,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.4257
@@ -8056,6 +8852,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (34)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8076,6 +8876,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.6757
@@ -8120,6 +8924,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (148)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8140,6 +8948,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.6757
@@ -8184,6 +8996,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (60)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8204,6 +9020,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 693.1757
@@ -8248,6 +9068,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (82)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8268,6 +9092,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.1757
@@ -8312,6 +9140,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (68)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8332,6 +9164,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 692.9257
@@ -8376,6 +9212,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (74)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8396,6 +9236,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 703.6757
@@ -8440,6 +9284,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (129)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8460,6 +9308,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.1757
@@ -8504,6 +9356,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (80)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8524,6 +9380,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 706.6757
@@ -8568,6 +9428,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (7)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8588,6 +9452,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (20)
@@ -8651,6 +9519,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.1757
@@ -8695,6 +9567,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (11)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8715,6 +9591,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (29)
@@ -8833,7 +9713,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -8853,6 +9733,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 687.6757
@@ -8897,6 +9781,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (17)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8917,6 +9805,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 683.9257
@@ -8961,6 +9853,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (65)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -8981,6 +9877,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 708.1757
@@ -9025,6 +9925,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (25)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9045,6 +9949,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 692.4257
@@ -9089,6 +9997,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (15)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9109,6 +10021,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 709.6757
@@ -9153,6 +10069,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (131)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9173,6 +10093,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 690.1757
@@ -9217,6 +10141,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (108)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9237,6 +10165,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 684.1757
@@ -9281,6 +10213,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (55)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9301,6 +10237,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.6757
@@ -9345,6 +10285,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (66)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9365,6 +10309,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 698.6757
@@ -9409,6 +10357,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (78)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9429,6 +10381,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -9473,6 +10429,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (42)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9493,6 +10453,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.9257
@@ -9537,6 +10501,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (147)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9557,6 +10525,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 681.6757
@@ -9601,6 +10573,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (84)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9621,6 +10597,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 713.9257
@@ -9665,6 +10645,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (132)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9740,7 +10724,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -9815,7 +10799,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -9835,6 +10819,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 717.6757
@@ -9879,6 +10867,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (140)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9899,6 +10891,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 702.4257
@@ -9943,6 +10939,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (134)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -9963,6 +10963,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 709.9257
@@ -10007,6 +11011,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (8)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10027,6 +11035,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 682.4257
@@ -10071,6 +11083,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (53)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10091,6 +11107,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 685.9257
@@ -10135,6 +11155,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (57)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10155,6 +11179,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 695.9257
@@ -10199,6 +11227,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (102)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10219,6 +11251,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 685.9257
@@ -10263,6 +11299,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (152)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10283,6 +11323,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.4257
@@ -10327,6 +11371,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (63)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10347,6 +11395,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 687.6757
@@ -10391,6 +11443,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (124)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10411,6 +11467,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 704.4257
@@ -10455,6 +11515,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (72)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10475,6 +11539,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 691.6757
@@ -10519,6 +11587,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (83)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10539,6 +11611,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -10583,6 +11659,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (133)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10603,6 +11683,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 700.6757
@@ -10647,6 +11731,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (18)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10722,7 +11810,7 @@ PrefabInstance:
     - target: {fileID: 6024944493610781378, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 4048b867f872287459af7f4f8513a05e, type: 2}
+      objectReference: {fileID: 2100000, guid: 9fb0227b99093244fb6ec2ef3407d098, type: 2}
     m_RemovedComponents:
     - {fileID: 7199399268002386730, guid: e0a60158426252843b0a9e0a7d81a559, type: 3}
     m_RemovedGameObjects: []
@@ -10742,6 +11830,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.4257
@@ -10786,6 +11878,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (31)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10806,6 +11902,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (26)
@@ -10869,6 +11969,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -10913,6 +12017,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (45)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10933,6 +12041,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.6757
@@ -10977,6 +12089,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (95)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -10997,6 +12113,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 694.1757
@@ -11041,6 +12161,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (69)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11061,6 +12185,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 691.6757
@@ -11105,6 +12233,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (101)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11125,6 +12257,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 694.4257
@@ -11169,6 +12305,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (103)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11189,6 +12329,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 721.1757
@@ -11233,6 +12377,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (97)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11253,6 +12401,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.1757
@@ -11297,6 +12449,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (145)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11317,6 +12473,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 700.9257
@@ -11361,6 +12521,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (109)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11381,6 +12545,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 711.1757
@@ -11425,6 +12593,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (112)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11445,6 +12617,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (1)
@@ -11512,6 +12688,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.6757
@@ -11556,6 +12736,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (24)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11576,6 +12760,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 699.6757
@@ -11620,6 +12808,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (114)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11640,6 +12832,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 688.9257
@@ -11684,6 +12880,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (81)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11704,6 +12904,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.1757
@@ -11748,6 +12952,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (13)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11768,6 +12976,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 685.6757
@@ -11812,6 +13024,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (99)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11832,6 +13048,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 712.4257
@@ -11876,6 +13096,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (90)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11896,6 +13120,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 699.6757
@@ -11940,6 +13168,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (4)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -11960,6 +13192,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 692.6757
@@ -12004,6 +13240,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (106)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12024,6 +13264,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 693.6757
@@ -12068,6 +13312,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (2)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12088,6 +13336,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.4257
@@ -12132,6 +13384,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (67)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12152,6 +13408,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 709.6757
@@ -12196,6 +13456,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (113)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12216,6 +13480,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 716.1757
@@ -12260,6 +13528,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (46)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12280,6 +13552,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 690.9257
@@ -12324,6 +13600,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (1)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12344,6 +13624,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 700.9257
@@ -12388,6 +13672,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (127)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12408,6 +13696,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 715.4257
@@ -12452,6 +13744,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (142)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12472,6 +13768,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 702.9257
@@ -12516,6 +13816,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (73)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12536,6 +13840,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (2)
@@ -12599,6 +13907,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (5)
@@ -12666,6 +13978,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (12)
@@ -12729,6 +14045,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1087818692828033662, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1447987709244396459, guid: 64aaa8c698778aa4798fa25e58dd80d1, type: 3}
       propertyPath: m_Name
       value: Log_01 (28)
@@ -12796,6 +14116,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 686.4257
@@ -12840,6 +14164,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (54)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
@@ -12860,6 +14188,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1523694372174180399}
     m_Modifications:
+    - target: {fileID: 1609566420916001677, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 7183329066481745036, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 710.6757
@@ -12904,6 +14236,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Tree_04_Winter (22)
       objectReference: {fileID: 0}
+    - target: {fileID: 8357382825610971107, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 3213723334625280837, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}
     - {fileID: 933365252866259559, guid: b85d88c087c0a4e489dc94b5f62f72d1, type: 3}

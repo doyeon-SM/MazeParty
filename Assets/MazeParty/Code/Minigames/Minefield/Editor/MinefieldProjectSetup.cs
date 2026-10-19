@@ -592,7 +592,7 @@ namespace MazeParty.Editor
                 return material;
             }
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ??
+            var shader = Shader.Find("MazeParty/Toon Shader FX") ??
                          Shader.Find("Standard");
             if (shader == null)
             {

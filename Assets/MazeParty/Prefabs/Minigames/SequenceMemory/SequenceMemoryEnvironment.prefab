@@ -121,7 +121,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 953ee8248d740cb499536b0f182160ff, type: 2}
+  - {fileID: 2100000, guid: d6e814fdaecdf4a4bb877a72d6a287d6, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -287,6 +287,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -306,6 +310,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (1)
@@ -413,6 +421,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -476,6 +488,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -539,6 +555,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -602,6 +622,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -621,6 +645,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04 (5)
@@ -684,6 +712,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04 (4)
@@ -747,6 +779,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04 (3)
@@ -854,6 +890,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -873,6 +913,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (4)
@@ -936,6 +980,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04
@@ -999,6 +1047,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (3)
@@ -1062,6 +1114,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04 (2)
@@ -1125,6 +1181,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (2)
@@ -1232,6 +1292,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -1295,6 +1359,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -1314,6 +1382,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (5)
@@ -1421,6 +1493,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4320721188556392803, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     m_RemovedComponents:
     - {fileID: 4339308615977060637, guid: befc3921877d7224e9e2f6d593627c29, type: 3}
     m_RemovedGameObjects: []
@@ -1440,6 +1516,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 7541217733791825294, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 8333688883776986203, guid: 109a651ca1907324f8411f98c5175cf5, type: 3}
       propertyPath: m_Name
       value: Bush_04 (1)
@@ -1503,6 +1583,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08 (6)
@@ -1566,6 +1650,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 6010377543262633111}
     m_Modifications:
+    - target: {fileID: 1138315951266451626, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 20d86b997cf4bd146bd16cc4f2f68dbb, type: 2}
     - target: {fileID: 1498819219818180991, guid: 5f68e59d966f09c40acaa7371d15cd10, type: 3}
       propertyPath: m_Name
       value: Bush_08

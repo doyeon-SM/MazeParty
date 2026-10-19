@@ -468,3 +468,36 @@
 - 검증 완료: 폭탄 규칙·씬 계약·보드 사망 골드 권한·번역 계약의 관련 EditMode 28/28 통과. 최종 보완 후 폭탄 규칙·번역 계약 21/21 재통과(앞 실행의 부분집합). Unity 콘솔 오류 0건, git diff --check 통과.
 - 격리된 PreviewScene에서 실제 킬 골드 생성 준비 함수를 적용해 Renderer 경계 크기가 세 축 모두 기존의 0.500배임을 확인하고 이미지를 검토했다. 근거: Logs/ContactBomb-20261019/gold-scale-validation.txt, KillGold-half-size.png. 프리뷰 리소스는 정리했다.
 - 이번 변경은 기준 커밋 02b4bbe 위의 미커밋 상태다. 전체 EditMode, 새 Player 빌드 및 실제 네트워크 4인 플레이는 수행하지 않았다.
+
+## 툰 셰이더 최소 적용 비교 · 2026-10-19
+
+- 사용자 요청: Assets/Ignore/Simple Toon 및 Assets/Ignore/Toon Shader FX를 플레이어와 보드 내부에 최소한으로 테스트 적용하고 캡처를 보여준다. 최초에는 원본 직접 적용만 요청했고, 아래 후속 지시에서 URP 변환 테스트를 승인했다.
+- 현재 파이프라인은 URP PC_RPAsset. 설치된 원본 Simple Toon/SToon Default와 Bytesized/Toon은 Built-in ForwardBase/ForwardAdd 패스이며 설치 폴더에 URP 변형은 없다.
+- 격리된 Editor PreviewScene에 실제 MazeGrayboxMapRoot와 NetworkPlayer를 복제했다. 플레이어 몸체·머리와 시작 구역의 벽/불투명 메시 등 60개 Renderer에 메모리상 복제 머티리얼을 적용했다. 얼굴·손·Terrain은 원래 셰이더를 유지했다. 원래 텍스처/색상과 동일 카메라·조명에서 기존/두 패키지 원본을 비교했다.
+- 결과: 두 원본 모두 현재 URP에서 분홍색 오류 머티리얼로 렌더링된다. 셰이더 컴파일 진단은 비어 있으나 렌더링 패스 호환 문제가 실제 캡처에서 확인됐다. 정상 툰 외형 비교에는 URP 대응 버전 또는 별도 변환이 필요하다.
+- 플레이어와 보드 각 3장(1200x900) 및 비교표를 Logs/ToonPreview-20261019에 저장했다. 대표: Toon-Direct-Comparison.png. 중립 조명을 사용한 에디터 테스트 캡처이며 실제 멀티플레이 캡처는 아니다.
+- 캡처 후 임시 장면·머티리얼을 정리했다. 원본 씬·프리팹·머티리얼·셰이더·렌더 파이프라인은 수정하지 않았고 Race 씬 dirty=false를 확인했다. 기준 HEAD a9e62e1, 기존 작업 트리는 깨끗했다. 게임 코드/에셋 수정이 없어 EditMode 테스트와 빌드는 실행하지 않았다. Notion은 수정하지 않았다.
+
+## 툰 셰이더 URP 변환 테스트 완료 · 2026-10-19
+
+- 사용자 후속 승인: 두 셰이더를 변환하여 플레이어와 보드 내부에서 테스트한다. 테스트 이후 사용자가 Toon Shader FX 전체 적용을 승인했다.
+- Assets/MazeParty/Dev/ToonShaderPreview/Shaders에 SimpleToonURP.shader, ToonShaderFXURP.shader 및 공유 ToonPreviewCommon.hlsl을 추가했다. 설치된 원본 셰이더는 그대로 유지했다. 원본 조명 수식을 URP HLSL로 이식하고 Forward+, 주광원/추가 광원, 실시간 그림자, DepthOnly/DepthNormals 패스를 구성했다.
+- 최소 보정: Simple Toon 테스트 머티리얼의 Min Light=0.22. Toon Shader FX의 주변광을 그림자 감쇠 밖으로 옮겨 완전한 검은색 소실을 방지했다. 음수 fractional pow 및 0 폭 나눗셈을 방어한다. 나머지 툰 단계·rim·specular 설정은 원본 기본값이다.
+- 테스트용 머티리얼 6개(PlayerBody, PixPal_URP, Lit 각 2종)를 같은 Dev 폴더의 Materials에 저장했다. 원래 색상·텍스처를 옮겼고 플레이어 색상은 기존 MaterialPropertyBlock으로 적용했다.
+- 실제 MazeGrayboxMapRoot/NetworkPlayer 복제본의 몸체·머리와 시작 구역 벽 등 60개 Renderer만 교체해 기존/두 변환본 각 플레이어·보드 캡처 6장을 생성했다. 얼굴·손·Terrain은 유지했다. 동일 카메라·중립 조명을 사용한 에디터 프리뷰다.
+- 최종 이미지: Logs/ToonPreview-20261019/URP-Adjusted/Toon-URP-Comparison.png. 개별 1200x900 캡처와 capture-notes.txt도 동일 폴더. 변환 직후의 어두운 원본 기본값 캡처는 URP 하위 폴더에 비교 근거로 보존했다.
+- 검증: 두 셰이더 supported=true, 렌더 후 ShaderUtil 컴파일 오류·경고 0개, 분홍색 오류 픽셀 0개. Forward+ 추가 점광원 ON/OFF에 플레이어 영역 34,962/40,018 픽셀 변화, 주광원 그림자 ON/OFF에 5,541/5,149 픽셀 변화 확인. 근거: Logs/ToonPreview-20261019/Validation/capture-notes.txt.
+- 범위: 불투명 메시용 프리뷰 변환이다. Simple Toon의 별도 Outline/Transparent 셰이더, Terrain 전용 셰이더, 실제 멀티플레이·Player 빌드 검증은 포함하지 않는다. 게임 코드·씬·원본 프리팹·공유 머티리얼 및 PC_RPAsset 설정은 변경하지 않았다. 임시 장면/메모리 머티리얼은 정리했으며 장기 시각 회귀 테스트는 추가하지 않았다.
+
+## Toon Shader FX 전체 적용 · 2026-10-19
+
+- 사용자 확정 및 구현 완료: 선택한 Toon Shader FX의 URP 변환본을 플레이어·보드·숲·미니게임·로비의 일반 메시와 Terrain에 적용했다. UI·글자·파티클·하늘·전용 Unlit 표현은 기존 셰이더를 유지한다.
+- 프로덕션 셰이더는 Assets/MazeParty/Shaders/Toon의 MazeParty/Toon Shader FX와 MazeParty/Toon Terrain 및 Terrain Add/Base다. 승인된 툰 조명·주변광 보정·림·하이라이트를 유지하고 기존 색상/텍스처/노멀/발광/알파, 런타임 BaseMap·BaseColor 바인딩, Forward+ 광원·그림자·안개를 지원한다.
+- 기존 게임 머티리얼 202개를 GUID 유지하여 변환했고, 외부/내장 모델 머티리얼 22개는 Assets/MazeParty/Materials/Toon/Converted에 복제했다. 프리팹 40개와 씬 2개의 참조를 수정했다. 외부 패키지 원본은 수정하지 않았다.
+- 실제 저장된 씬·프리팹 192개를 점검했다. 일반 메시 머티리얼 슬롯 6,553개(중복 참조 포함)는 Toon Shader FX이며 Terrain 컴포넌트 19개는 Toon Terrain이다. 누락된 머티리얼 및 적용 대상의 기존 일반 Lit 셰이더 잔여는 0개다. 근거: Logs/ToonRollout-20261019/coverage.json.
+- 기존 제작/setup 코드 24개 파일도 새 셰이더를 사용하도록 수정했다. ToonShaderProjectSetup의 MazeParty/Art/Apply Toon Shader FX To Game 메뉴로 같은 변환을 재실행할 수 있다.
+- 숲 지형의 디테일 메시 4종은 기존 배치·밀도를 유지하며 Toon 머티리얼을 사용하는 instanced VertexLit 방식으로 변경했다. 기존 Terrain Grass 방식의 바람 표현은 이 경로에 포함되지 않는다. ORM 풍선은 원본에서 사용하지 않는 tint alpha를 1로 옮겨 알파 클리핑 소실을 방지했다.
+- 검증 완료: 관련 씬·프리팹 계약 EditMode 36/36 통과. 숲 디테일 변경 후 해당 계약 3/3 재통과(위 테스트의 부분집합). 실제 렌더 프로브로 플레이어 색상·색칠 텍스처·발광·알파 클립·투명 블렌딩·풍선 알파 매핑 6건 통과.
+- 실제 저장된 프로덕션 에셋으로 플레이어·미로 보드·숲 보드·달리기·폭탄돌리기·땅따먹기·풍선불기 캡처 7장을 검토했다. 분홍색 오류 픽셀 0개, 렌더 후 셰이더 4종 supported=true 및 컴파일 진단 0개, Unity 콘솔 오류 0개다.
+- 최종 캡처: Logs/ToonRollout-20261019/Captures/Toon-Rollout.png 및 개별 PNG. 중립 조명을 사용하는 에디터 프리뷰이며 실제 멀티플레이 캡처는 아니다. 기존 Race 씬 dirty=false, 임시 프리뷰 리소스 정리 완료. 전체 EditMode·Player 빌드·4인 네트워크 플레이는 실행하지 않았다.
+- 변경 전 백업: Logs/ToonRollout-20261019/Before. 진행 내역과 프로브 결과는 같은 로그 폴더에 보존했다. HEAD a9e62e1 위의 미커밋 변경이며 Notion은 수정하지 않았다.

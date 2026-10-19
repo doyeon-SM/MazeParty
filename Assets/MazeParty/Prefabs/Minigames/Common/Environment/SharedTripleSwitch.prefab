@@ -43,7 +43,7 @@ PrefabInstance:
     - target: {fileID: 1136539513585131928, guid: 98fcb18e9288f0c42ab823706e40b731, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: c1e6baf1df59eb34a8799e54d92d4be7, type: 2}
+      objectReference: {fileID: 2100000, guid: 8c9c24de76d7e0a4d855413c5949bee6, type: 2}
     - target: {fileID: 2829010416537941770, guid: 98fcb18e9288f0c42ab823706e40b731, type: 3}
       propertyPath: m_Name
       value: Triple Switch Source Visual
@@ -91,11 +91,11 @@ PrefabInstance:
     - target: {fileID: 4342127050944943839, guid: 98fcb18e9288f0c42ab823706e40b731, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: c1e6baf1df59eb34a8799e54d92d4be7, type: 2}
+      objectReference: {fileID: 2100000, guid: 8c9c24de76d7e0a4d855413c5949bee6, type: 2}
     - target: {fileID: 8722630306123432071, guid: 98fcb18e9288f0c42ab823706e40b731, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: c1e6baf1df59eb34a8799e54d92d4be7, type: 2}
+      objectReference: {fileID: 2100000, guid: 8c9c24de76d7e0a4d855413c5949bee6, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

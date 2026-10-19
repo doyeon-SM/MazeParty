@@ -497,11 +497,11 @@ namespace MazeParty.Editor
             }
 
             var shader =
-                Shader.Find("Universal Render Pipeline/Lit");
+                Shader.Find("MazeParty/Toon Shader FX");
             if (shader == null)
             {
                 throw new InvalidOperationException(
-                    "Universal Render Pipeline/Lit is required for " +
+                    "MazeParty/Toon Shader FX is required for " +
                     "Territory Paint prototype materials.");
             }
 

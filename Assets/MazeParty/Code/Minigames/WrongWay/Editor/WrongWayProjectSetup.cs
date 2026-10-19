@@ -460,7 +460,7 @@ namespace MazeParty.Editor
             if (material == null)
             {
                 var shader =
-                    Shader.Find("Universal Render Pipeline/Lit") ??
+                    Shader.Find("MazeParty/Toon Shader FX") ??
                     Shader.Find("Standard");
                 if (shader == null)
                 {

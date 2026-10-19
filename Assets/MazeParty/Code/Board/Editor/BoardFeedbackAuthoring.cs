@@ -152,7 +152,7 @@ namespace MazeParty.Editor
                 var material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
                 if (material == null)
                 {
-                    material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+                    material = new Material(Shader.Find("MazeParty/Toon Shader FX"));
                     material.SetTexture("_BaseMap", original.GetTexture("_MainTex"));
                     material.SetColor("_BaseColor", Color.white);
                     material.SetFloat("_Metallic", 0.65f);

@@ -850,7 +850,7 @@ namespace MazeParty.Editor
 
         private static Material CreateOrUpdateD12Material()
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ??
+            var shader = Shader.Find("MazeParty/Toon Shader FX") ??
                          Shader.Find("Standard");
             if (shader == null)
             {
@@ -1305,7 +1305,7 @@ namespace MazeParty.Editor
             var placeholder = new GameObject(RuntimeTerrainResourcesName);
             var terrain = placeholder.AddComponent<Terrain>();
             terrain.terrainData = terrainData;
-            terrain.materialTemplate = renderPipeline.defaultTerrainMaterial;
+            terrain.materialTemplate = ToonShaderProjectSetup.GetTerrainMaterial();
             terrain.drawInstanced = false;
             terrain.drawTreesAndFoliage = false;
             placeholder.SetActive(false);
@@ -1330,7 +1330,7 @@ namespace MazeParty.Editor
             if (material != null) return material; // Preserve authored material design.
             if (material == null)
             {
-                var shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+                var shader = Shader.Find("MazeParty/Toon Shader FX") ?? Shader.Find("Standard");
                 if (shader == null)
                 {
                     throw new InvalidOperationException("No supported Lit shader is available.");

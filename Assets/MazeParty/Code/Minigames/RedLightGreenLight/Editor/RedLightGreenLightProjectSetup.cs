@@ -887,11 +887,11 @@ namespace MazeParty.Editor
                 return material;
             }
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var shader = Shader.Find("MazeParty/Toon Shader FX");
             if (shader == null)
             {
                 throw new InvalidOperationException(
-                    "Universal Render Pipeline/Lit is required for Red Light " +
+                    "MazeParty/Toon Shader FX is required for Red Light " +
                     "/ Green Light materials.");
             }
 

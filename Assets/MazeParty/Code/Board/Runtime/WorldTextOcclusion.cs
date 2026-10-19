@@ -127,7 +127,7 @@ namespace MazeParty.Gameplay
                 return new Material(template) { name = name };
             }
 
-            var shader = Shader.Find("Universal Render Pipeline/Lit") ??
+            var shader = Shader.Find("MazeParty/Toon Shader FX") ??
                          Shader.Find("Standard");
             return shader != null ? new Material(shader) { name = name } : null;
         }

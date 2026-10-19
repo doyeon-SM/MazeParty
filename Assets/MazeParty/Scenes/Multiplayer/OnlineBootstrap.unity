@@ -370,6 +370,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1996574992}
     m_Modifications:
+    - target: {fileID: 219442259902808019, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: af9c440a02937e24eb1c6a7f69141aeb, type: 2}
     - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: m_LocalPosition.x
       value: 12
@@ -414,6 +418,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: South Iron Gate Left
       objectReference: {fileID: 0}
+    - target: {fileID: 4073327668993335970, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 33a934a9a082bd44787b5922a0063f86, type: 2}
     - target: {fileID: 6038573933271284404, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: m_Mesh
       value: 

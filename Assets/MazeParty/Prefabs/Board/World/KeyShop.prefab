@@ -227,6 +227,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4979692775832629881}
     m_Modifications:
+    - target: {fileID: 2929001040767390639, guid: 050b0f705d446fc4893e72b786f3fb53, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 0817c70d3886a4547816709c562a9f7a, type: 2}
     - target: {fileID: 3721409931440501370, guid: 050b0f705d446fc4893e72b786f3fb53, type: 3}
       propertyPath: m_Name
       value: House Model

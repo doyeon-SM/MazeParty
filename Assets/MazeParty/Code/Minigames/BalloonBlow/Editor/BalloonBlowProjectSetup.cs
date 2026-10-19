@@ -441,11 +441,11 @@ namespace MazeParty.Editor
             Color color,
             Color? emission = null)
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var shader = Shader.Find("MazeParty/Toon Shader FX");
             if (shader == null)
             {
                 throw new InvalidOperationException(
-                    "Universal Render Pipeline/Lit is required for Balloon " +
+                    "MazeParty/Toon Shader FX is required for Balloon " +
                     "Blow prototype materials.");
             }
 

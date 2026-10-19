@@ -339,11 +339,11 @@ namespace MazeParty.Editor
 
         private static Material CreateOrUpdateUrpMaterial()
         {
-            var shader = Shader.Find("Universal Render Pipeline/Lit");
+            var shader = Shader.Find("MazeParty/Toon Shader FX");
             if (shader == null)
             {
                 throw new InvalidOperationException(
-                    "Universal Render Pipeline/Lit is unavailable.");
+                    "MazeParty/Toon Shader FX is unavailable.");
             }
 
             var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(
@@ -375,7 +375,7 @@ namespace MazeParty.Editor
             material.SetColor("_Color", Color.white);
             material.SetFloat("_Surface", 0f);
             material.SetFloat("_AlphaClip", 0f);
-            material.enableInstancing = false;
+            material.enableInstancing = true;
             material.renderQueue = -1;
             EditorUtility.SetDirty(material);
             return material;
@@ -462,8 +462,8 @@ private static GameObject CreateOrUpdateCollisionFreePrefab(
             {
                 prototype = prefab,
                 usePrototypeMesh = true,
-                useInstancing = false,
-                renderMode = DetailRenderMode.Grass,
+                useInstancing = true,
+                renderMode = DetailRenderMode.VertexLit,
                 minWidth = 0.85f,
                 maxWidth = 1.15f,
                 minHeight = 0.85f,

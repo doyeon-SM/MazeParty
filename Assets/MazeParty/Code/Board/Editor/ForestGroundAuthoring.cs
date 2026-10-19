@@ -330,7 +330,7 @@ namespace MazeParty.Editor
                     "The active render pipeline does not provide a default terrain material.");
             }
 
-            terrain.materialTemplate = renderPipeline.defaultTerrainMaterial;
+            terrain.materialTemplate = ToonShaderProjectSetup.GetTerrainMaterial();
             // Unity 6 URP can leave runtime-instantiated Terrain invisible in
             // standalone Players when the instanced path is enabled. Keep the
             // stable non-instanced path for board maps loaded from Resources.
