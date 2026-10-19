@@ -506,6 +506,15 @@ namespace MazeParty.Multiplayer
                     PresentationAccessibility.FlashIntensityScale;
             }
 
+            // Result/countdown resets the lamps to green but is not a green gameplay signal.
+            if (state.Phase != NetworkRedLightGreenLightPhase.Running)
+            {
+                _signalBaselineInitialized = true;
+                _lastSignalPhase = phase;
+                GameSound.Stop(_signalTone, 0f);
+                return;
+            }
+
             if (!_signalBaselineInitialized)
             {
                 _signalBaselineInitialized = true;
@@ -519,8 +528,8 @@ namespace MazeParty.Multiplayer
             _lastSignalPhase = phase;
             if (phase == RedLightGreenLightSignalPhase.Green)
             {
-                if (cueAudioSource != null && greenCue != null)
-                    cueAudioSource.PlayOneShot(greenCue);
+                GameSound.Stop(_signalTone, 0f);
+                GameSound.Play(SoundKeys.MinigameGreenSignal);
             }
             else
             {

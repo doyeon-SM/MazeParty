@@ -424,6 +424,7 @@ namespace MazeParty.Multiplayer
                     : arena.position + Vector3.up;
             }
 
+            GameSound.PlayAt(SoundKeys.MinigameBombExplosion, explosionPosition);
             OneShotVfxPool.Play(
                 explosionVfxPrefab,
                 explosionPosition,

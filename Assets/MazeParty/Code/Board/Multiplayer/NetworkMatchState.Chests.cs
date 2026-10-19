@@ -57,7 +57,11 @@ namespace MazeParty.Multiplayer
             state.Consumed = true;
             state.Revision++;
             SetChestSnapshot(index, state);
-            avatar.PresentChestAcquiredOnServer(id);
+            var rewardPosition = _boardTopology != null &&
+                _boardTopology.TryGetTile(state.Location, out var tile)
+                    ? BoardTileWorldPlacement.PeripheralPoint(tile, .55f) + Vector3.up * .9f
+                    : avatar.transform.position + Vector3.up;
+            avatar.PresentChestAcquiredOnServer(id, rewardPosition);
             return true;
         }
         private void TickChestPresentation()

@@ -36,3 +36,4 @@ MonoBehaviour:
   WorldPrefab: {fileID: 1771592972813634690, guid: faa582ebfae513644bc14431bedabd70, type: 3}
   ExplosionPrefab: {fileID: 0}
   ImpactPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  PlayerImpactPrefab: {fileID: 8253370084733079207, guid: c6954217c1e172a40a7c8b946a7aad61, type: 3}

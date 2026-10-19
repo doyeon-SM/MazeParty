@@ -36,7 +36,13 @@ namespace MazeParty.Editor
         }
         internal static void EnsureChest()
         {
-            if (AssetDatabase.LoadAssetAtPath<GameObject>(ChestPath) != null) return;
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(ChestPath) != null)
+            {
+                var existing = AssetDatabase.LoadAssetAtPath<GameObject>(ChestPath);
+                if (existing.GetComponent<BoardChestVisual>().AcquiredVfxPrefab == null)
+                    Upgrade(ChestPath, EnsureAcquiredVfx);
+                return;
+            }
             var source = AssetDatabase.LoadAssetAtPath<GameObject>(SourcePath);
             if (source == null) throw new InvalidOperationException("EpicChest URP source is missing: " + SourcePath);
             Directory.CreateDirectory(Path.GetDirectoryName(ChestPath));
@@ -99,10 +105,23 @@ namespace MazeParty.Editor
                 data.FindProperty("interactionCollider").objectReferenceValue = collider;
                 data.FindProperty("observationPoint").objectReferenceValue = point;
                 data.ApplyModifiedPropertiesWithoutUndo();
+                EnsureAcquiredVfx(root);
                 PrefabUtility.SaveAsPrefabAsset(root, ChestPath);
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
         }
+        private static void EnsureAcquiredVfx(GameObject root)
+        {
+            var data = new SerializedObject(root.GetComponent<BoardChestVisual>());
+            var binding = data.FindProperty("acquiredVfxPrefab");
+            if (binding.objectReferenceValue != null) return;
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Minigames/Common/VFX/ArrivalFireworks.prefab");
+            if (prefab == null) throw new InvalidOperationException("Missing ArrivalFireworks prefab.");
+            binding.objectReferenceValue = prefab;
+            data.ApplyModifiedPropertiesWithoutUndo();
+        }
+
         private static void Upgrade(string path, Action<GameObject> update)
         {
             var root = PrefabUtility.LoadPrefabContents(path);

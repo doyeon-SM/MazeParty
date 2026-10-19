@@ -8,6 +8,8 @@ namespace MazeParty.Gameplay
         [SerializeField] private Animator chestAnimator;
         [SerializeField] private Collider interactionCollider;
         [SerializeField] private Transform observationPoint;
+        [SerializeField] private GameObject acquiredVfxPrefab;
+        public GameObject AcquiredVfxPrefab => acquiredVfxPrefab;
         private BoardTile _placedTile;
         private Vector3 _placedTilePosition;
         private bool _initialized;
@@ -15,7 +17,8 @@ namespace MazeParty.Gameplay
         public int ChestIndex { get; private set; }
         public Vector3 ObservationPoint => observationPoint.position;
         public bool HasRequiredReferences => chestAnimator != null &&
-            interactionCollider != null && interactionCollider.isTrigger && observationPoint != null;
+            interactionCollider != null && interactionCollider.isTrigger && observationPoint != null &&
+            acquiredVfxPrefab != null;
         public void PlaceOnTile(BoardTile tile)
         {
             if (tile == null || (_placedTile == tile && _placedTilePosition == tile.WorldCenter)) return;

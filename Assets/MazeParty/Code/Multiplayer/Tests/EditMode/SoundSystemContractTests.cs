@@ -121,6 +121,41 @@ namespace MazeParty.Multiplayer.Tests
                 SoundKeys.ItemUse(PrototypeItemId.Sniper),
                 SniperClipPath);
 
+            AssertCueUsesClip(library, SoundKeys.MinigameFinish,
+                "Assets/Resources/sound/minigamefinish.mp3");
+            AssertCueUsesClip(library, SoundKeys.BoardKeyBuy,
+                "Assets/Resources/sound/keybuy 1.mp3");
+            Assert.That(library.TryGet(SoundKeys.ItemBulletImpact, out var gunHit), Is.True);
+            Assert.That(gunHit.Spatial, Is.True);
+            Assert.That(gunHit.VariationMode, Is.EqualTo(SoundVariationMode.RandomNoRepeat));
+            Assert.That(gunHit.ClipCount, Is.GreaterThan(1));
+            var hitClips = Enumerable.Range(0, gunHit.ClipCount).Select(gunHit.GetClip).ToArray();
+            Assert.That(hitClips.All(clip => clip != null), Is.True);
+            Assert.That(hitClips.Distinct().Count(), Is.EqualTo(gunHit.ClipCount));
+            Assert.That(hitClips.Contains(
+                AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Resources/sound/gunhitsound.mp3")), Is.False);
+
+            AssertCueUsesClip(library, SoundKeys.MinigameBombExplosion, "Assets/Resources/sound/explosion.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftPickup, "Assets/Resources/sound/goldgain.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftThrow, "Assets/Resources/sound/grenade.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameBallReflect, "Assets/Resources/sound/dicebounce.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameBallGoal, "Assets/Resources/sound/diceresult.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGreenSignal, "Assets/Resources/sound/countdowngo.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayCorrect, "Assets/Resources/sound/confirmandpopupopen.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayIncorrect, "Assets/Resources/sound/errorandnotice.mp3");
+            AssertCueUsesClip(library, SoundKeys.BoardChestAcquire, "Assets/Resources/sound/keybuy 1.mp3");
+            Assert.That(library.TryGet(SoundKeys.MinigameGiftHit, out var giftHit), Is.True);
+            Assert.That(giftHit.ClipCount, Is.EqualTo(3));
+            Assert.That(giftHit.VariationMode, Is.EqualTo(SoundVariationMode.RandomNoRepeat));
+            foreach (var key in new[] { SoundKeys.MinigameBombExplosion, SoundKeys.MinigameGiftPickup, SoundKeys.MinigameGiftDeposit, SoundKeys.MinigameGiftThrow, SoundKeys.MinigameGiftHit, SoundKeys.MinigameBallReflect, SoundKeys.MinigameBallGoal, SoundKeys.MinigameGreenSignal, SoundKeys.MinigameWrongWayCorrect, SoundKeys.MinigameWrongWayIncorrect, SoundKeys.BoardChestAcquire })
+            {
+                Assert.That(library.TryGet(key, out var reused), Is.True);
+                Assert.That(reused.Channel, Is.EqualTo(AudioChannel.Sfx), key);
+                Assert.That(reused.HasClips, Is.True, key);
+                Assert.That(reused.Loop, Is.False, key);
+            }
+
             var registered = new HashSet<SoundCue>(library.Cues);
             var keys = new HashSet<string>();
             foreach (var cue in library.Cues)

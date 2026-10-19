@@ -71,6 +71,7 @@ MonoBehaviour:
   chestAnimator: {fileID: 6466503481235435025}
   interactionCollider: {fileID: 3041754840786189412}
   observationPoint: {fileID: 3912970321392655061}
+  acquiredVfxPrefab: {fileID: 6809623227728566479, guid: 85473b9fd0e62a845a128ec2f6219fb1, type: 3}
 --- !u!1 &2192980010913350490
 GameObject:
   m_ObjectHideFlags: 0

@@ -90,6 +90,7 @@ namespace MazeParty.Multiplayer
         public static NetworkBouncingBallsState Instance { get; private set; }
 
         public event Action<int> GoalPresentationRequested;
+        public event Action<Vector2> ReflectionPresentationRequested;
 
         public NetworkBouncingBallsPhase Phase =>
             (NetworkBouncingBallsPhase)_phase.Value;
@@ -186,6 +187,7 @@ namespace MazeParty.Multiplayer
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
             _serverMatch = new BouncingBallsMatchState(seed);
+            _serverMatch.ShieldReflected += PresentShieldReflectionOnServer;
             _matchActive.Value = true;
             _roundNumber.Value = (byte)_serverMatch.RoundNumber;
             CacheAndFreezeBoardAvatarsOnServer();
@@ -401,6 +403,19 @@ namespace MazeParty.Multiplayer
             _serverMatch.AdvanceTo(
                 Math.Min(BouncingBallsRules.RoundSeconds, elapsed));
             DeliverPendingGoalPresentationEventsOnServer();
+        }
+
+        private void PresentShieldReflectionOnServer(int slot, double x, double y)
+        {
+            if (IsSpawned && IsServer && _matchActive.Value && !_paused.Value &&
+                Phase == NetworkBouncingBallsPhase.Playing)
+                PlayReflectionPresentationRpc(new Vector2((float)x, (float)y));
+        }
+
+        [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable)]
+        private void PlayReflectionPresentationRpc(Vector2 position)
+        {
+            ReflectionPresentationRequested?.Invoke(position);
         }
 
         private void DeliverPendingGoalPresentationEventsOnServer()
@@ -663,6 +678,8 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalRuntime()
         {
+            if (_serverMatch != null)
+                _serverMatch.ShieldReflected -= PresentShieldReflectionOnServer;
             _serverMatch = null;
             _phaseStartedAt = 0d;
             _phaseElapsedAtPause = 0d;

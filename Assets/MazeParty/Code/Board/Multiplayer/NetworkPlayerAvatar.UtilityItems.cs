@@ -61,6 +61,7 @@ namespace MazeParty.Multiplayer
             _equippedItem.Value = (byte)PrototypeItemId.PositionSwapper;
             _swapSeconds.Value = (float)_swapChannel.Remaining;
             StopServerInputOnServer();
+            PresentItemUseOnServer(PrototypeItemId.PositionSwapper, animate: false);
             return true;
         }
 

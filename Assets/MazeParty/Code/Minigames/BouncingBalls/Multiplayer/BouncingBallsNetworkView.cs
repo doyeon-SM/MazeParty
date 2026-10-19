@@ -377,8 +377,7 @@ namespace MazeParty.Multiplayer
 
         private void HandleGoalPresentationRequested(int slot)
         {
-            if (!_worldVisible || goalBurstVfxPrefab == null ||
-                arenaPresentation == null)
+            if (!_worldVisible || arenaPresentation == null)
             {
                 return;
             }
@@ -406,11 +405,23 @@ namespace MazeParty.Multiplayer
                     break;
             }
 
+            var worldPosition = arenaPresentation.transform.TransformPoint(localPosition);
+            GameSound.PlayAt(SoundKeys.MinigameBallGoal, worldPosition);
             OneShotVfxPool.Play(
                 goalBurstVfxPrefab,
-                arenaPresentation.transform.TransformPoint(localPosition),
+                worldPosition,
                 Quaternion.identity,
                 1.35f);
+        }
+
+        private void HandleReflectionPresentationRequested(Vector2 position)
+        {
+            if (!_worldVisible || arenaPresentation == null) return;
+            var worldPosition = arenaPresentation.transform.TransformPoint(
+                new Vector3(position.x, position.y, 0.7f));
+            GameSound.PlayAt(SoundKeys.MinigameBallReflect, worldPosition);
+            OneShotVfxPool.Play(goalBurstVfxPrefab, worldPosition,
+                Quaternion.identity, 0.45f);
         }
 
         private void EnsureGoalVfxSubscription()
@@ -425,6 +436,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.GoalPresentationRequested +=
                     HandleGoalPresentationRequested;
+                _subscribedVfxState.ReflectionPresentationRequested +=
+                    HandleReflectionPresentationRequested;
             }
         }
 
@@ -434,6 +447,8 @@ namespace MazeParty.Multiplayer
             {
                 _subscribedVfxState.GoalPresentationRequested -=
                     HandleGoalPresentationRequested;
+                _subscribedVfxState.ReflectionPresentationRequested -=
+                    HandleReflectionPresentationRequested;
                 _subscribedVfxState = null;
             }
         }

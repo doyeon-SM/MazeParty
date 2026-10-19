@@ -780,11 +780,11 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        public void PresentItemUseOnServer(PrototypeItemId itemId)
+        public void PresentItemUseOnServer(PrototypeItemId itemId, bool animate = true)
         {
             if (IsServer && PrototypeItemCatalog.IsValid(itemId))
             {
-                PresentItemUseRpc((byte)itemId);
+                PresentItemUseRpc((byte)itemId, animate);
             }
         }
 
@@ -897,7 +897,9 @@ namespace MazeParty.Multiplayer
             PresentHitRpc(
                 (byte)request.HitRegion,
                 request.Kind == DamageKind.Item,
-                request.Amount);
+                request.Amount,
+                playSound: !(request.Kind == DamageKind.Item &&
+                    BoardItemPresentationRules.IsFirearm(request.ItemId)));
             if (_currentHealth.Value == 0)
             {
                 if (attacker != null)
@@ -2569,12 +2571,15 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentHitRpc(byte region, bool showLocalFlash, int damage)
+        private void PresentHitRpc(byte region, bool showLocalFlash, int damage, bool playSound = true)
         {
             _avatarVisual?.TriggerHit((PlayerHitRegion)region, damage);
-            GameSound.PlayAt(
-                SoundKeys.CombatHit((PlayerHitRegion)region),
-                transform.position);
+            if (playSound)
+            {
+                GameSound.PlayAt(
+                    SoundKeys.CombatHit((PlayerHitRegion)region),
+                    transform.position);
+            }
             if (IsOwner && showLocalFlash)
             {
                 ArenaCombatHitFlashView.Instance?.Flash();
@@ -2582,9 +2587,9 @@ namespace MazeParty.Multiplayer
         }
 
         [Rpc(SendTo.ClientsAndHost)]
-        private void PresentItemUseRpc(byte itemId)
+        private void PresentItemUseRpc(byte itemId, bool animate)
         {
-            _avatarVisual?.TriggerItemUse((PrototypeItemId)itemId);
+            if (animate) _avatarVisual?.TriggerItemUse((PrototypeItemId)itemId);
             GameSound.PlayAt(
                 SoundKeys.ItemUse((PrototypeItemId)itemId),
                 transform.position);

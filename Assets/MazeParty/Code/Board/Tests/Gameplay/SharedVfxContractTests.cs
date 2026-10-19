@@ -12,6 +12,8 @@ namespace MazeParty.Gameplay.Tests
             "Assets/MazeParty/Prefabs/Common/VFX/CartoonExplosion.prefab";
         private const string HitSparkPath =
             "Assets/MazeParty/Prefabs/Common/VFX/HitSpark.prefab";
+        private const string FireImpactPath =
+            "Assets/MazeParty/Prefabs/Common/VFX/FireImpact.prefab";
         private const string LightningStrikePath =
             "Assets/MazeParty/Prefabs/Common/VFX/LightningStrike.prefab";
         private const string WaterShieldPath =
@@ -69,6 +71,7 @@ namespace MazeParty.Gameplay.Tests
                      {
                          ExplosionPath,
                          HitSparkPath,
+                         FireImpactPath,
                          LightningStrikePath
                      })
             {
@@ -143,6 +146,10 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(mine.ExplosionPrefab, Is.SameAs(explosion));
             Assert.That(pistol.ImpactPrefab, Is.SameAs(hitSpark));
             Assert.That(sniper.ImpactPrefab, Is.SameAs(hitSpark));
+            var playerImpact = AssetDatabase.LoadAssetAtPath<GameObject>(FireImpactPath);
+            Assert.That(playerImpact, Is.Not.Null);
+            Assert.That(pistol.PlayerImpactPrefab, Is.SameAs(playerImpact));
+            Assert.That(sniper.PlayerImpactPrefab, Is.SameAs(playerImpact));
 
             foreach (var id in new[]
                      {
@@ -176,6 +183,7 @@ namespace MazeParty.Gameplay.Tests
                     PrototypeItemCatalog.Get(id).ImpactPrefab,
                     Is.Null,
                     id.ToString());
+                Assert.That(PrototypeItemCatalog.Get(id).PlayerImpactPrefab, Is.Null, id.ToString());
             }
         }
 

@@ -511,7 +511,17 @@ namespace MazeParty.Multiplayer
                     Quaternion.identity,
                     0.72f);
             }
-            cueAudioSource?.Play();
+            string soundKey = null;
+            switch (actionType)
+            {
+                case GiftGrabNetworkActionType.Pickup: soundKey = SoundKeys.MinigameGiftPickup; break;
+                case GiftGrabNetworkActionType.Deposit: soundKey = SoundKeys.MinigameGiftDeposit; break;
+                case GiftGrabNetworkActionType.Throw: soundKey = SoundKeys.MinigameGiftThrow; break;
+                case GiftGrabNetworkActionType.Push:
+                case GiftGrabNetworkActionType.ThrownHit: soundKey = SoundKeys.MinigameGiftHit; break;
+            }
+            if (soundKey != null)
+                GameSound.PlayAt(soundKey, new Vector3(actionPosition.x, 0.62f, actionPosition.y));
         }
 
         private PlayerAvatarVisual GetPlayerVisual(int slot)

@@ -14,7 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: item.bullet_impact
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: 1e96186dd4082f04898fb17fcb868a2c, type: 3}
+  - {fileID: 8300000, guid: 940a257621a85454c8aacec34a6b7eff, type: 3}
+  - {fileID: 8300000, guid: 1db1354bfdf384942a700a71a1ba1674, type: 3}
+  - {fileID: 8300000, guid: 4e85d68c5577e9d41b018c3e54d99039, type: 3}
+  - {fileID: 8300000, guid: f89dcdee657f1b448a199db76f4665b9, type: 3}
+  - {fileID: 8300000, guid: 7038b35d1d653054aaf457210fbfe273, type: 3}
+  - {fileID: 8300000, guid: a0cd204b90187fd409ddf037e533884b, type: 3}
+  - {fileID: 8300000, guid: d184eac1c7fd1114d982e3a12a9ff8e4, type: 3}
+  - {fileID: 8300000, guid: 3931241c50089b64faf025f233c79807, type: 3}
+  - {fileID: 8300000, guid: 1bf9e6838866efe489ff2d06561a6cfb, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0.1
@@ -24,6 +34,7 @@ MonoBehaviour:
   maxDistance: 30
   rolloff: 1
   loop: 0
+  startOffsetSeconds: 0
   maxInstances: 4
   minInterval: 0.05
   priority: 70

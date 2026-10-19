@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.BouncingBalls;
 using NUnit.Framework;
 
@@ -156,6 +157,10 @@ namespace MazeParty.Gameplay.Tests
         {
             var batched = new BouncingBallsMatchState(2481);
             var incremental = new BouncingBallsMatchState(2481);
+            var batchedReflections = new List<(int, double, double)>();
+            var incrementalReflections = new List<(int, double, double)>();
+            batched.ShieldReflected += (slot, x, y) => batchedReflections.Add((slot, x, y));
+            incremental.ShieldReflected += (slot, x, y) => incrementalReflections.Add((slot, x, y));
             batched.SetShieldInput(0, 1);
             incremental.SetShieldInput(0, 1);
             batched.SetShieldInput(2, -1);
@@ -168,6 +173,11 @@ namespace MazeParty.Gameplay.Tests
             }
 
             AssertSameSimulation(batched, incremental);
+            Assert.That(batchedReflections, Is.Not.Empty);
+            Assert.That(incrementalReflections, Is.EqualTo(batchedReflections));
+            var delivered = batchedReflections.Count;
+            batched.AdvanceTo(5d);
+            Assert.That(batchedReflections.Count, Is.EqualTo(delivered), "A repeated tick must not replay impacts.");
             Assert.That(
                 batched.GetShield(0).Center,
                 Is.EqualTo(BouncingBallsRules.GoalHalfWidth));

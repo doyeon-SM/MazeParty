@@ -125,6 +125,8 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         public int ActiveBallCount => _activeBallCount;
         public ulong GoalSequence { get; private set; }
         public BouncingBallsGoalEvent? LastGoal { get; private set; }
+        // Transient simulation events, never reconstructed from a saved snapshot.
+        public event Action<int, double, double> ShieldReflected;
 
         public BouncingBallsBallSnapshot GetBall(int ballId)
         {
@@ -416,6 +418,11 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
                     SetRadial(ball, sideSlot, (2d * shieldFace) - radial);
                     InvertRadialVelocity(ball, sideSlot);
                     ball.OwnerSlot = sideSlot;
+                    var contactX = sideSlot == 1 ? BouncingBallsRules.ShieldRailDistance :
+                        sideSlot == 3 ? -BouncingBallsRules.ShieldRailDistance : tangentAtCrossing;
+                    var contactY = sideSlot == 0 ? -BouncingBallsRules.ShieldRailDistance :
+                        sideSlot == 2 ? BouncingBallsRules.ShieldRailDistance : tangentAtCrossing;
+                    ShieldReflected?.Invoke(sideSlot, contactX, contactY);
                     return false;
                 }
             }

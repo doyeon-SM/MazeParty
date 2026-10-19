@@ -35,5 +35,7 @@ namespace MazeParty.Gameplay
         public GameObject WorldPrefab;
         public GameObject ExplosionPrefab;
         public GameObject ImpactPrefab;
+        [Tooltip("Firearm impact on a player; ImpactPrefab remains the world-surface effect.")]
+        public GameObject PlayerImpactPrefab;
     }
 }

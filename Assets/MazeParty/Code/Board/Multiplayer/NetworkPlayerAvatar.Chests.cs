@@ -1,5 +1,6 @@
 using MazeParty.Gameplay;
 using Unity.Netcode;
+using UnityEngine;
 
 namespace MazeParty.Multiplayer
 {
@@ -40,14 +41,18 @@ namespace MazeParty.Multiplayer
             if (rpcParams.Receive.SenderClientId == OwnerClientId)
                 NetworkMatchState.Instance?.TryOpenChestOnServer(this, index, revision);
         }
-        public void PresentChestAcquiredOnServer(PrototypeItemId id)
+        public void PresentChestAcquiredOnServer(PrototypeItemId id, Vector3 position)
         {
-            if (IsServer) ChestAcquiredRpc((byte)id);
+            if (IsServer) ChestAcquiredRpc((byte)id, position);
         }
-        [Rpc(SendTo.Owner)]
-        private void ChestAcquiredRpc(byte item)
+        // Only a successful live acquisition sends this RPC. Snapshot restoration is silent.
+        [Rpc(SendTo.ClientsAndHost)]
+        private void ChestAcquiredRpc(byte item, Vector3 position)
         {
-            BoardChestNoticeView.Instance?.Present((PrototypeItemId)item);
+            if (IsOwner) BoardChestNoticeView.Instance?.Present((PrototypeItemId)item);
+            GameSound.PlayAt(SoundKeys.BoardChestAcquire, position);
+            OneShotVfxPool.Play(BoardWorldPrefabs.LoadRequired().Chest.AcquiredVfxPrefab,
+                position, Quaternion.identity, 0.45f);
         }
     }
 }

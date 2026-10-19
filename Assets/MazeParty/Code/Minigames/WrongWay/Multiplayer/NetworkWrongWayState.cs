@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.WrongWay;
 using Unity.Netcode;
 using UnityEngine;
@@ -251,6 +252,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            PresentAnswerRpc((byte)slot, resolution.WasCorrect);
+
             if (!resolution.WasCorrect)
             {
                 _wrongCounts[slot]++;
@@ -268,6 +271,16 @@ namespace MazeParty.Multiplayer
             }
 
             return true;
+        }
+
+        // Transient answers cannot be merged by snapshot updates or replayed on reconnect.
+        [Rpc(SendTo.ClientsAndHost)]
+        private void PresentAnswerRpc(byte slot, bool correct)
+        {
+            var avatar = NetworkMatchState.Instance?.GetAvatarForSlot(slot);
+            if (avatar != null && avatar.IsOwner)
+                GameSound.Play(correct ? SoundKeys.MinigameWrongWayCorrect :
+                    SoundKeys.MinigameWrongWayIncorrect);
         }
 
         public bool CanAcceptInputForSlot(int slot)

@@ -60,6 +60,9 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(gesture, Is.Not.Null);
             var world = BoardWorldPrefabs.LoadRequired();
             Assert.That(world.Chest.HasRequiredReferences, Is.True);
+            Assert.That(world.Chest.AcquiredVfxPrefab, Is.SameAs(
+                AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/Common/VFX/ArrivalFireworks.prefab")));
             Assert.That(PrefabUtility.IsPartOfPrefabAsset(world.Chest), Is.True);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {

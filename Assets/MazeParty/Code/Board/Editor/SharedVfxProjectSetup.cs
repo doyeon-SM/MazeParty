@@ -21,6 +21,8 @@ namespace MazeParty.Editor
             VfxFolder + "/CartoonExplosion.prefab";
         public const string HitSparkPrefabPath =
             VfxFolder + "/HitSpark.prefab";
+        public const string FireImpactPrefabPath =
+            VfxFolder + "/FireImpact.prefab";
         public const string LightningStrikePrefabPath =
             VfxFolder + "/LightningStrike.prefab";
         public const string WaterShieldPrefabPath =
@@ -37,6 +39,8 @@ namespace MazeParty.Editor
             ToolkitPrefabFolder + "/Toon Explosion.prefab";
         private const string HitSparkSourcePath =
             ToolkitPrefabFolder + "/Blue Impact.prefab";
+        private const string FireImpactSourcePath =
+            ToolkitPrefabFolder + "/Fire Impact.prefab";
         private const string LightningStrikeSourcePath =
             ToolkitPrefabFolder + "/Lightning Strike.prefab";
         private const string WaterShieldSourcePath =
@@ -53,10 +57,11 @@ namespace MazeParty.Editor
             EnsureFolder(VfxFolder);
             var explosion = EnsureCartoonExplosionPrefab();
             var impact = EnsureHitSparkPrefab();
+            var playerImpact = EnsureFireImpactPrefab();
             EnsureLightningStrikePrefab();
             EnsureWaterShieldPrefab();
             EnsureSandShieldPrefab();
-            EnsureBoardItemBindings(explosion, impact);
+            EnsureBoardItemBindings(explosion, impact, playerImpact);
             EnsureBombPassingBinding(explosion);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -89,6 +94,21 @@ namespace MazeParty.Editor
                 1.2f,
                 3f,
                 0.32f);
+        }
+
+        public static GameObject EnsureFireImpactPrefab()
+        {
+            return EnsureWrapper(
+                FireImpactPrefabPath,
+                FireImpactSourcePath,
+                "Fire Impact",
+                new Color(1f, 0.35f, 0.08f),
+                3.5f,
+                0.08f,
+                1.2f,
+                3f,
+                0.4f,
+                0.2f);
         }
 
         public static GameObject EnsureLightningStrikePrefab()
@@ -130,7 +150,8 @@ namespace MazeParty.Editor
 
         public static void EnsureBoardItemBindings(
             GameObject explosion,
-            GameObject impact)
+            GameObject impact,
+            GameObject playerImpact)
         {
             foreach (var guid in AssetDatabase.FindAssets(
                          "t:BoardItemDefinition",
@@ -168,6 +189,13 @@ namespace MazeParty.Editor
                 else if (!firearm && item.ImpactPrefab != null)
                 {
                     item.ImpactPrefab = null;
+                    dirty = true;
+                }
+
+                // Fill the new binding without overwriting an authored player impact.
+                if (firearm && item.PlayerImpactPrefab == null)
+                {
+                    item.PlayerImpactPrefab = playerImpact;
                     dirty = true;
                 }
 
@@ -244,7 +272,8 @@ namespace MazeParty.Editor
             float flashSeconds,
             float flashIntensity,
             float flashRange,
-            float sourceScale)
+            float sourceScale,
+            float sourceForwardOffset = 0f)
         {
             EnsureFolder(VfxFolder);
             var existing = AssetDatabase.LoadAssetAtPath<GameObject>(wrapperPath);
@@ -282,7 +311,8 @@ namespace MazeParty.Editor
                 }
 
                 vendor.name = "AllIn1 " + source.name;
-                vendor.transform.localPosition = Vector3.zero;
+                // Keep the pool root at the ray hit while clearing the player visual shell.
+                vendor.transform.localPosition = Vector3.forward * sourceForwardOffset;
                 vendor.transform.localRotation = Quaternion.identity;
                 vendor.transform.localScale = Vector3.one * sourceScale;
                 PrefabUtility.UnpackPrefabInstance(

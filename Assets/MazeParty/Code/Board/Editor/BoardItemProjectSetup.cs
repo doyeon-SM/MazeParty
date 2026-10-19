@@ -178,6 +178,7 @@ namespace MazeParty.Editor
             AssetDatabase.Refresh();
             var explosion = SharedVfxProjectSetup.EnsureCartoonExplosionPrefab();
             var impact = SharedVfxProjectSetup.EnsureHitSparkPrefab();
+            var playerImpact = SharedVfxProjectSetup.EnsureFireImpactPrefab();
             EnsureSimple("Shot", PrimitiveType.Cube, new Color(1f, .85f, .2f), "Assets/MazeParty/Resources/MazeParty/ItemViews");
             Create(PrototypeItemId.DoubleDice, "Double Dice", "Roll two D12s with RMB. Move after both settle.", 8, 1, 0, 0, .25f, 0, 0, 0, null);
             Create(PrototypeItemId.Pistol, "Pistol", "7 rounds / 20 damage / 2 tiles. LMB fires through board barriers.", 10, 7, 20, 16, .25f, 0, 0, 0, null);
@@ -190,7 +191,8 @@ namespace MazeParty.Editor
             Create(PrototypeItemId.Cloak, "Invisibility Cloak", "Automatically activates when selected or obtained from a chest. Hidden from opponents and minimaps until action ends. Ends before combat or on death.", 10, 1, 0, 0, .25f, 0, 0, 0, null);
             SharedVfxProjectSetup.EnsureBoardItemBindings(
                 explosion,
-                impact);
+                impact,
+                playerImpact);
             AssetDatabase.SaveAssets();
         }
 

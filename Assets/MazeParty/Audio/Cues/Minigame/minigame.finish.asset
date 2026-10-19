@@ -14,7 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.SoundCue
   key: minigame.finish
   channel: 0
-  clips: []
+  clips:
+  - {fileID: 8300000, guid: bfc8a6ed5bfeacf47a803699ec002b33, type: 3}
   variationMode: 1
   volume: 1
   volumeVariance: 0
@@ -24,6 +25,7 @@ MonoBehaviour:
   maxDistance: 30
   rolloff: 1
   loop: 0
+  startOffsetSeconds: 0
   maxInstances: 0
   minInterval: 0
   priority: 80

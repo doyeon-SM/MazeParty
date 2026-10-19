@@ -31,14 +31,14 @@
 - **현재 빌드 파일은 STOVE 검토 중**(10/18 사용자 확인).
   검토 종류·접수일·제출 버전/커밋·최신 변경 포함 여부·승인 예정일은 별도 확인한다.
 - STOVE Full 3.5.3.0, Windows x64 IL2CPP 프로필·인증 어댑터·입장 증명 구현과 Release 패키징은 완료됐다.
-  실제 런처 로그인·소유권·별도 PC 4인·복구 검증 완료로 간주하지 않는다.
+  10/19 사용자 확인: 수정 빌드의 STOVE 런처 실행 후 대기방 생성 성공. 다른 계정·별도 PC 참가, 4인 진행·복구 검증은 남아 있다.
 - 과거 확인된 Release: `Builds/stove-release-20261018-172140/MazeParty.exe`(사용자가 이전 Builds 출력을 삭제함).
   수동 빌드 출력 폴더는 `StoveBuild/`. 이전 출력의 최신 변경 포함 여부를 새 빌드와 혼동하지 않는다.
 - 10/19 사용자가 Studio 업로드·런처 실행 성공, 방 생성 전 SDK 오류 308을 보고했다.
   실제 SDK 로그에서 `real` 입력 → SDK `sandbox` / 런처 `live` 불일치와 IPC AES 키 미수신을 확인했다.
   STOVE 기본 환경과 복구 템플릿·로컬 JSON을 `LIVE`로 정정한다. 기존 `real`은 코드에서 `LIVE`로 정규화하고 잘못된 환경은 거부한다.
   SDK 호출·빌드 출력·UGS 로컬 계정 범위에 같은 정규화 값을 적용하며 소유권 검증·방 분리·코드 입장은 유지한다.
-  새 코드로 재빌드·재업로드 후 런처 방 생성 검증이 필요하다. 아직 실제 런처 접속 성공으로 간주하지 않는다.
+  후속 사용자 테스트에서 대기방 생성 성공을 확인했다(10/19). 다음 단계는 Studio 멤버 초대·승인·MazeParty 상품 권한 설정 후, 같은 STOVE 빌드의 다른 계정/PC에서 방 코드로 참가하는 테스트다.
   검증: STOVE 프로필 컴파일 오류 0, AdmissionProofTests·BuildVersionCompatibilityTests 표적 EditMode 7/7 통과.
   SDK 전달값·빌드 출력용 JSON이 LIVE로 일치함을 에디터에서 확인했고, 기존 키 보존·Git 제외도 확인했다. 이번 수정에서는 새 EXE를 추출하거나 Studio에 업로드하지 않았다.
 - Steam은 Windows x64 IL2CPP Integration Check 및 STOVE 타입/DLL 제외만 확인됐다.
@@ -353,3 +353,107 @@
 - 옷장이 열린 동안에도 대기실 WASD 이동을 허용한다. 옷장 선택용 커서와 ESC/닫기 동작은 유지하고 공격 등 다른 게임 입력은 계속 차단한다.
 - 팝업별 이동 허용 여부를 분리했다. 옷장만 이동을 허용하며 다른 일반 메뉴가 함께 열려 있으면 이동은 차단한다. 실제 대기실 이동 입력 경로에 연결했다.
 - 옷장 프리팹의 이동/커서/공격 차단 계약과 팝업 중첩·닫기·대기실 이탈 상태 전이를 포함한 관련 표적 EditMode 13/13 통과. 컴파일 오류 0. 새 Player 빌드와 실제 네트워크 다인 테스트는 수행하지 않았다.
+
+## 사운드 큐·이펙트 점검 · 2026-10-19
+
+아래는 연결 작업 전 현황 분석이다. 이후 승인된 연결·총 피격 보강 결과는 아래 사운드 연결 및 총 피격 보강 항목을 기준으로 한다.
+기준: 실제 저장소 development / HEAD 7ff2261, 저장된 코드·SoundCue/Library·씬·프리팹의 정적 점검.
+기존 PROJECT_MEMORY.md 수정은 보존했다. 이번에는 게임 코드/에셋·Notion을 수정하지 않았으며 실제 청음·플레이·테스트는 수행하지 않았다.
+
+### 확인된 사운드 연결 공백
+
+- SoundCue 68개 모두 라이브러리에 등록. 49개는 클립 할당, 19개는 비어 있다.
+  참조하는 고유 음원 GUID 62개는 모두 실제 파일까지 존재한다.
+- 즉시 보완 후보: `minigame.finish`, `item.bullet_impact`는 호출 코드가 있지만 clips=[]다.
+  미니게임 결과 진입음과 총알 충돌 전용음이 재생되지 않는다.
+  근거: 각 Audio/Cues 자산, BoardFeedbackSoundRules.ClassifyFlowTransition,
+  NetworkMatchState.Items.PresentBoardShotRpc.
+- `item.use.position_swapper`, `item.use.double_dice`, `item.use.high_dice`,
+  `item.use.low_dice`는 음원이 있지만 일반 사용 경로에서 제외되며 전용 경로에도 재생 호출이 없다.
+  위치 교환은 시전/완료/중단 알림과 좌표 이동, 특수 주사위는 선택 초기화/굴림 정산만 수행한다.
+  일반 주사위 굴림·충돌·결과음은 별도로 연결되어 있다.
+  근거: NetworkMatchState.Items.TryUseSelectedItemOnServer,
+  NetworkPlayerAvatar.UtilityItems, NetworkPlayerAvatar.Items, NetworkPlayerAvatar.BoardTurn.
+- GiftGrab은 액션 이벤트에서 cueAudioSource.Play()를 호출하지만 씬 AudioSource의 clip이 비어 있다
+  (GiftGrabNetworkView:514, GiftGrab.unity:2763). 획득·보관·던짐·피격별 큐 분리도 후속 후보다.
+- RedLightGreenLight의 Green 전환은 greenCue가 비어 있어 전환음이 없다.
+  경고/Red는 공용 음계 큐를 사용하므로 turnWarningCue/redCue 빈 필드를 별도 무음 오류로 세지 않는다.
+- 보드 상자에는 여는 소리·획득 전용음 호출이 없다. 임시 장착이라 인벤토리 개수 증가 기반
+  구매음에도 의존할 수 없다. 망토 획득 시에는 기존 망토 발동음이 별도로 난다.
+
+### 미니게임별 현황과 보강 후보
+
+공통 BGM·시작 카운트다운과 각 게임 고유 행동음을 구분했다.
+아래 보강 항목은 신규 제작/연결 후보이며 확정 기획이 아니다.
+
+| 게임 | 현재 고유 피드백 | 부족한 사운드·이펙트 후보 |
+| --- | --- | --- |
+| BombPassing | 폭탄 점멸·폭발 VFX/빛 | 전달·퓨즈 경고·폭발음 호출 없음. 전달 성공 시각 강조 후보 |
+| BouncingBalls | 실점 시 HitSpark | 반사·충돌·득실점음 없음. 방패 반사 순간 VFX 후보 |
+| CliffBarrage | 피격/밀치기 HitSpark·캐릭터 반응 | 발사·피격·낙사음 없음 |
+| GiftGrab | 액션/기절 표현·HitSpark | AudioSource 무음. 획득/보관/투척/피격 소리와 구분된 효과 후보 |
+| Race | 진행 HitSpark·도착 폭죽 | 입력 리듬·진행·완주음 없음 |
+| SnowySpin | 눈 충돌 폭발·추락 HitSpark | 구르기·충돌·추락음 없음 |
+| TerritoryPaint | 바닥 팀 색 갱신·HitSpark | 칠하기/덮어쓰기 소리 없음. 팀 색 페인트 splash 후보 |
+| WrongWay | 정답 진행/오답 회복에 같은 HitSpark, 완주 폭죽 | 정답·오답·완주음 없음. 정답/오답 VFX 구분 후보 |
+| RedLightGreenLight | 경고/Red 음계·페널티 번개음/VFX·도착 폭죽 | Green 전환음 미할당, 완주 확인음 후보 |
+| StableFooting | 안전 문양 음계·밀치기/문양 확정 HitSpark | 발판 붕괴·낙하·밀치기 효과음 후보 |
+| SequenceMemory | NPC/플레이어 음계·음표 입력 HitSpark·실수 상태 표현 | 정답 확정·오답·탈락음 및 결과별 VFX 후보 |
+| BalloonBlow | 풍선 터짐 소리·폭죽 | 불기·과호흡 위험·쓰러짐 소리 후보 |
+| Minefield | 탐지음·폭발음/VFX·도착 폭죽 | 안전 확인/도착음 후보. 탐지는 지뢰 설치 음원 재사용 |
+| TagChase | 잡힘 번개음·HitSpark·술래 aura | 역할 시작·긴급 시간 알림 후보 |
+| ArenaCombat | 공용 펀치·부위별 타격·KO음, HitSpark·피격 화면 | 핵심 타격 피드백은 이미 연결. 추가보다 실제 믹스 확인 우선 |
+
+### VFX·BGM 보강 판단
+
+- 15종 모두 주요 VFX 프리팹이 씬에 연결돼 있으며 13종은 하나 이상의 사건에 동일한 HitSpark를 사용한다.
+  이 사실만으로 외형 품질이 나쁘다고 판정하지 않는다. 페인트/정답/충돌의 의미 구분이 보강 후보다.
+- BoardChestVisual.Present는 열린 상태를 normalizedTime=1로 적용한다.
+  상자 열기 동작·보상 burst·획득 확인음을 보강할 여지가 있다. 재접속에는 과거 연출 재생을 막아야 한다.
+- 위치 교환에는 전용 시전·출발/도착 VFX와 완료/중단음 연결이 없어 HUD 문구/순간 좌표 이동에 의존한다.
+- 보드 피해 칸의 번개·폭발·FireTornado, 회복·보호막, 총알 궤적/명중, 시상식 피드백은 기존 구현이 있다.
+  FireTornado 사운드는 기존 explosion.mp3를 볼륨 0.65로 재사용한다.
+- 비어 있는 BGM 17개는 미니게임 전용 15개·대기방·시상식이다.
+  미니게임은 공용 BGM 큐(2클립), 대기방은 로비, 시상식은 보드 BGM으로 대체하므로 무음 결함으로 세지 않는다.
+  게임별 BGM 제작은 행동음 연결보다 후순위 후보다.
+- 우선순위 제안: (1) 종료/총알 충돌·기존 아이템 4큐·GiftGrab/Green 연결,
+  (2) 폭탄/공 반사·득점/눈 충돌/금더미/상자 핵심 행동음,
+  (3) 상자/위치 교환/팀 색 페인트·정답/오답 VFX,
+  (4) BGM 다양화와 실제 4인 청음·중첩/공간감/루프 확인.
+- 기존 확정 사항 유지: 미니게임 위치 강조 WaterShield를 복원하거나 임의 카메라 shake/zoom을 추가하지 않는다.
+
+## 사운드 연결 및 총 피격 보강 · 2026-10-19
+
+- 사용자 확정: 기존 음원이 있는 미연결 아이템 사운드 연결, 신규 gunhitsound/keybuy/minigamefinish 연결, gunhitsound 개별 분리 후 무작위 재생, AllIn1VfxToolkit Fire Impact를 플레이어 총 명중 위치에 표시한다. 후속 요청에서 아래 6개 재활용 추천안도 모두 승인했다.
+- 위치 교환은 시전 시작 성공 시, Double/High/Low Dice는 선택 확정 시 기존 item.use 큐를 한 번 재생하도록 연결했다. 기존 사용 모션 없이 소리만 전달하며 망토 자동 발동은 유지한다.
+- board.key.buy는 신규 `Assets/Resources/sound/keybuy 1.mp3`, minigame.finish는 신규 `minigamefinish.mp3`를 연결했다. 기존 keybuy.mp3는 보존했다. 종료음은 기존 미니게임 결과 전환 경로를 사용한다.
+- gunhitsound.mp3 원본을 보존하고 에너지 경계에 따라 10개 WAV(각 약 0.16~0.39초)로 분리했다. 클릭 방지를 위해 시작 2ms/끝 5ms 페이드를 적용했으며 Assets/MazeParty/Sounds/Board/GunHits에 저장했다. item.bullet_impact에 RandomNoRepeat로 연결해 같은 클립이 연속 선택되지 않는다.
+- 플레이어 총 명중 시 새 공간 피격음을 재생한다. 총 피해에 함께 재생되던 공통 몸 타격음은 제외해 이중 재생을 막고, 기존 피격 모션·화면 효과는 유지했다. 벽 등 비플레이어에는 인체 피격음을 재생하지 않는다.
+- Pistol/Sniper의 PlayerImpactPrefab에 공용 FireImpact 프리팹을 연결했다. 서버가 판정한 ray hit.point에 풀링된 VFX 루트를 생성하며 기존 월드 표면 HitSpark는 유지한다. 시각 요소만 앞쪽으로 약간 이동해 모델 안에 가려지지 않도록 했다. 원본 AllIn1 자산은 보존했다.
+- FireImpact는 기존 공용 VFX 생성/정리/풀링 경로를 재사용한다. 충돌체·NetworkObject·데모 동작을 포함하지 않으며 새 바인딩만 채우고 기존 프리팹 디자인을 덮어쓰지 않는다.
+- 검증: 사운드/공용 VFX/아이템 규칙 관련 표적 EditMode 16/16, 망토 선택·상자 획득 및 큰 피해 상태 전이 2/2 통과(총 18개). 프리팹 위치 보정 후 VFX 계약 4개 재실행 통과. 컴파일 오류 없음. 마지막 권한 테스트의 NetworkManager 미시작 RPC 로그 6건은 기존 LogAssert.Expect로 명시된 테스트 로그다.
+- 10개 클립의 Unity 디코딩·비영 데이터 및 피크 여유를 확인했고 1,000회 무작위 선택에서 연속 중복 없이 모든 클립이 선택됐다. 전체 EditMode, 새 Player 빌드, 실제 네트워크 4인 재생·청음은 수행하지 않았다.
+- 격리된 Editor PreviewScene에서 실제 플레이어 비주얼에 권총/저격총 효과를 렌더링했다. 근거: Logs/SoundFeedback-20261019/FireImpact-preview.png, audio-validation.txt, gun_hit_segments.json. 실제 게임플레이 스크린샷은 아니다. 작업 전 Race 씬을 유지했다.
+- development / 기존 HEAD 7ff2261 기준의 미커밋 작업이다. 기존 PROJECT_MEMORY 및 작업 도중의 LobbyCanvas/GameMenuCanvas 변경을 보존했다. Notion은 수정하지 않았다.
+
+### 재활용 보강 6개 — 사용자 전체 승인, 구현 완료
+
+1. BombPassing 폭발: 기존 explosion.mp3를 현재 폭발 VFX와 맞춰 재생.
+2. GiftGrab: 획득 goldgain.mp3, 보관 shopbuy.mp3, 투척 grenade.mp3, 피격 hitbody 계열. 기존 HitSpark 유지.
+3. BouncingBalls: 방패 반사 dicebounce.mp3, 득점 diceresult.mp3, 반사 지점에 작은 기존 HitSpark.
+4. RedLightGreenLight Green 전환: countdowngo.mp3를 재사용.
+5. WrongWay 정답/오답: confirmandpopupopen.mp3 / errorandnotice.mp3를 재사용하고 올바른 SFX 카테고리의 별도 이벤트 큐로 연결. UI 채널을 직접 재생하는 방식은 피한다.
+6. 보드 상자 획득: keybuy 1.mp3와 작은 ArrivalFireworks 조합. 성공한 획득 RPC에서만 재생하며 재접속 복원은 무음이다.
+
+위 6개는 사용자가 모두 적용하도록 승인했다. 상자 획득은 keybuy 1.mp3를 사용한다. minigamefinish는 약 7.68초이므로 개별 완주/득점에 반복 사용하지 않고 전체 결과 전환용으로 유지한다.
+
+
+- 6개 보강을 모두 연결했다. 기존 음원 파일을 복제하지 않고 전용 SoundCue 11개를 추가해 라이브러리에 등록했다. 기존 큐의 음량·카테고리는 유지하며 새 큐는 모두 SFX 믹서를 사용한다.
+- BombPassing은 기존 폭발 sequence 변경 감지에 폭발음을 연결하고 첫 프레임/늦은 접속의 과거 폭발은 재생하지 않는다. GiftGrab은 기존 액션 RPC의 Pickup/Deposit/Throw/Push/ThrownHit에 각 큐를 연결했다.
+- BouncingBalls는 서버 시뮬레이션의 실제 방패 반사 좌표를 일회성 RPC로 전달해 dicebounce와 작은 HitSpark를 함께 표시한다. 기존 골 이벤트에 diceresult를 연결했다. 반복 tick에서 반사 이벤트가 중복 발생하지 않으며 업데이트 묶음 크기에 상관없이 동일한 이벤트가 나온다.
+- RedLightGreenLight는 실제 Running 중 Green 전환에만 countdowngo를 재생한다. 경고 음계를 멈추며 결과/카운트다운의 조명 초기화는 재생하지 않는다. 최초 진입은 기존 기준 상태 처리로 과거 신호를 재생하지 않는다.
+- WrongWay는 서버가 승인한 입력마다 정답/오답을 일회성 RPC로 전달하고 해당 플레이어의 클라이언트에서만 소리를 재생한다. 빠른 입력의 스냅샷 병합으로 소리가 빠지거나 다른 플레이어의 결과와 혼동되는 것을 방지한다.
+- 상자 획득은 위치를 포함한 기존 RPC를 모든 참가자에게 전달해 공간 효과음과 0.45배 ArrivalFireworks를 표시한다. 획득 안내 UI는 소유자에게만 표시한다. 프리팹의 새 VFX 바인딩만 채웠고 기존 디자인은 유지했다.
+- 검증: 관련 표적 EditMode 18/18 통과. WrongWay 이벤트 전달 보완 후 입력 시간 경계·씬 계약 2/2 통과(앞 실행과 한 개 중복). 격리된 Play Mode에서 새 큐 11개의 유효한 재생 핸들·AudioSource 재생·정확한 음원·SFX 믹서 및 2D/3D 설정, 두 VFX 풀링 생성을 확인했다. 소스는 검증 중 mute 처리했으므로 주관적 청음 검증은 아니다.
+- 검증용 임시 씬을 삭제하고 Race 씬 및 playModeStartScene 설정을 복원했다. 기존 사용자 UI 변경은 보존했다. 전체 EditMode, 새 Player 빌드, 실제 네트워크 4인 믹스 검증은 수행하지 않았다. 재생 근거: Logs/SoundFeedback-20261019/reuse-playback-validation.txt.
+- 최종 Green 비실행 상태 가드 반영 후 스크립트 DLL 갱신·도메인 리로드 및 Unity 콘솔 오류 0건을 확인했다. 에디터 준비 상태 응답 지연은 있었으며, 관련 표적 테스트는 중복을 제외하면 19개가 통과했다.

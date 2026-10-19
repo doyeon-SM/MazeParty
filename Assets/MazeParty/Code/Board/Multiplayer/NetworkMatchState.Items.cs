@@ -70,15 +70,17 @@ namespace MazeParty.Multiplayer
                     item.Range,
                     avatar.gameObject,
                     out var hit);
+                var hitPlayer = false;
                 if (didHit)
                 {
                     endpoint = hit.point;
                     var target = hit.collider.GetComponentInParent<NetworkPlayerAvatar>();
-                    if (target != null) target.ApplyDamage(new DamageRequest(
+                    hitPlayer = target != null;
+                    if (hitPlayer) target.ApplyDamage(new DamageRequest(
                         item.Damage, DamageKind.Item, avatar.gameObject,
                         itemId: id));
                 }
-                PresentBoardShotRpc(origin, endpoint, (byte)id, didHit);
+                PresentBoardShotRpc(origin, endpoint, (byte)id, didHit, hitPlayer);
             }
             else if (id == PrototypeItemId.Grenade)
             {
@@ -453,20 +455,22 @@ namespace MazeParty.Multiplayer
             Vector3 origin,
             Vector3 end,
             byte itemId,
-            bool didHit)
+            bool didHit,
+            bool hitPlayer)
         {
             var item = PrototypeItemCatalog.Get((PrototypeItemId)itemId);
             if (didHit)
             {
-                GameSound.PlayAt(SoundKeys.ItemBulletImpact, end);
-                if (item.ImpactPrefab != null)
+                if (hitPlayer) GameSound.PlayAt(SoundKeys.ItemBulletImpact, end);
+                var impactPrefab = hitPlayer ? item.PlayerImpactPrefab : item.ImpactPrefab;
+                if (impactPrefab != null)
                 {
                     var incoming = origin - end;
                     var rotation = incoming.sqrMagnitude > 0.0001f
                         ? Quaternion.LookRotation(incoming.normalized, Vector3.up)
                         : Quaternion.identity;
                     OneShotVfxPool.Play(
-                        item.ImpactPrefab,
+                        impactPrefab,
                         end,
                         rotation,
                         item.Id == PrototypeItemId.Sniper ? 0.48f : 0.34f);
@@ -500,6 +504,7 @@ namespace MazeParty.Multiplayer
             var pistol = PrototypeItemCatalog.Get(PrototypeItemId.Pistol);
             OneShotVfxPool.Prewarm(grenade.ExplosionPrefab, 4);
             OneShotVfxPool.Prewarm(pistol.ImpactPrefab, 8);
+            OneShotVfxPool.Prewarm(pistol.PlayerImpactPrefab, 8);
         }
 
         private void ClearBoardItemWorld()
