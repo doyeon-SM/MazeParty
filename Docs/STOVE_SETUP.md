@@ -36,7 +36,7 @@ Steam은 별도 컴파일 정의와 방 구분을 유지한다. Steam SDK 인증
 ```json
 {
   "ugsEnvironment": "production",
-  "stoveEnvironment": "real",
+  "stoveEnvironment": "LIVE",
   "stoveGameId": "",
   "stoveAppKey": ""
 }
@@ -45,13 +45,21 @@ Steam은 별도 컴파일 정의와 방 구분을 유지한다. Steam SDK 인증
 | 필드 | 입력 기준 |
 | --- | --- |
 | ugsEnvironment | 이미 사용하는 Unity Dashboard 환경. 기본값은 기존 개발 환경인 `production`. 별도 UGS 환경을 만든 경우에만 해당 이름으로 변경 |
-| stoveEnvironment | PC SDK에 전달하는 환경 문자열. 공식 신규 Unity API 예시의 `real`을 기본값으로 사용. 별도 테스트 런처 환경을 발급받았다면 담당자가 지정한 **SDK 환경 문자열**을 사용하며 `SANDBOX`/`LIVE`라는 설명용 명칭을 그대로 넣지 않음 |
+| stoveEnvironment | 일반 STOVE 클라이언트와 Studio 테스트 빌드는 `LIVE`. 별도 Sandbox 계정·런처를 발급받은 경우에만 `SANDBOX`. 기존 `real`은 게임 코드에서 `LIVE`로 변환하며 SDK에 그대로 전달하지 않음 |
 | stoveGameId | Studio 상품키 화면의 **게임ID** |
 | stoveAppKey | 같은 화면의 **Application Key** |
 
 Studio의 **상품 No.**와 **Application Secret**은 입력하지 않는다. AppKey는 클라이언트 SDK 실행에 필요한 값이므로 출시 출력에 포함된다. Application Secret을 실행 파일에 넣거나 익명 로그인 비밀번호로 사용하지 않는다.
 
 `authBridgeUrl`, `grantKeyModulus`, 서버 서명 키, 서버 API 자격증명은 필요하지 않다. 예전 `Backend/StoveAuthBridge` 소스는 보존했지만 현재 클라이언트가 호출하지 않으며 배포하지 않는다.
+
+## 런처 오류 308과 환경 설정
+
+2026-10-19 실제 PC SDK 3.5.3.0 로그에서 `real` 입력이 `sandbox`로 처리되어, `live` 런처와 환경이 달라 IPC 인증 키 교환에 실패한 것을 확인했다. 308은 `IpcAesKeyNotReceived`다. 이전 문서의 `real` 권장값을 정정한다. 같은 공식 레퍼런스에도 예시가 혼재하므로 이 프로젝트는 실제 로그와 신규 초기화 가이드의 `LIVE`/`SANDBOX`를 기준으로 한다.
+
+기본값·복구 템플릿·로컬 설정은 `LIVE`를 사용한다. 기존 설정의 `real`과 대소문자/주변 공백은 SDK 호출과 빌드 출력 전에 정규화하고, 알 수 없는 환경은 빌드/로그인 전에 거부한다. UGS 로컬 프로필도 같은 정규화 값을 사용해 Live 표기 차이로 계정이 분리되지 않게 한다. Sandbox는 별도 프로필이다.
+
+기존 업로드본의 코드는 새 설정 규칙을 포함하지 않으므로 **수정된 코드로 다시 빌드 → Studio 재업로드 → 런처에서 새 빌드 설치**가 필요하다. JSON만 바꾼 뒤 이전 EXE를 재사용하지 않는다. SDK·소유권 실패 시 접속 차단은 유지한다.
 
 ## 플랫폼별 방 분리와 접속 보안
 

@@ -100,7 +100,7 @@ PluginImporter:
 }
 
 $templates = @{
-    'stove.json' = [ordered]@{ ugsEnvironment = 'production'; stoveEnvironment = 'real'; stoveGameId = ''; stoveAppKey = '' }
+    'stove.json' = [ordered]@{ ugsEnvironment = 'production'; stoveEnvironment = 'LIVE'; stoveGameId = ''; stoveAppKey = '' }
     'steam.json' = [ordered]@{ ugsEnvironment = 'production' }
 }
 foreach ($name in $templates.Keys) {

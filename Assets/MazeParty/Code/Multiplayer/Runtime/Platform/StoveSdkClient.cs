@@ -24,8 +24,7 @@ namespace MazeParty.Multiplayer
         private async Task InitializeCoreAsync(PlatformLaunchSettings settings)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(StoveSdkClient));
-            if (string.IsNullOrWhiteSpace(settings.stoveGameId) || string.IsNullOrWhiteSpace(settings.stoveAppKey))
-                throw new InvalidOperationException("Enter the STOVE Game ID and AppKey in the local platform settings.");
+            settings.Validate("stove");
             var generation = ++_generation;
             var completion = new TaskCompletionSource<bool>();
             _restartCallback = (result, outcome) =>
@@ -53,9 +52,10 @@ namespace MazeParty.Multiplayer
                 completion.TrySetResult(true);
             };
             _callbacks = true;
+            Debug.Log("STOVE launcher verification: SDK environment " + settings.StoveSdkEnvironment + ".");
             Stove_RestartAppIfNecessary(new IStoveRestartAppIfNecessaryParam
             {
-                Environment = settings.stoveEnvironment,
+                Environment = settings.StoveSdkEnvironment,
                 GameId = settings.stoveGameId,
                 AppKey = settings.stoveAppKey,
                 WaitTimeMilliSec = 10000,
@@ -132,7 +132,10 @@ namespace MazeParty.Multiplayer
         }
 
         private static Exception Failure(string operation, uint code) =>
-            new InvalidOperationException("STOVE " + operation + " failed (code " + code + "). Restart through the launcher.");
+            new InvalidOperationException("STOVE " + operation + " failed (code " + code + "). " +
+                (code == (uint)EStoveResultCode.k_EStoveResultCode_IpcAesKeyNotReceived
+                    ? "The launcher authentication key was not received. Check that the SDK and launcher environments match (LIVE for the standard STOVE client), then restart through the launcher."
+                    : "Restart through the launcher."));
     }
 }
 #endif

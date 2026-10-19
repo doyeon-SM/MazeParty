@@ -7,8 +7,8 @@
 ## 프로젝트 기준과 문서
 
 - 실제 저장소·Unity 프로젝트: `C:/Unity/MazeParty`. 보조 작업 폴더를 게임 저장소로 취급하지 않는다.
-- 확인 브랜치 `development`, HEAD `ec23da44031f77ff8ba7b35f7ba818d92077f79b`.
-  안정 기준은 `main`. 과거 STOVE 빌드 브랜치는 `dev/stove`이며 최신 변경 포함 여부는 실제 커밋으로 판단한다.
+- 현재 STOVE 오류 수정 브랜치 `dev/stove`, 작업 시작 HEAD `fffa947`.
+  안정 기준은 `main`. 최신 변경 포함 여부는 실제 커밋으로 판단한다.
 - 기획 버전 v0.55, Unity `bundleVersion=0.0.55`. 로비 표시는 `Application.version`을 따른다.
 - 제작자: 훈연구이팀(HYGY). 자체 제작물과 제3자 폰트·에셋·SDK의 권리를 구분한다.
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0)
@@ -32,8 +32,15 @@
   검토 종류·접수일·제출 버전/커밋·최신 변경 포함 여부·승인 예정일은 별도 확인한다.
 - STOVE Full 3.5.3.0, Windows x64 IL2CPP 프로필·인증 어댑터·입장 증명 구현과 Release 패키징은 완료됐다.
   실제 런처 로그인·소유권·별도 PC 4인·복구 검증 완료로 간주하지 않는다.
-- 확인된 Release: `Builds/stove-release-20261018-172140/MazeParty.exe`.
-  이 17:21 출력은 이후 조명·주사위·시상식·지형 변경을 포함하지 않는다. 검토 중인 제출본과 동일한지는 미확인이다.
+- 과거 확인된 Release: `Builds/stove-release-20261018-172140/MazeParty.exe`(사용자가 이전 Builds 출력을 삭제함).
+  수동 빌드 출력 폴더는 `StoveBuild/`. 이전 출력의 최신 변경 포함 여부를 새 빌드와 혼동하지 않는다.
+- 10/19 사용자가 Studio 업로드·런처 실행 성공, 방 생성 전 SDK 오류 308을 보고했다.
+  실제 SDK 로그에서 `real` 입력 → SDK `sandbox` / 런처 `live` 불일치와 IPC AES 키 미수신을 확인했다.
+  STOVE 기본 환경과 복구 템플릿·로컬 JSON을 `LIVE`로 정정한다. 기존 `real`은 코드에서 `LIVE`로 정규화하고 잘못된 환경은 거부한다.
+  SDK 호출·빌드 출력·UGS 로컬 계정 범위에 같은 정규화 값을 적용하며 소유권 검증·방 분리·코드 입장은 유지한다.
+  새 코드로 재빌드·재업로드 후 런처 방 생성 검증이 필요하다. 아직 실제 런처 접속 성공으로 간주하지 않는다.
+  검증: STOVE 프로필 컴파일 오류 0, AdmissionProofTests·BuildVersionCompatibilityTests 표적 EditMode 7/7 통과.
+  SDK 전달값·빌드 출력용 JSON이 LIVE로 일치함을 에디터에서 확인했고, 기존 키 보존·Git 제외도 확인했다. 이번 수정에서는 새 EXE를 추출하거나 Studio에 업로드하지 않았다.
 - Steam은 Windows x64 IL2CPP Integration Check 및 STOVE 타입/DLL 제외만 확인됐다.
   **Steam SDK 인증은 미구현이며 온라인 접속·Release는 차단 상태**다.
 - README·THIRD_PARTY_NOTICES·ThirdPartyLicenses·STOVE 설치/런처 문서는 작성됐다.

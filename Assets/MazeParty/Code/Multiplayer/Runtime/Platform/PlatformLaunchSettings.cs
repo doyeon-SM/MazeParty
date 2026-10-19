@@ -9,23 +9,48 @@ namespace MazeParty.Multiplayer
     public sealed class PlatformLaunchSettings
     {
         public string ugsEnvironment = "production";
-        public string stoveEnvironment = "real";
+        public string stoveEnvironment = "LIVE";
         public string stoveGameId = "";
         public string stoveAppKey = "";
+
+        // PC SDK 3.5.3 treats the old "real" value as Sandbox. Never pass it through.
+        // Keep it only as an explicit migration alias for previously generated local settings.
+        public string StoveSdkEnvironment
+        {
+            get
+            {
+                switch ((stoveEnvironment ?? "").Trim().ToUpperInvariant())
+                {
+                    case "REAL":
+                    case "LIVE": return "LIVE";
+                    case "SANDBOX": return "SANDBOX";
+                    default: throw new InvalidOperationException(
+                        "Configure STOVE environment as LIVE for the standard launcher, or SANDBOX for a provisioned Sandbox launcher.");
+                }
+            }
+        }
 
         public void Validate(string expectedChannel)
         {
             if ((expectedChannel != "stove" && expectedChannel != "steam") ||
                 !Regex.IsMatch(ugsEnvironment ?? "", "^[a-z0-9][a-z0-9-]{0,39}$"))
                 throw new InvalidOperationException("Configure an existing UGS environment name.");
-            if (expectedChannel == "stove" &&
-                (string.IsNullOrWhiteSpace(stoveGameId) || string.IsNullOrWhiteSpace(stoveAppKey) ||
-                 !Regex.IsMatch(stoveEnvironment ?? "", "^[a-z][a-z0-9_-]{0,31}$")))
-                throw new InvalidOperationException("Configure STOVE Game ID, AppKey and the PC SDK environment value (normally real).");
+            if (expectedChannel == "stove")
+            {
+                if (string.IsNullOrWhiteSpace(stoveGameId) || string.IsNullOrWhiteSpace(stoveAppKey))
+                    throw new InvalidOperationException("Configure STOVE Game ID and AppKey.");
+                _ = StoveSdkEnvironment;
+            }
         }
 
         public string ToClientJson(string channel) => channel == "stove"
-            ? JsonUtility.ToJson(this, true)
+            ? JsonUtility.ToJson(new PlatformLaunchSettings
+            {
+                ugsEnvironment = ugsEnvironment,
+                stoveEnvironment = StoveSdkEnvironment,
+                stoveGameId = stoveGameId,
+                stoveAppKey = stoveAppKey
+            }, true)
             : JsonUtility.ToJson(new UgsSettings { ugsEnvironment = ugsEnvironment }, true);
 
         [Serializable] private sealed class UgsSettings { public string ugsEnvironment; }
@@ -39,7 +64,7 @@ namespace MazeParty.Multiplayer
         {
             if (stoveUser == 0) throw new ArgumentException("A locally verified STOVE account is required.");
             return "mp-local2-" + Hash128.Compute(channel + "/" + settings.ugsEnvironment + "/" +
-                settings.stoveEnvironment + "/" + settings.stoveGameId + "/" +
+                settings.StoveSdkEnvironment + "/" + settings.stoveGameId + "/" +
                 stoveUser.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToString().Substring(0, 20);
         }
     }

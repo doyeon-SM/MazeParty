@@ -108,8 +108,24 @@ namespace MazeParty.Multiplayer.Tests
             settings.ugsEnvironment = "";
             Assert.Throws<InvalidOperationException>(() => settings.Validate("stove"));
             settings.ugsEnvironment = "production";
-            settings.stoveEnvironment = "SANDBOX";
-            Assert.Throws<InvalidOperationException>(() => settings.Validate("stove"), "Do not pass documentation environment labels as PC SDK values.");
+            foreach (var environment in new[] { "LIVE", "live", " real ", "SANDBOX", "sandbox" })
+            {
+                settings.stoveEnvironment = environment;
+                Assert.DoesNotThrow(() => settings.Validate("stove"));
+                var packaged = JsonUtility.FromJson<PlatformLaunchSettings>(settings.ToClientJson("stove"));
+                var expected = environment.Trim().Equals("sandbox", StringComparison.OrdinalIgnoreCase) ? "SANDBOX" : "LIVE";
+                Assert.That(packaged.stoveEnvironment, Is.EqualTo(expected), "The SDK must never receive legacy real or an unrecognized environment.");
+                Assert.That(settings.StoveSdkEnvironment, Is.EqualTo(packaged.stoveEnvironment), "Editor and packaged SDK calls must agree.");
+                Assert.That(packaged.stoveGameId, Is.EqualTo(settings.stoveGameId));
+                Assert.That(packaged.stoveAppKey, Is.EqualTo(settings.stoveAppKey));
+            }
+            foreach (var invalid in new[] { null, "", " ", "production", "lvei", "live-typo" })
+            {
+                settings.stoveEnvironment = invalid;
+                Assert.Throws<InvalidOperationException>(() => settings.Validate("stove"));
+                Assert.Throws<InvalidOperationException>(() => settings.ToClientJson("stove"));
+                Assert.DoesNotThrow(() => settings.Validate("steam"), "STOVE configuration must not gate another store.");
+            }
         }
 
         [Test]
@@ -124,6 +140,14 @@ namespace MazeParty.Multiplayer.Tests
             settings.ugsEnvironment = "test";
             Assert.That(PlatformAccountScope.AuthenticationProfile("stove", settings, 123), Is.Not.EqualTo(profile));
             settings.ugsEnvironment = "production";
+            foreach (var alias in new[] { "real", "live", " LIVE " })
+            {
+                settings.stoveEnvironment = alias;
+                Assert.That(PlatformAccountScope.AuthenticationProfile("stove", settings, 123), Is.EqualTo(profile), "Equivalent Live settings must reuse one local UGS account.");
+            }
+            settings.stoveEnvironment = "SANDBOX";
+            Assert.That(PlatformAccountScope.AuthenticationProfile("stove", settings, 123), Is.Not.EqualTo(profile), "Sandbox must not reuse a Live account cache.");
+            settings.stoveEnvironment = "LIVE";
             settings.stoveGameId = "game-b";
             Assert.That(PlatformAccountScope.AuthenticationProfile("stove", settings, 123), Is.Not.EqualTo(profile));
             Assert.Throws<ArgumentException>(() => PlatformAccountScope.AuthenticationProfile("stove", settings, 0));

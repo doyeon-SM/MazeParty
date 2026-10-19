@@ -30,7 +30,7 @@
 
 테스트 목록이 보이지 않으면 같은 계정인지, 팀·프로젝트의 Studio 권한이 있는지, 업로드가 완료되었는지를 확인한 뒤 런처를 재시작합니다. 메뉴가 여전히 없으면 현재 Studio 안내 또는 담당자에게 해당 프로젝트의 테스트 빌드 접근 경로를 확인합니다.
 
-현재 기본 `stoveEnvironment`는 `real`입니다. 3.5 SDK의 일반 런처 경로로 검증하며, 구형 SDK 2.x 문서의 AppSecret·개발자 모드 설정을 이 빌드에 그대로 적용하지 않습니다. 현행 PC 클라이언트 문서는 로컬 개발자 모드를 Sandbox 전용으로 안내하므로, 별도 Sandbox 환경을 발급받지 않았다면 환경 문자열을 임의로 바꾸거나 `PolicyConfig.json`으로 우회하지 않습니다.
+일반 STOVE 클라이언트에서 실행하는 Studio 테스트 빌드도 `stoveEnvironment`는 **`LIVE`**입니다. 별도로 발급된 Sandbox 런처·계정을 사용하는 경우에만 `SANDBOX`를 선택합니다. 3.5.3.0에서 이전 `real` 입력은 Sandbox로 처리되어 Live 런처와 오류 308을 일으켰습니다. 수정 코드가 기존 `real`을 `LIVE`로 정규화합니다. AppSecret이나 `PolicyConfig.json` 우회 설정은 필요하지 않습니다.
 
 ## 4. 확인할 동작
 
@@ -56,6 +56,14 @@ EXE를 직접 실행했을 때는 SDK가 런처를 열거나 다시 시작하도
 - 키 값, 토큰, 원본 설정 파일 전체는 공유하지 않습니다. 필요한 오류 구간만 민감정보를 가려 전달합니다.
 - `SDK 초기화/IPC`: 런처 상태·로그인·환경·상품 일치를 확인합니다. `소유권`: Studio 계정·상품 접근 권한을 확인합니다. `UGS`: Unity 환경·인터넷·서비스 상태를 확인합니다. `방 참가`: 플랫폼·게임 버전·코드를 확인합니다.
 
+### 308이 계속 발생할 때
+
+- 308은 런처의 IPC 인증 키를 받지 못했다는 뜻입니다. 이번 사례는 SDK `sandbox`와 런처 `live`의 불일치가 로그로 확인됐습니다.
+- 수정된 코드로 STOVE / Windows x64 / IL2CPP / Development Build 해제 상태에서 다시 빌드합니다. 출력 `MazeParty_Data/StreamingAssets/mazeparty-platform.json`의 `stoveEnvironment`가 `LIVE`인지 값 전체를 공유하지 않고 확인합니다.
+- 새 빌드를 업로드하고 런처에서 그 버전을 설치합니다. 이전 설치본 재시작만으로는 수정이 적용되지 않습니다.
+- 새 Player.log의 `STOVE launcher verification: SDK environment LIVE.`를 확인합니다. 계속 실패하면 SDK 로그에서 환경 불일치 여부를 확인합니다. SDK 로그에는 키·토큰이 포함될 수 있으므로 원본 전체를 공유하지 않습니다.
+- 성공 기준은 런처 실행뿐 아니라 소유권 확인 후 방 생성·코드 표시까지입니다.
+
 ## 공식 참고
 
 - [STOVE Studio FAQ: 업로드·테스트 빌드·소유권 테스트](https://studio-docs.onstove.com/pc/References/faq.html)
@@ -63,4 +71,4 @@ EXE를 직접 실행했을 때는 SDK가 런처를 열거나 다시 시작하도
 - [현행 STOVE PC 클라이언트 및 환경 안내](https://developers.onstove.com/docs/stove/setup/pc-client)
 - [PC SDK 3.5 이상 Unity API](https://developers.onstove.com/docs/stove/reference/pc-sdk/pc-sdk-reference-unity-pc)
 
-확인일: 2026-10-18. Studio 문서는 새 개발자센터로 연결될 수 있습니다. 업로드·테스트 권한과 화면 명칭은 로그인한 Studio의 실제 안내를 우선합니다.
+확인일: 2026-10-19. Studio 문서는 새 개발자센터로 연결될 수 있습니다. 업로드·테스트 권한과 화면 명칭은 로그인한 Studio의 실제 안내를 우선합니다.
