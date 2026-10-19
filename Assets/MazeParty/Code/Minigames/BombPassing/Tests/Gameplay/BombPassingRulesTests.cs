@@ -144,72 +144,64 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void TransferUsesExactCastStunAndPostCastRecoveryBoundaries()
+        public void ContactTransfer_UsesOneSecondBombCooldownAndPreservesFuseAndStun()
         {
             var match = NewMatchWithPositions(
                 new BombPassingPosition(0.5d, 0d),
-                new BombPassingPosition(0.5d, -1.8d),
-                new BombPassingPosition(1.0d, -2.2d),
+                new BombPassingPosition(0.5d, -0.4d),
+                new BombPassingPosition(0.5d, 0.4d),
                 new BombPassingPosition(-5d, -5d));
             match.AdvanceTo(BombPassingRules.SimulationStepSeconds);
             Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
+            var originalFuse = match.GetBomb().FuseSeconds;
+            match.SetFacing(0, 1d, 0d); // Contact is independent of aim.
+            Assert.That(match.TryStartAttack(0), Is.False, "Carrier clicks cannot bypass contact.");
 
-            var castStartedAt = match.MatchElapsedSeconds;
-            BombPassingInteraction? resolved = null;
-            match.InteractionResolved += interaction =>
-                resolved = interaction;
-            match.SetFacing(0, 0d, -1d);
-            Assert.That(match.TryStartAttack(0), Is.True);
-            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.True);
-            Assert.That(match.TryStartAttack(0), Is.False);
-
-            var actorBeforeCast = match.GetPlayer(0);
-            match.SetMovementInput(0, 1d, 0d);
-            match.SetFacing(0, 0d, 1d);
-            match.AdvanceTo(
-                castStartedAt +
-                BombPassingRules.AttackCastSeconds - 0.001d);
-            Assert.That(match.InteractionSequence, Is.Zero);
-            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
-            Assert.That(match.GetPlayer(0).X,
-                Is.EqualTo(actorBeforeCast.X).Within(0.000001d));
-            Assert.That(match.GetPlayer(0).Z,
-                Is.EqualTo(actorBeforeCast.Z).Within(0.000001d));
-
-            var castCompletedAt = castStartedAt +
-                BombPassingRules.AttackCastSeconds;
-            match.AdvanceTo(castCompletedAt);
-            Assert.That(resolved.HasValue, Is.True);
-            Assert.That(resolved.Value.Kind,
-                Is.EqualTo(BombPassingInteractionKind.Transfer));
-            Assert.That(resolved.Value.TargetSlot, Is.EqualTo(1));
-            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(1));
-            Assert.That(match.GetPlayer(0).IsAttackCasting, Is.False);
+            var transferredAt = 2d * BombPassingRules.SimulationStepSeconds;
+            match.AdvanceTo(transferredAt);
+            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(1), "Equal contacts select the lower slot deterministically.");
+            Assert.That(match.InteractionSequence, Is.EqualTo(1UL), "A crowd must not chain transfers in one tick.");
+            Assert.That(match.LastInteraction.Value.Kind, Is.EqualTo(BombPassingInteractionKind.Transfer));
             Assert.That(match.GetPlayer(1).StunRemainingSeconds,
-                Is.EqualTo(BombPassingRules.StunSeconds)
-                    .Within(0.000001d));
-            Assert.That(match.CanStartAttack(0), Is.False);
+                Is.EqualTo(BombPassingRules.StunSeconds).Within(0.000001d));
+            Assert.That(match.TryStartAttack(1), Is.False);
 
-            match.SetMovementInput(1, 0d, -1d);
-            var stunnedAt = match.GetPlayer(1);
-            match.AdvanceTo(
-                castCompletedAt +
-                BombPassingRules.StunSeconds - 0.001d);
-            Assert.That(match.GetPlayer(1).Z,
-                Is.EqualTo(stunnedAt.Z).Within(0.000001d));
+            match.AdvanceTo(transferredAt + BombPassingRules.StunSeconds - 0.001d);
             Assert.That(match.GetPlayer(1).IsStunned, Is.True);
-            Assert.That(match.CanStartAttack(0), Is.False);
-            Assert.That(match.GetPlayer(0).X,
-                Is.GreaterThan(actorBeforeCast.X));
-
-            var nextAttackAt = castCompletedAt +
-                BombPassingRules.AttackRecoverySeconds;
-            match.AdvanceTo(nextAttackAt);
+            match.AdvanceTo(transferredAt + BombPassingRules.StunSeconds);
             Assert.That(match.GetPlayer(1).IsStunned, Is.False);
-            Assert.That(match.CanStartAttack(0), Is.True);
-            Assert.That(match.TryStartAttack(0), Is.True);
-            Assert.That(match.GetBomb().Z,
-                Is.EqualTo(match.GetPlayer(1).Z));
+            var readyAt = transferredAt + BombPassingRules.TransferCooldownSeconds;
+            match.AdvanceTo(readyAt - 0.001d);
+            match.AdvanceTo(readyAt - 0.001d); // Paused active time must not consume cooldown.
+            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(1));
+            Assert.That(match.InteractionSequence, Is.EqualTo(1UL));
+            match.AdvanceTo(readyAt);
+            Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(0));
+            Assert.That(match.InteractionSequence, Is.EqualTo(2UL));
+            Assert.That(match.GetBomb().FuseSeconds, Is.EqualTo(originalFuse));
+            Assert.That(match.GetBomb().RemainingSeconds, Is.EqualTo(originalFuse - readyAt).Within(0.000001d),
+                "Transfers must not restart the running fuse.");
+            match.AdvanceTo(readyAt);
+            Assert.That(match.InteractionSequence, Is.EqualTo(2UL), "Repeated updates must not replay a transfer.");
+        }
+
+        [Test]
+        public void ContactTransfer_RequiresTouchInsteadOfFormerAttackRange()
+        {
+            foreach (var distance in new[] { 0.9d, 0.9001d, 1.8d })
+            {
+                var match = NewMatchWithPositions(
+                    new BombPassingPosition(0.5d, 0d),
+                    new BombPassingPosition(0.5d, -distance),
+                    new BombPassingPosition(5d, 5d),
+                    new BombPassingPosition(-5d, -5d));
+                match.AdvanceTo(BombPassingRules.SimulationStepSeconds);
+                match.SetFacing(0, 0d, -1d);
+                Assert.That(match.TryStartAttack(0), Is.False);
+                match.AdvanceTo(0.2d);
+                Assert.That(match.GetBomb().HolderSlot, Is.EqualTo(distance <= 0.9d ? 1 : 0),
+                    "Contact distance " + distance);
+            }
         }
 
         [Test]
@@ -484,8 +476,15 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void FixedStepMovementAndBombStateDoNotDependOnUpdateChunking()
         {
-            var batched = new BombPassingMatchState(9211);
-            var incremental = new BombPassingMatchState(9211);
+            var positions = new[] { new BombPassingPosition(0.5d, 0d),
+                new BombPassingPosition(0.5d, -0.6d), new BombPassingPosition(5d, 5d),
+                new BombPassingPosition(-5d, -5d) };
+            var batched = new BombPassingMatchState(9211, positions);
+            var incremental = new BombPassingMatchState(9211, positions);
+            var batchedTransfers = new System.Collections.Generic.List<(int, int)>();
+            var incrementalTransfers = new System.Collections.Generic.List<(int, int)>();
+            batched.InteractionResolved += item => batchedTransfers.Add((item.ActorSlot, item.TargetSlot));
+            incremental.InteractionResolved += item => incrementalTransfers.Add((item.ActorSlot, item.TargetSlot));
             batched.SetMovementInput(0, 1d, 1d);
             incremental.SetMovementInput(0, 1d, 1d);
             batched.AdvanceTo(2d);
@@ -502,6 +501,9 @@ namespace MazeParty.Gameplay.Tests
                 Is.EqualTo(batched.GetBomb().X));
             Assert.That(incremental.GetBomb().Z,
                 Is.EqualTo(batched.GetBomb().Z));
+            Assert.That(batchedTransfers, Is.Not.Empty);
+            Assert.That(incrementalTransfers, Is.EqualTo(batchedTransfers));
+            Assert.That(incremental.GetBomb().HolderSlot, Is.EqualTo(batched.GetBomb().HolderSlot));
             Assert.Throws<ArgumentOutOfRangeException>(
                 () => incremental.AdvanceTo(1d));
         }

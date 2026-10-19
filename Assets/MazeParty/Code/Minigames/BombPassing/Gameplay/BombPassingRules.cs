@@ -18,6 +18,8 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         public const double ArenaHalfExtent = 8d;
         public const double PlayerRadius = 0.45d;
         public const double PickupRadius = 0.95d;
+        public const double TransferContactDistance = PlayerRadius * 2d;
+        public const double TransferCooldownSeconds = 1d;
         public const double CarrierSpeed = 5d;
         // Matches the project's 5 m/s base and 55% walking movement tier.
         public const double EmptyHandSpeed = 2.75d;

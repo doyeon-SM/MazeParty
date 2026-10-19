@@ -90,6 +90,8 @@ namespace MazeParty.Multiplayer
 
         private static void PrepareVisual(GameObject coin)
         {
+            // Only death-reward coins are smaller; shared board coin assets keep their size.
+            coin.transform.localScale *= 0.5f;
             foreach (var behaviour in coin.GetComponentsInChildren<MonoBehaviour>(true))
                 behaviour.enabled = false;
             foreach (var collider in coin.GetComponentsInChildren<Collider>(true))

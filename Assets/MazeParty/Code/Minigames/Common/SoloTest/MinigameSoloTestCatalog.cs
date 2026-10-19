@@ -171,7 +171,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 MinigameSoloTestId.BombPassing,
                 "Bomb Passing",
                 BombPassingScenePath,
-                "WASD move · LMB pass bomb / stun nearby player · " +
+                "WASD move · touch to pass (1s cooldown) · LMB empty-hand stun · " +
                 "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(
                 MinigameSoloTestId.SnowySpin,

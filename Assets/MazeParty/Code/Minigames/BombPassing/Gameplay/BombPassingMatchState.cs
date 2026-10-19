@@ -182,6 +182,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
         private int _simulatedSteps;
         private double _bombSpawnElapsedSeconds;
         private double _bombFuseSeconds;
+        private double _nextTransferAt;
         private double _bombX;
         private double _bombZ;
         private int _bombHolderSlot = BombPassingRules.NoHolderSlot;
@@ -344,6 +345,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             ValidateSlot(slot);
             var actor = _players[slot];
             return !IsComplete &&
+                slot != _bombHolderSlot &&
                 !actor.IsEliminated &&
                 actor.StunnedUntil <= MatchElapsedSeconds + TimeEpsilon &&
                 actor.AttackCastEndsAt <=
@@ -436,6 +438,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
 
             if (_bombHolderSlot != BombPassingRules.NoHolderSlot)
             {
+                TryTransferBombOnContact(stepEndSeconds);
                 _bombX = _players[_bombHolderSlot].X;
                 _bombZ = _players[_bombHolderSlot].Z;
             }
@@ -478,7 +481,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
 
                 var castCompletedAt = actor.AttackCastEndsAt;
                 actor.AttackCastEndsAt = 0d;
-                if (actor.IsEliminated)
+                if (actor.IsEliminated || slot == _bombHolderSlot)
                 {
                     continue;
                 }
@@ -493,15 +496,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 }
 
                 var target = _players[targetSlot];
-                var kind = _bombHolderSlot == slot
-                    ? BombPassingInteractionKind.Transfer
-                    : BombPassingInteractionKind.Stun;
-                if (kind == BombPassingInteractionKind.Transfer)
-                {
-                    _bombHolderSlot = targetSlot;
-                    _bombX = target.X;
-                    _bombZ = target.Z;
-                }
+                const BombPassingInteractionKind kind = BombPassingInteractionKind.Stun;
 
                 target.StunnedUntil = Math.Max(
                     target.StunnedUntil,
@@ -515,6 +510,47 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
                 LastInteraction = interaction;
                 InteractionResolved?.Invoke(interaction);
             }
+        }
+
+        private void TryTransferBombOnContact(double elapsedSeconds)
+        {
+            if (elapsedSeconds + TimeEpsilon < _nextTransferAt) return;
+            var actorSlot = _bombHolderSlot;
+            var actor = _players[actorSlot];
+            if (actor.IsEliminated) return;
+            var nearest = BombPassingRules.NoHolderSlot;
+            var nearestDistanceSquared =
+                BombPassingRules.TransferContactDistance * BombPassingRules.TransferContactDistance;
+            for (var slot = 0; slot < _players.Length; slot++)
+            {
+                var target = _players[slot];
+                if (slot == actorSlot || target.IsEliminated) continue;
+                var distanceSquared = DistanceSquared(actor.X, actor.Z, target.X, target.Z);
+                if (distanceSquared > nearestDistanceSquared + TimeEpsilon ||
+                    BombPassingArenaCollisionLayout.BlocksSegment(actor.X, actor.Z, target.X, target.Z))
+                    continue;
+                if (nearest == BombPassingRules.NoHolderSlot ||
+                    distanceSquared < nearestDistanceSquared - TimeEpsilon)
+                {
+                    nearest = slot;
+                    nearestDistanceSquared = distanceSquared;
+                }
+            }
+            if (nearest == BombPassingRules.NoHolderSlot) return;
+
+            var receiver = _players[nearest];
+            _bombHolderSlot = nearest;
+            _bombX = receiver.X;
+            _bombZ = receiver.Z;
+            _nextTransferAt = elapsedSeconds + BombPassingRules.TransferCooldownSeconds;
+            receiver.AttackCastEndsAt = 0d;
+            receiver.StunnedUntil = Math.Max(receiver.StunnedUntil,
+                elapsedSeconds + BombPassingRules.StunSeconds);
+            InteractionSequence++;
+            var interaction = new BombPassingInteraction(BombPassingInteractionKind.Transfer,
+                InteractionSequence, actorSlot, nearest);
+            LastInteraction = interaction;
+            InteractionResolved?.Invoke(interaction);
         }
 
         private static void ResolvePlayerMovement(
@@ -610,6 +646,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             if (nearest != BombPassingRules.NoHolderSlot)
             {
                 _bombHolderSlot = nearest;
+                _players[nearest].AttackCastEndsAt = 0d;
                 _bombX = _players[nearest].X;
                 _bombZ = _players[nearest].Z;
             }
@@ -962,6 +999,7 @@ namespace MazeParty.Gameplay.Minigames.BombPassing
             _bombZ = 0d;
             _bombHolderSlot = BombPassingRules.NoHolderSlot;
             _bombSpawnElapsedSeconds = elapsedSeconds;
+            _nextTransferAt = elapsedSeconds;
             _bombFuseSeconds = BombPassingRules.MinimumFuseSeconds +
                 NextRandomUnit() *
                 (BombPassingRules.MaximumFuseSeconds -

@@ -106,7 +106,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             BeginMatch(seed);
             Debug.Log(
                 "[Minigame Solo Test] Bomb Passing started. " +
-                "WASD moves, left click passes or stuns; three " +
+                "WASD moves, touch passes the bomb (1s cooldown), left click stuns with empty hands; three " +
                 "practice opponents use the production arena.");
         }
 
@@ -355,7 +355,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     var target = _match.GetPlayer(opponent);
                     targetX = target.X;
                     targetZ = target.Z;
-                    attack = true;
+                    // Carrying players transfer on contact without an attack input.
                 }
             }
             else if (bomb.HolderSlot >= 0)

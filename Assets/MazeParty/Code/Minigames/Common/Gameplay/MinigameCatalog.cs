@@ -235,7 +235,7 @@ namespace MazeParty.Gameplay.Minigames
                 case ScheduledMinigameId.BouncingBalls:
                     return GameText.N("Keep the ball out of your goal and bounce it into another.");
                 case ScheduledMinigameId.BombPassing:
-                    return GameText.N("Pass the bomb to another player before it explodes.");
+                    return GameText.N("Touch another player to pass the bomb before it explodes. Each pass has a 1-second cooldown.");
                 case ScheduledMinigameId.SnowySpin:
                     return GameText.N("Roll your snowball and knock others off.");
                 case ScheduledMinigameId.ArenaCombat:
