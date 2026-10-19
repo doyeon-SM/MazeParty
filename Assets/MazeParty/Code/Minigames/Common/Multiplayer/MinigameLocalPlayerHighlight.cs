@@ -113,6 +113,9 @@ namespace MazeParty.Multiplayer
                 case ScheduledMinigameId.BalloonBlow:
                     prefix = "Balloon Player ";
                     break;
+                case ScheduledMinigameId.OddOneOut:
+                    prefix = "Odd One Out Player ";
+                    break;
                 case ScheduledMinigameId.CoinCollect:
                     prefix = "Coin Collect Player ";
                     break;

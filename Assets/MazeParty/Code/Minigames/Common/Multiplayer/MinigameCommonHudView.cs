@@ -75,7 +75,7 @@ namespace MazeParty.Multiplayer
             RefreshSpectatorLabel(match);
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
-                match.IsMinigameRoundCountdown ||
+                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut) ||
                 !MinigameCatalog.TryGetDefinition(
                     match.CurrentMinigame, out var definition))
             {
@@ -104,6 +104,12 @@ namespace MazeParty.Multiplayer
                 ShowClock(match.ReconnectRemaining,
                     NetworkMatchState.ReconnectGraceSeconds,
                     GameText.T("RECONNECT"), true);
+                return;
+            }
+
+            if (match.CurrentMinigame == ScheduledMinigameId.OddOneOut && match.IsMinigameRoundCountdown)
+            {
+                ShowRoundOnly(GameText.F("ROUND {0} / {1}", NetworkOddOneOutState.Instance.RoundNumber, definition.RoundCount));
                 return;
             }
 
@@ -451,6 +457,15 @@ namespace MazeParty.Multiplayer
                     total = state.Phase == NetworkCliffBarragePhase.Countdown
                         ? 3d : state.Phase == NetworkCliffBarragePhase.RoundResult
                             ? 4d : runningSeconds;
+                    return true;
+                }
+                case ScheduledMinigameId.OddOneOut:
+                {
+                    var state = NetworkOddOneOutState.Instance;
+                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Inactive ||
+                        state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete) return false;
+                    remaining = state.Remaining; round = state.RoundNumber;
+                    total = state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Choosing ? 3d : 2d;
                     return true;
                 }
                 case ScheduledMinigameId.CoinCollect:

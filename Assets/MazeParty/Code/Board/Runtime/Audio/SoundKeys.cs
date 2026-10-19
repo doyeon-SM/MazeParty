@@ -75,6 +75,7 @@ namespace MazeParty.Gameplay
             "minigame.sequence_memory.tone";
 
         public const string MinigameBombExplosion = "minigame.bomb_passing.explosion";
+        public const string MinigameOddOneOutToggle = "minigame.odd_one_out.toggle";
         public const string MinigameCoinPickup = "minigame.coin_collect.coin";
         public const string MinigameMoneyPickup = "minigame.coin_collect.money";
         public const string MinigameCoinBomb = "minigame.coin_collect.explosion";
@@ -107,7 +108,7 @@ namespace MazeParty.Gameplay
             BoardFootstep, BoardFireTornado,
             ItemExplosion, ItemBulletImpact,
             MinigameReveal, MinigameCountdownTick, MinigameCountdownGo,
-            MinigameFinish, MinigameMinefieldExplosion,
+            MinigameFinish, MinigameOddOneOutToggle, MinigameMinefieldExplosion,
             MinigameMinefieldScan, Balloon, Lightning,
             MinigameSequenceMemoryTone,
             MinigameBombExplosion,

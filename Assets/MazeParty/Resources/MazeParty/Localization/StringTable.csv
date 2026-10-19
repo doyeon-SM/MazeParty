@@ -841,3 +841,9 @@ CHEST (RMB TO EQUIP ITEM),상자 (우클릭으로 아이템 장착),宝箱（右
 COIN COLLECT,동전줍기,コイン拾い,捡金币
 COIN COLLECT RESULTS,동전줍기 결과,コイン拾いの結果,捡金币结果
 "Collect falling coins and money across two rounds. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.","2라운드 동안 떨어지는 동전과 돈을 모으세요. 동전은 1점, 돈은 5점입니다. 폭탄을 먹으면 1초 기절하고 점수의 절반을 떨어뜨립니다. 클릭으로 밀칠 수 있습니다.",2ラウンドで落ちてくるコインとお金を集めよう。コインは1点、お金は5点。爆弾で1秒気絶し、得点の半分を落とす。クリックで押せる。,在两轮中收集落下的金币和钞票。金币1分，钞票5分。炸弹使你眩晕1秒并掉落一半分数。点击可推人。
+ODD ONE OUT,눈치게임,少数派ゲーム,少数派游戏
+ODD ONE OUT RESULTS,눈치게임 결과,少数派ゲームの結果,少数派游戏结果
+Sit,앉기,座る,坐下
+Stand,서기,立つ,站起
+SIT / STAND,앉기 / 서기,座る / 立つ,坐下 / 站起
+Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Ten rounds; click again to switch.,카운트다운 동안 몰래 앉기 또는 서기를 선택하세요. 혼자 앉거나 혼자 서 있으면 1점입니다. 총 10라운드이며 다시 클릭하면 전환됩니다.,カウントダウン中に座るか立つかを秘密で選ぼう。1人だけ違えば1点。全10ラウンド。再クリックで切り替え。,倒计时期间秘密选择坐下或站起。只有一人坐下或站起时得1分。共10轮，再次点击可切换。

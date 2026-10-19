@@ -25,7 +25,8 @@ namespace MazeParty.Gameplay.Minigames
         SnowySpin = 13,
         ArenaCombat = 14,
         CliffBarrage = 15,
-        CoinCollect = 16
+        CoinCollect = 16,
+        OddOneOut = 17
     }
 
     public static class MinigameScheduleRules

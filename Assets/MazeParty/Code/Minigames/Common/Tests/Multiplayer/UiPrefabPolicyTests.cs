@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/DevelopmentDiagnostics.prefab",
             "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
@@ -67,6 +68,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.OddOneOutHudBindings",
             "MazeParty.Multiplayer.MinigameLocalPlayerHighlight",
             "MazeParty.Multiplayer.DevelopmentDiagnosticsPanel",
             "MazeParty.Gameplay.BoardCameraCloudView",
@@ -107,6 +109,10 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly SceneUiContract[] SceneContracts =
         {
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
+                "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity",
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",

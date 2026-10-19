@@ -15,6 +15,10 @@ namespace MazeParty.Gameplay
         public const float MiPitchScale = 0.8408964f;
         public const float SolPitchScale = 1f;
 
+        /// <summary>Private local feedback: lower when sitting, higher when standing.</summary>
+        public static SoundHandle PlayOddOneOutToggle(bool sitting) =>
+            PlayPitched(SoundKeys.MinigameOddOneOutToggle, sitting ? 0.85f : 1.15f);
+
         public static SoundHandle PlayBouncingBallGoal(int scoreDelta) =>
             scoreDelta == 0 ? default : PlayPitched(
                 scoreDelta < 0 ? SoundKeys.MinigameBallLoss : SoundKeys.MinigameBallGoal,

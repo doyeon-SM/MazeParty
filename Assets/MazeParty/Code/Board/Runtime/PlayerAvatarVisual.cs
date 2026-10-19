@@ -411,6 +411,14 @@ namespace MazeParty.Gameplay
             _crouching = crouching;
         }
 
+        public void SetCrouchingImmediate(bool crouching)
+        {
+            EnsureBuilt();
+            _crouching = crouching;
+            _crouchBlend = crouching ? 1f : 0f;
+            UpdatePose(false);
+        }
+
         public void SetEliminated(bool eliminated)
         {
             EnsureBuilt();

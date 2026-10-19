@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer
             new SnowySpinRuntimeAdapter(),
             new ArenaCombatRuntimeAdapter(),
             new CliffBarrageRuntimeAdapter(),
+            new OddOneOutRuntimeAdapter(),
             new CoinCollectRuntimeAdapter()
         };
 

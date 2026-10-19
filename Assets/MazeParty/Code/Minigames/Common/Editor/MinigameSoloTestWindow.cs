@@ -1,5 +1,7 @@
 using System;
 using MazeParty.Dev.MinigameSoloTest;
+using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using MazeParty.Multiplayer;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -401,6 +403,15 @@ namespace MazeParty.EditorTools
             return CanStart;
         }
 
+        [MenuItem("MazeParty/Minigames/Quick Play/Odd One Out")]
+        private static void QuickPlayOddOneOut()
+        {
+            Start(MinigameSoloTestId.OddOneOut, CreateRandomSeed());
+        }
+
+        [MenuItem("MazeParty/Minigames/Quick Play/Odd One Out", true)]
+        private static bool ValidateQuickPlayOddOneOut() => CanStart;
+
         [MenuItem("MazeParty/Minigames/Quick Play/Coin Collect")]
         private static void QuickPlayCoinCollect()
         {
@@ -552,6 +563,12 @@ namespace MazeParty.EditorTools
 
             try
             {
+                // Solo IDs predate the network IDs (Minefield/WrongWay differ): resolve by name.
+                if (!Enum.TryParse<ScheduledMinigameId>(id.ToString(), out var minigame))
+                    throw new InvalidOperationException("No music mapping for " + id);
+                GameSound.SetSimulationPaused(false);
+                GameSound.PlayBgm(BgmTrackRules.Pick(
+                    BgmTrackRules.Candidates(BgmScene.Minigame, minigame), GameSound.HasClips));
                 switch (id)
                 {
                     case MinigameSoloTestId.Minefield:
@@ -821,6 +838,24 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Cliff Barrage " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.OddOneOut:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            OddOneOutSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Odd One Out " +
                                 "solo harness.");
                         }
                         controller.ConfigureHud(
@@ -1386,6 +1421,8 @@ namespace MazeParty.EditorTools
             {
                 return snowySpin;
             }
+            var oddOneOut = FindRuntimeHarnessOfType<OddOneOutSoloTestController>();
+            if (oddOneOut != null) return oddOneOut;
             var coinCollect = FindRuntimeHarnessOfType<CoinCollectSoloTestController>();
             if (coinCollect != null) return coinCollect;
             var arenaCombat = FindRuntimeHarnessOfType<
@@ -1398,6 +1435,7 @@ namespace MazeParty.EditorTools
 
         private static void DestroyRuntimeHarnesses()
         {
+            DestroyRuntimeHarnessesOfType<OddOneOutSoloTestController>();
             DestroyRuntimeHarnessesOfType<CoinCollectSoloTestController>();
             DestroyRuntimeHarnessesOfType<
                 MinefieldSoloTestController>();

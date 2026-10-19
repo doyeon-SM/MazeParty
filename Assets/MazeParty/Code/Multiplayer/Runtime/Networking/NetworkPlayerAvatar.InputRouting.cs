@@ -104,7 +104,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (match != null && (match.IsGiftGrabPlaying || match.IsCoinCollectPlaying))
+            if (match != null && (match.IsGiftGrabPlaying || match.IsCoinCollectPlaying || match.IsOddOneOutPlaying))
             {
                 return;
             }

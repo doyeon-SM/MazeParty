@@ -25,7 +25,7 @@ namespace MazeParty.Multiplayer.Tests
             warning.SetValue(null, true);
             var previousMatch = NetworkMatchState.Instance;
             typeof(NetworkMatchState).GetProperty("Instance").SetValue(null, null);
-            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect" };
+            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut" };
             try
             {
                 foreach (var name in names)
@@ -37,7 +37,15 @@ namespace MazeParty.Multiplayer.Tests
                         var state = root.AddComponent(type);
                         var field = type.GetField("_finalRanks", flags) ?? type.GetField("_finalRanksPacked", flags);
                         System.Action<uint> setRanks;
-                        if (state is NetworkCoinCollectState)
+                        if (state is NetworkOddOneOutState)
+                        {
+                            var snapshot = (Unity.Netcode.NetworkVariable<OddOneOutPublicSnapshot>)type.GetField("_snapshot", flags).GetValue(state);
+                            setRanks = packed => snapshot.Value = packed == 0 ? default : new OddOneOutPublicSnapshot {
+                                Phase = MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete,
+                                Score0 = 4 - (int)(packed & 255), Score1 = 4 - (int)((packed >> 8) & 255),
+                                Score2 = 4 - (int)((packed >> 16) & 255), Score3 = 4 - (int)((packed >> 24) & 255) };
+                        }
+                        else if (state is NetworkCoinCollectState)
                         {
                             var players = (Unity.Netcode.NetworkList<CoinCollectPlayerNetworkSnapshot>)
                                 type.GetField("_players", flags).GetValue(state);

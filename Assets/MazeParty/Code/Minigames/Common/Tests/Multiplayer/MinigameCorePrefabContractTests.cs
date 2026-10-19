@@ -28,6 +28,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly TestCaseData[] EnvironmentContracts =
         {
+            EnvironmentCase("OddOneOut", "Odd One Out Environment", "OddOneOutEnvironment.prefab",
+                typeof(NetworkOddOneOutState), "Runtime Players"),
             EnvironmentCase(
                 "BombPassing", "Bomb Passing Environment",
                 "BombPassingEnvironment.prefab",
@@ -145,6 +147,13 @@ namespace MazeParty.Multiplayer.Tests
                         scenePath + " has no scene-connected core world " +
                         "prefab under " + prefabPrefix);
 
+                    if (game == "OddOneOut")
+                    {
+                        var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<OddOneOutNetworkView>(true)).Single();
+                        Assert.That(view.HasRequiredReferences, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().InScenePlaced, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().PrefabIdHash, Is.Not.Zero);
+                    }
                     if (game == "CoinCollect")
                     {
                         var view = scene.GetRootGameObjects().SelectMany(root =>

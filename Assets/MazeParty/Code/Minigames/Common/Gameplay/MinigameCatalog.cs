@@ -191,7 +191,9 @@ namespace MazeParty.Gameplay.Minigames
                 ScheduledMinigameId.CoinCollect,
                 GameText.N("COIN COLLECT"),
                 2, 60f, "CoinCollect",
-                new Color(1f, 0.78f, 0.16f, 1f))
+                new Color(1f, 0.78f, 0.16f, 1f)),
+            new MinigameDefinition(ScheduledMinigameId.OddOneOut, GameText.N("ODD ONE OUT"),
+                10, 3f, "OddOneOut", new Color(.65f, .38f, .95f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;
@@ -247,6 +249,8 @@ namespace MazeParty.Gameplay.Minigames
                     return GameText.N("Become the top fighter in a bare-knuckle brawl.");
                 case ScheduledMinigameId.CliffBarrage:
                     return GameText.N("Dodge and survive.");
+                case ScheduledMinigameId.OddOneOut:
+                    return GameText.N("Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Ten rounds; click again to switch.");
                 case ScheduledMinigameId.CoinCollect:
                     return GameText.N("Collect falling coins and money across two rounds. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.");
                 default:

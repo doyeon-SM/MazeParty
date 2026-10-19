@@ -66,7 +66,7 @@ namespace MazeParty.Multiplayer
             SetCountdown(Mathf.Clamp(numeral, 1, 3), remaining > 0d);
         }
 
-        public void SetCountdown(int numeral, bool visible)
+        public void SetCountdown(int numeral, bool visible, bool playSounds = true)
         {
             if (!HasRequiredReferences)
             {
@@ -77,12 +77,12 @@ namespace MazeParty.Multiplayer
             if (show && _displayedNumeral != numeral)
             {
                 numeralText.text = numeral.ToString();
-                if (Application.isPlaying)
+                if (playSounds && Application.isPlaying)
                 {
                     GameSound.Play(SoundKeys.MinigameCountdownTick);
                 }
             }
-            else if (!show && _visible && _displayedNumeral == 1 && Application.isPlaying)
+            else if (!show && _visible && _displayedNumeral == 1 && playSounds && Application.isPlaying)
             {
                 // The countdown ran out after "1": the round starts.
                 GameSound.Play(SoundKeys.MinigameCountdownGo);
