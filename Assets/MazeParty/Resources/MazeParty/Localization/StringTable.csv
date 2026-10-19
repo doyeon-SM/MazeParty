@@ -847,3 +847,7 @@ Sit,앉기,座る,坐下
 Stand,서기,立つ,站起
 SIT / STAND,앉기 / 서기,座る / 立つ,坐下 / 站起
 Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Ten rounds; click again to switch.,카운트다운 동안 몰래 앉기 또는 서기를 선택하세요. 혼자 앉거나 혼자 서 있으면 1점입니다. 총 10라운드이며 다시 클릭하면 전환됩니다.,カウントダウン中に座るか立つかを秘密で選ぼう。1人だけ違えば1点。全10ラウンド。再クリックで切り替え。,倒计时期间秘密选择坐下或站起。只有一人坐下或站起时得1分。共10轮，再次点击可切换。
+RACE 2,레이스2,レース2,竞速2
+RACE 2 RESULTS,레이스2 결과,レース2の結果,竞速2结果
+"<sprite name=""a""><sprite name=""d"">  SWITCH LANE","<sprite name=""a""><sprite name=""d"">  좌우 전환","<sprite name=""a""><sprite name=""d"">  左右切替","<sprite name=""a""><sprite name=""d"">  左右切换"
+"Choose left with A or right with D to dodge boxes. Three rounds, up to two minutes each. Boxes speed up; one collision eliminates you.","A는 왼쪽, D는 오른쪽으로 박스를 피하세요. 라운드당 최대 2분, 총 3라운드입니다. 박스는 점점 빨라지며 한 번 부딪히면 탈락합니다.",Aで左、Dで右へ移動して箱を避けよう。各ラウンド最大2分、全3ラウンド。箱は加速し、一度当たると脱落。,按A向左、D向右躲避箱子。共3轮，每轮最多2分钟。箱子逐渐加速，碰撞一次即淘汰。

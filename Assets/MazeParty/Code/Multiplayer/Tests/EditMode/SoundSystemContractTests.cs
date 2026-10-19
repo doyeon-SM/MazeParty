@@ -123,6 +123,8 @@ namespace MazeParty.Multiplayer.Tests
 
             AssertCueUsesClip(library, SoundKeys.MinigameFinish,
                 "Assets/Resources/sound/minigamefinish.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameRace2Lane,
+                "Assets/Resources/sound/clickandhover.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameOddOneOutToggle,
                 "Assets/Resources/sound/clickandhover.mp3");
             Assert.That(library.TryGet(SoundKeys.MinigameOddOneOutToggle, out var privateToggle), Is.True);

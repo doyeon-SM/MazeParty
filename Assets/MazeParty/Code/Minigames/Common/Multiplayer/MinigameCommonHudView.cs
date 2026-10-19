@@ -75,7 +75,7 @@ namespace MazeParty.Multiplayer
             RefreshSpectatorLabel(match);
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
-                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut) ||
+                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut && match.CurrentMinigame != ScheduledMinigameId.Race2) ||
                 !MinigameCatalog.TryGetDefinition(
                     match.CurrentMinigame, out var definition))
             {
@@ -175,6 +175,11 @@ namespace MazeParty.Multiplayer
             {
                 spectatorText.text = label;
             }
+        }
+
+        public void ShowPracticeClock(double remaining, double total, int round, int roundCount)
+        {
+            ShowClock(remaining, total, GameText.F("ROUND {0} / {1}", round, roundCount), true);
         }
 
         private void ShowClock(double remaining, double total,
@@ -457,6 +462,16 @@ namespace MazeParty.Multiplayer
                     total = state.Phase == NetworkCliffBarragePhase.Countdown
                         ? 3d : state.Phase == NetworkCliffBarragePhase.RoundResult
                             ? 4d : runningSeconds;
+                    return true;
+                }
+                case ScheduledMinigameId.Race2:
+                {
+                    var state = NetworkRace2State.Instance;
+                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Inactive ||
+                        state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Complete) return false;
+                    total = 120d; round = state.RoundNumber;
+                    remaining = state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Countdown ? total :
+                        state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Running ? state.Remaining : 0d;
                     return true;
                 }
                 case ScheduledMinigameId.OddOneOut:

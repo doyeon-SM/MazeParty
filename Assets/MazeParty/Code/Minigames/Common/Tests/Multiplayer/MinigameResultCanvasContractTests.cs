@@ -25,7 +25,7 @@ namespace MazeParty.Multiplayer.Tests
             warning.SetValue(null, true);
             var previousMatch = NetworkMatchState.Instance;
             typeof(NetworkMatchState).GetProperty("Instance").SetValue(null, null);
-            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut" };
+            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut", "Race2" };
             try
             {
                 foreach (var name in names)
@@ -37,7 +37,15 @@ namespace MazeParty.Multiplayer.Tests
                         var state = root.AddComponent(type);
                         var field = type.GetField("_finalRanks", flags) ?? type.GetField("_finalRanksPacked", flags);
                         System.Action<uint> setRanks;
-                        if (state is NetworkOddOneOutState)
+                        if (state is NetworkRace2State)
+                        {
+                            var snapshot = (Unity.Netcode.NetworkVariable<Race2Snapshot>)type.GetField("_snapshot", flags).GetValue(state);
+                            setRanks = packed => snapshot.Value = packed == 0 ? default : new Race2Snapshot {
+                                Phase = MazeParty.Gameplay.Minigames.Race2.Race2Phase.Complete,
+                                Scores = (4 - (packed & 255)) | ((4 - ((packed >> 8) & 255)) << 8) |
+                                    ((4 - ((packed >> 16) & 255)) << 16) | ((4 - ((packed >> 24) & 255)) << 24) };
+                        }
+                        else if (state is NetworkOddOneOutState)
                         {
                             var snapshot = (Unity.Netcode.NetworkVariable<OddOneOutPublicSnapshot>)type.GetField("_snapshot", flags).GetValue(state);
                             setRanks = packed => snapshot.Value = packed == 0 ? default : new OddOneOutPublicSnapshot {

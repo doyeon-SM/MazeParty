@@ -1,0 +1,70 @@
+using MazeParty.Gameplay.Minigames;
+using MazeParty.Gameplay.Minigames.Race2;
+
+namespace MazeParty.Multiplayer
+{
+    internal sealed class Race2RuntimeAdapter :
+        MinigameRuntimeAdapter<NetworkRace2State>,
+        IMinigameRoundEpochCapability,
+        IMinigameReconnectCapability
+    {
+        public override ScheduledMinigameId Id =>
+            ScheduledMinigameId.Race2;
+
+        protected override NetworkRace2State CurrentState =>
+            NetworkRace2State.Instance;
+
+        public override bool TryGetRoundCountdown(out double remainingSeconds)
+        {
+            var state = CurrentState;
+            remainingSeconds = state != null &&
+                               state.Phase == Race2Phase.Countdown
+                ? state.Remaining
+                : 0d;
+            return remainingSeconds > 0d;
+        }
+
+        public override bool CanAcceptInputForSlot(int slot)
+        {
+            var state = CurrentState;
+            return state != null && state.CanAcceptInputForSlot(slot);
+        }
+
+        public bool TryGetRoundAndInputEpoch(
+            out byte roundNumber,
+            out uint inputEpoch)
+        {
+            var state = CurrentState;
+            roundNumber = state != null ? (byte)state.RoundNumber : (byte)0;
+            inputEpoch = state != null ? state.InputEpoch : 0U;
+            return true;
+        }
+
+        public override void BeginMatchOnServer(ulong matchSeed)
+        {
+            CurrentState?.BeginMatchOnServer(matchSeed);
+        }
+
+        public override void PauseOnServer(double now)
+        {
+            CurrentState?.PauseOnServer(now);
+        }
+
+        public override void ResumeOnServer(double now)
+        {
+            CurrentState?.ResumeOnServer(now);
+        }
+
+        public void RestoreAvatarForReconnectOnServer(
+            NetworkPlayerAvatar avatar)
+        {
+            CurrentState?.RestoreAvatarForReconnectOnServer(avatar);
+        }
+
+        public override void EndMatchOnServer()
+        {
+            CurrentState?.EndMatchOnServer();
+        }
+
+    }
+}

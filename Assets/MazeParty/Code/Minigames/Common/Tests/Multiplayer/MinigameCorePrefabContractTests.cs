@@ -28,6 +28,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly TestCaseData[] EnvironmentContracts =
         {
+            EnvironmentCase("Race2", "Race 2 Environment", "Race2Environment.prefab", typeof(NetworkRace2State), "Runtime Players", "Runtime Boxes"),
             EnvironmentCase("OddOneOut", "Odd One Out Environment", "OddOneOutEnvironment.prefab",
                 typeof(NetworkOddOneOutState), "Runtime Players"),
             EnvironmentCase(
@@ -147,6 +148,16 @@ namespace MazeParty.Multiplayer.Tests
                         scenePath + " has no scene-connected core world " +
                         "prefab under " + prefabPrefix);
 
+                    if (game == "Race2")
+                    {
+                        var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Race2NetworkView>(true)).Single();
+                        Assert.That(view.HasRequiredReferences, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().InScenePlaced, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().PrefabIdHash, Is.Not.Zero);
+                        var box = (GameObject)new SerializedObject(view).FindProperty("boxPrefab").objectReferenceValue;
+                        var sourceBox = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Ignore/Fantasy Lowpoly Pack (Demo)/Prefabs/box_003.prefab");
+                        Assert.That(box.GetComponentInChildren<MeshFilter>(true).sharedMesh, Is.SameAs(sourceBox.GetComponentInChildren<MeshFilter>(true).sharedMesh));
+                    }
                     if (game == "OddOneOut")
                     {
                         var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<OddOneOutNetworkView>(true)).Single();

@@ -109,6 +109,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly SceneUiContract[] SceneContracts =
         {
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/Race2/Race2.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab"),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab",

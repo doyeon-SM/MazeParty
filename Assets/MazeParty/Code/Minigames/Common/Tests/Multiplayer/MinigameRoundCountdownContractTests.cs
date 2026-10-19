@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using MazeParty.Gameplay.Minigames.Race2;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -59,6 +60,9 @@ namespace MazeParty.Multiplayer.Tests
                     typeof(RaceRuntimeAdapter),
                     (byte)NetworkRacePhase.Countdown);
                 yield return new CountdownAdapterCase(
+                    typeof(NetworkRace2State), typeof(Race2RuntimeAdapter),
+                    (byte)Race2Phase.Countdown);
+                yield return new CountdownAdapterCase(
                     typeof(NetworkBouncingBallsState),
                     typeof(BouncingBallsRuntimeAdapter),
                     (byte)NetworkBouncingBallsPhase.Countdown);
@@ -96,6 +100,14 @@ namespace MazeParty.Multiplayer.Tests
                 NetworkCountdownTestAccess.SetInstance(
                     testCase.StateType,
                     state);
+                if (state is NetworkRace2State)
+                    NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new Race2Snapshot
+                    {
+                        Phase = Race2Phase.Countdown, Round = 2, AliveMask = 15,
+                        EndsAt = Time.unscaledTimeAsDouble + 30d
+                    });
+                else
+                {
                 NetworkCountdownTestAccess.SetNetworkValue(
                     state,
                     "_phase",
@@ -113,6 +125,7 @@ namespace MazeParty.Multiplayer.Tests
                     state,
                     "_phaseEndsAt",
                     Time.unscaledTimeAsDouble + 30d);
+                }
 
                 var adapter = (IMinigameRuntimeAdapter)
                     Activator.CreateInstance(testCase.AdapterType, true);

@@ -65,5 +65,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity
     guid: fcc286f83905afa4ebe9928c6dcf2ac5
+  - enabled: 1
+    path: Assets/MazeParty/Scenes/Minigames/Race2/Race2.unity
+    guid: 2cf491c39f9da484ab63e84051b73497
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

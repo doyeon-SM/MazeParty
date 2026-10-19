@@ -159,6 +159,7 @@ namespace MazeParty.Editor
             EnsureDefaultClip(
                 SoundKeys.MinigameMinefieldScan,
                 MinefieldScanDefaultClipPath);
+            EnsureDefaultClips(SoundKeys.MinigameRace2Lane, "Assets/Resources/sound/clickandhover.mp3");
             EnsureDefaultClips(SoundKeys.MinigameOddOneOutToggle, "Assets/Resources/sound/clickandhover.mp3");
             EnsureDefaultClips(SoundKeys.MinigameCoinPickup, "Assets/Resources/sound/goldgain.mp3");
             EnsureDefaultClips(SoundKeys.MinigameMoneyPickup, "Assets/Resources/sound/shopbuy.mp3");
@@ -503,6 +504,12 @@ namespace MazeParty.Editor
                 pitchVariance = 0.08f;
                 maxInstances = 4;
                 minInterval = 0.05f;
+                priority = 70;
+            }
+            else if (key == SoundKeys.MinigameRace2Lane)
+            {
+                volume = 0.45f;
+                maxInstances = 2;
                 priority = 70;
             }
             else if (key == SoundKeys.MinigameOddOneOutToggle)

@@ -66,7 +66,8 @@ namespace MazeParty.Multiplayer
             },
             new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" },
             new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" },
-            new[] { "<sprite name=\"ml\">  SIT / STAND" }
+            new[] { "<sprite name=\"ml\">  SIT / STAND" },
+            new[] { "<sprite name=\"a\"><sprite name=\"d\">  SWITCH LANE" }
         };
 
         private ScheduledMinigameId _renderedControlMinigame;
@@ -1372,6 +1373,7 @@ namespace MazeParty.Multiplayer
                 selected == ScheduledMinigameId.ArenaCombat;
             var isCliffBarrage =
                 selected == ScheduledMinigameId.CliffBarrage;
+            var isRace2 = selected == ScheduledMinigameId.Race2;
             var isOddOneOut = selected == ScheduledMinigameId.OddOneOut;
             var isCoinCollect = selected == ScheduledMinigameId.CoinCollect;
             var isSkip = selected == ScheduledMinigameId.Skip;
@@ -1411,6 +1413,8 @@ namespace MazeParty.Multiplayer
                         ? GameText.T("SNOWY SPIN")
                     : isArenaCombat
                         ? GameText.T("ARENA COMBAT")
+                    : isRace2
+                        ? GameText.T("RACE 2")
                     : isOddOneOut
                         ? GameText.T("ODD ONE OUT")
                     : isCoinCollect
@@ -1511,6 +1515,8 @@ namespace MazeParty.Multiplayer
                         ? GameText.T("SNOWY SPIN RESULTS")
                     : isArenaCombat
                         ? GameText.T("ARENA COMBAT RESULTS")
+                    : isRace2
+                        ? GameText.T("RACE 2 RESULTS")
                     : isOddOneOut
                         ? GameText.T("ODD ONE OUT RESULTS")
                     : isCoinCollect
@@ -1557,6 +1563,8 @@ namespace MazeParty.Multiplayer
                 : isArenaCombat
                     ? BuildArenaCombatResultSummary(
                         NetworkArenaCombatState.Instance)
+                : isRace2
+                    ? BuildRace2ResultSummary(NetworkRace2State.Instance)
                 : isOddOneOut
                     ? BuildOddOneOutResultSummary(NetworkOddOneOutState.Instance)
                 : isCoinCollect
@@ -2008,6 +2016,40 @@ namespace MazeParty.Multiplayer
                     rank,
                     FormatMinigameResultPlayerName(avatar, rankedSlot),
                     cliffBarrage.GetScore(rankedSlot),
+                    MinigameRewardRules.GetFinalPlacementGold(rank)));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string BuildRace2ResultSummary(
+            NetworkRace2State race2)
+        {
+            if (race2 == null)
+            {
+                return GameText.T("Final standings are synchronizing...");
+            }
+
+            if (!TryGetFinalResultSlots(race2.GetFinalRank, out var rankedSlots))
+                return GameText.T("Final standings are synchronizing...");
+            var builder = new StringBuilder();
+            foreach (var rankedSlot in rankedSlots)
+            {
+                var rank = race2.GetFinalRank(rankedSlot);
+                if (builder.Length > 0)
+                {
+                    builder.AppendLine();
+                }
+
+                var match = NetworkMatchState.Instance;
+                var avatar = match != null
+                    ? match.GetAvatarForSlot(rankedSlot)
+                    : null;
+                builder.Append(GameText.F(
+                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
+                    rank,
+                    FormatMinigameResultPlayerName(avatar, rankedSlot),
+                    race2.GetScore(rankedSlot),
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 

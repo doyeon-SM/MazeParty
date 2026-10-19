@@ -21,7 +21,8 @@ namespace MazeParty.Dev.MinigameSoloTest
         ArenaCombat = 14,
         CliffBarrage = 15,
         CoinCollect = 16,
-        OddOneOut = 17
+        OddOneOut = 17,
+        Race2 = 18
     }
 
     public readonly struct MinigameSoloTestDescriptor
@@ -100,6 +101,7 @@ namespace MazeParty.Dev.MinigameSoloTest
         public const string CliffBarrageScenePath =
             "Assets/MazeParty/Scenes/Minigames/CliffBarrage/CliffBarrage.unity";
 
+        public const string Race2ScenePath = "Assets/MazeParty/Scenes/Minigames/Race2/Race2.unity";
         public const string OddOneOutScenePath = "Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity";
         public const string CoinCollectScenePath = "Assets/MazeParty/Scenes/Minigames/CoinCollect/CoinCollect.unity";
 
@@ -198,6 +200,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 "R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(MinigameSoloTestId.CoinCollect, "Coin Collect", CoinCollectScenePath,
                 "WASD move · LMB push · collect coins and money · R restart · N next seed · Esc stop"),
+            new MinigameSoloTestDescriptor(MinigameSoloTestId.Race2, "Race 2", Race2ScenePath,
+                "A left · D right · R restart · N next seed · Esc stop"),
             new MinigameSoloTestDescriptor(MinigameSoloTestId.OddOneOut, "Odd One Out", OddOneOutScenePath,
                 "LMB sit / stand · choose privately · R restart · N next seed · Esc stop")
         };

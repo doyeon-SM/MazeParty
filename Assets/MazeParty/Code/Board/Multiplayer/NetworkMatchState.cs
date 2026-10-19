@@ -418,6 +418,10 @@ namespace MazeParty.Multiplayer
         public bool IsCliffBarragePlaying =>
             IsCliffBarragePhase &&
             FlowState == BoardFlowState.MinigamePlaying;
+        public bool IsRace2Phase => GameplayEnabled && CurrentMinigame == ScheduledMinigameId.Race2 &&
+            (FlowState == BoardFlowState.MinigameIntroReady || FlowState == BoardFlowState.MinigameLoading ||
+             FlowState == BoardFlowState.MinigamePlaying || FlowState == BoardFlowState.MinigameResult);
+        public bool IsRace2Playing => IsRace2Phase && FlowState == BoardFlowState.MinigamePlaying;
         public bool IsOddOneOutPhase => GameplayEnabled && CurrentMinigame == ScheduledMinigameId.OddOneOut &&
             (FlowState == BoardFlowState.MinigameIntroReady || FlowState == BoardFlowState.MinigameLoading ||
              FlowState == BoardFlowState.MinigamePlaying || FlowState == BoardFlowState.MinigameResult);
