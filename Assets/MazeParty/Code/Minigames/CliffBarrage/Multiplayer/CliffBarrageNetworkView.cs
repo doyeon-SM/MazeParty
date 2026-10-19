@@ -341,6 +341,7 @@ namespace MazeParty.Multiplayer
                             : avatar.DisplayName);
                 }
                 player.Visual.SetOwnerFirstPerson(false);
+                player.Visual.SetKnockedDown(state.IsStunned(slot));
                 player.TorsoPose.ApplyState(
                     state.GetHitCount(slot), eliminated);
                 player.Root.localScale = Vector3.one *

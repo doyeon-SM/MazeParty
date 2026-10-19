@@ -165,6 +165,15 @@ namespace MazeParty.Multiplayer.Tests
                         var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                             item.Path);
                         Assert.That(prefab, Is.Not.Null, item.Path);
+                        if (item.Path == PrefabFolder + "BombPassing/Bomb.prefab")
+                        {
+                            var bombSource = AssetDatabase.LoadAssetAtPath<GameObject>(
+                                "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Bomb.prefab");
+                            Assert.That(prefab.GetComponent<MeshFilter>().sharedMesh,
+                                Is.SameAs(bombSource.GetComponent<MeshFilter>().sharedMesh));
+                            Assert.That(prefab.GetComponent<Renderer>().sharedMaterials,
+                                Has.None.Null);
+                        }
                         Assert.That(
                             PrefabUtility.IsPartOfPrefabAsset(prefab),
                             Is.True,

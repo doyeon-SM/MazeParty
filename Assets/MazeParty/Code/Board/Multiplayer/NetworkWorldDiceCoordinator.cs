@@ -87,9 +87,10 @@ namespace MazeParty.Multiplayer
 
         public void RelocatePendingDiceOnServer(NetworkPlayerAvatar avatar)
         {
-            if (!IsServer || avatar == null ||
+            if (!IsServer || avatar == null || !avatar.HasResolvedItemChoice ||
+                avatar.AssignedSlot < 0 || avatar.AssignedSlot >= 4 ||
                 avatar.CurrentBoardTileOnServer == null) return;
-            for (int n = 0; n < 2; n++)
+            for (int n = 0; n < (avatar.UsesDoubleDice ? 2 : 1); n++)
             {
                 var index = Index(avatar.AssignedSlot, n);
                 if (!TryGetDie(avatar.AssignedSlot, n, out var die) ||

@@ -81,6 +81,7 @@ namespace MazeParty.Gameplay
         public const string MinigameGiftHit = "minigame.gift_grab.hit";
         public const string MinigameBallReflect = "minigame.bouncing_balls.reflect";
         public const string MinigameBallGoal = "minigame.bouncing_balls.goal";
+        public const string MinigameBallLoss = "minigame.bouncing_balls.loss";
         public const string MinigameGreenSignal = "minigame.red_light_green_light.green";
         public const string MinigameWrongWayCorrect = "minigame.wrong_way.correct";
         public const string MinigameWrongWayIncorrect = "minigame.wrong_way.incorrect";
@@ -113,6 +114,7 @@ namespace MazeParty.Gameplay
             MinigameGiftHit,
             MinigameBallReflect,
             MinigameBallGoal,
+            MinigameBallLoss,
             MinigameGreenSignal,
             MinigameWrongWayCorrect,
             MinigameWrongWayIncorrect,

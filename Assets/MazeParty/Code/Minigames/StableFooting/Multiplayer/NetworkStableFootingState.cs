@@ -90,6 +90,8 @@ namespace MazeParty.Multiplayer
             CreateULongVariable();
         private readonly NetworkVariable<uint> _tileSymbolsHigh =
             CreateUIntVariable();
+        private readonly NetworkVariable<byte> _stunnedMask =
+            CreateByteVariable();
         private readonly NetworkVariable<byte> _eliminatedMask =
             CreateByteVariable();
         private readonly NetworkVariable<uint> _eliminationOrders =
@@ -214,6 +216,7 @@ namespace MazeParty.Multiplayer
             if (Phase == NetworkStableFootingPhase.Running)
             {
                 ResolveCompletedPushCastsOnServer(now);
+                SyncStunPresentationOnServer(now);
                 if (Phase != NetworkStableFootingPhase.Running)
                 {
                     return;
@@ -556,6 +559,21 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        public bool IsStunned(int slot) => Phase == NetworkStableFootingPhase.Running &&
+            StableFootingRules.IsValidPlayerSlot(slot) && !IsEliminated(slot) &&
+            IsMaskBitSet(_stunnedMask.Value, slot);
+
+        private void SyncStunPresentationOnServer(double now)
+        {
+            if (!IsServer) return;
+            byte mask = 0;
+            if (Phase == NetworkStableFootingPhase.Running)
+                for (var slot = 0; slot < StableFootingRules.PlayerCount; slot++)
+                    if (!IsEliminated(slot) && now < _pushTimingStates[slot].StunnedUntil)
+                        mask |= (byte)(1 << slot);
+            _stunnedMask.Value = mask;
+        }
+
         public bool IsEliminated(int slot)
         {
             return !StableFootingRules.IsValidPlayerSlot(slot) ||
@@ -667,6 +685,7 @@ namespace MazeParty.Multiplayer
             if (Phase == NetworkStableFootingPhase.Running)
             {
                 ResolveCompletedPushCastsOnServer(now);
+                SyncStunPresentationOnServer(now);
             }
             _pausedPhaseRemaining.Value = _phaseEndsAt.Value > 0d
                 ? Math.Max(0d, _phaseEndsAt.Value - now)
@@ -767,6 +786,7 @@ namespace MazeParty.Multiplayer
             _roundEndReason.Value =
                 (byte)StableFootingRoundEndReason.None;
             _eliminatedMask.Value = 0;
+            _stunnedMask.Value = 0;
             _eliminationOrders.Value = 0U;
             _roundPoints.Value = 0U;
             _roundRanks.Value = 0U;
@@ -1346,6 +1366,7 @@ namespace MazeParty.Multiplayer
             _tileSymbolsLow.Value = 0UL;
             _tileSymbolsHigh.Value = 0U;
             _eliminatedMask.Value = 0;
+            _stunnedMask.Value = 0;
             _eliminationOrders.Value = 0U;
             _scores.Value = 0U;
             _roundPoints.Value = 0U;

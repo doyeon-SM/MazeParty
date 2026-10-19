@@ -15,19 +15,19 @@ MonoBehaviour:
   key: minigame.bouncing_balls.goal
   channel: 0
   clips:
-  - {fileID: 8300000, guid: d63f162c064a16c448e2dfa6e96867c5, type: 3}
+  - {fileID: 8300000, guid: 1f93406dbc18f604c97243ea71e24347, type: 3}
   variationMode: 1
-  volume: 0.75
+  volume: 0.65
   volumeVariance: 0
-  pitchVariance: 0.04
-  spatial: 1
+  pitchVariance: 0
+  spatial: 0
   minDistance: 1
-  maxDistance: 80
+  maxDistance: 30
   rolloff: 1
   loop: 0
-  startOffsetSeconds: 0
-  maxInstances: 6
+  startOffsetSeconds: 0.21
+  maxInstances: 8
   minInterval: 0
-  priority: 75
+  priority: 80
   duckMusic: 0
   fadeSeconds: 0.5

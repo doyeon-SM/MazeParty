@@ -139,8 +139,16 @@ namespace MazeParty.Multiplayer.Tests
             AssertCueUsesClip(library, SoundKeys.MinigameGiftPickup, "Assets/Resources/sound/goldgain.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameGiftThrow, "Assets/Resources/sound/grenade.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameBallReflect, "Assets/Resources/sound/dicebounce.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameBallGoal, "Assets/Resources/sound/diceresult.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameBallReflect, SequenceMemoryBellPath);
+            AssertCueUsesClip(library, SoundKeys.MinigameBallGoal, SequenceMemoryBellPath);
+            AssertCueUsesClip(library, SoundKeys.MinigameBallLoss, SequenceMemoryBellPath);
+            foreach (var key in new[] { SoundKeys.MinigameBallReflect, SoundKeys.MinigameBallGoal, SoundKeys.MinigameBallLoss })
+            {
+                Assert.That(library.TryGet(key, out var cue), Is.True);
+                Assert.That(cue.PitchVariance, Is.Zero, key);
+                Assert.That(cue.Spatial, Is.False, key);
+                Assert.That(cue.StartOffsetSeconds, Is.EqualTo(sequenceTone.StartOffsetSeconds), key);
+            }
             AssertCueUsesClip(library, SoundKeys.MinigameGreenSignal, "Assets/Resources/sound/countdowngo.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameWrongWayCorrect, "Assets/Resources/sound/confirmandpopupopen.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameWrongWayIncorrect, "Assets/Resources/sound/errorandnotice.mp3");
@@ -148,7 +156,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(library.TryGet(SoundKeys.MinigameGiftHit, out var giftHit), Is.True);
             Assert.That(giftHit.ClipCount, Is.EqualTo(3));
             Assert.That(giftHit.VariationMode, Is.EqualTo(SoundVariationMode.RandomNoRepeat));
-            foreach (var key in new[] { SoundKeys.MinigameBombExplosion, SoundKeys.MinigameGiftPickup, SoundKeys.MinigameGiftDeposit, SoundKeys.MinigameGiftThrow, SoundKeys.MinigameGiftHit, SoundKeys.MinigameBallReflect, SoundKeys.MinigameBallGoal, SoundKeys.MinigameGreenSignal, SoundKeys.MinigameWrongWayCorrect, SoundKeys.MinigameWrongWayIncorrect, SoundKeys.BoardChestAcquire })
+            foreach (var key in new[] { SoundKeys.MinigameBombExplosion, SoundKeys.MinigameGiftPickup, SoundKeys.MinigameGiftDeposit, SoundKeys.MinigameGiftThrow, SoundKeys.MinigameGiftHit, SoundKeys.MinigameGreenSignal, SoundKeys.MinigameWrongWayCorrect, SoundKeys.MinigameWrongWayIncorrect, SoundKeys.BoardChestAcquire })
             {
                 Assert.That(library.TryGet(key, out var reused), Is.True);
                 Assert.That(reused.Channel, Is.EqualTo(AudioChannel.Sfx), key);

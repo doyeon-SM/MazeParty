@@ -169,14 +169,16 @@ namespace MazeParty.Editor
             var playerRoot = new GameObject("Player Visuals").transform;
             playerRoot.SetParent(parent, false);
 
-            var bomb = CreatePrimitive("Bomb", PrimitiveType.Sphere, parent,
-                new Vector3(0f, 0.76f, 0f), Quaternion.identity,
-                Vector3.one * 1.1f, materials.Bomb);
-            var fuse = CreatePrimitive("Bomb Fuse", PrimitiveType.Cylinder,
-                bomb.transform, new Vector3(0f, 0.55f, 0f),
-                Quaternion.identity, new Vector3(0.14f, 0.17f, 0.14f),
-                materials.Fuse);
-            fuse.transform.localScale = new Vector3(0.14f, 0.17f, 0.14f);
+            var source = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Bomb.prefab");
+            if (source == null) throw new InvalidOperationException("Missing BTM Bomb prefab.");
+            var bomb = (GameObject)PrefabUtility.InstantiatePrefab(source, parent);
+            PrefabUtility.UnpackPrefabInstance(bomb, PrefabUnpackMode.Completely,
+                InteractionMode.AutomatedAction);
+            bomb.name = "Bomb";
+            bomb.transform.localPosition = new Vector3(0f, 0.76f, 0f);
+            bomb.transform.localScale = Vector3.one * 0.65f;
+            MinigameCorePrefabUtility.StripColliders(bomb);
 
             var lightObject = new GameObject("Bomb Warning Light");
             lightObject.transform.SetParent(bomb.transform, false);

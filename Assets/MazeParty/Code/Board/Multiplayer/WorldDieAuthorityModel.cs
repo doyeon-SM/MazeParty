@@ -65,7 +65,7 @@ namespace MazeParty.Multiplayer
         {
             return !avatarHasRolled &&
                    !dieHasRecordedResult &&
-                   phase == WorldDiePhase.Ready;
+                   (phase == WorldDiePhase.Ready || phase == WorldDiePhase.Hidden);
         }
     }
 

@@ -344,6 +344,7 @@ namespace MazeParty.Multiplayer
                             : avatar.DisplayName);
                 }
                 runner.Visual.SetEliminated(eliminated);
+                runner.Visual.SetKnockedDown(state.IsStunned(slot));
             }
         }
 

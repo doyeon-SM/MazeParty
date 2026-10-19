@@ -164,8 +164,9 @@ namespace MazeParty.Editor
             EnsureDefaultClips(SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");
             EnsureDefaultClips(SoundKeys.MinigameGiftThrow, "Assets/Resources/sound/grenade.mp3");
             EnsureDefaultClips(SoundKeys.MinigameGiftHit, "Assets/Resources/sound/hitbody1.mp3", "Assets/Resources/sound/hitbody2.mp3", "Assets/Resources/sound/hitbody3.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBallReflect, "Assets/Resources/sound/dicebounce.mp3");
-            EnsureDefaultClips(SoundKeys.MinigameBallGoal, "Assets/Resources/sound/diceresult.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallReflect, "Assets/Resources/sound/- Bell 7.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallGoal, "Assets/Resources/sound/- Bell 7.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameBallLoss, "Assets/Resources/sound/- Bell 7.mp3");
             EnsureDefaultClips(SoundKeys.MinigameGreenSignal, "Assets/Resources/sound/countdowngo.mp3");
             EnsureDefaultClips(SoundKeys.MinigameWrongWayCorrect, "Assets/Resources/sound/confirmandpopupopen.mp3");
             EnsureDefaultClips(SoundKeys.MinigameWrongWayIncorrect, "Assets/Resources/sound/errorandnotice.mp3");
@@ -539,7 +540,10 @@ namespace MazeParty.Editor
                 priority = 85;
                 maxDistance = 60f;
             }
-            else if (key == SoundKeys.MinigameSequenceMemoryTone)
+            else if (key == SoundKeys.MinigameSequenceMemoryTone ||
+                     key == SoundKeys.MinigameBallReflect ||
+                     key == SoundKeys.MinigameBallGoal ||
+                     key == SoundKeys.MinigameBallLoss)
             {
                 // Four players can strike together; leave transient headroom.
                 volume = 0.65f;
@@ -598,17 +602,15 @@ namespace MazeParty.Editor
                      key == SoundKeys.MinigameGiftDeposit ||
                      key == SoundKeys.MinigameGiftThrow ||
                      key == SoundKeys.MinigameGiftHit ||
-                     key == SoundKeys.MinigameBallReflect ||
-                     key == SoundKeys.MinigameBallGoal ||
                      key == SoundKeys.BoardChestAcquire)
             {
                 spatial = true;
-                volume = key == SoundKeys.MinigameBallReflect ? 0.55f : 0.75f;
-                pitchVariance = key == SoundKeys.MinigameBallReflect ? 0.1f : 0.04f;
+                volume = 0.75f;
+                pitchVariance = 0.04f;
                 maxInstances = 6;
                 // Independent players can act in the same frame.
                 minInterval = 0f;
-                priority = key == SoundKeys.MinigameBallReflect ? 45 : 75;
+                priority = 75;
                 maxDistance = 80f;
             }
             else if (key == SoundKeys.MinigameGreenSignal ||

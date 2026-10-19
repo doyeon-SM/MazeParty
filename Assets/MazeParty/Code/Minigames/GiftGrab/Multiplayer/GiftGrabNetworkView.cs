@@ -41,8 +41,6 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform pushVfxAnchor;
         [SerializeField] private Transform throwVfxAnchor;
         [SerializeField] private Transform dropVfxAnchor;
-        [SerializeField] private Transform[] stunVfxAnchors =
-            new Transform[PlayerCount];
         [SerializeField] private GameObject arenaPresentation;
         [SerializeField] private AudioSource cueAudioSource;
         [SerializeField] private GameObject actionBurstVfxPrefab;
@@ -88,7 +86,6 @@ namespace MazeParty.Multiplayer
             Transform pushEffect,
             Transform throwEffect,
             Transform dropEffect,
-            Transform[] stunEffects,
             GameObject arena,
             AudioSource audioSource)
         {
@@ -102,7 +99,6 @@ namespace MazeParty.Multiplayer
             pushVfxAnchor = pushEffect;
             throwVfxAnchor = throwEffect;
             dropVfxAnchor = dropEffect;
-            stunVfxAnchors = stunEffects;
             arenaPresentation = arena;
             cueAudioSource = audioSource;
             _cameraConfigured = false;
@@ -438,23 +434,8 @@ namespace MazeParty.Multiplayer
 
             for (var slot = 0; slot < PlayerCount; slot++)
             {
-                if (stunVfxAnchors == null ||
-                    slot >= stunVfxAnchors.Length ||
-                    stunVfxAnchors[slot] == null)
-                {
-                    continue;
-                }
-                var active = state.GetPlayerStunRemaining(slot) > 0d;
-                stunVfxAnchors[slot].gameObject.SetActive(active);
-                if (active && _players[slot] != null)
-                {
-                    stunVfxAnchors[slot].position =
-                        _players[slot].Root.position + Vector3.up * 0.04f;
-                    stunVfxAnchors[slot].Rotate(
-                        Vector3.up,
-                        150f * Time.unscaledDeltaTime,
-                        Space.World);
-                }
+                _players[slot]?.Visual.SetKnockedDown(
+                    state.Phase == NetworkGiftGrabPhase.Running && state.GetPlayerStunRemaining(slot) > 0d);
             }
         }
 
@@ -612,14 +593,6 @@ namespace MazeParty.Multiplayer
             pushVfxAnchor?.gameObject.SetActive(active);
             throwVfxAnchor?.gameObject.SetActive(active);
             dropVfxAnchor?.gameObject.SetActive(active);
-            if (stunVfxAnchors == null)
-            {
-                return;
-            }
-            foreach (var effect in stunVfxAnchors)
-            {
-                effect?.gameObject.SetActive(active);
-            }
         }
 
         private static void DisableGeneratedHitColliders(GameObject root)

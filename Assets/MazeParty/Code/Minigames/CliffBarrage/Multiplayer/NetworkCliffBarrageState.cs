@@ -21,6 +21,7 @@ namespace MazeParty.Multiplayer
         public Vector2 Facing;
         public byte HitCount;
         public bool IsEliminated;
+        public bool IsStunned;
         public byte RoundRank;
         public byte Score;
 
@@ -31,6 +32,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref Facing);
             serializer.SerializeValue(ref HitCount);
             serializer.SerializeValue(ref IsEliminated);
+            serializer.SerializeValue(ref IsStunned);
             serializer.SerializeValue(ref RoundRank);
             serializer.SerializeValue(ref Score);
         }
@@ -39,7 +41,7 @@ namespace MazeParty.Multiplayer
         {
             return Position == other.Position && Facing == other.Facing &&
                 HitCount == other.HitCount &&
-                IsEliminated == other.IsEliminated &&
+                IsEliminated == other.IsEliminated && IsStunned == other.IsStunned &&
                 RoundRank == other.RoundRank && Score == other.Score;
         }
 
@@ -56,6 +58,7 @@ namespace MazeParty.Multiplayer
             hash.Add(Facing);
             hash.Add(HitCount);
             hash.Add(IsEliminated);
+            hash.Add(IsStunned);
             hash.Add(RoundRank);
             hash.Add(Score);
             return hash.ToHashCode();
@@ -400,6 +403,10 @@ namespace MazeParty.Multiplayer
                     ? _playerSnapshots[slot].HitCount : 0;
         }
 
+        public bool IsStunned(int slot) => Phase == NetworkCliffBarragePhase.Playing &&
+            CliffBarrageRules.IsValidSlot(slot) && slot < _playerSnapshots.Count &&
+            _playerSnapshots[slot].IsStunned;
+
         public bool IsEliminated(int slot)
         {
             return CliffBarrageRules.IsValidSlot(slot) &&
@@ -714,6 +721,8 @@ namespace MazeParty.Multiplayer
                         (float)player.FacingZ),
                     HitCount = (byte)player.HitCount,
                     IsEliminated = player.IsEliminated,
+                    IsStunned = !player.IsEliminated &&
+                        player.StunnedUntil > _serverMatch.RoundElapsedSeconds,
                     RoundRank = (byte)player.RoundRank,
                     Score = (byte)player.TotalScore
                 };

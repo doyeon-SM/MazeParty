@@ -15,6 +15,11 @@ namespace MazeParty.Gameplay
         public const float MiPitchScale = 0.8408964f;
         public const float SolPitchScale = 1f;
 
+        public static SoundHandle PlayBouncingBallGoal(int scoreDelta) =>
+            scoreDelta == 0 ? default : PlayPitched(
+                scoreDelta < 0 ? SoundKeys.MinigameBallLoss : SoundKeys.MinigameBallGoal,
+                scoreDelta < 0 ? DoPitchScale : SolPitchScale);
+
         public static SoundHandle PlaySequenceTone(bool confirmed) =>
             PlayPitched(SoundKeys.MinigameSequenceMemoryTone,
                 confirmed ? SolPitchScale : DoPitchScale);

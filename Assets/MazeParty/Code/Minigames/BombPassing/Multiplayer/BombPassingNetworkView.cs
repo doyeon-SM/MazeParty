@@ -21,10 +21,6 @@ namespace MazeParty.Multiplayer
 
         private const float InterpolationSpeed = 20f;
         private const float ExplosionFlashSeconds = 0.35f;
-        private static readonly int BaseColorProperty =
-            Shader.PropertyToID("_BaseColor");
-        private static readonly int ColorProperty =
-            Shader.PropertyToID("_Color");
         private static readonly int EmissionColorProperty =
             Shader.PropertyToID("_EmissionColor");
         private static readonly Color BombColor =
@@ -306,7 +302,7 @@ namespace MazeParty.Multiplayer
                             : avatar.DisplayName);
                 }
                 player.Visual.SetOwnerFirstPerson(false);
-                player.Visual.SetCrouching(state.IsStunned(slot));
+                player.Visual.SetKnockedDown(state.Phase == NetworkBombPassingPhase.Playing && state.IsStunned(slot));
                 player.Visual.SetEliminated(state.IsEliminated(slot));
             }
         }
@@ -378,8 +374,6 @@ namespace MazeParty.Multiplayer
             {
                 _colorBlock ??= new MaterialPropertyBlock();
                 _colorBlock.Clear();
-                _colorBlock.SetColor(BaseColorProperty, BombColor);
-                _colorBlock.SetColor(ColorProperty, BombColor);
                 _colorBlock.SetColor(
                     EmissionColorProperty,
                     on

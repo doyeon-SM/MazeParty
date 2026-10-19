@@ -29,10 +29,6 @@ namespace MazeParty.Dev.MinigameSoloTest
 
         private static readonly Color BombColor =
             new Color(1f, 0.23f, 0.1f);
-        private static readonly int BaseColorProperty =
-            Shader.PropertyToID("_BaseColor");
-        private static readonly int ColorProperty =
-            Shader.PropertyToID("_Color");
         private static readonly int EmissionColorProperty =
             Shader.PropertyToID("_EmissionColor");
 
@@ -452,7 +448,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 _visuals[slot].SetOwnerFirstPerson(false);
                 _visuals[slot].SetTopViewHighlight(
                     slot == LocalPlayerSlot);
-                _visuals[slot].SetCrouching(player.IsStunned);
+                _visuals[slot].SetKnockedDown(_phase == SoloPhase.Playing && player.IsStunned);
                 _visuals[slot].SetEliminated(player.IsEliminated);
             }
 
@@ -508,8 +504,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _bombLight.enabled = on;
             _bombLight.intensity = on ? _baseLightIntensity : 0f;
             _colorBlock.Clear();
-            _colorBlock.SetColor(BaseColorProperty, BombColor);
-            _colorBlock.SetColor(ColorProperty, BombColor);
             _colorBlock.SetColor(
                 EmissionColorProperty,
                 on ? BombColor * 3f : BombColor * 0.15f);

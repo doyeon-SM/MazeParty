@@ -53,7 +53,6 @@ namespace MazeParty.Dev.MinigameSoloTest
         private Transform _pushVfx;
         private Transform _throwVfx;
         private Transform _dropVfx;
-        private Transform[] _stunVfx;
         private bool _productionStateWasEnabled;
         private bool _productionViewWasEnabled;
         private bool _productionPlayerRootWasActive;
@@ -266,13 +265,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _pushVfx = RequireChild(vfxRoot, "Push VFX Anchor");
             _throwVfx = RequireChild(vfxRoot, "Throw VFX Anchor");
             _dropVfx = RequireChild(vfxRoot, "Drop VFX Anchor");
-            _stunVfx = new Transform[GiftGrabRules.PlayerCount];
-            for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
-            {
-                _stunVfx[slot] = RequireChild(
-                    vfxRoot,
-                    "Stun VFX " + (slot + 1));
-            }
         }
 
         private void CreateRuntimeRoot()
@@ -352,7 +344,6 @@ namespace MazeParty.Dev.MinigameSoloTest
             _dropVfx.gameObject.SetActive(false);
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
-                _stunVfx[slot].gameObject.SetActive(false);
             }
         }
 
@@ -438,17 +429,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             _dropVfx.gameObject.SetActive(Time.unscaledTime < _dropVfxUntil);
             for (var slot = 0; slot < GiftGrabRules.PlayerCount; slot++)
             {
-                var stunned = _session.GetPlayer(slot).StunRemaining > 0d;
-                _stunVfx[slot].gameObject.SetActive(stunned);
-                if (stunned)
-                {
-                    _stunVfx[slot].position =
-                        _players[slot].position + Vector3.up * 0.04f;
-                    _stunVfx[slot].Rotate(
-                        Vector3.up,
-                        150f * Time.unscaledDeltaTime,
-                        Space.World);
-                }
+                _playerVisuals[slot].SetKnockedDown(
+                    _session.Phase == GiftGrabSoloPhase.Running && _session.GetPlayer(slot).StunRemaining > 0d);
             }
         }
 

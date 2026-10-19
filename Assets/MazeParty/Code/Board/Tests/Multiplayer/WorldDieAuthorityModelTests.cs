@@ -388,14 +388,14 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void PreparedRelocation_OnlyMovesVisibleReadyUnrolledDice()
+        public void PreparedRelocation_RespawnsPendingDiceWithoutInterruptingRollsOrResults()
         {
             var cases = new[]
             {
                 (AvatarRolled: false, HasResult: false,
                     Phase: WorldDiePhase.Ready, Expected: true),
                 (AvatarRolled: false, HasResult: false,
-                    Phase: WorldDiePhase.Hidden, Expected: false),
+                    Phase: WorldDiePhase.Hidden, Expected: true),
                 (AvatarRolled: true, HasResult: false,
                     Phase: WorldDiePhase.Ready, Expected: false),
                 (AvatarRolled: false, HasResult: true,

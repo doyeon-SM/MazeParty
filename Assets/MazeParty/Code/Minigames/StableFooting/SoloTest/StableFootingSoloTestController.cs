@@ -722,6 +722,9 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 var player = _session.RoundState.GetPlayer(slot);
                 var runner = _runners[slot];
+                _runnerVisuals[slot].SetKnockedDown(
+                    _session.Phase == StableFootingSoloPhase.Running && !player.IsEliminated &&
+                    Time.unscaledTimeAsDouble < _pushTimingStates[slot].StunnedUntil);
                 var position = runner.position;
                 var targetY = player.IsEliminated
                     ? DroppedTileY - 1f

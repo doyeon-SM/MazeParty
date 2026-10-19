@@ -19,6 +19,52 @@ namespace MazeParty.Multiplayer.Tests
             "SafeSymbolDisplay.prefab";
 
         [Test]
+        public void StunPresentation_UsesServerStateAndExactRecoveryBoundary()
+        {
+            var root = new GameObject("Stun state contract");
+            var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            var warning = typeof(NetworkVariableBase).GetField("IgnoreInitializeWarning", BindingFlags.Static | BindingFlags.NonPublic);
+            var previousWarning = warning.GetValue(null);
+            warning.SetValue(null, true);
+            try
+            {
+                var state = root.AddComponent<NetworkStableFootingState>();
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phase", (byte)NetworkStableFootingPhase.Running);
+                var timings = (StableFootingPushTimingState[])typeof(NetworkStableFootingState)
+                    .GetField("_pushTimingStates", flags).GetValue(state);
+                timings[1].ApplyStun(10d);
+                var sync = typeof(NetworkStableFootingState).GetMethod("SyncStunPresentationOnServer", flags);
+                sync.Invoke(state, new object[] { 10d });
+                Assert.That(state.IsStunned(1), Is.False, "Clients cannot publish a stun.");
+                typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(state, true);
+                foreach (var sample in new[] { (10d, true), (10.499d, true), (10.5d, false) })
+                {
+                    sync.Invoke(state, new object[] { sample.Item1 });
+                    Assert.That(state.IsStunned(1), Is.EqualTo(sample.Item2));
+                    Assert.That(state.IsStunned(0), Is.False);
+                }
+                timings[1].ApplyStun(20d);
+                timings[1].Pause(20.2d);
+                sync.Invoke(state, new object[] { 20.2d });
+                Assert.That(state.IsStunned(1), Is.True);
+                timings[1].Resume(120.2d);
+                sync.Invoke(state, new object[] { 120.499d });
+                Assert.That(state.IsStunned(1), Is.True);
+                sync.Invoke(state, new object[] { 120.5d });
+                Assert.That(state.IsStunned(1), Is.False);
+                timings[1].ApplyStun(130d);
+                sync.Invoke(state, new object[] { 130d });
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phase", (byte)NetworkStableFootingPhase.RoundResult);
+                Assert.That(state.IsStunned(1), Is.False, "Round results clear the pose.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                warning.SetValue(null, previousWarning);
+            }
+        }
+
+        [Test]
         public void PushPresentationRpc_IsReliablePerEvent()
         {
             var rpc = typeof(NetworkStableFootingState).GetMethod(

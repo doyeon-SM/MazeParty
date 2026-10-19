@@ -9,6 +9,18 @@ namespace MazeParty.Multiplayer.Tests
 {
     public sealed class MinigameRoundCountdownContractTests
     {
+        [Test]
+        public void PlayerMarkers_OnlyShowDuringFirstSecondOfEachRoundCountdown()
+        {
+            foreach (var sample in new[] {
+                (true, 3d, true), (true, 2.001d, true), (true, 2d, false),
+                (true, 1d, false), (true, 0d, false), (false, 3d, false),
+                (true, double.NaN, false), (true, double.PositiveInfinity, false),
+                (true, 3d, true) })
+                Assert.That(MinigameLocalPlayerHighlight.ShouldShowMarkers(sample.Item1, sample.Item2),
+                    Is.EqualTo(sample.Item3), sample.ToString());
+        }
+
         private static IEnumerable<CountdownAdapterCase>
             MultiRoundAdapters
         {

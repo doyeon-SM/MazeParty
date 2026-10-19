@@ -375,7 +375,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void HandleGoalPresentationRequested(int slot)
+        private void HandleGoalPresentationRequested(int slot, int scoreDelta)
         {
             if (!_worldVisible || arenaPresentation == null)
             {
@@ -406,7 +406,7 @@ namespace MazeParty.Multiplayer
             }
 
             var worldPosition = arenaPresentation.transform.TransformPoint(localPosition);
-            GameSound.PlayAt(SoundKeys.MinigameBallGoal, worldPosition);
+            GameSound.PlayBouncingBallGoal(scoreDelta);
             OneShotVfxPool.Play(
                 goalBurstVfxPrefab,
                 worldPosition,
@@ -419,7 +419,7 @@ namespace MazeParty.Multiplayer
             if (!_worldVisible || arenaPresentation == null) return;
             var worldPosition = arenaPresentation.transform.TransformPoint(
                 new Vector3(position.x, position.y, 0.7f));
-            GameSound.PlayAt(SoundKeys.MinigameBallReflect, worldPosition);
+            GameSound.PlayPitched(SoundKeys.MinigameBallReflect, GameSound.MiPitchScale);
             OneShotVfxPool.Play(goalBurstVfxPrefab, worldPosition,
                 Quaternion.identity, 0.45f);
         }

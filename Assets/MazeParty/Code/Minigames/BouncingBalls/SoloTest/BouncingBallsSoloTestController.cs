@@ -186,6 +186,9 @@ namespace MazeParty.Dev.MinigameSoloTest
         {
             _seed = seed;
             _match = new BouncingBallsMatchState(seed);
+            _match.BallReflected += (slot, x, y) =>
+                GameSound.PlayPitched(SoundKeys.MinigameBallReflect, GameSound.MiPitchScale);
+            _match.GoalResolved += goal => GameSound.PlayBouncingBallGoal(goal.ScoreDelta);
             _phase = NetworkBouncingBallsPhase.Countdown;
             _phaseElapsed = 0d;
             RefreshPresentation();

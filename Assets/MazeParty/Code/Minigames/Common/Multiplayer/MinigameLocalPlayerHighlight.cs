@@ -23,6 +23,9 @@ namespace MazeParty.Multiplayer
             foreach (var visual in _visuals)
                 if (visual != null) visual.SetNameplateVisible(true);
         }
+        internal static bool ShouldShowMarkers(bool countdown, double remaining) =>
+            countdown && remaining > 2d && remaining <= 3d;
+
         private void LateUpdate()
         {
             var match = NetworkMatchState.Instance;
@@ -43,10 +46,12 @@ namespace MazeParty.Multiplayer
             for (var slot = 0; slot < 4; slot++)
                 if (match.GetAvatarForSlot(slot)?.IsOwner == true) localSlot = slot;
             if (localSlot < 0 || camera == null) { markers.Hide(); return; }
+            var showMarkers = ShouldShowMarkers(match.IsMinigameRoundCountdown,
+                match.MinigameRoundCountdownRemaining);
             for (var slot = 0; slot < 4; slot++)
             {
                 var target = _targets[slot];
-                var visible = target != null && target.gameObject.activeInHierarchy;
+                var visible = showMarkers && target != null && target.gameObject.activeInHierarchy;
                 var visual = _visuals[slot];
                 if (visual != null)
                 {

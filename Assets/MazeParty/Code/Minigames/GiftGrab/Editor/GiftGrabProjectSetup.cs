@@ -161,7 +161,6 @@ namespace MazeParty.Editor
                 arena.PushVfx,
                 arena.ThrowVfx,
                 arena.DropVfx,
-                arena.StunVfx,
                 arenaPresentation,
                 audioSource);
 
@@ -282,8 +281,7 @@ namespace MazeParty.Editor
                 GiftRoot = giftRoot,
                 PushVfx = effects.Push,
                 ThrowVfx = effects.Throw,
-                DropVfx = effects.Drop,
-                StunVfx = effects.Stun
+                DropVfx = effects.Drop
             };
         }
 
@@ -434,22 +432,11 @@ namespace MazeParty.Editor
                 PrimitiveType.Cylinder,
                 materials.DropVfx,
                 new Vector3(0.9f, 0.08f, 0.9f));
-            var stun = new Transform[GiftGrabRules.PlayerCount];
-            for (var slot = 0; slot < stun.Length; slot++)
-            {
-                stun[slot] = CreateEffect(
-                    root,
-                    "Stun VFX " + (slot + 1),
-                    PrimitiveType.Cylinder,
-                    materials.StunVfx,
-                    new Vector3(0.95f, 0.12f, 0.95f));
-            }
             return new VfxReferences
             {
                 Push = push,
                 Throw = thrown,
-                Drop = drop,
-                Stun = stun
+                Drop = drop
             };
         }
 
@@ -577,9 +564,6 @@ namespace MazeParty.Editor
                 DropVfx = CreateOrLoadMaterial(
                     "GiftGrabDropVfx", new Color(1f, 0.8f, 0.18f),
                     new Color(0.26f, 0.12f, 0.01f)),
-                StunVfx = CreateOrLoadMaterial(
-                    "GiftGrabStunVfx", new Color(0.92f, 0.28f, 1f),
-                    new Color(0.25f, 0.02f, 0.3f)),
                 Bases = bases
             };
         }
@@ -738,7 +722,6 @@ namespace MazeParty.Editor
             public Transform PushVfx;
             public Transform ThrowVfx;
             public Transform DropVfx;
-            public Transform[] StunVfx;
         }
 
         private sealed class VfxReferences
@@ -746,7 +729,6 @@ namespace MazeParty.Editor
             public Transform Push;
             public Transform Throw;
             public Transform Drop;
-            public Transform[] Stun;
         }
 
         private sealed class GiftGrabMaterials
@@ -759,7 +741,6 @@ namespace MazeParty.Editor
             public Material PushVfx;
             public Material ThrowVfx;
             public Material DropVfx;
-            public Material StunVfx;
             public Material[] Bases;
         }
     }

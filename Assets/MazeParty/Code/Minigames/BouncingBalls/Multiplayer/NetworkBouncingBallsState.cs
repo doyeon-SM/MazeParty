@@ -79,8 +79,6 @@ namespace MazeParty.Multiplayer
 
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[BouncingBallsRules.PlayerCount];
-        private readonly int[] _deliveredGoalCounts =
-            new int[BouncingBallsRules.PlayerCount];
         private BouncingBallsMatchState _serverMatch;
         private double _phaseStartedAt;
         private double _phaseElapsedAtPause;
@@ -89,7 +87,7 @@ namespace MazeParty.Multiplayer
 
         public static NetworkBouncingBallsState Instance { get; private set; }
 
-        public event Action<int> GoalPresentationRequested;
+        public event Action<int, int> GoalPresentationRequested;
         public event Action<Vector2> ReflectionPresentationRequested;
 
         public NetworkBouncingBallsPhase Phase =>
@@ -187,7 +185,8 @@ namespace MazeParty.Multiplayer
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
             _serverMatch = new BouncingBallsMatchState(seed);
-            _serverMatch.ShieldReflected += PresentShieldReflectionOnServer;
+            _serverMatch.BallReflected += PresentBallReflectionOnServer;
+            _serverMatch.GoalResolved += PresentGoalOnServer;
             _matchActive.Value = true;
             _roundNumber.Value = (byte)_serverMatch.RoundNumber;
             CacheAndFreezeBoardAvatarsOnServer();
@@ -402,10 +401,9 @@ namespace MazeParty.Multiplayer
             var elapsed = Math.Max(0d, now - _phaseStartedAt);
             _serverMatch.AdvanceTo(
                 Math.Min(BouncingBallsRules.RoundSeconds, elapsed));
-            DeliverPendingGoalPresentationEventsOnServer();
         }
 
-        private void PresentShieldReflectionOnServer(int slot, double x, double y)
+        private void PresentBallReflectionOnServer(int slot, double x, double y)
         {
             if (IsSpawned && IsServer && _matchActive.Value && !_paused.Value &&
                 Phase == NetworkBouncingBallsPhase.Playing)
@@ -418,33 +416,21 @@ namespace MazeParty.Multiplayer
             ReflectionPresentationRequested?.Invoke(position);
         }
 
-        private void DeliverPendingGoalPresentationEventsOnServer()
+        private void PresentGoalOnServer(BouncingBallsGoalEvent goal)
         {
-            for (var slot = 0; slot < BouncingBallsRules.PlayerCount;
-                 slot++)
-            {
-                var conceded = _serverMatch.GetConceded(slot);
-                if (conceded < _deliveredGoalCounts[slot])
-                {
-                    _deliveredGoalCounts[slot] = 0;
-                }
-
-                while (_deliveredGoalCounts[slot] < conceded)
-                {
-                    _deliveredGoalCounts[slot]++;
-                    PlayGoalPresentationRpc((byte)slot);
-                }
-            }
+            if (IsSpawned && IsServer && _matchActive.Value && !_paused.Value &&
+                Phase == NetworkBouncingBallsPhase.Playing)
+                PlayGoalPresentationRpc((byte)goal.DefenderSlot, goal.ScoreDelta);
         }
 
         [Rpc(
             SendTo.ClientsAndHost,
             Delivery = RpcDelivery.Reliable)]
-        private void PlayGoalPresentationRpc(byte defenderSlot)
+        private void PlayGoalPresentationRpc(byte defenderSlot, int scoreDelta)
         {
             if (BouncingBallsRules.IsValidPlayerSlot(defenderSlot))
             {
-                GoalPresentationRequested?.Invoke(defenderSlot);
+                GoalPresentationRequested?.Invoke(defenderSlot, scoreDelta);
             }
         }
 
@@ -649,10 +635,6 @@ namespace MazeParty.Multiplayer
             _finalRanks.Value = 0U;
             _goalSequence.Value = 0U;
             _lastGoalDefenderSlot.Value = byte.MaxValue;
-            Array.Clear(
-                _deliveredGoalCounts,
-                0,
-                _deliveredGoalCounts.Length);
             _ball0.Value = Vector2.zero;
             _ball1.Value = Vector2.zero;
             _ball2.Value = Vector2.zero;
@@ -679,7 +661,10 @@ namespace MazeParty.Multiplayer
         private void ClearLocalRuntime()
         {
             if (_serverMatch != null)
-                _serverMatch.ShieldReflected -= PresentShieldReflectionOnServer;
+            {
+                _serverMatch.BallReflected -= PresentBallReflectionOnServer;
+                _serverMatch.GoalResolved -= PresentGoalOnServer;
+            }
             _serverMatch = null;
             _phaseStartedAt = 0d;
             _phaseElapsedAtPause = 0d;

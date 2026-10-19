@@ -26,8 +26,9 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(rpc.GetCustomAttribute<RpcAttribute>()?.Delivery,
                 Is.EqualTo(RpcDelivery.Reliable));
             var parameters = rpc.GetParameters();
-            Assert.That(parameters, Has.Length.EqualTo(1));
+            Assert.That(parameters, Has.Length.EqualTo(2));
             Assert.That(parameters[0].ParameterType, Is.EqualTo(typeof(byte)));
+            Assert.That(parameters[1].ParameterType, Is.EqualTo(typeof(int)));
         }
 
         [Test]

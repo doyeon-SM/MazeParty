@@ -258,8 +258,7 @@ namespace MazeParty.Multiplayer.Tests
                 }
                 foreach (var propertyName in new[]
                          {
-                              "playerAnchors", "baseAnchors",
-                              "stunVfxAnchors"
+                              "playerAnchors", "baseAnchors"
                          })
                 {
                     var property = serialized.FindProperty(propertyName);

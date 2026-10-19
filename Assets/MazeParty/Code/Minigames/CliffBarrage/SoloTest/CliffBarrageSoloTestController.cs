@@ -403,6 +403,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                 }
                 root.localScale = Vector3.one;
                 _visuals[slot].SetOwnerFirstPerson(false);
+                _visuals[slot].SetKnockedDown(_phase == SoloPhase.Playing &&
+                    player.StunnedUntil > _match.RoundElapsedSeconds);
                 _visuals[slot].SetTopViewHighlight(
                     slot == LocalPlayerSlot);
                 _torsoPoses[slot].ApplyState(
