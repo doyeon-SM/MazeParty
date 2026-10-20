@@ -571,7 +571,7 @@
 - 표적 EditMode 75/75 통과(job 24e068600d324b5b86ad7732fd71aa9e): 16가지 선택 조합, 무제한 전환, 3/5/50초 경계, 점수 유지/공동순위, 서버 입력 거부, 비공개 네트워크 접근, 중지·재개, 카탈로그/복구/부트스트랩 및 공통 씬·UI·결과·카운트다운 계약. 전체 테스트는 요청하지 않아 실행하지 않았다.
 - Solo 화면에서 한글 앉기/서기 안내·본인 선택만 표시·3명 앉기/1명 서기 동시 공개·1점·골인 VFX를 확인했다. 실제 로컬 NGO 호스트에서 소유자 RPC 전환, 공개 마스크 0, 타 클라이언트의 비공개 변수 읽기 거부, 본인 선택 복원, 중지/재개 남은 2초 유지와 이전 epoch 입력 거부를 확인했다. 임시 최소 호스트 검증 구성의 보드 토폴로지/초기 식별자 오류는 QA 로그에 별도 기록했다. 원격 4개 클라이언트 동시 플레이·실제 세션 재접속·새 실행 파일 빌드는 수행하지 않았다.
 - setup 재실행 전후 전용 씬/환경/안내 HUD의 해시가 동일해 디자인 보존을 확인했다. 검증 자료는 Logs/OddOneOut-20261020의 private-choice.png, reveal.png, host-private-choice.json, host-resume.json, host-reveal.json, editmode-summary.json, setup-idempotence.json이다.
-- 컴파일 오류 및 마지막 Solo 런타임 오류 없음. Play Mode를 종료하고 원래 Race 씬으로 복원한다. 새 Git 커밋과 Notion 갱신은 하지 않았다.
+- 컴파일 오류 및 마지막 Solo 런타임 오류 없음. Play Mode를 종료하고 원래 Race 씬으로 복원했다. 눈치게임과 카운트다운·사운드/Solo BGM 후속 수정은 fd998ddfd017d2fdb5bd3aa02ff2b1481970261d에 커밋됐으며 10/20 사용자 요청으로 Notion 기획서·회의록에 반영했다.
 
 ## 눈치게임 카운트다운·사운드 / Solo BGM 피드백 · 구현 완료 · 2026-10-20
 
@@ -586,7 +586,7 @@
 - 표적 EditMode 18/18 통과(job cdc1dd601fd5493e84d649365f08feff): 카운트다운, 공통 UI 출처/바인딩/씬 계약, 사운드 라이브러리와 BGM 선택 규칙. 첫 검사의 씬 활성화 override 위반은 런타임 표시 제어로 옮겨 해결했다. 전체 EditMode는 실행하지 않았다.
 - 실제 Quick Play 눈치게임에서 bgm.minigame/BGMminigame2 재생, 음량 0.7, 활성 AudioListener 1개, 음소거 없음, 최종 Listener 오디오 RMS 0.1172를 확인했다. Minefield Solo에서도 공통 BGMminigame1 재생을 확인했다. 장치에서 사람이 청음한 검증은 아니다.
 - Solo 3→2→1 표시와 countdowntick/go 호출, 유일 득점의 minigamefinish 1회, 같은 결과 재표시에서 중복 없음, 무득점 결과 무음, 다음 라운드에서 결과음 종료를 확인했다. 입력 경로의 앉기 전환음 pitch 0.85와 공통 재생 함수의 서기 음 pitch 1.15를 확인했다. 비집중 에디터에서 일부 합성 마우스 입력이 처리되지 않아 서기는 실제 입력 경로 재현이 아닌 재생 함수로 검증했다.
-- 검증 자료: Logs/OddOneOut-20261020/feedback-countdown-clean.png, feedback-result-audio.json, feedback-bgm-audio.json, feedback-other-solo-audio.json. 컴파일 오류 및 마지막 Solo 런타임 오류 없음, git diff --check 통과. Play Mode 종료 후 원래 Race 씬을 복원했다. 새 빌드·원격 4인 검증·Git 커밋·Notion 갱신은 수행하지 않았다.
+- 검증 자료: Logs/OddOneOut-20261020/feedback-countdown-clean.png, feedback-result-audio.json, feedback-bgm-audio.json, feedback-other-solo-audio.json. 컴파일 오류 및 마지막 Solo 런타임 오류 없음, git diff --check 통과. Play Mode 종료 후 원래 Race 씬을 복원했다. 새 빌드·원격 4인 검증은 수행하지 않았다. 이 후속 수정은 fd998ddfd017d2fdb5bd3aa02ff2b1481970261d에 포함됐으며 10/20 사용자 요청으로 Notion에 반영했다.
 
 
 ## 신규 미니게임 레이스2 · 구현 완료 · 2026-10-20
@@ -606,4 +606,44 @@
 - 최종 Solo 화면에서 28개 인스턴스(인당 7개), 카운트다운 20개 표시(인당 5개), 앞뒤 간격 10.5, 뒤 가로선 숨김을 확인했다. A/D 실제 입력 경로에서 좌우 전환과 카메라 위치 동일, clickandhover 음량 0.45를 확인했다. 탈락 시 폭발과 P2→P3→P4 관전(각 점선 중앙), 다음 라운드 전원 부활·점수 유지·28개 동일 인스턴스 보존을 확인했다.
 - 최종 원근 카메라에서 4개 구역 × 4:3/16:9/21:9/32:9의 16가지 화면 모서리가 모두 바닥 안에 있으며, 양쪽 상자의 재배치 직전 렌더러 전체가 카메라 밖인 32가지 조합을 확인했다. 2라운드의 countdowntick/countdowngo, 공통 BGMminigame2 재생 및 Listener RMS 0.116을 확인했다. 사람의 장치 청음 검증은 아니다.
 - 검증 자료: Logs/Race2-20261020/final-center-five-preview.png, final-playing.png, camera-floor-validation.json, fixed-camera-input.json, final-spectator-pool.json, round2-start-audio.json, setup-idempotence.json, editmode-summary.json. 컴파일·최종 Solo 런타임 오류 없음. 원격 4개 클라이언트 동시 플레이·실제 재접속 세션·새 실행 파일 빌드는 수행하지 않았다.
-- Play Mode를 종료하고 원래 Race 씬을 복원했다. 새 Git 커밋과 Notion 수정은 하지 않았다.
+- Play Mode를 종료하고 원래 Race 씬을 복원했다. 레이스2와 최종 7개 풀·5개 미리보기·점선 고정 카메라 피드백은 de7a066b4b350e7b2f2a34e8d83b7c2a402e80e8에 커밋됐으며 10/20 사용자 요청으로 Notion 기획서·회의록에 반영했다.
+
+## Notion 최신화·일일 회의록 추가 반영 · 눈치게임/레이스2 · 2026-10-20
+
+- 사용자 명시 요청으로 눈치게임 fd998ddfd017d2fdb5bd3aa02ff2b1481970261d 및 레이스2 de7a066b4b350e7b2f2a34e8d83b7c2a402e80e8의 전체 해시·제목·본문·실제 변경과 최종 기획·검증을 대조했다. 문서 작업 전 development HEAD는 de7a066, 작업 트리는 clean이었다.
+- 메인 기획서·미니게임 공통·구현 기록을 최신화하고 눈치게임·레이스2 상세 문서를 추가했다. 기존 2026-10-20 회의록에 두 커밋을 누적했으며 앞서 기록한 d378139/838c5e7 내용은 보존했다. 기획 v0.56·런타임 0.0.56은 유지했다.
+- 눈치게임 비공개 앉기/서기·10라운드·3초 선택/2초 결과, 공통 카운트다운·전환/결과음·Solo BGM을 반영했다. 레이스2는 상자 7개·미리보기 5개·10.5m 간격·화면 밖 재배치·점선 중앙 고정 카메라·맵 정렬의 최종안만 현재 기획에 기록했다.
+- 현재 카탈로그는 18종 중 기본 15턴의 서로 다른 15종을 선택하며 Board 미리보기는 SKIP 포함 19칸이다. 레이스2 영상은 미제공으로 공통 placeholder를 유지한다.
+- 눈치게임: https://app.notion.com/p/3fec227fda03816299c3ee64ee1114fa
+- 레이스2: https://app.notion.com/p/3fec227fda0381adb95ed065f8ddd626
+- 회의록: https://app.notion.com/p/3fec227fda0381d0a941d32e598dcb8d
+- 저장 후 6개 문서를 다시 읽어 최종 내용과 기존 하위 문서 링크 보존을 확인했고 해당 날짜 회의록 1개를 확인했다. 표적 검사 75/75·18/18·71/71·34/34는 중복 합산하지 않고 실제 Solo/눈치게임 로컬 호스트/오디오 측정 범위와 레이스2 실제 네트워크·원격 4인·실제 재접속·최신 빌드·전체 EditMode 미검증을 구분했다.
+- 이번 문서 작업은 게임 코드·에셋·외부 번역 시트를 변경하지 않았다. 새 Git 커밋·빌드·게임 테스트를 실행하지 않았으며 PROJECT_MEMORY.md만 문서 반영 상태로 갱신했다.
+
+## 신규 미니게임 야바위 · 구현 완료 · 2026-10-20
+
+- 확정: 공동 카메라에서 네 명이 동일한 상자 3개·코인 1개를 보고 캐릭터 이동 없이 클릭한다. 5라운드, 매 라운드 코인 위치 2초 공개 후 상자를 내려 숨기고 두 상자를 서로 바꾸는 동작을 무작위 5~8회 진행한다.
+- 라운드별 섞기 1회 소요 시간은 0.8 / 0.675 / 0.55 / 0.425 / 0.3초로 선형 감소한다.
+- 섞기가 끝나면 10초 동안 선택한다. 첫 클릭으로 확정, 변경 불가, 같은 상자 복수 선택 허용, 다른 플레이어의 선택은 결과 전 비공개다. 전원 선택하면 즉시 공개하고 시간 초과 미선택은 0점이다.
+- 선택 10초는 기존 3초 시작 카운트다운이나 원형 타이머를 사용하지 않는다. 보드 주사위 이동수 Text 디자인을 복제한 전용 프리팹에서 숫자 10→1로 표시한다. 매 라운드 준비용 공통 3초 카운트다운은 별도 유지한다.
+- 숨기기/공개는 상자 상하 이동. 정답은 1점, 결과 2초 후 다음 라운드. 5라운드 누적 점수와 공통 공동순위·최종 보상 적용.
+- Christmas Gifts/Prefabs/box1.prefab, BTM_Assets/BTM_Items_Gems/Prefabs/Coin.prefab 사용. BalloonBlow 환경을 전용 프리팹에 재활용하고 기존 풍선불기는 유지한다. 공통 점수 HUD 사용.
+- 섞기/선택/정답/오답 사운드는 기존 punchswing1(낮은 음량), clickandhover, minigamefinish, errorandnotice를 별도 교체 가능한 cue로 연결한다. 공통 BGM과 Solo BGM을 사용한다.
+- ShellGame(ID 19)을 카탈로그·기본 15턴 추첨·런타임 어댑터·공통 라운드/점수 HUD·결과/공동순위 보상·조작 안내/번역표·빌드 씬·Solo Tester에 연결했다. 현재 19종 중 15종을 선택한다. Board 미리보기 슬롯은 SKIP 포함 20칸으로 확장했으며 별도 영상은 없어 공통 placeholder를 유지한다.
+- 서버가 소유자/배정 슬롯·라운드·epoch·순번·상태·마감 시간을 검증한다. 미공개 선택은 소유자 전용 네트워크 변수로 보내고 공개 선택·점수·단계는 원자 스냅샷으로 동기화한다. 전원 선택 시 조기 공개하며 여러 명이 같은 정답을 고르면 각각 1점이다.
+- 중지/재개는 현재 섞기 진행률·선택·점수·남은 시간을 보존하고 입력 epoch를 갱신한다. 재접속 아바타에는 본인 선택만 복원한다. 시드 기반 공통 순열로 서버·클라이언트의 섞기 경로를 맞춘다.
+- BalloonBlow 전용 환경 복사본에서 가리는 장식판·앞 통나무를 숨겼다. box1의 Legacy 재질을 원본 수정 없이 게임 소유 Toon 재질로 변환했다. 상자는 서로 반대쪽 곡선으로 이동한다. 상자 위 선택자 닉네임은 표시하지 않는다. 결과 공개 시 정답을 맞힌 각 플레이어 위치에 기존 도착 불꽃 VFX와 도착 효과음을 동시에 출력한다. 선택 중에는 본인 선택 표시만 보인다.
+- 10초 숫자 HUD는 BoardMapCanvas의 이동수 Text 디자인을 복제한 프리팹·직렬화 바인딩으로 구현했다. 매 라운드 준비용 3초 공통 카운트다운/효과음과 분리했다. Quick Play/Shell Game, R 재시작, N 다음 시드, Esc 종료를 지원한다.
+- 표적 EditMode 46/46 통과(job dca8552cd85d469e9c216b46cb2867bd): 정확한 시간 경계, 5라운드 누적/공동순위, 모든 선택 조합, 시드 결정론, 서버 입력 거부/비공개/직렬화/정지 복원, 카탈로그·공통 씬·UI·결과·사운드·부트스트랩 계약. 보완 후 관련 표적 35/35 통과(job 94a4b8d24f8a41b8ba56c2af7469144f), 선택 10초가 공통 3-2-1 카운트다운을 켜지 않는 계약도 확인했다. 중복 검사 수를 합산하지 않으며 전체 EditMode는 실행하지 않았다.
+- Solo에서 세 상자 클릭 판정, 실제 합성 마우스 입력 경로의 정답 선택과 1점, 공통 점수/라운드 HUD, 선택 숫자 10, 상자 상승/코인 공개/선택자 표시, 5라운드 누적 5점 및 공동 1위를 확인했다. 테스트 시 라운드별 섞기 횟수는 7/5/8/8/8, 속도는 0.8/0.675/0.55/0.425/0.3초였다.
+- BGMminigame2 재생(음량 0.7), 활성 AudioListener 1개, 음소거 없음, 최종 Listener 출력 peak 0.424를 확인했다. 사람의 장치 청음 검증은 아니다. 섞기 punchswing1·선택 clickandhover·정답 minigamefinish·오답 errorandnotice cue를 연결했다.
+- setup 재실행 전후 전용 씬/환경/HUD/상자/코인 에셋 해시가 동일했다. QA 자료: Logs/ShellGameQA의 preview-fixed.png, choosing-10.png, round5-result.png, validation.json. 컴파일 및 최종 Solo 런타임 오류 없음. Play Mode를 종료하고 원래 Race 씬으로 복원했다.
+- 새 실행 파일 빌드·실제 로컬 NGO 호스트·원격 4인 동시 플레이·실제 세션 재접속은 검증하지 않았다. Git 커밋과 Notion 갱신은 이번에 수행하지 않았다.
+
+## 야바위 결과 연출 피드백 · 2026-10-20
+
+- 상자 위 선택자 닉네임 표시와 관련 씬 오브젝트를 삭제한다. 정답자는 각 캐릭터 위치에서 공통 ArrivalFireworks와 minigamefinish 음원을 재생한다. 여러 정답자를 모두 표시하며 반복 스냅샷에서 중복 재생하지 않는다. 결과 종료·재시작·씬 숨김에서는 연출을 정리한다.
+- 구현 완료. 기존 플레이어 이름표·공통 점수 HUD와 오답자의 로컬 오답음은 유지한다. 정답음은 기존 minigamefinish 음원을 야바위 정답 cue에 연결해 정답자 위치의 3D 소리로 출력하고, 동시 정답자 수에 맞춰 총음량을 조절한다.
+- 관련 표적 EditMode 25/25 통과(job 87f87900c4004b5389b0657347d46e9f): 공통 VFX 씬 바인딩·사운드 에셋 계약과 야바위 상태/서버 권한 검사. 초기 에셋 연결 전 검사에서 발견된 누락 참조/이전 음원은 씬·cue 갱신 후 해결했다.
+- Solo에서 P2/P4만 정답일 때 두 위치에만 VFX·3D 도착음 생성, 전원 정답 시 4개씩 생성, 정답자 없음 시 도착 연출 0개를 확인했다. 동일 결과 재표시의 재생 핸들/재생 회차 유지, 다음 라운드 정리, 결과부터 표시할 때 과거 연출 미재생, 상자 위 닉네임 오브젝트 0개를 확인했다.
+- 검증 자료: Logs/ShellGameQA/arrival-feedback-two-winners.png 및 arrival-feedback-validation.json. 컴파일/최종 Solo 런타임 오류 없음, git diff --check 통과. Play Mode 종료 후 원래 Race 씬 복원. 실제 원격 4인 세션·새 빌드는 실행하지 않았다.

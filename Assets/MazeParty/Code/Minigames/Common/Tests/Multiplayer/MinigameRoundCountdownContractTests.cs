@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using MazeParty.Gameplay.Minigames.Race2;
+using MazeParty.Gameplay.Minigames.ShellGame;
 using Unity.Netcode;
 using UnityEngine;
 
@@ -63,6 +64,9 @@ namespace MazeParty.Multiplayer.Tests
                     typeof(NetworkRace2State), typeof(Race2RuntimeAdapter),
                     (byte)Race2Phase.Countdown);
                 yield return new CountdownAdapterCase(
+                    typeof(NetworkShellGameState), typeof(ShellGameRuntimeAdapter),
+                    (byte)ShellGamePhase.Countdown);
+                yield return new CountdownAdapterCase(
                     typeof(NetworkBouncingBallsState),
                     typeof(BouncingBallsRuntimeAdapter),
                     (byte)NetworkBouncingBallsPhase.Countdown);
@@ -106,6 +110,12 @@ namespace MazeParty.Multiplayer.Tests
                         Phase = Race2Phase.Countdown, Round = 2, AliveMask = 15,
                         EndsAt = Time.unscaledTimeAsDouble + 30d
                     });
+                else if(state is NetworkShellGameState)
+                    NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new ShellGamePublicSnapshot
+                    {
+                        Phase = ShellGamePhase.Countdown, Round = 2,
+                        EndsAt = Time.unscaledTimeAsDouble + 30d
+                    });
                 else
                 {
                 NetworkCountdownTestAccess.SetNetworkValue(
@@ -138,6 +148,16 @@ namespace MazeParty.Multiplayer.Tests
                     remaining,
                     Is.GreaterThan(0d).And.LessThanOrEqualTo(30.001d),
                     testCase.AdapterType.Name);
+                if(state is NetworkShellGameState)
+                {
+                    NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new ShellGamePublicSnapshot
+                    {
+                        Phase = ShellGamePhase.Choosing, Round = 2,
+                        EndsAt = Time.unscaledTimeAsDouble + 10d
+                    });
+                    Assert.That(adapter.TryGetRoundCountdown(out _), Is.False,
+                        "The selection timer must not activate the shared 3-2-1 countdown.");
+                }
             }
             finally
             {

@@ -27,7 +27,8 @@ namespace MazeParty.Gameplay.Minigames
         CliffBarrage = 15,
         CoinCollect = 16,
         OddOneOut = 17,
-        Race2 = 18
+        Race2 = 18,
+        ShellGame = 19
     }
 
     public static class MinigameScheduleRules

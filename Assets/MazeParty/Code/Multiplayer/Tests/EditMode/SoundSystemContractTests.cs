@@ -121,6 +121,8 @@ namespace MazeParty.Multiplayer.Tests
                 SoundKeys.ItemUse(PrototypeItemId.Sniper),
                 SniperClipPath);
 
+            AssertSpatialCueUsesClip(library, SoundKeys.MinigameShellCorrect,
+                "Assets/Resources/sound/minigamefinish.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameFinish,
                 "Assets/Resources/sound/minigamefinish.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameRace2Lane,

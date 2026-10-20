@@ -28,6 +28,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly TestCaseData[] EnvironmentContracts =
         {
+            EnvironmentCase("ShellGame", "Shell Game Environment", "ShellGameEnvironment.prefab", typeof(NetworkShellGameState), "Runtime Players", "Shell Boxes"),
             EnvironmentCase("Race2", "Race 2 Environment", "Race2Environment.prefab", typeof(NetworkRace2State), "Runtime Players", "Runtime Boxes"),
             EnvironmentCase("OddOneOut", "Odd One Out Environment", "OddOneOutEnvironment.prefab",
                 typeof(NetworkOddOneOutState), "Runtime Players"),

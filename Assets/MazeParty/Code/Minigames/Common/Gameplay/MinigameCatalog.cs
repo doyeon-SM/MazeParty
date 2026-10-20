@@ -195,7 +195,9 @@ namespace MazeParty.Gameplay.Minigames
             new MinigameDefinition(ScheduledMinigameId.OddOneOut, GameText.N("ODD ONE OUT"),
                 10, 3f, "OddOneOut", new Color(.65f, .38f, .95f, 1f)),
             new MinigameDefinition(ScheduledMinigameId.Race2, GameText.N("RACE 2"),
-                3, 120f, "Race2", new Color(.25f, .7f, .95f, 1f))
+                3, 120f, "Race2", new Color(.25f, .7f, .95f, 1f)),
+            new MinigameDefinition(ScheduledMinigameId.ShellGame, GameText.N("SHELL GAME"),
+                5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;
@@ -251,6 +253,8 @@ namespace MazeParty.Gameplay.Minigames
                     return GameText.N("Become the top fighter in a bare-knuckle brawl.");
                 case ScheduledMinigameId.CliffBarrage:
                     return GameText.N("Dodge and survive.");
+                case ScheduledMinigameId.ShellGame:
+                    return GameText.N("Follow the coin and click the correct box.");
                 case ScheduledMinigameId.Race2:
                     return GameText.N("Choose left with A or right with D to dodge boxes. Three rounds, up to two minutes each. Boxes speed up; one collision eliminates you.");
                 case ScheduledMinigameId.OddOneOut:

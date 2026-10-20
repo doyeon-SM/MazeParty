@@ -159,6 +159,10 @@ namespace MazeParty.Editor
             EnsureDefaultClip(
                 SoundKeys.MinigameMinefieldScan,
                 MinefieldScanDefaultClipPath);
+            EnsureDefaultClips(SoundKeys.MinigameShellShuffle, "Assets/Resources/sound/punchswing1.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellSelect, "Assets/Resources/sound/clickandhover.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellCorrect, "Assets/Resources/sound/minigamefinish.mp3");
+            EnsureDefaultClips(SoundKeys.MinigameShellWrong, "Assets/Resources/sound/errorandnotice.mp3");
             EnsureDefaultClips(SoundKeys.MinigameRace2Lane, "Assets/Resources/sound/clickandhover.mp3");
             EnsureDefaultClips(SoundKeys.MinigameOddOneOutToggle, "Assets/Resources/sound/clickandhover.mp3");
             EnsureDefaultClips(SoundKeys.MinigameCoinPickup, "Assets/Resources/sound/goldgain.mp3");
@@ -505,6 +509,16 @@ namespace MazeParty.Editor
                 maxInstances = 4;
                 minInterval = 0.05f;
                 priority = 70;
+            }
+            else if (key == SoundKeys.MinigameShellCorrect)
+            {
+                spatial = true;
+                maxDistance = 60f;
+                maxInstances = 4;
+            }
+            else if (key == SoundKeys.MinigameShellShuffle)
+            {
+                volume = 0.35f; maxInstances = 2; priority = 65;
             }
             else if (key == SoundKeys.MinigameRace2Lane)
             {

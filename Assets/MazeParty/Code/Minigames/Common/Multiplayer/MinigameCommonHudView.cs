@@ -75,7 +75,7 @@ namespace MazeParty.Multiplayer
             RefreshSpectatorLabel(match);
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
-                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut && match.CurrentMinigame != ScheduledMinigameId.Race2) ||
+                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut && match.CurrentMinigame != ScheduledMinigameId.Race2 && match.CurrentMinigame != ScheduledMinigameId.ShellGame) ||
                 !MinigameCatalog.TryGetDefinition(
                     match.CurrentMinigame, out var definition))
             {
@@ -110,6 +110,14 @@ namespace MazeParty.Multiplayer
             if (match.CurrentMinigame == ScheduledMinigameId.OddOneOut && match.IsMinigameRoundCountdown)
             {
                 ShowRoundOnly(GameText.F("ROUND {0} / {1}", NetworkOddOneOutState.Instance.RoundNumber, definition.RoundCount));
+                return;
+            }
+
+            if (match.CurrentMinigame == ScheduledMinigameId.ShellGame)
+            {
+                var shell = NetworkShellGameState.Instance;
+                if (shell == null) HideClock();
+                else ShowRoundOnly(GameText.F("ROUND {0} / {1}", shell.RoundNumber, definition.RoundCount));
                 return;
             }
 
@@ -175,6 +183,11 @@ namespace MazeParty.Multiplayer
             {
                 spectatorText.text = label;
             }
+        }
+
+        public void ShowPracticeRoundOnly(int round, int roundCount)
+        {
+            ShowRoundOnly(GameText.F("ROUND {0} / {1}", round, roundCount));
         }
 
         public void ShowPracticeClock(double remaining, double total, int round, int roundCount)

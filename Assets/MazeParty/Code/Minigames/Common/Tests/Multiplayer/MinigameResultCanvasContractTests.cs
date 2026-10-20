@@ -25,7 +25,7 @@ namespace MazeParty.Multiplayer.Tests
             warning.SetValue(null, true);
             var previousMatch = NetworkMatchState.Instance;
             typeof(NetworkMatchState).GetProperty("Instance").SetValue(null, null);
-            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut", "Race2" };
+            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut", "Race2", "ShellGame" };
             try
             {
                 foreach (var name in names)
@@ -44,6 +44,14 @@ namespace MazeParty.Multiplayer.Tests
                                 Phase = MazeParty.Gameplay.Minigames.Race2.Race2Phase.Complete,
                                 Scores = (4 - (packed & 255)) | ((4 - ((packed >> 8) & 255)) << 8) |
                                     ((4 - ((packed >> 16) & 255)) << 16) | ((4 - ((packed >> 24) & 255)) << 24) };
+                        }
+                        else if (state is NetworkShellGameState)
+                        {
+                            var snapshot = (Unity.Netcode.NetworkVariable<ShellGamePublicSnapshot>)type.GetField("_snapshot", flags).GetValue(state);
+                            setRanks = packed => snapshot.Value = packed == 0 ? default : new ShellGamePublicSnapshot {
+                                Phase = MazeParty.Gameplay.Minigames.ShellGame.ShellGamePhase.Complete,
+                                Score0 = 4 - (int)(packed & 255), Score1 = 4 - (int)((packed >> 8) & 255),
+                                Score2 = 4 - (int)((packed >> 16) & 255), Score3 = 4 - (int)((packed >> 24) & 255) };
                         }
                         else if (state is NetworkOddOneOutState)
                         {

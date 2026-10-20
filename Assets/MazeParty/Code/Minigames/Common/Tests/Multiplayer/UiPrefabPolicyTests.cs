@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Minigames/ShellGame/UI/ShellGameHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/DevelopmentDiagnostics.prefab",
@@ -68,6 +69,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.ShellGameHudBindings",
             "MazeParty.Multiplayer.OddOneOutHudBindings",
             "MazeParty.Multiplayer.MinigameLocalPlayerHighlight",
             "MazeParty.Multiplayer.DevelopmentDiagnosticsPanel",
@@ -109,6 +111,10 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly SceneUiContract[] SceneContracts =
         {
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/ShellGame/ShellGame.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
+                "Assets/MazeParty/Prefabs/Minigames/ShellGame/UI/ShellGameHud.prefab",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/Race2/Race2.unity",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab"),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity",

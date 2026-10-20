@@ -508,7 +508,7 @@ namespace MazeParty.Multiplayer
             }
             if (!handlingMinigame)
             {
-                handlingMinigame = SubmitLocalOddOneOutInput();
+                handlingMinigame = SubmitLocalShellGameInput() || SubmitLocalOddOneOutInput();
             }
             if (!handlingMinigame)
             {

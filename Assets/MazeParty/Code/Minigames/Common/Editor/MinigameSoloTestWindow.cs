@@ -403,6 +403,12 @@ namespace MazeParty.EditorTools
             return CanStart;
         }
 
+        [MenuItem("MazeParty/Minigames/Quick Play/Shell Game")]
+        private static void QuickPlayShellGame()
+        {
+            Start(MinigameSoloTestId.ShellGame, CreateRandomSeed());
+        }
+
         [MenuItem("MazeParty/Minigames/Quick Play/Race 2")]
         private static void QuickPlayRace2()
         {
@@ -847,6 +853,24 @@ namespace MazeParty.EditorTools
                         {
                             throw new InvalidOperationException(
                                 "Could not attach the Cliff Barrage " +
+                                "solo harness.");
+                        }
+                        controller.ConfigureHud(
+                            InstantiateSoloHud(bootstrap.transform));
+                        controller.Begin(
+                            SessionState.GetInt(TestSeedKey, 12345));
+                        break;
+                    }
+                    case MinigameSoloTestId.ShellGame:
+                    {
+                        var bootstrap = new GameObject(
+                            "[Developer] Minigame Solo Test");
+                        var controller = bootstrap.AddComponent<
+                            ShellGameSoloTestController>();
+                        if (controller == null)
+                        {
+                            throw new InvalidOperationException(
+                                "Could not attach the Shell Game " +
                                 "solo harness.");
                         }
                         controller.ConfigureHud(
@@ -1448,6 +1472,8 @@ namespace MazeParty.EditorTools
             {
                 return snowySpin;
             }
+            var shellGame = FindRuntimeHarnessOfType<ShellGameSoloTestController>();
+            if (shellGame != null) return shellGame;
             var race2 = FindRuntimeHarnessOfType<Race2SoloTestController>();
             if (race2 != null) return race2;
             var oddOneOut = FindRuntimeHarnessOfType<OddOneOutSoloTestController>();
@@ -1464,6 +1490,7 @@ namespace MazeParty.EditorTools
 
         private static void DestroyRuntimeHarnesses()
         {
+            DestroyRuntimeHarnessesOfType<ShellGameSoloTestController>();
             DestroyRuntimeHarnessesOfType<Race2SoloTestController>();
             DestroyRuntimeHarnessesOfType<OddOneOutSoloTestController>();
             DestroyRuntimeHarnessesOfType<CoinCollectSoloTestController>();
