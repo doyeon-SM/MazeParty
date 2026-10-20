@@ -18,6 +18,8 @@ namespace MazeParty.Editor
     {
         public const string HitSparkPrefabPath =
             "Assets/MazeParty/Prefabs/Common/VFX/HitSpark.prefab";
+        public const string ArenaCombatHitSparkPrefabPath =
+            "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/VFX/ArenaCombatHitSpark.prefab";
         public const string CartoonExplosionPrefabPath =
             "Assets/MazeParty/Prefabs/Common/VFX/CartoonExplosion.prefab";
         public const string TaggerAuraPrefabPath =
@@ -191,7 +193,13 @@ namespace MazeParty.Editor
                 var root = roots[index];
                 var arena = root.GetComponentInChildren<
                     ArenaCombatNetworkView>(true);
-                arena?.ConfigureVfx(hitSpark);
+                if (arena != null)
+                {
+                    var arenaSpark = AssetDatabase.LoadAssetAtPath<GameObject>(ArenaCombatHitSparkPrefabPath);
+                    if (arenaSpark == null)
+                        throw new InvalidOperationException("The authored arena impact prefab is missing.");
+                    arena.ConfigureVfx(arenaSpark);
+                }
 
                 var bouncing = root.GetComponentInChildren<
                     BouncingBallsNetworkView>(true);

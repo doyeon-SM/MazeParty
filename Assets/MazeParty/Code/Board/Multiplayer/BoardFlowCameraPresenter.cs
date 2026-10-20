@@ -752,7 +752,7 @@ namespace MazeParty.Multiplayer
                 visual.SetBoardNameplateCamera(canTestLineOfSight ? outputCamera : null);
                 var isLocalAvatar = avatar == _localAvatar || avatar.IsOwner;
                 visual.SetNameplateOccluded(
-                    canTestLineOfSight &&
+                    canTestLineOfSight && mode != GameplayMode.BoardResourceEvent &&
                     !isLocalAvatar &&
                     IsNameplateBlocked(outputCamera, visual));
             }

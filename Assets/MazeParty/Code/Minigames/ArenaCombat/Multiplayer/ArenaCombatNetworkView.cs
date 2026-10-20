@@ -64,8 +64,6 @@ namespace MazeParty.Multiplayer
         private PlayerAvatarVisual _ownedOwnerPresentation;
         private bool _worldVisible;
         private bool _visibilityInitialized;
-        private readonly PresentationEventRevisionGate[] _hitVfxGates =
-            new PresentationEventRevisionGate[4];
         private readonly ArenaCombatHealthBarView[] _healthBars =
             new ArenaCombatHealthBarView[4];
 
@@ -150,7 +148,6 @@ namespace MazeParty.Multiplayer
             SetHealthBarsVisible(false);
             SetAimVisible(false);
             ReleaseOwnerPresentation();
-            ResetHitVfxGates();
             _worldVisible = false;
             _visibilityInitialized = false;
             UnregisterCamera();
@@ -180,7 +177,6 @@ namespace MazeParty.Multiplayer
             }
 
             ResolveLocalAvatar(match);
-            RefreshHitVfx(match);
             var localSlot = _localAvatar != null
                 ? _localAvatar.AssignedSlot
                 : -1;
@@ -235,7 +231,6 @@ namespace MazeParty.Multiplayer
                 if (anchor != null && bar == null && healthBarPrefab != null)
                 {
                     bar = Instantiate(healthBarPrefab, anchor, false);
-                    bar.transform.localPosition = new Vector3(0f, -0.22f, 0f);
                     bar.transform.localRotation = Quaternion.identity;
                     _healthBars[slot] = bar;
                 }
@@ -374,28 +369,12 @@ namespace MazeParty.Multiplayer
             // manually tuned framing when ownership switches.
         }
 
-        private void RefreshHitVfx(NetworkMatchState match)
+        public void PresentHitSpark(Vector3 point, Vector3 normal)
         {
-            for (var slot = 0; slot < _hitVfxGates.Length; slot++)
-            {
-                if (!_hitVfxGates[slot].Observe(
-                        (uint)state.GetHitSequence(slot)))
-                {
-                    continue;
-                }
-
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(slot)
-                    : null;
-                if (avatar != null && hitSparkVfxPrefab != null)
-                {
-                    OneShotVfxPool.Play(
-                        hitSparkVfxPrefab,
-                        avatar.transform.position + Vector3.up,
-                        Quaternion.identity,
-                        0.7f);
-                }
-            }
+            if (hitSparkVfxPrefab == null) return;
+            var outward = normal.sqrMagnitude > 0.0001f ? normal.normalized : Vector3.up;
+            OneShotVfxPool.Play(hitSparkVfxPrefab, point + outward * 0.025f,
+                Quaternion.LookRotation(outward), 0.7f);
         }
 
         private void RegisterCamera(CinemachineCamera desired)
@@ -436,18 +415,6 @@ namespace MazeParty.Multiplayer
             if (arenaPresentation != null)
             {
                 arenaPresentation.SetActive(visible);
-            }
-            if (!visible)
-            {
-                ResetHitVfxGates();
-            }
-        }
-
-        private void ResetHitVfxGates()
-        {
-            for (var slot = 0; slot < _hitVfxGates.Length; slot++)
-            {
-                _hitVfxGates[slot].Reset();
             }
         }
 

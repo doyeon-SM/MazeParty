@@ -38,8 +38,6 @@ namespace MazeParty.Multiplayer
             CreateByteVariable();
         private readonly NetworkVariable<uint> _finalRanks =
             CreateUIntVariable();
-        private readonly NetworkVariable<ulong> _hitSequences =
-            CreateULongVariable();
 
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[ArenaCombatRules.PlayerCount];
@@ -245,6 +243,7 @@ namespace MazeParty.Multiplayer
                 QueryTriggerInteraction.Ignore);
             NetworkPlayerAvatar target = null;
             var closestDistance = float.MaxValue;
+            var contact = default(RaycastHit);
             for (var index = 0; index < hits.Length; index++)
             {
                 var candidate = hits[index].collider != null
@@ -260,6 +259,7 @@ namespace MazeParty.Multiplayer
 
                 target = candidate;
                 closestDistance = hits[index].distance;
+                contact = hits[index];
             }
 
             var damage = attacker.ResolveCombatPunchDamageOnServer(target != null, now);
@@ -277,12 +277,23 @@ namespace MazeParty.Multiplayer
             }
             knockbackDirection.Normalize();
 
+            // Capture before damage can disable the victim's colliders. Sphere casts
+            // starting in an overlap have an undefined point, so use the surface.
+            var hitPoint = contact.distance > 0.0001f
+                ? contact.point
+                : contact.collider.ClosestPoint(authoritativeOrigin);
+            if (contact.distance <= 0.0001f && (hitPoint - authoritativeOrigin).sqrMagnitude < 0.0001f)
+                hitPoint = contact.collider.ClosestPoint(authoritativeOrigin - direction *
+                    (contact.collider.bounds.size.magnitude + BoardCombatRules.PunchRange));
+            var hitNormal = contact.distance > 0.0001f && contact.normal.sqrMagnitude > 0.0001f
+                ? contact.normal.normalized : -direction;
+
             var eliminated = target.ApplyCombatPunchOnServer(
                 attacker,
                 knockbackDirection *
                 BoardCombatRules.PunchKnockbackSpeed,
                 damage);
-            IncrementHitSequenceOnServer(target.AssignedSlot);
+            PresentHitSparkRpc(hitPoint, hitNormal);
             if (!eliminated)
             {
                 return true;
@@ -309,13 +320,6 @@ namespace MazeParty.Multiplayer
         {
             return ArenaCombatRules.IsValidSlot(slot)
                 ? (int)((_finalRanks.Value >> (slot * 8)) & 0xffU)
-                : 0;
-        }
-
-        public int GetHitSequence(int slot)
-        {
-            return ArenaCombatRules.IsValidSlot(slot)
-                ? (int)((_hitSequences.Value >> (slot * 16)) & 0xffffUL)
                 : 0;
         }
 
@@ -592,19 +596,11 @@ namespace MazeParty.Multiplayer
             return survivors;
         }
 
-        private void IncrementHitSequenceOnServer(int slot)
+        [Rpc(SendTo.ClientsAndHost, Delivery = RpcDelivery.Reliable,
+            InvokePermission = RpcInvokePermission.Server)]
+        private void PresentHitSparkRpc(Vector3 point, Vector3 normal)
         {
-            if (!ArenaCombatRules.IsValidSlot(slot))
-            {
-                return;
-            }
-
-            var shift = slot * 16;
-            var mask = 0xffffUL << shift;
-            var next = ((
-                _hitSequences.Value >> shift) + 1UL) & 0xffffUL;
-            _hitSequences.Value =
-                (_hitSequences.Value & ~mask) | (next << shift);
+            GetComponent<ArenaCombatNetworkView>()?.PresentHitSpark(point, normal);
         }
 
         private bool HasReachedDeadline(double now)
@@ -633,7 +629,6 @@ namespace MazeParty.Multiplayer
             _inputEpoch.Value = 0U;
             _eliminatedMask.Value = 0;
             _finalRanks.Value = 0U;
-            _hitSequences.Value = 0UL;
         }
 
         private void ClearTimingRuntime()
@@ -689,14 +684,6 @@ namespace MazeParty.Multiplayer
         {
             return new NetworkVariable<uint>(
                 0U,
-                NetworkVariableReadPermission.Everyone,
-                NetworkVariableWritePermission.Server);
-        }
-
-        private static NetworkVariable<ulong> CreateULongVariable()
-        {
-            return new NetworkVariable<ulong>(
-                0UL,
                 NetworkVariableReadPermission.Everyone,
                 NetworkVariableWritePermission.Server);
         }

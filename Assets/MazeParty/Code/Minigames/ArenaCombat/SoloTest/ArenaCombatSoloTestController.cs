@@ -155,7 +155,9 @@ namespace MazeParty.Dev.MinigameSoloTest
                     ? "SOLO DEV"
                     : "PRACTICE " + (slot + 1));
                 DisableGeneratedHitColliders(body);
-                _fighters[slot] = new Fighter(body.transform, eye, visual);
+                var healthBar = Instantiate(_productionView.HealthBarPrefab,
+                    visual.Bindings.NameplateAnchor, false);
+                _fighters[slot] = new Fighter(body.transform, eye, visual) { HealthBar = healthBar };
             }
         }
 
@@ -338,6 +340,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             victim.Health = Mathf.Max(0,
                 victim.Health - damage);
             victim.Visual.TriggerHit(PlayerHitRegion.Body, damage);
+            var hitPoint = victim.Root.position + Vector3.up * EyeOffset - direction * BodyRadius;
+            _productionView.PresentHitSpark(hitPoint, -direction);
             victim.Knockback = direction *
                 BoardCombatRules.PunchKnockbackSpeed;
             if (bestSlot == LocalPlayerSlot)
@@ -405,6 +409,12 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 return;
             }
+            foreach (var fighter in _fighters)
+            {
+                fighter.Visual.SetBoardNameplateCamera(_camera);
+                fighter.HealthBar.gameObject.SetActive(fighter.IsAlive);
+                if (fighter.IsAlive) fighter.HealthBar.SetHealth(fighter.Health, BoardCombatRules.TemporaryHealth);
+            }
             var local = _fighters[LocalPlayerSlot];
             var firstPerson = _phase == PracticePhase.Playing &&
                               local.IsAlive;
@@ -451,7 +461,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 status,
                 "TIME " + Math.Max(0d, remaining).ToString("0.0") +
                 "s · ALIVE " + CountSurvivors(),
-                "ONE MATCH · NO HEALTH DISPLAY",
+                "ONE MATCH · HP " + local.Health + "/" + BoardCombatRules.TemporaryHealth,
                 "WASD MOVE · MOUSE LOOK · LMB PUNCH",
                 "R RESTART · N NEXT SEED · ESC STOP",
                 _phase == PracticePhase.Complete
@@ -564,6 +574,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             public Transform Root { get; }
             public Transform Eye { get; }
             public PlayerAvatarVisual Visual { get; }
+            public ArenaCombatHealthBarView HealthBar { get; set; }
             public int Health { get; set; }
             public double EliminatedAt { get; set; }
             public double NextPunchAt { get; set; }

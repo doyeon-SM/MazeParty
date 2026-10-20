@@ -441,7 +441,7 @@ MonoBehaviour:
   - {fileID: 1652106232}
   - {fileID: 1455110934}
   - {fileID: 342140975}
-  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 61ff483eb9c3ad944b9e577634fbeb70, type: 3}
+  hitSparkVfxPrefab: {fileID: 6348518798376118498, guid: 2c8fae67a1dcad347954e4f755bb4de7, type: 3}
   aimView: {fileID: 71582197}
   healthBarPrefab: {fileID: 4244892520982058478, guid: 3634ed84f77871c49bbb9bc6d3f4b0d5, type: 3}
 --- !u!114 &765835580

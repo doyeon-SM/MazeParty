@@ -40,7 +40,7 @@ namespace MazeParty.Multiplayer
                 if (health == null || healthFill == null || healthTrail == null ||
                     healthTrailFill == null || healthTrail == health ||
                     healthTrail.fillRect != healthTrailFill.rectTransform ||
-                    deltas == null || deltas.Length != 3) return false;
+                    deltas == null || (deltas.Length != 1 && deltas.Length != 3)) return false;
                 for (var kind = 0; kind < deltas.Length; kind++)
                 {
                     var delta = deltas[kind];
@@ -124,7 +124,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
-            for (var kind = 0; kind < 3; kind++) HideDelta(kind);
+            for (var kind = 0; kind < (deltas?.Length ?? 0); kind++) HideDelta(kind);
             if (health != null) health.transform.localScale = healthBaseScale;
         }
     }

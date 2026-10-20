@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHealthBar.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchSettingsPanel.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchMinigameRow.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ShellGame/UI/ShellGameHud.prefab",
@@ -71,6 +72,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.ArenaCombatHealthBarView",
             "MazeParty.Multiplayer.MatchSettingsPanelBindings",
             "MazeParty.Multiplayer.MatchMinigameRowBindings",
             "MazeParty.Multiplayer.ShellGameHudBindings",

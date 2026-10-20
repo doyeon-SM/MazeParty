@@ -15,6 +15,7 @@ namespace MazeParty.Multiplayer
         private bool _sourceWasEnabled;
         private int _count;
         private float _focusHeight;
+        private readonly BoardEventCameraOcclusion _occlusion = new BoardEventCameraOcclusion();
 
         public bool HasRequiredReferences => cameras != null && cameras.Length == 4 &&
             System.Array.TrueForAll(cameras, camera => camera != null);
@@ -55,6 +56,7 @@ namespace MazeParty.Multiplayer
             {
                 var camera = cameras[index];
                 camera.enabled = index < _count && _roots[index] != null;
+                _occlusion.SetFocus(camera, camera.enabled ? _roots[index] : null);
                 if (!camera.enabled) continue;
                 camera.CopyFrom(_source);
                 camera.enabled = true;
@@ -71,6 +73,7 @@ namespace MazeParty.Multiplayer
 
         public void Clear()
         {
+            _occlusion.Dispose();
             if (cameras != null)
                 foreach (var camera in cameras) if (camera != null) camera.enabled = false;
             if (_source != null) _source.enabled = _sourceWasEnabled;

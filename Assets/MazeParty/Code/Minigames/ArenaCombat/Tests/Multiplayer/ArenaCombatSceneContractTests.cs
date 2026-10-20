@@ -56,6 +56,8 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(spectatorCamera, Is.Not.Null);
                 Assert.That(firstPersonCamera,
                     Is.Not.SameAs(spectatorCamera));
+                Assert.That(view.HitSparkVfxPrefab, Is.Not.Null);
+                Assert.That(view.HitSparkVfxPrefab.GetComponent<PooledOneShotVfx>(), Is.Not.Null);
                 Assert.That(view.HealthBarPrefab, Is.Not.Null);
                 Assert.That(view.HealthBarPrefab.HasRequiredReferences,
                     Is.True);

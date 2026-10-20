@@ -1,0 +1,93 @@
+using System.Reflection;
+using NUnit.Framework;
+using UnityEngine;
+using UnityEngine.Rendering;
+using Object = UnityEngine.Object;
+
+namespace MazeParty.Gameplay.Tests
+{
+    public sealed class BoardEventCameraOcclusionTests
+    {
+        [Test]
+        public void EventViews_RestoreSceneryAfterRenderCancellationAndDisposal()
+        {
+            var root = new GameObject("Event occlusion contract");
+            var material = new Material(Shader.Find("MazeParty/Toon Shader FX"));
+            using var occlusion = new BoardEventCameraOcclusion();
+            try
+            {
+                GameObject Child(string name)
+                {
+                    var value = new GameObject(name);
+                    value.transform.SetParent(root.transform);
+                    return value;
+                }
+                var player = Child("Focus player").transform;
+                player.position = new Vector3(10000, 10000, 10000);
+                var camera = Child("Event view").AddComponent<Camera>();
+                camera.enabled = false;
+                camera.transform.position = player.position + new Vector3(0, .75f, 3.4f);
+                var otherCamera = Child("Other view").AddComponent<Camera>();
+                otherCamera.enabled = false;
+                otherCamera.transform.position = player.position + new Vector3(3.4f, .75f, 0);
+                var blocker = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                blocker.transform.SetParent(root.transform);
+                blocker.transform.position = player.position + new Vector3(0, .75f, 1.5f);
+                var renderer = blocker.GetComponent<Renderer>();
+                renderer.sharedMaterial = material;
+                renderer.shadowCastingMode = ShadowCastingMode.TwoSided;
+                var body = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                body.transform.SetParent(player, false);
+                body.transform.localPosition = Vector3.up * .75f;
+                body.GetComponent<Renderer>().sharedMaterial = material;
+                var originalColor = new Color(.3f, .7f, .9f, .8f);
+                var block = new MaterialPropertyBlock();
+                block.SetColor("_BaseColor", originalColor);
+                block.SetFloat("_ContractSentinel", 123f);
+                renderer.SetPropertyBlock(block);
+                renderer.SetPropertyBlock(block, 0);
+
+                void Render(string phase, Camera view) => typeof(BoardEventCameraOcclusion)
+                    .GetMethod(phase + "CameraRendering", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(occlusion, new object[] { default(ScriptableRenderContext), view });
+                void AssertRestored()
+                {
+                    Assert.That(renderer.sharedMaterial, Is.SameAs(material));
+                    Assert.That(renderer.shadowCastingMode, Is.EqualTo(ShadowCastingMode.TwoSided));
+                    Assert.That(renderer.forceRenderingOff, Is.False);
+                    renderer.GetPropertyBlock(block);
+                    Assert.That(Vector4.Distance(block.GetColor("_BaseColor"), originalColor), Is.LessThan(0.00001f));
+                    Assert.That(block.GetFloat("_ContractSentinel"), Is.EqualTo(123f));
+                    renderer.GetPropertyBlock(block, 0);
+                    Assert.That(Vector4.Distance(block.GetColor("_BaseColor"), originalColor), Is.LessThan(0.00001f));
+                    Assert.That(blocker.GetComponent<Collider>().enabled, Is.True);
+                }
+
+                occlusion.SetFocus(camera, player);
+                occlusion.SetFocus(otherCamera, player);
+                Render("Begin", otherCamera);
+                AssertRestored();
+                Render("End", otherCamera);
+                foreach (var finish in new[] { "End", "Cancel", "Dispose", "NextCamera" })
+                {
+                    occlusion.SetFocus(camera, player);
+                    Render("Begin", camera);
+                    Assert.That(renderer.sharedMaterial, Is.Not.SameAs(material));
+                    Assert.That(body.GetComponent<Renderer>().sharedMaterial, Is.SameAs(material));
+                    Assert.That(blocker.GetComponent<Collider>().enabled, Is.True);
+                    if (finish == "End") Render("End", camera);
+                    else if (finish == "Cancel") occlusion.SetFocus(camera, null);
+                    else if (finish == "Dispose") occlusion.Dispose();
+                    else Render("Begin", otherCamera);
+                    AssertRestored();
+                }
+            }
+            finally
+            {
+                occlusion.Dispose();
+                Object.DestroyImmediate(root);
+                Object.DestroyImmediate(material);
+            }
+        }
+    }
+}

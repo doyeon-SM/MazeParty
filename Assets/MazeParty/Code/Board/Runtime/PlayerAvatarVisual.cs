@@ -69,10 +69,8 @@ namespace MazeParty.Gameplay
         private bool _knockedDown;
         private float _bodyHitTimer;
         private float _headHitTimer;
-        private float _handHitTimer;
         private float _bodyHitScale = 1f;
         private float _headHitScale = 1f;
-        private float _handHitScale = 1f;
         private float _itemUseTimer;
         private PrototypeItemId _activeItemId;
         private PrototypeItemId _equippedItemId;
@@ -539,10 +537,8 @@ namespace MazeParty.Gameplay
                     _headHitScale = scale;
                     _headHitTimer = 1f;
                     break;
+                // Hand impacts use the torso reaction; hand poses remain driven by attacks/emotes.
                 case PlayerHitRegion.Hand:
-                    _handHitScale = scale;
-                    _handHitTimer = 1f;
-                    break;
                 default:
                     _bodyHitScale = scale;
                     _bodyHitTimer = 1f;
@@ -590,7 +586,6 @@ namespace MazeParty.Gameplay
             _pushTimer = Mathf.MoveTowards(_pushTimer, 0f, Time.deltaTime * 4f);
             _bodyHitTimer = Mathf.MoveTowards(_bodyHitTimer, 0f, Time.deltaTime * 1.9f);
             _headHitTimer = Mathf.MoveTowards(_headHitTimer, 0f, Time.deltaTime * 1.9f);
-            _handHitTimer = Mathf.MoveTowards(_handHitTimer, 0f, Time.deltaTime * 2.5f);
             var wasUsingItem = _itemUseTimer > 0f;
             _itemUseTimer = Mathf.MoveTowards(_itemUseTimer, 0f, Time.deltaTime);
             if (wasUsingItem && _itemUseTimer <= 0f)
@@ -722,17 +717,20 @@ namespace MazeParty.Gameplay
             var push = StrikeAmount(_pushTimer);
             var leftStrike = Mathf.Max(leftPunch, push);
             var rightStrike = Mathf.Max(rightPunch, push);
-            var bodyWobble = WobbleAngle(_bodyHitTimer, 22f * _bodyHitScale);
-            var headWobble = WobbleAngle(_headHitTimer, 30f * _headHitScale);
-            var handWobble = WobbleAngle(_handHitTimer, 34f * _handHitScale);
-            var headOffsetX = headWobble / 30f * 0.11f;
+            var bodyWobble = WobbleAngle(_bodyHitTimer, 33f * _bodyHitScale);
+            var headWobble = WobbleAngle(_headHitTimer, 45f * _headHitScale);
+            var headRotation = Quaternion.Euler(0f, 0f, headWobble);
+            var headPivot = new Vector3(0f, bodyY, 0f);
+            // An inverted pendulum arcs around the torso. Rotate the entire face
+            // around the same pivot; the independent eye/camera and hit zones stay fixed.
+            var headPosition = headPivot + headRotation * new Vector3(0f, headY - bodyY, 0f);
 
             _body.localPosition = new Vector3(0f, bodyY, 0f);
             _body.localScale = new Vector3(0.82f, Mathf.Lerp(0.63f, 0.37f, t), 0.82f);
             _body.localRotation = Quaternion.Euler(0f, 0f, bodyWobble);
-            _head.localPosition = new Vector3(headOffsetX, headY, 0f);
+            _head.localPosition = headPosition;
             _head.localScale = Vector3.one * 0.78f;
-            _head.localRotation = Quaternion.Euler(0f, 0f, headWobble);
+            _head.localRotation = headRotation;
             // From above, the hands converge toward the forward tip of a
             // triangle instead of barely moving along parallel arm lines.
             _leftHand.localPosition = new Vector3(
@@ -745,22 +743,22 @@ namespace MazeParty.Gameplay
                 -swing + rightStrike * 1.65f);
             _leftHand.localScale = Vector3.one * 0.27f;
             _rightHand.localScale = Vector3.one * 0.27f;
-            _leftHand.localRotation = Quaternion.Euler(0f, 0f, -handWobble);
-            _rightHand.localRotation = Quaternion.Euler(0f, 0f, handWobble);
+            _leftHand.localRotation = Quaternion.identity;
+            _rightHand.localRotation = Quaternion.identity;
 
-            _leftEye.localPosition = new Vector3(-0.15f + headOffsetX, headY + 0.07f, 0.355f);
-            _rightEye.localPosition = new Vector3(0.15f + headOffsetX, headY + 0.07f, 0.355f);
+            _leftEye.localPosition = headPosition + headRotation * new Vector3(-0.15f, 0.07f, 0.355f);
+            _rightEye.localPosition = headPosition + headRotation * new Vector3(0.15f, 0.07f, 0.355f);
             _leftEye.localScale = new Vector3(0.095f, 0.13f, 0.055f);
             _rightEye.localScale = new Vector3(0.095f, 0.13f, 0.055f);
-            _leftEye.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _rightEye.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _mouth.localPosition = new Vector3(headOffsetX, headY - 0.17f, 0.37f);
+            _leftEye.localRotation = headRotation;
+            _rightEye.localRotation = headRotation;
+            _mouth.localPosition = headPosition + headRotation * new Vector3(0f, -0.17f, 0.37f);
             _mouth.localScale = _mouthBlowing
                 ? new Vector3(0.115f, 0.14f, 0.045f)
                 : new Vector3(0.2f, 0.055f, 0.045f);
-            _mouth.localRotation = Quaternion.Euler(0f, 0f, headWobble);
-            _hat.localPosition = new Vector3(headOffsetX, headY + 0.34f, 0f);
-            _hat.localRotation = Quaternion.Euler(0f, 0f, headWobble);
+            _mouth.localRotation = headRotation;
+            _hat.localPosition = headPosition + headRotation * new Vector3(0f, 0.34f, 0f);
+            _hat.localRotation = headRotation;
             _outfit.localPosition = new Vector3(0f, bodyY, 0f);
             _outfit.localScale = new Vector3(1f, Mathf.Lerp(1f, 0.62f, t), 1f);
             _outfit.localRotation = Quaternion.Euler(0f, 0f, bodyWobble);

@@ -66,6 +66,7 @@ namespace MazeParty.Gameplay
         [SerializeField, Range(10f, 120f)]
         private float boardResourceEventFieldOfView = 60f;
 
+        private readonly BoardEventCameraOcclusion _eventOcclusion = new BoardEventCameraOcclusion();
         private CinemachineBrain _brain;
         private Coroutine _transitionCoroutine;
         private CinemachineBlendDefinition _savedDefaultBlend;
@@ -323,6 +324,10 @@ namespace MazeParty.Gameplay
             if (!Application.isPlaying)
                 return;
 
+            var showEvent = activeMode == GameplayMode.BoardResourceEvent ||
+                (_isTransitioning && _transitionFrom == GameplayMode.BoardResourceEvent);
+            _eventOcclusion.SetFocus(outputCamera, showEvent ? _boardResourceEventFacing : null);
+
             // The first-person virtual camera has no procedural body component.
             // Keep its raw pose attached to the moving eye after a blend completes.
             if (!_isTransitioning && activeMode == GameplayMode.FirstPerson)
@@ -341,6 +346,7 @@ namespace MazeParty.Gameplay
 
         private void OnDisable()
         {
+            _eventOcclusion.Dispose();
             LocalInputGate.Changed -= ApplyCursorPolicy;
             CancelTransition();
             _completedMode = activeMode;

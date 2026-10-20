@@ -30,7 +30,7 @@ namespace MazeParty.Multiplayer.Tests
         {
             SceneCase(
                 "ArenaCombat", typeof(ArenaCombatNetworkView),
-                ("hitSparkVfxPrefab", HitSparkPath)),
+                ("hitSparkVfxPrefab", "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/VFX/ArenaCombatHitSpark.prefab")),
             SceneCase(
                 "BalloonBlow", typeof(BalloonBlowNetworkView),
                 ("popBurstVfxPrefab", ArrivalFireworksPath)),
