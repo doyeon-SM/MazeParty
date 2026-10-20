@@ -262,6 +262,34 @@ namespace MazeParty.Multiplayer.Tests
                     Is.True,
                     "Instantiated root Canvases must resolve to unit scale.");
 
+                var cameraRoot = new GameObject("Inventory camera mode");
+                cameraRoot.transform.SetParent(instance.transform);
+                var director = cameraRoot.AddComponent<GameplayCameraDirector>();
+                view.Configure(director);
+                const System.Reflection.BindingFlags privateInstance =
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic;
+                var refresh = typeof(BoardFlowView).GetMethod("LateUpdate", privateInstance);
+                foreach (var state in new[]
+                {
+                    (GameplayMode.BoardTopDown, false, false),
+                    (GameplayMode.FirstPerson, true, false),
+                    (GameplayMode.FirstPerson, false, true),
+                    (GameplayMode.BoardTopDown, true, false),
+                    (GameplayMode.BoardTopDown, false, false),
+                    (GameplayMode.FirstPerson, false, true)
+                })
+                {
+                    typeof(GameplayCameraDirector).GetField("activeMode", privateInstance).SetValue(director, state.Item1);
+                    typeof(GameplayCameraDirector).GetField("_isTransitioning", privateInstance).SetValue(director, state.Item2);
+                    refresh.Invoke(view, null);
+                    Assert.That(bindings.Item.InventoryPanel.activeSelf, Is.EqualTo(state.Item3),
+                        state.Item1 + " / transitioning: " + state.Item2);
+                    Assert.That(bindings.Item.InventorySlotBackgrounds.All(slot =>
+                        slot.gameObject.activeInHierarchy == state.Item3), Is.True);
+                    Assert.That(bindings.Map.RootCanvas.enabled, Is.True,
+                        "Hiding inventory must keep the map available.");
+                }
+
                 view.SetBoardUiVisible(false);
                 Assert.That(view.BoardUiVisible, Is.False);
                 Assert.That(
@@ -388,6 +416,9 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.Hud.HasRequiredReferences, Is.True);
             Assert.That(bindings.Map.HasRequiredReferences, Is.True);
             Assert.That(bindings.Item.HasRequiredReferences, Is.True);
+            Assert.That(bindings.Item.InventorySlotBackgrounds.All(slot =>
+                slot.transform.IsChildOf(bindings.Item.InventoryPanel.transform)), Is.True,
+                "The serialized inventory root must own all slots in prefab and scene instances.");
 
             var badges =
                 bindings.Hud.GetComponent<BoardPlayerStatusBadges>();

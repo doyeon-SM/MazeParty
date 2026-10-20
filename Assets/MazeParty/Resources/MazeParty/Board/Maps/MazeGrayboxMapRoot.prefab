@@ -1522,6 +1522,9 @@ MonoBehaviour:
   tilesRoot: {fileID: 2839086089725572429}
   connectionsRoot: {fileID: 9167767210969122715}
   environmentRoot: {fileID: 3561716202416923930}
+  mapWallSources:
+  - {fileID: 8742424056901545708}
+  - {fileID: 7699096622359476037}
   startTile: {fileID: 571111397552852919}
   playerStartTiles:
   - {fileID: 571111397552852919}

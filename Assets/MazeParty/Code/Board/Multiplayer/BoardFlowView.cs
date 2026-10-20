@@ -358,6 +358,15 @@ namespace MazeParty.Multiplayer
             RefreshCursor(match);
         }
 
+        private void LateUpdate()
+        {
+            if (cameraDirector == null)
+                cameraDirector = FindAnyObjectByType<GameplayCameraDirector>();
+            uiBindings?.Item?.SetInventoryVisible(cameraDirector != null &&
+                cameraDirector.ActiveMode != GameplayMode.BoardTopDown &&
+                !cameraDirector.IsTransitioning);
+        }
+
         public void SelectItem(int slotIndex)
         {
             _localAvatar?.ChooseItem(slotIndex);
@@ -1089,16 +1098,13 @@ namespace MazeParty.Multiplayer
                     : default;
             }
             var ranks = PlayerRankingRules.Calculate(rankingStats);
+            uiBindings.Hud.PresentPlayerRanking(ranks, Time.unscaledTimeAsDouble);
 
             for (var slot = 0; slot < _playerRows.Length; slot++)
             {
                 var isPresent = match.IsPlayerPresent(slot);
                 var avatar = match.GetAvatarForSlot(slot);
-                var isLocal = _localAvatar != null && _localAvatar.AssignedSlot == slot;
-                var connectionLabel = !isPresent
-                    ? GameText.T("RECONNECTING")
-                    : isLocal ? GameText.T("LOCAL") : GameText.T("ONLINE");
-                SetText(_playerRows[slot], "P" + (slot + 1) + "  " + connectionLabel);
+                SetText(_playerRows[slot], ResolveBoardPlayerName(avatar, slot));
                 if (_playerRows[slot] != null)
                 {
                     _playerRows[slot].color = isPresent

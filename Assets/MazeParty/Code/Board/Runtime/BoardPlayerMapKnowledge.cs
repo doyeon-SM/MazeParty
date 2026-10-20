@@ -6,8 +6,8 @@ namespace MazeParty.Gameplay
     /// <summary>
     /// Owner-local knowledge used by board map presentation. It remembers the last
     /// observed logical tile separately from the players visible in the current
-    /// observation frame, so losing sight hides a minimap marker without erasing the
-    /// full-map history.
+    /// observation frame. Both maps retain a darkened historical marker when sight
+    /// is lost; hidden movement never updates its coordinate.
     /// </summary>
     public sealed class BoardPlayerMapKnowledge
     {

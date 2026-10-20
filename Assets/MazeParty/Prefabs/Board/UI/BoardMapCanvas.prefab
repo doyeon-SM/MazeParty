@@ -60545,11 +60545,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   outlineWidth: 1.5
-  portalWidth: 3
+  wallWidth: 2.5
+  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
   outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
-  neutralPortalColor: {r: 0.75, g: 0.82, b: 0.88, a: 0.72}
-  passablePortalColor: {r: 0.3, g: 0.82, b: 1, a: 0.62}
-  blockedPortalColor: {r: 1, g: 0.24, b: 0.2, a: 0.62}
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
 --- !u!1 &2256547655907003779
 GameObject:
@@ -75901,6 +75899,7 @@ MonoBehaviour:
   visionGraphic: {fileID: 8016299093725133281}
   circularMask: {fileID: 337828874792897713}
   radiusInTiles: 2
+  rememberedPlayerDarken: 0.6
   followHeading: 1
   localPlayerOnly: 0
   showKeyShopDetails: 0
@@ -100725,11 +100724,9 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   outlineWidth: 1.5
-  portalWidth: 3
+  wallWidth: 2.5
+  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
   outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
-  neutralPortalColor: {r: 0.75, g: 0.82, b: 0.88, a: 0.72}
-  passablePortalColor: {r: 0.3, g: 0.82, b: 1, a: 0.62}
-  blockedPortalColor: {r: 1, g: 0.24, b: 0.2, a: 0.62}
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
 --- !u!1 &3521052782146599325
 GameObject:
@@ -147841,6 +147838,7 @@ MonoBehaviour:
   visionGraphic: {fileID: 0}
   circularMask: {fileID: 0}
   radiusInTiles: 0
+  rememberedPlayerDarken: 0.6
   followHeading: 0
   localPlayerOnly: 1
   showKeyShopDetails: 0

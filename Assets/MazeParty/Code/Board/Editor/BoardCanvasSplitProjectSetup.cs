@@ -400,6 +400,7 @@ namespace MazeParty.Editor
                 ReadyButton = readyButton,
                 PlayerRows = playerRows,
                 PlayerCards = playerCards,
+                PlayerRankingLayout = playerCards[0].GetComponentInParent<VerticalLayoutGroup>(),
                 PlayerHealthSliders = healthSliders,
                 PlayerHealthFills = healthFills,
                 PlayerHealthTexts = healthTexts,
@@ -543,6 +544,7 @@ namespace MazeParty.Editor
             {
                 RootCanvas = root.GetComponent<Canvas>(),
                 RootRaycaster = root.GetComponent<GraphicRaycaster>(),
+                InventoryPanel = RequireObject(root, "Inventory Panel"),
                 ItemSelectionPanel = RequireObject(root, "ItemSelectionPanel"),
                 ItemShopPanel = RequireObject(root, "ItemShopPanel"),
                 AmmoText = ammo,

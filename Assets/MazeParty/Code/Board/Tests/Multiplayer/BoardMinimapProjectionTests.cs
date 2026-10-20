@@ -621,7 +621,7 @@ namespace MazeParty.Multiplayer.Tests
                         .objectReferenceValue as BoardMapTopologyGraphic;
                     Assert.That(graphic, Is.Not.Null);
                     Assert.That(graphic.PresentedTileCount, Is.EqualTo(2));
-                    Assert.That(graphic.PresentedPortalCount, Is.EqualTo(1));
+                    Assert.That(graphic.PresentedWallCount, Is.Zero, "Connections must not be drawn as physical walls.");
 
                     var rooms = data.FindProperty("rooms");
                     var firstFloor = (Image)rooms.GetArrayElementAtIndex(0)

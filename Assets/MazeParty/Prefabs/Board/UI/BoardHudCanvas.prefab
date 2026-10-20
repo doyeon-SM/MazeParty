@@ -4510,6 +4510,7 @@ MonoBehaviour:
     - {fileID: 5271000699908571816}
     - {fileID: 7528803862394769494}
     - {fileID: 7744703875925046104}
+    PlayerRankingLayout: {fileID: 6099777088669304629}
     PlayerCards:
     - {fileID: 3595135217545045475}
     - {fileID: 7378879688164200269}
@@ -4605,6 +4606,9 @@ MonoBehaviour:
     ActionArrived: {r: 1, g: 0.82, b: 0.3, a: 1}
     ActionFighting: {r: 1, g: 0.3, b: 0.25, a: 1}
     ActionHidden: {r: 0, g: 0, b: 0, a: 0}
+  rankSwapDuration: 0.65
+  rankSwapArc: 38
+  rankSwapStagger: 0.12
   minigamePreviewClips:
   - {fileID: 0}
   - {fileID: 0}

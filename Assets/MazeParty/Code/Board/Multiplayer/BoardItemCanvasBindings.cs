@@ -18,6 +18,7 @@ namespace MazeParty.Multiplayer
             public Canvas RootCanvas;
             public GraphicRaycaster RootRaycaster;
 
+            public GameObject InventoryPanel;
             public GameObject ItemSelectionPanel;
             public GameObject ItemShopPanel;
 
@@ -61,6 +62,7 @@ namespace MazeParty.Multiplayer
 
         public Canvas RootCanvas => references.RootCanvas;
         public GraphicRaycaster RootRaycaster => references.RootRaycaster;
+        public GameObject InventoryPanel => references.InventoryPanel;
         public GameObject ItemSelectionPanel => references.ItemSelectionPanel;
         public GameObject ItemShopPanel => references.ItemShopPanel;
         public Text AmmoText => references.AmmoText;
@@ -94,6 +96,7 @@ namespace MazeParty.Multiplayer
             statePalette != null &&
             references.RootCanvas != null &&
             references.RootRaycaster != null &&
+            references.InventoryPanel != null &&
             references.ItemSelectionPanel != null &&
             references.ItemShopPanel != null &&
             references.AmmoText != null &&
@@ -123,6 +126,12 @@ namespace MazeParty.Multiplayer
             HasArray(references.ShopOfferIcons, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferLabels, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferHovers, ItemShopRules.OfferCount);
+
+        public void SetInventoryVisible(bool visible)
+        {
+            if (references.InventoryPanel != null && references.InventoryPanel.activeSelf != visible)
+                references.InventoryPanel.SetActive(visible);
+        }
 
         public void Configure(References targetReferences)
         {

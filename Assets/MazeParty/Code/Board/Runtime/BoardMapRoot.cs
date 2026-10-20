@@ -16,6 +16,8 @@ namespace MazeParty.Gameplay
         [SerializeField] private Transform tilesRoot;
         [SerializeField] private Transform connectionsRoot;
         [SerializeField] private Transform environmentRoot;
+        [Tooltip("Authored physical wall BoxColliders drawn on maps. Leave empty on wall-free maps.")]
+        [SerializeField] private Transform[] mapWallSources = Array.Empty<Transform>();
         [SerializeField] private BoardTile startTile;
         [SerializeField] private BoardTile[] playerStartTiles = new BoardTile[PlayerSlotRules.Count];
         [SerializeField] private Transform[] playerSpawnAnchors = new Transform[PlayerSlotRules.Count];
@@ -25,6 +27,7 @@ namespace MazeParty.Gameplay
         public Transform TilesRoot => tilesRoot;
         public Transform ConnectionsRoot => connectionsRoot;
         public Transform EnvironmentRoot => environmentRoot;
+        public IReadOnlyList<Transform> MapWallSources => mapWallSources;
         public BoardTile StartTile => startTile;
         public IReadOnlyList<BoardTile> PlayerStartTiles =>
             playerStartTiles ?? Array.Empty<BoardTile>();

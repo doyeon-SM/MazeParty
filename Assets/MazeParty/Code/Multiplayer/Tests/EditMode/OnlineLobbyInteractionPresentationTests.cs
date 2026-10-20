@@ -604,7 +604,7 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(forestDefinition.MapRootPrefab
                         .GetComponent<BoardMapRoot>()
                         .Topology.Tiles.Count));
-                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero,
+                Assert.That(previewGraphic.PresentedWallCount, Is.Zero,
                     "Lobby map information must omit junction and gate lines.");
 
                 view.Render(CreateSnapshot(
@@ -622,7 +622,7 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(mazeDefinition.MapRootPrefab
                         .GetComponent<BoardMapRoot>()
                         .Topology.Tiles.Count));
-                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero);
+                Assert.That(previewGraphic.PresentedWallCount, Is.Zero);
 
                 view.Render(CreateSnapshot(
                         MultiplayerConstants.LobbyPhase,
@@ -634,7 +634,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(previewName.text,
                     Is.EqualTo(GameText.T("Unavailable Map")));
                 Assert.That(previewGraphic.PresentedTileCount, Is.Zero);
-                Assert.That(previewGraphic.PresentedPortalCount, Is.Zero);
+                Assert.That(previewGraphic.PresentedWallCount, Is.Zero);
 
                 view.SetBoardMapSelectionLocked(true);
                 view.Render(CreateSnapshot(

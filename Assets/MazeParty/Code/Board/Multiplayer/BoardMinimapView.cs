@@ -55,6 +55,7 @@ namespace MazeParty.Multiplayer
             : radiusInTiles * BoardTile.RoomSize;
         [SerializeField] private Room[] rooms = Array.Empty<Room>();
         [SerializeField] private Image[] players = Array.Empty<Image>();
+        [SerializeField, Range(0f, 1f)] private float rememberedPlayerDarken = 0.6f;
         [SerializeField] private GameObject[] localHighlights = Array.Empty<GameObject>();
         [SerializeField] private BoardMapPlayerDirectionGraphic[] localDirections =
             Array.Empty<BoardMapPlayerDirectionGraphic>();
@@ -278,7 +279,8 @@ namespace MazeParty.Multiplayer
                 PresentPlayerAtTile(
                     slot,
                     markerTile,
-                    avatar != null ? avatar.Appearance.BodyColor : Color.white,
+                    GetPlayerMarkerColor(avatar != null ? avatar.Appearance.BodyColor : Color.white,
+                        isLocal || knowledge != null && knowledge.IsCurrentlyVisible(slot)),
                     isLocal,
                     displayContext);
             }
@@ -575,20 +577,6 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            if (displayContext == BoardMinimapDisplayContext.Minimap)
-            {
-                if (avatar == null || !avatar.IsSpawned ||
-                    !avatar.HasLogicalBoardTile)
-                {
-                    coordinate = default;
-                    return false;
-                }
-
-                return knowledge.TryGetCurrentlyVisible(
-                    slot,
-                    out coordinate);
-            }
-
             if (avatar == null || !avatar.IsSpawned)
             {
                 coordinate = default;
@@ -659,8 +647,19 @@ namespace MazeParty.Multiplayer
             return x != 0 ? x : left.Coordinate.y.CompareTo(right.Coordinate.y);
         }
 
+        private Color GetPlayerMarkerColor(Color playerColor, bool currentlyVisible)
+        {
+            if (currentlyVisible) return playerColor;
+            var brightness = 1f - rememberedPlayerDarken;
+            return new Color(playerColor.r * brightness, playerColor.g * brightness,
+                playerColor.b * brightness, playerColor.a);
+        }
+
         private static bool UsesFreeformProjection(BoardTopology topology)
         {
+            // Authored maps show physical walls, including square-grid maps.
+            if (BoardMapRuntimeLoader.ResolveActiveMapRoot(topology) != null)
+                return true;
             for (var index = 0; index < topology.Tiles.Count; index++)
             {
                 var tile = topology.Tiles[index];

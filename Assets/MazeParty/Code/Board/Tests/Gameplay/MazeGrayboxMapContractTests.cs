@@ -100,6 +100,8 @@ namespace MazeParty.Gameplay.Tests
                 var wallColliderRoot = mapRoot.transform.Find(WallColliderRootName);
                 Assert.That(wallVisualRoot, Is.Not.Null);
                 Assert.That(wallColliderRoot, Is.Not.Null);
+                Assert.That(mapRoot.MapWallSources, Is.EquivalentTo(new[] { wallColliderRoot, wallVisualRoot }),
+                    "Maps must show permanent wall collision and window frames from their authored sources.");
                 Assert.That(wallColliderRoot.parent, Is.SameAs(mapRoot.transform));
                 Assert.That(wallColliderRoot.gameObject.activeSelf, Is.True);
                 Assert.That(wallColliderRoot.localPosition, Is.EqualTo(Vector3.zero));

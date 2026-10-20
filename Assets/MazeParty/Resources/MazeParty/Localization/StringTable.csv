@@ -879,3 +879,6 @@ Choose sit or stand secretly during the countdown. Only one sitting or standing 
 {0} rounds · {1}s per round,{0}라운드 · 라운드당 {1}초,{0}ラウンド · 各{1}秒,{0}轮 · 每轮{1}秒
 {0} rounds,{0}라운드,{0}ラウンド,{0}轮
 Round placement points: 3 / 2 / 1 / 0.,라운드 순위별 점수: 3 / 2 / 1 / 0점.,ラウンド順位点: 3 / 2 / 1 / 0。,每轮排名积分：3 / 2 / 1 / 0。
+SWITCH LANE,좌우 전환,左右切替,左右切换
+CHOOSE BOX,상자 선택,箱を選ぶ,选择箱子
+FLAP,날개짓,羽ばたく,振翅

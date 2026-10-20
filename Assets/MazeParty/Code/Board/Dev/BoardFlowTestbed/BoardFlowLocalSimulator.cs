@@ -3117,6 +3117,9 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
 
         private void RefreshUi()
         {
+            boardUiBindings?.Item?.SetInventoryVisible(cameraDirector != null &&
+                cameraDirector.ActiveMode != GameplayMode.BoardTopDown &&
+                !cameraDirector.IsTransitioning);
             var globallyPaused = _paused || _keyShopRevealActive;
             RefreshLocalItemShopUi();
             var shopOpen = _openItemShopIndex >= 0;

@@ -1321,7 +1321,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5118072036598799918
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2062,6 +2062,7 @@ MonoBehaviour:
   references:
     RootCanvas: {fileID: 4318934716147439226}
     RootRaycaster: {fileID: 1076833368338647132}
+    InventoryPanel: {fileID: 1809359192652373407}
     ItemSelectionPanel: {fileID: 1621994921237849244}
     ItemShopPanel: {fileID: 2058008268472203909}
     AmmoText: {fileID: 6714939632395465505}

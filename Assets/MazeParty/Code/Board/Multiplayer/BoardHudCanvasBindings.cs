@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
     /// update state through these references; layout remains prefab-authored.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class BoardHudCanvasBindings : MonoBehaviour
+    public sealed partial class BoardHudCanvasBindings : MonoBehaviour
     {
         [Serializable]
         public sealed class References
@@ -50,6 +50,7 @@ namespace MazeParty.Multiplayer
 
             public Text[] PlayerRows;
             public Image[] PlayerCards;
+            public VerticalLayoutGroup PlayerRankingLayout;
             public Slider[] PlayerHealthSliders;
             public BoardHudStatFeedbackView[] PlayerStatFeedback;
             public Image[] PlayerHealthFills;
@@ -236,6 +237,7 @@ namespace MazeParty.Multiplayer
             minigamePreviewClips.Length >=
                 RequiredMinigamePreviewClipSlotCount &&
             references.ReadyButton != null &&
+            references.PlayerRankingLayout != null &&
             HasArray(references.PlayerRows, MultiplayerConstants.MaxPlayers) &&
             HasArray(references.PlayerCards, MultiplayerConstants.MaxPlayers) &&
             HasArray(

@@ -15,33 +15,31 @@ namespace MazeParty.Multiplayer
     public sealed class BoardMapTopologyGraphic : MaskableGraphic
     {
         [SerializeField, Min(0.5f)] private float outlineWidth = 1.5f;
-        [SerializeField, Min(1f)] private float portalWidth = 3f;
         [SerializeField] private Color outlineColor =
             new Color(0.62f, 0.73f, 0.82f, 0.92f);
-        [SerializeField] private Color neutralPortalColor =
-            new Color(0.75f, 0.82f, 0.88f, 0.72f);
-        [SerializeField] private Color passablePortalColor =
-            new Color(0.3f, 0.82f, 1f, 0.62f);
-        [SerializeField] private Color blockedPortalColor =
-            new Color(1f, 0.24f, 0.2f, 0.62f);
         [SerializeField] private Color tilesOnlyColor =
             new Color(0.82f, 0.9f, 1f, 0.94f);
 
         private readonly List<TileMesh> _tiles = new List<TileMesh>(49);
-        private readonly List<PortalMesh> _portals = new List<PortalMesh>(64);
+        [SerializeField, Min(0.5f)] private float wallWidth = 2.5f;
+        [SerializeField] private Color wallColor = new Color(0.82f, 0.88f, 0.94f, 1f);
+        private readonly List<WallMesh> _walls = new List<WallMesh>(128);
+        private BoardMapRoot _wallMap;
+        private BoxCollider[] _wallColliders = Array.Empty<BoxCollider>();
+        private bool _tilesOnly;
         private readonly List<Vector3> _worldVertices = new List<Vector3>(5);
         private Bounds _worldBounds;
 
         public int PresentedTileCount => _tiles.Count;
-        public int PresentedPortalCount => _portals.Count;
+        public int PresentedWallCount => _walls.Count;
 
         public void Clear()
         {
-            if (_tiles.Count == 0 && _portals.Count == 0)
+            if (_tiles.Count == 0 && _walls.Count == 0)
                 return;
 
             _tiles.Clear();
-            _portals.Clear();
+            _walls.Clear();
             SetVerticesDirty();
         }
 
@@ -58,8 +56,9 @@ namespace MazeParty.Multiplayer
             Color respawnColor)
         {
             _tiles.Clear();
-            _portals.Clear();
+            _walls.Clear();
             _worldBounds = worldBounds;
+            _tilesOnly = false;
 
             if (topology == null || worldBounds.size.x <= 0f ||
                 worldBounds.size.z <= 0f)
@@ -98,34 +97,7 @@ namespace MazeParty.Multiplayer
                 _tiles.Add(new TileMesh(points, tileColor));
             }
 
-            var seenPortals = new HashSet<PortalKey>();
-            for (var index = 0; index < topology.Gates.Count; index++)
-            {
-                var gate = topology.Gates[index];
-                if (gate == null || gate.Source == null || gate.Destination == null)
-                    continue;
-
-                var key = new PortalKey(gate);
-                if (!seenPortals.Add(key))
-                    continue;
-
-                var color = neutralPortalColor;
-                if (localTile == gate.Source || localTile == gate.Destination)
-                {
-                    var canExit = remainingMoves > 0 && HasOutgoingPortal(
-                        topology,
-                        localTile,
-                        gate);
-                    color = canExit ? passablePortalColor : blockedPortalColor;
-                }
-
-                var halfWidth = gate.transform.right.normalized *
-                                (gate.GateWidth * 0.5f);
-                _portals.Add(new PortalMesh(
-                    Project(gate.PlanePoint - halfWidth),
-                    Project(gate.PlanePoint + halfWidth),
-                    color));
-            }
+            PresentWalls(BoardMapRuntimeLoader.ResolveActiveMapRoot(topology));
 
             SetVerticesDirty();
         }
@@ -137,8 +109,9 @@ namespace MazeParty.Multiplayer
         /// </summary>
         public void PresentTilesOnly(BoardTopology topology)
         {
+            _tilesOnly = true;
             _tiles.Clear();
-            _portals.Clear();
+            _walls.Clear();
 
             if (topology == null)
             {
@@ -217,14 +190,15 @@ namespace MazeParty.Multiplayer
                         tile.Points[edge],
                         tile.Points[(edge + 1) % tile.Points.Length],
                         outlineWidth,
-                        outlineColor);
+                        _tilesOnly ? outlineColor : new Color(outlineColor.r,
+                            outlineColor.g, outlineColor.b, outlineColor.a * 0.18f));
                 }
             }
 
-            for (var index = 0; index < _portals.Count; index++)
+            for (var index = 0; index < _walls.Count; index++)
             {
-                var portal = _portals[index];
-                AddLine(vh, portal.Start, portal.End, portalWidth, portal.Color);
+                var wall = _walls[index];
+                AddLine(vh, wall.Start, wall.End, wall.Width, wallColor);
             }
         }
 
@@ -237,26 +211,36 @@ namespace MazeParty.Multiplayer
                 offset.z * rect.height / _worldBounds.size.z);
         }
 
-        private static bool HasOutgoingPortal(
-            BoardTopology topology,
-            BoardTile localTile,
-            BoardGate representative)
+        private void PresentWalls(BoardMapRoot map)
         {
-            if (localTile == null)
-                return false;
-
-            var outgoing = topology.GetOutgoingGates(localTile);
-            for (var index = 0; index < outgoing.Count; index++)
+            if (_wallMap != map)
             {
-                var candidate = outgoing[index];
-                if (candidate == null || candidate.Destination == null)
-                    continue;
-
-                if (new PortalKey(candidate).Equals(new PortalKey(representative)))
-                    return true;
+                _wallMap = map;
+                var colliders = new HashSet<BoxCollider>();
+                if (map != null && map.MapWallSources != null)
+                    foreach (var source in map.MapWallSources)
+                        if (source != null)
+                            foreach (var collider in source.GetComponentsInChildren<BoxCollider>(true))
+                                colliders.Add(collider);
+                _wallColliders = new BoxCollider[colliders.Count];
+                colliders.CopyTo(_wallColliders);
             }
 
-            return false;
+            foreach (var wall in _wallColliders)
+            {
+                if (wall == null || !wall.enabled || wall.isTrigger ||
+                    !wall.gameObject.activeInHierarchy) continue;
+                var halfX = wall.transform.TransformVector(Vector3.right * wall.size.x * 0.5f);
+                var halfZ = wall.transform.TransformVector(Vector3.forward * wall.size.z * 0.5f);
+                var alongX = new Vector2(halfX.x, halfX.z).sqrMagnitude >=
+                             new Vector2(halfZ.x, halfZ.z).sqrMagnitude;
+                var along = alongX ? halfX : halfZ;
+                var across = alongX ? halfZ : halfX;
+                var center = wall.transform.TransformPoint(wall.center);
+                var width = Vector2.Distance(Project(center - across), Project(center + across));
+                _walls.Add(new WallMesh(Project(center - along), Project(center + along),
+                    Mathf.Max(wallWidth, width)));
+            }
         }
 
         private static void AddPolygon(
@@ -308,75 +292,18 @@ namespace MazeParty.Multiplayer
             public Color Color { get; }
         }
 
-        private readonly struct PortalMesh
+        private readonly struct WallMesh
         {
-            public PortalMesh(Vector2 start, Vector2 end, Color color)
+            public WallMesh(Vector2 start, Vector2 end, float width)
             {
                 Start = start;
                 End = end;
-                Color = color;
+                Width = width;
             }
 
             public Vector2 Start { get; }
             public Vector2 End { get; }
-            public Color Color { get; }
-        }
-
-        private readonly struct PortalKey : IEquatable<PortalKey>
-        {
-            private const float Quantization = 1000f;
-            private readonly Vector2Int _first;
-            private readonly Vector2Int _second;
-            private readonly Vector3Int _position;
-
-            public PortalKey(BoardGate gate)
-            {
-                var source = gate.Source.Coordinate;
-                var destination = gate.Destination.Coordinate;
-                if (Compare(source, destination) <= 0)
-                {
-                    _first = source;
-                    _second = destination;
-                }
-                else
-                {
-                    _first = destination;
-                    _second = source;
-                }
-
-                var position = gate.PlanePoint;
-                _position = new Vector3Int(
-                    Mathf.RoundToInt(position.x * Quantization),
-                    Mathf.RoundToInt(position.y * Quantization),
-                    Mathf.RoundToInt(position.z * Quantization));
-            }
-
-            public bool Equals(PortalKey other)
-            {
-                return _first == other._first && _second == other._second &&
-                       _position == other._position;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is PortalKey other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                unchecked
-                {
-                    var hash = _first.GetHashCode();
-                    hash = hash * 397 ^ _second.GetHashCode();
-                    return hash * 397 ^ _position.GetHashCode();
-                }
-            }
-
-            private static int Compare(Vector2Int left, Vector2Int right)
-            {
-                var x = left.x.CompareTo(right.x);
-                return x != 0 ? x : left.y.CompareTo(right.y);
-            }
+            public float Width { get; }
         }
     }
 }
