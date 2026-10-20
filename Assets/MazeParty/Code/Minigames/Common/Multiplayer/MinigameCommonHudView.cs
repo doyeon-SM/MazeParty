@@ -75,7 +75,7 @@ namespace MazeParty.Multiplayer
             RefreshSpectatorLabel(match);
             if (match == null ||
                 match.FlowState != BoardFlowState.MinigamePlaying ||
-                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut && match.CurrentMinigame != ScheduledMinigameId.Race2 && match.CurrentMinigame != ScheduledMinigameId.ShellGame) ||
+                (match.IsMinigameRoundCountdown && match.CurrentMinigame != ScheduledMinigameId.OddOneOut && match.CurrentMinigame != ScheduledMinigameId.Race2 && match.CurrentMinigame != ScheduledMinigameId.ShellGame && match.CurrentMinigame != ScheduledMinigameId.Flight) ||
                 !MinigameCatalog.TryGetDefinition(
                     match.CurrentMinigame, out var definition))
             {
@@ -189,6 +189,8 @@ namespace MazeParty.Multiplayer
         {
             ShowRoundOnly(GameText.F("ROUND {0} / {1}", round, roundCount));
         }
+
+        public void ShowPracticeTimeOnly(double remaining, double total) => ShowClock(remaining, total, string.Empty, false);
 
         public void ShowPracticeClock(double remaining, double total, int round, int roundCount)
         {
@@ -475,6 +477,16 @@ namespace MazeParty.Multiplayer
                     total = state.Phase == NetworkCliffBarragePhase.Countdown
                         ? 3d : state.Phase == NetworkCliffBarragePhase.RoundResult
                             ? 4d : runningSeconds;
+                    return true;
+                }
+                case ScheduledMinigameId.Flight:
+                {
+                    var state = NetworkFlightState.Instance;
+                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Inactive ||
+                        state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Complete) return false;
+                    total = 120d; round = 1;
+                    remaining = state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown ? total :
+                        state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Running ? state.Remaining : 0d;
                     return true;
                 }
                 case ScheduledMinigameId.Race2:

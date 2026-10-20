@@ -23,6 +23,7 @@ namespace MazeParty.Multiplayer
             new SnowySpinRuntimeAdapter(),
             new ArenaCombatRuntimeAdapter(),
             new CliffBarrageRuntimeAdapter(),
+            new FlightRuntimeAdapter(),
             new ShellGameRuntimeAdapter(),
             new Race2RuntimeAdapter(),
             new OddOneOutRuntimeAdapter(),

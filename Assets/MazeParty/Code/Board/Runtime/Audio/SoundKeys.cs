@@ -79,6 +79,8 @@ namespace MazeParty.Gameplay
         public const string MinigameShellSelect = "minigame.shell_game.select";
         public const string MinigameShellCorrect = "minigame.shell_game.correct";
         public const string MinigameShellWrong = "minigame.shell_game.wrong";
+        public const string MinigameFlightFlap = "minigame.flight.flap";
+        public const string MinigameFlightExplosion = "minigame.flight.explosion";
         public const string MinigameRace2Lane = "minigame.race2.lane";
         public const string MinigameOddOneOutToggle = "minigame.odd_one_out.toggle";
         public const string MinigameCoinPickup = "minigame.coin_collect.coin";
@@ -113,7 +115,7 @@ namespace MazeParty.Gameplay
             BoardFootstep, BoardFireTornado,
             ItemExplosion, ItemBulletImpact,
             MinigameReveal, MinigameCountdownTick, MinigameCountdownGo,
-            MinigameFinish, MinigameShellShuffle, MinigameShellSelect, MinigameShellCorrect, MinigameShellWrong, MinigameRace2Lane, MinigameOddOneOutToggle, MinigameMinefieldExplosion,
+            MinigameFlightFlap, MinigameFlightExplosion, MinigameFinish, MinigameShellShuffle, MinigameShellSelect, MinigameShellCorrect, MinigameShellWrong, MinigameRace2Lane, MinigameOddOneOutToggle, MinigameMinefieldExplosion,
             MinigameMinefieldScan, Balloon, Lightning,
             MinigameSequenceMemoryTone,
             MinigameBombExplosion,

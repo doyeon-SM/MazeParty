@@ -75,6 +75,9 @@ namespace MazeParty.Multiplayer.Tests
                 "TerritoryPaint", typeof(TerritoryPaintNetworkView),
                 ("paintSplashVfxPrefab", HitSparkPath)),
             SceneCase(
+                "Flight", typeof(FlightNetworkView),
+                ("explosionPrefab", ExplosionPath)),
+            SceneCase(
                 "ShellGame", typeof(ShellGameNetworkView),
                 ("arrivalVfxPrefab", ArrivalFireworksPath)),
             SceneCase(

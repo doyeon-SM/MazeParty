@@ -68,7 +68,8 @@ namespace MazeParty.Multiplayer
             new[] { MoveKeys + "  MOVE", "<sprite name=\"ml\">  PUSH" },
             new[] { "<sprite name=\"ml\">  SIT / STAND" },
             new[] { "<sprite name=\"a\"><sprite name=\"d\">  SWITCH LANE" },
-            new[] { "<sprite name=\"ml\">  CHOOSE BOX" }
+            new[] { "<sprite name=\"ml\">  CHOOSE BOX" },
+            new[] { "<sprite name=\"ml\">  FLAP" }
         };
 
         private ScheduledMinigameId _renderedControlMinigame;
@@ -1374,6 +1375,7 @@ namespace MazeParty.Multiplayer
                 selected == ScheduledMinigameId.ArenaCombat;
             var isCliffBarrage =
                 selected == ScheduledMinigameId.CliffBarrage;
+            var isFlight = selected == ScheduledMinigameId.Flight;
             var isShellGame = selected == ScheduledMinigameId.ShellGame;
             var isRace2 = selected == ScheduledMinigameId.Race2;
             var isOddOneOut = selected == ScheduledMinigameId.OddOneOut;
@@ -1415,6 +1417,8 @@ namespace MazeParty.Multiplayer
                         ? GameText.T("SNOWY SPIN")
                     : isArenaCombat
                         ? GameText.T("ARENA COMBAT")
+                    : isFlight
+                        ? GameText.T("FLIGHT")
                     : isShellGame
                         ? GameText.T("SHELL GAME")
                     : isRace2
@@ -1519,6 +1523,8 @@ namespace MazeParty.Multiplayer
                         ? GameText.T("SNOWY SPIN RESULTS")
                     : isArenaCombat
                         ? GameText.T("ARENA COMBAT RESULTS")
+                    : isFlight
+                        ? GameText.T("FLIGHT RESULTS")
                     : isShellGame
                         ? GameText.T("SHELL GAME RESULTS")
                     : isRace2
@@ -1569,6 +1575,8 @@ namespace MazeParty.Multiplayer
                 : isArenaCombat
                     ? BuildArenaCombatResultSummary(
                         NetworkArenaCombatState.Instance)
+                : isFlight
+                    ? BuildFlightResultSummary(NetworkFlightState.Instance)
                 : isShellGame
                     ? BuildShellGameResultSummary(NetworkShellGameState.Instance)
                 : isRace2
@@ -2027,6 +2035,22 @@ namespace MazeParty.Multiplayer
                     MinigameRewardRules.GetFinalPlacementGold(rank)));
             }
 
+            return builder.ToString();
+        }
+
+        private static string BuildFlightResultSummary(NetworkFlightState flight)
+        {
+            if (flight == null || !TryGetFinalResultSlots(flight.GetFinalRank, out var slots))
+                return GameText.T("Final standings are synchronizing...");
+            var builder = new StringBuilder();
+            foreach (var slot in slots)
+            {
+                if (builder.Length > 0) builder.AppendLine();
+                var rank = flight.GetFinalRank(slot);
+                builder.Append(GameText.F("{0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3}", rank,
+                    FormatMinigameResultPlayerName(NetworkMatchState.Instance?.GetAvatarForSlot(slot), slot),
+                    flight.GetPlayer(slot).Survival, MinigameRewardRules.GetFinalPlacementGold(rank)));
+            }
             return builder.ToString();
         }
 

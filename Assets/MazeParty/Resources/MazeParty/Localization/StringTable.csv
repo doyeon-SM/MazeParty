@@ -855,3 +855,8 @@ SHELL GAME,야바위,カップシャッフル,猜金币
 SHELL GAME RESULTS,야바위 결과,カップシャッフルの結果,猜金币结果
 Follow the coin and click the correct box.,코인의 위치를 기억하고 섞기가 끝나면 상자를 클릭하세요.,コインを追いかけ、シャッフル後に正しい箱をクリックしよう。,记住金币位置，打乱后点击正确的箱子。
 "<sprite name=""ml"">  CHOOSE BOX","<sprite name=""ml"">  상자 선택","<sprite name=""ml"">  箱を選ぶ","<sprite name=""ml"">  选择箱子"
+FLIGHT,날기,フライト,飞行
+FLIGHT RESULTS,날기 결과,フライト結果,飞行结果
+"<sprite name=""ml"">  FLAP","<sprite name=""ml"">  날개짓","<sprite name=""ml"">  羽ばたく","<sprite name=""ml"">  振翅"
+Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날개짓하며 장애물 사이를 통과하세요. 최대 2분 동안 생존하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。最大2分間生き残ろう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙，最多生存两分钟。障碍物会加速，碰撞或掉出屏幕下方即淘汰。
+{0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3},{0}위  {1}  생존 {2:0.00}초  골드 +{3},{0}位  {1}  生存 {2:0.00}秒  ゴールド +{3},第{0}名  {1}  生存 {2:0.00}秒  金币 +{3}

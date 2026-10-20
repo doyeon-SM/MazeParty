@@ -197,7 +197,9 @@ namespace MazeParty.Gameplay.Minigames
             new MinigameDefinition(ScheduledMinigameId.Race2, GameText.N("RACE 2"),
                 3, 120f, "Race2", new Color(.25f, .7f, .95f, 1f)),
             new MinigameDefinition(ScheduledMinigameId.ShellGame, GameText.N("SHELL GAME"),
-                5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f))
+                5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f)),
+            new MinigameDefinition(ScheduledMinigameId.Flight, GameText.N("FLIGHT"),
+                1, 120f, "Flight", new Color(.3f, .8f, 1f, 1f))
         };
 
         public static int RegisteredCount => RegisteredMinigameDefinitions.Length;
@@ -253,6 +255,8 @@ namespace MazeParty.Gameplay.Minigames
                     return GameText.N("Become the top fighter in a bare-knuckle brawl.");
                 case ScheduledMinigameId.CliffBarrage:
                     return GameText.N("Dodge and survive.");
+                case ScheduledMinigameId.Flight:
+                    return GameText.N("Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.");
                 case ScheduledMinigameId.ShellGame:
                     return GameText.N("Follow the coin and click the correct box.");
                 case ScheduledMinigameId.Race2:

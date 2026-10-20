@@ -25,7 +25,7 @@ namespace MazeParty.Multiplayer.Tests
             warning.SetValue(null, true);
             var previousMatch = NetworkMatchState.Instance;
             typeof(NetworkMatchState).GetProperty("Instance").SetValue(null, null);
-            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut", "Race2", "ShellGame" };
+            var names = new[] { "Minefield", "WrongWay", "RedLightGreenLight", "StableFooting", "BalloonBlow", "GiftGrab", "TerritoryPaint", "TagChase", "Race", "SnowySpin", "ArenaCombat", "CliffBarrage", "BombPassing", "BouncingBalls", "SequenceMemory", "CoinCollect", "OddOneOut", "Race2", "ShellGame", "Flight" };
             try
             {
                 foreach (var name in names)
@@ -37,7 +37,17 @@ namespace MazeParty.Multiplayer.Tests
                         var state = root.AddComponent(type);
                         var field = type.GetField("_finalRanks", flags) ?? type.GetField("_finalRanksPacked", flags);
                         System.Action<uint> setRanks;
-                        if (state is NetworkRace2State)
+                        if (state is NetworkFlightState)
+                        {
+                            var snapshot = (Unity.Netcode.NetworkVariable<FlightSnapshot>)type.GetField("_snapshot", flags).GetValue(state);
+                            setRanks = packed => snapshot.Value = packed == 0 ? default : new FlightSnapshot {
+                                Phase = MazeParty.Gameplay.Minigames.Flight.FlightPhase.Complete,
+                                Player0 = new FlightPlayerSnapshot { Rank = (byte)packed },
+                                Player1 = new FlightPlayerSnapshot { Rank = (byte)(packed >> 8) },
+                                Player2 = new FlightPlayerSnapshot { Rank = (byte)(packed >> 16) },
+                                Player3 = new FlightPlayerSnapshot { Rank = (byte)(packed >> 24) } };
+                        }
+                        else if (state is NetworkRace2State)
                         {
                             var snapshot = (Unity.Netcode.NetworkVariable<Race2Snapshot>)type.GetField("_snapshot", flags).GetValue(state);
                             setRanks = packed => snapshot.Value = packed == 0 ? default : new Race2Snapshot {

@@ -70,7 +70,7 @@ namespace MazeParty.Gameplay.Tests
                 "Serialized production minigame ids must remain stable.");
             Assert.That(
                 MinigameScheduleRules.RegisteredGameCount,
-                Is.EqualTo(19));
+                Is.EqualTo(20));
             Assert.That(
                 schedule.TurnCount,
                 Is.EqualTo(MinigameScheduleRules.RegisteredGameCount));
@@ -119,6 +119,8 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(
                 counts[ScheduledMinigameId.CliffBarrage],
                 Is.EqualTo(1));
+            Assert.That((int)ScheduledMinigameId.Flight, Is.EqualTo(20));
+            Assert.That(counts[ScheduledMinigameId.Flight], Is.EqualTo(1));
             Assert.That((int)ScheduledMinigameId.ShellGame, Is.EqualTo(19));
             Assert.That(counts[ScheduledMinigameId.ShellGame], Is.EqualTo(1));
             Assert.That((int)ScheduledMinigameId.Race2, Is.EqualTo(18));
@@ -445,6 +447,7 @@ namespace MazeParty.Gameplay.Tests
                 [ScheduledMinigameId.CliffBarrage] = 0,
                 [ScheduledMinigameId.CoinCollect] = 0,
                 [ScheduledMinigameId.OddOneOut] = 0,
+                [ScheduledMinigameId.Flight] = 0,
                 [ScheduledMinigameId.ShellGame] = 0,
                 [ScheduledMinigameId.Race2] = 0
             };

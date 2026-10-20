@@ -115,6 +115,8 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/ShellGame/UI/ShellGameHud.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
+            new SceneUiContract("Assets/MazeParty/Scenes/Minigames/Flight/Flight.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab"),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/Race2/Race2.unity",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab"),
             new SceneUiContract("Assets/MazeParty/Scenes/Minigames/OddOneOut/OddOneOut.unity",

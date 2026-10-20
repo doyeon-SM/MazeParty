@@ -28,6 +28,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly TestCaseData[] EnvironmentContracts =
         {
+            EnvironmentCase("Flight", "Flight Environment", "FlightEnvironment.prefab", typeof(NetworkFlightState), "Runtime Players", "Runtime Obstacles"),
             EnvironmentCase("ShellGame", "Shell Game Environment", "ShellGameEnvironment.prefab", typeof(NetworkShellGameState), "Runtime Players", "Shell Boxes"),
             EnvironmentCase("Race2", "Race 2 Environment", "Race2Environment.prefab", typeof(NetworkRace2State), "Runtime Players", "Runtime Boxes"),
             EnvironmentCase("OddOneOut", "Odd One Out Environment", "OddOneOutEnvironment.prefab",
@@ -149,6 +150,17 @@ namespace MazeParty.Multiplayer.Tests
                         scenePath + " has no scene-connected core world " +
                         "prefab under " + prefabPrefix);
 
+                    if (game == "Flight")
+                    {
+                        var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<FlightNetworkView>(true)).Single();
+                        Assert.That(view.HasRequiredReferences, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().InScenePlaced, Is.True);
+                        Assert.That(view.GetComponent<NetworkObject>().PrefabIdHash, Is.Not.Zero);
+                        var obstacle = (GameObject)new SerializedObject(view).FindProperty("obstaclePrefab").objectReferenceValue;
+                        var original = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/Ignore/FreeLowpolyScifiObjects/Prefabs/Objects/object_012.prefab");
+                        Assert.That(obstacle.GetComponentInChildren<MeshFilter>(true).sharedMesh,
+                            Is.SameAs(original.GetComponentInChildren<MeshFilter>(true).sharedMesh));
+                    }
                     if (game == "Race2")
                     {
                         var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Race2NetworkView>(true)).Single();

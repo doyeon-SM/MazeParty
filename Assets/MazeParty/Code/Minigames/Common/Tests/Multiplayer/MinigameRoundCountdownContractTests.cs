@@ -23,6 +23,32 @@ namespace MazeParty.Multiplayer.Tests
                     Is.EqualTo(sample.Item3), sample.ToString());
         }
 
+        [Test]
+        public void FlightAdapter_ExposesOnlyTheInitialCountdown()
+        {
+            var root = new GameObject("Flight countdown contract");
+            var previous = NetworkFlightState.Instance;
+            try
+            {
+                var state = root.AddComponent<NetworkFlightState>();
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkFlightState), state);
+                var adapter = new FlightRuntimeAdapter();
+                foreach (var phase in new[] { MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown,
+                    MazeParty.Gameplay.Minigames.Flight.FlightPhase.Running, MazeParty.Gameplay.Minigames.Flight.FlightPhase.Result })
+                {
+                    NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new FlightSnapshot {
+                        Phase = phase, EndsAt = Time.unscaledTimeAsDouble + 3 });
+                    Assert.That(adapter.TryGetRoundCountdown(out var remaining),
+                        Is.EqualTo(phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown));
+                }
+            }
+            finally
+            {
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkFlightState), previous);
+                UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
         private static IEnumerable<CountdownAdapterCase>
             MultiRoundAdapters
         {
