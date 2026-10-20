@@ -11,9 +11,9 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
     {
         public const int PlayerCount = 4;
         public const int StepCount = 50;
-        public const int RoundCount = 2;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.WrongWay, 2);
         public const double CountdownSeconds = 3d;
-        public const double RoundSeconds = 60d;
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.WrongWay, 60d);
         public const double IncorrectInputLockSeconds = 0.5d;
 
         public static int GetPointsForRank(int rank)

@@ -7,22 +7,23 @@ namespace MazeParty.Gameplay.Minigames.Flight
     public static class FlightRules
     {
         public const int PlayerCount = 4, GatePoolCount = 5;
-        public const double CountdownSeconds = 3, RunSeconds = 120, ResultSeconds = 2;
+        public const double CountdownSeconds = 3, ResultSeconds = 2;
+        public static double RunSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Flight, 120);
         public const double Step = 1d / 120, Gravity = 12, FlapVelocity = 4.5, MaxFallSpeed = 4.5;
         public const double BodyHeight = 2, HalfWidth = .42, GateWidth = .9, Spacing = 5.5, FirstGate = 3.5;
         public const double ViewHalfHeight = 7.4, CameraOffsetX = 2.7, RecycleX = -11.1;
         public const double Ceiling = ViewHalfHeight - BodyHeight / 2, Bottom = -ViewHalfHeight - BodyHeight / 2;
         public const double CollisionRadiusX = (GateWidth / 2) + HalfWidth;
         public static bool ValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
-        public static double Speed(double time) => 5 * (1 + 2 * Math.Max(0, Math.Min(120, time)) / 120);
+        public static double Speed(double time) => 5 * (1 + 2 * Math.Max(0, Math.Min(RunSeconds, time)) / RunSeconds);
         public static double Distance(double time)
         {
-            var t = Math.Max(0, Math.Min(120, time));
-            return 5 * (t + t * t / 120) + Math.Max(0, time - 120) * 15;
+            var t = Math.Max(0, Math.Min(RunSeconds, time));
+            return 5 * (t + t * t / RunSeconds) + Math.Max(0, time - RunSeconds) * 15;
         }
         public static double TimeAtDistance(double distance) => distance <= 0 ? 0 :
-            distance >= 1200 ? 120 + (distance - 1200) / 15 :
-            2 * distance / (5 + Math.Sqrt(25 + distance / 6));
+            distance >= 10 * RunSeconds ? RunSeconds + (distance - 10 * RunSeconds) / 15 :
+            2 * distance / (5 + Math.Sqrt(25 + 20 * distance / RunSeconds));
 
         // Shared by authority, prediction and the course's witness path.
         public static void Integrate(ref double y, ref double velocity, double duration)
@@ -85,7 +86,7 @@ namespace MazeParty.Gameplay.Minigames.Flight
 
         public FlightCourse(ulong seed)
         {
-            _gates = new FlightGate[(int)Math.Ceiling((FlightRules.Distance(120) + 28) / FlightRules.Spacing) + 1];
+            _gates = new FlightGate[(int)Math.Ceiling((FlightRules.Distance(FlightRules.RunSeconds) + 28) / FlightRules.Spacing) + 1];
             var lastDistance = FlightRules.FirstGate + (_gates.Length - 1) * FlightRules.Spacing;
             var ticks = (int)Math.Ceiling(FlightRules.TimeAtDistance(lastDistance + FlightRules.CollisionRadiusX) / FlightRules.Step) + 2;
             _witnessFlaps = new bool[ticks];

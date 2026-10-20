@@ -58,8 +58,8 @@ namespace MazeParty.Gameplay.Minigames
 
             Id = id;
             DisplayName = displayName;
-            RoundCount = roundCount;
-            PhaseDurationSeconds = phaseDurationSeconds;
+            _authoredRoundCount = roundCount;
+            _authoredPhaseDurationSeconds = phaseDurationSeconds;
             SceneName = sceneName;
             TowerColor = towerColor;
             RecoveryCompatibilityVersion = recoveryCompatibilityVersion;
@@ -67,8 +67,10 @@ namespace MazeParty.Gameplay.Minigames
 
         public ScheduledMinigameId Id { get; }
         public string DisplayName { get; }
-        public int RoundCount { get; }
-        public float PhaseDurationSeconds { get; }
+        private readonly int _authoredRoundCount;
+        public int RoundCount => MinigameRuntimeSettings.Rounds(Id, _authoredRoundCount);
+        private readonly float _authoredPhaseDurationSeconds;
+        public float PhaseDurationSeconds => (float)MinigameRuntimeSettings.Seconds(Id, _authoredPhaseDurationSeconds);
         public string SceneName { get; }
         public Color TowerColor { get; }
         public int RecoveryCompatibilityVersion { get; }
@@ -84,84 +86,84 @@ namespace MazeParty.Gameplay.Minigames
             new MinigameDefinition(
                 ScheduledMinigameId.Minefield,
                 GameText.N("MINEFIELD"),
-                MinefieldRules.RoundCount,
+                3,
                 40f,
                 "Minefield",
                 new Color(0.12f, 0.58f, 0.42f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.WrongWay,
                 GameText.N("WRONG WAY"),
-                WrongWayRules.RoundCount,
+                2,
                 60f,
                 "WrongWay",
                 new Color(0.95f, 0.42f, 0.12f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.RedLightGreenLight,
                 GameText.N("RED LIGHT / GREEN LIGHT"),
-                RedLightGreenLightRules.RoundCount,
+                3,
                 60f,
                 "RedLightGreenLight",
                 new Color(0.84f, 0.16f, 0.2f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.StableFooting,
                 GameText.N("STABLE FOOTING"),
-                StableFootingRules.RoundCount,
+                3,
                 60f,
                 "StableFooting",
                 new Color(0.2f, 0.7f, 0.86f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BalloonBlow,
                 GameText.N("BALLOON BLOW"),
-                BalloonBlowRules.RoundCount,
+                3,
                 30f,
                 "BalloonBlow",
                 new Color(0.94f, 0.28f, 0.62f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.GiftGrab,
                 GameText.N("GIFT GRAB"),
-                GiftGrabRules.RoundCount,
+                2,
                 60f,
                 "GiftGrab",
                 new Color(0.72f, 0.36f, 0.92f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.TerritoryPaint,
                 GameText.N("TERRITORY PAINT"),
-                TerritoryPaintRules.RoundCount,
-                (float)TerritoryPaintRules.RoundSeconds,
+                1,
+                60f,
                 "TerritoryPaint",
                 new Color(0.16f, 0.72f, 0.68f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.TagChase,
                 GameText.N("TAG CHASE"),
-                TagChaseRules.RoundCount,
-                (float)TagChaseRules.RoundSeconds,
+                4,
+                60f,
                 "TagChase",
                 new Color(0.94f, 0.18f, 0.28f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.Race,
                 GameText.N("RACE"),
-                RaceRules.RoundCount,
-                (float)RaceRules.RoundSeconds,
+                3,
+                60f,
                 "Race",
                 new Color(0.98f, 0.64f, 0.12f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.SequenceMemory,
                 GameText.N("SEQUENCE MEMORY"),
-                SequenceMemoryRules.RoundCount,
+                10,
                 (float)SequenceMemoryRules.InputWindowSeconds,
                 "SequenceMemory",
                 new Color(0.48f, 0.36f, 0.94f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BouncingBalls,
                 GameText.N("BOUNCING BALLS"),
-                BouncingBallsRules.RoundCount,
-                (float)BouncingBallsRules.RoundSeconds,
+                2,
+                60f,
                 "BouncingBalls",
                 new Color(0.26f, 0.66f, 0.92f, 1f)),
             new MinigameDefinition(
                 ScheduledMinigameId.BombPassing,
                 GameText.N("BOMB PASSING"),
-                BombPassingRules.RoundCount,
+                1,
                 // Metadata only: one bomb's maximum fuse, not a match limit.
                 (float)BombPassingRules.MaximumFuseSeconds,
                 "BombPassing",
@@ -169,8 +171,8 @@ namespace MazeParty.Gameplay.Minigames
             new MinigameDefinition(
                 ScheduledMinigameId.SnowySpin,
                 GameText.N("SNOWY SPIN"),
-                SnowySpinRules.RoundCount,
-                (float)SnowySpinRules.RoundDurationSeconds,
+                3,
+                60f,
                 "SnowySpin",
                 new Color(0.62f, 0.83f, 0.98f, 1f)),
             new MinigameDefinition(
@@ -183,8 +185,8 @@ namespace MazeParty.Gameplay.Minigames
             new MinigameDefinition(
                 ScheduledMinigameId.CliffBarrage,
                 GameText.N("CLIFF BARRAGE"),
-                CliffBarrageRules.RoundCount,
-                (float)CliffBarrageRules.RoundDurationSeconds,
+                3,
+                60f,
                 "CliffBarrage",
                 new Color(0.98f, 0.48f, 0.14f, 1f)),
             new MinigameDefinition(
@@ -218,7 +220,18 @@ namespace MazeParty.Gameplay.Minigames
 
         public static string GetDescription(ScheduledMinigameId minigame)
         {
-            return GameText.T(GetDescriptionSource(minigame));
+            var description = GameText.T(GetDescriptionSource(minigame));
+            var settings = MinigameRuntimeSettings.Current;
+            if (settings == null || !IsRegistered(minigame)) return description;
+            var value = settings.Get(minigame);
+            var summary = MatchGameSettings.HasTimeLimit(minigame)
+                ? GameText.F("{0} rounds · {1}s per round", value.Rounds, value.Seconds)
+                : GameText.F("{0} rounds", value.Rounds);
+            if (value.Rounds > 1 && (minigame == ScheduledMinigameId.TerritoryPaint ||
+                minigame == ScheduledMinigameId.BombPassing || minigame == ScheduledMinigameId.ArenaCombat ||
+                minigame == ScheduledMinigameId.Flight))
+                description += "\n" + GameText.T("Round placement points: 3 / 2 / 1 / 0.");
+            return summary + "\n" + description;
         }
 
         public static string GetDescriptionSource(ScheduledMinigameId minigame)
@@ -256,15 +269,15 @@ namespace MazeParty.Gameplay.Minigames
                 case ScheduledMinigameId.CliffBarrage:
                     return GameText.N("Dodge and survive.");
                 case ScheduledMinigameId.Flight:
-                    return GameText.N("Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.");
+                    return GameText.N("Click to flap and glide through the gaps. Obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.");
                 case ScheduledMinigameId.ShellGame:
                     return GameText.N("Follow the coin and click the correct box.");
                 case ScheduledMinigameId.Race2:
-                    return GameText.N("Choose left with A or right with D to dodge boxes. Three rounds, up to two minutes each. Boxes speed up; one collision eliminates you.");
+                    return GameText.N("Choose left with A or right with D to dodge boxes. Boxes speed up; one collision eliminates you.");
                 case ScheduledMinigameId.OddOneOut:
-                    return GameText.N("Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Ten rounds; click again to switch.");
+                    return GameText.N("Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Click again to switch.");
                 case ScheduledMinigameId.CoinCollect:
-                    return GameText.N("Collect falling coins and money across two rounds. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.");
+                    return GameText.N("Collect falling coins and money. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.");
                 default:
                     return string.Empty;
             }

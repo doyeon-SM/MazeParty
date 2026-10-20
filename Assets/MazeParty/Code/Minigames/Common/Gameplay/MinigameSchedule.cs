@@ -96,7 +96,8 @@ namespace MazeParty.Gameplay.Minigames
 
         public static HostMinigameSchedule Create(
             int seed,
-            int totalTurns = MinigameScheduleRules.DefaultTurnCount)
+            int totalTurns = MinigameScheduleRules.DefaultTurnCount,
+            IReadOnlyList<ScheduledMinigameId> includedGames = null)
         {
             if (totalTurns < 1)
             {
@@ -108,11 +109,16 @@ namespace MazeParty.Gameplay.Minigames
 
             var entries = new ScheduledMinigameId[totalTurns];
             var registered = new ScheduledMinigameId[
-                MinigameScheduleRules.RegisteredGameCount];
+                includedGames != null ? includedGames.Count : MinigameScheduleRules.RegisteredGameCount];
+            if (includedGames != null && includedGames.Count < totalTurns)
+                throw new ArgumentException("Select at least one distinct minigame per turn.");
+            var selectedIds = new HashSet<ScheduledMinigameId>();
             for (var index = 0; index < registered.Length; index++)
             {
-                registered[index] =
+                registered[index] = includedGames != null ? includedGames[index] :
                     MinigameScheduleRules.GetRegisteredGame(index);
+                if (!MinigameScheduleRules.IsRegisteredGame(registered[index]) || !selectedIds.Add(registered[index]))
+                    throw new ArgumentException("The selected pool contains invalid or duplicate games.");
             }
 
             var random = new StableScheduleRandom(seed);

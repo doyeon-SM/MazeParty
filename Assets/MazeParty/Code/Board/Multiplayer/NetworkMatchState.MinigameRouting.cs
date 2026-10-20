@@ -488,6 +488,8 @@ namespace MazeParty.Multiplayer
                 rewardAvatars[slot] = avatar;
             }
 
+            if (ContinueConfiguredSeries(ref placementSet)) return true;
+
             if (!_flow.TryCompleteMinigame(ServerNow))
             {
                 return false;

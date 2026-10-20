@@ -23,7 +23,8 @@ namespace MazeParty.Multiplayer
         public const int LegacyRecoveryVersionWithoutMines = 1;
         public const int LegacyRecoveryVersionWithoutMapIdentity = 2;
         public const int LegacyRecoveryVersionWithoutChests = 3;
-        public const int CurrentRecoveryVersion = 4;
+        public const int LegacyRecoveryVersionWithoutGameSettings = 4;
+        public const int CurrentRecoveryVersion = 5;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
@@ -33,6 +34,7 @@ namespace MazeParty.Multiplayer
         public int settledMinigameTurn;
         public int scheduleSeed;
         public int scheduleTurnCount;
+        public string gameSettings = string.Empty;
         public int catalogEntryCount;
         public string catalogFingerprint = string.Empty;
         public int[] scheduleEntries = Array.Empty<int>();

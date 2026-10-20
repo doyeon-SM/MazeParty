@@ -530,6 +530,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            InitializeGameSettings();
             InitializeBoardMapRuntime();
             PrewarmBoardItemVfx();
             if (IsServer)
@@ -548,6 +549,7 @@ namespace MazeParty.Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            ReleaseGameSettings();
             ClearBoardItemWorld();
             ShutdownBoardMapRuntime();
             if (IsServer && NetworkManager != null && NetworkManager.SceneManager != null)
@@ -657,6 +659,7 @@ namespace MazeParty.Multiplayer
             }
 
             EnsureFlowModel();
+            TickConfiguredSeries();
             var deferActionTimeout =
                 ShouldDeferActionTimeoutForWorldDie();
             AdvanceDeathGoldPresentationOnServer(now);
@@ -1287,7 +1290,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _flow = new BoardFlowStateMachine();
+            _flow = new BoardFlowStateMachine(totalTurns: TotalTurns);
             _flow.Transitioned += OnFlowTransitioned;
         }
 
@@ -1324,7 +1327,7 @@ namespace MazeParty.Multiplayer
                         0,
                         _minigameSchedule != null
                             ? _minigameSchedule.TurnCount - transition.Turn + 1
-                            : MinigameScheduleRules.DefaultTurnCount -
+                            : TotalTurns -
                               transition.Turn + 1);
                     ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
                     RefreshItemShopsForTurnOnServer(transition.Turn);

@@ -19,8 +19,8 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         };
 
         public const int PlayerCount = 4;
-        public const int RoundCount = 10;
-        public const int ProblemTurnCount = RoundCount;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.SequenceMemory, 10);
+        public static int ProblemTurnCount => RoundCount;
         public const int MistakesToEliminate = 2;
         public const double CountdownSeconds = 3d;
         public const double ProblemSymbolIntervalSeconds = 0.7d;

@@ -446,7 +446,8 @@ namespace MazeParty.Gameplay.Minigames
         public HostMinigameSchedule LoadOrCreate(
             string matchKey,
             Func<int> seedFactory,
-            int totalTurns = MinigameScheduleRules.DefaultTurnCount)
+            int totalTurns = MinigameScheduleRules.DefaultTurnCount,
+            System.Collections.Generic.IReadOnlyList<ScheduledMinigameId> includedGames = null)
         {
             MatchKeyValidator.Validate(matchKey);
             if (seedFactory == null)
@@ -461,7 +462,7 @@ namespace MazeParty.Gameplay.Minigames
 
             var created = HostMinigameSchedule.Create(
                 seedFactory(),
-                totalTurns);
+                totalTurns, includedGames);
             Save(matchKey, created);
             return created;
         }

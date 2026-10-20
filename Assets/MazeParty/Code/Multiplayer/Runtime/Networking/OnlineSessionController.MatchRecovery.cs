@@ -110,6 +110,11 @@ namespace MazeParty.Multiplayer
                     new InvalidOperationException(error));
             }
 
+            if (!MazeParty.Gameplay.Minigames.MatchGameSettings.TryDecode(recoverySnapshot.gameSettings, out var savedSettings))
+                throw new InvalidOperationException("Saved match settings are invalid.");
+            if (_sessions.Current.GameSettings?.Encode() != savedSettings.Encode())
+                await _sessions.SetGameSettingsAsync(savedSettings);
+
             if (_sessions.Current.BoardMapSelection != savedSelection)
             {
                 await _sessions.SetBoardMapAsync(savedSelection);

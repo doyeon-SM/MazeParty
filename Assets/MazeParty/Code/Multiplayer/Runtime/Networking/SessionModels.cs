@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 
 namespace MazeParty.Multiplayer
 {
@@ -61,8 +62,11 @@ namespace MazeParty.Multiplayer
             string localPlayerId,
             IReadOnlyList<OnlinePlayerSnapshot> players,
             BoardMapSelection boardMapSelection,
-            IReadOnlyList<string> waitingPlayerNames = null)
+            IReadOnlyList<string> waitingPlayerNames = null,
+            string gameSettingsPayload = null)
         {
+            GameSettings = gameSettingsPayload == null ? MatchGameSettings.Default :
+                MatchGameSettings.TryDecode(gameSettingsPayload, out var settings) ? settings : null;
             WaitingPlayerNames = waitingPlayerNames ?? Array.Empty<string>();
             Code = code;
             IsHost = isHost;
@@ -81,7 +85,8 @@ namespace MazeParty.Multiplayer
         public string LocalPlayerId { get; }
         public IReadOnlyList<OnlinePlayerSnapshot> Players { get; }
         public BoardMapSelection BoardMapSelection { get; }
-        public bool CanStart => Phase == MultiplayerConstants.LobbyPhase && SessionRules.CanStart(Players);
+        public MatchGameSettings GameSettings { get; }
+        public bool CanStart => GameSettings != null && Phase == MultiplayerConstants.LobbyPhase && SessionRules.CanStart(Players);
 
         public int LocalSlot
         {

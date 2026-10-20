@@ -142,6 +142,27 @@ namespace MazeParty.Gameplay.Tests
             }
         }
 
+
+        [Test]
+        public void ConfiguredMapLengths_EndOnlyAfterTheirLastMinigameResult()
+        {
+            foreach (var turns in new[] { 10, 15, 20 })
+            {
+                var flow = new BoardFlowStateMachine(totalTurns: turns);
+                flow.RestoreCheckpoint(BoardFlowState.MinigameIntroReady, turns - 1, 0d);
+                flow.TryBeginMinigameLoading(0d); flow.TryBeginMinigame(0d); flow.TryCompleteMinigame(0d);
+                flow.Tick(3d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.TurnOverview));
+                Assert.That(flow.CurrentTurn, Is.EqualTo(turns));
+                flow.RestoreCheckpoint(BoardFlowState.MinigameIntroReady, turns, 4d);
+                flow.TryBeginMinigameLoading(4d); flow.TryBeginMinigame(4d); flow.TryCompleteMinigame(4d);
+                flow.Tick(6.999999d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigameResult));
+                flow.Tick(7d);
+                Assert.That(flow.State, Is.EqualTo(BoardFlowState.MatchComplete));
+            }
+        }
+
         [Test]
         public void AscendingResolve_WaitsForDeathPresentationAndPreservesPauseTime()
         {

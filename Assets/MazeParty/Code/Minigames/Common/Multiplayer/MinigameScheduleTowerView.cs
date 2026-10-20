@@ -14,8 +14,8 @@ namespace MazeParty.Multiplayer
     public sealed class MinigameScheduleTowerView : MonoBehaviour
     {
         public const float RevealDelaySeconds = 0.7f;
-        public const int MaximumVisibleBlocks =
-            MinigameScheduleRules.DefaultTurnCount;
+        public const int MaximumVisibleBlocks = 20;
+        public const int VisibleRowCount = 10;
 
         [Header("Prefab UI Bindings")]
         [SerializeField] private Canvas canvas;
@@ -24,6 +24,14 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Text subtitle;
         [SerializeField] private Image[] blocks = Array.Empty<Image>();
         [SerializeField] private Text[] blockLabels = Array.Empty<Text>();
+
+        [SerializeField] private ScrollRect scrollView;
+        [SerializeField] private RectTransform content;
+        [SerializeField] private float rowHeight = 48f;
+        private int _lastScrolledTurn = -1;
+
+        public void ConfigureScroll(ScrollRect scroll, RectTransform list, float height)
+        { scrollView = scroll; content = list; rowHeight = height; }
 
         [Header("State Colors")]
         [SerializeField] private Color futureBlockColor =
@@ -38,6 +46,8 @@ namespace MazeParty.Multiplayer
         private int _revealSoundRevision = -1;
 
         public bool HasRequiredReferences =>
+            scrollView != null && content != null &&
+            scrollView.viewport != null && scrollView.content == content &&
             canvas != null &&
             panel != null &&
             title != null &&
@@ -134,12 +144,19 @@ namespace MazeParty.Multiplayer
                 match.Turn,
                 match.RemainingMinigameSlots);
 
+            content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, match.TotalTurns * rowHeight);
+            if (_lastScrolledTurn != match.Turn)
+            {
+                _lastScrolledTurn = match.Turn;
+                var max = Mathf.Max(0, match.TotalTurns - VisibleRowCount);
+                scrollView.StopMovement();
+                scrollView.verticalNormalizedPosition = max == 0 ? 1f :
+                    1f - Mathf.Clamp(match.Turn - 1, 0, max) / (float)max;
+            }
             for (var index = 0; index < blocks.Length; index++)
             {
-                if (!blocks[index].gameObject.activeSelf)
-                {
-                    blocks[index].gameObject.SetActive(true);
-                }
+                blocks[index].gameObject.SetActive(index < match.TotalTurns);
+                if (index >= match.TotalTurns) continue;
 
                 var oneBasedTurn = index + 1;
                 var current = oneBasedTurn == match.Turn;

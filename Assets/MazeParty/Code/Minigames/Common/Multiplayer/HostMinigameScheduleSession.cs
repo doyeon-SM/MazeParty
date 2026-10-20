@@ -47,7 +47,8 @@ namespace MazeParty.Multiplayer
         /// </param>
         public HostMinigameSchedule LoadOrCreateActive(
             int totalTurns,
-            string rosterKey)
+            string rosterKey,
+            MatchGameSettings settings = null)
         {
             rosterKey ??= string.Empty;
             var matchKey =
@@ -75,7 +76,7 @@ namespace MazeParty.Multiplayer
             var schedule = _repository.LoadOrCreate(
                 matchKey,
                 CreateSeed,
-                totalTurns);
+                totalTurns, settings?.IncludedGames());
             if (schedule.TurnCount != totalTurns)
             {
                 throw new InvalidOperationException(
@@ -83,6 +84,11 @@ namespace MazeParty.Multiplayer
                     "match the current game rules.");
             }
 
+            if (settings != null)
+                for (var turn = 1; turn <= schedule.TurnCount; turn++)
+                    if (schedule.GetMinigameForTurn(turn) != ScheduledMinigameId.Skip &&
+                        !settings.Get(schedule.GetMinigameForTurn(turn)).Included)
+                        throw new InvalidOperationException("Saved schedule conflicts with match settings.");
             ActiveMatchKey = matchKey;
             return schedule;
         }

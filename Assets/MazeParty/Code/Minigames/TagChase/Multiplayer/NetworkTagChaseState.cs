@@ -524,7 +524,7 @@ namespace MazeParty.Multiplayer
                 1,
                 TagChaseRules.RoundCount);
             _taggerSlot.Value =
-                (byte)_taggerOrder[_roundNumber.Value - 1];
+                (byte)_taggerOrder[(_roundNumber.Value - 1) % _taggerOrder.Length];
             _caughtMask.Value = 0;
             _nextCatchAllowedAt = 0d;
             _pausedCatchCooldownRemaining = 0d;

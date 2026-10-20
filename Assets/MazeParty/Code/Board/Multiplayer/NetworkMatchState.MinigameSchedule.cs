@@ -111,6 +111,7 @@ namespace MazeParty.Multiplayer
 
             if (_flow.TryBeginMinigame(now))
             {
+                BeginConfiguredSeries();
                 runtime.BeginMatchOnServer(_currentMinigameSeed.Value);
             }
         }
@@ -149,8 +150,8 @@ namespace MazeParty.Multiplayer
                 }
                 _minigameSchedule =
                     _minigameScheduleSession.LoadOrCreateActive(
-                        MinigameScheduleRules.DefaultTurnCount,
-                        rosterKey);
+                        TotalTurns,
+                        rosterKey, GameSettings);
                 return true;
             }
             catch (Exception exception)

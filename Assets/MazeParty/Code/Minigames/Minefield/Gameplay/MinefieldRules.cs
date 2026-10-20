@@ -10,7 +10,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
     public static class MinefieldRules
     {
         public const int PlayerCount = 4;
-        public const int RoundCount = 3;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.Minefield, 3);
         public const int MineHitsToEliminate = 2;
 
         public static int GetPointsForRank(int rank)

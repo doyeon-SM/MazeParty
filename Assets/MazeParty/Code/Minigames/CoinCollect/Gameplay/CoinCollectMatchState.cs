@@ -9,8 +9,8 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
     public static class CoinCollectRules
     {
         public const int PlayerCount = 4;
-        public const int RoundCount = 2;
-        public const double RoundSeconds = 60d;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.CoinCollect, 2);
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.CoinCollect, 60d);
         public const int CoinCount = 50, MoneyCount = 10, BombCount = 10;
         public const int RainCount = CoinCount + MoneyCount + BombCount;
         public const float MoveSpeed = 5f, FallSpeed = 6f;

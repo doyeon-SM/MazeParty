@@ -95,7 +95,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 ShowRoundOnly(GameText.F("ROUND {0} / {1}",
-                    bomb.RoundNumber, definition.RoundCount));
+                    match.ConfiguredSeriesRound, definition.RoundCount));
                 return;
             }
 
@@ -130,6 +130,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            if (match.UsesConfiguredRoundSeries) round = match.ConfiguredSeriesRound;
             var hasRounds = definition.RoundCount > 1;
             var label = match.CurrentMinigame ==
                     ScheduledMinigameId.SequenceMemory
@@ -484,7 +485,7 @@ namespace MazeParty.Multiplayer
                     var state = NetworkFlightState.Instance;
                     if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Inactive ||
                         state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Complete) return false;
-                    total = 120d; round = 1;
+                    total = MazeParty.Gameplay.Minigames.Flight.FlightRules.RunSeconds; round = 1;
                     remaining = state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown ? total :
                         state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Running ? state.Remaining : 0d;
                     return true;

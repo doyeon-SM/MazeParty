@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using Unity.Services.Multiplayer;
 using UnityEngine;
 
@@ -44,6 +45,7 @@ namespace MazeParty.Multiplayer
 
             var sessionProperties = new Dictionary<string, SessionProperty>
             {
+                [GameSettingsProperty] = new SessionProperty(MatchGameSettings.Default.Encode(), VisibilityPropertyOptions.Member),
                 [PlatformSessionAdmission.Property] = new SessionProperty(PlatformSessionAdmission.Empty(
                     PlatformContext.Channel, PlatformContext.EnvironmentName), VisibilityPropertyOptions.Member),
                 [MultiplayerConstants.OriginalHostProperty] =
@@ -1031,7 +1033,8 @@ namespace MazeParty.Multiplayer
                 _identity.PlayerId,
                 players,
                 boardMapSelection,
-                waitingNames);
+                waitingNames,
+                GetSessionProperty(session, GameSettingsProperty, MatchGameSettings.Default.Encode()));
             Changed?.Invoke();
         }
 

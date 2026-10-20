@@ -1838,6 +1838,7 @@ namespace MazeParty.Multiplayer
         private static string BuildTerritoryPaintResultSummary(
             NetworkTerritoryPaintState territoryPaint)
         {
+            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
             if (territoryPaint == null)
             {
                 return GameText.T("Final standings are synchronizing...");
@@ -1974,6 +1975,7 @@ namespace MazeParty.Multiplayer
         private static string BuildArenaCombatResultSummary(
             NetworkArenaCombatState arenaCombat)
         {
+            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
             if (arenaCombat == null)
             {
                 return GameText.T("Final standings are synchronizing...");
@@ -2038,8 +2040,26 @@ namespace MazeParty.Multiplayer
             return builder.ToString();
         }
 
+        private static string BuildConfiguredSeriesResultSummary()
+        {
+            var match = NetworkMatchState.Instance;
+            if (match == null || !TryGetFinalResultSlots(match.GetSeriesFinalRank, out var slots))
+                return GameText.T("Final standings are synchronizing...");
+            var builder = new StringBuilder();
+            foreach (var slot in slots)
+            {
+                if (builder.Length > 0) builder.AppendLine();
+                var rank = match.GetSeriesFinalRank(slot);
+                builder.Append(GameText.F("{0}.  {1}  SCORE {2}  GOLD +{3}", rank,
+                    FormatMinigameResultPlayerName(match.GetAvatarForSlot(slot), slot),
+                    match.GetSeriesPoints(slot), MinigameRewardRules.GetFinalPlacementGold(rank)));
+            }
+            return builder.ToString();
+        }
+
         private static string BuildFlightResultSummary(NetworkFlightState flight)
         {
+            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
             if (flight == null || !TryGetFinalResultSlots(flight.GetFinalRank, out var slots))
                 return GameText.T("Final standings are synchronizing...");
             var builder = new StringBuilder();
@@ -2193,6 +2213,7 @@ namespace MazeParty.Multiplayer
         private static string BuildBombPassingResultSummary(
             NetworkBombPassingState bombPassing)
         {
+            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
             if (bombPassing == null)
             {
                 return GameText.T("Final standings are synchronizing...");

@@ -95,6 +95,11 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (snapshot.gameSettings != GameSettings.Encode())
+            {
+                error = GameText.T("The saved match settings do not match this lobby.");
+                return false;
+            }
             try
             {
                 ResetTransientMatchStateForRecovery();
@@ -595,6 +600,7 @@ namespace MazeParty.Multiplayer
 
             return new MatchRecoverySnapshot
             {
+                gameSettings = GameSettings.Encode(),
                 originalHostPlayerKey = players[0].playerKey,
                 sessionId = controller.RecoverySessionId,
                 checkpoint = checkpoint,

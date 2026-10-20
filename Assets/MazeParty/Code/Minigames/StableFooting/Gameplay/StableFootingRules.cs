@@ -14,9 +14,9 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         public const int BoardHeight = 6;
         public const int TileCount = BoardWidth * BoardHeight;
         public const int SymbolCount = 3;
-        public const int RoundCount = 3;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.StableFooting, 3);
         public const int PermanentTilesRemovedPerCycle = 4;
-        public const double RoundSeconds = 60d;
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.StableFooting, 60d);
         public const double ShuffleRevealSeconds = 3d;
         public const double SymbolShuffleIntervalSeconds = 0.5d;
         public const int SymbolShuffleStepCount = 6;

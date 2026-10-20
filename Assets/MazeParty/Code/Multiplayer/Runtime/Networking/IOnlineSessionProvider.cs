@@ -36,6 +36,7 @@ namespace MazeParty.Multiplayer
             bool honorLeaveMarker = true);
         Task SetReadyAsync(bool ready);
         Task SetBoardMapAsync(BoardMapSelection selection);
+        Task SetGameSettingsAsync(MazeParty.Gameplay.Minigames.MatchGameSettings settings);
         Task SetPlayingAsync(bool playing);
         Task LeaveAsync();
     }

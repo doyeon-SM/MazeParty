@@ -11,8 +11,8 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
     public static class BalloonBlowRules
     {
         public const int PlayerCount = 4;
-        public const int RoundCount = 3;
-        public const double RoundSeconds = 30d;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.BalloonBlow, 3);
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.BalloonBlow, 30d);
         public const float MinimumProgressPercent = 0f;
         public const float MaxProgressPercent = 100f;
         public const float InflatePercentPerSecond = 10f;

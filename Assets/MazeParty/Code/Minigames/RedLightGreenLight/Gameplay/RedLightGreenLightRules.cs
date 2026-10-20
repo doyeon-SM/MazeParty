@@ -12,11 +12,11 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     public static class RedLightGreenLightRules
     {
         public const int PlayerCount = 4;
-        public const int RoundCount = 3;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.RedLightGreenLight, 3);
         public const int ViolationsToEliminate = 2;
 
         public const double CountdownSeconds = 3d;
-        public const double RoundSeconds = 60d;
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.RedLightGreenLight, 60d);
         public const double ResultSeconds = 4d;
         public const double MinimumGreenStepSeconds = 0.1d;
         public const double MaximumGreenStepSeconds = 2d;

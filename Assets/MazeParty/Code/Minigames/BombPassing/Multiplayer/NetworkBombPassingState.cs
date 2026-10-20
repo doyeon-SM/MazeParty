@@ -674,7 +674,7 @@ namespace MazeParty.Multiplayer
             _paused.Value = false;
             _phase.Value = (byte)NetworkBombPassingPhase.Inactive;
             _roundNumber.Value = 0;
-            _inputEpoch.Value = 0U;
+            AdvanceInputEpochOnServer();
             _phaseEndsAt.Value = 0d;
             _pausedPhaseRemaining.Value = 0d;
             _player0.Value = Vector2.zero;

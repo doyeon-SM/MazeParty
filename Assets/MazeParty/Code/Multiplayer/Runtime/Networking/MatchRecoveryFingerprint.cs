@@ -23,6 +23,8 @@ namespace MazeParty.Multiplayer
             {
                 CreateContentFingerprint(topology, schedule, mapSelection),
                 CreateContentFingerprint(topology, schedule,
+                    MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings, mapSelection),
+                CreateContentFingerprint(topology, schedule,
                     MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests, mapSelection),
                 CreateContentFingerprint(topology, schedule,
                     MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMapIdentity, BoardMapSelection.Legacy),

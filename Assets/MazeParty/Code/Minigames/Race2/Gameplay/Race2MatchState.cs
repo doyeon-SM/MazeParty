@@ -7,8 +7,10 @@ namespace MazeParty.Gameplay.Minigames.Race2
 
     public static class Race2Rules
     {
-        public const int PlayerCount = 4, RoundCount = 3, BoxCount = 7, PreviewBoxCount = 5;
-        public const double CountdownSeconds = 3d, RoundSeconds = 120d, ResultSeconds = 4d;
+        public const int PlayerCount = 4, BoxCount = 7, PreviewBoxCount = 5;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.Race2, 3);
+        public const double CountdownSeconds = 3d, ResultSeconds = 4d;
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Race2, 120d);
         public const double BaseSpeed = 5d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
         // Behind the rear camera as well as below its view, so recycling is never visible.
         public const double RecycleZ = -12d, CollisionHalfDepth = .85d;

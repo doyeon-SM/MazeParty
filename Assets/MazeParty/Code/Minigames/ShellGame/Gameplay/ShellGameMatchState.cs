@@ -51,7 +51,8 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
 
     public sealed class ShellGameMatchState
     {
-        public const int PlayerCount = 4, RoundCount = 5;
+        public const int PlayerCount = 4;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.ShellGame, 5);
         public const double CountdownSeconds = 3d, PreviewSeconds = 2d, LiftSeconds = .45d, ChoiceSeconds = 10d, ResultSeconds = 2d;
         private readonly int[] _choices = { -1, -1, -1, -1 };
         private readonly int[] _scores = new int[4];

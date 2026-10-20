@@ -61,6 +61,13 @@ namespace MazeParty.Multiplayer
                 return true;
             }
 
+            if (snapshot.recoveryVersion == MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings)
+            {
+                snapshot.gameSettings = MazeParty.Gameplay.Minigames.MatchGameSettings.Default.Encode();
+                snapshot.recoveryVersion = MatchRecoverySnapshot.CurrentRecoveryVersion;
+                return true;
+            }
+
             if (snapshot.recoveryVersion ==
                 MatchRecoverySnapshot.LegacyRecoveryVersionWithoutMines)
             {
@@ -82,6 +89,7 @@ namespace MazeParty.Multiplayer
             }
             if (snapshot.recoveryVersion != MatchRecoverySnapshot.LegacyRecoveryVersionWithoutChests)
                 return false;
+            snapshot.gameSettings = MazeParty.Gameplay.Minigames.MatchGameSettings.Default.Encode();
             snapshot.chests = new BoardChestSnapshot[BoardChestRules.Count];
             snapshot.recoveryVersion = MatchRecoverySnapshot.CurrentRecoveryVersion;
             return true;
@@ -103,6 +111,13 @@ namespace MazeParty.Multiplayer
 
         private static bool IsValid(MatchRecoverySnapshot snapshot)
         {
+            if (snapshot == null || !MazeParty.Gameplay.Minigames.MatchGameSettings.TryDecode(snapshot.gameSettings, out var settings) ||
+                settings.Turns != snapshot.scheduleTurnCount) return false;
+            if (snapshot.scheduleEntries != null)
+                foreach (var id in snapshot.scheduleEntries)
+                    if (id != (int)ScheduledMinigameId.Skip &&
+                        (id < 1 || id > MatchGameSettings.GameCount ||
+                         !settings.Get((ScheduledMinigameId)id).Included)) return false;
             if (snapshot == null ||
                 snapshot.recoveryVersion != MatchRecoverySnapshot.CurrentRecoveryVersion ||
                 !IsCheckpoint(snapshot.checkpoint) ||

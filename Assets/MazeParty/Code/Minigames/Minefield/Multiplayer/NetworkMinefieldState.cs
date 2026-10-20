@@ -1,4 +1,5 @@
 using System;
+using MazeParty.Gameplay.Minigames;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.Minefield;
@@ -34,7 +35,7 @@ namespace MazeParty.Multiplayer
         public const int GridHeight = 12;
         public const int MineCount = 30;
         public const double CountdownSeconds = 3d;
-        public const double RunSeconds = 40d;
+        public static double RunSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Minefield, 40d);
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 300f;
         public const float ArenaMinX = 293.33334f;

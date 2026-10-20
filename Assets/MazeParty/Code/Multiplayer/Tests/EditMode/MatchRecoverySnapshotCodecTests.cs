@@ -7,6 +7,39 @@ namespace MazeParty.Multiplayer.Tests
 {
     public sealed class MatchRecoverySnapshotCodecTests
     {
+
+        [Test]
+        public void CustomSettingsRoundTrip_RejectsMismatchedScheduleAndMissingPayload()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            var settings = MatchGameSettings.Default;
+            settings.TryChangeTurns(10, out settings);
+            settings.TryChangeGame(ScheduledMinigameId.Minefield, new MinigameSetting(false, 1, 30), out settings);
+            settings.TryChangeGame(ScheduledMinigameId.Flight, new MinigameSetting(true, 5, 180), out settings);
+            snapshot.gameSettings = settings.Encode();
+            snapshot.scheduleTurnCount = 10;
+            snapshot.remainingMinigameSlots = 9;
+            var schedule = HostMinigameSchedule.Create(123, 10, settings.IncludedGames());
+            snapshot.scheduleEntries = new int[10];
+            for (var i = 0; i < 10; i++) snapshot.scheduleEntries[i] = (int)schedule.GetMinigameForTurn(i + 1);
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.gameSettings, Is.EqualTo(settings.Encode()));
+            var entries = (int[])snapshot.scheduleEntries.Clone();
+            snapshot.scheduleEntries[0] = (int)ScheduledMinigameId.Minefield;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            snapshot.scheduleEntries = entries;
+            snapshot.gameSettings = MatchGameSettings.Default.Encode();
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            snapshot.gameSettings = string.Empty;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            snapshot = CreateValidSnapshot();
+            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings;
+            snapshot.gameSettings = string.Empty;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out restored), Is.True);
+            Assert.That(restored.gameSettings, Is.EqualTo(MatchGameSettings.Default.Encode()));
+        }
+
         [Test]
         public void RoundTrip_PreservesSafeCheckpointPayload()
         {
@@ -63,14 +96,13 @@ namespace MazeParty.Multiplayer.Tests
             var snapshot = CreateValidSnapshot();
             snapshot.catalogEntryCount = 2;
             snapshot.catalogFingerprint = MinigameCatalog.GetRecoveryFingerprint(2);
-            snapshot.scheduleTurnCount = 3;
-            snapshot.scheduleEntries = new[]
-            {
-                (int)MinigameCatalog.GetRegisteredGame(0),
-                (int)MinigameCatalog.GetRegisteredGame(1),
-                (int)ScheduledMinigameId.Skip
-            };
-            snapshot.remainingMinigameSlots = 2;
+            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings;
+            snapshot.gameSettings = string.Empty;
+            snapshot.scheduleTurnCount = 15;
+            snapshot.scheduleEntries = new int[15];
+            snapshot.scheduleEntries[0] = (int)MinigameCatalog.GetRegisteredGame(0);
+            snapshot.scheduleEntries[1] = (int)MinigameCatalog.GetRegisteredGame(1);
+            snapshot.remainingMinigameSlots = 14;
 
             Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.True);
 
@@ -383,6 +415,7 @@ namespace MazeParty.Multiplayer.Tests
 
             return new MatchRecoverySnapshot
             {
+                gameSettings = MatchGameSettings.Default.Encode(),
                 checkpoint = MatchRecoveryCheckpoint.TurnOverview,
                 turn = 2,
                 settledMinigameTurn = 1,

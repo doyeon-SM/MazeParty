@@ -8,7 +8,7 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
     {
         public const int PlayerCount = 4;
         public const int RoundCount = 1;
-        public const double RoundSeconds = 60d;
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.TerritoryPaint, 60d);
         public const int TotalScore = 1000;
         public const int SurfaceResolution = 96;
         public const byte UnpaintedOwner = byte.MaxValue;

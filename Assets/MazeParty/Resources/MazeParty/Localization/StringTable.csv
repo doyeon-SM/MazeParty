@@ -860,3 +860,22 @@ FLIGHT RESULTS,날기 결과,フライト結果,飞行结果
 "<sprite name=""ml"">  FLAP","<sprite name=""ml"">  날개짓","<sprite name=""ml"">  羽ばたく","<sprite name=""ml"">  振翅"
 Click to flap and glide through the gaps. Survive for up to two minutes; obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날개짓하며 장애물 사이를 통과하세요. 최대 2분 동안 생존하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。最大2分間生き残ろう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙，最多生存两分钟。障碍物会加速，碰撞或掉出屏幕下方即淘汰。
 {0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3},{0}위  {1}  생존 {2:0.00}초  골드 +{3},{0}位  {1}  生存 {2:0.00}秒  ゴールド +{3},第{0}名  {1}  生存 {2:0.00}秒  金币 +{3}
+Saving match settings...,경기 설정 저장 중...,ゲーム設定を保存中...,正在保存对局设置…
+Invalid match settings.,경기 설정을 확인해 주세요.,ゲーム設定を確認してください。,请检查对局设置。
+{0} turns,{0}턴,{0}ターン,{0}回合
+Selected {0} / {1} required,{0}개 선택 / 최소 {1}개,選択 {0} / 最低 {1},已选 {0} / 至少 {1}
+Map Turns,맵 턴 수,マップのターン数,地图回合数
+Minigame,미니게임,ミニゲーム,小游戏
+Include,포함,選択,包含
+Rounds,라운드 수,ラウンド数,轮数
+Round Time,라운드당 시간,ラウンド時間,每轮时间
+Fixed,고정,固定,固定
+{0}s,{0}초,{0}秒,{0}秒
+Select at least as many minigames as map turns.,맵 턴 수 이상으로 미니게임을 선택하세요.,マップのターン数以上のミニゲームを選んでください。,小游戏数量不能少于地图回合数。
+Click to flap and glide through the gaps. Obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.,"클릭해 날개짓하며 장애물 사이를 통과하세요. 장애물이 점점 빨라지며, 충돌하거나 화면 아래로 떨어지면 탈락합니다.",クリックで羽ばたき、隙間を通り抜けよう。障害物は加速し、衝突や画面下への落下で脱落。,点击振翅穿过空隙。障碍物会加速，碰撞或掉出屏幕下方即淘汰。
+Choose left with A or right with D to dodge boxes. Boxes speed up; one collision eliminates you.,"A로 왼쪽, D로 오른쪽을 선택해 상자를 피하세요. 상자가 점점 빨라지며 한 번 부딪히면 탈락합니다.",Aで左、Dで右を選んで箱を避けよう。箱は加速し、一度ぶつかると脱落。,A向左、D向右躲避箱子。箱子不断加速，碰撞一次即淘汰。
+Choose sit or stand secretly during the countdown. Only one sitting or standing scores 1 point. Click again to switch.,카운트다운 동안 남몰래 앉기 또는 서기를 선택하세요. 혼자 앉거나 혼자 서 있으면 1점입니다. 다시 클릭하면 전환합니다.,カウントダウン中に座るか立つかを秘密に選ぼう。一人だけ座るか立つと1点。再クリックで切り替え。,倒计时内秘密选择坐下或站立。只有一人坐下或站立时，该玩家得1分。再次点击可切换。
+"Collect falling coins and money. Coin +1, Money +5. Bombs stun for 1 second and drop half your score. Click to push.","떨어지는 코인과 돈을 주우세요. 코인은 1점, 돈은 5점입니다. 폭탄을 먹으면 1초 기절하고 점수 절반을 떨어뜨립니다. 클릭하면 밀기 공격을 합니다.",落ちるコインとお金を拾おう。コインは1点、お金は5点。爆弾は1秒気絶し得点の半分を落とす。クリックで押す。,拾取掉落的金币和钞票。金币加1分，钞票加5分。炸弹会眩晕1秒并掉落一半分数。点击推人。
+{0} rounds · {1}s per round,{0}라운드 · 라운드당 {1}초,{0}ラウンド · 各{1}秒,{0}轮 · 每轮{1}秒
+{0} rounds,{0}라운드,{0}ラウンド,{0}轮
+Round placement points: 3 / 2 / 1 / 0.,라운드 순위별 점수: 3 / 2 / 1 / 0점.,ラウンド順位点: 3 / 2 / 1 / 0。,每轮排名积分：3 / 2 / 1 / 0。

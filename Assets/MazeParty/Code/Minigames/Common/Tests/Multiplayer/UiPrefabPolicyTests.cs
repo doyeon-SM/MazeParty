@@ -35,6 +35,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchSettingsPanel.prefab",
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchMinigameRow.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ShellGame/UI/ShellGameHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab",
             "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
@@ -69,6 +71,8 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.MatchSettingsPanelBindings",
+            "MazeParty.Multiplayer.MatchMinigameRowBindings",
             "MazeParty.Multiplayer.ShellGameHudBindings",
             "MazeParty.Multiplayer.OddOneOutHudBindings",
             "MazeParty.Multiplayer.MinigameLocalPlayerHighlight",
@@ -472,6 +476,31 @@ namespace MazeParty.Multiplayer.Tests
                             actualPaths,
                             Does.Contain(expectedPath),
                             contract.Path);
+                    }
+
+                    if (contract.Path == OnlineBootstrapScenePath)
+                    {
+                        var settings = scene.GetRootGameObjects()
+                            .SelectMany(root => root.GetComponentsInChildren<MatchSettingsPanelBindings>(true)).Single();
+                        Assert.That(settings.HasRequiredReferences, Is.True);
+                        Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(settings.gameObject),
+                            Is.EqualTo("Assets/MazeParty/Prefabs/Multiplayer/UI/MatchSettingsPanel.prefab"));
+                        var settingsRows = settings.GetComponentsInChildren<MatchMinigameRowBindings>(true);
+                        Assert.That(settingsRows.Select(row => (int)row.Game).OrderBy(id => id),
+                            Is.EqualTo(Enumerable.Range(1, 20)));
+                        foreach (var row in settingsRows)
+                        {
+                            Assert.That(row.HasRequiredReferences, Is.True);
+                            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(row.gameObject),
+                                Is.EqualTo("Assets/MazeParty/Prefabs/Multiplayer/UI/MatchMinigameRow.prefab"));
+                        }
+                        var tower = scene.GetRootGameObjects()
+                            .SelectMany(root => root.GetComponentsInChildren<MinigameScheduleTowerView>(true)).Single();
+                        Assert.That(tower.HasRequiredReferences, Is.True);
+                        var scroll = tower.GetComponentInChildren<ScrollRect>(true);
+                        Assert.That(scroll.vertical && !scroll.horizontal, Is.True);
+                        Assert.That(scroll.verticalScrollbar, Is.Null);
+                        Assert.That(scroll.horizontalScrollbar, Is.Null);
                     }
 
                     var hitFlashPath = contract.Path switch

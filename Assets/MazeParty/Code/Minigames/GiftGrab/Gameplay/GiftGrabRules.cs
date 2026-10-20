@@ -11,8 +11,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
     public static class GiftGrabRules
     {
         public const int PlayerCount = 4;
-        public const int RoundCount = 2;
-        public const double RoundSeconds = 60d;
+        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.GiftGrab, 2);
+        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.GiftGrab, 60d);
 
         public const int InitialGiftCount = 5;
         public const int SpawnBatchSize = 3;

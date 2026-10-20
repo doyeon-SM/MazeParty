@@ -37,7 +37,7 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
         public const float ArenaHalfExtent = 9f;
 
         public static double MatchDurationSeconds =>
-            BoardCombatRules.FightDurationSeconds;
+            MinigameRuntimeSettings.Seconds(ScheduledMinigameId.ArenaCombat, BoardCombatRules.FightDurationSeconds);
 
         public static bool IsValidSlot(int slot)
         {
