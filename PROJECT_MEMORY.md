@@ -7,10 +7,10 @@
 ## 기준과 참조
 
 - 실제 Git·Unity 프로젝트: `C:/Unity/MazeParty`. 현재 브랜치 `development`, 안정 기준 `main`.
-- 최신 구현 커밋: `4c1579f3111f167bc7b2d2dfa1039031e089ce3d` — 맵·미니게임 설정 및 스크롤 탑. 날기는 `c62cfecee328ac761d58b37ba82fc81f5720d0c0`에 커밋 완료. 기획 v0.56·런타임 0.0.56.
-- 10/20 요청으로 최신 기획·구현·검증을 Notion 14개 페이지와 기존 일일 회의록에 반영했다.
+- 최신 구현 커밋: `624c913cf421525c57423860960dbb6063e55aa9` — 입장·맵 준비 로딩. 보드 지도/HUD·탑뷰 슬롯·번역은 `877c036b0c3d3988280efd65ec29f48d6232ec2d`, 격투 HP/VFX·최종 피격 정정·정산 카메라 투과는 `ff538d8b078854b2825d74af439ffccd60bdee1e`에 포함됐다. 기획 v0.56·런타임 0.0.56.
+- 10/21 요청으로 기획서·세부 룰·미니게임·격투·입장/복구 흐름·구현 이력·맵 제작 설명서·완성 TODO·QA 등 Notion 9개 문서를 갱신하고 오늘 회의록 1개를 작성했다. 최종 기획, 성공 커밋 3건의 해시/제목/본문/실제 변경과 표적 검증·실기 미검증 범위를 저장 후 재조회해 확인했다.
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026)
-- [10/20 회의록](https://app.notion.com/p/3fec227fda0381d0a941d32e598dcb8d) · [10/19 회의록](https://app.notion.com/p/3fdc227fda0381e8a212dcfd9a1011cb)
+- [10/21 회의록](https://app.notion.com/p/3ffc227fda0381d5a2f1c8a03deb1617) · [10/20 회의록](https://app.notion.com/p/3fec227fda0381d0a941d32e598dcb8d) · [10/19 회의록](https://app.notion.com/p/3fdc227fda0381e8a212dcfd9a1011cb)
 - [출시 계획](https://app.notion.com/p/3fbc227fda0381edbfa1d43003e1b92f) · [STOVE](https://app.notion.com/p/3fdc227fda0381a5810eea5bb10e94a5) · [Steam](https://app.notion.com/p/3fdc227fda0381c99710ce09c64e3849) · [공통 준비·도전과제](https://app.notion.com/p/3fdc227fda03812fb239c2aecec78bfe)
 
 ## 현재 경기·설정
