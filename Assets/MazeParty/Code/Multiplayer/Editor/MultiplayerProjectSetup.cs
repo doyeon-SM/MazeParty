@@ -982,6 +982,7 @@ namespace MazeParty.Editor
 
             var sessionController = runtime.AddComponent<OnlineSessionController>();
             sessionController.ConfigureSceneReferences(camera, light, lobbyView);
+            OnlineLoadingProjectSetup.EnsureSceneInstance(scene, sessionController);
 
             EditorSceneManager.SaveScene(scene, BootstrapPath);
         }

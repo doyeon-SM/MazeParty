@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Multiplayer/UI/OnlineLoadingCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHealthBar.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchSettingsPanel.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchMinigameRow.prefab",
@@ -72,6 +73,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.OnlineLoadingView",
             "MazeParty.Multiplayer.ArenaCombatHealthBarView",
             "MazeParty.Multiplayer.MatchSettingsPanelBindings",
             "MazeParty.Multiplayer.MatchMinigameRowBindings",
@@ -131,6 +133,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Multiplayer/OnlineBootstrap.unity",
+                "Assets/MazeParty/Prefabs/Multiplayer/UI/OnlineLoadingCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/LobbyCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/MinigameScheduleTower.prefab",
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
@@ -482,6 +485,13 @@ namespace MazeParty.Multiplayer.Tests
 
                     if (contract.Path == OnlineBootstrapScenePath)
                     {
+                        var loading = scene.GetRootGameObjects()
+                            .SelectMany(root => root.GetComponentsInChildren<OnlineLoadingView>(true)).Single();
+                        var controller = scene.GetRootGameObjects()
+                            .SelectMany(root => root.GetComponentsInChildren<OnlineSessionController>(true)).Single();
+                        Assert.That(loading.HasRequiredReferences, Is.True);
+                        Assert.That(new SerializedObject(controller).FindProperty("loadingView").objectReferenceValue,
+                            Is.SameAs(loading), "The persistent controller must own the authored loading view.");
                         var settings = scene.GetRootGameObjects()
                             .SelectMany(root => root.GetComponentsInChildren<MatchSettingsPanelBindings>(true)).Single();
                         Assert.That(settings.HasRequiredReferences, Is.True);

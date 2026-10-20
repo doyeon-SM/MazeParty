@@ -351,6 +351,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             (_identity as IPlatformIdentityProvider)?.Tick();
+            RefreshLoadingPresentation();
             if (_applicationQuitting)
             {
                 return;
@@ -427,6 +428,7 @@ namespace MazeParty.Multiplayer
         private void OnDestroy()
         {
             _destroyed = true;
+            loadingView?.SetVisible(false);
             (_identity as IPlatformIdentityProvider)?.Dispose();
             _sessionOperations.BecameIdle -= OnSessionOperationsBecameIdle;
             ResetCompletedMatchLobbyReturnState();

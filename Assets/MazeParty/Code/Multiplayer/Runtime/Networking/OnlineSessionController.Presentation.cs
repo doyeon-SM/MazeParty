@@ -112,6 +112,7 @@ namespace MazeParty.Multiplayer
 
         private void RenderLobby()
         {
+            RefreshLoadingPresentation();
             if (_statusUsesLocalization)
             {
                 _status = _localizedStatus.Resolve();
