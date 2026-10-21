@@ -29,7 +29,8 @@ namespace MazeParty.Gameplay.Minigames
             float phaseDurationSeconds,
             string sceneName,
             Color towerColor,
-            int recoveryCompatibilityVersion = 1)
+            int recoveryCompatibilityVersion = 1,
+            bool hasRoundTimeLimit = true)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -63,14 +64,26 @@ namespace MazeParty.Gameplay.Minigames
             SceneName = sceneName;
             TowerColor = towerColor;
             RecoveryCompatibilityVersion = recoveryCompatibilityVersion;
+            HasRoundTimeLimit = hasRoundTimeLimit;
+            // Lobby limits use the existing 15-second grid. Phase/fuse metadata
+            // is kept distinct from a configurable round deadline.
+            var authoredSeconds = (int)phaseDurationSeconds;
+            DefaultOnlineSetting = new MinigameSetting(true, Math.Min(5, roundCount),
+                hasRoundTimeLimit ? Math.Max(30, ((authoredSeconds + 7) / 15) * 15) : 0);
+            MaximumOnlineSeconds = hasRoundTimeLimit ? ((authoredSeconds + 60) / 15) * 15 : 0;
         }
 
+        public int AuthoredRoundCount => _authoredRoundCount;
+        public double AuthoredPhaseDurationSeconds => _authoredPhaseDurationSeconds;
+        public bool HasRoundTimeLimit { get; }
+        public MinigameSetting DefaultOnlineSetting { get; }
+        public int MaximumOnlineSeconds { get; }
         public ScheduledMinigameId Id { get; }
         public string DisplayName { get; }
         private readonly int _authoredRoundCount;
-        public int RoundCount => MinigameRuntimeSettings.Rounds(Id, _authoredRoundCount);
+        public int RoundCount => _authoredRoundCount;
         private readonly float _authoredPhaseDurationSeconds;
-        public float PhaseDurationSeconds => (float)MinigameRuntimeSettings.Seconds(Id, _authoredPhaseDurationSeconds);
+        public float PhaseDurationSeconds => _authoredPhaseDurationSeconds;
         public string SceneName { get; }
         public Color TowerColor { get; }
         public int RecoveryCompatibilityVersion { get; }
@@ -152,7 +165,7 @@ namespace MazeParty.Gameplay.Minigames
                 10,
                 (float)SequenceMemoryRules.InputWindowSeconds,
                 "SequenceMemory",
-                new Color(0.48f, 0.36f, 0.94f, 1f)),
+                new Color(0.48f, 0.36f, 0.94f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(
                 ScheduledMinigameId.BouncingBalls,
                 GameText.N("BOUNCING BALLS"),
@@ -167,7 +180,7 @@ namespace MazeParty.Gameplay.Minigames
                 // Metadata only: one bomb's maximum fuse, not a match limit.
                 (float)BombPassingRules.MaximumFuseSeconds,
                 "BombPassing",
-                new Color(0.95f, 0.55f, 0.11f, 1f)),
+                new Color(0.95f, 0.55f, 0.11f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(
                 ScheduledMinigameId.SnowySpin,
                 GameText.N("SNOWY SPIN"),
@@ -195,11 +208,11 @@ namespace MazeParty.Gameplay.Minigames
                 2, 60f, "CoinCollect",
                 new Color(1f, 0.78f, 0.16f, 1f)),
             new MinigameDefinition(ScheduledMinigameId.OddOneOut, GameText.N("ODD ONE OUT"),
-                10, 3f, "OddOneOut", new Color(.65f, .38f, .95f, 1f)),
+                10, 3f, "OddOneOut", new Color(.65f, .38f, .95f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(ScheduledMinigameId.Race2, GameText.N("RACE 2"),
                 3, 120f, "Race2", new Color(.25f, .7f, .95f, 1f)),
             new MinigameDefinition(ScheduledMinigameId.ShellGame, GameText.N("SHELL GAME"),
-                5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f)),
+                5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(ScheduledMinigameId.Flight, GameText.N("FLIGHT"),
                 1, 120f, "Flight", new Color(.3f, .8f, 1f, 1f))
         };
@@ -218,10 +231,9 @@ namespace MazeParty.Gameplay.Minigames
                     : GameText.N("UNKNOWN");
         }
 
-        public static string GetDescription(ScheduledMinigameId minigame)
+        public static string GetDescription(ScheduledMinigameId minigame, MatchGameSettings settings = null)
         {
             var description = GameText.T(GetDescriptionSource(minigame));
-            var settings = MinigameRuntimeSettings.Current;
             if (settings == null || !IsRegistered(minigame)) return description;
             var value = settings.Get(minigame);
             var summary = MatchGameSettings.HasTimeLimit(minigame)
@@ -403,17 +415,17 @@ namespace MazeParty.Gameplay.Minigames
                 StringComparison.Ordinal);
         }
 
-        public static int GetRoundCount(ScheduledMinigameId minigame)
+        public static int GetRoundCount(ScheduledMinigameId minigame, MatchGameSettings settings = null)
         {
             return TryGetDefinition(minigame, out var definition)
-                ? definition.RoundCount
+                ? settings?.Get(minigame).Rounds ?? definition.RoundCount
                 : 0;
         }
 
-        internal static float GetPhaseDurationSeconds(ScheduledMinigameId minigame)
+        internal static float GetPhaseDurationSeconds(ScheduledMinigameId minigame, MatchGameSettings settings = null)
         {
             return TryGetDefinition(minigame, out var definition)
-                ? definition.PhaseDurationSeconds
+                ? (float)MinigameRulesConfig.FromMatch(minigame, settings).Seconds
                 : 0f;
         }
 

@@ -18,10 +18,6 @@ namespace MazeParty.Gameplay.Minigames
     public sealed class MatchGameSettings
     {
         public const int GameCount = 20;
-        private static readonly int[] DefaultRounds = { 3,2,3,3,3,2,1,4,3,5,2,1,3,1,3,2,5,3,5,1 };
-        // Actual round limits, not catalog phase/fuse metadata. Minefield's authored 40s
-        // becomes 45s on the 15s grid; its upper bound remains <= authored limit + 60.
-        private static readonly int[] BaseSeconds = { 40,60,60,60,30,60,60,60,60,0,60,0,60,60,60,60,0,120,0,120 };
         private readonly MinigameSetting[] _games;
         public int Turns { get; }
         public int IncludedCount { get; }
@@ -30,16 +26,13 @@ namespace MazeParty.Gameplay.Minigames
             Turns = turns; _games = (MinigameSetting[])games.Clone();
             foreach (var game in _games) if (game.Included) IncludedCount++;
         }
-        public static MatchGameSettings Default
+        public static MatchGameSettings Default { get; } = CreateDefault();
+        private static MatchGameSettings CreateDefault()
         {
-            get
-            {
-                var games = new MinigameSetting[GameCount];
-                for (var i = 0; i < GameCount; i++)
-                    games[i] = new MinigameSetting(true, DefaultRounds[i],
-                        BaseSeconds[i] == 0 ? 0 : Math.Max(30, ((BaseSeconds[i] + 7) / 15) * 15));
-                return new MatchGameSettings(15, games);
-            }
+            var games = new MinigameSetting[GameCount];
+            foreach (var definition in MinigameCatalog.RegisteredMinigames)
+                games[(int)definition.Id - 1] = definition.DefaultOnlineSetting;
+            return new MatchGameSettings(15, games);
         }
         public MinigameSetting Get(ScheduledMinigameId id)
         {
@@ -48,9 +41,9 @@ namespace MazeParty.Gameplay.Minigames
             return _games[index];
         }
         public static bool HasTimeLimit(ScheduledMinigameId id) =>
-            (int)id >= 1 && (int)id <= GameCount && BaseSeconds[(int)id - 1] > 0;
+            MinigameCatalog.TryGetDefinition(id, out var definition) && definition.HasRoundTimeLimit;
         public static int MaximumSeconds(ScheduledMinigameId id) =>
-            HasTimeLimit(id) ? ((BaseSeconds[(int)id - 1] + 60) / 15) * 15 : 0;
+            MinigameCatalog.TryGetDefinition(id, out var definition) ? definition.MaximumOnlineSeconds : 0;
         public bool TryChangeTurns(int turns, out MatchGameSettings updated)
         {
             updated = this;
@@ -107,26 +100,4 @@ namespace MazeParty.Gameplay.Minigames
         }
     }
 
-    /// <summary>
-    /// One immutable rules snapshot for this Unity process's active match. Owned by
-    /// NetworkMatchState; cleared on despawn. Pure simulations and Solo retain authored
-    /// rules when no online match owns this context. Never populated from lobby drafts.
-    /// </summary>
-    public static class MinigameRuntimeSettings
-    {
-        private static object _owner;
-        public static MatchGameSettings Current { get; private set; }
-        public static void Bind(object owner, MatchGameSettings settings)
-        {
-            if (owner == null || settings == null) throw new ArgumentNullException();
-            if (_owner != null && !ReferenceEquals(owner, _owner))
-                throw new InvalidOperationException("Another match owns the minigame rules.");
-            _owner = owner; Current = settings;
-        }
-        public static void Release(object owner)
-        { if (ReferenceEquals(owner, _owner)) { _owner = null; Current = null; } }
-        public static int Rounds(ScheduledMinigameId id, int authored) => Current?.Get(id).Rounds ?? authored;
-        public static double Seconds(ScheduledMinigameId id, double authored) =>
-            Current != null && MatchGameSettings.HasTimeLimit(id) ? Current.Get(id).Seconds : authored;
-    }
 }

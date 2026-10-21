@@ -55,6 +55,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
 
     public sealed class BalloonBlowPlayerRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double TimeEpsilon = 0.000000001d;
         private const double ProgressEpsilon = 0.000001d;
 
@@ -66,8 +67,9 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         private bool _requiresReleaseToRearm;
         private bool _isRecoveringFromOverhold;
 
-        internal BalloonBlowPlayerRoundState(int playerSlot)
+        internal BalloonBlowPlayerRoundState(int playerSlot, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.BalloonBlow, rules);
             PlayerSlot = playerSlot;
             Phase = BalloonBlowPlayerPhase.Ready;
         }
@@ -224,10 +226,10 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                 ? BalloonBlowRoundOutcome.Popped(
                     PlayerSlot,
                     PoppedAtSeconds,
-                    PopOrder)
+                    PopOrder, rules: _rules)
                 : BalloonBlowRoundOutcome.Incomplete(
                     PlayerSlot,
-                    ProgressPercent);
+                    ProgressPercent, rules: _rules);
         }
 
         private void ForceStopForOverhold()
@@ -308,14 +310,16 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
     /// </summary>
     public sealed class BalloonBlowRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double TimeEpsilon = 0.000000001d;
 
         private readonly BalloonBlowPlayerRoundState[] _players;
         private ulong _nextServerEventOrder = 1UL;
 
-        public BalloonBlowRoundState(int roundNumber)
+        public BalloonBlowRoundState(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            BalloonBlowRules.ValidateRoundNumber(roundNumber);
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.BalloonBlow, rules);
+            BalloonBlowRules.ValidateRoundNumber(roundNumber, rules: _rules);
             RoundNumber = roundNumber;
             _players = new BalloonBlowPlayerRoundState[
                 BalloonBlowRules.PlayerCount];
@@ -324,7 +328,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                  playerSlot++)
             {
                 _players[playerSlot] =
-                    new BalloonBlowPlayerRoundState(playerSlot);
+                    new BalloonBlowPlayerRoundState(playerSlot, rules: _rules);
             }
         }
 
@@ -420,7 +424,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
 
             var targetSeconds = Math.Min(
                 activeElapsedSeconds,
-                BalloonBlowRules.RoundSeconds);
+                _rules.Seconds);
             if (targetSeconds < ElapsedSeconds)
             {
                 targetSeconds = ElapsedSeconds;
@@ -447,7 +451,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                 ElapsedSeconds = completedAtSeconds;
                 Complete(BalloonBlowRoundEndReason.AllPopped);
             }
-            else if (targetSeconds >= BalloonBlowRules.RoundSeconds)
+            else if (targetSeconds >= _rules.Seconds)
             {
                 Complete(BalloonBlowRoundEndReason.TimeLimit);
             }

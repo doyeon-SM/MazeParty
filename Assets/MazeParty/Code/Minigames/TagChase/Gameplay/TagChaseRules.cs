@@ -25,8 +25,8 @@ namespace MazeParty.Gameplay.Minigames.TagChase
     public static class TagChaseRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.TagChase, 4);
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.TagChase, 60d);
+        public const int RoundCount = 4;
+        public const double RoundSeconds = 60d;
         public const int TaggerWinPoints = 3;
         public const int TaggerLossPoints = 0;
         public const int RunnerSurvivalPoints = 2;

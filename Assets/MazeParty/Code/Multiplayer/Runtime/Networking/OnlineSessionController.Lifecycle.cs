@@ -111,7 +111,7 @@ namespace MazeParty.Multiplayer
             }
 
             SessionLifecycleState next;
-            if (_completedMatchLobbyReturnInProgress)
+            if (_lobbyReturn.LobbyReturnInProgress)
             {
                 next = SessionLifecycleState.ReturningToLobby;
             }

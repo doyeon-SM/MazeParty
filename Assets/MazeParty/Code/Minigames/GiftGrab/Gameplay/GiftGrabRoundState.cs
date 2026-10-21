@@ -513,14 +513,16 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
     /// </summary>
     public sealed class GiftGrabRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double TimeEpsilon = 0.000000001d;
 
         private readonly GiftGrabPlayerRoundState[] _players;
         private readonly GiftGrabGiftRoundState[] _gifts;
 
-        public GiftGrabRoundState(int roundNumber)
+        public GiftGrabRoundState(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            GiftGrabRules.ValidateRoundNumber(roundNumber);
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.GiftGrab, rules);
+            GiftGrabRules.ValidateRoundNumber(roundNumber, rules: _rules);
             RoundNumber = roundNumber;
 
             _players = new GiftGrabPlayerRoundState[
@@ -594,7 +596,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
 
             var targetSeconds = Math.Min(
                 activeElapsedSeconds,
-                GiftGrabRules.RoundSeconds);
+                _rules.Seconds);
             if (targetSeconds < ElapsedSeconds)
             {
                 targetSeconds = ElapsedSeconds;
@@ -618,7 +620,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
 
             SpawnedGiftCount = targetGiftCount;
             ElapsedSeconds = targetSeconds;
-            if (ElapsedSeconds >= GiftGrabRules.RoundSeconds)
+            if (ElapsedSeconds >= _rules.Seconds)
             {
                 Complete(GiftGrabRoundEndReason.TimeLimit);
             }

@@ -11,8 +11,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
     public static class GiftGrabRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.GiftGrab, 2);
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.GiftGrab, 60d);
+        public const int RoundCount = 2;
+        public const double RoundSeconds = 60d;
 
         public const int InitialGiftCount = 5;
         public const int SpawnBatchSize = 3;
@@ -95,9 +95,10 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 (completedBatches * SpawnBatchSize);
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.GiftGrab, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -336,14 +337,15 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
     public static class GiftGrabMatchScoring
     {
         public static IReadOnlyList<GiftGrabLeaderboardEntry>
-            BuildLeaderboard(IReadOnlyList<GiftGrabRoundResult> rounds)
+            BuildLeaderboard(IReadOnlyList<GiftGrabRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.GiftGrab, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != GiftGrabRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly two rounds.",
@@ -374,7 +376,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     totalPoints[standing.PlayerSlot] += standing.Points;
                     totalStoredGiftCounts[standing.PlayerSlot] +=
                         standing.StoredGiftCount;
-                    if (roundIndex == GiftGrabRules.RoundCount - 1)
+                    if (roundIndex == configuration.Rounds - 1)
                     {
                         finalRoundRanks[standing.PlayerSlot] =
                             standing.Rank;

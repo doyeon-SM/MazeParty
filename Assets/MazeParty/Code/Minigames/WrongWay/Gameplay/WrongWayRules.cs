@@ -11,9 +11,9 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
     {
         public const int PlayerCount = 4;
         public const int StepCount = 50;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.WrongWay, 2);
+        public const int RoundCount = 2;
         public const double CountdownSeconds = 3d;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.WrongWay, 60d);
+        public const double RoundSeconds = 60d;
         public const double IncorrectInputLockSeconds = 0.5d;
 
         public static int GetPointsForRank(int rank)
@@ -34,9 +34,10 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
             return playerSlot >= 0 && playerSlot < PlayerCount;
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.WrongWay, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -255,9 +256,9 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
     /// </summary>
     public static class WrongWayPromptGenerator
     {
-        public static ulong DeriveRoundSeed(ulong serverSeed, int roundNumber)
+        public static ulong DeriveRoundSeed(ulong serverSeed, int roundNumber, MinigameRulesConfig? rules = null)
         {
-            WrongWayRules.ValidateRoundNumber(roundNumber);
+            WrongWayRules.ValidateRoundNumber(roundNumber, rules: rules);
             var mixer = new SplitMix64(
                 serverSeed ^
                 unchecked(0xD1B54A32D192ED03UL * (ulong)roundNumber));
@@ -266,11 +267,11 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
 
         public static WrongWayDirection[] Generate(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            WrongWayRules.ValidateRoundNumber(roundNumber);
+            WrongWayRules.ValidateRoundNumber(roundNumber, rules: rules);
             var random = new SplitMix64(
-                DeriveRoundSeed(serverSeed, roundNumber));
+                DeriveRoundSeed(serverSeed, roundNumber, rules: rules));
             var prompts =
                 new WrongWayDirection[WrongWayRules.StepCount];
 
@@ -543,14 +544,15 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
     {
         public static IReadOnlyList<WrongWayLeaderboardEntry>
             BuildLeaderboard(
-                IReadOnlyList<WrongWayRoundResult> rounds)
+                IReadOnlyList<WrongWayRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.WrongWay, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != WrongWayRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly two rounds.",
@@ -587,7 +589,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
                     totalSteps[standing.PlayerSlot] +=
                         standing.CompletedSteps;
 
-                    if (roundIndex == WrongWayRules.RoundCount - 1)
+                    if (roundIndex == configuration.Rounds - 1)
                     {
                         secondRoundRanks[standing.PlayerSlot] =
                             standing.Rank;

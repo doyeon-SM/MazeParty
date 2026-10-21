@@ -41,9 +41,9 @@ namespace MazeParty.Gameplay.Minigames.Race
     public static class RaceRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.Race, 3);
+        public const int RoundCount = 3;
         public const int RequiredSteps = 200;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Race, 60d);
+        public const double RoundSeconds = 60d;
 
         public static bool IsValidPlayerSlot(int slot)
         {

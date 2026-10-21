@@ -147,6 +147,16 @@ namespace MazeParty.Multiplayer
             new List<BoardTile>();
         private readonly List<BoardTile> _choicePrimaryRoute =
             new List<BoardTile>();
+        private readonly BoardMapRoute.DestinationIndex _routesToDestination;
+        private readonly List<BoardTile> _preferredReturn = new List<BoardTile>();
+        private readonly Dictionary<BoardTile, BoardTile[]> _destinations =
+            new Dictionary<BoardTile, BoardTile[]>();
+        private readonly HashSet<BoardRouteChoice> _visibleEdges = new HashSet<BoardRouteChoice>();
+        private readonly List<BoardRouteChoice> _cachedChoices = new List<BoardRouteChoice>();
+        private readonly List<CandidateRoute> _compatibleRoutes = new List<CandidateRoute>();
+        private readonly List<int> _choiceEndNodes = new List<int>();
+        private bool _choiceCacheValid;
+        private CandidateRoute _cachedPrimaryRoute;
         private readonly BoardTopology _topology;
         private readonly BoardTile _primaryDestination;
 
@@ -209,11 +219,9 @@ namespace MazeParty.Multiplayer
             _primaryDestination = primaryDestination;
             if (primaryDestination != null)
             {
-                BoardMapRoute.TryFind(
-                    topology,
-                    turnOrigin,
-                    primaryDestination,
-                    _primaryRoute);
+                _routesToDestination = new BoardMapRoute.DestinationIndex(topology, primaryDestination);
+                FindPreferredReturn();
+                _routesToDestination.TryFind(turnOrigin, _primaryRoute);
                 ExtendPreferredRoute(_primaryRoute);
             }
             var path = new List<RouteNode>
@@ -239,14 +247,8 @@ namespace MazeParty.Multiplayer
         public int GetCompatibleRouteCount(
             IReadOnlyList<BoardRouteChoice> choices)
         {
-            var count = 0;
-            for (var index = 0; index < _routes.Count; index++)
-            {
-                if (IsCompatible(_routes[index], choices))
-                    count++;
-            }
-
-            return count;
+            EnsureChoiceCache(choices);
+            return _compatibleRoutes.Count;
         }
 
         /// <summary>
@@ -263,12 +265,11 @@ namespace MazeParty.Multiplayer
 
             destination.Clear();
             _visibleSteps.Clear();
-            var choicePrimaryRoute = ResolveChoicePrimaryRoute(choices);
-            for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
+            EnsureChoiceCache(choices);
+            var choicePrimaryRoute = _cachedPrimaryRoute;
+            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
             {
-                var route = _routes[routeIndex];
-                if (!IsCompatible(route, choices))
-                    continue;
+                var route = _compatibleRoutes[routeIndex];
 
                 for (var step = 0; step < route.Nodes.Length; step++)
                 {
@@ -320,12 +321,11 @@ namespace MazeParty.Multiplayer
             if (destination == null)
                 throw new ArgumentNullException(nameof(destination));
             destination.Clear();
-            var seen = new HashSet<BoardRouteChoice>();
-            for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
+            EnsureChoiceCache(choices);
+            _visibleEdges.Clear();
+            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
             {
-                var route = _routes[routeIndex];
-                if (!IsCompatible(route, choices))
-                    continue;
+                var route = _compatibleRoutes[routeIndex];
                 for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
                 {
                     if (StartingStep + edge < consumedStep)
@@ -333,7 +333,7 @@ namespace MazeParty.Multiplayer
                     var choice = new BoardRouteChoice(
                         route.Nodes[edge].Tile.Coordinate,
                         route.Nodes[edge + 1].Tile.Coordinate);
-                    if (seen.Add(choice))
+                    if (_visibleEdges.Add(choice))
                         destination.Add(choice);
                 }
             }
@@ -358,7 +358,8 @@ namespace MazeParty.Multiplayer
             if (destination == null)
                 throw new ArgumentNullException(nameof(destination));
             destination.Clear();
-            var route = ResolveChoicePrimaryRoute(choices);
+            EnsureChoiceCache(choices);
+            var route = _cachedPrimaryRoute;
             if (route == null) return 0;
             for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
             {
@@ -382,25 +383,17 @@ namespace MazeParty.Multiplayer
                 if (!_topology.TryGetTile(
                         choices[choiceCount - 1].Destination,
                         out var current) || current == null ||
-                    !BoardMapRoute.TryFind(
-                        _topology, current, _primaryDestination,
-                        _choicePrimaryRoute))
+                    !_routesToDestination.TryFind(current, _choicePrimaryRoute))
                     return null;
                 ExtendPreferredRoute(_choicePrimaryRoute);
                 preferred = _choicePrimaryRoute;
             }
             CandidateRoute best = null;
             var bestPrefixLength = -1;
-            for (var routeIndex = 0; routeIndex < _routes.Count; routeIndex++)
+            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
             {
-                var route = _routes[routeIndex];
-                if (!TryGetChoiceEndNodeIndex(
-                        route,
-                        choices,
-                        out var choiceEndNode))
-                {
-                    continue;
-                }
+                var route = _compatibleRoutes[routeIndex];
+                var choiceEndNode = _choiceEndNodes[routeIndex];
 
                 var prefixLength = 0;
                 while (choiceEndNode + prefixLength < route.Nodes.Length &&
@@ -421,33 +414,63 @@ namespace MazeParty.Multiplayer
             return best;
         }
 
+        private void FindPreferredReturn()
+        {
+            var candidate = new List<BoardTile>();
+            foreach (var next in GetDestinations(_primaryDestination))
+            {
+                if (!_routesToDestination.TryFind(next, candidate) || candidate.Count == 0) continue;
+                if (_preferredReturn.Count > 0 && candidate.Count >= _preferredReturn.Count) continue;
+                _preferredReturn.Clear();
+                _preferredReturn.AddRange(candidate);
+            }
+        }
+
         private void ExtendPreferredRoute(List<BoardTile> route)
         {
-            if (route.Count == 0 || _primaryDestination == null)
-                return;
+            if (route.Count == 0 || _preferredReturn.Count == 0) return;
             var maximumNodes = MaximumStep - StartingStep + 1;
-            while (route.Count < maximumNodes &&
-                   route[route.Count - 1] == _primaryDestination)
+            while (route.Count < maximumNodes && route[route.Count - 1] == _primaryDestination)
+                for (var index = 0; index < _preferredReturn.Count && route.Count < maximumNodes; index++)
+                    route.Add(_preferredReturn[index]);
+        }
+
+        private void EnsureChoiceCache(IReadOnlyList<BoardRouteChoice> choices)
+        {
+            var count = choices != null ? choices.Count : 0;
+            var unchanged = _choiceCacheValid && count == _cachedChoices.Count;
+            for (var i = 0; unchanged && i < count; i++)
+                unchanged = choices[i].Equals(_cachedChoices[i]);
+            if (unchanged) return;
+
+            // Copy values: callers can append, replace or clear the same list in place.
+            _cachedChoices.Clear();
+            for (var i = 0; i < count; i++) _cachedChoices.Add(choices[i]);
+            _compatibleRoutes.Clear();
+            _choiceEndNodes.Clear();
+            foreach (var route in _routes)
             {
-                var outgoing = _topology.GetOutgoingGates(_primaryDestination);
-                List<BoardTile> bestReturn = null;
-                for (var index = 0; index < outgoing.Count; index++)
-                {
-                    var next = outgoing[index]?.Destination;
-                    if (next == null) continue;
-                    var candidate = new List<BoardTile>();
-                    if (!BoardMapRoute.TryFind(
-                            _topology, next, _primaryDestination,
-                            candidate) || candidate.Count == 0)
-                        continue;
-                    if (bestReturn == null || candidate.Count < bestReturn.Count)
-                        bestReturn = candidate;
-                }
-                if (bestReturn == null) break;
-                for (var index = 0; index < bestReturn.Count &&
-                                    route.Count < maximumNodes; index++)
-                    route.Add(bestReturn[index]);
+                if (!TryGetChoiceEndNodeIndex(route, _cachedChoices, out var end)) continue;
+                _compatibleRoutes.Add(route);
+                _choiceEndNodes.Add(end);
             }
+            _cachedPrimaryRoute = ResolveChoicePrimaryRoute(_cachedChoices);
+            _choiceCacheValid = true;
+        }
+
+        private BoardTile[] GetDestinations(BoardTile tile)
+        {
+            if (_destinations.TryGetValue(tile, out var cached)) return cached;
+            var destinations = new List<BoardTile>();
+            var outgoing = _topology.GetOutgoingGates(tile);
+            for (var i = 0; i < outgoing.Count; i++)
+            {
+                var next = outgoing[i]?.Destination;
+                if (next != null && !destinations.Contains(next)) destinations.Add(next);
+            }
+            cached = destinations.ToArray();
+            _destinations.Add(tile, cached);
+            return cached;
         }
 
         private void Enumerate(
@@ -462,28 +485,22 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            var outgoing = topology.GetOutgoingGates(current);
-            var destinations = new HashSet<BoardTile>();
+            var destinations = GetDestinations(current);
             var extended = false;
             var routeStep = path.Count - 1;
             var preferredDestination = routeStep < _primaryRoute.Count - 1 &&
                                        _primaryRoute[routeStep] == current
                 ? _primaryRoute[routeStep + 1]
                 : null;
-            for (var gateIndex = 0; gateIndex < outgoing.Count; gateIndex++)
+            for (var gateIndex = 0; gateIndex < destinations.Length; gateIndex++)
             {
-                var destination = outgoing[gateIndex]?.Destination;
-                if (destination == null ||
-                    !destinations.Add(destination))
-                {
-                    continue;
-                }
+                var destination = destinations[gateIndex];
 
                 extended = true;
                 var destinationIsBranch = isBranch ||
                     (preferredDestination != null
                         ? destination != preferredDestination
-                        : destinations.Count > 1);
+                        : gateIndex > 0);
                 path.Add(new RouteNode(destination, destinationIsBranch));
                 Enumerate(
                     topology,
@@ -497,12 +514,7 @@ namespace MazeParty.Multiplayer
                 _routes.Add(new CandidateRoute(path.ToArray()));
         }
 
-        private static bool IsCompatible(
-            CandidateRoute route,
-            IReadOnlyList<BoardRouteChoice> choices)
-        {
-            return TryGetChoiceEndNodeIndex(route, choices, out _);
-        }
+
 
         private static bool TryGetChoiceEndNodeIndex(
             CandidateRoute route,

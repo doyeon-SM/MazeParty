@@ -5,8 +5,8 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
     public static class CliffBarrageRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.CliffBarrage, 3);
-        public static double RoundDurationSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.CliffBarrage, 60d);
+        public const int RoundCount = 3;
+        public const double RoundDurationSeconds = 60d;
         public const double CountdownSeconds = 3d;
         public const double ResultSeconds = 4d;
         public const int SimulationHz = 60;

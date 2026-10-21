@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
 using Unity.Collections;
@@ -24,6 +25,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkSequenceMemoryState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.SequenceMemory, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<bool> _matchActive =
             CreateBoolVariable();
         private readonly NetworkVariable<bool> _paused =
@@ -178,7 +181,7 @@ namespace MazeParty.Multiplayer
 
             ClearLocalRuntime();
             ResetReplicatedStateOnServer();
-            _serverMatch = new SequenceMemoryMatchState(matchSeed);
+            _serverMatch = new SequenceMemoryMatchState(matchSeed, rules: GameRules);
             _serverMatch.BeginMatch();
             _matchActive.Value = true;
             _paused.Value = false;
@@ -426,7 +429,7 @@ namespace MazeParty.Multiplayer
                 (byte)NetworkSequenceMemoryPhase.PresentingProblem;
             _phaseEndsAt.Value = now +
                 SequenceMemoryRules.GetProblemPresentationSeconds(
-                    _serverMatch.CurrentRoundNumber);
+                    _serverMatch.CurrentRoundNumber, rules: GameRules);
             SyncPlayerStateOnServer();
             Debug.Log(
                 "[SequenceMemory] Problem " + _roundNumber.Value +
@@ -624,8 +627,7 @@ namespace MazeParty.Multiplayer
                    _matchActive.Value && !_paused.Value &&
                    Phase == NetworkSequenceMemoryPhase.AcceptingInput &&
                    roundNumber == _roundNumber.Value &&
-                   inputEpoch != 0U &&
-                   inputEpoch == _inputEpoch.Value &&
+                   MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                    Remaining > 0d &&
                    _serverMatch.CanAcceptInputForSlot(
                        slot,
@@ -637,10 +639,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   SequenceMemoryRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -756,9 +755,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 
@@ -784,14 +781,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private static string BuildInputString(

@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
@@ -25,6 +26,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkRedLightGreenLightState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.RedLightGreenLight, NetworkMatchState.Instance?.GameSettings);
         public const float ArenaCenterX = 380f;
         public const float ArenaMinX = 370f;
         public const float ArenaMaxX = 390f;
@@ -91,8 +94,7 @@ namespace MazeParty.Multiplayer
         private readonly Vector3[] _nextPositions =
             new Vector3[RedLightGreenLightRules.PlayerCount];
         private readonly List<RedLightGreenLightRoundResult> _roundResults =
-            new List<RedLightGreenLightRoundResult>(
-                RedLightGreenLightRules.RoundCount);
+            new List<RedLightGreenLightRoundResult>();
 
         private RedLightGreenLightRoundState _roundState;
         private ulong _matchSeed;
@@ -184,13 +186,13 @@ namespace MazeParty.Multiplayer
                     {
                         SyncAllProgressToRules();
                         _roundState.TryEndForTimeout(
-                            RedLightGreenLightRules.RoundSeconds);
+                            GameRules.Seconds);
                         CompleteCurrentRoundOnServer(now);
                     }
                     break;
                 case NetworkRedLightGreenLightPhase.RoundResult:
                     if (_roundNumber.Value <
-                        RedLightGreenLightRules.RoundCount)
+                        GameRules.Rounds)
                     {
                         BeginRoundOnServer(_roundNumber.Value + 1, now);
                     }
@@ -435,7 +437,7 @@ namespace MazeParty.Multiplayer
         {
             _roundState = new RedLightGreenLightRoundState(
                 _matchSeed,
-                roundNumber);
+                roundNumber, rules: GameRules);
             _roundNumber.Value = (byte)roundNumber;
             _phase.Value = (byte)NetworkRedLightGreenLightPhase.Countdown;
             _phaseEndsAt.Value =
@@ -470,7 +472,7 @@ namespace MazeParty.Multiplayer
         {
             _phase.Value = (byte)NetworkRedLightGreenLightPhase.Running;
             _phaseEndsAt.Value =
-                now + RedLightGreenLightRules.RoundSeconds;
+                now + GameRules.Seconds;
             _runningStartedAt = now;
             _currentSignalWindowStart = -1d;
             RefreshSignalWindowOnServer(now);
@@ -715,14 +717,14 @@ namespace MazeParty.Multiplayer
         private void CompleteMatchOnServer()
         {
             if (_completionReported ||
-                _roundResults.Count != RedLightGreenLightRules.RoundCount)
+                _roundResults.Count != GameRules.Rounds)
             {
                 return;
             }
 
             var leaderboard =
                 RedLightGreenLightMatchScoring.BuildLeaderboard(
-                    _roundResults);
+                    _roundResults, rules: GameRules);
             uint finalRanks = 0U;
             for (var index = 0; index < leaderboard.Count; index++)
             {
@@ -775,10 +777,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   RedLightGreenLightRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -856,7 +855,7 @@ namespace MazeParty.Multiplayer
             return Math.Max(
                 0d,
                 Math.Min(
-                    RedLightGreenLightRules.RoundSeconds,
+                    GameRules.Seconds,
                     now - _runningStartedAt));
         }
 
@@ -865,13 +864,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private void ResetReplicatedStateOnServer()
@@ -1004,15 +998,12 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector2 value)
         {
-            return !float.IsNaN(value.x) &&
-                   !float.IsInfinity(value.x) &&
-                   !float.IsNaN(value.y) &&
-                   !float.IsInfinity(value.y);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
     }
 }

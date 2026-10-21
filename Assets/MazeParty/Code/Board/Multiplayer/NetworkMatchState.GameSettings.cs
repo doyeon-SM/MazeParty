@@ -26,12 +26,10 @@ namespace MazeParty.Multiplayer
             if (!MatchGameSettings.TryDecode(next.ToString(), out var settings))
                 throw new InvalidOperationException("Invalid authoritative match settings.");
             GameSettings = settings;
-            MinigameRuntimeSettings.Bind(this, settings);
         }
         private void ReleaseGameSettings()
         {
             _gameSettingsPayload.OnValueChanged -= OnGameSettingsChanged;
-            MinigameRuntimeSettings.Release(this);
         }
     }
 }

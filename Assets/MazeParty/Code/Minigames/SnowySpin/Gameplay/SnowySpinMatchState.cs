@@ -118,21 +118,23 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
     /// </summary>
     public sealed class SnowySpinMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double Epsilon = 0.000000001d;
         private readonly BallState[] _balls =
             new BallState[SnowySpinRules.PlayerCount];
         private readonly int[] _scores =
             new int[SnowySpinRules.PlayerCount];
-        private readonly int[,] _roundRanks =
-            new int[SnowySpinRules.RoundCount, SnowySpinRules.PlayerCount];
+        private readonly int[,] _roundRanks;
         private readonly double[,] _collisionPresentationReadyAt =
             new double[SnowySpinRules.PlayerCount,
                 SnowySpinRules.PlayerCount];
         private uint _randomState;
         private int _simulatedSteps;
 
-        public SnowySpinMatchState(int seed)
+        public SnowySpinMatchState(int seed, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.SnowySpin, rules);
+            _roundRanks = new int[_rules.Rounds, SnowySpinRules.PlayerCount];
             _randomState = unchecked((uint)seed);
             for (var slot = 0; slot < _balls.Length; slot++)
             {
@@ -174,7 +176,7 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
         {
             ValidateSlot(slot);
             if (roundNumber < 1 ||
-                roundNumber > SnowySpinRules.RoundCount ||
+                roundNumber > _rules.Rounds ||
                 roundNumber > RoundNumber ||
                 (roundNumber == RoundNumber && !IsRoundComplete))
             {
@@ -250,7 +252,7 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             }
 
             var target = Math.Min(activeRoundElapsedSeconds,
-                SnowySpinRules.RoundDurationSeconds);
+                _rules.Seconds);
             var targetSteps = (int)Math.Floor(
                 target * SnowySpinRules.SimulationHz + Epsilon);
             while (_simulatedSteps < targetSteps && !IsRoundComplete)
@@ -267,16 +269,16 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             }
 
             RoundElapsedSeconds = target;
-            if (target + Epsilon >= SnowySpinRules.RoundDurationSeconds)
+            if (target + Epsilon >= _rules.Seconds)
             {
-                FinishRound(SnowySpinRules.RoundDurationSeconds);
+                FinishRound(_rules.Seconds);
             }
         }
 
         public void BeginNextRound()
         {
             if (!IsRoundComplete || IsComplete ||
-                RoundNumber >= SnowySpinRules.RoundCount)
+                RoundNumber >= _rules.Rounds)
             {
                 throw new InvalidOperationException(
                     "The next round requires a completed non-final round.");
@@ -491,7 +493,7 @@ namespace MazeParty.Gameplay.Minigames.SnowySpin
             }
 
             IsRoundComplete = true;
-            IsComplete = RoundNumber == SnowySpinRules.RoundCount;
+            IsComplete = RoundNumber == _rules.Rounds;
             RoundTransitionSequence++;
             LastCompletedRound = new SnowySpinRoundResult(RoundNumber,
                 elapsedSeconds, ranks);

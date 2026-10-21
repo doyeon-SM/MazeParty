@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
@@ -55,6 +56,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkTagChaseState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.TagChase, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 1060f;
@@ -217,7 +220,7 @@ namespace MazeParty.Multiplayer
                     BeginRunOnServer(now);
                     break;
                 case NetworkTagChasePhase.RoundResult:
-                    if (_roundNumber.Value < TagChaseRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundCountdownOnServer(
                             now,
@@ -522,7 +525,7 @@ namespace MazeParty.Multiplayer
             _roundNumber.Value = (byte)Mathf.Clamp(
                 roundNumber,
                 1,
-                TagChaseRules.RoundCount);
+                GameRules.Rounds);
             _taggerSlot.Value =
                 (byte)_taggerOrder[(_roundNumber.Value - 1) % _taggerOrder.Length];
             _caughtMask.Value = 0;
@@ -572,7 +575,7 @@ namespace MazeParty.Multiplayer
             _phase.Value =
                 (byte)NetworkTagChasePhase.Running;
             _phaseEndsAt.Value =
-                now + TagChaseRules.RoundSeconds;
+                now + GameRules.Seconds;
             _lastSimulationAt = now;
             _nextCatchAllowedAt = now;
             Debug.Log(
@@ -879,8 +882,7 @@ namespace MazeParty.Multiplayer
                    !_paused.Value &&
                    Phase == NetworkTagChasePhase.Running &&
                    roundNumber == _roundNumber.Value &&
-                   inputEpoch != 0U &&
-                   inputEpoch == _inputEpoch.Value &&
+                   MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                    Remaining > 0d;
         }
 
@@ -888,10 +890,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer &&
-                   avatar != null && avatar.IsSpawned &&
-                   TagChaseRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private bool TryGetPlayerSnapshot(
@@ -993,9 +992,7 @@ namespace MazeParty.Multiplayer
             unchecked
             {
                 _inputEpoch.Value =
-                    _inputEpoch.Value == uint.MaxValue
-                        ? 1U
-                        : _inputEpoch.Value + 1U;
+                    MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 
@@ -1026,14 +1023,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private string BuildRoundScoreLog(int[] points)
@@ -1062,7 +1053,7 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector2 value)
         {
-            return IsFinite(value.x) && IsFinite(value.y);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static bool IsFinite(float value)

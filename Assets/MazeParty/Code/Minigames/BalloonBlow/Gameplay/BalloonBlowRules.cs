@@ -11,8 +11,8 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
     public static class BalloonBlowRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.BalloonBlow, 3);
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.BalloonBlow, 30d);
+        public const int RoundCount = 3;
+        public const double RoundSeconds = 30d;
         public const float MinimumProgressPercent = 0f;
         public const float MaxProgressPercent = 100f;
         public const float InflatePercentPerSecond = 10f;
@@ -37,9 +37,10 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             return playerSlot >= 0 && playerSlot < PlayerCount;
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.BalloonBlow, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -83,8 +84,9 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             bool isPopped,
             double poppedAtSeconds,
             ulong popOrder,
-            float progressPercent)
+            float progressPercent, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.BalloonBlow, rules);
             if (!BalloonBlowRules.IsValidPlayerSlot(playerSlot))
             {
                 throw new ArgumentOutOfRangeException(
@@ -98,7 +100,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
             {
                 BalloonBlowRules.ValidateActiveElapsedSeconds(
                     poppedAtSeconds);
-                if (poppedAtSeconds > BalloonBlowRules.RoundSeconds)
+                if (poppedAtSeconds > configuration.Seconds)
                 {
                     throw new ArgumentOutOfRangeException(
                         nameof(poppedAtSeconds));
@@ -135,26 +137,26 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         public static BalloonBlowRoundOutcome Popped(
             int playerSlot,
             double poppedAtSeconds,
-            ulong popOrder)
+            ulong popOrder, MinigameRulesConfig? rules = null)
         {
             return new BalloonBlowRoundOutcome(
                 playerSlot,
                 true,
                 poppedAtSeconds,
                 popOrder,
-                BalloonBlowRules.MaxProgressPercent);
+                BalloonBlowRules.MaxProgressPercent, rules: rules);
         }
 
         public static BalloonBlowRoundOutcome Incomplete(
             int playerSlot,
-            float progressPercent)
+            float progressPercent, MinigameRulesConfig? rules = null)
         {
             return new BalloonBlowRoundOutcome(
                 playerSlot,
                 false,
                 0d,
                 0UL,
-                progressPercent);
+                progressPercent, rules: rules);
         }
     }
 
@@ -333,14 +335,15 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
     {
         public static IReadOnlyList<BalloonBlowLeaderboardEntry>
             BuildLeaderboard(
-                IReadOnlyList<BalloonBlowRoundResult> rounds)
+                IReadOnlyList<BalloonBlowRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.BalloonBlow, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != BalloonBlowRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly three rounds.",
@@ -367,7 +370,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
                 {
                     var standing = round.Standings[standingIndex];
                     totalPoints[standing.PlayerSlot] += standing.Points;
-                    if (roundIndex == BalloonBlowRules.RoundCount - 1)
+                    if (roundIndex == configuration.Rounds - 1)
                     {
                         finalRoundRanks[standing.PlayerSlot] =
                             standing.Rank;

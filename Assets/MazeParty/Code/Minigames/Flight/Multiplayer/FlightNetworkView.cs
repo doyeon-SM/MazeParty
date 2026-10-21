@@ -17,6 +17,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform playerRoot, obstacleRoot;
         [SerializeField] private MinigameCommonHudView practiceHud;
         [SerializeField] private MinigameStartCountdownView practiceCountdown;
+        private double _courseDuration;
         private readonly PlayerAvatarVisual[] _players = new PlayerAvatarVisual[4];
         private readonly FlightAvatarPresentation[] _flightVisuals = new FlightAvatarPresentation[4];
         private readonly Transform[,] _obstacles = new Transform[FlightRules.GatePoolCount, 2];
@@ -105,7 +106,8 @@ namespace MazeParty.Multiplayer
         }
         private void Render(ulong seed, double elapsed, Func<int, bool> alive, int local, NetworkMatchState match, bool showName)
         {
-            if (_course == null || _seed != seed) { _course = new FlightCourse(seed); _seed = seed; _observed = false; }
+            var duration = MinigameRulesConfig.FromMatch(ScheduledMinigameId.Flight, match?.GameSettings).Seconds;
+            if (_course == null || _seed != seed || _courseDuration != duration) { _course = new FlightCourse(seed, duration); _courseDuration = duration; _seed = seed; _observed = false; }
             EnsureWorld(local);
             sharedCamera.transform.SetPositionAndRotation(CameraPosition, Quaternion.identity);
             for (var i = 0; i < 4; i++)

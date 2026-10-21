@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
 
@@ -15,6 +16,24 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkBombPassingState CurrentState =>
             NetworkBombPassingState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            return false;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot),
+                state.IsEliminated(slot) ? "{0}.  {1}  OUT  GOLD +{2}" : "{0}.  {1}  SURVIVED  GOLD +{2}");
+        }
+
+        public override bool UsesRoundSeriesResults => true;
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

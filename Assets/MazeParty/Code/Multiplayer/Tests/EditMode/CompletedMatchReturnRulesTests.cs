@@ -6,6 +6,37 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class CompletedMatchReturnRulesTests
     {
         [Test]
+        public void UnloadAcknowledgementsWaitForEveryClientAndTheNextFrame_ThenResetCleanly()
+        {
+            var state = new CompletedMatchReturnState {
+                LobbyReturnInProgress = true, PendingUnloadScene = "Board",
+                PendingUnloadDeadline = 30d
+            };
+            state.PendingUnloadClients.Add(1); state.PendingUnloadClients.Add(2);
+            Assert.That(state.TryAcknowledgeUnload(1, "Race", 10), Is.False);
+            Assert.That(state.TryAcknowledgeUnload(1, "Board", 10), Is.True);
+            Assert.That(state.TryAcknowledgeUnload(1, "Board", 10), Is.False);
+            Assert.That(state.TryConsumeScheduledUnload(11), Is.False);
+            // A disconnect satisfies that client's outstanding acknowledgement.
+            Assert.That(state.TryRemovePendingClient(2, 11), Is.True);
+            Assert.That(state.TryConsumeScheduledUnload(11), Is.False);
+            Assert.That(state.TryConsumeScheduledUnload(12), Is.True);
+            Assert.That(state.TryConsumeScheduledUnload(12), Is.False);
+            state.SceneUnloadQueue.Enqueue("Race");
+            state.FailClosedTerminationPending = true;
+            state.VoidedMatchLobbyReturnPending = true;
+            state.PreserveRecoveryOnLobbyReturn = true;
+            state.ScheduleUnload(20);
+            state.Reset();
+            Assert.That(state.TryConsumeScheduledUnload(21), Is.False);
+            Assert.That(state.TryAcknowledgeUnload(2, "Board", 21), Is.False);
+            Assert.That(state.SceneUnloadQueue, Is.Empty);
+            Assert.That(state.FailClosedTerminationPending, Is.False);
+            Assert.That(state.VoidedMatchLobbyReturnPending, Is.False);
+            Assert.That(state.PreserveRecoveryOnLobbyReturn, Is.False);
+        }
+
+        [Test]
         public void ActiveMatchVoidGate_IsOneWayAndBlocksEveryMatchMutation()
         {
             var gate = new ActiveMatchVoidGate();

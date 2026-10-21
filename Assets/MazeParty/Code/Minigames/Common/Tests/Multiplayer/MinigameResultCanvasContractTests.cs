@@ -31,10 +31,14 @@ namespace MazeParty.Multiplayer.Tests
                 foreach (var name in names)
                 {
                     var root = new GameObject("Result contract " + name);
+                    System.Type type = null;
+                    object previousInstance = null;
                     try
                     {
-                        var type = typeof(NetworkMatchState).Assembly.GetType("MazeParty.Multiplayer.Network" + name + "State");
+                        type = typeof(NetworkMatchState).Assembly.GetType("MazeParty.Multiplayer.Network" + name + "State");
                         var state = root.AddComponent(type);
+                        previousInstance = type.GetProperty("Instance").GetValue(null);
+                        type.GetProperty("Instance").SetValue(null, state);
                         var field = type.GetField("_finalRanks", flags) ?? type.GetField("_finalRanksPacked", flags);
                         System.Action<uint> setRanks;
                         if (state is NetworkFlightState)
@@ -87,13 +91,16 @@ namespace MazeParty.Multiplayer.Tests
                             var ranks = (Unity.Netcode.NetworkVariable<uint>)field.GetValue(state);
                             setRanks = packed => ranks.Value = packed;
                         }
-                        var method = typeof(BoardFlowView).GetMethod("Build" + name + "ResultSummary", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                        var id = (MazeParty.Gameplay.Minigames.ScheduledMinigameId)System.Enum.Parse(
+                            typeof(MazeParty.Gameplay.Minigames.ScheduledMinigameId), name);
+                        Assert.That(MinigameRuntimeRegistry.TryGet(id, out var runtime), Is.True);
+                        var presenter = new MinigameResultPresenter();
                         foreach (var input in new[] { new[] { 4, 2, 2, 1 }, new[] { 1, 1, 1, 1 } })
                         {
                             uint packed = 0;
                             for (var slot = 0; slot < 4; slot++) packed |= (uint)input[slot] << (slot * 8);
                             setRanks(packed);
-                            var lines = ((string)method.Invoke(null, new object[] { state })).Split('\n');
+                            var lines = presenter.Present(runtime, null, slot => "P" + (slot + 1)).Split('\n');
                             Assert.That(lines.Length, Is.EqualTo(4), name);
                             var expected = input.OrderBy(value => value).ToArray();
                             for (var row = 0; row < 4; row++)
@@ -103,9 +110,13 @@ namespace MazeParty.Multiplayer.Tests
                             }
                         }
                         setRanks(0);
-                        Assert.That((string)method.Invoke(null, new object[] { state }), Does.Not.Contain("\n"), name + " waits for a complete snapshot");
+                        Assert.That(presenter.Present(runtime, null, slot => "P" + (slot + 1)), Does.Not.Contain("\n"), name + " waits for a complete snapshot");
                     }
-                    finally { Object.DestroyImmediate(root); }
+                    finally
+                    {
+                        Object.DestroyImmediate(root);
+                        type?.GetProperty("Instance").SetValue(null, previousInstance);
+                    }
                 }
             }
             finally

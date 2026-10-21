@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.ArenaCombat;
@@ -22,6 +23,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkArenaCombatState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.ArenaCombat, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<bool> _matchActive =
             CreateBoolVariable();
         private readonly NetworkVariable<bool> _paused =
@@ -121,8 +124,8 @@ namespace MazeParty.Multiplayer
                     if (ArenaCombatRules.ShouldEndMatch(
                             Math.Max(0d, now -
                                 (_phaseEndsAt.Value -
-                                 ArenaCombatRules.MatchDurationSeconds)),
-                            CountSurvivors()))
+                                 GameRules.Seconds)),
+                            CountSurvivors(), rules: GameRules))
                     {
                         CompletePlayingOnServer(now);
                     }
@@ -454,7 +457,7 @@ namespace MazeParty.Multiplayer
         {
             _phase.Value = (byte)NetworkArenaCombatPhase.Playing;
             _phaseEndsAt.Value =
-                now + ArenaCombatRules.MatchDurationSeconds;
+                now + GameRules.Seconds;
             AdvanceInputEpochOnServer();
             for (var slot = 0; slot < ArenaCombatRules.PlayerCount;
                  slot++)
@@ -556,13 +559,9 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                avatar.IsSpawned &&
-                ArenaCombatRules.IsValidSlot(slot) &&
-                match != null && match.GetAvatarForSlot(slot) == avatar &&
-                _avatars[slot] == avatar;
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
+                match != null && match.GetAvatarForSlot(slot) == avatar && _avatars[slot] == avatar;
         }
 
         private NetworkPlayerAvatar GetAvatar(int slot)
@@ -613,9 +612,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 
@@ -656,12 +653,7 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector3 value)
         {
-            return !float.IsNaN(value.x) &&
-                !float.IsInfinity(value.x) &&
-                !float.IsNaN(value.y) &&
-                !float.IsInfinity(value.y) &&
-                !float.IsNaN(value.z) &&
-                !float.IsInfinity(value.z);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static NetworkVariable<bool> CreateBoolVariable()

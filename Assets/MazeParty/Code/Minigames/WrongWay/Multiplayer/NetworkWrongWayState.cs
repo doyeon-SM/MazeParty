@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
@@ -24,6 +25,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkWrongWayState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.WrongWay, NetworkMatchState.Instance?.GameSettings);
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 340f;
         public const float StepWidth = 1.45f;
@@ -73,7 +76,7 @@ namespace MazeParty.Multiplayer
             new NetworkVariable<double>();
 
         private readonly List<WrongWayRoundResult> _roundResults =
-            new List<WrongWayRoundResult>(WrongWayRules.RoundCount);
+            new List<WrongWayRoundResult>();
         private readonly int[] _scores = new int[WrongWayRules.PlayerCount];
         private readonly int[] _wrongCounts = new int[WrongWayRules.PlayerCount];
 
@@ -143,21 +146,21 @@ namespace MazeParty.Multiplayer
                     {
                         _phase.Value = (byte)NetworkWrongWayPhase.Running;
                         _roundRunningStartedAt = now;
-                        _phaseEndsAt.Value = now + WrongWayRules.RoundSeconds;
+                        _phaseEndsAt.Value = now + GameRules.Seconds;
                     }
                     break;
                 case NetworkWrongWayPhase.Running:
                     if (now >= _phaseEndsAt.Value && _roundState != null)
                     {
                         _roundState.TryEndForTimeout(
-                            WrongWayRules.RoundSeconds);
+                            GameRules.Seconds);
                         CompleteCurrentRound(now);
                     }
                     break;
                 case NetworkWrongWayPhase.RoundResult:
                     if (now >= _phaseEndsAt.Value)
                     {
-                        if (_roundNumber.Value < WrongWayRules.RoundCount)
+                        if (_roundNumber.Value < GameRules.Rounds)
                         {
                             BeginRoundOnServer(_roundNumber.Value + 1, now);
                         }
@@ -236,7 +239,7 @@ namespace MazeParty.Multiplayer
             var now = ServerNow;
             if (now >= _phaseEndsAt.Value)
             {
-                _roundState.TryEndForTimeout(WrongWayRules.RoundSeconds);
+                _roundState.TryEndForTimeout(GameRules.Seconds);
                 CompleteCurrentRound(now);
                 return false;
             }
@@ -394,7 +397,7 @@ namespace MazeParty.Multiplayer
             if (Phase == NetworkWrongWayPhase.Running)
             {
                 _roundRunningStartedAt =
-                    _phaseEndsAt.Value - WrongWayRules.RoundSeconds;
+                    _phaseEndsAt.Value - GameRules.Seconds;
             }
 
             _pausedPhaseRemaining.Value = 0d;
@@ -403,7 +406,7 @@ namespace MazeParty.Multiplayer
 
         private void BeginRoundOnServer(int roundNumber, double now)
         {
-            _roundState = new WrongWayRoundState(_matchSeed, roundNumber);
+            _roundState = new WrongWayRoundState(_matchSeed, roundNumber, rules: GameRules);
             _roundNumber.Value = (byte)roundNumber;
             _phase.Value = (byte)NetworkWrongWayPhase.Countdown;
             _phaseEndsAt.Value = now + WrongWayRules.CountdownSeconds;
@@ -446,10 +449,10 @@ namespace MazeParty.Multiplayer
             _scorePacked.Value = PackBytes(_scores);
             _wrongCountsPacked.Value = PackBytes(_wrongCounts);
 
-            if (_roundResults.Count == WrongWayRules.RoundCount)
+            if (_roundResults.Count == GameRules.Rounds)
             {
                 _leaderboard =
-                    WrongWayMatchScoring.BuildLeaderboard(_roundResults);
+                    WrongWayMatchScoring.BuildLeaderboard(_roundResults, rules: GameRules);
                 uint finalRanks = 0u;
                 for (var index = 0; index < _leaderboard.Count; index++)
                 {

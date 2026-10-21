@@ -10,7 +10,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
     public static class MinefieldRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.Minefield, 3);
+        public const int RoundCount = 3;
         public const int MineHitsToEliminate = 2;
 
         public static int GetPointsForRank(int rank)
@@ -321,14 +321,15 @@ namespace MazeParty.Gameplay.Minigames.Minefield
     public static class MinefieldMatchScoring
     {
         public static IReadOnlyList<MinefieldLeaderboardEntry> BuildLeaderboard(
-            IReadOnlyList<MinefieldRoundResult> rounds)
+            IReadOnlyList<MinefieldRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.Minefield, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != MinefieldRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly three rounds.",
@@ -440,9 +441,9 @@ namespace MazeParty.Gameplay.Minigames.Minefield
     /// </summary>
     public static class MinefieldLayoutGenerator
     {
-        public static ulong DeriveRoundSeed(ulong serverSeed, int roundNumber)
+        public static ulong DeriveRoundSeed(ulong serverSeed, int roundNumber, MinigameRulesConfig? rules = null)
         {
-            ValidateRoundNumber(roundNumber);
+            ValidateRoundNumber(roundNumber, rules: rules);
             var mixer = new SplitMix64(
                 serverSeed ^
                 unchecked(0xD1B54A32D192ED03UL * (ulong)roundNumber));
@@ -455,7 +456,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             int mineCount,
             ulong serverSeed,
             int roundNumber,
-            IReadOnlyCollection<MinefieldCell> forbiddenCells = null)
+            IReadOnlyCollection<MinefieldCell> forbiddenCells = null, MinigameRulesConfig? rules = null)
         {
             if (width <= 0)
             {
@@ -472,7 +473,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 throw new ArgumentOutOfRangeException(nameof(mineCount));
             }
 
-            ValidateRoundNumber(roundNumber);
+            ValidateRoundNumber(roundNumber, rules: rules);
 
             var forbidden = new HashSet<MinefieldCell>();
             if (forbiddenCells != null)
@@ -513,7 +514,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 }
             }
 
-            var random = new SplitMix64(DeriveRoundSeed(serverSeed, roundNumber));
+            var random = new SplitMix64(DeriveRoundSeed(serverSeed, roundNumber, rules: rules));
             for (var i = 0; i < mineCount; i++)
             {
                 var swapIndex = i + random.NextInt(candidates.Count - i);
@@ -528,9 +529,10 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             return mines;
         }
 
-        private static void ValidateRoundNumber(int roundNumber)
+        private static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > MinefieldRules.RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.Minefield, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),

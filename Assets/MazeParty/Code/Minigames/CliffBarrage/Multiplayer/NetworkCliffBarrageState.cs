@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.CliffBarrage;
 using Unity.Netcode;
@@ -151,6 +152,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkCliffBarrageState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.CliffBarrage, NetworkMatchState.Instance?.GameSettings);
         public const int ProjectilePoolSize =
             CliffBarrageRules.MaximumProjectiles;
         public const int LaserPoolSize =
@@ -312,7 +315,7 @@ namespace MazeParty.Multiplayer
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
             _serverMatch = new CliffBarrageMatchState(seed,
                 Mathf.Clamp(_projectileLimit, 0, ProjectilePoolSize),
-                Mathf.Clamp(_laserLimit, 0, LaserPoolSize));
+                Mathf.Clamp(_laserLimit, 0, LaserPoolSize), rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.CliffBarrage, NetworkMatchState.Instance?.GameSettings));
             _matchActive.Value = true;
             CacheAndFreezeBoardAvatarsOnServer();
             var now = ServerNow;
@@ -539,7 +542,7 @@ namespace MazeParty.Multiplayer
             _phaseStartedAt = now;
             _phase.Value = (byte)NetworkCliffBarragePhase.Playing;
             _phaseEndsAt.Value = now +
-                CliffBarrageRules.RoundDurationSeconds;
+                GameRules.Seconds;
             AdvanceInputEpochOnServer();
             SyncSnapshotOnServer();
             _lastSnapshotAt = now;
@@ -568,7 +571,7 @@ namespace MazeParty.Multiplayer
         private void AdvancePlayingModelOnServer(double now)
         {
             _serverMatch?.AdvanceTo(Math.Min(
-                CliffBarrageRules.RoundDurationSeconds,
+                GameRules.Seconds,
                 Math.Max(0d, now - _phaseStartedAt)));
             DeliverPendingDamagePresentationEventsOnServer();
         }
@@ -785,21 +788,16 @@ namespace MazeParty.Multiplayer
                 _phaseEndsAt.Value > 0d &&
                 now < _phaseEndsAt.Value &&
                 roundNumber == _roundNumber.Value &&
-                inputEpoch != 0U &&
-                inputEpoch == _inputEpoch.Value &&
+                MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                 _serverMatch != null && !IsEliminated(slot);
         }
 
         private bool TryResolveAuthoritativeSlot(
             NetworkPlayerAvatar avatar, out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                avatar.IsSpawned &&
-                CliffBarrageRules.IsValidSlot(slot) &&
-                match != null &&
-                match.GetAvatarForSlot(slot) == avatar;
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
+                match != null && match.GetAvatarForSlot(slot) == avatar;
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()

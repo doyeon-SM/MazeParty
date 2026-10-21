@@ -66,6 +66,50 @@ namespace MazeParty.Multiplayer
             public Text[] PlayerRankTexts;
         }
 
+        // Runtime grouping over the existing serialized prefab arrays. No prefab
+        // migration or design rewrite is required to present one player's row.
+        public readonly struct PlayerHudRow
+        {
+            public readonly Text Name;
+            public readonly Image Card;
+            public readonly Slider HealthSlider;
+            public readonly Image HealthFill;
+            public readonly Text HealthText;
+            public readonly Text HealthDelta;
+            public readonly Text KeyText;
+            public readonly Text KeyDelta;
+            public readonly Text GoldText;
+            public readonly Text GoldDelta;
+            public readonly BoardHudStatFeedbackView Feedback;
+            public readonly Text Action;
+            public readonly Text Rank;
+            internal PlayerHudRow(References source, int slot)
+            {
+                Name = At(source.PlayerRows, slot);
+                Card = At(source.PlayerCards, slot);
+                HealthSlider = At(source.PlayerHealthSliders, slot);
+                HealthFill = At(source.PlayerHealthFills, slot);
+                HealthText = At(source.PlayerHealthTexts, slot);
+                HealthDelta = At(source.PlayerHealthDeltaTexts, slot);
+                KeyText = At(source.PlayerKeyTexts, slot);
+                KeyDelta = At(source.PlayerKeyDeltaTexts, slot);
+                GoldText = At(source.PlayerGoldTexts, slot);
+                GoldDelta = At(source.PlayerGoldDeltaTexts, slot);
+                Feedback = At(source.PlayerStatFeedback, slot);
+                Action = At(source.PlayerActionIcons, slot);
+                Rank = At(source.PlayerRankTexts, slot);
+            }
+            private static T At<T>(T[] values, int slot) where T : UnityEngine.Object =>
+                values != null && slot < values.Length ? values[slot] : null;
+        }
+
+        public PlayerHudRow GetPlayerRow(int slot)
+        {
+            if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers)
+                throw new ArgumentOutOfRangeException(nameof(slot));
+            return new PlayerHudRow(references, slot);
+        }
+
         [Serializable]
         public sealed class StatePalette
         {

@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using UnityEngine;
 
@@ -14,6 +15,34 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkTerritoryPaintState CurrentState =>
             NetworkTerritoryPaintState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            var state = CurrentState;
+            if (state == null ||
+                state.Phase == NetworkTerritoryPaintPhase.Inactive ||
+                state.Phase == NetworkTerritoryPaintPhase.Complete)
+                return false;
+            remaining = state.Remaining;
+            total = state.Phase == NetworkTerritoryPaintPhase.Countdown
+                ? NetworkTerritoryPaintState.CountdownSeconds
+                : state.Phase == NetworkTerritoryPaintPhase.RoundResult
+                    ? NetworkTerritoryPaintState.ResultSeconds
+                    : runningSeconds;
+            return true;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot), "{0}.  {1}  {2}  GOLD +{3}", state.GetScore(slot));
+        }
+
+        public override bool UsesRoundSeriesResults => true;
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

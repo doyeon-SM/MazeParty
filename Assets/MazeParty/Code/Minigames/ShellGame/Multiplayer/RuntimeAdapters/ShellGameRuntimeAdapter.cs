@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.ShellGame;
 
@@ -13,6 +14,21 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkShellGameState CurrentState =>
             NetworkShellGameState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            return false;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot), "{0}.  {1}  SCORE {2}  GOLD +{3}", state.GetScore(slot));
+        }
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

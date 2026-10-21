@@ -9,8 +9,8 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
     public static class CoinCollectRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.CoinCollect, 2);
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.CoinCollect, 60d);
+        public const int RoundCount = 2;
+        public const double RoundSeconds = 60d;
         public const int CoinCount = 50, MoneyCount = 10, BombCount = 10;
         public const int RainCount = CoinCount + MoneyCount + BombCount;
         public const float MoveSpeed = 5f, FallSpeed = 6f;
@@ -68,6 +68,7 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
     /// <summary>Fixed-step authority shared by network play and offline practice.</summary>
     public sealed class CoinCollectMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private sealed class Player
         {
             public Vector2 Position, Facing, Input, PushFacing;
@@ -82,15 +83,16 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         private int _spawned;
         public int RoundNumber { get; private set; }
         public double Elapsed { get; private set; }
-        public bool IsRoundComplete => Elapsed >= CoinCollectRules.RoundSeconds;
-        public bool IsComplete => IsRoundComplete && RoundNumber == CoinCollectRules.RoundCount;
+        public bool IsRoundComplete => Elapsed >= _rules.Seconds;
+        public bool IsComplete => IsRoundComplete && RoundNumber == _rules.Rounds;
         public int ItemCount => _items.Count;
         public int RainSpawnedCount => _spawned;
         public event Action<CoinCollectItemKind, int> ItemCollected;
         public event Action<int> PushStarted;
 
-        public CoinCollectMatchState(ulong seed)
+        public CoinCollectMatchState(ulong seed, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.CoinCollect, rules);
             _seed = seed;
             for (var slot = 0; slot < 4; slot++) _players[slot] = new Player();
             var random = new StableRandom(seed);
@@ -153,7 +155,7 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         {
             if (!CoinCollectRules.IsFinite(target) || target < Elapsed)
                 throw new ArgumentOutOfRangeException(nameof(target));
-            target = Math.Min(CoinCollectRules.RoundSeconds, target);
+            target = Math.Min(_rules.Seconds, target);
             SpawnDue();
             while (Elapsed < target)
             {
@@ -259,7 +261,7 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                 var j = random.Next(i + 1); var temp = kinds[i]; kinds[i] = kinds[j]; kinds[j] = temp;
             }
             // Even the last item reaches the floor before the round closes.
-            var lastSpawn = CoinCollectRules.RoundSeconds -
+            var lastSpawn = _rules.Seconds -
                 (CoinCollectRules.SpawnHeight - CoinCollectRules.GroundHeight) / CoinCollectRules.FallSpeed - 0.5d;
             for (var i = 0; i < _rain.Length; i++)
                 _rain[i] = new CoinCollectItemSnapshot(kinds[i], new Vector2(

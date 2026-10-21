@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.BombPassing;
 using Unity.Netcode;
@@ -22,6 +23,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkBombPassingState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.BombPassing, NetworkMatchState.Instance?.GameSettings);
         private const double SnapshotIntervalSeconds = 0.05d;
 
         private readonly NetworkVariable<bool> _matchActive =
@@ -609,7 +612,7 @@ namespace MazeParty.Multiplayer
                 _matchActive.Value && !_paused.Value &&
                 Phase == NetworkBombPassingPhase.Playing &&
                 roundNumber == _roundNumber.Value &&
-                inputEpoch != 0U && inputEpoch == _inputEpoch.Value &&
+                MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                 _serverMatch != null &&
                 !_serverMatch.GetPlayer(slot).IsEliminated;
         }
@@ -618,11 +621,8 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                avatar.IsSpawned &&
-                BombPassingRules.IsValidPlayerSlot(slot) &&
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
                 match != null && match.GetAvatarForSlot(slot) == avatar;
         }
 
@@ -702,9 +702,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 

@@ -14,9 +14,9 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         public const int BoardHeight = 6;
         public const int TileCount = BoardWidth * BoardHeight;
         public const int SymbolCount = 3;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.StableFooting, 3);
+        public const int RoundCount = 3;
         public const int PermanentTilesRemovedPerCycle = 4;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.StableFooting, 60d);
+        public const double RoundSeconds = 60d;
         public const double ShuffleRevealSeconds = 3d;
         public const double SymbolShuffleIntervalSeconds = 0.5d;
         public const int SymbolShuffleStepCount = 6;
@@ -77,9 +77,10 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
             return phase == StableFootingCyclePhase.Move;
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -442,12 +443,14 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
 
     public sealed class StableFootingRoundSchedule
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly ReadOnlyCollection<StableFootingCycle> _cycles;
 
         internal StableFootingRoundSchedule(
             StableFootingCycle[] cycles,
-            int finalTileIndex)
+            int finalTileIndex, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
             _cycles = Array.AsReadOnly(cycles);
             FinalTileIndex = finalTileIndex;
         }
@@ -459,7 +462,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         {
             StableFootingRules.ValidateRoundElapsedSeconds(
                 roundElapsedSeconds);
-            if (roundElapsedSeconds >= StableFootingRules.RoundSeconds)
+            if (roundElapsedSeconds >= _rules.Seconds)
             {
                 return null;
             }
@@ -482,7 +485,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         {
             StableFootingRules.ValidateRoundElapsedSeconds(
                 roundElapsedSeconds);
-            if (roundElapsedSeconds >= StableFootingRules.RoundSeconds)
+            if (roundElapsedSeconds >= _rules.Seconds)
             {
                 return StableFootingCyclePhase.RoundComplete;
             }
@@ -503,9 +506,9 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
     {
         public static ulong DeriveRoundSeed(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            StableFootingRules.ValidateRoundNumber(roundNumber);
+            StableFootingRules.ValidateRoundNumber(roundNumber, rules: rules);
             var mixer = new SplitMix64(
                 serverSeed ^
                 unchecked(0xA24BAED4963EE407UL * (ulong)roundNumber));
@@ -514,11 +517,11 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
 
         public static StableFootingRoundSchedule Generate(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            StableFootingRules.ValidateRoundNumber(roundNumber);
+            StableFootingRules.ValidateRoundNumber(roundNumber, rules: rules);
             var random = new SplitMix64(
-                DeriveRoundSeed(serverSeed, roundNumber));
+                DeriveRoundSeed(serverSeed, roundNumber, rules: rules));
             var activeTiles = new List<int>(StableFootingRules.TileCount);
             for (var tileIndex = 0;
                  tileIndex < StableFootingRules.TileCount;
@@ -619,7 +622,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
 
             return new StableFootingRoundSchedule(
                 cycles.ToArray(),
-                activeTiles[0]);
+                activeTiles[0], rules: rules);
         }
 
         private static void Shuffle(int[] values, ref SplitMix64 random)
@@ -681,8 +684,9 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
             int playerSlot,
             bool survived,
             double eliminatedAtSeconds,
-            ulong eliminationOrder)
+            ulong eliminationOrder, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
             if (!StableFootingRules.IsValidPlayerSlot(playerSlot))
             {
                 throw new ArgumentOutOfRangeException(
@@ -695,7 +699,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
             {
                 StableFootingRules.ValidateRoundElapsedSeconds(
                     eliminatedAtSeconds);
-                if (eliminatedAtSeconds > StableFootingRules.RoundSeconds)
+                if (eliminatedAtSeconds > configuration.Seconds)
                 {
                     throw new ArgumentOutOfRangeException(
                         nameof(eliminatedAtSeconds));
@@ -720,25 +724,25 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         public double EliminatedAtSeconds { get; }
         public ulong EliminationOrder { get; }
 
-        public static StableFootingRoundOutcome Survive(int playerSlot)
+        public static StableFootingRoundOutcome Survive(int playerSlot, MinigameRulesConfig? rules = null)
         {
             return new StableFootingRoundOutcome(
                 playerSlot,
                 true,
                 0d,
-                0UL);
+                0UL, rules: rules);
         }
 
         public static StableFootingRoundOutcome Eliminate(
             int playerSlot,
             double eliminatedAtSeconds,
-            ulong eliminationOrder)
+            ulong eliminationOrder, MinigameRulesConfig? rules = null)
         {
             return new StableFootingRoundOutcome(
                 playerSlot,
                 false,
                 eliminatedAtSeconds,
-                eliminationOrder);
+                eliminationOrder, rules: rules);
         }
     }
 
@@ -904,14 +908,15 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
     {
         public static IReadOnlyList<StableFootingLeaderboardEntry>
             BuildLeaderboard(
-                IReadOnlyList<StableFootingRoundResult> rounds)
+                IReadOnlyList<StableFootingRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != StableFootingRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly three rounds.",
@@ -938,7 +943,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                 {
                     var standing = round.Standings[standingIndex];
                     totalPoints[standing.PlayerSlot] += standing.Points;
-                    if (roundIndex == StableFootingRules.RoundCount - 1)
+                    if (roundIndex == configuration.Rounds - 1)
                     {
                         finalRoundRanks[standing.PlayerSlot] = standing.Rank;
                     }

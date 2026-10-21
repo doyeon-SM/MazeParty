@@ -12,6 +12,9 @@ namespace MazeParty.Multiplayer
         ScheduledMinigameId Id { get; }
         NetworkBehaviour Instance { get; }
         bool IsSpawned { get; }
+        bool UsesRoundSeriesResults { get; }
+        MinigameResultRow GetResultRow(int slot);
+        bool TryGetClock(double runningSeconds, out double remaining, out double total, out int round);
 
         bool CanAcceptInputForSlot(int slot);
         bool TryGetRoundCountdown(out double remainingSeconds);
@@ -39,6 +42,11 @@ namespace MazeParty.Multiplayer
                 return state != null && state.IsSpawned;
             }
         }
+
+        public virtual bool UsesRoundSeriesResults => false;
+        public abstract MinigameResultRow GetResultRow(int slot);
+        public abstract bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round);
 
         public abstract bool CanAcceptInputForSlot(int slot);
 

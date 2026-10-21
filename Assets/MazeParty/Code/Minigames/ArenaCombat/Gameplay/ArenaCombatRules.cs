@@ -36,8 +36,7 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
         public const float ArenaHalfDepth = 9f;
         public const float ArenaHalfExtent = 9f;
 
-        public static double MatchDurationSeconds =>
-            MinigameRuntimeSettings.Seconds(ScheduledMinigameId.ArenaCombat, BoardCombatRules.FightDurationSeconds);
+        public const double MatchDurationSeconds = BoardCombatRules.FightDurationSeconds;
 
         public static bool IsValidSlot(int slot)
         {
@@ -56,10 +55,10 @@ namespace MazeParty.Gameplay.Minigames.ArenaCombat
             }
         }
 
-        public static bool ShouldEndMatch(double elapsedSeconds, int survivorCount)
+        public static bool ShouldEndMatch(double elapsedSeconds, int survivorCount, MinigameRulesConfig? rules = null)
         {
             return survivorCount <= 1 ||
-                elapsedSeconds >= MatchDurationSeconds;
+                elapsedSeconds >= MinigameRulesConfig.Resolve(ScheduledMinigameId.ArenaCombat, rules).Seconds;
         }
 
         /// <summary>

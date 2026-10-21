@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
@@ -24,6 +25,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkStableFootingState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.StableFooting, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 460f;
@@ -124,8 +127,7 @@ namespace MazeParty.Multiplayer
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[StableFootingRules.PlayerCount];
         private readonly List<StableFootingRoundResult> _roundResults =
-            new List<StableFootingRoundResult>(
-                StableFootingRules.RoundCount);
+            new List<StableFootingRoundResult>();
         private readonly List<int> _fallingSlots =
             new List<int>(StableFootingRules.PlayerCount);
 
@@ -235,7 +237,7 @@ namespace MazeParty.Multiplayer
                     now >= _phaseEndsAt.Value)
                 {
                     _roundState?.TryEndForTimeout(
-                        StableFootingRules.RoundSeconds);
+                        GameRules.Seconds);
                     CompleteCurrentRoundOnServer(now);
                     return;
                 }
@@ -253,7 +255,7 @@ namespace MazeParty.Multiplayer
                     BeginRunOnServer(now);
                     break;
                 case NetworkStableFootingPhase.RoundResult:
-                    if (_roundNumber.Value < StableFootingRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundOnServer(_roundNumber.Value + 1, now);
                     }
@@ -772,7 +774,7 @@ namespace MazeParty.Multiplayer
         {
             _roundState = new StableFootingRoundState(
                 _matchSeed,
-                roundNumber);
+                roundNumber, rules: GameRules);
             _currentCycle = _roundState.Schedule.Cycles[0];
             _roundNumber.Value = (byte)roundNumber;
             _phase.Value = (byte)NetworkStableFootingPhase.Countdown;
@@ -814,7 +816,7 @@ namespace MazeParty.Multiplayer
         private void BeginRunOnServer(double now)
         {
             _phase.Value = (byte)NetworkStableFootingPhase.Running;
-            _phaseEndsAt.Value = now + StableFootingRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             _runningStartedAt = now;
             _resolvedDropCycle = -1;
             RefreshCycleOnServer(now, true);
@@ -841,7 +843,7 @@ namespace MazeParty.Multiplayer
             if (cycle == null)
             {
                 _roundState.TryEndForTimeout(
-                    StableFootingRules.RoundSeconds);
+                    GameRules.Seconds);
                 CompleteCurrentRoundOnServer(now);
                 return;
             }
@@ -1171,13 +1173,13 @@ namespace MazeParty.Multiplayer
         private void CompleteMatchOnServer()
         {
             if (_completionReported ||
-                _roundResults.Count != StableFootingRules.RoundCount)
+                _roundResults.Count != GameRules.Rounds)
             {
                 return;
             }
 
             var leaderboard =
-                StableFootingMatchScoring.BuildLeaderboard(_roundResults);
+                StableFootingMatchScoring.BuildLeaderboard(_roundResults, rules: GameRules);
             uint finalRanks = 0U;
             for (var index = 0; index < leaderboard.Count; index++)
             {
@@ -1209,10 +1211,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   StableFootingRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -1311,7 +1310,7 @@ namespace MazeParty.Multiplayer
             return Math.Max(
                 0d,
                 Math.Min(
-                    StableFootingRules.RoundSeconds,
+                    GameRules.Seconds,
                     now - _runningStartedAt));
         }
 
@@ -1320,13 +1319,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private static double GetCyclePhaseEnd(
@@ -1517,15 +1511,12 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector2 value)
         {
-            return !float.IsNaN(value.x) &&
-                   !float.IsInfinity(value.x) &&
-                   !float.IsNaN(value.y) &&
-                   !float.IsInfinity(value.y);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
     }
 }

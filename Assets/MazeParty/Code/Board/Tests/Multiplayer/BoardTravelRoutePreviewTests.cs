@@ -450,6 +450,75 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void DestinationIndexPreservesDirectedShortestPathsAndAuthoredTies()
+        {
+            var tiles = Enumerable.Range(0, 7).Select(i => CreateTile("Tile " + i, i, 0)).ToArray();
+            var topology = CreateTopology(tiles,
+                CreateGate(tiles[0], tiles[2]), CreateGate(tiles[0], tiles[1]),
+                CreateGate(tiles[0], tiles[2]), // Duplicate exit must not change a tie.
+                CreateGate(tiles[1], tiles[3]), CreateGate(tiles[2], tiles[3]),
+                CreateGate(tiles[3], tiles[0]), CreateGate(tiles[3], tiles[4]),
+                CreateGate(tiles[4], tiles[4]), CreateGate(tiles[5], tiles[4]), null);
+            var expected = new List<BoardTile>();
+            var actual = new List<BoardTile>();
+            foreach (var destination in tiles)
+            {
+                var index = new BoardMapRoute.DestinationIndex(topology, destination);
+                foreach (var source in tiles)
+                {
+                    var found = BoardMapRoute.TryFind(topology, source, destination, expected);
+                    Assert.That(index.TryFind(source, actual), Is.EqualTo(found));
+                    Assert.That(actual, Is.EqualTo(expected));
+                }
+            }
+            new BoardMapRoute.DestinationIndex(topology, tiles[3]).TryFind(tiles[0], actual);
+            Assert.That(actual, Is.EqualTo(new[] { tiles[0], tiles[2], tiles[3] }));
+            Assert.That(new BoardMapRoute.DestinationIndex(null, tiles[0]).TryFind(tiles[0], actual), Is.False);
+            Assert.That(actual, Is.Empty);
+        }
+
+        [Test]
+        public void ReusedChoiceListUpdatesRoutesAfterReplaceAppendAndClear()
+        {
+            var start = CreateTile("Start", 0, 0);
+            var primary = CreateTile("Primary", 1, 0);
+            var branch = CreateTile("Branch", 0, 1);
+            var topology = CreateTopology(new[] { start, primary, branch },
+                CreateGate(start, primary), CreateGate(start, branch),
+                CreateGate(primary, start), CreateGate(branch, start));
+            var preview = new BoardTravelRoutePreview(topology, start, 6, primary);
+            var choices = new List<BoardRouteChoice>();
+            var preferred = new List<BoardRouteChoice>();
+            var visible = new List<BoardRouteChoice>();
+            Assert.That(preview.GetCompatibleRouteCount(choices), Is.EqualTo(8));
+            choices.Add(new BoardRouteChoice(start.Coordinate, primary.Coordinate));
+            Assert.That(preview.GetCompatibleRouteCount(choices), Is.EqualTo(4));
+            choices[0] = new BoardRouteChoice(start.Coordinate, branch.Coordinate);
+            var steps = preview.GetVisibleSteps(choices);
+            AssertStep(steps, branch.Coordinate, 1, false);
+            Assert.That(steps.Any(s => s.Coordinate == primary.Coordinate && s.Step == 1), Is.False);
+            preview.GetPreferredEdges(choices, 0, preferred);
+            Assert.That(preferred[0], Is.EqualTo(choices[0]));
+            choices.Add(new BoardRouteChoice(start.Coordinate, primary.Coordinate));
+            Assert.That(preview.GetCompatibleRouteCount(choices), Is.EqualTo(2));
+            preview.GetVisibleEdges(choices, 5, visible);
+            Assert.That(visible, Is.EquivalentTo(new[] {
+                new BoardRouteChoice(primary.Coordinate, start.Coordinate),
+                new BoardRouteChoice(branch.Coordinate, start.Coordinate) }));
+            preview.GetPreferredEdges(choices, 5, preferred);
+            Assert.That(preferred, Is.EqualTo(new[] {
+                new BoardRouteChoice(primary.Coordinate, start.Coordinate) }));
+            choices[0] = new BoardRouteChoice(primary.Coordinate, branch.Coordinate);
+            Assert.That(preview.GetCompatibleRouteCount(choices), Is.Zero);
+            Assert.That(preview.GetVisibleSteps(choices), Is.Empty);
+            Assert.That(preview.GetPreferredEdges(choices, 0, preferred), Is.Zero);
+            choices.Clear();
+            Assert.That(preview.GetCompatibleRouteCount(choices), Is.EqualTo(8));
+            AssertStep(preview.GetVisibleSteps(choices), primary.Coordinate, 1, false);
+            AssertStep(preview.GetVisibleSteps(choices), branch.Coordinate, 1, true);
+        }
+
         private static void AssertStep(
             IReadOnlyList<BoardTravelRouteStep> steps,
             Vector2Int coordinate,

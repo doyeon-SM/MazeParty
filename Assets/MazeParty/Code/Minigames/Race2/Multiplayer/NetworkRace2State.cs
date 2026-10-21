@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.Race2;
 using Unity.Netcode;
@@ -30,6 +31,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkRace2State : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.Race2, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<Race2Snapshot> _snapshot = new NetworkVariable<Race2Snapshot>();
         private readonly uint[] _sequences = new uint[4];
         private Race2MatchState _simulation;
@@ -43,7 +46,7 @@ namespace MazeParty.Multiplayer
         public bool IsPaused => _snapshot.Value.Paused;
         public double Remaining => Phase == Race2Phase.Inactive || Phase == Race2Phase.Complete ? 0d :
             Math.Max(0d, IsPaused ? _snapshot.Value.PausedRemaining : _snapshot.Value.EndsAt - ServerNow);
-        public double RoundElapsed => Math.Min(Race2Rules.RoundSeconds, _snapshot.Value.RoundElapsed +
+        public double RoundElapsed => Math.Min(GameRules.Seconds, _snapshot.Value.RoundElapsed +
             (Phase == Race2Phase.Running && !IsPaused ? Math.Max(0d, ServerNow - _snapshot.Value.SampledAt) : 0d));
         private double ServerNow => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.unscaledTimeAsDouble;
         public override void OnNetworkSpawn() { Instance = this; }
@@ -62,7 +65,7 @@ namespace MazeParty.Multiplayer
         public void BeginMatchOnServer(ulong seed)
         {
             if (!IsSpawned || !IsServer) return;
-            _simulation = new Race2MatchState(seed); _completionReported = false; _startedAt = ServerNow;
+            _simulation = new Race2MatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race2, NetworkMatchState.Instance?.GameSettings)); _completionReported = false; _startedAt = ServerNow;
             Publish(false, true); FreezeAvatars();
         }
         private void Update()
@@ -83,7 +86,7 @@ namespace MazeParty.Multiplayer
             if (transition || before != AliveMask()) Publish(false, transition);
         }
         private bool ValidateEnvelope(int round, uint epoch, uint sequence, int slot) => IsSpawned && IsServer &&
-            _simulation != null && CanAcceptInputForSlot(slot) && round == RoundNumber && epoch != 0 && epoch == InputEpoch && sequence > _sequences[slot];
+            _simulation != null && CanAcceptInputForSlot(slot) && round == RoundNumber && MinigameServerRules.IsCurrentInputEpoch(epoch, InputEpoch) && sequence > _sequences[slot];
         public bool TrySetLaneOnServer(NetworkPlayerAvatar avatar, byte lane, byte round, uint epoch, uint sequence)
         {
             var slot = avatar != null ? avatar.AssignedSlot : -1; var match = NetworkMatchState.Instance;
@@ -117,7 +120,7 @@ namespace MazeParty.Multiplayer
             if (!IsServer) return;
             FreezeAvatars(); _simulation = null; _snapshot.Value = new Race2Snapshot { Epoch = NextEpoch() };
         }
-        private uint NextEpoch() => InputEpoch == uint.MaxValue ? 1U : InputEpoch + 1U;
+        private uint NextEpoch() => MinigameServerRules.NextInputEpoch(InputEpoch);
         private byte AliveMask()
         {
             byte mask = 0; for (var i = 0; i < 4; i++) if (_simulation.IsAlive(i)) mask |= (byte)(1 << i); return mask;

@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.SequenceMemory;
 
@@ -14,6 +15,42 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkSequenceMemoryState CurrentState =>
             NetworkSequenceMemoryState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            var state = CurrentState;
+            if (state == null ||
+                state.Phase == NetworkSequenceMemoryPhase.Inactive)
+                return false;
+            remaining = state.Remaining;
+            round = state.RoundNumber;
+            total = state.Phase == NetworkSequenceMemoryPhase.Countdown
+                ? SequenceMemoryRules.CountdownSeconds
+                : state.Phase ==
+                    NetworkSequenceMemoryPhase.PresentingProblem
+                    ? SequenceMemoryRules.GetProblemPresentationSeconds(
+                        UnityEngine.Mathf.Clamp(round, 1,
+                            state.GameRules.Rounds), rules: state.GameRules)
+                    : state.Phase ==
+                        NetworkSequenceMemoryPhase.RevealingAnswer
+                        ? SequenceMemoryRules.AnswerRevealSeconds
+                        : state.Phase ==
+                            NetworkSequenceMemoryPhase.Complete
+                            ? SequenceMemoryRules.ResultSeconds
+                        : SequenceMemoryRules.InputWindowSeconds;
+            return true;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot),
+                state.IsPlayerEliminated(slot) ? "{0}.  {1}  OUT  GOLD +{2}" : "{0}.  {1}  SURVIVED  GOLD +{2}");
+        }
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

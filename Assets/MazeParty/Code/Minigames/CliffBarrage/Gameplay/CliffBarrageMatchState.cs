@@ -87,6 +87,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
     /// </summary>
     public sealed class CliffBarrageMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double Epsilon = 0.000000001d;
         private const double ProjectileSpawnMin = 1.5d / 2d;
         private const double ProjectileSpawnMax = 2.5d / 2d;
@@ -100,9 +101,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             new LaserState[CliffBarrageRules.MaximumLasers];
         private readonly int[] _scores =
             new int[CliffBarrageRules.PlayerCount];
-        private readonly int[,] _roundRanks =
-            new int[CliffBarrageRules.RoundCount,
-                CliffBarrageRules.PlayerCount];
+        private readonly int[,] _roundRanks;
         private readonly int _projectileLimit;
         private readonly int _laserLimit;
         private uint _randomState;
@@ -113,8 +112,10 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
 
         public CliffBarrageMatchState(int seed,
             int projectileLimit = CliffBarrageRules.MaximumProjectiles,
-            int laserLimit = CliffBarrageRules.MaximumLasers)
+            int laserLimit = CliffBarrageRules.MaximumLasers, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.CliffBarrage, rules);
+            _roundRanks = new int[_rules.Rounds, CliffBarrageRules.PlayerCount];
             if (projectileLimit < 0 || projectileLimit >
                 CliffBarrageRules.MaximumProjectiles)
             {
@@ -380,7 +381,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
                 return;
             }
             var target = Math.Min(activeElapsedSeconds,
-                CliffBarrageRules.RoundDurationSeconds);
+                _rules.Seconds);
             var targetSteps = (int)Math.Floor(target *
                 CliffBarrageRules.SimulationHz + Epsilon);
             while (_simulatedSteps < targetSteps && !IsRoundComplete)
@@ -395,16 +396,16 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             }
             RoundElapsedSeconds = target;
             if (target + Epsilon >=
-                CliffBarrageRules.RoundDurationSeconds)
+                _rules.Seconds)
             {
-                FinishRound(CliffBarrageRules.RoundDurationSeconds);
+                FinishRound(_rules.Seconds);
             }
         }
 
         public void BeginNextRound()
         {
             if (!IsRoundComplete || IsComplete ||
-                RoundNumber >= CliffBarrageRules.RoundCount)
+                RoundNumber >= _rules.Rounds)
             {
                 throw new InvalidOperationException(
                     "A completed non-final round is required.");
@@ -823,7 +824,7 @@ namespace MazeParty.Gameplay.Minigames.CliffBarrage
             }
             IsRoundComplete = true;
             IsComplete = RoundNumber ==
-                CliffBarrageRules.RoundCount;
+                _rules.Rounds;
             RoundTransitionSequence++;
             foreach (var projectile in _projectiles)
             {

@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.SnowySpin;
 using Unity.Netcode;
@@ -21,6 +22,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkSnowySpinState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.SnowySpin, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double ResultSeconds = 4d;
         private const double SnapshotIntervalSeconds = 0.05d;
@@ -164,7 +167,7 @@ namespace MazeParty.Multiplayer
             ClearLocalRuntime();
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
-            _serverMatch = new SnowySpinMatchState(seed);
+            _serverMatch = new SnowySpinMatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.SnowySpin, NetworkMatchState.Instance?.GameSettings));
             _serverMatch.CollisionResolved +=
                 HandleServerCollisionResolved;
 
@@ -336,7 +339,7 @@ namespace MazeParty.Multiplayer
             _phaseStartedAt = now;
             _phase.Value = (byte)NetworkSnowySpinPhase.Playing;
             _phaseEndsAt.Value =
-                now + SnowySpinRules.RoundDurationSeconds;
+                now + GameRules.Seconds;
             AdvanceInputEpochOnServer();
             SyncSnapshotOnServer();
             _lastSnapshotAt = now;
@@ -366,7 +369,7 @@ namespace MazeParty.Multiplayer
         private void AdvancePlayingModelOnServer(double now)
         {
             _serverMatch?.AdvanceTo(Math.Min(
-                SnowySpinRules.RoundDurationSeconds,
+                GameRules.Seconds,
                 Math.Max(0d, now - _phaseStartedAt)));
         }
 
@@ -515,11 +518,8 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                avatar.IsSpawned &&
-                SnowySpinRules.IsValidPlayerSlot(slot) &&
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
                 match != null && match.GetAvatarForSlot(slot) == avatar;
         }
 
@@ -576,9 +576,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 

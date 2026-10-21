@@ -8,7 +8,7 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
     {
         public const int PlayerCount = 4;
         public const int RoundCount = 1;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.TerritoryPaint, 60d);
+        public const double RoundSeconds = 60d;
         public const int TotalScore = 1000;
         public const int SurfaceResolution = 96;
         public const byte UnpaintedOwner = byte.MaxValue;
@@ -56,7 +56,11 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
     /// </summary>
     public sealed class TerritoryPaintSurface
     {
+        private const int CellsPerWord = 64;
         private readonly byte[] _owners;
+        private readonly bool[] _dirtyWords;
+        private readonly int[] _dirtyWordIndices;
+        private int _dirtyWordCount;
         private readonly int[] _ownedCounts =
             new int[TerritoryPaintRules.PlayerCount];
 
@@ -86,6 +90,11 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
             ArenaHalfExtent = arenaHalfExtent;
             _owners = new byte[resolution * resolution];
             Array.Fill(_owners, TerritoryPaintRules.UnpaintedOwner);
+            var wordCount = (_owners.Length + CellsPerWord - 1) / CellsPerWord;
+            _dirtyWords = new bool[wordCount];
+            _dirtyWordIndices = new int[wordCount];
+            // A new round must also clear any ownership left in its network lists.
+            for (var word = 0; word < wordCount; word++) MarkWordDirty(word);
         }
 
         public int Resolution { get; }
@@ -129,6 +138,37 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
             }
 
             return _owners[index];
+        }
+
+        // Consumed by the authoritative replicator after simulation. Repainting
+        // a cell by its current owner never creates another update.
+        public bool TryConsumeChangedWord(out int word, out ulong painted,
+            out ulong ownerLow, out ulong ownerHigh)
+        {
+            word = 0;
+            painted = ownerLow = ownerHigh = 0UL;
+            if (_dirtyWordCount == 0) return false;
+            word = _dirtyWordIndices[--_dirtyWordCount];
+            _dirtyWords[word] = false;
+            var start = word * CellsPerWord;
+            var end = Math.Min(start + CellsPerWord, _owners.Length);
+            for (var cell = start; cell < end; cell++)
+            {
+                var owner = _owners[cell];
+                if (owner == TerritoryPaintRules.UnpaintedOwner) continue;
+                var mask = 1UL << (cell - start);
+                painted |= mask;
+                if ((owner & 1) != 0) ownerLow |= mask;
+                if ((owner & 2) != 0) ownerHigh |= mask;
+            }
+            return true;
+        }
+
+        private void MarkWordDirty(int word)
+        {
+            if (_dirtyWords[word]) return;
+            _dirtyWords[word] = true;
+            _dirtyWordIndices[_dirtyWordCount++] = word;
         }
 
         public int PaintStroke(
@@ -234,6 +274,7 @@ namespace MazeParty.Gameplay.Minigames.TerritoryPaint
                     }
 
                     _owners[index] = (byte)playerSlot;
+                    MarkWordDirty(index / CellsPerWord);
                     _ownedCounts[playerSlot]++;
                     changed++;
                 }

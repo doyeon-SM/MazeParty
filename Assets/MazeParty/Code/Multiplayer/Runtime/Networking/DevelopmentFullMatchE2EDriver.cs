@@ -1569,8 +1569,8 @@ namespace MazeParty.Multiplayer
                     "No minigame definition is registered for " + game + ".");
             }
 
-            var roundCount = Math.Max(1, definition.RoundCount);
-            var phaseSeconds = Math.Max(1d, definition.PhaseDurationSeconds);
+            var roundCount = Math.Max(1, MinigameRulesConfig.FromMatch(definition.Id, NetworkMatchState.Instance?.GameSettings).Rounds);
+            var phaseSeconds = Math.Max(1d, MinigameRulesConfig.FromMatch(definition.Id, NetworkMatchState.Instance?.GameSettings).Seconds);
             var timedGameplaySeconds = phaseSeconds * roundCount;
             if (game == ScheduledMinigameId.BombPassing)
             {

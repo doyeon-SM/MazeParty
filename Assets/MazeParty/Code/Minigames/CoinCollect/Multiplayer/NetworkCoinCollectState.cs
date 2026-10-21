@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames.CoinCollect;
@@ -49,6 +50,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkCoinCollectState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.CoinCollect, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d, RoundResultSeconds = 4d;
         private readonly NetworkVariable<byte> _phase = new NetworkVariable<byte>();
         private readonly NetworkVariable<byte> _roundNumber = new NetworkVariable<byte>();
@@ -70,7 +73,7 @@ namespace MazeParty.Multiplayer
         public bool IsPaused => _paused.Value;
         public int ItemCount => _items.Count;
         public double Elapsed => Phase == NetworkCoinCollectPhase.Running && !_paused.Value
-            ? Math.Min(CoinCollectRules.RoundSeconds, Math.Max(0d, CoinCollectRules.RoundSeconds - Remaining))
+            ? Math.Min(GameRules.Seconds, Math.Max(0d, GameRules.Seconds - Remaining))
             : _roundElapsed.Value;
         public double Remaining => Phase == NetworkCoinCollectPhase.Inactive || Phase == NetworkCoinCollectPhase.Complete
             ? 0d : Math.Max(0d, _paused.Value ? _pausedPhaseRemaining.Value : _phaseEndsAt.Value - ServerNow);
@@ -91,7 +94,7 @@ namespace MazeParty.Multiplayer
         public void BeginMatchOnServer(ulong seed)
         {
             if (!IsSpawned || !IsServer) return;
-            _simulation = new CoinCollectMatchState(seed);
+            _simulation = new CoinCollectMatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.CoinCollect, NetworkMatchState.Instance?.GameSettings));
             _simulation.ItemCollected += OnItemCollected;
             _simulation.PushStarted += OnPushStarted;
             _paused.Value = false; _completionReported = false;
@@ -114,7 +117,7 @@ namespace MazeParty.Multiplayer
                 case NetworkCoinCollectPhase.Countdown:
                     _runningStartedAt = now;
                     _phase.Value = (byte)NetworkCoinCollectPhase.Running;
-                    _phaseEndsAt.Value = now + CoinCollectRules.RoundSeconds;
+                    _phaseEndsAt.Value = now + GameRules.Seconds;
                     AdvanceEpoch();
                     _simulation.AdvanceTo(0d); Sync();
                     break;
@@ -168,7 +171,7 @@ namespace MazeParty.Multiplayer
         }
         private bool ValidateEnvelope(int round, uint epoch) => IsSpawned && IsServer && _simulation != null &&
             !_paused.Value && Phase == NetworkCoinCollectPhase.Running && Remaining > 0d &&
-            round == RoundNumber && epoch != 0 && epoch == InputEpoch;
+            round == RoundNumber && MinigameServerRules.IsCurrentInputEpoch(epoch, InputEpoch);
         private bool TryResolveSlot(NetworkPlayerAvatar avatar, out int slot)
         {
             slot = avatar != null ? avatar.AssignedSlot : -1;
@@ -217,7 +220,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             for (var slot = 0; slot < 4; slot++) match?.GetAvatarForSlot(slot)?.StopServerInputOnServer();
         }
-        private void AdvanceEpoch() { _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue ? 1U : _inputEpoch.Value + 1U; }
+        private void AdvanceEpoch() { _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value); }
         private void Sync()
         {
             _roundElapsed.Value = _simulation.Elapsed;

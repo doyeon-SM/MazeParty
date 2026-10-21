@@ -8,21 +8,21 @@ namespace MazeParty.Gameplay.Minigames.Race2
     public static class Race2Rules
     {
         public const int PlayerCount = 4, BoxCount = 7, PreviewBoxCount = 5;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.Race2, 3);
+        public const int RoundCount = 3;
         public const double CountdownSeconds = 3d, ResultSeconds = 4d;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Race2, 120d);
+        public const double RoundSeconds = 120d;
         public const double BaseSpeed = 5d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
         // Behind the rear camera as well as below its view, so recycling is never visible.
         public const double RecycleZ = -12d, CollisionHalfDepth = .85d;
         public static bool ValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
-        public static double Speed(double time) => BaseSpeed * (1d + 2d * Math.Max(0d, Math.Min(RoundSeconds, time)) / RoundSeconds);
-        public static double Distance(double time)
+        public static double Speed(double time, double duration = 120d) => BaseSpeed * (1d + 2d * Math.Max(0d, Math.Min(duration, time)) / duration);
+        public static double Distance(double time, double duration = 120d)
         {
-            var t = Math.Max(0d, Math.Min(RoundSeconds, time));
-            return BaseSpeed * (t + t * t / RoundSeconds);
+            var t = Math.Max(0d, Math.Min(duration, time));
+            return BaseSpeed * (t + t * t / duration);
         }
-        public static double TimeAtDistance(double distance) => distance <= 0d ? 0d :
-            2d * distance / (BaseSpeed + Math.Sqrt(BaseSpeed * BaseSpeed + 4d * BaseSpeed * distance / RoundSeconds));
+        public static double TimeAtDistance(double distance, double duration = 120d) => distance <= 0d ? 0d :
+            2d * distance / (BaseSpeed + Math.Sqrt(BaseSpeed * BaseSpeed + 4d * BaseSpeed * distance / duration));
         public static int NextSpectator(int current, Func<int, bool> alive)
         {
             for (var offset = 1; offset <= PlayerCount; offset++)
@@ -37,9 +37,10 @@ namespace MazeParty.Gameplay.Minigames.Race2
     /// <summary>Seeded shared obstacle stream, also used by clients to place the fixed pool of recycled boxes.</summary>
     public sealed class Race2BoxStream
     {
+        private readonly double _duration;
         private readonly List<byte> _lanes = new List<byte>();
         private ulong _random;
-        public Race2BoxStream(ulong seed, int round) { _random = seed ^ (0xD1B54A32D192ED03UL * (ulong)round); }
+        public Race2BoxStream(ulong seed, int round, double duration = 120d) { _duration = duration; _random = seed ^ (0xD1B54A32D192ED03UL * (ulong)round); }
         public byte Lane(int sequence)
         {
             if (sequence < 0) throw new ArgumentOutOfRangeException(nameof(sequence));
@@ -58,7 +59,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
         {
             if (index < 0 || index >= Race2Rules.BoxCount) throw new ArgumentOutOfRangeException(nameof(index));
             var original = Race2Rules.FirstBoxDistance + index * Race2Rules.BoxSpacing;
-            var distance = Race2Rules.Distance(time); var length = Race2Rules.BoxCount * Race2Rules.BoxSpacing;
+            var distance = Race2Rules.Distance(time, _duration); var length = Race2Rules.BoxCount * Race2Rules.BoxSpacing;
             var cycles = Math.Max(0, (int)Math.Floor((distance - original + Race2Rules.RecycleZ) / length) + 1);
             sequence = index + cycles * Race2Rules.BoxCount;
             z = original + cycles * length - distance;
@@ -68,6 +69,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
     /// <summary>All transitions and swept collision times use the authoritative match clock.</summary>
     public sealed class Race2MatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly byte[] _lanes = new byte[4];
         private readonly bool[] _alive = new bool[4];
         private readonly double[] _eliminatedAt = new double[4];
@@ -82,7 +84,8 @@ namespace MazeParty.Gameplay.Minigames.Race2
         public double RoundElapsed => _roundElapsed;
         public double Remaining => Phase == Race2Phase.Complete ? 0d : Math.Max(0d, PhaseEndsAt - Elapsed);
         public Race2BoxStream Boxes { get; private set; }
-        public Race2MatchState(ulong seed) { Seed = seed; BeginRound(1, 0d); }
+        public Race2MatchState(ulong seed, MinigameRulesConfig? rules = null) {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.Race2, rules); Seed = seed; BeginRound(1, 0d); }
         public bool IsAlive(int slot) => Race2Rules.ValidSlot(slot) && _alive[slot];
         public byte GetLane(int slot) => Race2Rules.ValidSlot(slot) ? _lanes[slot] : (byte)0;
         public int GetScore(int slot) => Race2Rules.ValidSlot(slot) ? _scores[slot] : 0;
@@ -104,7 +107,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
                 if (Phase == Race2Phase.Running)
                 {
                     var crossing = Race2Rules.TimeAtDistance(Race2Rules.FirstBoxDistance +
-                        _nextCrossing * Race2Rules.BoxSpacing - Race2Rules.CollisionHalfDepth);
+                        _nextCrossing * Race2Rules.BoxSpacing - Race2Rules.CollisionHalfDepth, _rules.Seconds);
                     var eventAt = _runningStartedAt + crossing;
                     var until = Math.Min(target, PhaseEndsAt);
                     if (eventAt <= until)
@@ -125,9 +128,9 @@ namespace MazeParty.Gameplay.Minigames.Race2
                     if (Phase == Race2Phase.Countdown)
                     {
                         Phase = Race2Phase.Running; _runningStartedAt = Elapsed;
-                        PhaseEndsAt = Elapsed + Race2Rules.RoundSeconds;
+                        PhaseEndsAt = Elapsed + _rules.Seconds;
                     }
-                    else if (RoundNumber < Race2Rules.RoundCount) BeginRound(RoundNumber + 1, Elapsed);
+                    else if (RoundNumber < _rules.Rounds) BeginRound(RoundNumber + 1, Elapsed);
                     else { Phase = Race2Phase.Complete; PhaseEndsAt = Elapsed; }
                 }
             }
@@ -135,7 +138,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
         private void BeginRound(int round, double now)
         {
             RoundNumber = round; Phase = Race2Phase.Countdown; PhaseEndsAt = now + Race2Rules.CountdownSeconds;
-            _roundElapsed = 0d; _nextCrossing = 0; Boxes = new Race2BoxStream(Seed, round);
+            _roundElapsed = 0d; _nextCrossing = 0; Boxes = new Race2BoxStream(Seed, round, _rules.Seconds);
             for (var i = 0; i < 4; i++) { _alive[i] = true; _lanes[i] = 0; _eliminatedAt[i] = 0; _roundRanks[i] = 0; }
         }
         private void ResolveOverlaps()

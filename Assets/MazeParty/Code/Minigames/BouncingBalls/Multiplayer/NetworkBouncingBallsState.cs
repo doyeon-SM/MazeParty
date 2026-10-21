@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.BouncingBalls;
 using Unity.Netcode;
@@ -22,6 +23,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkBouncingBallsState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings);
         public const double RoundBreakSeconds =
             BouncingBallsRules.ResultSeconds;
         private const double SnapshotIntervalSeconds = 0.05d;
@@ -184,7 +187,7 @@ namespace MazeParty.Multiplayer
             ClearLocalRuntime();
             ResetReplicatedStateOnServer();
             var seed = unchecked((int)(matchSeed ^ (matchSeed >> 32)));
-            _serverMatch = new BouncingBallsMatchState(seed);
+            _serverMatch = new BouncingBallsMatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings));
             _serverMatch.BallReflected += PresentBallReflectionOnServer;
             _serverMatch.GoalResolved += PresentGoalOnServer;
             _matchActive.Value = true;
@@ -400,7 +403,7 @@ namespace MazeParty.Multiplayer
         {
             var elapsed = Math.Max(0d, now - _phaseStartedAt);
             _serverMatch.AdvanceTo(
-                Math.Min(BouncingBallsRules.RoundSeconds, elapsed));
+                Math.Min(GameRules.Seconds, elapsed));
         }
 
         private void PresentBallReflectionOnServer(int slot, double x, double y)
@@ -444,7 +447,7 @@ namespace MazeParty.Multiplayer
             _roundNumber.Value = (byte)_serverMatch.RoundNumber;
             _phaseStartedAt = now;
             _phase.Value = (byte)NetworkBouncingBallsPhase.Playing;
-            _phaseEndsAt.Value = now + BouncingBallsRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             AdvanceInputEpochOnServer();
             SyncSnapshotOnServer();
             _lastSnapshotAt = now;
@@ -582,11 +585,8 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                avatar.IsSpawned &&
-                BouncingBallsRules.IsValidPlayerSlot(slot) &&
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
                 match != null && match.GetAvatarForSlot(slot) == avatar;
         }
 
@@ -652,9 +652,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 

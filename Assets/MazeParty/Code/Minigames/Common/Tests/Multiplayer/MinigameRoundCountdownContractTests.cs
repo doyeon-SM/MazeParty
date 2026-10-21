@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using MazeParty.Gameplay;
+using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 using MazeParty.Gameplay.Minigames.Race2;
 using MazeParty.Gameplay.Minigames.ShellGame;
@@ -46,6 +48,78 @@ namespace MazeParty.Multiplayer.Tests
             {
                 NetworkCountdownTestAccess.SetInstance(typeof(NetworkFlightState), previous);
                 UnityEngine.Object.DestroyImmediate(root);
+            }
+        }
+
+        [Test]
+        public void Race2Hud_ConfiguredDurationSurvivesCountdownRunningAndRoundRestart()
+        {
+            var previousMatch = NetworkMatchState.Instance;
+            var previousRace = NetworkRace2State.Instance;
+            var warning = typeof(NetworkVariableBase).GetField(
+                "IgnoreInitializeWarning", BindingFlags.Static | BindingFlags.NonPublic);
+            var previousWarning = warning.GetValue(null);
+            var root = new GameObject("Race2 configured HUD contract");
+            GameObject hudRoot = null;
+            try
+            {
+                warning.SetValue(null, true);
+                var match = root.AddComponent<NetworkMatchState>();
+                var state = root.AddComponent<NetworkRace2State>();
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkMatchState), match);
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkRace2State), state);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    match, "_flowState", (byte)BoardFlowState.MinigamePlaying);
+                NetworkCountdownTestAccess.SetNetworkValue(
+                    match, "_currentMinigame", (byte)ScheduledMinigameId.Race2);
+                var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab");
+                Assert.That(prefab, Is.Not.Null);
+                hudRoot = UnityEngine.Object.Instantiate(prefab);
+                var hud = hudRoot.GetComponent<MinigameCommonHudView>();
+                Assert.That(hud.HasRequiredReferences, Is.True);
+
+                foreach (var duration in new[] { (30, "00:30", "00:15"), (180, "03:00", "01:30") })
+                {
+                    Assert.That(MatchGameSettings.Default.TryChangeGame(
+                        ScheduledMinigameId.Race2,
+                        new MinigameSetting(true, 3, duration.Item1),
+                        out var settings), Is.True);
+                    typeof(NetworkMatchState).GetProperty("GameSettings").SetValue(match, settings);
+                    foreach (var sample in new[] {
+                        (Race2Phase.Countdown, 1, 3d, duration.Item2, 1f),
+                        (Race2Phase.Running, 1, (double)duration.Item1, duration.Item2, 1f),
+                        (Race2Phase.Running, 1, duration.Item1 / 2d, duration.Item3, .5f),
+                        (Race2Phase.Running, 1, 0d, "00:00", 0f),
+                        (Race2Phase.RoundResult, 1, 4d, "00:00", 0f),
+                        (Race2Phase.Countdown, 2, 3d, duration.Item2, 1f) })
+                    {
+                        // Freeze the snapshot clock so assertions do not depend on editor timing.
+                        NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new Race2Snapshot {
+                            Phase = sample.Item1, Round = (byte)sample.Item2, AliveMask = 15,
+                            Paused = true, PausedRemaining = sample.Item3
+                        });
+                        NetworkCountdownTestAccess.InvokePrivate(hud, "Update");
+                        var context = duration.Item1 + "s " + sample.Item1 + " round " + sample.Item2;
+                        Assert.That(hud.TimerDial.gameObject.activeSelf, Is.True, context);
+                        Assert.That(hud.TimerDial.TimeText.text, Is.EqualTo(sample.Item4), context);
+                        Assert.That(hud.TimerDial.Ring.FillAmount,
+                            Is.EqualTo(sample.Item5).Within(0.000001f), context);
+                    }
+
+                    NetworkCountdownTestAccess.SetNetworkValue(
+                        state, "_snapshot", new Race2Snapshot { Phase = Race2Phase.Complete });
+                    NetworkCountdownTestAccess.InvokePrivate(hud, "Update");
+                    Assert.That(hud.TimerDial.gameObject.activeSelf, Is.False);
+                }
+            }
+            finally
+            {
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkMatchState), previousMatch);
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkRace2State), previousRace);
+                if (hudRoot != null) UnityEngine.Object.DestroyImmediate(hudRoot);
+                UnityEngine.Object.DestroyImmediate(root);
+                warning.SetValue(null, previousWarning);
             }
         }
 

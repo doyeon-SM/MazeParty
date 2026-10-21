@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay;
@@ -24,6 +25,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkBalloonBlowState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.BalloonBlow, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double RoundResultSeconds = 4d;
 
@@ -90,8 +93,7 @@ namespace MazeParty.Multiplayer
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[BalloonBlowRules.PlayerCount];
         private readonly List<BalloonBlowRoundResult> _roundResults =
-            new List<BalloonBlowRoundResult>(
-                BalloonBlowRules.RoundCount);
+            new List<BalloonBlowRoundResult>();
 
         private BalloonBlowRoundState _roundState;
         private double _runningStartedAt;
@@ -189,7 +191,7 @@ namespace MazeParty.Multiplayer
                     BeginRunOnServer(now);
                     break;
                 case NetworkBalloonBlowPhase.RoundResult:
-                    if (_roundNumber.Value < BalloonBlowRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundOnServer(_roundNumber.Value + 1, now);
                     }
@@ -434,7 +436,7 @@ namespace MazeParty.Multiplayer
         private void BeginRoundOnServer(int roundNumber, double now)
         {
             AdvanceInputEpochOnServer();
-            _roundState = new BalloonBlowRoundState(roundNumber);
+            _roundState = new BalloonBlowRoundState(roundNumber, rules: GameRules);
             _roundNumber.Value = (byte)roundNumber;
             _phase.Value = (byte)NetworkBalloonBlowPhase.Countdown;
             _phaseEndsAt.Value = now + CountdownSeconds;
@@ -468,7 +470,7 @@ namespace MazeParty.Multiplayer
                 _requiresFreshRelease[slot] = true;
             }
             _phase.Value = (byte)NetworkBalloonBlowPhase.Running;
-            _phaseEndsAt.Value = now + BalloonBlowRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             _runningStartedAt = now;
             SyncRoundSnapshotOnServer();
         }
@@ -515,13 +517,13 @@ namespace MazeParty.Multiplayer
         private void CompleteMatchOnServer()
         {
             if (_completionReported ||
-                _roundResults.Count != BalloonBlowRules.RoundCount)
+                _roundResults.Count != GameRules.Rounds)
             {
                 return;
             }
 
             var leaderboard =
-                BalloonBlowMatchScoring.BuildLeaderboard(_roundResults);
+                BalloonBlowMatchScoring.BuildLeaderboard(_roundResults, rules: GameRules);
             uint finalRanks = 0U;
             for (var index = 0; index < leaderboard.Count; index++)
             {
@@ -655,13 +657,9 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   BalloonBlowRules.IsValidPlayerSlot(slot) &&
-                   match != null &&
-                   ReferenceEquals(match.GetAvatarForSlot(slot), avatar);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
+                match != null && ReferenceEquals(match.GetAvatarForSlot(slot), avatar);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -699,7 +697,7 @@ namespace MazeParty.Multiplayer
             return Math.Max(
                 0d,
                 Math.Min(
-                    BalloonBlowRules.RoundSeconds,
+                    GameRules.Seconds,
                     now - _runningStartedAt));
         }
 
@@ -708,13 +706,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private void SetPlayerProgressOnServer(int slot, float value)
@@ -875,7 +868,7 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
     }
 }

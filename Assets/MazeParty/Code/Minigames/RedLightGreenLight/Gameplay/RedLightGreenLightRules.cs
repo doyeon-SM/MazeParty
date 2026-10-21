@@ -12,11 +12,11 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     public static class RedLightGreenLightRules
     {
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.RedLightGreenLight, 3);
+        public const int RoundCount = 3;
         public const int ViolationsToEliminate = 2;
 
         public const double CountdownSeconds = 3d;
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.RedLightGreenLight, 60d);
+        public const double RoundSeconds = 60d;
         public const double ResultSeconds = 4d;
         public const double MinimumGreenStepSeconds = 0.1d;
         public const double MaximumGreenStepSeconds = 2d;
@@ -45,9 +45,10 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             return playerSlot >= 0 && playerSlot < PlayerCount;
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -58,13 +59,14 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
         internal static void ValidateRunningElapsedSeconds(
             double runningElapsedSeconds,
-            bool allowPastTimeLimit = false)
+            bool allowPastTimeLimit = false, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
             if (double.IsNaN(runningElapsedSeconds) ||
                 double.IsInfinity(runningElapsedSeconds) ||
                 runningElapsedSeconds < 0d ||
                 (!allowPastTimeLimit &&
-                 runningElapsedSeconds > RoundSeconds))
+                 runningElapsedSeconds > configuration.Seconds))
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(runningElapsedSeconds),
@@ -145,12 +147,14 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
     public sealed class RedLightGreenLightSignalSchedule
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly ReadOnlyCollection<RedLightGreenLightSignalWindow>
             _windows;
 
         internal RedLightGreenLightSignalSchedule(
-            RedLightGreenLightSignalWindow[] windows)
+            RedLightGreenLightSignalWindow[] windows, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
             if (windows == null || windows.Length == 0)
             {
                 throw new ArgumentException(
@@ -168,14 +172,14 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             double runningElapsedSeconds)
         {
             RedLightGreenLightRules.ValidateRunningElapsedSeconds(
-                runningElapsedSeconds);
+                runningElapsedSeconds, rules: _rules);
 
             for (var index = 0; index < _windows.Count; index++)
             {
                 var window = _windows[index];
                 if (runningElapsedSeconds < window.EndsAtSeconds ||
                     (runningElapsedSeconds ==
-                     RedLightGreenLightRules.RoundSeconds &&
+                     _rules.Seconds &&
                      index == _windows.Count - 1))
                 {
                     return window;
@@ -212,9 +216,9 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     {
         public static ulong DeriveRoundSeed(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            RedLightGreenLightRules.ValidateRoundNumber(roundNumber);
+            RedLightGreenLightRules.ValidateRoundNumber(roundNumber, rules: rules);
             var mixer = new SplitMix64(
                 serverSeed ^
                 unchecked(0xA0761D6478BD642FUL *
@@ -224,16 +228,17 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
         public static RedLightGreenLightSignalSchedule Generate(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            RedLightGreenLightRules.ValidateRoundNumber(roundNumber);
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
+            RedLightGreenLightRules.ValidateRoundNumber(roundNumber, rules: rules);
             var random = new SplitMix64(
-                DeriveRoundSeed(serverSeed, roundNumber));
+                DeriveRoundSeed(serverSeed, roundNumber, rules: rules));
             var windows =
                 new List<RedLightGreenLightSignalWindow>();
             var cursor = 0d;
 
-            while (cursor < RedLightGreenLightRules.RoundSeconds)
+            while (cursor < configuration.Seconds)
             {
                 for (var redLightCount = 0;
                      redLightCount < 3;
@@ -262,7 +267,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             }
 
             return new RedLightGreenLightSignalSchedule(
-                windows.ToArray());
+                windows.ToArray(), rules: rules);
         }
 
         private struct SplitMix64
@@ -628,14 +633,15 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     {
         public static IReadOnlyList<
             RedLightGreenLightLeaderboardEntry> BuildLeaderboard(
-                IReadOnlyList<RedLightGreenLightRoundResult> rounds)
+                IReadOnlyList<RedLightGreenLightRoundResult> rounds, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
             if (rounds == null)
             {
                 throw new ArgumentNullException(nameof(rounds));
             }
 
-            if (rounds.Count != RedLightGreenLightRules.RoundCount)
+            if (rounds.Count != configuration.Rounds)
             {
                 throw new ArgumentException(
                     "A completed match must contain exactly three rounds.",
@@ -672,7 +678,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
                         standing.ForwardProgressMeters;
 
                     if (roundIndex ==
-                        RedLightGreenLightRules.RoundCount - 1)
+                        configuration.Rounds - 1)
                     {
                         finalRoundRanks[standing.PlayerSlot] =
                             standing.Rank;

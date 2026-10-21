@@ -81,23 +81,12 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardCanvasBindings uiBindings;
         [SerializeField] private MinigameResultCanvasBindings resultUiBindings;
 
+        private readonly BoardHudCanvasBindings.PlayerHudRow[] _playerHudRows =
+            new BoardHudCanvasBindings.PlayerHudRow[MultiplayerConstants.MaxPlayers];
         private readonly Image[] _slotBackgrounds = new Image[GameplayInventory.Capacity];
         private readonly Image[] _slotIcons = new Image[GameplayInventory.Capacity];
         private readonly Button[] _choiceButtons = new Button[GameplayInventory.Capacity];
         private readonly Text[] _choiceLabels = new Text[GameplayInventory.Capacity];
-        private readonly Text[] _playerRows = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Image[] _playerCards = new Image[MultiplayerConstants.MaxPlayers];
-        private readonly Slider[] _playerHealthSliders =
-            new Slider[MultiplayerConstants.MaxPlayers];
-        private readonly Image[] _playerHealthFills = new Image[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerHealthTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerHealthDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerKeyTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerKeyDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerGoldTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerGoldDeltaTexts = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly BoardHudStatFeedbackView[] _statFeedback =
-            new BoardHudStatFeedbackView[MultiplayerConstants.MaxPlayers];
         private readonly int[,] _pendingHudDeltas = new int[MultiplayerConstants.MaxPlayers, 3];
         private readonly bool[] _observedCombatHealth = new bool[MultiplayerConstants.MaxPlayers];
         private double _hudFeedbackNow;
@@ -107,8 +96,6 @@ namespace MazeParty.Multiplayer
         private readonly bool[] _observedStats = new bool[MultiplayerConstants.MaxPlayers];
         private readonly float[] _deathGoldDeltaUntil = new float[MultiplayerConstants.MaxPlayers];
         private readonly int[] _deathGoldDeltaTotal = new int[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerActionIcons = new Text[MultiplayerConstants.MaxPlayers];
-        private readonly Text[] _playerRankTexts = new Text[MultiplayerConstants.MaxPlayers];
         private readonly Text[] _minigameReadyPlayerStates =
             new Text[MultiplayerConstants.MaxPlayers];
         private readonly TMP_Text[] _minigameControlRows = new TMP_Text[4];
@@ -309,11 +296,11 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
-            for (var slot = 0; slot < _statFeedback.Length; slot++)
+            for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
                 for (var kind = 0; kind < 3; kind++)
                 {
-                    _statFeedback[slot]?.HideDelta(kind);
+                    _playerHudRows[slot].Feedback?.HideDelta(kind);
                     _pendingHudDeltas[slot, kind] = 0;
                 }
                 _observedStats[slot] = false;
@@ -578,19 +565,8 @@ namespace MazeParty.Multiplayer
             CopyReferences(item.ShopOfferButtons, _shopOfferButtons);
             CopyReferences(item.ShopOfferIcons, _shopOfferIcons);
             CopyReferences(item.ShopOfferLabels, _shopOfferLabels);
-            CopyReferences(hud.PlayerRows, _playerRows);
-            CopyReferences(hud.PlayerCards, _playerCards);
-            CopyReferences(hud.PlayerHealthSliders, _playerHealthSliders);
-            CopyReferences(hud.PlayerHealthFills, _playerHealthFills);
-            CopyReferences(hud.PlayerHealthTexts, _playerHealthTexts);
-            CopyReferences(hud.PlayerHealthDeltaTexts, _playerHealthDeltaTexts);
-            CopyReferences(hud.PlayerKeyTexts, _playerKeyTexts);
-            CopyReferences(hud.PlayerKeyDeltaTexts, _playerKeyDeltaTexts);
-            CopyReferences(hud.PlayerGoldTexts, _playerGoldTexts);
-            CopyReferences(hud.PlayerGoldDeltaTexts, _playerGoldDeltaTexts);
-            CopyReferences(hud.PlayerStatFeedback, _statFeedback);
-            CopyReferences(hud.PlayerActionIcons, _playerActionIcons);
-            CopyReferences(hud.PlayerRankTexts, _playerRankTexts);
+            for (var slot = 0; slot < _playerHudRows.Length; slot++)
+                _playerHudRows[slot] = hud.GetPlayerRow(slot);
             CopyReferences(
                 hud.MinigameReadyPlayerStates,
                 _minigameReadyPlayerStates);
@@ -995,7 +971,7 @@ namespace MazeParty.Multiplayer
             NetworkMatchState match, int slot, NetworkPlayerAvatar avatar,
             int health, int maxHealth, bool combatHealth)
         {
-            var feedback = _statFeedback[slot];
+            var feedback = _playerHudRows[slot].Feedback;
             if (feedback == null) return;
             if (avatar == null)
             {
@@ -1077,44 +1053,61 @@ namespace MazeParty.Multiplayer
         public void PresentDeathGoldArrival(int slot, int amount)
         {
             if (slot < 0 || slot >= MultiplayerConstants.MaxPlayers || amount <= 0 ||
-                _statFeedback[slot] == null) return;
+                _playerHudRows[slot].Feedback == null) return;
             if (_hudFeedbackNow >= _deathGoldDeltaUntil[slot]) _deathGoldDeltaTotal[slot] = 0;
             _deathGoldDeltaTotal[slot] += amount;
             _deathGoldDeltaUntil[slot] = (float)(_hudFeedbackNow + 1d);
-            _statFeedback[slot].PresentDelta(2, _deathGoldDeltaTotal[slot], _hudFeedbackNow);
+            _playerHudRows[slot].Feedback.PresentDelta(2, _deathGoldDeltaTotal[slot], _hudFeedbackNow);
         }
+
+        private readonly MinigameResultPresenter _resultPresenter = new MinigameResultPresenter();
+        private readonly PlayerRankingStats[] _rankingStats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _rankingOrder = new int[MultiplayerConstants.MaxPlayers];
+        private readonly int[] _rankingRanks = new int[MultiplayerConstants.MaxPlayers];
+        private bool _rankingValid;
+
+        private static string FormatResultPlayerName(int slot) =>
+            FormatMinigameResultPlayerName(NetworkMatchState.Instance?.GetAvatarForSlot(slot), slot);
 
         private void RefreshPlayerRows(NetworkMatchState match)
         {
-            var rankingStats = new PlayerRankingStats[MultiplayerConstants.MaxPlayers];
+            var rankingStats = _rankingStats;
+            var rankingChanged = !_rankingValid;
             for (var slot = 0; slot < rankingStats.Length; slot++)
             {
                 var rankedAvatar = match.GetAvatarForSlot(slot);
-                rankingStats[slot] = rankedAvatar != null
+                var nextStats = rankedAvatar != null
                     ? new PlayerRankingStats(
                         rankedAvatar.KeyCount,
                         rankedAvatar.Gold,
                         rankedAvatar.MinigameWins)
                     : default;
+                rankingChanged |= PlayerRankingRules.Compare(rankingStats[slot], nextStats) != 0;
+                rankingStats[slot] = nextStats;
             }
-            var ranks = PlayerRankingRules.Calculate(rankingStats);
+            if (rankingChanged)
+            {
+                PlayerRankingRules.Calculate(rankingStats, _rankingOrder, _rankingRanks);
+                _rankingValid = true;
+            }
+            var ranks = _rankingRanks;
             uiBindings.Hud.PresentPlayerRanking(ranks, Time.unscaledTimeAsDouble);
 
-            for (var slot = 0; slot < _playerRows.Length; slot++)
+            for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
                 var isPresent = match.IsPlayerPresent(slot);
                 var avatar = match.GetAvatarForSlot(slot);
-                SetText(_playerRows[slot], ResolveBoardPlayerName(avatar, slot));
-                if (_playerRows[slot] != null)
+                SetText(_playerHudRows[slot].Name, ResolveBoardPlayerName(avatar, slot));
+                if (_playerHudRows[slot].Name != null)
                 {
-                    _playerRows[slot].color = isPresent
+                    _playerHudRows[slot].Name.color = isPresent
                         ? ResolveBoardPlayerTextColor(avatar, slot)
                         : uiBindings.Hud.DisconnectedPlayerColor;
                 }
 
-                if (_playerCards[slot] != null)
+                if (_playerHudRows[slot].Card != null)
                 {
-                    _playerCards[slot].color =
+                    _playerHudRows[slot].Card.color =
                         uiBindings.Hud.GetPlayerCardColor(
                             ResolveBoardPlayerColor(avatar, slot));
                 }
@@ -1132,35 +1125,35 @@ namespace MazeParty.Multiplayer
                     : 0f;
                 RefreshLandingHudDeltas(match, slot, avatar,
                     currentHealth, maxHealth, showCombatHealth);
-                if (_playerHealthSliders[slot] != null)
-                    _playerHealthSliders[slot].SetValueWithoutNotify(healthRatio);
+                if (_playerHudRows[slot].HealthSlider != null)
+                    _playerHudRows[slot].HealthSlider.SetValueWithoutNotify(healthRatio);
 
-                if (_playerHealthFills[slot] != null)
+                if (_playerHudRows[slot].HealthFill != null)
                 {
-                    _playerHealthFills[slot].gameObject.SetActive(
+                    _playerHudRows[slot].HealthFill.gameObject.SetActive(
                         !match.IsArenaCombatPhase);
-                    _playerHealthFills[slot].color = healthRatio > 0.5f
+                    _playerHudRows[slot].HealthFill.color = healthRatio > 0.5f
                         ? uiBindings.Hud.HealthyHealthColor
                         : healthRatio > 0.25f
                             ? uiBindings.Hud.WoundedHealthColor
                             : uiBindings.Hud.CriticalHealthColor;
                 }
-                _statFeedback[slot]?.Tick(_hudFeedbackNow, !match.IsArenaCombatPhase);
-                SetText(_playerHealthTexts[slot], avatar != null
+                _playerHudRows[slot].Feedback?.Tick(_hudFeedbackNow, !match.IsArenaCombatPhase);
+                SetText(_playerHudRows[slot].HealthText, avatar != null
                     ? currentHealth + "/" + maxHealth
                     : "--/--");
                 SetActive(
-                    _playerHealthTexts[slot] != null
-                        ? _playerHealthTexts[slot].gameObject
+                    _playerHudRows[slot].HealthText != null
+                        ? _playerHudRows[slot].HealthText.gameObject
                         : null,
                     !match.IsArenaCombatPhase);
-                SetText(_playerKeyTexts[slot], avatar != null
+                SetText(_playerHudRows[slot].KeyText, avatar != null
                     ? avatar.KeyCount.ToString()
                     : "--");
-                SetText(_playerGoldTexts[slot], avatar != null
+                SetText(_playerHudRows[slot].GoldText, avatar != null
                     ? avatar.Gold.ToString()
                     : "--");
-                SetText(_playerRankTexts[slot], avatar != null
+                SetText(_playerHudRows[slot].Rank, avatar != null
                     ? GameText.F("RANK {0}", ranks[slot])
                     : GameText.T("RANK --"));
 
@@ -1168,12 +1161,12 @@ namespace MazeParty.Multiplayer
                     ? avatar.ActionState
                     : PlayerBoardActionState.Hidden;
                 var isCombatOut = showCombatHealth && !match.IsCombatAlive(slot);
-                SetText(_playerActionIcons[slot], isCombatOut
+                SetText(_playerHudRows[slot].Action, isCombatOut
                     ? GameText.T("OUT")
                     : ActionIconLabel(actionState));
-                if (_playerActionIcons[slot] != null)
+                if (_playerHudRows[slot].Action != null)
                 {
-                    _playerActionIcons[slot].color = isCombatOut
+                    _playerHudRows[slot].Action.color = isCombatOut
                         ? uiBindings.Hud.CombatOutColor
                         : uiBindings.Hud.GetActionIconColor(actionState);
                 }
@@ -1442,7 +1435,7 @@ namespace MazeParty.Multiplayer
                 _minigameDescription,
                 revealPending || isSkip
                     ? string.Empty
-                    : MinigameCatalog.GetDescription(selected));
+                    : MinigameCatalog.GetDescription(selected, match.GameSettings));
             SetText(
                 _minigameReadyStatus,
                 revealPending
@@ -1544,59 +1537,12 @@ namespace MazeParty.Multiplayer
                     : isSkip
                         ? GameText.T("TURN SKIPPED")
                         : GameText.T("MINEFIELD RESULTS"));
-            var resultSummary = isWrongWay
-                ? BuildWrongWayResultSummary(NetworkWrongWayState.Instance)
-                : isRedLightGreenLight
-                    ? BuildRedLightGreenLightResultSummary(
-                        NetworkRedLightGreenLightState.Instance)
-                : isStableFooting
-                    ? BuildStableFootingResultSummary(
-                        NetworkStableFootingState.Instance)
-                : isBalloonBlow
-                    ? BuildBalloonBlowResultSummary(
-                        NetworkBalloonBlowState.Instance)
-                : isGiftGrab
-                    ? BuildGiftGrabResultSummary(
-                        NetworkGiftGrabState.Instance)
-                : isTerritoryPaint
-                    ? BuildTerritoryPaintResultSummary(
-                        NetworkTerritoryPaintState.Instance)
-                : isTagChase
-                    ? BuildTagChaseResultSummary(
-                        NetworkTagChaseState.Instance)
-                : isRace
-                    ? BuildRaceResultSummary(NetworkRaceState.Instance)
-                : isSequenceMemory
-                    ? BuildSequenceMemoryResultSummary(
-                        NetworkSequenceMemoryState.Instance)
-                : isBouncingBalls
-                    ? BuildBouncingBallsResultSummary(
-                        NetworkBouncingBallsState.Instance)
-                : isBombPassing
-                    ? BuildBombPassingResultSummary(
-                        NetworkBombPassingState.Instance)
-                : isSnowySpin
-                    ? BuildSnowySpinResultSummary(
-                        NetworkSnowySpinState.Instance)
-                : isArenaCombat
-                    ? BuildArenaCombatResultSummary(
-                        NetworkArenaCombatState.Instance)
-                : isFlight
-                    ? BuildFlightResultSummary(NetworkFlightState.Instance)
-                : isShellGame
-                    ? BuildShellGameResultSummary(NetworkShellGameState.Instance)
-                : isRace2
-                    ? BuildRace2ResultSummary(NetworkRace2State.Instance)
-                : isOddOneOut
-                    ? BuildOddOneOutResultSummary(NetworkOddOneOutState.Instance)
-                : isCoinCollect
-                    ? BuildCoinCollectResultSummary(NetworkCoinCollectState.Instance)
-                : isCliffBarrage
-                    ? BuildCliffBarrageResultSummary(
-                        NetworkCliffBarrageState.Instance)
-                : isSkip
-                    ? GameText.T("No minigame was scheduled for this turn.")
-                    : BuildMinefieldResultSummary(NetworkMinefieldState.Instance);
+            // Hidden result panels do not rebuild rank tables or formatted summaries.
+            if (match.FlowState != BoardFlowState.MinigameResult) return;
+            MinigameRuntimeRegistry.TryGet(selected, out var resultRuntime);
+            var resultSummary = isSkip
+                ? GameText.T("No minigame was scheduled for this turn.")
+                : _resultPresenter.Present(resultRuntime, match, FormatResultPlayerName);
             if (_minefieldResultSummary != null)
             {
                 SetText(
@@ -1627,701 +1573,6 @@ namespace MazeParty.Multiplayer
             return count;
         }
 
-        private static bool TryGetFinalResultSlots(Func<int, int> getRank, out int[] slots)
-        {
-            slots = new[] { 0, 1, 2, 3 };
-            var placements = new PlayerPlacement[MultiplayerConstants.MaxPlayers];
-            for (var slot = 0; slot < placements.Length; slot++)
-                placements[slot] = new PlayerPlacement(slot, getRank(slot));
-            if (!PlayerPlacementSet.TryCreate(placements, out var validated, out _)) return false;
-            Array.Sort(slots, (left, right) =>
-            {
-                var order = validated.GetRankForSlot(left).CompareTo(validated.GetRankForSlot(right));
-                return order != 0 ? order : left.CompareTo(right);
-            });
-            return true;
-        }
-
-        private static string BuildMinefieldResultSummary(
-            NetworkMinefieldState minefield)
-        {
-            if (minefield == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(minefield.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = minefield.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    minefield.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildWrongWayResultSummary(
-            NetworkWrongWayState wrongWay)
-        {
-            if (wrongWay == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(wrongWay.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = wrongWay.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar =
-                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    wrongWay.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildRedLightGreenLightResultSummary(
-            NetworkRedLightGreenLightState redLightGreenLight)
-        {
-            if (redLightGreenLight == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(redLightGreenLight.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = redLightGreenLight.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar =
-                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    redLightGreenLight.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildStableFootingResultSummary(
-            NetworkStableFootingState stableFooting)
-        {
-            if (stableFooting == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(stableFooting.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = stableFooting.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar =
-                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    stableFooting.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildBalloonBlowResultSummary(
-            NetworkBalloonBlowState balloonBlow)
-        {
-            if (balloonBlow == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(balloonBlow.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = balloonBlow.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar =
-                    match != null ? match.GetAvatarForSlot(rankedSlot) : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    balloonBlow.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildGiftGrabResultSummary(
-            NetworkGiftGrabState giftGrab)
-        {
-            if (giftGrab == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(giftGrab.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = giftGrab.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GIFTS {3}  GOLD +{4}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    giftGrab.GetScore(rankedSlot),
-                    giftGrab.GetTotalStoredGiftCount(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildTerritoryPaintResultSummary(
-            NetworkTerritoryPaintState territoryPaint)
-        {
-            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
-            if (territoryPaint == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(territoryPaint.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = territoryPaint.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    territoryPaint.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildTagChaseResultSummary(
-            NetworkTagChaseState tagChase)
-        {
-            if (tagChase == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(tagChase.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = tagChase.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    tagChase.GetTotalScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildRaceResultSummary(
-            NetworkRaceState race)
-        {
-            if (race == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(race.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = race.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    race.GetTotalScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildSnowySpinResultSummary(
-            NetworkSnowySpinState snowySpin)
-        {
-            if (snowySpin == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(snowySpin.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = snowySpin.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    snowySpin.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildArenaCombatResultSummary(
-            NetworkArenaCombatState arenaCombat)
-        {
-            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
-            if (arenaCombat == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(arenaCombat.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = arenaCombat.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  GOLD +{2}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildCliffBarrageResultSummary(
-            NetworkCliffBarrageState cliffBarrage)
-        {
-            if (cliffBarrage == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(cliffBarrage.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = cliffBarrage.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    cliffBarrage.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildConfiguredSeriesResultSummary()
-        {
-            var match = NetworkMatchState.Instance;
-            if (match == null || !TryGetFinalResultSlots(match.GetSeriesFinalRank, out var slots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var slot in slots)
-            {
-                if (builder.Length > 0) builder.AppendLine();
-                var rank = match.GetSeriesFinalRank(slot);
-                builder.Append(GameText.F("{0}.  {1}  SCORE {2}  GOLD +{3}", rank,
-                    FormatMinigameResultPlayerName(match.GetAvatarForSlot(slot), slot),
-                    match.GetSeriesPoints(slot), MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-            return builder.ToString();
-        }
-
-        private static string BuildFlightResultSummary(NetworkFlightState flight)
-        {
-            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
-            if (flight == null || !TryGetFinalResultSlots(flight.GetFinalRank, out var slots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var slot in slots)
-            {
-                if (builder.Length > 0) builder.AppendLine();
-                var rank = flight.GetFinalRank(slot);
-                builder.Append(GameText.F("{0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3}", rank,
-                    FormatMinigameResultPlayerName(NetworkMatchState.Instance?.GetAvatarForSlot(slot), slot),
-                    flight.GetPlayer(slot).Survival, MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-            return builder.ToString();
-        }
-
-        private static string BuildRace2ResultSummary(
-            NetworkRace2State race2)
-        {
-            if (race2 == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(race2.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = race2.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    race2.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildShellGameResultSummary(
-            NetworkShellGameState shellGame)
-        {
-            if (shellGame == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(shellGame.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = shellGame.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    shellGame.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildOddOneOutResultSummary(
-            NetworkOddOneOutState oddOneOut)
-        {
-            if (oddOneOut == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(oddOneOut.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = oddOneOut.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    oddOneOut.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildCoinCollectResultSummary(
-            NetworkCoinCollectState coinCollect)
-        {
-            if (coinCollect == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(coinCollect.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = coinCollect.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  SCORE {2}  GOLD +{3}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    coinCollect.GetScore(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildBombPassingResultSummary(
-            NetworkBombPassingState bombPassing)
-        {
-            if (NetworkMatchState.Instance?.HasConfiguredSeries == true) return BuildConfiguredSeriesResultSummary();
-            if (bombPassing == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(bombPassing.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = bombPassing.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    bombPassing.IsEliminated(rankedSlot)
-                        ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
-                        : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildBouncingBallsResultSummary(
-            NetworkBouncingBallsState bouncingBalls)
-        {
-            if (bouncingBalls == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(bouncingBalls.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = bouncingBalls.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    "{0}.  {1}  GOALS {2}  CONCEDED {3}  GOLD +{4}",
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    bouncingBalls.GetScore(rankedSlot),
-                    bouncingBalls.GetConceded(rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
-        private static string BuildSequenceMemoryResultSummary(
-            NetworkSequenceMemoryState sequenceMemory)
-        {
-            if (sequenceMemory == null)
-            {
-                return GameText.T("Final standings are synchronizing...");
-            }
-
-            if (!TryGetFinalResultSlots(sequenceMemory.GetFinalRank, out var rankedSlots))
-                return GameText.T("Final standings are synchronizing...");
-            var builder = new StringBuilder();
-            foreach (var rankedSlot in rankedSlots)
-            {
-                var rank = sequenceMemory.GetFinalRank(rankedSlot);
-                if (builder.Length > 0)
-                {
-                    builder.AppendLine();
-                }
-
-                var match = NetworkMatchState.Instance;
-                var avatar = match != null
-                    ? match.GetAvatarForSlot(rankedSlot)
-                    : null;
-                builder.Append(GameText.F(
-                    sequenceMemory.IsPlayerEliminated(rankedSlot)
-                        ? GameText.N("{0}.  {1}  OUT  GOLD +{2}")
-                        : GameText.N("{0}.  {1}  SURVIVED  GOLD +{2}"),
-                    rank,
-                    FormatMinigameResultPlayerName(avatar, rankedSlot),
-                    MinigameRewardRules.GetFinalPlacementGold(rank)));
-            }
-
-            return builder.ToString();
-        }
-
         private static string MinefieldPhaseLabel(
             NetworkMinefieldState minefield)
         {
@@ -2331,7 +1582,7 @@ namespace MazeParty.Multiplayer
             }
 
             var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.Minefield);
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.Minefield, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 minefield.RoundNumber,
                 1,
@@ -2364,7 +1615,7 @@ namespace MazeParty.Multiplayer
             }
 
             var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.WrongWay);
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.WrongWay, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 wrongWay.RoundNumber,
                 1,
@@ -2398,7 +1649,7 @@ namespace MazeParty.Multiplayer
 
             var totalRounds =
                 MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.RedLightGreenLight);
+                    ScheduledMinigameId.RedLightGreenLight, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 redLightGreenLight.RoundNumber,
                 1,
@@ -2452,7 +1703,7 @@ namespace MazeParty.Multiplayer
 
             var totalRounds =
                 MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.StableFooting);
+                    ScheduledMinigameId.StableFooting, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 stableFooting.RoundNumber,
                 1,
@@ -2487,7 +1738,7 @@ namespace MazeParty.Multiplayer
 
             var totalRounds =
                 MinigameCatalog.GetRoundCount(
-                    ScheduledMinigameId.BalloonBlow);
+                    ScheduledMinigameId.BalloonBlow, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 balloonBlow.RoundNumber,
                 1,
@@ -2520,7 +1771,7 @@ namespace MazeParty.Multiplayer
             }
 
             var totalRounds =
-                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab);
+                MinigameCatalog.GetRoundCount(ScheduledMinigameId.GiftGrab, NetworkMatchState.Instance?.GameSettings);
             var round = Mathf.Clamp(
                 giftGrab.RoundNumber,
                 1,
@@ -2577,18 +1828,18 @@ namespace MazeParty.Multiplayer
             var round = Mathf.Clamp(
                 tagChase.RoundNumber,
                 1,
-                TagChaseRules.RoundCount);
+                MinigameRulesConfig.FromMatch(ScheduledMinigameId.TagChase, NetworkMatchState.Instance?.GameSettings).Rounds);
             switch (tagChase.Phase)
             {
                 case NetworkTagChasePhase.Countdown:
                     return GameText.F("TAG CHASE  ROUND {0} / {1}  -  COUNTDOWN",
-                           round, TagChaseRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.TagChase, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkTagChasePhase.Running:
                     return GameText.F("TAG CHASE  ROUND {0} / {1}  -  CHASE",
-                           round, TagChaseRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.TagChase, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkTagChasePhase.RoundResult:
                     return GameText.F("TAG CHASE  ROUND {0} / {1}  -  RESULT",
-                           round, TagChaseRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.TagChase, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkTagChasePhase.Complete:
                     return GameText.T("TAG CHASE COMPLETE");
                 default:
@@ -2607,18 +1858,18 @@ namespace MazeParty.Multiplayer
             var round = Mathf.Clamp(
                 race.RoundNumber,
                 1,
-                RaceRules.RoundCount);
+                MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race, NetworkMatchState.Instance?.GameSettings).Rounds);
             switch (race.Phase)
             {
                 case NetworkRacePhase.Countdown:
                     return GameText.F("RACE  ROUND {0} / {1}  -  COUNTDOWN",
-                           round, RaceRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkRacePhase.Running:
                     return GameText.F("RACE  ROUND {0} / {1}  -  RUN",
-                           round, RaceRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkRacePhase.RoundResult:
                     return GameText.F("RACE  ROUND {0} / {1}  -  RESULT",
-                           round, RaceRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkRacePhase.Complete:
                     return GameText.T("RACE COMPLETE");
                 default:
@@ -2638,18 +1889,18 @@ namespace MazeParty.Multiplayer
             var round = Mathf.Clamp(
                 bouncingBalls.RoundNumber,
                 1,
-                BouncingBallsRules.RoundCount);
+                MinigameRulesConfig.FromMatch(ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings).Rounds);
             switch (bouncingBalls.Phase)
             {
                 case NetworkBouncingBallsPhase.Countdown:
                     return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  COUNTDOWN",
-                           round, BouncingBallsRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkBouncingBallsPhase.Playing:
                     return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  PLAY",
-                           round, BouncingBallsRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkBouncingBallsPhase.RoundBreak:
                     return GameText.F("BOUNCING BALLS  ROUND {0} / {1}  -  RESULT",
-                           round, BouncingBallsRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.BouncingBalls, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkBouncingBallsPhase.Complete:
                     return GameText.T("BOUNCING BALLS COMPLETE");
                 default:
@@ -2669,28 +1920,26 @@ namespace MazeParty.Multiplayer
             var round = Mathf.Clamp(
                 sequenceMemory.RoundNumber,
                 1,
-                SequenceMemoryRules.RoundCount);
+                MinigameRulesConfig.FromMatch(ScheduledMinigameId.SequenceMemory, NetworkMatchState.Instance?.GameSettings).Rounds);
             switch (sequenceMemory.Phase)
             {
                 case NetworkSequenceMemoryPhase.Countdown:
                     return GameText.T("SEQUENCE MEMORY  -  COUNTDOWN");
                 case NetworkSequenceMemoryPhase.PresentingProblem:
                     return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  WATCH",
-                           round, SequenceMemoryRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.SequenceMemory, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkSequenceMemoryPhase.AcceptingInput:
                     return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  INPUT",
-                           round, SequenceMemoryRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.SequenceMemory, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkSequenceMemoryPhase.RevealingAnswer:
                     return GameText.F("SEQUENCE MEMORY  PROBLEM {0} / {1}  -  ANSWER",
-                           round, SequenceMemoryRules.RoundCount);
+                           round, MinigameRulesConfig.FromMatch(ScheduledMinigameId.SequenceMemory, NetworkMatchState.Instance?.GameSettings).Rounds);
                 case NetworkSequenceMemoryPhase.Complete:
                     return GameText.T("SEQUENCE MEMORY COMPLETE");
                 default:
                     return GameText.T("SEQUENCE MEMORY");
             }
         }
-
-
 
         internal static IReadOnlyList<string> GetMinigameControlGuide(
             ScheduledMinigameId minigame)

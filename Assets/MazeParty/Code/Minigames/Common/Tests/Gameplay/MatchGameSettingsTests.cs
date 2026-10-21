@@ -4,6 +4,12 @@ using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.CoinCollect;
 using MazeParty.Gameplay.Minigames.Flight;
 using MazeParty.Gameplay.Minigames.Race2;
+using MazeParty.Gameplay.Minigames.BalloonBlow;
+using MazeParty.Gameplay.Minigames.GiftGrab;
+using MazeParty.Gameplay.Minigames.StableFooting;
+using MazeParty.Gameplay.Minigames.RedLightGreenLight;
+using MazeParty.Gameplay.Minigames.WrongWay;
+using MazeParty.Gameplay.Minigames.SequenceMemory;
 using NUnit.Framework;
 
 namespace MazeParty.Gameplay.Tests
@@ -46,6 +52,10 @@ namespace MazeParty.Gameplay.Tests
         public void SettingsRejectInvalidRangesAndCorruptWirePayloads()
         {
             var settings = MatchGameSettings.Default;
+            const string savedDefault = "1:15:AQMDAQIEAQMEAQMEAQMCAQIEAQEEAQQEAQMEAQUAAQIEAQEAAQMEAQEEAQMEAQIEAQUAAQMIAQUAAQEI";
+            Assert.That(settings.Encode(), Is.EqualTo(savedDefault));
+            Assert.That(MatchGameSettings.TryDecode(savedDefault, out var saved), Is.True);
+            Assert.That(saved.Encode(), Is.EqualTo(savedDefault));
             foreach (ScheduledMinigameId id in settings.IncludedGames())
             {
                 var timed = MatchGameSettings.HasTimeLimit(id);
@@ -77,78 +87,139 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void ConfiguredCoinRoundsKeepRainBudget_AndFinishAtExactCustomDeadline()
         {
-            var owner = new object();
-            try
-            {
-                foreach (var rounds in new[] { 1, 5 })
-                    foreach (var seconds in new[] { 30, 120 })
+            foreach (var rounds in new[] { 1, 5 })
+                foreach (var seconds in new[] { 30, 120 })
+                {
+                    Assert.That(MatchGameSettings.Default.TryChangeGame(ScheduledMinigameId.CoinCollect,
+                        new MinigameSetting(true, rounds, seconds), out var settings), Is.True);
+                    var match = new CoinCollectMatchState(417, MinigameRulesConfig.FromMatch(ScheduledMinigameId.CoinCollect, settings));
+                    for (var round = 1; round <= rounds; round++)
                     {
-                        Assert.That(MatchGameSettings.Default.TryChangeGame(ScheduledMinigameId.CoinCollect,
-                            new MinigameSetting(true, rounds, seconds), out var settings), Is.True);
-                        MinigameRuntimeSettings.Bind(owner, settings);
-                        var match = new CoinCollectMatchState(417);
-                        for (var round = 1; round <= rounds; round++)
+                        var counts = new int[3];
+                        for (var i = 0; i < 70; i++)
                         {
-                            var counts = new int[3];
-                            for (var i = 0; i < 70; i++)
-                            {
-                                var item = match.GetScheduledItem(i);
-                                counts[(int)item.Kind]++;
-                                Assert.That(item.BornAt, Is.GreaterThanOrEqualTo(0).And.LessThan(seconds));
-                            }
-                            Assert.That(counts, Is.EqualTo(new[] { 50, 10, 10 }));
-                            match.AdvanceTo(seconds - 0.000001);
-                            Assert.That(match.IsRoundComplete, Is.False);
-                            match.AdvanceTo(seconds);
-                            Assert.That(match.IsRoundComplete, Is.True);
-                            Assert.That(match.BeginNextRound(), Is.EqualTo(round < rounds));
+                            var item = match.GetScheduledItem(i);
+                            counts[(int)item.Kind]++;
+                            Assert.That(item.BornAt, Is.GreaterThanOrEqualTo(0).And.LessThan(seconds));
                         }
-                        Assert.That(match.IsComplete, Is.True);
+                        Assert.That(counts, Is.EqualTo(new[] { 50, 10, 10 }));
+                        match.AdvanceTo(seconds - 0.000001);
+                        Assert.That(match.IsRoundComplete, Is.False);
+                        match.AdvanceTo(seconds);
+                        Assert.That(match.IsRoundComplete, Is.True);
+                        Assert.That(match.BeginNextRound(), Is.EqualTo(round < rounds));
                     }
-            }
-            finally { MinigameRuntimeSettings.Release(owner); }
+                    Assert.That(match.IsComplete, Is.True);
+                }
         }
 
         [Test]
         public void ShortAndLongFlightCoursesRemainReachable_AndSpeedRampUsesConfiguredDeadline()
         {
-            var owner = new object();
-            try
+            foreach (var seconds in new[] { 30, 180 })
             {
-                foreach (var seconds in new[] { 30, 180 })
+                var settings = MatchGameSettings.Default;
+                settings.TryChangeGame(ScheduledMinigameId.Flight, new MinigameSetting(true, 1, seconds), out settings);
+                settings.TryChangeGame(ScheduledMinigameId.Race2, new MinigameSetting(true, 5, seconds), out settings);
+                foreach (var t in new[] { 0d, seconds / 2d, (double)seconds })
                 {
-                    var settings = MatchGameSettings.Default;
-                    settings.TryChangeGame(ScheduledMinigameId.Flight, new MinigameSetting(true, 1, seconds), out settings);
-                    settings.TryChangeGame(ScheduledMinigameId.Race2, new MinigameSetting(true, 5, seconds), out settings);
-                    MinigameRuntimeSettings.Bind(owner, settings);
-                    foreach (var t in new[] { 0d, seconds / 2d, (double)seconds })
-                    {
-                        Assert.That(Race2Rules.TimeAtDistance(Race2Rules.Distance(t)), Is.EqualTo(t).Within(1e-8));
-                        Assert.That(FlightRules.TimeAtDistance(FlightRules.Distance(t)), Is.EqualTo(t).Within(1e-8));
-                    }
-                    Assert.That(Race2Rules.Speed(seconds), Is.EqualTo(15d).Within(1e-8));
-                    var match = new FlightMatchState(417);
-                    for (var tick = 0; tick < seconds * 120; tick++)
-                    {
-                        match.AdvanceTo(3 + tick / 120d);
-                        if (match.Course.WitnessFlap(tick))
-                            for (var slot = 0; slot < 4; slot++)
-                                Assert.That(match.TryFlap(slot), Is.True);
-                    }
-                    match.AdvanceTo(3 + seconds - .000001);
-                    Assert.That(match.Phase, Is.EqualTo(FlightPhase.Running));
-                    match.AdvanceTo(3 + seconds);
-                    Assert.That(match.Phase, Is.EqualTo(FlightPhase.Result));
-                    for (var slot = 0; slot < 4; slot++)
-                    {
-                        Assert.That(match.IsAlive(slot), Is.True);
-                        Assert.That(match.Survival(slot), Is.EqualTo(seconds).Within(1e-8));
-                    }
-                    match.AdvanceTo(5 + seconds);
-                    Assert.That(match.Phase, Is.EqualTo(FlightPhase.Complete));
+                    Assert.That(Race2Rules.TimeAtDistance(Race2Rules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
+                    Assert.That(FlightRules.TimeAtDistance(FlightRules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
                 }
+                Assert.That(Race2Rules.Speed(seconds, seconds), Is.EqualTo(15d).Within(1e-8));
+                var match = new FlightMatchState(417, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Flight, settings));
+                for (var tick = 0; tick < seconds * 120; tick++)
+                {
+                    match.AdvanceTo(3 + tick / 120d);
+                    if (match.Course.WitnessFlap(tick))
+                        for (var slot = 0; slot < 4; slot++)
+                            Assert.That(match.TryFlap(slot), Is.True);
+                }
+                match.AdvanceTo(3 + seconds - .000001);
+                Assert.That(match.Phase, Is.EqualTo(FlightPhase.Running));
+                match.AdvanceTo(3 + seconds);
+                Assert.That(match.Phase, Is.EqualTo(FlightPhase.Result));
+                for (var slot = 0; slot < 4; slot++)
+                {
+                    Assert.That(match.IsAlive(slot), Is.True);
+                    Assert.That(match.Survival(slot), Is.EqualTo(seconds).Within(1e-8));
+                }
+                match.AdvanceTo(5 + seconds);
+                Assert.That(match.Phase, Is.EqualTo(FlightPhase.Complete));
             }
-            finally { MinigameRuntimeSettings.Release(owner); }
+        }
+
+        [Test]
+        public void ConcurrentSimulationsKeepTheirOwnDeadlinesAndRoundCounts()
+        {
+            var shortMatch = new CoinCollectMatchState(417, Rules(ScheduledMinigameId.CoinCollect, 1, 30));
+            var longMatch = new CoinCollectMatchState(417, Rules(ScheduledMinigameId.CoinCollect, 5, 120));
+            var practice = new CoinCollectMatchState(417);
+            shortMatch.AdvanceTo(30);
+            longMatch.AdvanceTo(30);
+            practice.AdvanceTo(30);
+            Assert.That(shortMatch.IsComplete, Is.True);
+            Assert.That(shortMatch.BeginNextRound(), Is.False);
+            Assert.That(longMatch.IsRoundComplete, Is.False);
+            Assert.That(practice.IsRoundComplete, Is.False);
+            for (var round = 1; round <= 5; round++)
+            {
+                longMatch.AdvanceTo(120);
+                Assert.That(longMatch.BeginNextRound(), Is.EqualTo(round < 5));
+            }
+            Assert.That(longMatch.IsComplete, Is.True);
+            practice.AdvanceTo(CoinCollectRules.RoundSeconds);
+            Assert.That(practice.BeginNextRound(), Is.True);
+        }
+
+        [Test]
+        public void ConfiguredFifthRoundsEndExactlyAtTheirOwnDeadline()
+        {
+            foreach (var seconds in new[] { 30, 90 })
+            {
+                var balloon = new BalloonBlowRoundState(5, Rules(ScheduledMinigameId.BalloonBlow, 5, seconds));
+                var gift = new GiftGrabRoundState(5, Rules(ScheduledMinigameId.GiftGrab, 5, seconds));
+                var footing = new StableFootingRoundState(417, 5, Rules(ScheduledMinigameId.StableFooting, 5, seconds));
+                var redLight = new RedLightGreenLightRoundState(417, 5, Rules(ScheduledMinigameId.RedLightGreenLight, 5, seconds));
+                var wrongWay = new WrongWayRoundState(417, 5, Rules(ScheduledMinigameId.WrongWay, 5, seconds));
+                foreach (var end in new Func<double, bool>[] { balloon.TryEndForTimeout, gift.TryEndForTimeout,
+                    footing.TryEndForTimeout, redLight.TryEndForTimeout, wrongWay.TryEndForTimeout })
+                {
+                    Assert.That(end(seconds - .000001), Is.False);
+                    Assert.That(end(seconds), Is.True);
+                    Assert.That(end(seconds), Is.False);
+                }
+                Assert.That(footing.Result.Standings.All(s => s.Outcome.Survived), Is.True);
+            }
+        }
+
+        [Test]
+        public void ConfiguredFinalMemoryRoundRanksByCompletionTime()
+        {
+            foreach (var rounds in new[] { 1, 5 })
+            {
+                var match = new SequenceMemoryMatchState(417, Rules(ScheduledMinigameId.SequenceMemory, rounds, 0));
+                match.BeginMatch();
+                for (var round = 1; round <= rounds; round++)
+                {
+                    match.OpenInputWindow();
+                    for (var slot = 0; slot < 4; slot++)
+                        for (var input = 0; input < match.CurrentProblem.Length; input++)
+                            Assert.That(match.SubmitInput(slot, match.CurrentProblem[input], (byte)round,
+                                match.InputEpoch, slot + 1d).WasAccepted, Is.True);
+                    match.CompleteRevealAndAdvance();
+                    Assert.That(match.IsComplete, Is.EqualTo(round == rounds));
+                }
+                Assert.That(match.Result.Standings.Select(s => s.Rank), Is.EqualTo(new[] { 1, 2, 3, 4 }));
+                Assert.That(match.Result.Standings.Select(s => s.PlayerSlot), Is.EqualTo(new[] { 0, 1, 2, 3 }));
+            }
+        }
+
+        private static MinigameRulesConfig Rules(ScheduledMinigameId id, int rounds, int seconds)
+        {
+            Assert.That(MatchGameSettings.Default.TryChangeGame(id,
+                new MinigameSetting(true, rounds, seconds), out var settings), Is.True, id.ToString());
+            return MinigameRulesConfig.FromMatch(id, settings);
         }
 
         [Test]

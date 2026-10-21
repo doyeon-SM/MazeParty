@@ -10,6 +10,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
     /// </summary>
     public sealed class WrongWayRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly WrongWayDirection[] _prompts;
         private readonly ReadOnlyCollection<WrongWayDirection>
             _readOnlyPrompts;
@@ -21,15 +22,16 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
 
         public WrongWayRoundState(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            WrongWayRules.ValidateRoundNumber(roundNumber);
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.WrongWay, rules);
+            WrongWayRules.ValidateRoundNumber(roundNumber, rules: _rules);
 
             ServerSeed = serverSeed;
             RoundNumber = roundNumber;
             _prompts = WrongWayPromptGenerator.Generate(
                 serverSeed,
-                roundNumber);
+                roundNumber, rules: _rules);
             _readOnlyPrompts = Array.AsReadOnly(_prompts);
 
             _players =
@@ -128,7 +130,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
             }
 
             if (IsComplete ||
-                runningElapsedSeconds < WrongWayRules.RoundSeconds)
+                runningElapsedSeconds < _rules.Seconds)
             {
                 return false;
             }

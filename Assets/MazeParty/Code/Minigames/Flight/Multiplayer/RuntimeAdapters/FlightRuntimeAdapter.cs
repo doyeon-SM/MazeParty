@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Flight;
 
@@ -13,6 +14,29 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkFlightState CurrentState =>
             NetworkFlightState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            var state = CurrentState;
+            if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Inactive ||
+                state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Complete) return false;
+            total = state.GameRules.Seconds; round = 1;
+            remaining = state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown ? total :
+                state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Running ? state.Remaining : 0d;
+            return true;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot), "{0}.  {1}  SURVIVED {2:0.00}s  GOLD +{3}", state.GetPlayer(slot).Survival);
+        }
+
+        public override bool UsesRoundSeriesResults => true;
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

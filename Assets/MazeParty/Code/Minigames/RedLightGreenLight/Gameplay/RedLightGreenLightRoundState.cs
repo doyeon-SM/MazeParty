@@ -63,6 +63,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
     /// </summary>
     public sealed class RedLightGreenLightRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly RedLightGreenLightPlayerRoundState[] _players;
         private readonly ReadOnlyCollection<
             RedLightGreenLightPlayerRoundState> _readOnlyPlayers;
@@ -71,15 +72,16 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
 
         public RedLightGreenLightRoundState(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            RedLightGreenLightRules.ValidateRoundNumber(roundNumber);
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.RedLightGreenLight, rules);
+            RedLightGreenLightRules.ValidateRoundNumber(roundNumber, rules: _rules);
             ServerSeed = serverSeed;
             RoundNumber = roundNumber;
             SignalSchedule =
                 RedLightGreenLightSignalScheduleGenerator.Generate(
                     serverSeed,
-                    roundNumber);
+                    roundNumber, rules: _rules);
 
             _players =
                 new RedLightGreenLightPlayerRoundState[
@@ -160,7 +162,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
                 double runningElapsedSeconds)
         {
             RedLightGreenLightRules.ValidateRunningElapsedSeconds(
-                runningElapsedSeconds);
+                runningElapsedSeconds, rules: _rules);
             var player = GetPlayer(playerSlot);
             var signalWindow =
                 SignalSchedule.GetWindowAt(runningElapsedSeconds);
@@ -262,7 +264,7 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
             double runningElapsedSeconds)
         {
             RedLightGreenLightRules.ValidateRunningElapsedSeconds(
-                runningElapsedSeconds);
+                runningElapsedSeconds, rules: _rules);
             var player = GetPlayer(playerSlot);
             if (IsComplete ||
                 !player.TryFinish(forwardProgressMeters))
@@ -284,10 +286,10 @@ namespace MazeParty.Gameplay.Minigames.RedLightGreenLight
         {
             RedLightGreenLightRules.ValidateRunningElapsedSeconds(
                 runningElapsedSeconds,
-                true);
+                true, rules: _rules);
             if (IsComplete ||
                 runningElapsedSeconds <
-                RedLightGreenLightRules.RoundSeconds)
+                _rules.Seconds)
             {
                 return false;
             }

@@ -16,6 +16,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform playerRoot, boxRoot;
         [SerializeField] private MinigameCommonHudView practiceHud;
         [SerializeField] private MinigameStartCountdownView practiceCountdown;
+        private double _courseDuration;
         private readonly PlayerAvatarVisual[] _players = new PlayerAvatarVisual[4];
         private readonly Transform[,] _boxes = new Transform[4, Race2Rules.BoxCount];
         private readonly bool[] _lastAlive = new bool[4];
@@ -92,8 +93,9 @@ namespace MazeParty.Multiplayer
             int local, NetworkMatchState match)
         {
             EnsureWorld();
-            var newRound = _round != round || _seed != seed || _stream == null;
-            if (newRound) { _stream = new Race2BoxStream(seed, round); _round = round; _seed = seed; _observed = false; _watching = local; }
+            var duration = MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race2, match?.GameSettings).Seconds;
+            var newRound = _round != round || _seed != seed || _stream == null || _courseDuration != duration;
+            if (newRound) { _stream = new Race2BoxStream(seed, round, duration); _courseDuration = duration; _round = round; _seed = seed; _observed = false; _watching = local; }
             // A close rear perspective keeps the avatar's back and the approaching stream in view.
             var lens = sharedCamera.Lens;
             lens.ModeOverride = LensSettings.OverrideModes.Perspective;

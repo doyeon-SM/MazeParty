@@ -99,7 +99,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         public static SequenceMemoryMatchResult BuildResult(
             IReadOnlyList<SequenceMemoryPlayerOutcome> outcomes,
             SequenceMemoryMatchEndReason endReason,
-            int completedRoundCount)
+            int completedRoundCount, MinigameRulesConfig? rules = null)
         {
             if (outcomes == null)
             {
@@ -111,7 +111,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 throw new ArgumentOutOfRangeException(nameof(endReason));
             }
 
-            SequenceMemoryRules.ValidateRoundNumber(completedRoundCount);
+            SequenceMemoryRules.ValidateRoundNumber(completedRoundCount, rules: rules);
             if (outcomes.Count != SequenceMemoryRules.PlayerCount)
             {
                 throw new ArgumentException(
@@ -150,7 +150,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 ordered,
                 (left, right) =>
                 {
-                    var result = CompareOutcomes(left, right, completedRoundCount);
+                    var result = CompareOutcomes(left, right, completedRoundCount, rules: rules);
                     return result != 0 ? result : left.PlayerSlot.CompareTo(right.PlayerSlot);
                 });
 
@@ -160,7 +160,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
             for (var index = 0; index < ordered.Length; index++)
             {
                 standings[index] = new SequenceMemoryStanding(
-                    index > 0 && CompareOutcomes(ordered[index - 1], ordered[index], completedRoundCount) == 0
+                    index > 0 && CompareOutcomes(ordered[index - 1], ordered[index], completedRoundCount, rules: rules) == 0
                         ? standings[index - 1].Rank : index + 1,
                     ordered[index]);
             }
@@ -174,7 +174,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         private static int CompareOutcomes(
             SequenceMemoryPlayerOutcome left,
             SequenceMemoryPlayerOutcome right,
-            int completedRoundCount)
+            int completedRoundCount, MinigameRulesConfig? rules = null)
         {
             if (left.IsEliminated != right.IsEliminated)
             {
@@ -186,7 +186,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 return CompareSurvivors(
                     left,
                     right,
-                    completedRoundCount);
+                    completedRoundCount, rules: rules);
             }
 
             var eliminationRound = right.EliminatedOnRound.CompareTo(
@@ -219,9 +219,10 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         private static int CompareSurvivors(
             SequenceMemoryPlayerOutcome left,
             SequenceMemoryPlayerOutcome right,
-            int completedRoundCount)
+            int completedRoundCount, MinigameRulesConfig? rules = null)
         {
-            if (completedRoundCount == SequenceMemoryRules.RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.SequenceMemory, rules);
+            if (completedRoundCount == configuration.Rounds)
             {
                 var leftSolved = left.LastTurnStatus ==
                     SequenceMemoryPlayerTurnStatus.Correct;
@@ -277,6 +278,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
     /// </summary>
     public sealed class SequenceMemoryMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly SequenceMemoryProblem[] _problems;
         private readonly ReadOnlyCollection<SequenceMemoryProblem>
             _readOnlyProblems;
@@ -287,11 +289,12 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         private double _latestInputElapsedSeconds;
         private ulong _serverEventSequence;
 
-        public SequenceMemoryMatchState(ulong serverSeed)
+        public SequenceMemoryMatchState(ulong serverSeed, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.SequenceMemory, rules);
             ServerSeed = serverSeed;
             _problems =
-                SequenceMemoryProblemGenerator.GenerateMatch(serverSeed);
+                SequenceMemoryProblemGenerator.GenerateMatch(serverSeed, rules: _rules);
             _readOnlyProblems = Array.AsReadOnly(_problems);
             _players =
                 new SequenceMemoryPlayerState[
@@ -602,7 +605,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 return;
             }
 
-            if (CurrentRoundNumber == SequenceMemoryRules.RoundCount)
+            if (CurrentRoundNumber == _rules.Rounds)
             {
                 CompleteMatch(
                     SequenceMemoryMatchEndReason.AllRoundsCompleted);
@@ -772,7 +775,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
             Result = SequenceMemoryMatchRanking.BuildResult(
                 outcomes,
                 reason,
-                CurrentRoundNumber);
+                CurrentRoundNumber, rules: _rules);
             EndReason = reason;
             Phase = SequenceMemoryMatchPhase.Complete;
         }

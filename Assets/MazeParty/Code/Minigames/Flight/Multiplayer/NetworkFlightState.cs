@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.Flight;
 using Unity.Netcode;
@@ -44,6 +45,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkFlightState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.Flight, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<FlightSnapshot> _snapshot = new NetworkVariable<FlightSnapshot>();
         private readonly uint[] _sequences = new uint[4];
         private FlightMatchState _simulation;
@@ -56,7 +59,7 @@ namespace MazeParty.Multiplayer
         public bool IsPaused => _snapshot.Value.Paused;
         public double Remaining => Phase == FlightPhase.Inactive || Phase == FlightPhase.Complete ? 0 :
             Math.Max(0, IsPaused ? _snapshot.Value.PausedRemaining : _snapshot.Value.EndsAt - ServerNow);
-        public double RunElapsed => Math.Min(FlightRules.RunSeconds, _snapshot.Value.RunElapsed +
+        public double RunElapsed => Math.Min(GameRules.Seconds, _snapshot.Value.RunElapsed +
             (Phase == FlightPhase.Running && !IsPaused ? Math.Max(0, ServerNow - _snapshot.Value.SampledAt) : 0));
         private double ServerNow => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.unscaledTimeAsDouble;
         public override void OnNetworkSpawn() { Instance = this; }
@@ -74,7 +77,7 @@ namespace MazeParty.Multiplayer
         public void BeginMatchOnServer(ulong seed)
         {
             if (!IsSpawned || !IsServer) return;
-            _simulation = new FlightMatchState(seed); _startedAt = ServerNow; _completionReported = false;
+            _simulation = new FlightMatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.Flight, NetworkMatchState.Instance?.GameSettings)); _startedAt = ServerNow; _completionReported = false;
             Publish(false, true); FreezeAvatars();
         }
         private void Update()
@@ -95,7 +98,7 @@ namespace MazeParty.Multiplayer
                 Publish(false, phase != _simulation.Phase);
         }
         private bool ValidateEnvelope(uint epoch, uint sequence, int slot) => IsSpawned && IsServer &&
-            _simulation != null && CanAcceptInputForSlot(slot) && epoch != 0 && epoch == InputEpoch && sequence > _sequences[slot];
+            _simulation != null && CanAcceptInputForSlot(slot) && MinigameServerRules.IsCurrentInputEpoch(epoch, InputEpoch) && sequence > _sequences[slot];
         public bool TryFlapOnServer(NetworkPlayerAvatar avatar, uint epoch, uint sequence)
         {
             var slot = avatar != null ? avatar.AssignedSlot : -1; var match = NetworkMatchState.Instance;
@@ -129,7 +132,7 @@ namespace MazeParty.Multiplayer
             if (!IsServer) return;
             FreezeAvatars(); _simulation = null; _snapshot.Value = new FlightSnapshot { Epoch = NextEpoch() };
         }
-        private uint NextEpoch() => InputEpoch == uint.MaxValue ? 1U : InputEpoch + 1U;
+        private uint NextEpoch() => MinigameServerRules.NextInputEpoch(InputEpoch);
         private byte AliveMask()
         {
             byte mask = 0; for (var i = 0; i < 4; i++) if (_simulation.IsAlive(i)) mask |= (byte)(1 << i); return mask;

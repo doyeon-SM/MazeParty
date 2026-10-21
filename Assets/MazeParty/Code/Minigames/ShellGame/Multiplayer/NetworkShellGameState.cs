@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.ShellGame;
 using Unity.Netcode;
@@ -46,6 +47,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkShellGameState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.ShellGame, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<ShellGamePublicSnapshot> _snapshot = new NetworkVariable<ShellGamePublicSnapshot>();
         private readonly uint[] _sequences = new uint[4];
         private ShellGameMatchState _simulation;
@@ -84,7 +87,7 @@ namespace MazeParty.Multiplayer
         public void BeginMatchOnServer(ulong seed)
         {
             if (!IsSpawned || !IsServer) return;
-            _simulation = new ShellGameMatchState(seed); _completionReported = false; _startedAt = ServerNow;
+            _simulation = new ShellGameMatchState(seed, rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.ShellGame, NetworkMatchState.Instance?.GameSettings)); _completionReported = false; _startedAt = ServerNow;
             Publish(false, true); FreezeAvatars();
         }
         private void Update()
@@ -106,7 +109,7 @@ namespace MazeParty.Multiplayer
         }
         private bool ValidateEnvelope(int round, uint epoch, uint sequence, int slot) =>
             IsSpawned && IsServer && _simulation != null && CanAcceptInputForSlot(slot) &&
-            round == RoundNumber && epoch != 0 && epoch == InputEpoch && sequence > _sequences[slot];
+            round == RoundNumber && MinigameServerRules.IsCurrentInputEpoch(epoch, InputEpoch) && sequence > _sequences[slot];
         public bool TrySetChoiceOnServer(NetworkPlayerAvatar avatar, int box, byte round, uint epoch, uint sequence)
         {
             if (!TryResolveSlot(avatar, out var slot) || IsPaused || _simulation == null) return false;
@@ -147,7 +150,7 @@ namespace MazeParty.Multiplayer
             FreezeAvatars(); _simulation = null;
             _snapshot.Value = new ShellGamePublicSnapshot { Epoch = NextEpoch() };
         }
-        private uint NextEpoch() => InputEpoch == uint.MaxValue ? 1U : InputEpoch + 1U;
+        private uint NextEpoch() => MinigameServerRules.NextInputEpoch(InputEpoch);
         private void Publish(bool paused, bool newEpoch)
         {
             var epoch = newEpoch ? NextEpoch() : InputEpoch;

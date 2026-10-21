@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.Race;
@@ -23,6 +24,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkRaceState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.Race, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double RoundResultSeconds = 4d;
         public const float TrackCenterX = 1090f;
@@ -131,7 +134,7 @@ namespace MazeParty.Multiplayer
                     CompleteRoundOnServer(now);
                     break;
                 case NetworkRacePhase.RoundResult:
-                    if (_roundNumber.Value < RaceRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundCountdownOnServer(
                             now,
@@ -318,7 +321,7 @@ namespace MazeParty.Multiplayer
             _roundNumber.Value = (byte)Mathf.Clamp(
                 roundNumber,
                 1,
-                RaceRules.RoundCount);
+                GameRules.Rounds);
             Array.Clear(_serverProgress, 0, _serverProgress.Length);
             Array.Clear(_progressOrder, 0, _progressOrder.Length);
             Array.Clear(_lastStepInputs, 0, _lastStepInputs.Length);
@@ -337,7 +340,7 @@ namespace MazeParty.Multiplayer
         {
             AdvanceInputEpochOnServer();
             _phase.Value = (byte)NetworkRacePhase.Running;
-            _phaseEndsAt.Value = now + RaceRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             Debug.Log(
                 "[Race] Round " + _roundNumber.Value +
                 " started. Alternate A and D; first to " +
@@ -406,7 +409,7 @@ namespace MazeParty.Multiplayer
             return _matchActive.Value && !_paused.Value &&
                    Phase == NetworkRacePhase.Running &&
                    roundNumber == _roundNumber.Value &&
-                   inputEpoch != 0U && inputEpoch == _inputEpoch.Value &&
+                   MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                    Remaining > 0d;
         }
 
@@ -414,9 +417,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned && RaceRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -496,9 +497,7 @@ namespace MazeParty.Multiplayer
         {
             unchecked
             {
-                _inputEpoch.Value = _inputEpoch.Value == uint.MaxValue
-                    ? 1U
-                    : _inputEpoch.Value + 1U;
+                _inputEpoch.Value = MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 
@@ -516,13 +515,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private static string BuildRoundResultLog(

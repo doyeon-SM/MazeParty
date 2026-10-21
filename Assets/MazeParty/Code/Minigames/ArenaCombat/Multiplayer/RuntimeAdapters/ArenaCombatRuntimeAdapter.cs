@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 
 namespace MazeParty.Multiplayer
@@ -12,6 +13,32 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkArenaCombatState CurrentState =>
             NetworkArenaCombatState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            var state = CurrentState;
+            if (state == null ||
+                state.Phase == NetworkArenaCombatPhase.Inactive)
+                return false;
+            remaining = state.Remaining;
+            total = state.Phase == NetworkArenaCombatPhase.Countdown
+                ? 3d : state.Phase == NetworkArenaCombatPhase.Complete
+                    ? MazeParty.Gameplay.Minigames.ArenaCombat.ArenaCombatRules.ResultSeconds
+                    : runningSeconds;
+            return true;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot), "{0}.  {1}  GOLD +{2}");
+        }
+
+        public override bool UsesRoundSeriesResults => true;
 
         public override bool TryGetRoundCountdown(
             out double remainingSeconds)

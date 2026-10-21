@@ -314,12 +314,31 @@ namespace MazeParty.Gameplay
 
             var order = new int[players.Count];
             var ranks = new int[players.Count];
+            Calculate(players, order, ranks);
+            return ranks;
+        }
+
+        public static void Calculate(IReadOnlyList<PlayerRankingStats> players, int[] order, int[] ranks)
+        {
+            if (players == null) throw new ArgumentNullException(nameof(players));
+            if (order == null || ranks == null || order.Length != players.Count || ranks.Length != players.Count)
+                throw new ArgumentException("Ranking buffers must match the player count.");
             for (var i = 0; i < order.Length; i++)
             {
                 order[i] = i;
             }
 
-            Array.Sort(order, (left, right) => Compare(players[left], players[right]));
+            for (var i = 1; i < order.Length; i++)
+            {
+                var slot = order[i];
+                var previous = i - 1;
+                while (previous >= 0 && Compare(players[order[previous]], players[slot]) > 0)
+                {
+                    order[previous + 1] = order[previous];
+                    previous--;
+                }
+                order[previous + 1] = slot;
+            }
             for (var sortedIndex = 0; sortedIndex < order.Length; sortedIndex++)
             {
                 var inputIndex = order[sortedIndex];
@@ -331,7 +350,6 @@ namespace MazeParty.Gameplay
                     : sortedIndex + 1;
             }
 
-            return ranks;
         }
 
         public static int Compare(PlayerRankingStats left, PlayerRankingStats right)

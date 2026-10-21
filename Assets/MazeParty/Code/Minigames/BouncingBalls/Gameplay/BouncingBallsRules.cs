@@ -14,8 +14,8 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         public const int BallCount = 7;
         public const int AdditionalBallsPerWave = 2;
         public const double AdditionalBallIntervalSeconds = 20d;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.BouncingBalls, 2);
-        public static double RoundSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.BouncingBalls, 60d);
+        public const int RoundCount = 2;
+        public const double RoundSeconds = 60d;
         public const double CountdownSeconds = 3d;
         public const double ResultSeconds = 4d;
         public const int SimulationHz = 60;

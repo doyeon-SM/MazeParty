@@ -33,8 +33,10 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
 
     public sealed class StableFootingPlayerRoundState
     {
-        internal StableFootingPlayerRoundState(int playerSlot)
+        private readonly MinigameRulesConfig _rules;
+        internal StableFootingPlayerRoundState(int playerSlot, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
             PlayerSlot = playerSlot;
         }
 
@@ -70,11 +72,11 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
         internal StableFootingRoundOutcome CaptureOutcome()
         {
             return IsAlive
-                ? StableFootingRoundOutcome.Survive(PlayerSlot)
+                ? StableFootingRoundOutcome.Survive(PlayerSlot, rules: _rules)
                 : StableFootingRoundOutcome.Eliminate(
                     PlayerSlot,
                     EliminatedAtSeconds,
-                    EliminationOrder);
+                    EliminationOrder, rules: _rules);
         }
     }
 
@@ -84,19 +86,21 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
     /// </summary>
     public sealed class StableFootingRoundState
     {
+        private readonly MinigameRulesConfig _rules;
         private readonly StableFootingPlayerRoundState[] _players;
         private ulong _nextServerEventOrder = 1UL;
 
         public StableFootingRoundState(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            StableFootingRules.ValidateRoundNumber(roundNumber);
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.StableFooting, rules);
+            StableFootingRules.ValidateRoundNumber(roundNumber, rules: _rules);
             ServerSeed = serverSeed;
             RoundNumber = roundNumber;
             Schedule = StableFootingCycleScheduleGenerator.Generate(
                 serverSeed,
-                roundNumber);
+                roundNumber, rules: _rules);
             _players =
                 new StableFootingPlayerRoundState[
                     StableFootingRules.PlayerCount];
@@ -105,7 +109,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                  playerSlot++)
             {
                 _players[playerSlot] =
-                    new StableFootingPlayerRoundState(playerSlot);
+                    new StableFootingPlayerRoundState(playerSlot, rules: _rules);
             }
         }
 
@@ -189,7 +193,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
                 new StableFootingFallResolution[
                     playerSlotsInServerOrder.Count];
             if (IsComplete ||
-                roundElapsedSeconds >= StableFootingRules.RoundSeconds)
+                roundElapsedSeconds >= _rules.Seconds)
             {
                 if (!IsComplete)
                 {
@@ -244,7 +248,7 @@ namespace MazeParty.Gameplay.Minigames.StableFooting
             StableFootingRules.ValidateRoundElapsedSeconds(
                 roundElapsedSeconds);
             if (IsComplete ||
-                roundElapsedSeconds < StableFootingRules.RoundSeconds)
+                roundElapsedSeconds < _rules.Seconds)
             {
                 return false;
             }

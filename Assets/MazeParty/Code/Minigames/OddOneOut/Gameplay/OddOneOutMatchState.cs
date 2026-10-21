@@ -7,8 +7,11 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
     /// <summary>Server-owned choices stay private until the exact countdown boundary.</summary>
     public sealed class OddOneOutMatchState
     {
+        private readonly MinigameRulesConfig _rules;
+        public OddOneOutMatchState(MinigameRulesConfig? rules = null)
+        { _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.OddOneOut, rules); }
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.OddOneOut, 10);
+        public const int RoundCount = 10;
         public const double CountdownSeconds = 3d, ResultSeconds = 2d;
         private readonly bool[] _choices = new bool[PlayerCount];
         private readonly int[] _scores = new int[PlayerCount];
@@ -62,7 +65,7 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
                     Phase = OddOneOutPhase.Reveal;
                     PhaseEndsAt += ResultSeconds;
                 }
-                else if (RoundNumber == RoundCount) Phase = OddOneOutPhase.Complete;
+                else if (RoundNumber == _rules.Rounds) Phase = OddOneOutPhase.Complete;
                 else
                 {
                     RoundNumber++;

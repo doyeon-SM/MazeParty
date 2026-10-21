@@ -31,11 +31,13 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkMinefieldState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.Minefield, NetworkMatchState.Instance?.GameSettings);
         public const int GridWidth = 2;
         public const int GridHeight = 12;
         public const int MineCount = 30;
         public const double CountdownSeconds = 3d;
-        public static double RunSeconds => MinigameRuntimeSettings.Seconds(ScheduledMinigameId.Minefield, 40d);
+        public const double RunSeconds = 40d;
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 300f;
         public const float ArenaMinX = 293.33334f;
@@ -182,7 +184,7 @@ namespace MazeParty.Multiplayer
         private readonly bool[] _hasRoundOutcome =
             new bool[MinefieldRules.PlayerCount];
         private readonly List<MinefieldRoundResult> _roundResults =
-            new List<MinefieldRoundResult>(MinefieldRules.RoundCount);
+            new List<MinefieldRoundResult>();
         private readonly List<Vector3> _revealedMineCache =
             new List<Vector3>(MineCount);
         private readonly List<Vector3> _sensorRevealScratch =
@@ -308,7 +310,7 @@ namespace MazeParty.Multiplayer
                     CompleteRoundOnServer(now);
                     break;
                 case NetworkMinefieldPhase.RoundResult:
-                    if (_roundNumber.Value < MinefieldRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundOnServer(_roundNumber.Value + 1, now);
                     }
@@ -661,7 +663,7 @@ namespace MazeParty.Multiplayer
         private void BeginRunOnServer(double now)
         {
             _phase.Value = (byte)NetworkMinefieldPhase.Running;
-            _phaseEndsAt.Value = now + RunSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             _crusherWorldZ.Value = ArenaMinZ - CrusherStartOffset;
         }
 
@@ -1002,12 +1004,12 @@ namespace MazeParty.Multiplayer
         private void CompleteMatchOnServer()
         {
             if (_completionReported ||
-                _roundResults.Count != MinefieldRules.RoundCount)
+                _roundResults.Count != GameRules.Rounds)
             {
                 return;
             }
 
-            var leaderboard = MinefieldMatchScoring.BuildLeaderboard(_roundResults);
+            var leaderboard = MinefieldMatchScoring.BuildLeaderboard(_roundResults, rules: GameRules);
             for (var index = 0; index < leaderboard.Count; index++)
             {
                 var entry = leaderboard[index];
@@ -1220,12 +1222,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned &&
-                   IsServer &&
-                   avatar != null &&
-                   avatar.IsSpawned &&
-                   MinefieldRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -1316,7 +1313,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (round < 1 || round > MinefieldRules.RoundCount)
+            if (round < 1 || round > GameRules.Rounds)
             {
                 _cachedMineWorldPositions = Array.Empty<Vector3>();
                 _cachedActiveMineWorldPositions = Array.Empty<Vector3>();
@@ -1330,7 +1327,7 @@ namespace MazeParty.Multiplayer
             {
                 _cachedMineWorldPositions = GenerateMineWorldPositions(
                     seed,
-                    round);
+                    round, rules: GameRules);
             }
 
             var activeMines = new List<Vector3>(_cachedMineWorldPositions.Length);
@@ -1352,12 +1349,12 @@ namespace MazeParty.Multiplayer
 
         public static Vector3[] GenerateMineWorldPositions(
             ulong serverSeed,
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
             var random = new MinePositionRandom(
                 MinefieldLayoutGenerator.DeriveRoundSeed(
                     serverSeed,
-                    roundNumber));
+                    roundNumber, rules: rules));
             var positions = new Vector3[MineCount];
             var minimumSpacingSquared = MinimumMineSpacing * MinimumMineSpacing;
             var minX = ArenaMinX + MineSpawnHorizontalPadding;
@@ -1565,15 +1562,12 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector2 value)
         {
-            return !float.IsNaN(value.x) &&
-                   !float.IsInfinity(value.x) &&
-                   !float.IsNaN(value.y) &&
-                   !float.IsInfinity(value.y);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static ulong CreateServerSeed()

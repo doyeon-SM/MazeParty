@@ -51,8 +51,9 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
 
     public sealed class ShellGameMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.ShellGame, 5);
+        public const int RoundCount = 5;
         public const double CountdownSeconds = 3d, PreviewSeconds = 2d, LiftSeconds = .45d, ChoiceSeconds = 10d, ResultSeconds = 2d;
         private readonly int[] _choices = { -1, -1, -1, -1 };
         private readonly int[] _scores = new int[4];
@@ -63,7 +64,8 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
         public double Elapsed { get; private set; }
         public double PhaseEndsAt { get; private set; } = CountdownSeconds;
         public double Remaining => Math.Max(0d, PhaseEndsAt - Elapsed);
-        public ShellGameMatchState(ulong seed) { Seed = seed; Plan = new ShellGameRoundPlan(seed,1); }
+        public ShellGameMatchState(ulong seed, MinigameRulesConfig? rules = null) {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.ShellGame, rules); Seed = seed; Plan = new ShellGameRoundPlan(seed,1); }
         public static bool IsValidSlot(int slot) => slot >= 0 && slot < 4;
         public int GetChoice(int slot) => IsValidSlot(slot) ? _choices[slot] : -1;
         public int GetVisibleChoice(int slot, int viewerSlot) =>
@@ -113,7 +115,7 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
                     case ShellGamePhase.Shuffling: Phase=ShellGamePhase.Choosing; PhaseEndsAt+=ChoiceSeconds; break;
                     case ShellGamePhase.Choosing: Reveal(Elapsed); break;
                     case ShellGamePhase.Reveal:
-                        if (RoundNumber==RoundCount) { Phase=ShellGamePhase.Complete; break; }
+                        if (RoundNumber==_rules.Rounds) { Phase=ShellGamePhase.Complete; break; }
                         RoundNumber++; Plan=new ShellGameRoundPlan(Seed,RoundNumber);
                         for(var i=0;i<4;i++) _choices[i]=-1;
                         Phase=ShellGamePhase.Countdown; PhaseEndsAt+=CountdownSeconds; break;

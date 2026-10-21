@@ -85,6 +85,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
     /// </summary>
     public sealed class BouncingBallsMatchState
     {
+        private readonly MinigameRulesConfig _rules;
         private const double TimeEpsilon = 0.000000001d;
         private const double Tau = Math.PI * 2d;
         private const int BallCollisionSolverIterations = 12;
@@ -107,8 +108,9 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
         private int _simulatedSteps;
         private int _activeBallCount;
 
-        public BouncingBallsMatchState(int seed)
+        public BouncingBallsMatchState(int seed, MinigameRulesConfig? rules = null)
         {
+            _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.BouncingBalls, rules);
             _randomState = unchecked((uint)seed);
             for (var id = 0; id < _balls.Length; id++)
             {
@@ -216,7 +218,7 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
             var target = Math.Min(
                 activeRoundElapsedSeconds,
-                BouncingBallsRules.RoundSeconds);
+                _rules.Seconds);
             var targetSteps = (int)Math.Floor(
                 target * BouncingBallsRules.SimulationHz +
                 TimeEpsilon);
@@ -228,11 +230,11 @@ namespace MazeParty.Gameplay.Minigames.BouncingBalls
 
             RoundElapsedSeconds = target;
             if (RoundElapsedSeconds + TimeEpsilon >=
-                BouncingBallsRules.RoundSeconds)
+                _rules.Seconds)
             {
-                RoundElapsedSeconds = BouncingBallsRules.RoundSeconds;
+                RoundElapsedSeconds = _rules.Seconds;
                 IsRoundComplete = true;
-                IsComplete = RoundNumber == BouncingBallsRules.RoundCount;
+                IsComplete = RoundNumber == _rules.Rounds;
                 Array.Clear(_shieldInputs, 0, _shieldInputs.Length);
             }
         }

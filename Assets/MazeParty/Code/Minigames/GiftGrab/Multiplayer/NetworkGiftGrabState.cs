@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.GiftGrab;
@@ -150,6 +151,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkGiftGrabState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.GiftGrab, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double RoundResultSeconds = 4d;
         public const float ArenaCenterX = 700f;
@@ -264,7 +267,7 @@ namespace MazeParty.Multiplayer
         private readonly int[] _spawnPointOrder =
             new int[GiftGrabRules.TotalGiftCount];
         private readonly List<GiftGrabRoundResult> _roundResults =
-            new List<GiftGrabRoundResult>(GiftGrabRules.RoundCount);
+            new List<GiftGrabRoundResult>();
 
         private GiftGrabRoundState _roundState;
         private ulong _matchSeed;
@@ -372,7 +375,7 @@ namespace MazeParty.Multiplayer
                     BeginRunOnServer(now);
                     break;
                 case NetworkGiftGrabPhase.RoundResult:
-                    if (_roundNumber.Value < GiftGrabRules.RoundCount)
+                    if (_roundNumber.Value < GameRules.Rounds)
                     {
                         BeginRoundOnServer(_roundNumber.Value + 1, now);
                     }
@@ -741,7 +744,7 @@ namespace MazeParty.Multiplayer
         {
             AdvanceInputEpochOnServer();
             ClearServerInputs();
-            _roundState = new GiftGrabRoundState(roundNumber);
+            _roundState = new GiftGrabRoundState(roundNumber, rules: GameRules);
             _roundNumber.Value = (byte)roundNumber;
             _phase.Value = (byte)NetworkGiftGrabPhase.Countdown;
             _phaseEndsAt.Value = now + CountdownSeconds;
@@ -764,7 +767,7 @@ namespace MazeParty.Multiplayer
             AdvanceInputEpochOnServer();
             ClearServerInputs();
             _phase.Value = (byte)NetworkGiftGrabPhase.Running;
-            _phaseEndsAt.Value = now + GiftGrabRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             _runningStartedAt = now;
             _simulatedElapsed = 0d;
             SyncSnapshotsOnServer();
@@ -823,13 +826,13 @@ namespace MazeParty.Multiplayer
         private void CompleteMatchOnServer()
         {
             if (_completionReported ||
-                _roundResults.Count != GiftGrabRules.RoundCount)
+                _roundResults.Count != GameRules.Rounds)
             {
                 return;
             }
 
             var leaderboard =
-                GiftGrabMatchScoring.BuildLeaderboard(_roundResults);
+                GiftGrabMatchScoring.BuildLeaderboard(_roundResults, rules: GameRules);
             uint finalRanks = 0U;
             for (var index = 0; index < leaderboard.Count; index++)
             {
@@ -863,7 +866,7 @@ namespace MazeParty.Multiplayer
             return _matchActive.Value && !_paused.Value &&
                    Phase == NetworkGiftGrabPhase.Running &&
                    roundNumber == _roundNumber.Value &&
-                   inputEpoch != 0U && inputEpoch == _inputEpoch.Value &&
+                   MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                    RemainingSeconds > 0d && _roundState != null &&
                    !_roundState.IsComplete;
         }
@@ -877,10 +880,10 @@ namespace MazeParty.Multiplayer
 
             targetElapsed = Math.Max(
                 _simulatedElapsed,
-                Math.Min(GiftGrabRules.RoundSeconds, targetElapsed));
+                Math.Min(GameRules.Seconds, targetElapsed));
             var interactionLimit = Math.Min(
                 targetElapsed,
-                GiftGrabRules.RoundSeconds -
+                GameRules.Seconds -
                 FinalInteractionEpsilonSeconds);
             while (_simulatedElapsed + 0.000000001d < interactionLimit)
             {
@@ -908,10 +911,10 @@ namespace MazeParty.Multiplayer
                 _simulatedElapsed = next;
             }
 
-            if (targetElapsed >= GiftGrabRules.RoundSeconds)
+            if (targetElapsed >= GameRules.Seconds)
             {
-                _roundState.AdvanceTo(GiftGrabRules.RoundSeconds);
-                _simulatedElapsed = GiftGrabRules.RoundSeconds;
+                _roundState.AdvanceTo(GameRules.Seconds);
+                _simulatedElapsed = GameRules.Seconds;
             }
             else if (_simulatedElapsed + 0.000000001d < targetElapsed)
             {
@@ -1853,13 +1856,9 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
             var match = NetworkMatchState.Instance;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   GiftGrabRules.IsValidPlayerSlot(slot) &&
-                   match != null &&
-                   ReferenceEquals(match.GetAvatarForSlot(slot), avatar);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot) &&
+                match != null && ReferenceEquals(match.GetAvatarForSlot(slot), avatar);
         }
 
         private void CacheAndFreezeBoardAvatarsOnServer()
@@ -1901,7 +1900,7 @@ namespace MazeParty.Multiplayer
             return Math.Max(
                 0d,
                 Math.Min(
-                    GiftGrabRules.RoundSeconds,
+                    GameRules.Seconds,
                     now - _runningStartedAt));
         }
 
@@ -1910,14 +1909,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private static Vector2 ClampPlayerPosition(Vector2 position)
@@ -2158,7 +2151,7 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) && !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private struct StableRandom

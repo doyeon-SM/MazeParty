@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using System.Collections.Generic;
 using MazeParty.Gameplay.Minigames.TerritoryPaint;
@@ -54,6 +55,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkTerritoryPaintState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.TerritoryPaint, NetworkMatchState.Instance?.GameSettings);
         public const double CountdownSeconds = 3d;
         public const double ResultSeconds = 4d;
         public const float ArenaCenterX = 940f;
@@ -110,13 +113,6 @@ namespace MazeParty.Multiplayer
             new Vector2[TerritoryPaintRules.PlayerCount];
         private readonly NetworkPlayerAvatar[] _avatars =
             new NetworkPlayerAvatar[TerritoryPaintRules.PlayerCount];
-        private readonly ulong[] _paintedScratch =
-            new ulong[PaintWordCount];
-        private readonly ulong[] _ownerLowScratch =
-            new ulong[PaintWordCount];
-        private readonly ulong[] _ownerHighScratch =
-            new ulong[PaintWordCount];
-
         private TerritoryPaintSurface _surface;
         private IReadOnlyList<TerritoryPaintLeaderboardEntry>
             _finalLeaderboard;
@@ -463,7 +459,7 @@ namespace MazeParty.Multiplayer
             ClearInputsOnServer();
             AdvanceInputEpochOnServer();
             _phase.Value = (byte)NetworkTerritoryPaintPhase.Running;
-            _phaseEndsAt.Value = now + TerritoryPaintRules.RoundSeconds;
+            _phaseEndsAt.Value = now + GameRules.Seconds;
             _runningStartedAt = now;
             _simulatedElapsed = 0d;
 
@@ -490,7 +486,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SimulateToOnServer(TerritoryPaintRules.RoundSeconds);
+            SimulateToOnServer(GameRules.Seconds);
             SyncPlayerSnapshotsOnServer();
             SyncPaintOnServer();
 
@@ -561,7 +557,7 @@ namespace MazeParty.Multiplayer
 
             targetElapsed = Math.Max(
                 _simulatedElapsed,
-                Math.Min(TerritoryPaintRules.RoundSeconds, targetElapsed));
+                Math.Min(GameRules.Seconds, targetElapsed));
             while (_simulatedElapsed + 0.000000001d < targetElapsed)
             {
                 var next = Math.Min(
@@ -687,48 +683,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            Array.Clear(_paintedScratch, 0, _paintedScratch.Length);
-            Array.Clear(_ownerLowScratch, 0, _ownerLowScratch.Length);
-            Array.Clear(_ownerHighScratch, 0, _ownerHighScratch.Length);
-            for (var cellIndex = 0;
-                 cellIndex < _surface.CellCount;
-                 cellIndex++)
-            {
-                var owner = _surface.GetOwnerAtIndex(cellIndex);
-                if (owner == TerritoryPaintRules.UnpaintedOwner)
-                {
-                    continue;
-                }
-
-                var word = cellIndex / BitsPerWord;
-                var mask = 1UL << (cellIndex % BitsPerWord);
-                _paintedScratch[word] |= mask;
-                if ((owner & 1) != 0)
-                {
-                    _ownerLowScratch[word] |= mask;
-                }
-                if ((owner & 2) != 0)
-                {
-                    _ownerHighScratch[word] |= mask;
-                }
-            }
-
             EnsurePaintWordCountOnServer();
             var changed = false;
-            for (var word = 0; word < PaintWordCount; word++)
+            while (_surface.TryConsumeChangedWord(out var word, out var painted,
+                       out var ownerLow, out var ownerHigh))
             {
-                changed |= SetWordIfChanged(
-                    _paintedWords,
-                    word,
-                    _paintedScratch[word]);
-                changed |= SetWordIfChanged(
-                    _ownerLowWords,
-                    word,
-                    _ownerLowScratch[word]);
-                changed |= SetWordIfChanged(
-                    _ownerHighWords,
-                    word,
-                    _ownerHighScratch[word]);
+                changed |= SetWordIfChanged(_paintedWords, word, painted);
+                changed |= SetWordIfChanged(_ownerLowWords, word, ownerLow);
+                changed |= SetWordIfChanged(_ownerHighWords, word, ownerHigh);
             }
 
             ulong scores = 0UL;
@@ -764,8 +726,7 @@ namespace MazeParty.Multiplayer
             return _matchActive.Value && !_paused.Value &&
                    Phase == NetworkTerritoryPaintPhase.Running &&
                    roundNumber == 1 &&
-                   inputEpoch != 0U &&
-                   inputEpoch == _inputEpoch.Value &&
+                   MinigameServerRules.IsCurrentInputEpoch(inputEpoch, _inputEpoch.Value) &&
                    Remaining > 0d;
         }
 
@@ -773,10 +734,7 @@ namespace MazeParty.Multiplayer
             NetworkPlayerAvatar avatar,
             out int slot)
         {
-            slot = avatar != null ? avatar.AssignedSlot : -1;
-            return IsSpawned && IsServer && avatar != null &&
-                   avatar.IsSpawned &&
-                   TerritoryPaintRules.IsValidPlayerSlot(slot);
+            return MinigameServerRules.TryResolveSpawnedServerSlot(this, avatar, out slot);
         }
 
         private bool TryGetPlayerSnapshot(
@@ -907,9 +865,7 @@ namespace MazeParty.Multiplayer
             unchecked
             {
                 _inputEpoch.Value =
-                    _inputEpoch.Value == uint.MaxValue
-                        ? 1U
-                        : _inputEpoch.Value + 1U;
+                    MinigameServerRules.NextInputEpoch(_inputEpoch.Value);
             }
         }
 
@@ -938,7 +894,7 @@ namespace MazeParty.Multiplayer
             return Math.Max(
                 0d,
                 Math.Min(
-                    TerritoryPaintRules.RoundSeconds,
+                    GameRules.Seconds,
                     now - _runningStartedAt));
         }
 
@@ -947,14 +903,8 @@ namespace MazeParty.Multiplayer
             double pausedRemaining,
             bool inactive)
         {
-            if (inactive)
-            {
-                return 0d;
-            }
-
-            return _paused.Value
-                ? Math.Max(0d, pausedRemaining)
-                : Math.Max(0d, deadline - ServerNow);
+            return MinigameServerRules.Remaining(deadline, pausedRemaining,
+                inactive, _paused.Value, ServerNow);
         }
 
         private string BuildScoreLog()
@@ -967,13 +917,12 @@ namespace MazeParty.Multiplayer
 
         private static bool IsFinite(Vector2 value)
         {
-            return IsFinite(value.x) && IsFinite(value.y);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static bool IsFinite(double value)
         {
-            return !double.IsNaN(value) &&
-                   !double.IsInfinity(value);
+            return MinigameServerRules.IsFinite(value);
         }
 
         private static NetworkVariable<bool> CreateBoolVariable()

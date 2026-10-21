@@ -1,3 +1,4 @@
+using MazeParty.Gameplay.Minigames;
 using System;
 using MazeParty.Gameplay.Minigames.OddOneOut;
 using Unity.Netcode;
@@ -45,6 +46,8 @@ namespace MazeParty.Multiplayer
     [RequireComponent(typeof(NetworkObject))]
     public sealed class NetworkOddOneOutState : NetworkBehaviour
     {
+        public MinigameRulesConfig GameRules => MinigameRulesConfig.FromMatch(
+            ScheduledMinigameId.OddOneOut, NetworkMatchState.Instance?.GameSettings);
         private readonly NetworkVariable<OddOneOutPublicSnapshot> _snapshot = new NetworkVariable<OddOneOutPublicSnapshot>();
         private readonly uint[] _sequences = new uint[4];
         private OddOneOutMatchState _simulation;
@@ -82,7 +85,7 @@ namespace MazeParty.Multiplayer
         public void BeginMatchOnServer(ulong seed)
         {
             if (!IsSpawned || !IsServer) return;
-            _simulation = new OddOneOutMatchState(); _completionReported = false; _startedAt = ServerNow;
+            _simulation = new OddOneOutMatchState(rules: MinigameRulesConfig.FromMatch(ScheduledMinigameId.OddOneOut, NetworkMatchState.Instance?.GameSettings)); _completionReported = false; _startedAt = ServerNow;
             Publish(false, true); FreezeAvatars();
         }
         private void Update()
@@ -104,7 +107,7 @@ namespace MazeParty.Multiplayer
         }
         private bool ValidateEnvelope(int round, uint epoch, uint sequence, int slot) =>
             IsSpawned && IsServer && _simulation != null && CanAcceptInputForSlot(slot) &&
-            round == RoundNumber && epoch != 0 && epoch == InputEpoch && sequence > _sequences[slot];
+            round == RoundNumber && MinigameServerRules.IsCurrentInputEpoch(epoch, InputEpoch) && sequence > _sequences[slot];
         public bool TrySetChoiceOnServer(NetworkPlayerAvatar avatar, bool sitting, byte round, uint epoch, uint sequence)
         {
             if (!TryResolveSlot(avatar, out var slot) || IsPaused || _simulation == null) return false;
@@ -145,7 +148,7 @@ namespace MazeParty.Multiplayer
             FreezeAvatars(); _simulation = null;
             _snapshot.Value = new OddOneOutPublicSnapshot { Epoch = NextEpoch(), Winner = -1 };
         }
-        private uint NextEpoch() => InputEpoch == uint.MaxValue ? 1U : InputEpoch + 1U;
+        private uint NextEpoch() => MinigameServerRules.NextInputEpoch(InputEpoch);
         private void Publish(bool paused, bool newEpoch)
         {
             var epoch = newEpoch ? NextEpoch() : InputEpoch;

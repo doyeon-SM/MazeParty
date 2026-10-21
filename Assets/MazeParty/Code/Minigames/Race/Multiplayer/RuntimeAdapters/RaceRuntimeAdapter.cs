@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using MazeParty.Gameplay.Minigames.Race;
 
@@ -14,6 +15,33 @@ namespace MazeParty.Multiplayer
 
         protected override NetworkRaceState CurrentState =>
             NetworkRaceState.Instance;
+
+        public override bool TryGetClock(double runningSeconds,
+            out double remaining, out double total, out int round)
+        {
+            remaining = 0d;
+            total = runningSeconds;
+            round = 1;
+            var state = CurrentState;
+            if (state == null ||
+                state.Phase == NetworkRacePhase.Inactive ||
+                state.Phase == NetworkRacePhase.Complete)
+                return false;
+            remaining = state.Remaining;
+            round = state.RoundNumber;
+            total = state.Phase == NetworkRacePhase.Countdown
+                ? NetworkRaceState.CountdownSeconds
+                : state.Phase == NetworkRacePhase.RoundResult
+                    ? NetworkRaceState.RoundResultSeconds
+                    : runningSeconds;
+            return true;
+        }
+
+        public override MinigameResultRow GetResultRow(int slot)
+        {
+            var state = CurrentState;
+            return state == null ? default : new MinigameResultRow(state.GetFinalRank(slot), "{0}.  {1}  SCORE {2}  GOLD +{3}", state.GetTotalScore(slot));
+        }
 
         public override bool TryGetRoundCountdown(out double remainingSeconds)
         {

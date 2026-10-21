@@ -19,7 +19,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         };
 
         public const int PlayerCount = 4;
-        public static int RoundCount => MinigameRuntimeSettings.Rounds(ScheduledMinigameId.SequenceMemory, 10);
+        public const int RoundCount = 10;
         public static int ProblemTurnCount => RoundCount;
         public const int MistakesToEliminate = 2;
         public const double CountdownSeconds = 3d;
@@ -40,23 +40,24 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 input <= SequenceMemoryInput.D;
         }
 
-        public static int GetProblemLength(int roundNumber)
+        public static int GetProblemLength(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            ValidateRoundNumber(roundNumber);
+            ValidateRoundNumber(roundNumber, rules: rules);
             return ProblemLengths[roundNumber - 1];
         }
 
         public static double GetProblemPresentationSeconds(
-            int roundNumber)
+            int roundNumber, MinigameRulesConfig? rules = null)
         {
-            var length = GetProblemLength(roundNumber);
+            var length = GetProblemLength(roundNumber, rules: rules);
             return (length * ProblemSymbolIntervalSeconds) +
                 ProblemFinalHoldSeconds;
         }
 
-        internal static void ValidateRoundNumber(int roundNumber)
+        internal static void ValidateRoundNumber(int roundNumber, MinigameRulesConfig? rules = null)
         {
-            if (roundNumber < 1 || roundNumber > RoundCount)
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.SequenceMemory, rules);
+            if (roundNumber < 1 || roundNumber > configuration.Rounds)
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(roundNumber),
@@ -116,8 +117,9 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
             _readOnlyInputs;
 
         public SequenceMemoryProblem(
-            IReadOnlyList<SequenceMemoryInput> inputs)
+            IReadOnlyList<SequenceMemoryInput> inputs, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.SequenceMemory, rules);
             if (inputs == null)
             {
                 throw new ArgumentNullException(nameof(inputs));
@@ -126,7 +128,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
             if (inputs.Count < 1 ||
                 inputs.Count >
                 SequenceMemoryRules.GetProblemLength(
-                    SequenceMemoryRules.RoundCount))
+                    configuration.Rounds, rules: configuration))
             {
                 throw new ArgumentOutOfRangeException(
                     nameof(inputs),
@@ -198,11 +200,12 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
         private const ulong SeedSalt = 0xD6E8FEB86659FD93UL;
 
         public static SequenceMemoryProblem[] GenerateMatch(
-            ulong serverSeed)
+            ulong serverSeed, MinigameRulesConfig? rules = null)
         {
+            var configuration = MinigameRulesConfig.Resolve(ScheduledMinigameId.SequenceMemory, rules);
             var random = new SplitMix64(serverSeed ^ SeedSalt);
             var problems =
-                new SequenceMemoryProblem[SequenceMemoryRules.RoundCount];
+                new SequenceMemoryProblem[configuration.Rounds];
             var signatures = new HashSet<string>();
 
             for (var roundIndex = 0;
@@ -210,13 +213,13 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                  roundIndex++)
             {
                 var length = SequenceMemoryRules.GetProblemLength(
-                    roundIndex + 1);
+                    roundIndex + 1, rules: rules);
                 var accepted = false;
                 for (var attempt = 0;
                      attempt < MaximumDuplicateRetries;
                      attempt++)
                 {
-                    var candidate = GenerateProblem(length, ref random);
+                    var candidate = GenerateProblem(length, ref random, rules: rules);
                     if (!signatures.Add(candidate.ToString()))
                     {
                         continue;
@@ -239,7 +242,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
 
         private static SequenceMemoryProblem GenerateProblem(
             int length,
-            ref SplitMix64 random)
+            ref SplitMix64 random, MinigameRulesConfig? rules = null)
         {
             var inputs = new SequenceMemoryInput[length];
             for (var index = 0; index < inputs.Length; index++)
@@ -258,7 +261,7 @@ namespace MazeParty.Gameplay.Minigames.SequenceMemory
                 }
             }
 
-            return new SequenceMemoryProblem(inputs);
+            return new SequenceMemoryProblem(inputs, rules: rules);
         }
 
         private struct SplitMix64

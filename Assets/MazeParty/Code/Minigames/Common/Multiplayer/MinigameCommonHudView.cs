@@ -95,7 +95,7 @@ namespace MazeParty.Multiplayer
                 }
 
                 ShowRoundOnly(GameText.F("ROUND {0} / {1}",
-                    match.ConfiguredSeriesRound, definition.RoundCount));
+                    match.ConfiguredSeriesRound, match.GameSettings.Get(match.CurrentMinigame).Rounds));
                 return;
             }
 
@@ -109,7 +109,7 @@ namespace MazeParty.Multiplayer
 
             if (match.CurrentMinigame == ScheduledMinigameId.OddOneOut && match.IsMinigameRoundCountdown)
             {
-                ShowRoundOnly(GameText.F("ROUND {0} / {1}", NetworkOddOneOutState.Instance.RoundNumber, definition.RoundCount));
+                ShowRoundOnly(GameText.F("ROUND {0} / {1}", NetworkOddOneOutState.Instance.RoundNumber, match.GameSettings.Get(match.CurrentMinigame).Rounds));
                 return;
             }
 
@@ -117,12 +117,12 @@ namespace MazeParty.Multiplayer
             {
                 var shell = NetworkShellGameState.Instance;
                 if (shell == null) HideClock();
-                else ShowRoundOnly(GameText.F("ROUND {0} / {1}", shell.RoundNumber, definition.RoundCount));
+                else ShowRoundOnly(GameText.F("ROUND {0} / {1}", shell.RoundNumber, match.GameSettings.Get(match.CurrentMinigame).Rounds));
                 return;
             }
 
             if (!TryGetClock(match.CurrentMinigame,
-                    definition.PhaseDurationSeconds,
+                    MinigameRulesConfig.FromMatch(match.CurrentMinigame, match.GameSettings).Seconds,
                     out var remaining, out var total,
                     out var round))
             {
@@ -131,13 +131,16 @@ namespace MazeParty.Multiplayer
             }
 
             if (match.UsesConfiguredRoundSeries) round = match.ConfiguredSeriesRound;
-            var hasRounds = definition.RoundCount > 1;
+            var hasRounds = match.GameSettings.Get(match.CurrentMinigame).Rounds > 1;
             var label = match.CurrentMinigame ==
                     ScheduledMinigameId.SequenceMemory
-                ? GameText.F("PROBLEM {0} / {1}", round, definition.RoundCount)
-                : GameText.F("ROUND {0} / {1}", round, definition.RoundCount);
+                ? GameText.F("PROBLEM {0} / {1}", round, match.GameSettings.Get(match.CurrentMinigame).Rounds)
+                : GameText.F("ROUND {0} / {1}", round, match.GameSettings.Get(match.CurrentMinigame).Rounds);
             ShowClock(remaining, total, label, hasRounds);
         }
+
+        private MinefieldNetworkView _minefieldSpectator;
+        private RedLightGreenLightNetworkView _redLightSpectator;
 
         private void RefreshSpectatorLabel(NetworkMatchState match)
         {
@@ -152,13 +155,17 @@ namespace MazeParty.Multiplayer
             {
                 if (match.CurrentMinigame == ScheduledMinigameId.Minefield)
                 {
-                    var view = FindFirstObjectByType<MinefieldNetworkView>();
+                    if (_minefieldSpectator == null)
+                        _minefieldSpectator = FindFirstObjectByType<MinefieldNetworkView>();
+                    var view = _minefieldSpectator;
                     slot = view != null ? view.SpectatedSlot : -1;
                 }
                 else if (match.CurrentMinigame ==
                          ScheduledMinigameId.RedLightGreenLight)
                 {
-                    var view = FindFirstObjectByType<RedLightGreenLightNetworkView>();
+                    if (_redLightSpectator == null)
+                        _redLightSpectator = FindFirstObjectByType<RedLightGreenLightNetworkView>();
+                    var view = _redLightSpectator;
                     slot = view != null ? view.SpectatedSlot : -1;
                 }
             }
@@ -254,278 +261,8 @@ namespace MazeParty.Multiplayer
             remaining = 0d;
             total = runningSeconds;
             round = 1;
-            switch (id)
-            {
-                case ScheduledMinigameId.Minefield:
-                {
-                    var state = NetworkMinefieldState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkMinefieldPhase.Inactive ||
-                        state.Phase == NetworkMinefieldPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkMinefieldPhase.Countdown
-                        ? NetworkMinefieldState.CountdownSeconds
-                        : state.Phase == NetworkMinefieldPhase.RoundResult
-                            ? NetworkMinefieldState.RoundResultSeconds
-                            : NetworkMinefieldState.RunSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.WrongWay:
-                {
-                    var state = NetworkWrongWayState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkWrongWayPhase.Inactive ||
-                        state.Phase == NetworkWrongWayPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkWrongWayPhase.RoundResult
-                        ? NetworkWrongWayState.RoundResultSeconds
-                        : state.Phase == NetworkWrongWayPhase.Countdown
-                            ? 3d : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.RedLightGreenLight:
-                {
-                    var state = NetworkRedLightGreenLightState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkRedLightGreenLightPhase.Inactive ||
-                        state.Phase == NetworkRedLightGreenLightPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkRedLightGreenLightPhase.Countdown
-                        ? 3d : state.Phase ==
-                            NetworkRedLightGreenLightPhase.RoundResult
-                            ? 4d : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.StableFooting:
-                {
-                    var state = NetworkStableFootingState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkStableFootingPhase.Inactive ||
-                        state.Phase == NetworkStableFootingPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkStableFootingPhase.Countdown
-                        ? NetworkStableFootingState.CountdownSeconds
-                        : state.Phase == NetworkStableFootingPhase.RoundResult
-                            ? NetworkStableFootingState.RoundResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.BalloonBlow:
-                {
-                    var state = NetworkBalloonBlowState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkBalloonBlowPhase.Inactive ||
-                        state.Phase == NetworkBalloonBlowPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkBalloonBlowPhase.Countdown
-                        ? NetworkBalloonBlowState.CountdownSeconds
-                        : state.Phase == NetworkBalloonBlowPhase.RoundResult
-                            ? NetworkBalloonBlowState.RoundResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.GiftGrab:
-                {
-                    var state = NetworkGiftGrabState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkGiftGrabPhase.Inactive ||
-                        state.Phase == NetworkGiftGrabPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkGiftGrabPhase.Countdown
-                        ? NetworkGiftGrabState.CountdownSeconds
-                        : state.Phase == NetworkGiftGrabPhase.RoundResult
-                            ? NetworkGiftGrabState.RoundResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.TerritoryPaint:
-                {
-                    var state = NetworkTerritoryPaintState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkTerritoryPaintPhase.Inactive ||
-                        state.Phase == NetworkTerritoryPaintPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    total = state.Phase == NetworkTerritoryPaintPhase.Countdown
-                        ? NetworkTerritoryPaintState.CountdownSeconds
-                        : state.Phase == NetworkTerritoryPaintPhase.RoundResult
-                            ? NetworkTerritoryPaintState.ResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.TagChase:
-                {
-                    var state = NetworkTagChaseState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkTagChasePhase.Inactive ||
-                        state.Phase == NetworkTagChasePhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkTagChasePhase.Countdown
-                        ? NetworkTagChaseState.CountdownSeconds
-                        : state.Phase == NetworkTagChasePhase.RoundResult
-                            ? NetworkTagChaseState.RoundResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.Race:
-                {
-                    var state = NetworkRaceState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkRacePhase.Inactive ||
-                        state.Phase == NetworkRacePhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkRacePhase.Countdown
-                        ? NetworkRaceState.CountdownSeconds
-                        : state.Phase == NetworkRacePhase.RoundResult
-                            ? NetworkRaceState.RoundResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.SequenceMemory:
-                {
-                    var state = NetworkSequenceMemoryState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkSequenceMemoryPhase.Inactive)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkSequenceMemoryPhase.Countdown
-                        ? SequenceMemoryRules.CountdownSeconds
-                        : state.Phase ==
-                            NetworkSequenceMemoryPhase.PresentingProblem
-                            ? SequenceMemoryRules.GetProblemPresentationSeconds(
-                                Mathf.Clamp(round, 1,
-                                    SequenceMemoryRules.RoundCount))
-                            : state.Phase ==
-                                NetworkSequenceMemoryPhase.RevealingAnswer
-                                ? SequenceMemoryRules.AnswerRevealSeconds
-                                : state.Phase ==
-                                    NetworkSequenceMemoryPhase.Complete
-                                    ? SequenceMemoryRules.ResultSeconds
-                                : SequenceMemoryRules.InputWindowSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.BouncingBalls:
-                {
-                    var state = NetworkBouncingBallsState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkBouncingBallsPhase.Inactive)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkBouncingBallsPhase.Countdown
-                        ? 3d : state.Phase == NetworkBouncingBallsPhase.RoundBreak
-                            ? NetworkBouncingBallsState.RoundBreakSeconds
-                            : state.Phase == NetworkBouncingBallsPhase.Complete
-                                ? BouncingBallsRules.ResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.SnowySpin:
-                {
-                    var state = NetworkSnowySpinState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkSnowySpinPhase.Inactive ||
-                        state.Phase == NetworkSnowySpinPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkSnowySpinPhase.Countdown
-                        ? NetworkSnowySpinState.CountdownSeconds
-                        : state.Phase == NetworkSnowySpinPhase.RoundResult
-                            ? NetworkSnowySpinState.ResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.ArenaCombat:
-                {
-                    var state = NetworkArenaCombatState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkArenaCombatPhase.Inactive)
-                        return false;
-                    remaining = state.Remaining;
-                    total = state.Phase == NetworkArenaCombatPhase.Countdown
-                        ? 3d : state.Phase == NetworkArenaCombatPhase.Complete
-                            ? ArenaCombatRules.ResultSeconds
-                            : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.CliffBarrage:
-                {
-                    var state = NetworkCliffBarrageState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkCliffBarragePhase.Inactive ||
-                        state.Phase == NetworkCliffBarragePhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkCliffBarragePhase.Countdown
-                        ? 3d : state.Phase == NetworkCliffBarragePhase.RoundResult
-                            ? 4d : runningSeconds;
-                    return true;
-                }
-                case ScheduledMinigameId.Flight:
-                {
-                    var state = NetworkFlightState.Instance;
-                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Inactive ||
-                        state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Complete) return false;
-                    total = MazeParty.Gameplay.Minigames.Flight.FlightRules.RunSeconds; round = 1;
-                    remaining = state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Countdown ? total :
-                        state.Phase == MazeParty.Gameplay.Minigames.Flight.FlightPhase.Running ? state.Remaining : 0d;
-                    return true;
-                }
-                case ScheduledMinigameId.Race2:
-                {
-                    var state = NetworkRace2State.Instance;
-                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Inactive ||
-                        state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Complete) return false;
-                    total = 120d; round = state.RoundNumber;
-                    remaining = state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Countdown ? total :
-                        state.Phase == MazeParty.Gameplay.Minigames.Race2.Race2Phase.Running ? state.Remaining : 0d;
-                    return true;
-                }
-                case ScheduledMinigameId.OddOneOut:
-                {
-                    var state = NetworkOddOneOutState.Instance;
-                    if (state == null || state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Inactive ||
-                        state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete) return false;
-                    remaining = state.Remaining; round = state.RoundNumber;
-                    total = state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Choosing ? 3d : 2d;
-                    return true;
-                }
-                case ScheduledMinigameId.CoinCollect:
-                {
-                    var state = NetworkCoinCollectState.Instance;
-                    if (state == null ||
-                        state.Phase == NetworkCoinCollectPhase.Inactive ||
-                        state.Phase == NetworkCoinCollectPhase.Complete)
-                        return false;
-                    remaining = state.Remaining;
-                    round = state.RoundNumber;
-                    total = state.Phase == NetworkCoinCollectPhase.Countdown
-                        ? 3d : state.Phase == NetworkCoinCollectPhase.RoundResult
-                            ? 4d : runningSeconds;
-                    return true;
-                }
-                default:
-                    return false;
-            }
+            return MinigameRuntimeRegistry.TryGet(id, out var runtime) &&
+                   runtime.TryGetClock(runningSeconds, out remaining, out total, out round);
         }
     }
 }
