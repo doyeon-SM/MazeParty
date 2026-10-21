@@ -1,6 +1,6 @@
 # MazeParty 현재 기준과 남은 작업
 
-갱신: 2026-10-21 (Asia/Seoul). 다음 작업에 필요한 기준만 유지한다. 사용자 최신 지시를 우선하며 작업 규칙은 `AGENTS.md`, 구현은 코드·프리팹·테스트를 따른다.
+갱신: 2026-10-22 (Asia/Seoul). 다음 작업에 필요한 기준만 유지한다. 사용자 최신 지시를 우선하며 작업 규칙은 `AGENTS.md`, 구현은 코드·프리팹·테스트를 따른다.
 
 ## 기준 자료
 
@@ -9,6 +9,10 @@
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026) · [10/21 회의록](https://app.notion.com/p/3ffc227fda0381d5a2f1c8a03deb1617).
 - 리팩토링 요약: [기술문서](Docs/REFACTORING_2026-10-21.md). 상세 설계·단계별 근거는 [Notion 기술문서](https://app.notion.com/p/400c227fda038101b398fcd871aa766a)에 보관했다.
 - 실행·배포는 `README.md`, `Docs/STOVE_SETUP.md`, `Docs/STOVE_LAUNCHER_TEST.md`. 번역은 `Docs/LOCALIZATION_GOOGLE_SHEETS.md`를 따르며 요청받았을 때만 시트를 동기화한다.
+
+- 상점 원고: [스팀](https://app.notion.com/p/400c227fda038110a86dcba4a27ed369) · [스토브](https://app.notion.com/p/400c227fda0381d69a49c99948246af3). 기획 v0.56 기반 소개·상세 설명·4인 온라인 안내 초안과 공식 규격별 이미지 준비표를 유지한다. 파일 링크·진행상태는 빈칸이며 이미지 촬영, 출시 빌드 대조, 확정 출시일·가격·실측 사양·지원 연락처 입력은 남아 있다. 상점 등록·공개 완료를 뜻하지 않는다.
+
+- 사양 검토(2026-10-22 사용자 보고): 작업 관리자 측정으로 RAM 273.5MB / i7-13700K CPU 1~2% / RTX 4070 Ti GPU 약 20%, 다른 PC는 RAM 330MB / Ryzen 5 7500F(6코어) CPU 2.7~5%. 대기실까지 60FPS를 확인했으며 실제 4인 테스트는 아직이다. 해상도·품질·프레임 제한 여부·두 번째 PC GPU·설치 RAM·최고 메모리 사용량은 미확인. 대기실 결과만으로 공개 최소·권장 CPU/GPU를 확정하지 않으며 보드·미니게임 4인 호스트/클라이언트 검증이 필요하다.
 
 ## 현재 구현
 
