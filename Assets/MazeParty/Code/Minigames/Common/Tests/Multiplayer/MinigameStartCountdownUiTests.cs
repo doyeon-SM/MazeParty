@@ -27,6 +27,11 @@ namespace MazeParty.Multiplayer.Tests
                 .Single(text => text.gameObject.name == "Numeral");
             Assert.That(view, Is.Not.Null);
             Assert.That(view.HasRequiredReferences, Is.True);
+            var serializedView = new SerializedObject(view);
+            var prompt = serializedView.FindProperty("combatPromptText").objectReferenceValue as Text;
+            Assert.That(prompt, Is.Not.Null);
+            Assert.That(prompt.GetComponent<LocalizedText>(), Is.Not.Null);
+            Assert.That(prompt.raycastTarget, Is.False);
             Assert.That(common, Is.Not.Null);
             Assert.That(common.HasRequiredReferences, Is.True);
             Assert.That(common.RootCanvas, Is.SameAs(canvas));

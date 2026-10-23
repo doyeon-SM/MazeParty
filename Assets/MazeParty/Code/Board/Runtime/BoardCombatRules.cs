@@ -8,6 +8,7 @@ namespace MazeParty.Gameplay
     {
         public const int TemporaryHealth = 100;
         public const int PunchDamage = 5;
+        public const double CountdownSeconds = 3d;
         public const double FightDurationSeconds = 60d;
         public const double NextActionItemProtectionSeconds = 30d;
         public const float PunchRange = 2f;

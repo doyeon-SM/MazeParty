@@ -450,9 +450,17 @@ namespace MazeParty.Multiplayer
         public double ActionRemaining => RemainingUntil(_actionEndsAt.Value, _pausedActionRemaining.Value);
         public double ChoiceRemaining => RemainingUntil(_choiceEndsAt.Value, _pausedChoiceRemaining.Value);
         public double ShieldRemaining => RemainingUntil(_shieldEndsAt.Value, _pausedShieldRemaining.Value);
-        public double CombatRemaining => RemainingUntil(
+        // One replicated deadline covers preparation and fighting, so pauses and
+        // reconnects preserve both phases without a separate client-side clock.
+        private double CombatSequenceRemaining => RemainingUntil(
             _combatEndsAt.Value,
             _pausedCombatRemaining.Value);
+        public double CombatRemaining => Math.Min(
+            BoardCombatRules.FightDurationSeconds, CombatSequenceRemaining);
+        public double CombatCountdownRemaining => IsCombatPhase && IsCombatActive
+            ? Math.Max(0d, CombatSequenceRemaining - BoardCombatRules.FightDurationSeconds)
+            : 0d;
+        public bool IsCombatCountdown => CombatCountdownRemaining > 0d;
         public double ReconnectRemaining => _reconnectPaused.Value
             ? Math.Max(0d, _reconnectGraceEndsAt.Value - ServerNow)
             : 0d;
@@ -1166,6 +1174,7 @@ namespace MazeParty.Multiplayer
             }
 
             return IsCombatPhase && IsCombatActive &&
+                   !IsCombatCountdown && CombatRemaining > 0d &&
                    IsCombatParticipant(avatar.AssignedSlot) &&
                    IsCombatAlive(avatar.AssignedSlot);
         }
@@ -1802,7 +1811,8 @@ namespace MazeParty.Multiplayer
                 _combatParticipantMask.Value = participantMask;
                 _combatAliveMask.Value = participantMask;
                 _combatSequenceIndex.Value++;
-                _combatEndsAt.Value = now + BoardCombatRules.FightDurationSeconds;
+                _combatEndsAt.Value = now + BoardCombatRules.CountdownSeconds +
+                                      BoardCombatRules.FightDurationSeconds;
                 _pausedCombatRemaining.Value = 0d;
                 for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
                 {

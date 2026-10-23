@@ -544,8 +544,26 @@ namespace MazeParty.Editor
             numeral.raycastTarget = false;
             numeral.text = "3";
 
+            var promptObject = new GameObject("Combat Prompt", typeof(RectTransform),
+                typeof(CanvasRenderer), typeof(Text), typeof(LocalizedText));
+            promptObject.transform.SetParent(content.transform, false);
+            var prompt = promptObject.GetComponent<Text>();
+            prompt.font = font;
+            prompt.fontSize = 42;
+            prompt.fontStyle = FontStyle.Normal;
+            prompt.alignment = TextAnchor.MiddleCenter;
+            prompt.color = numeral.color;
+            prompt.raycastTarget = false;
+            prompt.text = "FIGHT!";
+            promptObject.GetComponent<LocalizedText>().Configure("FIGHT!");
+            var promptRect = prompt.rectTransform;
+            promptRect.anchorMin = promptRect.anchorMax = new Vector2(0.5f, 0f);
+            promptRect.pivot = new Vector2(0.5f, 1f);
+            promptRect.anchoredPosition = new Vector2(0f, -16f);
+            promptRect.sizeDelta = new Vector2(500f, 70f);
+            promptObject.SetActive(false);
             root.GetComponent<MinigameStartCountdownView>()
-                .ConfigureUiBindings(canvas, content, numeral);
+                .ConfigureUiBindings(canvas, content, numeral, prompt);
             content.SetActive(false);
             SetUiLayer(root);
             return root;
