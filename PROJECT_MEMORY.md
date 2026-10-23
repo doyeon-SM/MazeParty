@@ -5,7 +5,7 @@
 ## 기준 자료
 
 - Git·Unity 루트: `C:/Unity/MazeParty`. 현재 브랜치 `dev/stove`, 안정 기준 `main`.
-- 최신 구현: `5f3c8f95d3d77141c03bcad96741db722d91d7e0` (`26.10.23` / `stove 도전과제 연결`). 보드 야간 조명은 `3c6890452ed26b732baa89c9459e323f9fc30b37` (`26.10.23` / `씬 라이팅 점검 및 수정`)에 반영됐다. 기획 v0.56·런타임 0.0.56 유지.
+- 최신 구현: `a133836a2deaede16bf937b190ed693193f39e30` (`26.10.24` / `격투 카운트 다운 추가`). 도전과제 연결·ID 검증 자료는 `78102620279ff0e0d1dfbb05e9e1a4c0134fbb34` (`26.10.24` / `스토브 도전과제 연결`)에 포함됐다. 보드 야간 조명은 `3c6890452ed26b732baa89c9459e323f9fc30b37` (`26.10.23` / `씬 라이팅 점검 및 수정`)에 반영됐다. 기획 v0.56·런타임 0.0.56 유지.
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026) · [10/23 회의록](https://app.notion.com/p/402c227fda03818c8e90d7095b274675).
 - 리팩토링 요약: [기술문서](Docs/REFACTORING_2026-10-21.md). 상세 설계·단계별 근거는 [Notion 기술문서](https://app.notion.com/p/400c227fda038101b398fcd871aa766a)에 보관했다.
 - 실행·배포는 `README.md`, `Docs/STOVE_SETUP.md`, `Docs/STOVE_LAUNCHER_TEST.md`. 번역은 `Docs/LOCALIZATION_GOOGLE_SHEETS.md`를 따르며 요청받았을 때만 시트를 동기화한다.
@@ -77,12 +77,14 @@
 - 보너스 2종 반영 후 최종 순위 확정 시 집계하며 중도 무효 경기는 폐기한다. 임시 기록은 복구 체크포인트에 포함한다.
 - STOVE Studio 실제 등록은 사용자가 진행하며 완료 여부는 미확인이다. `achievement_id`는 STOVE 자동 할당 도전과제 ID이고 기존 관리용 이름은 `project_label`로 보존한다. SDK 스탯 전송에는 기존 Stat ID를 사용한다. 공식 등록 화면에는 별도 프로젝트 관리 ID·초기값·최소값·최대값 입력 칸이 없다. 새 등록 기준은 아래 공통 스탯 29개 설계와 Notion의 항목별 목표 1·5·10 이상이다. `Docs/STOVE_STATS.csv`는 스탯 29개, `Docs/STOVE_ACHIEVEMENTS.csv`는 도전과제 34개의 연결 ID·목표 값 표다. `Docs/STOVE_ACHIEVEMENTS.md`와 아이콘 manifest/미리보기/README도 새 매핑으로 동기화했다.
 - 현재 구현은 STOVE 계정별 누적 기록·한 경기 미니게임 최고 승수·스탯별 전송 확인값을 v2 파일에 원자적으로 저장한다. 공통 스탯 5개에는 실제 누적/최고 값을, 나머지 24개에는 0/1을 MAX 방식으로 전송한다. 구매 횟수는 10을 넘겨 계속 누적하며 SDK Int32 한계에서 포화한다. 요청 중 값이 증가하면 요청 시점 값만 확인하고 새 값을 다시 전송한다. SDK 권장 간격에 따라 전체 요청을 60초 간격으로 처리하고 남은 전송은 다음 로그인에서 이어간다. 다른 PC의 미달성 누적 기록 동기화는 범위에 포함하지 않는다.
-- 공통 스탯 변경 후 표적 EditMode 32/32 통과, STOVE SDK 포함 Editor 및 Windows x64 Release 스크립트 컴파일 성공(86개 어셈블리). 코드·Notion 매핑·CSV·아이콘 68개 연결 및 원본 해시 일치 확인. 증빙: `Logs/SharedStatsQA`. 전체 실행 파일 빌드·Studio 등록·실계정 해제 검증은 별도로 남았다.
+- 공통 스탯 변경 후 표적 EditMode 32/32 통과, STOVE SDK 포함 Editor 및 Windows x64 Release 스크립트 컴파일 성공(86개 어셈블리). 코드·Notion 매핑·CSV·아이콘 68개 연결 및 원본 해시 일치 확인. 증빙: `Logs/SharedStatsQA`. 전체 Release 빌드는 2026-10-24에 완료했으며 Studio 등록 상태 대조·실계정 해제 검증은 남았다.
 - 사용자 명시 요청(2026-10-23)으로 Notion 공통준비사항의 공통 설정·34개 조건표·현지화별 연결 정보를 공통 Stat ID 기준으로 수정하고, 도전과제 34개/고유 스탯 29개와 기존 현지화 문구 보존을 재조회로 확인했다. 10·15·20턴 인정 및 경험자 20종을 유지한다. Studio 실제 등록은 사용자가 진행하며 완료 여부는 미확인이다. 이후 Notion 변경은 별도 요청 범위에서만 수행한다.
 
 - 도전과제 ID 정리(2026-10-24): 사용자가 Notion에서 수정한 01~06번 `MP_ACH_01_1/MP_ACH_01_5/MP_ACH_03_1/MP_ACH_03_5/MP_ACH_05_1/MP_ACH_06_1`을 근거로 34개 ID를 `스탯 ID_목표값` 형식으로 맞췄다. Notion의 34개 조건표·개별 안내 반영 및 5개 언어 510개 셀 보존을 재조회로 확인했다. `achievement_id_source`로 01~06번 사용자 입력값과 07~34번 규칙 적용값을 구분하며 후자는 Studio 실제 표시값 대조가 남았다. 등록 CSV·문서·아이콘 manifest/미리보기에 반영하고 기존 관리용 이름은 `project_label`로 유지한다. 스탯 29개·목표·런타임 전송·저장·이미지 파일명은 변경하지 않는다.
 
 - 도전과제 ID 코드 검증(2026-10-24): 현재 Unity의 컴파일된 코드와 등록 CSV의 도전과제 34개→스탯 29개 매핑이 모두 일치했다. 5개 완료 경기의 목표 판정 170건, SDK 요청 객체 29개(누적 열쇠 12·아이템 14·한 경기 최고 7 포함)를 로컬에서 대조하고 관련 EditMode 13/13 통과·콘솔 오류 0건을 확인했다. 게임은 기존 Stat ID를 Stove_SetStat에 전달하므로 자동 할당 도전과제 ID 정리로 런타임 코드를 변경할 필요가 없다. 실제 STOVE 요청은 보내지 않았으며 Studio 07~34번 실제 ID 대조 및 Release 실계정 해제 검증은 남았다. 근거: Logs/StoveAchievementIdQA/{validation,tests}.json.
+
+- 실계정 도전과제 테스트 Release 빌드(2026-10-24): 최신 커밋 a133836a 기준 0.0.56 / STOVE / LIVE / UGS production / Windows x64 / IL2CPP / Development 해제로 전체 빌드 성공(02:51 KST, 오류 0·경고 43, 디버그 백업 제외 업로드 폴더 약 328 MB). 업로드 폴더는 `Builds/stove-release-20261024-achievements`, 실행 파일은 `MazeParty.exe`다. SDK BaseSDK 3.5.3.0 및 설정 포함, IL2CPP 생성 코드의 도전과제 Release 허용·Stat ID 전송 경로를 확인했다. 고지·라이선스를 포함하고 Unity 디버그 백업은 인접한 `stove-release-20261024-achievements-symbols`로 분리했다. 검증 근거는 `Logs/StoveRelease20261024QA`, 실계정 4인·10턴·시상식 정상 종료 및 공통 스탯 누적/최고 기록 테스트 절차는 `Docs/STOVE_LAUNCHER_TEST.md` 6절이다. LIVE 런처 테스트에는 Studio 업로드가 필요하며 업로드·실계정 해제·Studio 07~34번 실제 ID 대조는 아직 수행하지 않았다.
 
 ### 공통 스탯 등록 설계 · 코드 반영 완료 (2026-10-23)
 
