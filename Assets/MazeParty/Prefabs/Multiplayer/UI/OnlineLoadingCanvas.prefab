@@ -14,6 +14,7 @@ GameObject:
   - component: {fileID: 2123416426484910793}
   - component: {fileID: 4599631751979357073}
   - component: {fileID: 4619633485842365541}
+  - component: {fileID: 5039196006885567093}
   m_Layer: 5
   m_Name: OnlineLoadingCanvas
   m_TagString: Untagged
@@ -135,6 +136,18 @@ MonoBehaviour:
   loadingText: {fileID: 7605637738895056639}
   sourceText: Entering
   dotInterval: 0.4
+--- !u!114 &5039196006885567093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 356638118590182225}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &3392098668181903259
 GameObject:
   m_ObjectHideFlags: 0

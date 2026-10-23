@@ -87,13 +87,14 @@ namespace MazeParty.Editor
             AssetDatabase.SaveAssets();
         }
 
-        private static void EnsureFontFallbacks()
+        public static void EnsureFontFallbacks()
         {
             var fonts = new[]
             {
                 AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MazeParty/Fonts/BoardReadyKorean SDF.asset"),
                 AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MazeParty/Fonts/BoardReadyJapanese SDF.asset"),
-                AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MazeParty/Fonts/BoardReadyChineseSimplified SDF.asset")
+                AssetDatabase.LoadAssetAtPath<TMP_FontAsset>("Assets/MazeParty/Fonts/BoardReadyChineseSimplified SDF.asset"),
+                BoardUiCopyCleanup.EnsureTraditionalChineseFont()
             };
             if (fonts.Any(font => font == null))
                 throw new InvalidOperationException("Event nickname fonts are missing.");
@@ -154,6 +155,8 @@ namespace MazeParty.Editor
                 "Assets/MazeParty/Fonts/BoardReadyJapanese SDF.asset");
             data.FindProperty("chineseFont").objectReferenceValue = AssetDatabase.LoadAssetAtPath<TMP_FontAsset>(
                 "Assets/MazeParty/Fonts/BoardReadyChineseSimplified SDF.asset");
+            data.FindProperty("chineseTraditionalFont").objectReferenceValue =
+                BoardUiCopyCleanup.EnsureTraditionalChineseFont();
             data.ApplyModifiedPropertiesWithoutUndo();
         }
 

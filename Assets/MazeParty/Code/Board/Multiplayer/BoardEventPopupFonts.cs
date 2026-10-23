@@ -13,10 +13,11 @@ namespace MazeParty.Multiplayer
         [SerializeField] private TMP_FontAsset englishKoreanFont;
         [SerializeField] private TMP_FontAsset japaneseFont;
         [SerializeField] private TMP_FontAsset chineseFont;
+        [SerializeField] private TMP_FontAsset chineseTraditionalFont;
 
         public bool HasRequiredReferences => message != null &&
             message.spriteAsset != null && englishKoreanFont != null &&
-            japaneseFont != null && chineseFont != null;
+            japaneseFont != null && chineseFont != null && chineseTraditionalFont != null;
 
         private void OnEnable()
         {
@@ -30,7 +31,8 @@ namespace MazeParty.Multiplayer
         {
             if (!HasRequiredReferences) return;
             message.font = GameText.Language == GameLanguage.Japanese ? japaneseFont :
-                GameText.Language == GameLanguage.ChineseSimplified ? chineseFont : englishKoreanFont;
+                GameText.Language == GameLanguage.ChineseSimplified ? chineseFont :
+                GameText.Language == GameLanguage.ChineseTraditional ? chineseTraditionalFont : englishKoreanFont;
             foreach (var text in additionalTexts) if (text != null) text.font = message.font;
         }
     }

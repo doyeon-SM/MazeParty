@@ -14,7 +14,7 @@ namespace MazeParty.Multiplayer.Tests
     /// <summary>
     /// Keeps the shipped string table complete: every English source used by
     /// runtime code or by a localized prefab label has Korean, Japanese and
-    /// Simplified Chinese text with the same placeholders and line breaks.
+    /// Simplified and Traditional Chinese text with the same placeholders and line breaks.
     /// </summary>
     public sealed class StringTableContractTests
     {
@@ -59,7 +59,8 @@ namespace MazeParty.Multiplayer.Tests
                          {
                              GameLanguage.Korean,
                              GameLanguage.Japanese,
-                             GameLanguage.ChineseSimplified
+                             GameLanguage.ChineseSimplified,
+                             GameLanguage.ChineseTraditional
                          })
                 {
                     if (!table.TryGet(source, language, out var translated))

@@ -18,7 +18,7 @@ import sys
 import tempfile
 
 
-HEADERS = ["source", "ko", "ja", "zh-Hans"]
+HEADERS = ["source", "ko", "ja", "zh-Hans", "zh-Hant"]
 TOKEN = re.compile(r"\{[0-9]+(?:,-?[0-9]+)?(?::[^{}]*)?\}")
 
 
@@ -57,15 +57,15 @@ def placeholders(value):
 
 def validate_rows(rows):
     if not isinstance(rows, list) or not rows or rows[0] != HEADERS:
-        raise ValidationError("Header must be exactly: source,ko,ja,zh-Hans")
+        raise ValidationError("Header must be exactly: source,ko,ja,zh-Hans,zh-Hant")
     table = {}
     for number, row in enumerate(rows[1:], 2):
         if not isinstance(row, list) or any(not isinstance(v, str) for v in row):
             raise ValidationError(f"Row {number}: every cell must be plain text")
         if not any(row):
             continue
-        if len(row) != 4:
-            raise ValidationError(f"Row {number}: expected four non-empty columns")
+        if len(row) != len(HEADERS):
+            raise ValidationError(f"Row {number}: expected {len(HEADERS)} non-empty columns")
         source, *translations = [decode_cell(v) for v in row]
         if not source.strip():
             raise ValidationError(f"Row {number}: empty source")

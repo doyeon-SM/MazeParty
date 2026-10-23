@@ -66,19 +66,28 @@ namespace MazeParty.Editor
             var englishKorean = RequiredFont(GameFonts.EnglishKoreanAssetPath);
             var japanese = RequiredFont(GameFonts.JapaneseAssetPath);
             var chineseSimplified = RequiredFont(GameFonts.ChineseSimplifiedAssetPath);
+            var chineseTraditional = RequiredFont(GameFonts.ChineseTraditionalAssetPath);
 
             ConfigureFallbacks(
                 GameFonts.EnglishKoreanAssetPath,
                 japanese,
-                chineseSimplified);
+                chineseSimplified,
+                chineseTraditional);
             ConfigureFallbacks(
                 GameFonts.JapaneseAssetPath,
                 englishKorean,
-                chineseSimplified);
+                chineseSimplified,
+                chineseTraditional);
             ConfigureFallbacks(
                 GameFonts.ChineseSimplifiedAssetPath,
                 englishKorean,
-                japanese);
+                japanese,
+                chineseTraditional);
+            ConfigureFallbacks(
+                GameFonts.ChineseTraditionalAssetPath,
+                englishKorean,
+                japanese,
+                chineseSimplified);
         }
 
         [MenuItem("MazeParty/Localization/Write Localized Label Source List")]
@@ -197,9 +206,14 @@ namespace MazeParty.Editor
             var contents = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                if (contents.GetComponent<LocalizedFontScope>() != null ||
-                    (contents.GetComponentsInChildren<Text>(true).Length == 0 &&
-                     contents.GetComponentsInChildren<TextMesh>(true).Length == 0))
+                var texts = contents.GetComponentsInChildren<Text>(true).Cast<Component>()
+                    .Concat(contents.GetComponentsInChildren<TextMesh>(true).Cast<Component>());
+                if (!texts.Any(text =>
+                    {
+                        var marker = text.GetComponentInParent<BoardLocalPlayerMarkerView>(true);
+                        return text.GetComponentInParent<LocalizedFontScope>(true) == null &&
+                               (marker == null || !marker.IsFixedLabel(text as Text));
+                    }))
                 {
                     return 0;
                 }
@@ -250,6 +264,8 @@ namespace MazeParty.Editor
 
             if (changed)
             {
+                // Native fontReferences setters do not reliably dirty an existing importer.
+                EditorUtility.SetDirty(importer);
                 importer.SaveAndReimport();
             }
         }

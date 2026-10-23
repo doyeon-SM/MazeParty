@@ -17,13 +17,13 @@
 
 저작권 문구는 실제 OTF 메타데이터에서 확인했습니다. OFL 본문은 제공된 Noto 패키지의 동일한 SIL OFL 1.1 본문을 사용하고 KCC 권리자 고지를 구분해 수록했습니다.
 
-### Noto Sans JP / Noto Sans SC
+### Noto Sans JP / Noto Sans SC / Noto Sans TC
 
 - 사용 파일: `NotoSansJP-Regular.ttf`, `NotoSansSC-Regular.ttf` (`Assets/Ignore/Resources/Font`).
 - 실제 파일 및 다운로드 패키지 고지: `Copyright 2014-2021 Adobe (http://www.adobe.com/), with Reserved Font Name 'Source'`.
 - 라이선스: **SIL Open Font License 1.1**.
 - [JP 패키지의 OFL 원문](ThirdPartyLicenses/Noto-Sans-JP-OFL.txt), [SC 패키지의 OFL 원문](ThirdPartyLicenses/Noto-Sans-SC-OFL.txt).
-- Noto Sans TC 원본은 별도 보관 중이며 현재 언어 설정의 중국어 간체 폰트는 SC입니다.
+- 번체 런타임 폰트: `Assets/MazeParty/Resources/Font/NotoSansTC-Regular.ttf`. 간체는 SC, 번체는 TC를 사용합니다. 원본 패키지는 별도 보관하며 재배포에 필요한 [TC 패키지의 OFL 원문](ThirdPartyLicenses/Noto-Sans-TC-OFL.txt)을 함께 보존합니다.
 
 OFL 적용 폰트의 저작권과 라이선스 고지를 보존합니다. 폰트 자체 판매, 수정본의 예약 이름 사용, 재배포 조건은 [공식 OFL 1.1](https://openfontlicense.org/open-font-license-official-text/)을 따릅니다.
 

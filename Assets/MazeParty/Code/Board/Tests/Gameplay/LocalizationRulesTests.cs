@@ -6,11 +6,11 @@ namespace MazeParty.Gameplay.Tests
     public sealed class LocalizationRulesTests
     {
         private const string Csv =
-            "﻿source,ko,ja,zh-Hans\r\n" +
-            "TURN {0},턴 {0},ターン {0},回合 {0}\r\n" +
-            "\"Hello, world\",안녕,こんにちは,你好\r\n" +
-            "Line\\nBreak,줄\\n바꿈,,\r\n" +
-            "Broken {0},깨짐 {1},,\r\n";
+            "﻿source,ko,ja,zh-Hans,zh-Hant\r\n" +
+            "TURN {0},턴 {0},ターン {0},回合 {0},回合 {0}\r\n" +
+            "\"Hello, world\",안녕,こんにちは,你好,你好\r\n" +
+            "Line\\nBreak,줄\\n바꿈,,,\r\n" +
+            "Broken {0},깨짐 {1},,,\r\n";
 
         [TearDown]
         public void TearDown()
@@ -62,6 +62,12 @@ namespace MazeParty.Gameplay.Tests
 
             GameText.SetLanguage(GameLanguage.Japanese);
             Assert.That(GameText.F("TURN {0}", 3), Is.EqualTo("ターン 3"));
+            GameText.SetLanguage(GameLanguage.ChineseTraditional);
+            Assert.That(GameText.F("TURN {0}", 3), Is.EqualTo("回合 3"));
+            Assert.That(GameText.T("Line\nBreak"), Is.EqualTo("Line\nBreak"));
+            GameText.UseTableForTests(StringTable.Parse("source,ko,ja,zh-Hans\nLegacy,이전,以前,旧版\n"));
+            GameText.SetLanguage(GameLanguage.ChineseTraditional);
+            Assert.That(GameText.T("Legacy"), Is.EqualTo("Legacy"), "Legacy tables retain the English fallback.");
         }
 
         [Test]
@@ -106,7 +112,13 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void Languages_HaveStableIndicesAndColumns()
         {
-            Assert.That(GameLanguages.Count, Is.EqualTo(4));
+            Assert.That(GameLanguages.Count, Is.EqualTo(5));
+            Assert.That((int)GameLanguage.English, Is.EqualTo(0));
+            Assert.That((int)GameLanguage.Korean, Is.EqualTo(1));
+            Assert.That((int)GameLanguage.Japanese, Is.EqualTo(2));
+            Assert.That((int)GameLanguage.ChineseSimplified, Is.EqualTo(3));
+            Assert.That((int)GameLanguage.ChineseTraditional, Is.EqualTo(4));
+            Assert.That(GameLanguages.GetColumnId(GameLanguage.ChineseTraditional), Is.EqualTo("zh-Hant"));
             Assert.That(GameLanguages.GetColumnId(GameLanguage.Korean), Is.EqualTo("ko"));
             Assert.That(GameLanguages.GetColumnId(GameLanguage.Japanese), Is.EqualTo("ja"));
             Assert.That(GameLanguages.GetColumnId(GameLanguage.ChineseSimplified), Is.EqualTo("zh-Hans"));

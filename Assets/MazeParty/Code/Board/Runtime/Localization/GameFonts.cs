@@ -5,20 +5,23 @@ namespace MazeParty.Gameplay
 {
     /// <summary>
     /// Resolves the dynamic font used by player-facing text for each supported
-    /// language. Font files live under Assets/Ignore/Resources/Font so their
-    /// download packages remain local while runtime paths stay stable.
+    /// language. Runtime resource paths stay stable; downloaded source packages
+    /// remain separate from the fonts included in the player.
     /// </summary>
     public static class GameFonts
     {
         public const string EnglishKoreanResourcePath = "Font/KCCMurukmuruk";
         public const string JapaneseResourcePath = "Font/NotoSansJP-Regular";
         public const string ChineseSimplifiedResourcePath = "Font/NotoSansSC-Regular";
+        public const string ChineseTraditionalResourcePath = "Font/NotoSansTC-Regular";
         public const string EnglishKoreanAssetPath =
             "Assets/Ignore/Resources/Font/KCCMurukmuruk.otf";
         public const string JapaneseAssetPath =
             "Assets/Ignore/Resources/Font/NotoSansJP-Regular.ttf";
         public const string ChineseSimplifiedAssetPath =
             "Assets/Ignore/Resources/Font/NotoSansSC-Regular.ttf";
+        public const string ChineseTraditionalAssetPath =
+            "Assets/MazeParty/Resources/Font/NotoSansTC-Regular.ttf";
 
         private static readonly Font[] Cache = new Font[GameLanguages.Count];
         private static readonly bool[] LoadAttempted = new bool[GameLanguages.Count];
@@ -33,6 +36,8 @@ namespace MazeParty.Gameplay
                     return JapaneseResourcePath;
                 case GameLanguage.ChineseSimplified:
                     return ChineseSimplifiedResourcePath;
+                case GameLanguage.ChineseTraditional:
+                    return ChineseTraditionalResourcePath;
                 default:
                     return EnglishKoreanResourcePath;
             }

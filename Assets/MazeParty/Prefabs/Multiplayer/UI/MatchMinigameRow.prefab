@@ -1561,6 +1561,7 @@ GameObject:
   - component: {fileID: 2114810194641072139}
   - component: {fileID: 2970956428084829590}
   - component: {fileID: 4333320846260078398}
+  - component: {fileID: 4910090967598300472}
   m_Layer: 5
   m_Name: MatchMinigameRow
   m_TagString: Untagged
@@ -1664,6 +1665,18 @@ MonoBehaviour:
   moreRounds: {fileID: 4830212594408976206}
   lessTime: {fileID: 7203183913005533208}
   moreTime: {fileID: 3751216207806290400}
+--- !u!114 &4910090967598300472
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8574338550956218763}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &8793658216459329354
 GameObject:
   m_ObjectHideFlags: 0

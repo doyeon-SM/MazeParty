@@ -26,10 +26,10 @@ class LocalizationSyncTests(unittest.TestCase):
         self.input = self.root / "sheet.json"
         self.backups = self.root / "backups"
         self.rows = [sync.HEADERS,
-                     ["Close", "닫기", "閉じる", "关闭"],
-                     ["CLOSE", "닫기", "閉じる", "关闭"],
+                     ["Close", "닫기", "閉じる", "关闭", "關閉"],
+                     ["CLOSE", "닫기", "閉じる", "关闭", "關閉"],
                      [r'Value {0:0.0}\n"path", \\n', r'값 {0:0.0}\n"경로", \\n',
-                      r'値 {0:0.0}\n"経路", \\n', r'值 {0:0.0}\n"路径", \\n']]
+                      r'値 {0:0.0}\n"経路", \\n', r'值 {0:0.0}\n"路径", \\n', r'值 {0:0.0}\n"路徑", \\n']]
         stream = io.StringIO(newline="")
         csv.writer(stream, lineterminator="\r\n").writerows(self.rows)
         self.original = b"\xef\xbb\xbf" + stream.getvalue().encode("utf-8") + b"\r\n"
@@ -55,6 +55,9 @@ class LocalizationSyncTests(unittest.TestCase):
             ("invalid format", lambda r: r[3].__setitem__(1, r"값 {0\n경로")),
             ("changed line count", lambda r: r[3].__setitem__(1, "값 {0:0.0}")),
             ("missing column", lambda r: r[1].pop()),
+            ("legacy four-column export", lambda r: [row.pop() for row in r]),
+            ("blank traditional", lambda r: r[1].__setitem__(4, "")),
+            ("traditional placeholder", lambda r: r[3].__setitem__(4, r"值\n路徑")),
         ]:
             rows = copy.deepcopy(self.rows)
             change(rows)
@@ -133,8 +136,8 @@ class LocalizationSyncTests(unittest.TestCase):
         self.input.write_bytes(self.original)
         self.assertEqual([], self.run_sync()[1])
         duplicate = [sync.HEADERS,
-                     [r"A\nB", r"가\n나", r"あ\nい", r"甲\n乙"],
-                     ["A\nB", "가\n나", "あ\nい", "甲\n乙"]]
+                     [r"A\nB", r"가\n나", r"あ\nい", r"甲\n乙", r"甲\n乙", "甲\n乙"],
+                     ["A\nB", "가\n나", "あ\nい", "甲\n乙", "甲\n乙"]]
         with self.assertRaises(sync.ValidationError):
             sync.validate_rows(duplicate)
 

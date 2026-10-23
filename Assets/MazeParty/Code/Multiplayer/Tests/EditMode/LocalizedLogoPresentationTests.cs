@@ -27,7 +27,8 @@ namespace MazeParty.Multiplayer.Tests
                 (GameLanguage.English, true, false),
                 (GameLanguage.Korean, false, true),
                 (GameLanguage.Japanese, true, false),
-                (GameLanguage.ChineseSimplified, true, false)
+                (GameLanguage.ChineseSimplified, true, false),
+                (GameLanguage.ChineseTraditional, true, false)
             };
 
             foreach (var testCase in cases)

@@ -87,6 +87,7 @@ GameObject:
   - component: {fileID: 6751167941849317515}
   - component: {fileID: 4244892520982058478}
   - component: {fileID: 6366251465877424062}
+  - component: {fileID: 5378111977690709647}
   m_Layer: 0
   m_Name: ArenaCombatHealthBar
   m_TagString: Untagged
@@ -186,6 +187,18 @@ MonoBehaviour:
   loss: {r: 1, g: 0.25, b: 0.22, a: 1}
   trailBrightness: 0.45
   fadeSeconds: 0.15
+--- !u!114 &5378111977690709647
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3782111661467496058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &4541883565707553196
 GameObject:
   m_ObjectHideFlags: 0

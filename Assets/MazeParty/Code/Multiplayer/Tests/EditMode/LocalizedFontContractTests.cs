@@ -17,7 +17,8 @@ namespace MazeParty.Multiplayer.Tests
                 { GameLanguage.English, GameFonts.EnglishKoreanAssetPath },
                 { GameLanguage.Korean, GameFonts.EnglishKoreanAssetPath },
                 { GameLanguage.Japanese, GameFonts.JapaneseAssetPath },
-                { GameLanguage.ChineseSimplified, GameFonts.ChineseSimplifiedAssetPath }
+                { GameLanguage.ChineseSimplified, GameFonts.ChineseSimplifiedAssetPath },
+                { GameLanguage.ChineseTraditional, GameFonts.ChineseTraditionalAssetPath }
             };
 
         [TearDown]
@@ -42,6 +43,8 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(GameFonts.Get(GameLanguage.Japanese).HasCharacter('日'), Is.True);
             Assert.That(GameFonts.Get(GameLanguage.ChineseSimplified).HasCharacter('简'), Is.True);
             Assert.That(GameFonts.Get(GameLanguage.ChineseSimplified).HasCharacter('中'), Is.True);
+            Assert.That(GameFonts.Get(GameLanguage.ChineseTraditional).HasCharacter('體'), Is.True);
+            Assert.That(GameFonts.Get(GameLanguage.ChineseTraditional).HasCharacter('鑰'), Is.True);
         }
 
         [Test]
@@ -50,25 +53,36 @@ namespace MazeParty.Multiplayer.Tests
             AssertFallbacks(
                 GameFonts.EnglishKoreanAssetPath,
                 GameFonts.JapaneseAssetPath,
-                GameFonts.ChineseSimplifiedAssetPath);
+                GameFonts.ChineseSimplifiedAssetPath,
+                GameFonts.ChineseTraditionalAssetPath);
             AssertFallbacks(
                 GameFonts.JapaneseAssetPath,
                 GameFonts.EnglishKoreanAssetPath,
-                GameFonts.ChineseSimplifiedAssetPath);
+                GameFonts.ChineseSimplifiedAssetPath,
+                GameFonts.ChineseTraditionalAssetPath);
             AssertFallbacks(
                 GameFonts.ChineseSimplifiedAssetPath,
                 GameFonts.EnglishKoreanAssetPath,
-                GameFonts.JapaneseAssetPath);
+                GameFonts.JapaneseAssetPath,
+                GameFonts.ChineseTraditionalAssetPath);
+            AssertFallbacks(
+                GameFonts.ChineseTraditionalAssetPath,
+                GameFonts.EnglishKoreanAssetPath,
+                GameFonts.JapaneseAssetPath,
+                GameFonts.ChineseSimplifiedAssetPath);
 
             AssertRenders(
                 GameFonts.Get(GameLanguage.Korean),
-                'A', '가', 'あ', '简');
+                'A', '가', 'あ', '简', '體');
             AssertRenders(
                 GameFonts.Get(GameLanguage.Japanese),
-                'A', '가', 'あ', '简');
+                'A', '가', 'あ', '简', '體');
             AssertRenders(
                 GameFonts.Get(GameLanguage.ChineseSimplified),
-                'A', '가', 'あ', '简');
+                'A', '가', 'あ', '简', '體');
+            AssertRenders(
+                GameFonts.Get(GameLanguage.ChineseTraditional),
+                'A', '가', 'あ', '简', '體');
         }
 
         [Test]
@@ -161,6 +175,9 @@ namespace MazeParty.Multiplayer.Tests
                     textMesh,
                     meshRenderer,
                     GameFonts.Get(GameLanguage.ChineseSimplified));
+                GameText.SetLanguage(GameLanguage.ChineseTraditional);
+                AssertOccludedFontMaterial(textMesh, meshRenderer,
+                    GameFonts.Get(GameLanguage.ChineseTraditional));
             }
             finally
             {

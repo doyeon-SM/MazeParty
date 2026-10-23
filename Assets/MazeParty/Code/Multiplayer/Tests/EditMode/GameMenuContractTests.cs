@@ -136,18 +136,21 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void Settings_PersistenceRoundTripIncludesGraphicsInputAndAccessibility()
         {
-            var store = new MemorySettingsStore();
-            var expected = new GameSettingsData(
-                0.8f, 0.7f, 0.6f, GameLanguage.Korean,
-                ResolutionOption.Qhd1440, DisplayModeOption.Windowed,
-                QualityPresetOption.Low, FrameRateCapOption.Fps30,
-                1.35f, true, true, true);
+            foreach (var language in GameLanguages.All)
+            {
+                var store = new MemorySettingsStore();
+                var expected = new GameSettingsData(
+                    0.8f, 0.7f, 0.6f, language,
+                    ResolutionOption.Qhd1440, DisplayModeOption.Windowed,
+                    QualityPresetOption.Low, FrameRateCapOption.Fps30,
+                    1.35f, true, true, true);
 
-            GameSettings.Save(store, expected);
-            var loaded = GameSettings.Load(store);
+                GameSettings.Save(store, expected);
+                var loaded = GameSettings.Load(store);
 
-            Assert.That(loaded, Is.EqualTo(expected));
-            Assert.That(store.SaveCount, Is.EqualTo(1));
+                Assert.That(loaded, Is.EqualTo(expected));
+                Assert.That(store.SaveCount, Is.EqualTo(1));
+            }
         }
 
         [Test]

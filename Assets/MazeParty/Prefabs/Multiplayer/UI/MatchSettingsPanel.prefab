@@ -346,6 +346,7 @@ GameObject:
   - component: {fileID: 2582654362049831229}
   - component: {fileID: 1068740970955942075}
   - component: {fileID: 3638995770483592763}
+  - component: {fileID: 2487017013983401320}
   m_Layer: 5
   m_Name: MatchSettingsPanel
   m_TagString: Untagged
@@ -462,6 +463,18 @@ MonoBehaviour:
   - {fileID: 5049048577429805527}
   - {fileID: 2971938174809962271}
   - {fileID: 4057814400581091172}
+--- !u!114 &2487017013983401320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 734227348950209449}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &848577814090667743
 GameObject:
   m_ObjectHideFlags: 0

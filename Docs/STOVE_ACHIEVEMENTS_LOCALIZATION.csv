@@ -1,0 +1,171 @@
+﻿achievement_id,language,name,description
+MP_ACH_01_1,ko,첫 번째 시상식,1회 플레이로 시상식 참여하기
+MP_ACH_01_1,en,First Awards Ceremony,Complete one match and attend the awards ceremony.
+MP_ACH_01_1,ja,初めての表彰式,1回プレイして表彰式に参加する
+MP_ACH_01_1,zh-Hans,首场颁奖典礼,完成1场游戏并参加颁奖典礼
+MP_ACH_01_1,zh-Hant,首場頒獎典禮,完成1場遊戲並參加頒獎典禮
+MP_ACH_01_5,ko,파티의 단골손님,누적 5회 플레이로 시상식 참여하기
+MP_ACH_01_5,en,Party Regular,Complete a total of 5 matches and attend the awards ceremony.
+MP_ACH_01_5,ja,パーティーの常連,通算5回プレイして表彰式に参加する
+MP_ACH_01_5,zh-Hans,派对常客,累计完成5场游戏并参加颁奖典礼
+MP_ACH_01_5,zh-Hant,派對常客,累計完成5場遊戲並參加頒獎典禮
+MP_ACH_03_1,ko,오늘의 주인공,보너스 반영 후 최종 종합 1위 달성하기. 공동 1위도 인정
+MP_ACH_03_1,en,Star of the Show,Finish 1st overall in a match after bonuses are awarded. Ties count.
+MP_ACH_03_1,ja,今日の主役,ボーナス反映後の最終総合順位で1位になる。同率1位も対象
+MP_ACH_03_1,zh-Hans,今日主角,在奖励结算后的最终总排名中获得第1名，并列第1也计入
+MP_ACH_03_1,zh-Hant,今日主角,結算獎勵後，在最終總排名中獲得第1名，並列第1名也計入
+MP_ACH_03_5,ko,다섯 번의 왕관,보너스 반영 후 최종 종합 1위 누적 5회 달성하기. 공동 1위도 인정
+MP_ACH_03_5,en,Five Crowns,Finish 1st overall in a total of 5 matches after bonuses are awarded. Ties count.
+MP_ACH_03_5,ja,五つの王冠,ボーナス反映後の最終総合順位で通算5回1位になる。同率1位も対象
+MP_ACH_03_5,zh-Hans,五顶王冠,在奖励结算后的最终总排名中累计5次获得第1名，并列第1也计入
+MP_ACH_03_5,zh-Hant,五頂王冠,結算獎勵後，在最終總排名中累計5次獲得第1名，並列第1名也計入
+MP_ACH_05_1,ko,숲 탐험가,숲 맵에서 1회 플레이로 시상식 참여하기
+MP_ACH_05_1,en,Forest Explorer,Complete a match on the Forest map and attend the awards ceremony.
+MP_ACH_05_1,ja,森の探検家,森マップで1回プレイして表彰式に参加する
+MP_ACH_05_1,zh-Hans,森林探险家,在森林地图完成1场游戏并参加颁奖典礼
+MP_ACH_05_1,zh-Hant,森林探險家,在森林地圖完成1場遊戲並參加頒獎典禮
+MP_ACH_06_1,ko,미로 탐험가,미로 맵에서 1회 플레이로 시상식 참여하기
+MP_ACH_06_1,en,Maze Explorer,Complete a match on the Maze map and attend the awards ceremony.
+MP_ACH_06_1,ja,迷路の探検家,迷路マップで1回プレイして表彰式に参加する
+MP_ACH_06_1,zh-Hans,迷宫探险家,在迷宫地图完成1场游戏并参加颁奖典礼
+MP_ACH_06_1,zh-Hant,迷宮探險家,在迷宮地圖完成1場遊戲並參加頒獎典禮
+MP_ACH_07_1,ko,첫 열쇠,열쇠 상점에서 골드를 지불하고 열쇠 1회 구매하기
+MP_ACH_07_1,en,First Key,Buy a key with gold from the key shop.
+MP_ACH_07_1,ja,初めての鍵,鍵ショップでゴールドを払って鍵を1回購入する
+MP_ACH_07_1,zh-Hans,第一把钥匙,在钥匙商店花费金币购买1次钥匙
+MP_ACH_07_1,zh-Hant,第一把鑰匙,在鑰匙商店花費金幣購買1次鑰匙
+MP_ACH_07_10,ko,열쇠 상점 단골,열쇠 상점에서 골드를 지불하고 열쇠 누적 10회 구매하기
+MP_ACH_07_10,en,Key Shop Regular,Buy keys with gold from the key shop a total of 10 times.
+MP_ACH_07_10,ja,鍵ショップの常連,鍵ショップでゴールドを払って鍵を通算10回購入する
+MP_ACH_07_10,zh-Hans,钥匙店常客,在钥匙商店花费金币累计购买10次钥匙
+MP_ACH_07_10,zh-Hant,鑰匙店常客,在鑰匙商店花費金幣累計購買10次鑰匙
+MP_ACH_09_1,ko,이사 가도 찾아간다,같은 행동 턴에 열쇠 상점에서 열쇠 2회 구매하기
+MP_ACH_09_1,en,I'll Find You Anywhere,Buy a key from the key shop twice during the same action turn.
+MP_ACH_09_1,ja,引っ越しても見つけるよ,同じ行動ターン中に鍵ショップで鍵を2回購入する
+MP_ACH_09_1,zh-Hans,搬到哪都找得到你,在同一个行动回合内，在钥匙商店购买2次钥匙
+MP_ACH_09_1,zh-Hant,搬到哪都找得到你,在同一個行動回合內，於鑰匙商店購買2次鑰匙
+MP_ACH_10_1,ko,묵직한 열쇠꾸러미,보너스 지급 후 최종 정산에서 열쇠 4개 이상 보유하기
+MP_ACH_10_1,en,A Hefty Keyring,Finish a match with at least 4 keys after bonuses are awarded.
+MP_ACH_10_1,ja,ずっしり鍵束,ボーナス反映後の最終集計で鍵を4個以上持っている
+MP_ACH_10_1,zh-Hans,沉甸甸的钥匙串,在奖励结算后的最终结算中持有至少4把钥匙
+MP_ACH_10_1,zh-Hant,沉甸甸的鑰匙串,遊戲結束並結算獎勵後，持有至少4把鑰匙
+MP_ACH_11_1,ko,뜻밖의 주인공,해당 부문 기록이 0보다 큰 보너스상 수상하기. 공동 수상도 인정
+MP_ACH_11_1,en,An Unexpected Star,Win a bonus award with a qualifying stat above 0. Shared awards count.
+MP_ACH_11_1,ja,思わぬ主役,対象の記録が0より大きいボーナス賞を受賞する。共同受賞も対象
+MP_ACH_11_1,zh-Hans,意外的主角,获得对应记录大于0的加成奖，并列获奖也计入
+MP_ACH_11_1,zh-Hant,意外的主角,以該項目大於0的紀錄獲得加成獎，並列獲獎也計入
+MP_ACH_12_1,ko,아이템 구매도 전략,아이템 상점에서 골드를 지불하고 아이템 1회 구매하기
+MP_ACH_12_1,en,Strategic Shopping,Buy an item with gold from the item shop.
+MP_ACH_12_1,ja,買い物も戦略,アイテムショップでゴールドを払ってアイテムを1回購入する
+MP_ACH_12_1,zh-Hans,购物也是策略,在道具商店花费金币购买1次道具
+MP_ACH_12_1,zh-Hant,購物也是策略,在道具商店花費金幣購買1次道具
+MP_ACH_12_10,ko,게임은 템빨,아이템 상점에서 골드를 지불하고 아이템 누적 10회 구매하기
+MP_ACH_12_10,en,It's All About the Items,Buy items with gold from the item shop a total of 10 times.
+MP_ACH_12_10,ja,勝負はアイテム次第,アイテムショップでゴールドを払ってアイテムを通算10回購入する
+MP_ACH_12_10,zh-Hans,道具才是王道,在道具商店花费金币累计购买10次道具
+MP_ACH_12_10,zh-Hant,道具才是王道,在道具商店花費金幣累計購買10次道具
+MP_ACH_14_1,ko,내가 이 칸의 주인,보드 격투에서 1회 우승하기. 미니게임 격투는 제외
+MP_ACH_14_1,en,This Space Is Mine,Win a board battle. Minigame battles do not count.
+MP_ACH_14_1,ja,このマスは私のもの,ボード上のバトルで1回優勝する。ミニゲームのバトルは対象外
+MP_ACH_14_1,zh-Hans,这个格子我说了算,赢得1次棋盘战斗，不包括小游戏中的格斗
+MP_ACH_14_1,zh-Hant,這個格子我說了算,贏得1次棋盤戰鬥，不含小遊戲中的格鬥
+MP_ACH_15_1,ko,셋까지는 내 차례,한 번의 보드 격투에서 펀치 1·2·3타를 연속 적중시키기. 헛스윙 또는 공격 간 1초 이상 공백 시 연속타 초기화
+MP_ACH_15_1,en,"Three Hits, All Mine",Land all 3 hits of a punch combo in one board battle. Missing or waiting 1 second or more between attacks breaks the combo.
+MP_ACH_15_1,ja,3発目まで私の番,1回のボード上のバトルでパンチコンボの1・2・3発目をすべて当てる。空振りか攻撃間隔が1秒以上になるとコンボが途切れる
+MP_ACH_15_1,zh-Hans,三拳打完才轮到你,在同一次棋盘战斗中连续命中拳击连招的第1、2、3拳。挥空或两次攻击间隔达到1秒会中断连招
+MP_ACH_15_1,zh-Hant,三拳打完才輪到你,在同一次棋盤戰鬥中，連續命中拳擊連段的第1、2、3拳。揮空或兩次攻擊間隔達1秒以上會中斷連段
+MP_ACH_16_1,ko,자리를 바꿔볼까,위치 교환기로 다른 플레이어와 위치 교환에 성공하기
+MP_ACH_16_1,en,Let's Swap Places,Use a Position Swapper to successfully swap places with another player.
+MP_ACH_16_1,ja,場所を交換しよう,位置交換機で他のプレイヤーとの位置交換に成功する
+MP_ACH_16_1,zh-Hans,换个位置吧,使用位置交换器，成功与另一名玩家交换位置
+MP_ACH_16_1,zh-Hant,換個位置吧,使用位置交換器，成功與另一名玩家交換位置
+MP_ACH_17_1,ko,조용한 단골,투명 망토가 활성화된 상태에서 열쇠 구매하기
+MP_ACH_17_1,en,The Quiet Regular,Buy a key while your Invisibility Cloak is active.
+MP_ACH_17_1,ja,静かな常連,透明マントが有効な間に鍵を購入する
+MP_ACH_17_1,zh-Hans,悄悄光顾,在隐身斗篷生效期间购买钥匙
+MP_ACH_17_1,zh-Hant,悄悄光顧,在隱身斗篷生效期間購買鑰匙
+MP_ACH_18_1,ko,스나이퍼,저격총으로 다른 플레이어 1명 처치하기
+MP_ACH_18_1,en,Sniper,Defeat another player with a sniper rifle.
+MP_ACH_18_1,ja,スナイパー,スナイパーライフルで他のプレイヤーを1人倒す
+MP_ACH_18_1,zh-Hans,狙击手,使用狙击枪击败1名其他玩家
+MP_ACH_18_1,zh-Hant,狙擊手,使用狙擊槍擊敗1名其他玩家
+MP_ACH_19_1,ko,서부의 총잡이,권총으로 다른 플레이어 1명 처치하기
+MP_ACH_19_1,en,Wild West Gunslinger,Defeat another player with a pistol.
+MP_ACH_19_1,ja,西部のガンマン,ピストルで他のプレイヤーを1人倒す
+MP_ACH_19_1,zh-Hans,西部枪手,使用手枪击败1名其他玩家
+MP_ACH_19_1,zh-Hant,西部槍手,使用手槍擊敗1名其他玩家
+MP_ACH_20_1,ko,지뢰조심,자신이 설치한 지뢰로 다른 플레이어 1명 처치하기
+MP_ACH_20_1,en,Watch for Mines,Defeat another player with a mine you placed.
+MP_ACH_20_1,ja,地雷注意,自分が設置した地雷で他のプレイヤーを1人倒す
+MP_ACH_20_1,zh-Hans,当心地雷,用自己放置的地雷击败1名其他玩家
+MP_ACH_20_1,zh-Hant,當心地雷,用自己放置的地雷擊敗1名其他玩家
+MP_ACH_21_1,ko,다윈상,자신이 설치한 지뢰에 폭사하기
+MP_ACH_21_1,en,Darwin Award,Be eliminated by your own mine.
+MP_ACH_21_1,ja,ダーウィン賞,自分が設置した地雷の爆発で倒される
+MP_ACH_21_1,zh-Hans,达尔文奖,被自己放置的地雷炸死
+MP_ACH_21_1,zh-Hant,達爾文獎,被自己放置的地雷炸死
+MP_ACH_22_1,ko,파이어인더 홀,자신이 던진 수류탄으로 다른 플레이어 1명 처치하기
+MP_ACH_22_1,en,Fire in the Hole!,Defeat another player with a grenade you threw.
+MP_ACH_22_1,ja,ファイア・イン・ザ・ホール！,自分が投げた手榴弾で他のプレイヤーを1人倒す
+MP_ACH_22_1,zh-Hans,注意爆炸！,用自己投出的手雷击败1名其他玩家
+MP_ACH_22_1,zh-Hant,注意爆炸！,用自己投出的手榴彈擊敗1名其他玩家
+MP_ACH_23_1,ko,호안에 수류탄,자신이 던진 수류탄에 폭사하기
+MP_ACH_23_1,en,Grenade at My Feet!,Be eliminated by your own grenade.
+MP_ACH_23_1,ja,こっちに手榴弾！,自分が投げた手榴弾の爆発で倒される
+MP_ACH_23_1,zh-Hans,手雷就在脚下！,被自己投出的手雷炸死
+MP_ACH_23_1,zh-Hant,手榴彈就在腳下！,被自己投出的手榴彈炸死
+MP_ACH_24_1,ko,경주마,더블 주사위 한 번으로 실제 24칸 이동하기. 순간이동과 시간 종료 강제 이동은 제외
+MP_ACH_24_1,en,Racehorse,Move 24 spaces using Double Dice once. Teleportation and forced movement when time runs out do not count.
+MP_ACH_24_1,ja,競走馬,ダブルダイスを1回使って実際に24マス移動する。瞬間移動と時間切れによる強制移動は対象外
+MP_ACH_24_1,zh-Hans,赛马,使用1次双骰子实际移动24格，瞬移和时间结束时的强制移动不计入
+MP_ACH_24_1,zh-Hant,賽馬,使用1次雙骰子實際移動24格，瞬間移動和時間結束時的強制移動不計入
+MP_ACH_25_1,ko,첫 미니게임 우승,미니게임 최종 1위 1회 달성하기. 공동 1위도 인정
+MP_ACH_25_1,en,First Minigame Victory,Finish 1st in a minigame's final standings. Ties count.
+MP_ACH_25_1,ja,初めてのミニゲーム優勝,ミニゲームの最終順位で1回1位になる。同率1位も対象
+MP_ACH_25_1,zh-Hans,首次小游戏夺冠,在小游戏最终排名中获得1次第1名，并列第1也计入
+MP_ACH_25_1,zh-Hant,首次小遊戲奪冠,在小遊戲最終排名中獲得1次第1名，並列第1名也計入
+MP_ACH_25_5,ko,오늘은 내 무대,한 경기에서 미니게임 최종 1위 5회 달성하기. 공동 1위도 인정
+MP_ACH_25_5,en,This Is My Stage,Finish 1st in the final standings of 5 minigames within one match. Ties count.
+MP_ACH_25_5,ja,今日は私のステージ,1試合中にミニゲームの最終順位で5回1位になる。同率1位も対象
+MP_ACH_25_5,zh-Hans,今天是我的主场,在同一场游戏中，5次获得小游戏最终排名第1名，并列第1也计入
+MP_ACH_25_5,zh-Hant,今天是我的主場,在同一場遊戲中，5次獲得小遊戲最終排名第1名，並列第1名也計入
+MP_ACH_27_1,ko,세 게임 연속,한 경기에서 미니게임 최종 1위 3회 연속 달성하기. 공동 1위도 인정하며 SKIP은 연승을 끊지 않음
+MP_ACH_27_1,en,Three in a Row,Finish 1st in the final standings of 3 consecutive minigames within one match. Ties count; skipped minigames do not break the streak.
+MP_ACH_27_1,ja,3連勝,1試合中にミニゲームの最終順位で3回連続1位になる。同率1位も対象。スキップされたミニゲームでは連勝は途切れない
+MP_ACH_27_1,zh-Hans,三连胜,在同一场游戏中，连续3次获得小游戏最终排名第1名。并列第1也计入，跳过的小游戏不会中断连胜
+MP_ACH_27_1,zh-Hant,三連勝,在同一場遊戲中，連續3次獲得小遊戲最終排名第1名。並列第1名也計入，跳過的小遊戲不會中斷連勝
+MP_ACH_28_1,ko,경험자,등록된 미니게임 20종에 모두 참가하고 결과까지 완료하기. 여러 경기의 기록을 합산
+MP_ACH_28_1,en,"Been There, Played That",Play all 20 minigames through to their results. Progress carries over between matches.
+MP_ACH_28_1,ja,経験者,全20種類のミニゲームに参加し、結果確定までプレイする。複数の試合で達成できる
+MP_ACH_28_1,zh-Hans,见多识广,参与全部20种小游戏并完成至结算，可跨多场游戏累计
+MP_ACH_28_1,zh-Hant,見多識廣,參加全部20種小遊戲並遊玩至結果結算，可跨多場遊戲累計
+MP_ACH_29_1,ko,흔들림 없는 기억,순서 기억에서 받은 모든 문제를 오답·시간 초과 없이 맞히고 최종 1위 하기. 공동 1위도 인정
+MP_ACH_29_1,en,Unshakable Memory,Answer every prompt you receive in Sequence Memory without a mistake or timeout and finish 1st in its final standings. Ties count.
+MP_ACH_29_1,ja,揺るがぬ記憶,順番記憶で出題されたすべての問題に誤答や時間切れなく答え、最終順位で1位になる。同率1位も対象
+MP_ACH_29_1,zh-Hans,牢不可破的记忆,在顺序记忆中，正确回答自己收到的所有题目，不失误、不超时，并获得最终排名第1名。并列第1也计入
+MP_ACH_29_1,zh-Hant,牢不可破的記憶,在順序記憶中，正確回答自己收到的所有題目，不失誤、不逾時，並獲得最終排名第1名。並列第1名也計入
+MP_ACH_30_1,ko,"쉰 계단, 한 번도 안 틀리고",역방향 계단의 한 라운드에서 오답 없이 50번째 계단에 도달하기
+MP_ACH_30_1,en,"Fifty Steps, Zero Mistakes",Reach the 50th step in a single round of Wrong Way without making a mistake.
+MP_ACH_30_1,ja,50段、一度も間違えず,逆方向階段の1ラウンド中に、一度も間違えず50段目に到達する
+MP_ACH_30_1,zh-Hans,五十级台阶，零失误,在逆向楼梯的单轮中，零失误到达第50级台阶
+MP_ACH_30_1,zh-Hant,五十階，零失誤,在逆向樓梯的單一回合中，零失誤抵達第50階
+MP_ACH_31_1,ko,발밑까지 완벽하게,지뢰밭의 한 라운드에서 피격 없이 결승선에 도착하기. 지뢰 탐지 사용 가능
+MP_ACH_31_1,en,Flawless Footwork,Reach the finish line in a single round of Minefield without taking a hit. Scanning for mines is allowed.
+MP_ACH_31_1,ja,足元まで完璧,地雷原の1ラウンド中に、一度も被弾せずゴールする。地雷探知は使用可能
+MP_ACH_31_1,zh-Hans,脚下也要完美,在雷区的单轮中不被击中并到达终点，可以使用地雷探测
+MP_ACH_31_1,zh-Hant,腳下也要完美,在雷區的單一回合中，未被擊中並抵達終點。可以使用地雷探測
+MP_ACH_32_1,ko,호흡의 달인,풍선 불기의 한 라운드에서 과호흡 강제 정지 없이 100%에 도달하기. 스스로 쉬어가는 것은 허용
+MP_ACH_32_1,en,Master of Breath,Reach 100% in a single round of Balloon Blow without being forced to stop from overexertion. Taking voluntary breaks is allowed.
+MP_ACH_32_1,ja,呼吸の達人,風船ふくらましの1ラウンド中に、息の吹きすぎで強制停止されず100%に到達する。自分で手を止めて息を整えるのは可能
+MP_ACH_32_1,zh-Hans,呼吸大师,在吹气球的单轮中达到100%，且未因吹气过度而被强制暂停。可以主动停下来换气
+MP_ACH_32_1,zh-Hant,呼吸大師,在吹氣球的單一回合中達到100%，且未因過度吹氣而被強制暫停。可以主動停下來換氣
+MP_ACH_33_1,ko,한 명도 놓치지 않는다,술래잡기에서 자신이 술래인 한 라운드의 제한 시간이 끝나기 전에 도망자 3명 전원 잡기
+MP_ACH_33_1,en,No One Gets Away,"As the tagger in Tag Chase, catch all 3 runners before time runs out in a single round."
+MP_ACH_33_1,ja,誰も逃がさない,鬼ごっこで自分が鬼のラウンド中に、制限時間が終わる前に逃げる3人全員を捕まえる
+MP_ACH_33_1,zh-Hans,一个也别想跑,在捉人游戏中，担任追捕者时，在单轮时间结束前抓住全部3名逃跑者
+MP_ACH_33_1,zh-Hant,一個也別想跑,在捉人遊戲中擔任追捕者時，於單一回合的時間結束前抓住全部3名逃跑者
+MP_ACH_34_1,ko,그 금더미는 이제 제 겁니다,선물 쟁탈전에서 상대 구역의 금더미를 훔쳐 자기 구역에 직접 보관하는 행동 누적 10회 성공하기. 중립 금더미·투척·운반 중 떨어뜨리기는 제외
+MP_ACH_34_1,en,That Gold Is Mine Now,"In Gift Grab, steal gold piles from opponents' bases and carry them directly to your own base a total of 10 times across matches. Neutral piles, throws and interrupted deliveries do not count."
+MP_ACH_34_1,ja,その金塊はもう私のもの,プレゼント争奪戦で相手の基地から金塊を奪い、自分の基地まで直接運んで保管する行動を通算10回成功させる。複数試合で累計可能。中立の金塊、投げ入れ、運搬中に落としたものは対象外
+MP_ACH_34_1,zh-Hans,那堆黄金现在归我了,在抢礼物中，从对手基地偷取金堆并亲自搬回自己的基地存放，跨多场游戏累计成功10次。中立金堆、投掷送入和途中掉落均不计入
+MP_ACH_34_1,zh-Hant,那堆黃金現在歸我了,在搶禮物中，從對手基地偷取金堆並親自搬回自己的基地存放，跨多場遊戲累計成功10次。中立金堆、投擲送入和途中掉落均不計入

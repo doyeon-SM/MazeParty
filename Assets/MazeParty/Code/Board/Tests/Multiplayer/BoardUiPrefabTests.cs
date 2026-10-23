@@ -496,7 +496,8 @@ namespace MazeParty.Multiplayer.Tests
                              {
                                  GameLanguage.Korean,
                                  GameLanguage.Japanese,
-                                 GameLanguage.ChineseSimplified
+                                 GameLanguage.ChineseSimplified,
+                                 GameLanguage.ChineseTraditional
                              })
                     {
                         Assert.That(table.TryGet(source, language,
@@ -533,7 +534,8 @@ namespace MazeParty.Multiplayer.Tests
                          {
                              GameLanguage.Korean,
                              GameLanguage.Japanese,
-                             GameLanguage.ChineseSimplified
+                             GameLanguage.ChineseSimplified,
+                             GameLanguage.ChineseTraditional
                          })
                 {
                     GameText.SetLanguage(language);
@@ -591,6 +593,11 @@ namespace MazeParty.Multiplayer.Tests
                 controlFonts.GetFont(GameLanguage.ChineseSimplified)
                     .sourceFontFile),
                 Is.EqualTo(GameFonts.ChineseSimplifiedAssetPath));
+            Assert.That(AssetDatabase.GetAssetPath(
+                controlFonts.GetFont(GameLanguage.ChineseTraditional).sourceFontFile),
+                Is.EqualTo(GameFonts.ChineseTraditionalAssetPath));
+            Assert.That(controlFonts.GetFont(GameLanguage.ChineseTraditional)
+                .HasCharacter('體', true, true), Is.True);
             Assert.That(controlFonts.GetFont(GameLanguage.Korean)
                 .HasCharacter('조', true, true), Is.True);
             Assert.That(controlFonts.GetFont(GameLanguage.Japanese)
@@ -612,7 +619,8 @@ namespace MazeParty.Multiplayer.Tests
                              GameLanguage.English,
                              GameLanguage.Korean,
                              GameLanguage.Japanese,
-                             GameLanguage.ChineseSimplified
+                             GameLanguage.ChineseSimplified,
+                             GameLanguage.ChineseTraditional
                          })
                 {
                     GameText.SetLanguage(language);
@@ -741,6 +749,12 @@ namespace MazeParty.Multiplayer.Tests
             var eventFonts = panel.GetComponent<BoardEventPopupFonts>();
             Assert.That(eventFonts, Is.Not.Null);
             Assert.That(eventFonts.HasRequiredReferences, Is.True);
+            var fontData = new SerializedObject(eventFonts);
+            var traditional = fontData.FindProperty("chineseTraditionalFont")
+                .objectReferenceValue as TMP_FontAsset;
+            Assert.That(traditional, Is.Not.Null);
+            Assert.That(AssetDatabase.GetAssetPath(traditional.sourceFontFile),
+                Is.EqualTo(GameFonts.ChineseTraditionalAssetPath));
             var eventView = panel.GetComponent<BoardEventPanelView>();
             Assert.That(eventView, Is.Not.Null);
             Assert.That(eventView.HasRequiredReferences, Is.True);

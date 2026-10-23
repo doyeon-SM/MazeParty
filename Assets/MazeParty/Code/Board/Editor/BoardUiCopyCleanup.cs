@@ -26,6 +26,8 @@ namespace MazeParty.Editor
             FontFolderPath + "/BoardReadyJapanese SDF.asset";
         private const string ChineseControlFontPath =
             FontFolderPath + "/BoardReadyChineseSimplified SDF.asset";
+        public const string ChineseTraditionalControlFontPath =
+            FontFolderPath + "/BoardReadyChineseTraditional SDF.asset";
         private const string TablePath =
             "Assets/MazeParty/Resources/MazeParty/Localization/StringTable.csv";
 
@@ -106,6 +108,7 @@ namespace MazeParty.Editor
                 ChineseControlFontPath,
                 GameFonts.ChineseSimplifiedAssetPath,
                 GameLanguage.ChineseSimplified);
+            var traditional = EnsureTraditionalChineseFont();
             var root = PrefabUtility.LoadPrefabContents(ReadyPanelPrefabPath);
             try
             {
@@ -161,7 +164,7 @@ namespace MazeParty.Editor
                     }
 
                     fontBinding.Configure(rows, english, korean, japanese,
-                        chinese);
+                        chinese, traditional);
                 }
 
                 Save(root, ReadyPanelPrefabPath);
@@ -182,6 +185,12 @@ namespace MazeParty.Editor
             }
 
             return asset;
+        }
+
+        public static TMP_FontAsset EnsureTraditionalChineseFont()
+        {
+            return EnsureDynamicFont(ChineseTraditionalControlFontPath,
+                GameFonts.ChineseTraditionalAssetPath, GameLanguage.ChineseTraditional);
         }
 
         private static TMP_FontAsset EnsureDynamicFont(
@@ -235,7 +244,8 @@ namespace MazeParty.Editor
                 AssetDatabase.AddObjectToAsset(asset.material, asset);
             }
 
-            if (!asset.TryAddCharacters(characters.ToString(),
+            if (!asset.HasCharacters(characters.ToString()) &&
+                !asset.TryAddCharacters(characters.ToString(),
                     out var missingCharacters) &&
                 !string.IsNullOrWhiteSpace(missingCharacters))
             {

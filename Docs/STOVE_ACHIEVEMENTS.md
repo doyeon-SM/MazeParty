@@ -54,8 +54,9 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | First Awards Ceremony | Complete one match and attend the awards ceremony. |
 | 일본어 (ja) | 初めての表彰式 | 1回プレイして表彰式に参加する |
 | 중국어 간체 (zh-Hans) | 首场颁奖典礼 | 完成1场游戏并参加颁奖典礼 |
+| 중국어 번체 (zh-Hant) | 首場頒獎典禮 | 完成1場遊戲並參加頒獎典禮 |
 
-중국어는 기존 지원 언어에 맞춰 간체(zh-Hans)로 작성했다. 실제 판정은 기존 4인·10/15/20턴 정상 종료 기준을 따른다. Notion에 동일한 등록용 문구를 기록했으며, 외국어의 Studio 저장 완료는 미확인이다.
+중국어 간체(zh-Hans)와 번체(zh-Hant)를 각각 제공한다. 번체는 2026-10-24 Notion 기존 원고에서 추가했다. 실제 판정은 기존 4인·10/15/20턴 정상 종료 기준을 따른다. Notion에 동일한 등록용 문구를 기록했으며, 외국어의 Studio 저장 완료는 미확인이다.
 
 ## 나머지 도전과제 · 등록용 현지화 (02~34)
 
@@ -73,6 +74,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Party Regular | Complete a total of 5 matches and attend the awards ceremony. |
 | 일본어 (ja) | パーティーの常連 | 通算5回プレイして表彰式に参加する |
 | 중국어 간체 (zh-Hans) | 派对常客 | 累计完成5场游戏并参加颁奖典礼 |
+| 중국어 번체 (zh-Hant) | 派對常客 | 累計完成5場遊戲並參加頒獎典禮 |
 
 ### 03. 오늘의 주인공
 
@@ -84,6 +86,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Star of the Show | Finish 1st overall in a match after bonuses are awarded. Ties count. |
 | 일본어 (ja) | 今日の主役 | ボーナス反映後の最終総合順位で1位になる。同率1位も対象 |
 | 중국어 간체 (zh-Hans) | 今日主角 | 在奖励结算后的最终总排名中获得第1名，并列第1也计入 |
+| 중국어 번체 (zh-Hant) | 今日主角 | 結算獎勵後，在最終總排名中獲得第1名，並列第1名也計入 |
 
 ### 04. 다섯 번의 왕관
 
@@ -95,6 +98,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Five Crowns | Finish 1st overall in a total of 5 matches after bonuses are awarded. Ties count. |
 | 일본어 (ja) | 五つの王冠 | ボーナス反映後の最終総合順位で通算5回1位になる。同率1位も対象 |
 | 중국어 간체 (zh-Hans) | 五顶王冠 | 在奖励结算后的最终总排名中累计5次获得第1名，并列第1也计入 |
+| 중국어 번체 (zh-Hant) | 五頂王冠 | 結算獎勵後，在最終總排名中累計5次獲得第1名，並列第1名也計入 |
 
 ### 05. 숲 탐험가
 
@@ -106,6 +110,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Forest Explorer | Complete a match on the Forest map and attend the awards ceremony. |
 | 일본어 (ja) | 森の探検家 | 森マップで1回プレイして表彰式に参加する |
 | 중국어 간체 (zh-Hans) | 森林探险家 | 在森林地图完成1场游戏并参加颁奖典礼 |
+| 중국어 번체 (zh-Hant) | 森林探險家 | 在森林地圖完成1場遊戲並參加頒獎典禮 |
 
 ### 06. 미로 탐험가
 
@@ -117,6 +122,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Maze Explorer | Complete a match on the Maze map and attend the awards ceremony. |
 | 일본어 (ja) | 迷路の探検家 | 迷路マップで1回プレイして表彰式に参加する |
 | 중국어 간체 (zh-Hans) | 迷宫探险家 | 在迷宫地图完成1场游戏并参加颁奖典礼 |
+| 중국어 번체 (zh-Hant) | 迷宮探險家 | 在迷宮地圖完成1場遊戲並參加頒獎典禮 |
 
 ### 07. 첫 열쇠
 
@@ -128,6 +134,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | First Key | Buy a key with gold from the key shop. |
 | 일본어 (ja) | 初めての鍵 | 鍵ショップでゴールドを払って鍵を1回購入する |
 | 중국어 간체 (zh-Hans) | 第一把钥匙 | 在钥匙商店花费金币购买1次钥匙 |
+| 중국어 번체 (zh-Hant) | 第一把鑰匙 | 在鑰匙商店花費金幣購買1次鑰匙 |
 
 ### 08. 열쇠 상점 단골
 
@@ -139,6 +146,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Key Shop Regular | Buy keys with gold from the key shop a total of 10 times. |
 | 일본어 (ja) | 鍵ショップの常連 | 鍵ショップでゴールドを払って鍵を通算10回購入する |
 | 중국어 간체 (zh-Hans) | 钥匙店常客 | 在钥匙商店花费金币累计购买10次钥匙 |
+| 중국어 번체 (zh-Hant) | 鑰匙店常客 | 在鑰匙商店花費金幣累計購買10次鑰匙 |
 
 ### 09. 이사 가도 찾아간다
 
@@ -150,6 +158,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | I'll Find You Anywhere | Buy a key from the key shop twice during the same action turn. |
 | 일본어 (ja) | 引っ越しても見つけるよ | 同じ行動ターン中に鍵ショップで鍵を2回購入する |
 | 중국어 간체 (zh-Hans) | 搬到哪都找得到你 | 在同一个行动回合内，在钥匙商店购买2次钥匙 |
+| 중국어 번체 (zh-Hant) | 搬到哪都找得到你 | 在同一個行動回合內，於鑰匙商店購買2次鑰匙 |
 
 ### 10. 묵직한 열쇠꾸러미
 
@@ -161,6 +170,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | A Hefty Keyring | Finish a match with at least 4 keys after bonuses are awarded. |
 | 일본어 (ja) | ずっしり鍵束 | ボーナス反映後の最終集計で鍵を4個以上持っている |
 | 중국어 간체 (zh-Hans) | 沉甸甸的钥匙串 | 在奖励结算后的最终结算中持有至少4把钥匙 |
+| 중국어 번체 (zh-Hant) | 沉甸甸的鑰匙串 | 遊戲結束並結算獎勵後，持有至少4把鑰匙 |
 
 ### 11. 뜻밖의 주인공
 
@@ -172,6 +182,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | An Unexpected Star | Win a bonus award with a qualifying stat above 0. Shared awards count. |
 | 일본어 (ja) | 思わぬ主役 | 対象の記録が0より大きいボーナス賞を受賞する。共同受賞も対象 |
 | 중국어 간체 (zh-Hans) | 意外的主角 | 获得对应记录大于0的加成奖，并列获奖也计入 |
+| 중국어 번체 (zh-Hant) | 意外的主角 | 以該項目大於0的紀錄獲得加成獎，並列獲獎也計入 |
 
 ### 12. 아이템 구매도 전략
 
@@ -183,6 +194,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Strategic Shopping | Buy an item with gold from the item shop. |
 | 일본어 (ja) | 買い物も戦略 | アイテムショップでゴールドを払ってアイテムを1回購入する |
 | 중국어 간체 (zh-Hans) | 购物也是策略 | 在道具商店花费金币购买1次道具 |
+| 중국어 번체 (zh-Hant) | 購物也是策略 | 在道具商店花費金幣購買1次道具 |
 
 ### 13. 게임은 템빨
 
@@ -194,6 +206,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | It's All About the Items | Buy items with gold from the item shop a total of 10 times. |
 | 일본어 (ja) | 勝負はアイテム次第 | アイテムショップでゴールドを払ってアイテムを通算10回購入する |
 | 중국어 간체 (zh-Hans) | 道具才是王道 | 在道具商店花费金币累计购买10次道具 |
+| 중국어 번체 (zh-Hant) | 道具才是王道 | 在道具商店花費金幣累計購買10次道具 |
 
 ### 14. 내가 이 칸의 주인
 
@@ -205,6 +218,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | This Space Is Mine | Win a board battle. Minigame battles do not count. |
 | 일본어 (ja) | このマスは私のもの | ボード上のバトルで1回優勝する。ミニゲームのバトルは対象外 |
 | 중국어 간체 (zh-Hans) | 这个格子我说了算 | 赢得1次棋盘战斗，不包括小游戏中的格斗 |
+| 중국어 번체 (zh-Hant) | 這個格子我說了算 | 贏得1次棋盤戰鬥，不含小遊戲中的格鬥 |
 
 ### 15. 셋까지는 내 차례
 
@@ -216,6 +230,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Three Hits, All Mine | Land all 3 hits of a punch combo in one board battle. Missing or waiting 1 second or more between attacks breaks the combo. |
 | 일본어 (ja) | 3発目まで私の番 | 1回のボード上のバトルでパンチコンボの1・2・3発目をすべて当てる。空振りか攻撃間隔が1秒以上になるとコンボが途切れる |
 | 중국어 간체 (zh-Hans) | 三拳打完才轮到你 | 在同一次棋盘战斗中连续命中拳击连招的第1、2、3拳。挥空或两次攻击间隔达到1秒会中断连招 |
+| 중국어 번체 (zh-Hant) | 三拳打完才輪到你 | 在同一次棋盤戰鬥中，連續命中拳擊連段的第1、2、3拳。揮空或兩次攻擊間隔達1秒以上會中斷連段 |
 
 ### 16. 자리를 바꿔볼까
 
@@ -227,6 +242,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Let's Swap Places | Use a Position Swapper to successfully swap places with another player. |
 | 일본어 (ja) | 場所を交換しよう | 位置交換機で他のプレイヤーとの位置交換に成功する |
 | 중국어 간체 (zh-Hans) | 换个位置吧 | 使用位置交换器，成功与另一名玩家交换位置 |
+| 중국어 번체 (zh-Hant) | 換個位置吧 | 使用位置交換器，成功與另一名玩家交換位置 |
 
 ### 17. 조용한 단골
 
@@ -238,6 +254,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | The Quiet Regular | Buy a key while your Invisibility Cloak is active. |
 | 일본어 (ja) | 静かな常連 | 透明マントが有効な間に鍵を購入する |
 | 중국어 간체 (zh-Hans) | 悄悄光顾 | 在隐身斗篷生效期间购买钥匙 |
+| 중국어 번체 (zh-Hant) | 悄悄光顧 | 在隱身斗篷生效期間購買鑰匙 |
 
 ### 18. 스나이퍼
 
@@ -249,6 +266,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Sniper | Defeat another player with a sniper rifle. |
 | 일본어 (ja) | スナイパー | スナイパーライフルで他のプレイヤーを1人倒す |
 | 중국어 간체 (zh-Hans) | 狙击手 | 使用狙击枪击败1名其他玩家 |
+| 중국어 번체 (zh-Hant) | 狙擊手 | 使用狙擊槍擊敗1名其他玩家 |
 
 ### 19. 서부의 총잡이
 
@@ -260,6 +278,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Wild West Gunslinger | Defeat another player with a pistol. |
 | 일본어 (ja) | 西部のガンマン | ピストルで他のプレイヤーを1人倒す |
 | 중국어 간체 (zh-Hans) | 西部枪手 | 使用手枪击败1名其他玩家 |
+| 중국어 번체 (zh-Hant) | 西部槍手 | 使用手槍擊敗1名其他玩家 |
 
 ### 20. 지뢰조심
 
@@ -271,6 +290,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Watch for Mines | Defeat another player with a mine you placed. |
 | 일본어 (ja) | 地雷注意 | 自分が設置した地雷で他のプレイヤーを1人倒す |
 | 중국어 간체 (zh-Hans) | 当心地雷 | 用自己放置的地雷击败1名其他玩家 |
+| 중국어 번체 (zh-Hant) | 當心地雷 | 用自己放置的地雷擊敗1名其他玩家 |
 
 ### 21. 다윈상
 
@@ -282,6 +302,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Darwin Award | Be eliminated by your own mine. |
 | 일본어 (ja) | ダーウィン賞 | 自分が設置した地雷の爆発で倒される |
 | 중국어 간체 (zh-Hans) | 达尔文奖 | 被自己放置的地雷炸死 |
+| 중국어 번체 (zh-Hant) | 達爾文獎 | 被自己放置的地雷炸死 |
 
 ### 22. 파이어인더 홀
 
@@ -293,6 +314,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Fire in the Hole! | Defeat another player with a grenade you threw. |
 | 일본어 (ja) | ファイア・イン・ザ・ホール！ | 自分が投げた手榴弾で他のプレイヤーを1人倒す |
 | 중국어 간체 (zh-Hans) | 注意爆炸！ | 用自己投出的手雷击败1名其他玩家 |
+| 중국어 번체 (zh-Hant) | 注意爆炸！ | 用自己投出的手榴彈擊敗1名其他玩家 |
 
 ### 23. 호안에 수류탄
 
@@ -304,6 +326,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Grenade at My Feet! | Be eliminated by your own grenade. |
 | 일본어 (ja) | こっちに手榴弾！ | 自分が投げた手榴弾の爆発で倒される |
 | 중국어 간체 (zh-Hans) | 手雷就在脚下！ | 被自己投出的手雷炸死 |
+| 중국어 번체 (zh-Hant) | 手榴彈就在腳下！ | 被自己投出的手榴彈炸死 |
 
 ### 24. 경주마
 
@@ -315,6 +338,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Racehorse | Move 24 spaces using Double Dice once. Teleportation and forced movement when time runs out do not count. |
 | 일본어 (ja) | 競走馬 | ダブルダイスを1回使って実際に24マス移動する。瞬間移動と時間切れによる強制移動は対象外 |
 | 중국어 간체 (zh-Hans) | 赛马 | 使用1次双骰子实际移动24格，瞬移和时间结束时的强制移动不计入 |
+| 중국어 번체 (zh-Hant) | 賽馬 | 使用1次雙骰子實際移動24格，瞬間移動和時間結束時的強制移動不計入 |
 
 ### 25. 첫 미니게임 우승
 
@@ -326,6 +350,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | First Minigame Victory | Finish 1st in a minigame's final standings. Ties count. |
 | 일본어 (ja) | 初めてのミニゲーム優勝 | ミニゲームの最終順位で1回1位になる。同率1位も対象 |
 | 중국어 간체 (zh-Hans) | 首次小游戏夺冠 | 在小游戏最终排名中获得1次第1名，并列第1也计入 |
+| 중국어 번체 (zh-Hant) | 首次小遊戲奪冠 | 在小遊戲最終排名中獲得1次第1名，並列第1名也計入 |
 
 ### 26. 오늘은 내 무대
 
@@ -337,6 +362,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | This Is My Stage | Finish 1st in the final standings of 5 minigames within one match. Ties count. |
 | 일본어 (ja) | 今日は私のステージ | 1試合中にミニゲームの最終順位で5回1位になる。同率1位も対象 |
 | 중국어 간체 (zh-Hans) | 今天是我的主场 | 在同一场游戏中，5次获得小游戏最终排名第1名，并列第1也计入 |
+| 중국어 번체 (zh-Hant) | 今天是我的主場 | 在同一場遊戲中，5次獲得小遊戲最終排名第1名，並列第1名也計入 |
 
 ### 27. 세 게임 연속
 
@@ -348,6 +374,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Three in a Row | Finish 1st in the final standings of 3 consecutive minigames within one match. Ties count; skipped minigames do not break the streak. |
 | 일본어 (ja) | 3連勝 | 1試合中にミニゲームの最終順位で3回連続1位になる。同率1位も対象。スキップされたミニゲームでは連勝は途切れない |
 | 중국어 간체 (zh-Hans) | 三连胜 | 在同一场游戏中，连续3次获得小游戏最终排名第1名。并列第1也计入，跳过的小游戏不会中断连胜 |
+| 중국어 번체 (zh-Hant) | 三連勝 | 在同一場遊戲中，連續3次獲得小遊戲最終排名第1名。並列第1名也計入，跳過的小遊戲不會中斷連勝 |
 
 ### 28. 경험자
 
@@ -359,6 +386,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Been There, Played That | Play all 20 minigames through to their results. Progress carries over between matches. |
 | 일본어 (ja) | 経験者 | 全20種類のミニゲームに参加し、結果確定までプレイする。複数の試合で達成できる |
 | 중국어 간체 (zh-Hans) | 见多识广 | 参与全部20种小游戏并完成至结算，可跨多场游戏累计 |
+| 중국어 번체 (zh-Hant) | 見多識廣 | 參加全部20種小遊戲並遊玩至結果結算，可跨多場遊戲累計 |
 
 ### 29. 흔들림 없는 기억
 
@@ -370,6 +398,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Unshakable Memory | Answer every prompt you receive in Sequence Memory without a mistake or timeout and finish 1st in its final standings. Ties count. |
 | 일본어 (ja) | 揺るがぬ記憶 | 順番記憶で出題されたすべての問題に誤答や時間切れなく答え、最終順位で1位になる。同率1位も対象 |
 | 중국어 간체 (zh-Hans) | 牢不可破的记忆 | 在顺序记忆中，正确回答自己收到的所有题目，不失误、不超时，并获得最终排名第1名。并列第1也计入 |
+| 중국어 번체 (zh-Hant) | 牢不可破的記憶 | 在順序記憶中，正確回答自己收到的所有題目，不失誤、不逾時，並獲得最終排名第1名。並列第1名也計入 |
 
 ### 30. 쉰 계단, 한 번도 안 틀리고
 
@@ -381,6 +410,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Fifty Steps, Zero Mistakes | Reach the 50th step in a single round of Wrong Way without making a mistake. |
 | 일본어 (ja) | 50段、一度も間違えず | 逆方向階段の1ラウンド中に、一度も間違えず50段目に到達する |
 | 중국어 간체 (zh-Hans) | 五十级台阶，零失误 | 在逆向楼梯的单轮中，零失误到达第50级台阶 |
+| 중국어 번체 (zh-Hant) | 五十階，零失誤 | 在逆向樓梯的單一回合中，零失誤抵達第50階 |
 
 ### 31. 발밑까지 완벽하게
 
@@ -392,6 +422,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Flawless Footwork | Reach the finish line in a single round of Minefield without taking a hit. Scanning for mines is allowed. |
 | 일본어 (ja) | 足元まで完璧 | 地雷原の1ラウンド中に、一度も被弾せずゴールする。地雷探知は使用可能 |
 | 중국어 간체 (zh-Hans) | 脚下也要完美 | 在雷区的单轮中不被击中并到达终点，可以使用地雷探测 |
+| 중국어 번체 (zh-Hant) | 腳下也要完美 | 在雷區的單一回合中，未被擊中並抵達終點。可以使用地雷探測 |
 
 ### 32. 호흡의 달인
 
@@ -403,6 +434,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | Master of Breath | Reach 100% in a single round of Balloon Blow without being forced to stop from overexertion. Taking voluntary breaks is allowed. |
 | 일본어 (ja) | 呼吸の達人 | 風船ふくらましの1ラウンド中に、息の吹きすぎで強制停止されず100%に到達する。自分で手を止めて息を整えるのは可能 |
 | 중국어 간체 (zh-Hans) | 呼吸大师 | 在吹气球的单轮中达到100%，且未因吹气过度而被强制暂停。可以主动停下来换气 |
+| 중국어 번체 (zh-Hant) | 呼吸大師 | 在吹氣球的單一回合中達到100%，且未因過度吹氣而被強制暫停。可以主動停下來換氣 |
 
 ### 33. 한 명도 놓치지 않는다
 
@@ -414,6 +446,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | No One Gets Away | As the tagger in Tag Chase, catch all 3 runners before time runs out in a single round. |
 | 일본어 (ja) | 誰も逃がさない | 鬼ごっこで自分が鬼のラウンド中に、制限時間が終わる前に逃げる3人全員を捕まえる |
 | 중국어 간체 (zh-Hans) | 一个也别想跑 | 在捉人游戏中，担任追捕者时，在单轮时间结束前抓住全部3名逃跑者 |
+| 중국어 번체 (zh-Hant) | 一個也別想跑 | 在捉人遊戲中擔任追捕者時，於單一回合的時間結束前抓住全部3名逃跑者 |
 
 ### 34. 그 금더미는 이제 제 겁니다
 
@@ -425,6 +458,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 | 영어 (en) | That Gold Is Mine Now | In Gift Grab, steal gold piles from opponents' bases and carry them directly to your own base a total of 10 times across matches. Neutral piles, throws and interrupted deliveries do not count. |
 | 일본어 (ja) | その金塊はもう私のもの | プレゼント争奪戦で相手の基地から金塊を奪い、自分の基地まで直接運んで保管する行動を通算10回成功させる。複数試合で累計可能。中立の金塊、投げ入れ、運搬中に落としたものは対象外 |
 | 중국어 간체 (zh-Hans) | 那堆黄金现在归我了 | 在抢礼物中，从对手基地偷取金堆并亲自搬回自己的基地存放，跨多场游戏累计成功10次。中立金堆、投掷送入和途中掉落均不计入 |
+| 중국어 번체 (zh-Hant) | 那堆黃金現在歸我了 | 在搶禮物中，從對手基地偷取金堆並親自搬回自己的基地存放，跨多場遊戲累計成功10次。中立金堆、投擲送入和途中掉落均不計入 |
 
 ## 등록 목록
 
@@ -499,3 +533,6 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 3. 결과 직후 통신 중단·앱 재시작 후 재전송과 중복 누적 방지를 확인한다.
 4. 복구 재시작 전후 임시 구매·승리·미니게임 참가 기록이 체크포인트와 일치하는지 확인한다.
 5. SDK 로그의 업적 동기화 경고가 있으면 Studio Stat ID·MAX 설정·서비스 활성화·네트워크를 확인한다.
+
+
+2026-10-24: Notion 공통준비사항의 기존 승인 번체 34개를 그대로 추가했다. 전체 5개 언어 등록용 원고는 `STOVE_ACHIEVEMENTS_LOCALIZATION.csv`에 있다. Studio 직접 입력·저장은 사용자가 진행하며 이번 작업에서 게시하지 않았다.

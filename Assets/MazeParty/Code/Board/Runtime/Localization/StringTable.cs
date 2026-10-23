@@ -6,7 +6,7 @@ namespace MazeParty.Gameplay
 {
     /// <summary>
     /// Immutable string table keyed by the English source text.
-    /// The CSV header is <c>source,ko,ja,zh-Hans</c>. Line breaks inside a
+    /// The CSV header is <c>source,ko,ja,zh-Hans,zh-Hant</c>. Line breaks inside a
     /// cell are written as the two characters <c>\n</c> so every entry stays on
     /// one spreadsheet row; <see cref="Parse"/> converts them back.
     /// </summary>

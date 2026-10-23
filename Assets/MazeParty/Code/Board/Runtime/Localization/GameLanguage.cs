@@ -11,19 +11,21 @@ namespace MazeParty.Gameplay
         English = 0,
         Korean = 1,
         Japanese = 2,
-        ChineseSimplified = 3
+        ChineseSimplified = 3,
+        ChineseTraditional = 4
     }
 
     public static class GameLanguages
     {
-        public const int Count = 4;
+        public const int Count = 5;
 
         private static readonly GameLanguage[] AllLanguages =
         {
             GameLanguage.English,
             GameLanguage.Korean,
             GameLanguage.Japanese,
-            GameLanguage.ChineseSimplified
+            GameLanguage.ChineseSimplified,
+            GameLanguage.ChineseTraditional
         };
 
         public static GameLanguage[] All => (GameLanguage[])AllLanguages.Clone();
@@ -64,6 +66,8 @@ namespace MazeParty.Gameplay
                     return "日本語";
                 case GameLanguage.ChineseSimplified:
                     return "简体中文";
+                case GameLanguage.ChineseTraditional:
+                    return "繁體中文";
                 default:
                     return "English";
             }
@@ -82,6 +86,8 @@ namespace MazeParty.Gameplay
                     return "ja";
                 case GameLanguage.ChineseSimplified:
                     return "zh-Hans";
+                case GameLanguage.ChineseTraditional:
+                    return "zh-Hant";
                 default:
                     return "en";
             }

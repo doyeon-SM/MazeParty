@@ -171,6 +171,7 @@ GameObject:
   - component: {fileID: 143844777949759340}
   - component: {fileID: 4599261086750824866}
   - component: {fileID: 5789791944256242329}
+  - component: {fileID: 9155642363554046108}
   m_Layer: 0
   m_Name: DevelopmentDiagnostics
   m_TagString: Untagged
@@ -261,6 +262,18 @@ MonoBehaviour:
   metrics: {fileID: 8580881961764142838}
   logs: {fileID: 2381128120957622966}
   status: {fileID: 7400653212185130499}
+--- !u!114 &9155642363554046108
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2838470129936546417}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f44b24445696fd44cafd22d98f4c37eb, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.LocalizedFontScope
 --- !u!1 &3009795790201618699
 GameObject:
   m_ObjectHideFlags: 0

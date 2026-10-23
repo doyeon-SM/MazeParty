@@ -16,11 +16,13 @@ namespace MazeParty.Multiplayer
         [SerializeField] private TMP_FontAsset koreanFont;
         [SerializeField] private TMP_FontAsset japaneseFont;
         [SerializeField] private TMP_FontAsset chineseSimplifiedFont;
+        [SerializeField] private TMP_FontAsset chineseTraditionalFont;
 
         public bool HasRequiredReferences =>
             rows != null && rows.Length == 4 &&
             englishFont != null && koreanFont != null &&
             japaneseFont != null && chineseSimplifiedFont != null &&
+            chineseTraditionalFont != null &&
             System.Array.TrueForAll(rows, row => row != null);
 
         public void Configure(
@@ -28,13 +30,15 @@ namespace MazeParty.Multiplayer
             TMP_FontAsset english,
             TMP_FontAsset korean,
             TMP_FontAsset japanese,
-            TMP_FontAsset chineseSimplified)
+            TMP_FontAsset chineseSimplified,
+            TMP_FontAsset chineseTraditional)
         {
             rows = controlRows;
             englishFont = english;
             koreanFont = korean;
             japaneseFont = japanese;
             chineseSimplifiedFont = chineseSimplified;
+            chineseTraditionalFont = chineseTraditional;
         }
 
         public TMP_FontAsset GetFont(GameLanguage language)
@@ -47,6 +51,8 @@ namespace MazeParty.Multiplayer
                     return japaneseFont;
                 case GameLanguage.ChineseSimplified:
                     return chineseSimplifiedFont;
+                case GameLanguage.ChineseTraditional:
+                    return chineseTraditionalFont;
                 default:
                     return englishFont;
             }
