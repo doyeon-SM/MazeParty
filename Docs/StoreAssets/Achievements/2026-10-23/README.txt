@@ -11,12 +11,13 @@ MazeParty 도전과제 아이콘 — 2026-10-23
 - index.html: 이름/번호 검색, 양쪽 비교, 상태별 보기, 원본 열기.
 - unlocked/: 달성 PNG 34개.
 - locked/: 미달성 PNG 34개.
-- manifest.csv: 한국어 이름, Stat ID, 상태, 상대 경로, 크기, SHA-256.
+- manifest.csv: 한국어 이름, Stat ID, STOVE 도전과제 ID, ID 근거, 관리용 이름, 상태, 상대 경로, 크기, SHA-256.
 - prompts.json: 내장 ImageGen으로 실제 생성·수정한 프롬프트와 참조 기록.
 
 파일명의 MP_ACH_01~34는 원래 도전과제 번호를 보존한 이미지 식별자다. 공통 스탯 통합 후 실제 STOVE 연동 ID는 manifest.csv의 stat_id를 사용한다.
 02→01, 04→03, 08→07, 13→12, 26→25로 연결하며 이미지 파일명과 34쌍의 대응은 유지한다.
-manifest의 project_label은 프로젝트 관리용 이름이며 별도 Studio 입력 ID가 아니다.
+manifest의 achievement_id는 스탯 ID_목표값 형식의 STOVE 자동 할당 도전과제 ID이며, project_label은 기존 프로젝트 관리용 이름이다. 둘 다 Studio에 직접 입력할 스탯 ID가 아니다.
+achievement_id_source는 01~06번 사용자 Notion 입력값(notion_user), 07~34번 같은 형식으로 계산한 값(stat_target_rule)을 구분한다. 07~34번은 Studio 실제 표시값과 대조가 필요하다.
 미리보기는 폴더 구조를 유지한 채 index.html을 브라우저로 열면 된다.
 코인·열쇠·망토·위치교환기·무기·선물 등은 프로젝트의 실제 모델을 참조했다.
 주사위는 사용자 추가 요청에 따라 정12면체로 통일했다.

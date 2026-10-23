@@ -1,6 +1,6 @@
 # STOVE 도전과제 연결 및 등록표
 
-구현 브랜치: `dev/stove`. **STOVE Studio 실제 등록은 사용자가 진행하며 완료 여부는 미확인이다.** 아래 Stat ID는 코드 연동용이며 achievement_id는 프로젝트 관리용 이름이다.
+구현 브랜치: `dev/stove`. **STOVE Studio 실제 등록은 사용자가 진행하며 완료 여부는 미확인이다.** 아래 `stat_id`는 코드의 스탯 전송 ID, `achievement_id`는 STOVE 자동 할당 도전과제 ID, `project_label`은 기존 프로젝트 관리용 이름이다.
 
 기획 근거: [Notion 공통준비사항](https://app.notion.com/p/3fdc227fda03812fb239c2aecec78bfe). 사용자의 2026-10-23 확정 지시에 따라 기본 15턴뿐 아니라 **10·15·20턴 모두** 인정한다. 사용자 요청에 따라 2026-10-23 Notion 공통준비사항에 34개 도전과제 ID·Stat ID와 공통 등록 설정을 반영했다. Studio 실제 등록은 사용자가 진행하며 완료 여부는 미확인이다.
 
@@ -38,13 +38,15 @@
 3. [STOVE_ACHIEVEMENTS.csv](STOVE_ACHIEVEMENTS.csv)는 도전과제 **34개**의 연결 Stat ID와 목표 값 표다. 상품 데이터 관리 → 도전 과제 → 등록에서 기존 스탯을 선택하고 `stat_id`, **달성 목표 값 `unlock_value`(1·5·10)**, **달성 목표 방식 이상**을 입력한다. 같은 스탯에 연결하는 과제도 각각 등록한다.
 4. 도전 과제명·설명·미달성/달성 이미지를 입력하고 저장한다. 스토어 공개/숨김은 따로 저장한다. 아이콘 34쌍은 [StoreAssets/Achievements/2026-10-23](StoreAssets/Achievements/2026-10-23/README.txt)에 준비되어 있다.
 5. CSV는 등록 참고표이며 Studio 일괄 업로드 양식이 아니다. 공식 양식에는 초기값·최소값·최대값 입력 칸이 없다. 도전과제 CSV의 `stat_initial/min/max`는 코드의 값 범위 참고이며, `stat_name_ko`는 스탯 관리명, `stat_value_source`는 코드의 집계 원본이다.
-6. `achievement_id`는 프로젝트 관리용 이름이며 Studio가 발급한 도전과제 ID가 아니다. SDK에 전달하는 실제 연동 ID는 `stat_id`다. 이름·설명·언어별 문구·아이콘은 각 도전과제의 번호로 구분한다.
+6. `achievement_id`는 STOVE가 자동 할당하는 도전과제 ID다. 사용자가 Notion에서 수정한 01~06번의 `스탯 ID_목표값` 형식에 맞춰 34개를 정리했다. 예: 첫 번째 시상식 `MP_ACH_01_1`, 파티의 단골손님 `MP_ACH_01_5`, 열쇠 상점 단골 `MP_ACH_07_10`. Studio의 ID를 직접 입력하거나 변경하는 작업이 아니다.
+7. 기존 `MP_01_FIRST_CEREMONY` 등의 이름은 CSV의 `project_label`로 보존한다. `achievement_id_source=notion_user`는 사용자가 Notion에 적은 01~06번, `stat_target_rule`은 같은 형식으로 계산한 07~34번이며 Studio 실제 표시값과 대조가 필요하다. 이 구분은 등록·공개·현지화 저장·실계정 해제 완료 상태를 뜻하지 않는다.
+8. 게임은 `Stove_SetStat`의 `StatsId`에 기존 `stat_id`를 보낸다. 자동 할당 도전과제 ID를 `StatsId`에 넣지 않는다. 스탯 29개·목표값·게임 판정·저장 데이터·아이콘 파일명은 유지한다.
 
 SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·최고 기록 또는 달성 여부를 전달한다. 기존 Base SDK 초기화·콜백 펌프를 공유하며, 성공 응답의 `CurrentValue`가 **이번 요청에서 보낸 값 이상**일 때만 그 값을 전송 완료로 저장한다. 서버 값이 이미 같아서 변경되지 않은 성공 응답도 인정한다.
 
 ## 첫 번째 시상식 · 등록용 현지화
 
-2026-10-23 사용자 확정 설명: **1회 플레이로 시상식 참여하기**. 연결 스탯 `MP_ACH_01`, 업데이트 타입 `MAX`, 달성 목표 `1 이상`.
+2026-10-23 사용자 확정 설명: **1회 플레이로 시상식 참여하기**. 연결 스탯 `MP_ACH_01`, 업데이트 타입 `MAX`, 달성 목표 `1 이상`. STOVE 도전과제 ID `MP_ACH_01_1` · 관리용 이름 `MP_01_FIRST_CEREMONY`.
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -63,7 +65,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 02. 파티의 단골손님
 
-연결 스탯: `MP_ACH_01` · 달성 목표: **5 이상** · 프로젝트 관리 ID: `MP_02_REGULAR_GUEST`
+연결 스탯: `MP_ACH_01` · 달성 목표: **5 이상** · STOVE 도전과제 ID: `MP_ACH_01_5` · 관리용 이름: `MP_02_REGULAR_GUEST`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -74,7 +76,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 03. 오늘의 주인공
 
-연결 스탯: `MP_ACH_03` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_03_CHAMPION`
+연결 스탯: `MP_ACH_03` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_03_1` · 관리용 이름: `MP_03_CHAMPION`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -85,7 +87,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 04. 다섯 번의 왕관
 
-연결 스탯: `MP_ACH_03` · 달성 목표: **5 이상** · 프로젝트 관리 ID: `MP_04_FIVE_CROWNS`
+연결 스탯: `MP_ACH_03` · 달성 목표: **5 이상** · STOVE 도전과제 ID: `MP_ACH_03_5` · 관리용 이름: `MP_04_FIVE_CROWNS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -96,7 +98,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 05. 숲 탐험가
 
-연결 스탯: `MP_ACH_05` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_05_FOREST_EXPLORER`
+연결 스탯: `MP_ACH_05` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_05_1` · 관리용 이름: `MP_05_FOREST_EXPLORER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -107,7 +109,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 06. 미로 탐험가
 
-연결 스탯: `MP_ACH_06` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_06_MAZE_EXPLORER`
+연결 스탯: `MP_ACH_06` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_06_1` · 관리용 이름: `MP_06_MAZE_EXPLORER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -118,7 +120,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 07. 첫 열쇠
 
-연결 스탯: `MP_ACH_07` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_07_FIRST_KEY`
+연결 스탯: `MP_ACH_07` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_07_1` · 관리용 이름: `MP_07_FIRST_KEY`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -129,7 +131,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 08. 열쇠 상점 단골
 
-연결 스탯: `MP_ACH_07` · 달성 목표: **10 이상** · 프로젝트 관리 ID: `MP_08_KEY_REGULAR`
+연결 스탯: `MP_ACH_07` · 달성 목표: **10 이상** · STOVE 도전과제 ID: `MP_ACH_07_10` · 관리용 이름: `MP_08_KEY_REGULAR`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -140,7 +142,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 09. 이사 가도 찾아간다
 
-연결 스탯: `MP_ACH_09` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_09_MOVING_SHOP`
+연결 스탯: `MP_ACH_09` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_09_1` · 관리용 이름: `MP_09_MOVING_SHOP`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -151,7 +153,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 10. 묵직한 열쇠꾸러미
 
-연결 스탯: `MP_ACH_10` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_10_FOUR_KEYS`
+연결 스탯: `MP_ACH_10` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_10_1` · 관리용 이름: `MP_10_FOUR_KEYS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -162,7 +164,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 11. 뜻밖의 주인공
 
-연결 스탯: `MP_ACH_11` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_11_BONUS_WINNER`
+연결 스탯: `MP_ACH_11` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_11_1` · 관리용 이름: `MP_11_BONUS_WINNER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -173,7 +175,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 12. 아이템 구매도 전략
 
-연결 스탯: `MP_ACH_12` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_12_FIRST_ITEM`
+연결 스탯: `MP_ACH_12` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_12_1` · 관리용 이름: `MP_12_FIRST_ITEM`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -184,7 +186,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 13. 게임은 템빨
 
-연결 스탯: `MP_ACH_12` · 달성 목표: **10 이상** · 프로젝트 관리 ID: `MP_13_ITEM_REGULAR`
+연결 스탯: `MP_ACH_12` · 달성 목표: **10 이상** · STOVE 도전과제 ID: `MP_ACH_12_10` · 관리용 이름: `MP_13_ITEM_REGULAR`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -195,7 +197,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 14. 내가 이 칸의 주인
 
-연결 스탯: `MP_ACH_14` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_14_BOARD_WINNER`
+연결 스탯: `MP_ACH_14` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_14_1` · 관리용 이름: `MP_14_BOARD_WINNER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -206,7 +208,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 15. 셋까지는 내 차례
 
-연결 스탯: `MP_ACH_15` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_15_THREE_PUNCHES`
+연결 스탯: `MP_ACH_15` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_15_1` · 관리용 이름: `MP_15_THREE_PUNCHES`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -217,7 +219,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 16. 자리를 바꿔볼까
 
-연결 스탯: `MP_ACH_16` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_16_SWAP`
+연결 스탯: `MP_ACH_16` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_16_1` · 관리용 이름: `MP_16_SWAP`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -228,7 +230,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 17. 조용한 단골
 
-연결 스탯: `MP_ACH_17` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_17_INVISIBLE_CUSTOMER`
+연결 스탯: `MP_ACH_17` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_17_1` · 관리용 이름: `MP_17_INVISIBLE_CUSTOMER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -239,7 +241,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 18. 스나이퍼
 
-연결 스탯: `MP_ACH_18` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_18_SNIPER`
+연결 스탯: `MP_ACH_18` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_18_1` · 관리용 이름: `MP_18_SNIPER`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -250,7 +252,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 19. 서부의 총잡이
 
-연결 스탯: `MP_ACH_19` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_19_PISTOL`
+연결 스탯: `MP_ACH_19` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_19_1` · 관리용 이름: `MP_19_PISTOL`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -261,7 +263,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 20. 지뢰조심
 
-연결 스탯: `MP_ACH_20` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_20_MINE_KILL`
+연결 스탯: `MP_ACH_20` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_20_1` · 관리용 이름: `MP_20_MINE_KILL`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -272,7 +274,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 21. 다윈상
 
-연결 스탯: `MP_ACH_21` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_21_OWN_MINE`
+연결 스탯: `MP_ACH_21` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_21_1` · 관리용 이름: `MP_21_OWN_MINE`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -283,7 +285,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 22. 파이어인더 홀
 
-연결 스탯: `MP_ACH_22` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_22_GRENADE_KILL`
+연결 스탯: `MP_ACH_22` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_22_1` · 관리용 이름: `MP_22_GRENADE_KILL`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -294,7 +296,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 23. 호안에 수류탄
 
-연결 스탯: `MP_ACH_23` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_23_OWN_GRENADE`
+연결 스탯: `MP_ACH_23` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_23_1` · 관리용 이름: `MP_23_OWN_GRENADE`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -305,7 +307,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 24. 경주마
 
-연결 스탯: `MP_ACH_24` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_24_TWENTY_FOUR_STEPS`
+연결 스탯: `MP_ACH_24` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_24_1` · 관리용 이름: `MP_24_TWENTY_FOUR_STEPS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -316,7 +318,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 25. 첫 미니게임 우승
 
-연결 스탯: `MP_ACH_25` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_25_FIRST_MINIGAME_WIN`
+연결 스탯: `MP_ACH_25` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_25_1` · 관리용 이름: `MP_25_FIRST_MINIGAME_WIN`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -327,7 +329,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 26. 오늘은 내 무대
 
-연결 스탯: `MP_ACH_25` · 달성 목표: **5 이상** · 프로젝트 관리 ID: `MP_26_FIVE_MINIGAME_WINS`
+연결 스탯: `MP_ACH_25` · 달성 목표: **5 이상** · STOVE 도전과제 ID: `MP_ACH_25_5` · 관리용 이름: `MP_26_FIVE_MINIGAME_WINS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -338,7 +340,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 27. 세 게임 연속
 
-연결 스탯: `MP_ACH_27` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_27_WIN_STREAK`
+연결 스탯: `MP_ACH_27` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_27_1` · 관리용 이름: `MP_27_WIN_STREAK`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -349,7 +351,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 28. 경험자
 
-연결 스탯: `MP_ACH_28` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_28_ALL_MINIGAMES`
+연결 스탯: `MP_ACH_28` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_28_1` · 관리용 이름: `MP_28_ALL_MINIGAMES`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -360,7 +362,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 29. 흔들림 없는 기억
 
-연결 스탯: `MP_ACH_29` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_29_PERFECT_MEMORY`
+연결 스탯: `MP_ACH_29` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_29_1` · 관리용 이름: `MP_29_PERFECT_MEMORY`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -371,7 +373,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 30. 쉰 계단, 한 번도 안 틀리고
 
-연결 스탯: `MP_ACH_30` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_30_PERFECT_STAIRS`
+연결 스탯: `MP_ACH_30` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_30_1` · 관리용 이름: `MP_30_PERFECT_STAIRS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -382,7 +384,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 31. 발밑까지 완벽하게
 
-연결 스탯: `MP_ACH_31` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_31_PERFECT_MINEFIELD`
+연결 스탯: `MP_ACH_31` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_31_1` · 관리용 이름: `MP_31_PERFECT_MINEFIELD`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -393,7 +395,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 32. 호흡의 달인
 
-연결 스탯: `MP_ACH_32` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_32_PERFECT_BALLOON`
+연결 스탯: `MP_ACH_32` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_32_1` · 관리용 이름: `MP_32_PERFECT_BALLOON`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -404,7 +406,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 33. 한 명도 놓치지 않는다
 
-연결 스탯: `MP_ACH_33` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_33_CATCH_EVERYONE`
+연결 스탯: `MP_ACH_33` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_33_1` · 관리용 이름: `MP_33_CATCH_EVERYONE`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -415,7 +417,7 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 ### 34. 그 금더미는 이제 제 겁니다
 
-연결 스탯: `MP_ACH_34` · 달성 목표: **1 이상** · 프로젝트 관리 ID: `MP_34_TEN_STOLEN_GIFTS`
+연결 스탯: `MP_ACH_34` · 달성 목표: **1 이상** · STOVE 도전과제 ID: `MP_ACH_34_1` · 관리용 이름: `MP_34_TEN_STOLEN_GIFTS`
 
 | 언어 | 도전 과제명 | 설명 |
 |---|---|---|
@@ -428,42 +430,42 @@ SDK 3.5.3.0의 `Stove.PCSDK.V3.GameSupport.Stove_SetStat`에 실제 누적값·�
 
 모든 행은 위 공통 집계 기준을 적용한다.
 
-| 번호 | 프로젝트 관리 ID (achievement_id) | Stat ID | 목표 (이상) | 이름 | 게임 내부 조건 |
-|---|---|---|---|---|---|
-| 1 | `MP_01_FIRST_CEREMONY` | `MP_ACH_01` | 1 | 첫 번째 시상식 | 정상 경기 1회 완주 |
-| 2 | `MP_02_REGULAR_GUEST` | `MP_ACH_01` | 5 | 파티의 단골손님 | 정상 경기 누적 5회 완주 |
-| 3 | `MP_03_CHAMPION` | `MP_ACH_03` | 1 | 오늘의 주인공 | 보너스 반영 최종 공동 1위 이상 1회 |
-| 4 | `MP_04_FIVE_CROWNS` | `MP_ACH_03` | 5 | 다섯 번의 왕관 | 보너스 반영 최종 공동 1위 이상 누적 5회 |
-| 5 | `MP_05_FOREST_EXPLORER` | `MP_ACH_05` | 1 | 숲 탐험가 | 숲 맵 정상 경기 1회 완주 |
-| 6 | `MP_06_MAZE_EXPLORER` | `MP_ACH_06` | 1 | 미로 탐험가 | 미로 맵 정상 경기 1회 완주 |
-| 7 | `MP_07_FIRST_KEY` | `MP_ACH_07` | 1 | 첫 열쇠 | 열쇠 상점에서 골드를 지불한 구매 누적 1회 |
-| 8 | `MP_08_KEY_REGULAR` | `MP_ACH_07` | 10 | 열쇠 상점 단골 | 열쇠 상점에서 골드를 지불한 구매 누적 10회 |
-| 9 | `MP_09_MOVING_SHOP` | `MP_ACH_09` | 1 | 이사 가도 찾아간다 | 동일 행동 턴에 열쇠 상점 구매 2회 성공 |
-| 10 | `MP_10_FOUR_KEYS` | `MP_ACH_10` | 1 | 묵직한 열쇠꾸러미 | 보너스 반영 최종 열쇠 4개 이상 |
-| 11 | `MP_11_BONUS_WINNER` | `MP_ACH_11` | 1 | 뜻밖의 주인공 | 선정된 보너스상 수상; 수상 통계가 0이면 제외; 공동 수상 인정 |
-| 12 | `MP_12_FIRST_ITEM` | `MP_ACH_12` | 1 | 아이템 구매도 전략 | 아이템 상점 유료 구매 누적 1회 |
-| 13 | `MP_13_ITEM_REGULAR` | `MP_ACH_12` | 10 | 게임은 템빨 | 아이템 상점 유료 구매 누적 10회 |
-| 14 | `MP_14_BOARD_WINNER` | `MP_ACH_14` | 1 | 내가 이 칸의 주인 | 보드 전투 공식 순위 1위 1회 |
-| 15 | `MP_15_THREE_PUNCHES` | `MP_ACH_15` | 1 | 셋까지는 내 차례 | 보드 전투 펀치 1·2·3타 연속 실제 적중; 빗나감 또는 1초 이상 공백 시 초기화 |
-| 16 | `MP_16_SWAP` | `MP_ACH_16` | 1 | 자리를 바꿔볼까 | 위치 교환 아이템으로 교환 완료 |
-| 17 | `MP_17_INVISIBLE_CUSTOMER` | `MP_ACH_17` | 1 | 조용한 단골 | 투명 망토가 활성화된 상태에서 열쇠 구매 승인 |
-| 18 | `MP_18_SNIPER` | `MP_ACH_18` | 1 | 스나이퍼 | 저격총 아이템으로 다른 플레이어 처치 |
-| 19 | `MP_19_PISTOL` | `MP_ACH_19` | 1 | 서부의 총잡이 | 권총 아이템으로 다른 플레이어 처치 |
-| 20 | `MP_20_MINE_KILL` | `MP_ACH_20` | 1 | 지뢰조심 | 자신의 지뢰로 다른 플레이어 처치 |
-| 21 | `MP_21_OWN_MINE` | `MP_ACH_21` | 1 | 다윈상 | 자신의 지뢰 폭발로 자신이 사망 |
-| 22 | `MP_22_GRENADE_KILL` | `MP_ACH_22` | 1 | 파이어인더 홀 | 자신의 수류탄으로 다른 플레이어 처치 |
-| 23 | `MP_23_OWN_GRENADE` | `MP_ACH_23` | 1 | 호안에 수류탄 | 자신의 수류탄 폭발로 자신이 사망 |
-| 24 | `MP_24_TWENTY_FOUR_STEPS` | `MP_ACH_24` | 1 | 경주마 | 더블 주사위 한 번 사용 중 실제 24칸 통과; 강제 정산·순간이동 제외 |
-| 25 | `MP_25_FIRST_MINIGAME_WIN` | `MP_ACH_25` | 1 | 첫 미니게임 우승 | 정식 미니게임 최종 공동 1위 이상 1회 |
-| 26 | `MP_26_FIVE_MINIGAME_WINS` | `MP_ACH_25` | 5 | 오늘은 내 무대 | 한 경기에서 정식 미니게임 최종 공동 1위 이상 5회 |
-| 27 | `MP_27_WIN_STREAK` | `MP_ACH_27` | 1 | 세 게임 연속 | 한 경기에서 정식 미니게임 3회 연속 공동 1위 이상; SKIP은 연속 기록 유지 |
-| 28 | `MP_28_ALL_MINIGAMES` | `MP_ACH_28` | 1 | 경험자 | 현재 등록된 미니게임 20종 모두 실제 참여 후 결과 확정; 경기 간 누적 |
-| 29 | `MP_29_PERFECT_MEMORY` | `MP_ACH_29` | 1 | 흔들림 없는 기억 | ASD에서 받은 모든 문제 오답·시간 초과 0회이며 최종 공동 1위 이상 |
-| 30 | `MP_30_PERFECT_STAIRS` | `MP_ACH_30` | 1 | 쉰 계단, 한 번도 안 틀리고 | Wrong Way 한 라운드에서 오답 없이 50번째 계단 도달 |
-| 31 | `MP_31_PERFECT_MINEFIELD` | `MP_ACH_31` | 1 | 발밑까지 완벽하게 | Minefield 한 라운드에서 피격 없이 결승선 도착; 소나 허용 |
-| 32 | `MP_32_PERFECT_BALLOON` | `MP_ACH_32` | 1 | 호흡의 달인 | Balloon Blow 한 라운드에서 과호흡 강제 정지 없이 100% 도달 |
-| 33 | `MP_33_CATCH_EVERYONE` | `MP_ACH_33` | 1 | 한 명도 놓치지 않는다 | Tag Chase 자신의 술래 라운드에서 제한 시간 전에 도망자 3명 전원 포획 |
-| 34 | `MP_34_TEN_STOLEN_GIFTS` | `MP_ACH_34` | 1 | 그 금더미는 이제 제 겁니다 | Gift Grab 상대 보관 구역에서 훔쳐 자기 구역에 직접 넣기 누적 10회; 중립·투척·중도 드롭 제외 |
+| 번호 | STOVE 도전과제 ID (achievement_id) | 관리용 이름 (project_label) | Stat ID | 목표 (이상) | 이름 | 게임 내부 조건 |
+|---|---|---|---|---|---|---|
+| 1 | `MP_ACH_01_1` | `MP_01_FIRST_CEREMONY` | `MP_ACH_01` | 1 | 첫 번째 시상식 | 정상 경기 1회 완주 |
+| 2 | `MP_ACH_01_5` | `MP_02_REGULAR_GUEST` | `MP_ACH_01` | 5 | 파티의 단골손님 | 정상 경기 누적 5회 완주 |
+| 3 | `MP_ACH_03_1` | `MP_03_CHAMPION` | `MP_ACH_03` | 1 | 오늘의 주인공 | 보너스 반영 최종 공동 1위 이상 1회 |
+| 4 | `MP_ACH_03_5` | `MP_04_FIVE_CROWNS` | `MP_ACH_03` | 5 | 다섯 번의 왕관 | 보너스 반영 최종 공동 1위 이상 누적 5회 |
+| 5 | `MP_ACH_05_1` | `MP_05_FOREST_EXPLORER` | `MP_ACH_05` | 1 | 숲 탐험가 | 숲 맵 정상 경기 1회 완주 |
+| 6 | `MP_ACH_06_1` | `MP_06_MAZE_EXPLORER` | `MP_ACH_06` | 1 | 미로 탐험가 | 미로 맵 정상 경기 1회 완주 |
+| 7 | `MP_ACH_07_1` | `MP_07_FIRST_KEY` | `MP_ACH_07` | 1 | 첫 열쇠 | 열쇠 상점에서 골드를 지불한 구매 누적 1회 |
+| 8 | `MP_ACH_07_10` | `MP_08_KEY_REGULAR` | `MP_ACH_07` | 10 | 열쇠 상점 단골 | 열쇠 상점에서 골드를 지불한 구매 누적 10회 |
+| 9 | `MP_ACH_09_1` | `MP_09_MOVING_SHOP` | `MP_ACH_09` | 1 | 이사 가도 찾아간다 | 동일 행동 턴에 열쇠 상점 구매 2회 성공 |
+| 10 | `MP_ACH_10_1` | `MP_10_FOUR_KEYS` | `MP_ACH_10` | 1 | 묵직한 열쇠꾸러미 | 보너스 반영 최종 열쇠 4개 이상 |
+| 11 | `MP_ACH_11_1` | `MP_11_BONUS_WINNER` | `MP_ACH_11` | 1 | 뜻밖의 주인공 | 선정된 보너스상 수상; 수상 통계가 0이면 제외; 공동 수상 인정 |
+| 12 | `MP_ACH_12_1` | `MP_12_FIRST_ITEM` | `MP_ACH_12` | 1 | 아이템 구매도 전략 | 아이템 상점 유료 구매 누적 1회 |
+| 13 | `MP_ACH_12_10` | `MP_13_ITEM_REGULAR` | `MP_ACH_12` | 10 | 게임은 템빨 | 아이템 상점 유료 구매 누적 10회 |
+| 14 | `MP_ACH_14_1` | `MP_14_BOARD_WINNER` | `MP_ACH_14` | 1 | 내가 이 칸의 주인 | 보드 전투 공식 순위 1위 1회 |
+| 15 | `MP_ACH_15_1` | `MP_15_THREE_PUNCHES` | `MP_ACH_15` | 1 | 셋까지는 내 차례 | 보드 전투 펀치 1·2·3타 연속 실제 적중; 빗나감 또는 1초 이상 공백 시 초기화 |
+| 16 | `MP_ACH_16_1` | `MP_16_SWAP` | `MP_ACH_16` | 1 | 자리를 바꿔볼까 | 위치 교환 아이템으로 교환 완료 |
+| 17 | `MP_ACH_17_1` | `MP_17_INVISIBLE_CUSTOMER` | `MP_ACH_17` | 1 | 조용한 단골 | 투명 망토가 활성화된 상태에서 열쇠 구매 승인 |
+| 18 | `MP_ACH_18_1` | `MP_18_SNIPER` | `MP_ACH_18` | 1 | 스나이퍼 | 저격총 아이템으로 다른 플레이어 처치 |
+| 19 | `MP_ACH_19_1` | `MP_19_PISTOL` | `MP_ACH_19` | 1 | 서부의 총잡이 | 권총 아이템으로 다른 플레이어 처치 |
+| 20 | `MP_ACH_20_1` | `MP_20_MINE_KILL` | `MP_ACH_20` | 1 | 지뢰조심 | 자신의 지뢰로 다른 플레이어 처치 |
+| 21 | `MP_ACH_21_1` | `MP_21_OWN_MINE` | `MP_ACH_21` | 1 | 다윈상 | 자신의 지뢰 폭발로 자신이 사망 |
+| 22 | `MP_ACH_22_1` | `MP_22_GRENADE_KILL` | `MP_ACH_22` | 1 | 파이어인더 홀 | 자신의 수류탄으로 다른 플레이어 처치 |
+| 23 | `MP_ACH_23_1` | `MP_23_OWN_GRENADE` | `MP_ACH_23` | 1 | 호안에 수류탄 | 자신의 수류탄 폭발로 자신이 사망 |
+| 24 | `MP_ACH_24_1` | `MP_24_TWENTY_FOUR_STEPS` | `MP_ACH_24` | 1 | 경주마 | 더블 주사위 한 번 사용 중 실제 24칸 통과; 강제 정산·순간이동 제외 |
+| 25 | `MP_ACH_25_1` | `MP_25_FIRST_MINIGAME_WIN` | `MP_ACH_25` | 1 | 첫 미니게임 우승 | 정식 미니게임 최종 공동 1위 이상 1회 |
+| 26 | `MP_ACH_25_5` | `MP_26_FIVE_MINIGAME_WINS` | `MP_ACH_25` | 5 | 오늘은 내 무대 | 한 경기에서 정식 미니게임 최종 공동 1위 이상 5회 |
+| 27 | `MP_ACH_27_1` | `MP_27_WIN_STREAK` | `MP_ACH_27` | 1 | 세 게임 연속 | 한 경기에서 정식 미니게임 3회 연속 공동 1위 이상; SKIP은 연속 기록 유지 |
+| 28 | `MP_ACH_28_1` | `MP_28_ALL_MINIGAMES` | `MP_ACH_28` | 1 | 경험자 | 현재 등록된 미니게임 20종 모두 실제 참여 후 결과 확정; 경기 간 누적 |
+| 29 | `MP_ACH_29_1` | `MP_29_PERFECT_MEMORY` | `MP_ACH_29` | 1 | 흔들림 없는 기억 | ASD에서 받은 모든 문제 오답·시간 초과 0회이며 최종 공동 1위 이상 |
+| 30 | `MP_ACH_30_1` | `MP_30_PERFECT_STAIRS` | `MP_ACH_30` | 1 | 쉰 계단, 한 번도 안 틀리고 | Wrong Way 한 라운드에서 오답 없이 50번째 계단 도달 |
+| 31 | `MP_ACH_31_1` | `MP_31_PERFECT_MINEFIELD` | `MP_ACH_31` | 1 | 발밑까지 완벽하게 | Minefield 한 라운드에서 피격 없이 결승선 도착; 소나 허용 |
+| 32 | `MP_ACH_32_1` | `MP_32_PERFECT_BALLOON` | `MP_ACH_32` | 1 | 호흡의 달인 | Balloon Blow 한 라운드에서 과호흡 강제 정지 없이 100% 도달 |
+| 33 | `MP_ACH_33_1` | `MP_33_CATCH_EVERYONE` | `MP_ACH_33` | 1 | 한 명도 놓치지 않는다 | Tag Chase 자신의 술래 라운드에서 제한 시간 전에 도망자 3명 전원 포획 |
+| 34 | `MP_ACH_34_1` | `MP_34_TEN_STOLEN_GIFTS` | `MP_ACH_34` | 1 | 그 금더미는 이제 제 겁니다 | Gift Grab 상대 보관 구역에서 훔쳐 자기 구역에 직접 넣기 누적 10회; 중립·투척·중도 드롭 제외 |
 
 ## 저장·재전송과 범위
 
