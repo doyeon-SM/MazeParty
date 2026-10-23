@@ -29,6 +29,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private GameObject sessionHeaderRoot;
         [SerializeField] private GameObject sessionActionsRoot;
         [SerializeField] private Button copyButton;
+        [SerializeField] private Button steamInviteButton;
         [SerializeField] private Button readyButton;
         [SerializeField] private Button startButton;
         [SerializeField] private Text inviteCodeText;
@@ -97,6 +98,7 @@ namespace MazeParty.Multiplayer
         public event Action<string> CreateRequested;
         public event Action<string, string> JoinRequested;
         public event Action CopyRequested;
+        public event Action SteamInviteRequested;
         public event Action ReadyRequested;
         public event Action StartRequested;
         public event Action<int> MapSelectionDeltaRequested;
@@ -114,6 +116,7 @@ namespace MazeParty.Multiplayer
             joinButton != null &&
             cancelJoinButton != null &&
             copyButton != null &&
+            steamInviteButton != null &&
             readyButton != null &&
             startButton != null &&
             sessionHeaderRoot != null &&
@@ -424,6 +427,7 @@ namespace MazeParty.Multiplayer
             }
 
             BindButtonEvents();
+            SetSteamInviteState(false, false);
             buildVersionText.text = BuildVersionCompatibility.DisplayText;
             joinCodeInput.contentType = InputField.ContentType.Custom;
             joinCodeInput.inputType = InputField.InputType.Password;
@@ -535,6 +539,7 @@ namespace MazeParty.Multiplayer
             joinButton.onClick.AddListener(OnJoinClicked);
             cancelJoinButton.onClick.AddListener(OnCancelJoinClicked);
             copyButton.onClick.AddListener(OnCopyClicked);
+            steamInviteButton.onClick.AddListener(OnSteamInviteClicked);
             readyButton.onClick.AddListener(OnReadyClicked);
             startButton.onClick.AddListener(OnStartClicked);
             previousBoardMapButton.onClick.AddListener(OnPreviousBoardMapClicked);
@@ -568,6 +573,7 @@ namespace MazeParty.Multiplayer
             joinButton.onClick.RemoveListener(OnJoinClicked);
             cancelJoinButton.onClick.RemoveListener(OnCancelJoinClicked);
             copyButton.onClick.RemoveListener(OnCopyClicked);
+            steamInviteButton.onClick.RemoveListener(OnSteamInviteClicked);
             readyButton.onClick.RemoveListener(OnReadyClicked);
             startButton.onClick.RemoveListener(OnStartClicked);
             previousBoardMapButton.onClick.RemoveListener(OnPreviousBoardMapClicked);
@@ -683,6 +689,14 @@ namespace MazeParty.Multiplayer
         {
             CloseJoinPopup(true);
         }
+
+        public void SetSteamInviteState(bool visible, bool interactable)
+        {
+            if (steamInviteButton == null) return;
+            steamInviteButton.gameObject.SetActive(visible);
+            steamInviteButton.interactable = interactable;
+        }
+        private void OnSteamInviteClicked() => SteamInviteRequested?.Invoke();
 
         private void OnCopyClicked()
         {

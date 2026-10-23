@@ -884,3 +884,14 @@ CHOOSE BOX,상자 선택,箱を選ぶ,选择箱子
 FLAP,날개짓,羽ばたく,振翅
 Entering,입장중,入室中,正在进入
 FIGHT!,싸우세요,戦え！,战斗吧！
+Invite Steam Friends,Steam 친구 초대,Steamフレンドを招待,邀请 Steam 好友
+Steam Overlay is unavailable. Enable it in Steam or share the invite code.,Steam 오버레이를 사용할 수 없습니다. Steam에서 활성화하거나 초대 코드를 공유하세요.,Steamオーバーレイを利用できません。Steamで有効にするか招待コードを共有してください。,Steam 叠加界面不可用。请在 Steam 中启用或分享邀请码。
+Leave your current room before accepting another Steam invite.,다른 Steam 초대를 수락하려면 현재 방에서 나가세요.,別のSteam招待を受ける前に現在の部屋から退出してください。,接受其他 Steam 邀请前请先离开当前房间。
+This Steam invite is invalid or uses another game version or environment.,유효하지 않은 Steam 초대이거나 게임 버전 또는 접속 환경이 다릅니다.,このSteam招待は無効かゲームのバージョンまたは接続環境が異なります。,此 Steam 邀请无效或游戏版本、连接环境不同。
+UGS is using another account. Restart the game.,다른 계정으로 접속되어 있습니다. 게임을 다시 실행하세요.,別のアカウントで接続されています。ゲームを再起動してください。,正在使用其他账户。请重启游戏。
+Restarting through Steam. Open the game from your Steam library.,Steam으로 다시 실행합니다. Steam 라이브러리에서 게임을 실행하세요.,Steamから再起動します。Steamライブラリからゲームを起動してください。,正在通过 Steam 重启。请从 Steam 库启动游戏。
+Steam could not initialize. Sign in to Steam and launch this game from your library.,Steam을 초기화하지 못했습니다. Steam에 로그인하고 라이브러리에서 게임을 실행하세요.,Steamを初期化できません。Steamにログインしてライブラリから起動してください。,Steam 初始化失败。请登录 Steam 并从库启动游戏。
+This Steam account cannot run this app. Check the App ID and game license.,이 Steam 계정으로 게임을 실행할 수 없습니다. App ID와 게임 이용 권한을 확인하세요.,このSteamアカウントでは起動できません。App IDとゲームの利用権を確認してください。,此 Steam 账户无法运行游戏。请检查 App ID 和游戏许可。
+The Steam SDK is missing. Verify the game installation.,Steam SDK가 없습니다. 게임 설치 파일을 확인하세요.,Steam SDKがありません。ゲームのインストールを確認してください。,缺少 Steam SDK。请验证游戏安装文件。
+The Steam account changed or disconnected. Restart the game.,Steam 계정이 변경되었거나 연결이 끊겼습니다. 게임을 다시 실행하세요.,Steamアカウントが変更されたか切断されました。ゲームを再起動してください。,Steam 账户已更改或断开连接。请重启游戏。
+The saved match settings do not match this lobby.,저장된 경기 설정이 현재 대기실과 일치하지 않습니다.,保存された試合設定が現在のロビーと一致しません。,已保存的比赛设置与当前大厅不一致。

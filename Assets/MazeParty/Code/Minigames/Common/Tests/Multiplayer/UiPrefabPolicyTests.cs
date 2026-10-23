@@ -485,6 +485,15 @@ namespace MazeParty.Multiplayer.Tests
 
                     if (contract.Path == OnlineBootstrapScenePath)
                     {
+                        var lobby = scene.GetRootGameObjects()
+                            .SelectMany(root => root.GetComponentsInChildren<OnlineLobbyView>(true)).Single();
+                        Assert.That(lobby.HasRequiredReferences, Is.True);
+                        var steamInvite = (Button)new SerializedObject(lobby).FindProperty("steamInviteButton").objectReferenceValue;
+                        Assert.That(steamInvite, Is.Not.Null);
+                        Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(steamInvite), Is.Not.Null,
+                            "Steam invitations must use the button authored in the lobby prefab.");
+                        Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(steamInvite.gameObject),
+                            Is.EqualTo(LobbyCanvasPrefabPath));
                         var loading = scene.GetRootGameObjects()
                             .SelectMany(root => root.GetComponentsInChildren<OnlineLoadingView>(true)).Single();
                         var controller = scene.GetRootGameObjects()

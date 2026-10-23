@@ -128,12 +128,13 @@ namespace MazeParty.Multiplayer.Editor
             foreach (var importer in PluginImporter.GetAllImporters().Where(plugin =>
                          plugin.assetPath.StartsWith(SdkDirectory + "/", StringComparison.Ordinal)))
                 importer.SetIncludeInBuildDelegate(_ => PlatformContext.Channel == "stove");
+            foreach (var importer in PluginImporter.GetAllImporters().Where(plugin =>
+                         plugin.assetPath.StartsWith("Packages/com.rlabrecque.steamworks.net/Plugins/", StringComparison.Ordinal)))
+                importer.SetIncludeInBuildDelegate(_ => PlatformContext.Channel == "steam");
             if (!PlatformContext.IsStoreBuild) return;
             if (report.summary.platform != BuildTarget.StandaloneWindows64 ||
                 PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone) != ScriptingImplementation.IL2CPP)
                 throw new BuildFailedException("Store builds require Windows x64 / IL2CPP.");
-            if (PlatformContext.Channel == "steam" && !_validationBuild)
-                throw new BuildFailedException("Steam authentication is not integrated yet. Only Integration Check is available.");
             if (!_validationBuild) ReadLocalSettings().Validate(PlatformContext.Channel);
             if (PlatformContext.Channel == "stove")
             {
@@ -153,9 +154,16 @@ namespace MazeParty.Multiplayer.Editor
 
         public void OnPostprocessBuild(BuildReport report)
         {
-            if (!PlatformContext.IsStoreBuild) return;
             var root = Path.GetDirectoryName(report.summary.outputPath);
             var data = Path.Combine(root, Path.GetFileNameWithoutExtension(report.summary.outputPath) + "_Data");
+            var steamFiles = Directory.GetFiles(data, "steam_api*.dll", SearchOption.AllDirectories);
+            if (PlatformContext.Channel != "steam" && steamFiles.Length != 0)
+                throw new BuildFailedException("Steam binaries were unexpectedly included in another platform build.");
+            if (PlatformContext.Channel == "steam" && !steamFiles.Any(file => Path.GetFileName(file) == "steam_api64.dll"))
+                throw new BuildFailedException("The Steam x64 native SDK is missing from the output.");
+            if (File.Exists(Path.Combine(root, "steam_appid.txt")))
+                throw new BuildFailedException("Do not ship steam_appid.txt. Use a fresh output directory.");
+            if (!PlatformContext.IsStoreBuild) return;
             var sdkFiles = Directory.GetFiles(data, "BaseSDK*.dll", SearchOption.AllDirectories);
             if (PlatformContext.Channel == "steam" && sdkFiles.Length != 0)
                 throw new BuildFailedException("STOVE binaries were unexpectedly included in a Steam build.");

@@ -292,6 +292,7 @@ namespace MazeParty.Multiplayer
             lobbyView?.SetAppearance(_localProfile.Appearance);
 
             _identity = PlatformContext.CreateIdentity();
+            InitializeSteamInvites();
             var relaySessions = new MpsRelaySessionProvider(_identity);
             relaySessions.PrepareHostRecoveryAsync = PrepareOriginalHostRecoveryAsync;
             relaySessions.HostNetworkRestored += OnOriginalHostNetworkRestored;
@@ -329,6 +330,7 @@ namespace MazeParty.Multiplayer
         private void Update()
         {
             (_identity as IPlatformIdentityProvider)?.Tick();
+            TickSteamInvites();
             RefreshLoadingPresentation();
             if (_applicationQuitting)
             {
@@ -461,6 +463,7 @@ namespace MazeParty.Multiplayer
             lobbyView.CreateRequested += OnCreateRequested;
             lobbyView.JoinRequested += OnJoinRequested;
             lobbyView.CopyRequested += OnCopyRequested;
+            lobbyView.SteamInviteRequested += OnSteamInviteRequested;
             lobbyView.ReadyRequested += OnReadyRequested;
             lobbyView.StartRequested += OnStartRequested;
             lobbyView.MapSelectionDeltaRequested +=
@@ -482,6 +485,7 @@ namespace MazeParty.Multiplayer
             lobbyView.CreateRequested -= OnCreateRequested;
             lobbyView.JoinRequested -= OnJoinRequested;
             lobbyView.CopyRequested -= OnCopyRequested;
+            lobbyView.SteamInviteRequested -= OnSteamInviteRequested;
             lobbyView.ReadyRequested -= OnReadyRequested;
             lobbyView.StartRequested -= OnStartRequested;
             lobbyView.MapSelectionDeltaRequested -=

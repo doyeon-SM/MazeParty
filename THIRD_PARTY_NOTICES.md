@@ -66,3 +66,7 @@ Unity 패키지 고지는 설치된 패키지 버전의 스냅샷입니다. 개�
 배포할 게임 폴더의 최상위에 이 `THIRD_PARTY_NOTICES.md`와 `ThirdPartyLicenses` 폴더를 함께 둡니다. 파일 내부의 상대 링크를 유지하도록 같은 이름과 구조를 사용합니다. SDK DLL·폰트 바이너리·유료 에셋 원본을 이 고지 폴더에 추가하지 않습니다.
 
 이번 STOVE Release 출력에는 위 고지 사본을 함께 배치합니다. 현재 빌드 메뉴의 자동 복사 기능은 아니므로 이후 빌드에도 같은 고지를 수동으로 포함해야 합니다. 배포 대상이나 의존성이 바뀌면 고지 목록도 갱신합니다.
+
+## Steamworks.NET
+
+Steamworks.NET 2025.164.1 — Riley Labrecque, MIT. Source: https://github.com/rlabrecque/Steamworks.NET . License: ThirdPartyLicenses/Steamworks.NET.txt. Native Steamworks SDK redistribution remains subject to Valve's Steamworks SDK terms.

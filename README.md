@@ -19,9 +19,9 @@
 | --- | --- |
 | Development | UGS 익명 로그인, 한 PC의 4개 프로세스 테스트 지원 |
 | STOVE | PC SDK 3.5.3.0 연동 및 Release 빌드 지원. 런처·소유권 확인 후 UGS 익명 로그인 |
-| Steam | 빌드·방 분리 및 Integration Check 지원. Steam SDK 인증과 Release는 아직 미구현 |
+| Steam | Steam 클라이언트·계정·소유권 확인, UGS/Relay, 도전과제 34개, 오버레이 친구 초대 및 Release 코드 지원. Steamworks 등록·실계정 검증은 미완료 |
 
-STOVE·Steam·Development 이용자는 서로 다른 플랫폼의 방에 참가할 수 없습니다. 현재 STOVE 계정은 해당 PC의 UGS 계정 캐시를 선택하는 데 사용하며, 다른 PC에서 같은 STOVE 계정의 저장 경기를 자동 복원하는 기능은 제공하지 않습니다. 개발 계정과 저장 경기는 출시 계정으로 이전하지 않습니다.
+STOVE·Steam·Development 이용자는 서로 다른 플랫폼의 방에 참가할 수 없습니다. 현재 STOVE·Steam 계정은 해당 PC의 UGS 계정 캐시를 선택하는 데 사용하며, 다른 PC에서 같은 플랫폼 계정의 저장 경기를 자동 복원하는 기능은 제공하지 않습니다. 개발 계정과 저장 경기는 출시 계정으로 이전하지 않습니다.
 
 ## 개발 환경
 
@@ -74,7 +74,7 @@ Unity 6000.6.0f1에서 GPU Resident Drawer를 활성화하면 게임 시작 시 
 
 **Release는 빌드 형식이며 상점 공개를 자동 실행하지 않습니다.** 실제 설치·로그인·소유권·코드 입장 검증은 [STOVE 런처 테스트 절차](Docs/STOVE_LAUNCHER_TEST.md)를 따릅니다.
 
-`Selected Store - Integration Check (IL2CPP x64)`에는 플랫폼 설정이 포함되지 않습니다. 컴파일·패키징 검증용으로만 사용합니다. Steam 프로필에서는 현재 이 검증 빌드만 지원합니다.
+`Selected Store - Integration Check (IL2CPP x64)`에는 플랫폼 설정이 포함되지 않습니다. 컴파일·패키징 검증용으로만 사용합니다. Steam Release와 테스트 준비는 `Docs/STEAM_SETUP.md`를 따릅니다.
 
 검증은 수정한 기능과 관련된 EditMode 테스트를 대상으로 합니다. 전체 테스트 실행과 제작 규칙은 [AGENTS.md](AGENTS.md)를 따릅니다.
 
@@ -84,7 +84,7 @@ Unity 6000.6.0f1에서 GPU Resident Drawer를 활성화하면 게임 시작 시 
 | --- | --- |
 | `Assets/Stove&Steam/STOVE/x86_64` | STOVE DLL 2개와 플랫폼 전용 임포트 설정 |
 | `Assets/Stove&Steam/.local/stove.json` | UGS 환경, SDK 환경, STOVE Game ID·Application Key |
-| `Assets/Stove&Steam/.local/steam.json` | 현재는 UGS 환경만 저장 |
+| `Assets/Stove&Steam/.local/steam.json` | UGS 환경·공개 Steam App ID. 비밀키 없음 |
 | `Assets/Ignore` | 별도로 복원하는 외부 에셋·폰트 원본 등 |
 | `Builds`, `Logs`, `Library`, `UserSettings` | 로컬 출력·로그·캐시 |
 

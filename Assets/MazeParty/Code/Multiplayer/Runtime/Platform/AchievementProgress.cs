@@ -4,7 +4,7 @@ using MazeParty.Gameplay.Minigames;
 
 namespace MazeParty.Multiplayer
 {
-    // Stable one-based IDs match the STOVE registration sheet. Never renumber.
+    // Stable one-based IDs shared by STOVE and Steam. Never renumber.
     public enum PartyAchievement
     {
         FirstCeremony = 1, RegularGuest, Champion, FiveCrowns, ForestExplorer, MazeExplorer,
@@ -40,6 +40,20 @@ namespace MazeParty.Multiplayer
             return canonical == 1 || canonical == 3 || canonical == 7 || canonical == 12 || canonical == 25;
         }
         public static string StatId(int number) => "MP_ACH_" + StatNumber(number).ToString("D2", System.Globalization.CultureInfo.InvariantCulture);
+        public static int Target(int number)
+        {
+            _ = StatNumber(number);
+            switch ((PartyAchievement)number)
+            {
+                case PartyAchievement.RegularGuest:
+                case PartyAchievement.FiveCrowns:
+                case PartyAchievement.FiveMinigameWins: return 5;
+                case PartyAchievement.KeyRegular:
+                case PartyAchievement.ItemRegular: return 10;
+                default: return 1;
+            }
+        }
+        public static string ApiName(int number) => StatId(number) + "_" + Target(number).ToString(System.Globalization.CultureInfo.InvariantCulture);
         public static bool EligibleTurns(int turns) => turns == 10 || turns == 15 || turns == 20;
         public static int RegisteredGamesMask
         {

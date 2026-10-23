@@ -6,6 +6,8 @@ namespace MazeParty.Multiplayer
         {
 #if MAZEPARTY_STOVE
             (_identity as StovePlayerIdentityProvider)?.CommitAchievements(receipt);
+#elif MAZEPARTY_STEAM
+            (_identity as SteamPlayerIdentityProvider)?.CommitAchievements(receipt);
 #endif
         }
     }

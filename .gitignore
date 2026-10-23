@@ -126,3 +126,6 @@ Build.zip
 # Local store SDKs and settings, including Unity metadata.
 /Assets/Stove&Steam/
 /Assets/Stove&Steam.meta
+
+# Steam local launch testing; never distribute this file.
+/steam_appid.txt

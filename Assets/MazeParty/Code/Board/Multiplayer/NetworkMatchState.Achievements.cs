@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-#if MAZEPARTY_STOVE && !UNITY_EDITOR && !DEVELOPMENT_BUILD
+#if (MAZEPARTY_STOVE || MAZEPARTY_STEAM) && !UNITY_EDITOR && !DEVELOPMENT_BUILD
                 return true;
 #else
                 return false;

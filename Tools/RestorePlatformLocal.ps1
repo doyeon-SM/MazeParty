@@ -101,7 +101,7 @@ PluginImporter:
 
 $templates = @{
     'stove.json' = [ordered]@{ ugsEnvironment = 'production'; stoveEnvironment = 'LIVE'; stoveGameId = ''; stoveAppKey = '' }
-    'steam.json' = [ordered]@{ ugsEnvironment = 'production' }
+    'steam.json' = [ordered]@{ ugsEnvironment = 'production'; steamAppId = 5495650 }
 }
 foreach ($name in $templates.Keys) {
     $path = Join-Path $settingsDirectory $name

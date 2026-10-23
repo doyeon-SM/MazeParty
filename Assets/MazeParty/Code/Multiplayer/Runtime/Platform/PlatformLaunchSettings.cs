@@ -9,6 +9,7 @@ namespace MazeParty.Multiplayer
     public sealed class PlatformLaunchSettings
     {
         public string ugsEnvironment = "production";
+        public uint steamAppId = 5495650;
         public string stoveEnvironment = "LIVE";
         public string stoveGameId = "";
         public string stoveAppKey = "";
@@ -35,6 +36,8 @@ namespace MazeParty.Multiplayer
             if ((expectedChannel != "stove" && expectedChannel != "steam") ||
                 !Regex.IsMatch(ugsEnvironment ?? "", "^[a-z0-9][a-z0-9-]{0,39}$"))
                 throw new InvalidOperationException("Configure an existing UGS environment name.");
+            if (expectedChannel == "steam" && (steamAppId == 0 || steamAppId == 480))
+                throw new InvalidOperationException("Configure the MazeParty Steam App ID, not the Spacewar test app.");
             if (expectedChannel == "stove")
             {
                 if (string.IsNullOrWhiteSpace(stoveGameId) || string.IsNullOrWhiteSpace(stoveAppKey))
@@ -51,9 +54,9 @@ namespace MazeParty.Multiplayer
                 stoveGameId = stoveGameId,
                 stoveAppKey = stoveAppKey
             }, true)
-            : JsonUtility.ToJson(new UgsSettings { ugsEnvironment = ugsEnvironment }, true);
+            : JsonUtility.ToJson(new SteamSettings { ugsEnvironment = ugsEnvironment, steamAppId = steamAppId }, true);
 
-        [Serializable] private sealed class UgsSettings { public string ugsEnvironment; }
+        [Serializable] private sealed class SteamSettings { public string ugsEnvironment; public uint steamAppId; }
     }
 
     public static class PlatformAccountScope
@@ -62,7 +65,11 @@ namespace MazeParty.Multiplayer
         // The STOVE ID only selects a LOCAL cache; it is not a UGS login credential.
         public static string AuthenticationProfile(string channel, PlatformLaunchSettings settings, ulong stoveUser)
         {
-            if (stoveUser == 0) throw new ArgumentException("A locally verified STOVE account is required.");
+            if (stoveUser == 0) throw new ArgumentException("A locally verified platform account is required.");
+            if (channel == "steam")
+                return "mp-steam2-" + Hash128.Compute(channel + "/" + settings.ugsEnvironment + "/" +
+                    settings.steamAppId.ToString(System.Globalization.CultureInfo.InvariantCulture) + "/" +
+                    stoveUser.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToString().Substring(0, 20);
             return "mp-local2-" + Hash128.Compute(channel + "/" + settings.ugsEnvironment + "/" +
                 settings.StoveSdkEnvironment + "/" + settings.stoveGameId + "/" +
                 stoveUser.ToString(System.Globalization.CultureInfo.InvariantCulture)).ToString().Substring(0, 20);
@@ -120,21 +127,12 @@ namespace MazeParty.Multiplayer
 #if MAZEPARTY_STOVE
             return new StovePlayerIdentityProvider();
 #elif MAZEPARTY_STEAM
-            return new UnconfiguredSteamIdentityProvider();
+            return new SteamPlayerIdentityProvider();
 #else
             return new UnityAnonymousIdentityProvider();
 #endif
         }
 
-        private sealed class UnconfiguredSteamIdentityProvider : IPlayerIdentityProvider
-        {
-            public bool IsSignedIn => false;
-            public string PlayerId => "";
-            public string DisplayName => "Player";
-            public System.Threading.Tasks.Task SignInAsync(string requestedDisplayName) =>
-                System.Threading.Tasks.Task.FromException(new InvalidOperationException(
-                    "Steam builds are isolated. Steam SDK authentication must be integrated before online play."));
-        }
     }
 
     public interface IPlatformIdentityProvider : IPlayerIdentityProvider, IDisposable

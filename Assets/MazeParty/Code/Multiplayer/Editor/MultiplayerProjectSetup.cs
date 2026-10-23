@@ -1361,6 +1361,7 @@ namespace MazeParty.Editor
                 boardMapPreviewGraphic);
             PlayerExpressionAuthoring.EnsureLobbySelectors(canvasObject);
             RecoveryUiProjectSetup.EnsureLobby(lobbyView.gameObject);
+            MazeParty.Multiplayer.Editor.SteamUiProjectSetup.EnsureLobby(canvasObject);
             return lobbyView;
         }
 
