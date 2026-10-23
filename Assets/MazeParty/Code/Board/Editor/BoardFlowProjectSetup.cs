@@ -1011,6 +1011,7 @@ namespace MazeParty.Editor
             output.backgroundColor = new Color(0.018f, 0.026f, 0.045f);
             output.nearClipPlane = 0.05f;
             output.farClipPlane = 500f;
+            BoardFeedbackAuthoring.ConfigureNightCamera(output);
             cameraObject.AddComponent<AudioListener>();
             var brain = cameraObject.AddComponent<CinemachineBrain>();
             brain.DefaultBlend = new CinemachineBlendDefinition(
@@ -1266,9 +1267,10 @@ namespace MazeParty.Editor
             var light = lightObject.AddComponent<Light>();
             light.type = LightType.Directional;
             light.color = new Color(0.57f, 0.69f, 1f);
-            light.intensity = 0.28f;
+            light.intensity = 0.10f;
             light.shadows = LightShadows.Soft;
             RenderSettings.sun = light;
+            BoardFeedbackAuthoring.EnsureNightVolume();
         }
 
         private static void CreateBoardBackdrop(Material material)

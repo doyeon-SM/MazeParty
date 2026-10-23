@@ -25,6 +25,7 @@ namespace MazeParty.Editor
                     cameraObject.transform.SetParent(root.transform, false);
                     cameras[index] = cameraObject.AddComponent<Camera>();
                     cameras[index].enabled = false;
+                    BoardFeedbackAuthoring.ConfigureNightCamera(cameras[index]);
                 }
                 root.AddComponent<BoardEventSplitView>().Configure(cameras);
                 return PrefabUtility.SaveAsPrefabAsset(root, SplitPrefabPath).GetComponent<BoardEventSplitView>();

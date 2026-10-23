@@ -40,7 +40,7 @@ namespace MazeParty.Editor
                 {
                     light.name = "Board Moonlight";
                     light.color = new Color(0.57f, 0.69f, 1f);
-                    light.intensity = 0.28f;
+                    light.intensity = 0.10f;
                     light.shadows = LightShadows.Soft;
                     RenderSettings.sun = light;
                     ConfigureNightAmbient();
@@ -59,8 +59,30 @@ namespace MazeParty.Editor
         public static void ConfigureNightAmbient()
         {
             RenderSettings.ambientMode = AmbientMode.Skybox;
-            RenderSettings.ambientIntensity = 0.22f;
-            RenderSettings.reflectionIntensity = 0.3f;
+            RenderSettings.ambientIntensity = 0.08f;
+            RenderSettings.reflectionIntensity = 0.12f;
+        }
+
+        public static void ConfigureNightCamera(Camera camera)
+        {
+            var data = camera.GetComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            if (data == null)
+                data = camera.gameObject.AddComponent<UnityEngine.Rendering.Universal.UniversalAdditionalCameraData>();
+            data.renderPostProcessing = true;
+            data.volumeLayerMask |= 1 << LayerMask.NameToLayer("Ignore Raycast");
+        }
+
+        public static void EnsureNightVolume()
+        {
+            const string path = World + "/BoardNightLighting.prefab";
+            var scene = SceneManager.GetActiveScene();
+            if (scene.GetRootGameObjects().Any(root =>
+                    PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(root) == path))
+                return;
+            // Reuse the authored local volume so setup preserves its color grade and bounds.
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+            if (prefab == null) throw new InvalidOperationException("Missing " + path);
+            PrefabUtility.InstantiatePrefab(prefab, scene);
         }
 
         private static void UpgradeDie()
@@ -140,8 +162,8 @@ namespace MazeParty.Editor
                 foreach (var light in root.GetComponentsInChildren<Light>(true))
                 {
                     light.enabled = light.type == LightType.Point;
-                    light.color = new Color(1f, 0.77f, 0.44f);
-                    light.intensity = 3.5f;
+                    light.color = new Color(1f, 0.72f, 0.18f);
+                    light.intensity = 14f;
                     light.range = 11f;
                     light.shadows = LightShadows.None;
                     light.lightmapBakeType = LightmapBakeType.Realtime;
@@ -160,7 +182,7 @@ namespace MazeParty.Editor
                     var emission = AssetDatabase.LoadAssetAtPath<Texture>(
                         "Assets/Ignore/SpaceZeta_StreetLamps2/Materials/T_StreetLampRound1A_emission.png");
                     material.SetTexture("_EmissionMap", emission);
-                    material.SetColor("_EmissionColor", new Color(1f, 0.77f, 0.44f) * 2f);
+                    material.SetColor("_EmissionColor", new Color(1f, 0.72f, 0.18f) * 8f);
                     material.EnableKeyword("_EMISSION");
                     AssetDatabase.CreateAsset(material, materialPath);
                 }
@@ -172,22 +194,40 @@ namespace MazeParty.Editor
 
         private static GameObject EnsureMazeLight()
         {
-            var path = World + "/MazePassageLight.prefab";
+            const string path = World + "/MazeWallLamp.prefab";
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
-            if (prefab != null) return prefab;
-            var root = new GameObject("Maze Passage Light");
-            try
+            if (prefab == null) throw new InvalidOperationException("Missing authored wall lamp: " + path);
+            return prefab;
+        }
+
+        public static bool TryGetMazeWallMount(BoardMapRoot map, Vector3 passage,
+            out Vector3 position, out Quaternion rotation)
+        {
+            position = default;
+            rotation = Quaternion.identity;
+            var bestDistance = float.PositiveInfinity;
+            foreach (var source in map.MapWallSources)
+            foreach (var mesh in source.GetComponentsInChildren<MeshFilter>(true))
             {
-                var light = root.AddComponent<Light>();
-                light.type = LightType.Point;
-                light.color = new Color(0.72f, 0.85f, 1f);
-                light.intensity = 4f;
-                light.range = 10f;
-                light.shadows = LightShadows.None;
-                light.lightmapBakeType = LightmapBakeType.Realtime;
-                return PrefabUtility.SaveAsPrefabAsset(root, path);
+                // Use solid visible wall panels, excluding pillars, windows and door openings.
+                if (mesh.sharedMesh == null || !mesh.sharedMesh.name.StartsWith("Wall_") ||
+                    mesh.sharedMesh.name.Contains("Door")) continue;
+                var bounds = mesh.sharedMesh.bounds;
+                if (bounds.size.z > 0.6f || bounds.size.x < 1.5f || bounds.size.y < 3.9f) continue;
+                var local = mesh.transform.InverseTransformPoint(passage);
+                var sign = local.z >= bounds.center.z ? 1f : -1f;
+                local.x = Mathf.Clamp(local.x, bounds.min.x + 0.5f, bounds.max.x - 0.5f);
+                local.y = 2.8f;
+                local.z = bounds.center.z + sign * (bounds.extents.z + 0.015f);
+                var candidate = mesh.transform.TransformPoint(local);
+                var distance = (candidate - passage).sqrMagnitude;
+                if (distance >= bestDistance) continue;
+                bestDistance = distance;
+                position = candidate;
+                rotation = Quaternion.LookRotation(mesh.transform.TransformDirection(Vector3.forward * sign),
+                    Vector3.up);
             }
-            finally { UnityEngine.Object.DestroyImmediate(root); }
+            return bestDistance < 100f;
         }
 
         private static void AddMapLighting(string map, GameObject lightPrefab)
@@ -196,7 +236,8 @@ namespace MazeParty.Editor
             var root = PrefabUtility.LoadPrefabContents(path);
             try
             {
-                var environment = root.GetComponent<BoardMapRoot>().EnvironmentRoot;
+                var boardMap = root.GetComponent<BoardMapRoot>();
+                var environment = boardMap.EnvironmentRoot;
                 if (environment.Find("Night Lighting") != null) return;
                 var container = Child(environment, "Night Lighting");
                 var tiles = root.GetComponentsInChildren<BoardTile>(true);
@@ -207,6 +248,9 @@ namespace MazeParty.Editor
                     var center = tile.WorldCenter;
                     if (map == "Forest" && placed.Any(p => Vector3.Distance(p, center) < 7f)) continue;
                     var position = center + Vector3.up * 3.2f;
+                    var rotation = Quaternion.identity;
+                    if (map == "Maze" && !TryGetMazeWallMount(boardMap, position, out position, out rotation))
+                        throw new InvalidOperationException("No wall found for maze lamp at " + center);
                     if (map == "Forest")
                     {
                         // Small path-side fixtures, away from tile recovery/spawn centers.
@@ -218,7 +262,7 @@ namespace MazeParty.Editor
                     }
                     var instance = (GameObject)PrefabUtility.InstantiatePrefab(lightPrefab, container.transform);
                     instance.name = map + " Light " + placed.Count.ToString("00");
-                    instance.transform.position = position;
+                    instance.transform.SetPositionAndRotation(position, rotation);
                     placed.Add(center);
                 }
                 PrefabUtility.SaveAsPrefabAsset(root, path);
