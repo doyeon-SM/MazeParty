@@ -29,6 +29,7 @@ namespace MazeParty.Multiplayer
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
         public string sessionId = string.Empty;
+        public string achievementMatchId = string.Empty;
         public MatchRecoveryCheckpoint checkpoint;
         public int turn;
         public int settledMinigameTurn;
@@ -59,6 +60,8 @@ namespace MazeParty.Multiplayer
     public sealed class MatchRecoveryPlayerSnapshot
     {
         public string playerKey = string.Empty;
+        // JSON string preserves absence; Unity expands null inline objects into default instances.
+        public string achievementProgress = string.Empty;
         public string displayName = string.Empty;
         public bool hasLogicalTile;
         public Vector2Int logicalTile;

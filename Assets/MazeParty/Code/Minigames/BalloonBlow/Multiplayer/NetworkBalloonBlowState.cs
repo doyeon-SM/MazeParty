@@ -486,6 +486,10 @@ namespace MazeParty.Multiplayer
             SyncRoundSnapshotOnServer();
             var result = _roundState.Result;
             _roundResults.Add(result);
+            for (var slot = 0; slot < 4; slot++)
+                if (_roundState.GetPlayer(slot).IsPopped && _roundState.GetPlayer(slot).ForcedStopCount == 0)
+                    NetworkMatchState.Instance?.RecordMinigameAchievementOnServer(slot,
+                        ScheduledMinigameId.BalloonBlow, PartyAchievement.PerfectBalloon);
             uint roundPoints = 0U;
             uint roundRanks = 0U;
             for (var index = 0; index < result.Standings.Count; index++)

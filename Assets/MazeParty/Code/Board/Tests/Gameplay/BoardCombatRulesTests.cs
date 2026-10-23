@@ -11,19 +11,22 @@ namespace MazeParty.Gameplay.Tests
             var sequence = new CombatPunchSequence();
             var cases = new[]
             {
-                (time: 0d, hit: true, damage: 5),
-                (time: 0.65d, hit: true, damage: 7),
-                (time: 1.30d, hit: true, damage: 10),
-                (time: 1.95d, hit: true, damage: 5),
-                (time: 2.60d, hit: false, damage: 0),
-                (time: 3.25d, hit: true, damage: 5),
-                (time: 4.249999d, hit: true, damage: 7),
-                (time: 5.249999d, hit: true, damage: 5),
-                (time: 20d, hit: true, damage: 5)
+                (time: 0d, hit: true, damage: 5, strike: 1),
+                (time: 0.65d, hit: true, damage: 7, strike: 2),
+                (time: 1.30d, hit: true, damage: 10, strike: 3),
+                (time: 1.95d, hit: true, damage: 5, strike: 1),
+                (time: 2.60d, hit: false, damage: 0, strike: 0),
+                (time: 3.25d, hit: true, damage: 5, strike: 1),
+                (time: 4.249999d, hit: true, damage: 7, strike: 2),
+                (time: 5.249999d, hit: true, damage: 5, strike: 1),
+                (time: 20d, hit: true, damage: 5, strike: 1)
             };
             foreach (var entry in cases)
+            {
                 Assert.That(sequence.Resolve(entry.hit, entry.time, 100),
                     Is.EqualTo(entry.damage), "time " + entry.time);
+                Assert.That(sequence.LastStrike, Is.EqualTo(entry.strike), "Achievement strike at " + entry.time);
+            }
 
             sequence.Reset();
             Assert.That(sequence.Resolve(true, 20.65d, 100), Is.EqualTo(5));

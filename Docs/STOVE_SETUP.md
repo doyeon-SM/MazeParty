@@ -108,3 +108,7 @@ Release 빌드 업로드부터 설치·접속·방 생성까지는 [STOVE 런처
 - [Unity 익명 로그인과 세션 유지](https://docs.unity.com/en-us/authentication/session-management)
 - [Unity 계정 인증 방식과 다른 기기 복원](https://docs.unity.com/en-us/authentication/approaches-to-authentication)
 - [UGS 멤버 데이터 쓰기 권한과 제한](https://docs.unity.com/en-us/mps-sdk/session-data-and-player-data)
+
+## 도전과제
+
+도전과제 34개·공통 스탯 29개의 연결과 Studio 등록 기준은 [STOVE_ACHIEVEMENTS.md](STOVE_ACHIEVEMENTS.md)를 따른다. [스탯 등록용 CSV](STOVE_STATS.csv)의 29개 ID와 [도전과제 등록용 CSV](STOVE_ACHIEVEMENTS.csv)의 연결 ID·목표 1/5/10을 사용하며, Studio 등록 및 Release 실계정 해제 확인은 별도로 필요하다.

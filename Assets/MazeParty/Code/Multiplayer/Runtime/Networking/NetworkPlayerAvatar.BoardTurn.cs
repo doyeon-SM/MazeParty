@@ -60,6 +60,7 @@ namespace MazeParty.Multiplayer
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
+            _achievementDoubleDiceSteps = 0;
             _firstDieResult.Value = 0;
             _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
@@ -88,6 +89,7 @@ namespace MazeParty.Multiplayer
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
+            _achievementDoubleDiceSteps = 0;
             _firstDieResult.Value = 0;
             _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;
@@ -142,6 +144,7 @@ namespace MazeParty.Multiplayer
             ClearUtilityEffectsOnServer();
             _rangeDieItem.Value = 0;
             _doubleDice.Value = false;
+            _achievementDoubleDiceSteps = 0;
             _firstDieResult.Value = 0;
             _secondDieResult.Value = 0;
             _remainingMoves.Value = 0;

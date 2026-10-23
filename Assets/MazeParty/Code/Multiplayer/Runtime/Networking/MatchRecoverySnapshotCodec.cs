@@ -204,11 +204,15 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (!string.IsNullOrEmpty(snapshot.achievementMatchId) &&
+                !Guid.TryParseExact(snapshot.achievementMatchId, "N", out _)) return false;
             var playerKeys = new HashSet<string>(StringComparer.Ordinal);
             for (var index = 0; index < snapshot.players.Length; index++)
             {
                 var player = snapshot.players[index];
-                if (!IsValidPlayer(player) || !playerKeys.Add(player.playerKey))
+                if (!IsValidPlayer(player) || !playerKeys.Add(player.playerKey) ||
+                    (!string.IsNullOrEmpty(snapshot.achievementMatchId) &&
+                        !AchievementMatchProgress.TryDecode(player.achievementProgress, out _)))
                 {
                     return false;
                 }

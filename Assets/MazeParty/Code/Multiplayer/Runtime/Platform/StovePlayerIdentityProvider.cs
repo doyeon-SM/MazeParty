@@ -13,6 +13,7 @@ namespace MazeParty.Multiplayer
     {
         private readonly StoveSdkClient _sdk = new StoveSdkClient();
         private Task _signIn;
+        private StoveAchievementClient _achievements;
         private ulong _signedInStoveUser;
         private string _profile;
         private bool _disposed;
@@ -62,13 +63,29 @@ namespace MazeParty.Multiplayer
                 throw new InvalidOperationException("The STOVE account changed during sign-in. Restart the game.");
             _profile = profile;
             _signedInStoveUser = stoveUser;
+            if (_achievements == null && !UnityEngine.Application.isEditor && !UnityEngine.Debug.isDebugBuild)
+            {
+                try { _achievements = new StoveAchievementClient(_sdk, stoveUser, profile); }
+                catch (Exception) { UnityEngine.Debug.LogWarning("Achievement journal unavailable. Existing records were preserved; achievement sync is disabled for this session."); }
+            }
         }
 
-        public void Tick() => _sdk.Tick();
+        public void CommitAchievements(AchievementReceipt receipt)
+        {
+            if (!IsSignedIn || _achievements == null) return;
+            try { _achievements.Commit(receipt, MatchRecoveryFingerprint.CreatePlayerKey(PlayerId)); }
+            catch (Exception) { UnityEngine.Debug.LogWarning("Could not save achievement result. The server can resend it while the ceremony remains open."); }
+        }
+        public void Tick()
+        {
+            _sdk.Tick();
+            if (IsSignedIn) _achievements?.Tick();
+        }
         public void Dispose()
         {
             if (_disposed) return;
             _disposed = true;
+            _achievements?.Dispose();
             _sdk.Dispose();
             Proof.Dispose();
         }

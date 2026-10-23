@@ -428,6 +428,10 @@ namespace MazeParty.Multiplayer
 
             var result = _roundState.Result;
             _roundResults.Add(result);
+            for (var slot = 0; slot < 4; slot++)
+                if (_roundState.GetPlayer(slot).IsFinished && _roundState.GetPlayer(slot).MistakeCount == 0)
+                    NetworkMatchState.Instance?.RecordMinigameAchievementOnServer(slot,
+                        ScheduledMinigameId.WrongWay, PartyAchievement.PerfectStairs);
             uint pointsPacked = 0u;
             uint ranksPacked = 0u;
             for (var index = 0; index < result.Standings.Count; index++)

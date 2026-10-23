@@ -913,6 +913,9 @@ namespace MazeParty.Multiplayer
             }
 
             _serverInputs[slot] = Vector2.zero;
+            if (GetMineHitCount(slot) == 0)
+                NetworkMatchState.Instance?.RecordMinigameAchievementOnServer(slot,
+                    ScheduledMinigameId.Minefield, PartyAchievement.PerfectMinefield);
             SetPlayerStateOnServer(slot, MinefieldPlayerState.Finished);
             _roundOutcomes[slot] = MinefieldRoundOutcome.Finish(
                 slot,

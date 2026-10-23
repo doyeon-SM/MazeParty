@@ -143,6 +143,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
 
         public int PlayerSlot { get; }
         public int CompletedSteps { get; private set; }
+        public int MistakeCount { get; private set; }
         public bool IsFinished => CompletedSteps >= WrongWayRules.StepCount;
         public double InputLockedUntil { get; private set; }
 
@@ -184,6 +185,7 @@ namespace MazeParty.Gameplay.Minigames.WrongWay
 
             if (submittedDirection != expectedDirection)
             {
+                MistakeCount++;
                 InputLockedUntil =
                     serverNow + WrongWayRules.IncorrectInputLockSeconds;
                 return new WrongWayInputResolution(

@@ -123,6 +123,7 @@ namespace MazeParty.Multiplayer
                     }
                 }
                 RestoreBoardMines(snapshot.mines, mineOwnerSlots);
+                RestoreAchievements(snapshot, playerSnapshots);
 
                 _settledMinigameTurn = snapshot.settledMinigameTurn;
                 _remainingMinigameSlots.Value = snapshot.remainingMinigameSlots;
@@ -535,6 +536,8 @@ namespace MazeParty.Multiplayer
                     MatchRecoveryFingerprint.CreatePlayerKey(playerId));
                 if (players[slot] != null)
                 {
+                    players[slot].achievementProgress = string.IsNullOrEmpty(_achievementMatchId)
+                        ? string.Empty : JsonUtility.ToJson(_achievementPlayers[slot]);
                     foreach (var member in controller.CurrentSession.Players)
                         if (member.Slot == slot) players[slot].displayName = member.DisplayName;
                 }
@@ -603,6 +606,7 @@ namespace MazeParty.Multiplayer
                 gameSettings = GameSettings.Encode(),
                 originalHostPlayerKey = players[0].playerKey,
                 sessionId = controller.RecoverySessionId,
+                achievementMatchId = _achievementMatchId,
                 checkpoint = checkpoint,
                 turn = Turn,
                 settledMinigameTurn = _settledMinigameTurn,

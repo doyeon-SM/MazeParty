@@ -288,6 +288,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public int PlayerSlot { get; }
         public int HeldGiftId { get; private set; }
         public int StoredGiftCount { get; private set; }
+        public int StolenDeliveries { get; private set; }
+        private bool _carriedFromOpponent;
         public double CumulativeStoredGiftSeconds { get; private set; }
         public double StunnedUntilSeconds { get; private set; }
         public double ThrowRecoveryEndsAtSeconds { get; private set; }
@@ -325,8 +327,9 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                 StoredGiftCount * durationSeconds;
         }
 
-        internal void TakeGift(int giftId)
+        internal void TakeGift(int giftId, bool fromOpponent = false)
         {
+            _carriedFromOpponent = fromOpponent;
             HeldGiftId = giftId;
         }
 
@@ -334,8 +337,11 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         {
             var giftId = HeldGiftId;
             HeldGiftId = GiftGrabRules.NoGiftId;
+            _carriedFromOpponent = false;
             return giftId;
         }
+
+        internal void RecordDelivery() { if (_carriedFromOpponent) StolenDeliveries++; }
 
         internal void AddStoredGift()
         {
@@ -730,7 +736,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             }
 
             gift.Carry(playerSlot);
-            player.TakeGift(giftId);
+            player.TakeGift(giftId, previousOwnerSlot != GiftGrabRules.NoPlayerSlot && previousOwnerSlot != playerSlot);
             return new GiftGrabPickupResolution(
                 playerSlot,
                 giftId,
@@ -772,6 +778,7 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabDepositStatus.IgnoredNotCarrying);
             }
 
+            player.RecordDelivery();
             var giftId = player.ReleaseHeldGift();
             _gifts[giftId].Store(playerSlot);
             player.AddStoredGift();

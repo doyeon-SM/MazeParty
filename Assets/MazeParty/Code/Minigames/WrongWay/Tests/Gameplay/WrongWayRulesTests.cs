@@ -90,6 +90,8 @@ namespace MazeParty.Gameplay.Tests
                 accepted.Status,
                 Is.EqualTo(WrongWayInputStatus.Correct));
             Assert.That(round.GetPlayer(2).CompletedSteps, Is.EqualTo(1));
+            Assert.That(round.GetPlayer(2).MistakeCount, Is.EqualTo(1));
+            Assert.That(round.GetPlayer(0).MistakeCount, Is.Zero);
             Assert.That(
                 round.Prompts[0],
                 Is.EqualTo(prompt),

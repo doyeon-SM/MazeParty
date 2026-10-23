@@ -915,6 +915,7 @@ namespace MazeParty.Multiplayer
                     match?.PublishBoardKillOnServer(
                         attacker, this, request.ItemId);
                 }
+                if (request.Kind == DamageKind.Item) match?.RecordItemDeathOnServer(sourceAvatar, this, request.ItemId);
                 BeginBoardDeathOnServer(attacker);
             }
             return DamageResult.Applied;
@@ -1194,7 +1195,10 @@ namespace MazeParty.Multiplayer
         public int ResolveCombatPunchDamageOnServer(bool hit, double now)
         {
             if (!IsServer || !IsCombatAlive) return 0;
-            return _combatPunchSequence.Resolve(hit, now, _combatHealth.Value);
+            var damage = _combatPunchSequence.Resolve(hit, now, _combatHealth.Value);
+            if (damage > 0 && _combatPunchSequence.LastStrike == 3)
+                NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.ThreePunches);
+            return damage;
         }
 
         public void PauseCombatPunchOnServer(double now)
@@ -1606,6 +1610,8 @@ namespace MazeParty.Multiplayer
             }
         }
 
+        private int _achievementDoubleDiceSteps;
+
         private void ResolveBoardTraversalAfterMovement()
         {
             if (_topology == null || !_traversal.IsInitialized)
@@ -1628,6 +1634,8 @@ namespace MazeParty.Multiplayer
                     1f);
                 if (outcome == BoardGateTraversalOutcome.Committed)
                 {
+                    if (_doubleDice.Value && ++_achievementDoubleDiceSteps == 24)
+                        NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.TwentyFourSteps);
                     RecordBoardRouteChoiceOnServer(
                         currentTile,
                         _traversal.CurrentTile);

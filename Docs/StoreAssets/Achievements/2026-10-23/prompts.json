@@ -1,0 +1,730 @@
+{
+  "created": "2026-10-23",
+  "method": "Built-in ImageGen (one call per asset/variant)",
+  "dice_design": "Regular dodecahedron (D12), pentagonal faces, gold with black numerals; locked: gray with black numerals",
+  "common_unlocked_prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.",
+  "common_locked_prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+  "reference_images": {
+    "key": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png",
+    "coin": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png",
+    "sniper": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Sniper.png",
+    "pistol": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Pistol.png",
+    "mine": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Mine.png",
+    "grenade": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Grenade.png",
+    "cloak": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Cloak.png",
+    "dice": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/DoubleDice.png",
+    "swap": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/PositionSwapper.png",
+    "forest": "C:/Unity/MazeParty/Logs/TerrainCameraExtension-20261018/forest-top16-after.png",
+    "maze": "C:/Unity/MazeParty/Logs/TerrainCameraExtension-20261018/maze-top16-after.png",
+    "gift": "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/GiftGold.png",
+    "d12": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-771c7300-8feb-44c7-a12f-46112f9d2600.png"
+  },
+  "assets": [
+    {
+      "number": 1,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-da3ae805-4fb6-4a3b-b8f7-277cfeef6306.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_01_locked.png"
+    },
+    {
+      "number": 1,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-41467a78-7436-4f7d-8d08-06b909b982e3.png",
+      "prompt": "Use case: stylized-concept. Asset: one square 1024x1024 achievement icon for MazeParty, unlocked state, First Awards Ceremony.\nThe attached images are references for the REAL game character and podium; redesign them into a polished standalone casual low-poly 3D game achievement icon.\nSubject: four cheerful toy-like capsule players celebrating together at a compact three-tier awards podium: blue player atop gold center, red on silver left, green on bronze right, yellow beside the podium, all clearly visible. Characters have faceted round heads, capsule bodies, tiny floating hands, black shiny oval eyes and a happy open smile, NO legs, matching reference silhouette. A few colorful confetti pieces.\nArt direction: crisp large polygon facets, matte toy surfaces, simple bold geometry, warm upper-left key lighting, soft ambient occlusion. Rich gold yellow, cyan blue, coral red, green. Very readable at 128px. Isometric three-quarter view, centered large subject filling 78% of canvas, generous safe margin, clean silhouette.\nBackground: solid deep midnight navy #142335 filling entire square, subtle vignette allowed, no frame. No ground scenery except small integrated podium base. No text, no lettering, no labels, no numerals, no watermark, no UI, no sheet or collage. One finished icon only.",
+      "file": "unlocked/MP_ACH_01_unlocked.png"
+    },
+    {
+      "number": 2,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e5091562-237f-4582-a386-ed565d320cbe.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_02_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_02_locked.png"
+    },
+    {
+      "number": 2,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-5747b034-94a6-49e0-95a1-0d5c19fe8c4f.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Party Regular\nSubject: A joyful blue capsule player beside a small gold awards podium, with EXACTLY FIVE chunky gold star medals fanned in a semicircle above it, sparse coral confetti. The five separate stars must be easy to count. Represents completing five parties.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_02_unlocked.png"
+    },
+    {
+      "number": 3,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-647ee3c6-ff13-411d-ad47-6d6fea10a190.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_03_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_03_locked.png"
+    },
+    {
+      "number": 3,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-260e1e85-ca48-42d5-916c-505328738653.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Star of the Show\nSubject: One cheerful blue capsule player proudly wearing a bright gold crown, standing on a single gold winner's podium block. Two short gold laurel branches below. A clear overall champion composition, not four players.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_03_unlocked.png"
+    },
+    {
+      "number": 4,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-0fdc444c-ca6b-4799-b033-2a85fdad29e0.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_04_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_04_locked.png"
+    },
+    {
+      "number": 4,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e0812638-6f73-4b98-815b-620508a69b61.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Five Crowns\nSubject: EXACTLY FIVE large faceted gold crowns in a compact fan arrangement, two crowns behind and three crowns in front, one small cyan victory ribbon at the base. All five crown silhouettes must be visibly distinct. No character.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_04_unlocked.png"
+    },
+    {
+      "number": 5,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-9cf2994e-6495-4413-ac23-50903c57127d.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_05_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_05_locked.png"
+    },
+    {
+      "number": 5,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e58046ed-8564-47bc-a0eb-e06d21735e55.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Forest Explorer\nSubject: A tiny isometric forest board diorama: angular fresh green broadleaf trees and conifers around a short winding beige path, a small gray boulder and brown log, a bright golden game key floating at the path's exit. Use the forest screenshot as world reference, simplify heavily.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Unity/MazeParty/Logs/TerrainCameraExtension-20261018/forest-top16-after.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png"
+      ],
+      "file": "unlocked/MP_ACH_05_unlocked.png"
+    },
+    {
+      "number": 6,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e7bed760-6363-4766-ab78-c3c7f16c3531.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_06_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_06_locked.png"
+    },
+    {
+      "number": 6,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-b9d0b390-82bd-4bf3-aa15-27eaadcdb469.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Maze Explorer\nSubject: A small isometric square maze with pale gray tall straight concrete walls, vivid green floor and a clear passage leading to a bright golden game key. One tiny warm yellow wall lamp. Simple readable maze silhouette, no full map reproduction.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Unity/MazeParty/Logs/TerrainCameraExtension-20261018/maze-top16-after.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png"
+      ],
+      "file": "unlocked/MP_ACH_06_unlocked.png"
+    },
+    {
+      "number": 7,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-0a1bbabe-730b-4dc5-9cf2-b89b41bd20b8.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_07_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_07_locked.png"
+    },
+    {
+      "number": 7,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-6e824048-f795-485b-a601-9f0458281bd0.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: First Key\nSubject: One large bright golden key, tilted diagonally across the square, with one small thick gold coin leaning below it. Preserve the actual reference key's large round circular bow and short toothed shaft and the thick rim of the actual coin. Key is the dominant hero.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png"
+      ],
+      "file": "unlocked/MP_ACH_07_unlocked.png"
+    },
+    {
+      "number": 8,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-fceb039a-005b-4139-a51a-0105b72f9e3f.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_08_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_08_locked.png"
+    },
+    {
+      "number": 8,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-b01e4a9a-a8c3-49df-83c1-c20a91dcd42b.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Key Shop Regular\nSubject: A tidy merchant display of several actual round-bow golden keys fanned on a ring, with two generous stacks of thick gold coins beneath. A small emerald price-tag shape with no writing. Looks like a well-used key shop purchase reward, not a single key.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png"
+      ],
+      "file": "unlocked/MP_ACH_08_unlocked.png"
+    },
+    {
+      "number": 9,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-043a36fc-04a9-4bb2-81d0-bc941ee6b25e.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_09_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_09_locked.png"
+    },
+    {
+      "number": 9,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-8d423f7b-b0de-4bc9-9f1b-74a93b179201.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Moving Shop\nSubject: A tiny wooden key shop booth on two little wheels, carrying the actual large golden round-bow key over its roof and two gold coins on its counter. A single curved cyan motion arrow wraps around the booth to imply following the shop after it moves. Keep simple.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png"
+      ],
+      "file": "unlocked/MP_ACH_09_unlocked.png"
+    },
+    {
+      "number": 10,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-c6437c56-36eb-487e-806a-5868fe3e32d7.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_10_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_10_locked.png"
+    },
+    {
+      "number": 10,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-cd529389-e112-42b8-ae97-36274939e8ba.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: A Hefty Keyring\nSubject: EXACTLY FOUR bright gold keys with large round bows, fanned on a single dark bronze ring. All four shafts and four bows clearly distinguishable. Keys feel satisfyingly chunky and heavy, with small warm glints. No coins, no fifth key.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png"
+      ],
+      "file": "unlocked/MP_ACH_10_unlocked.png"
+    },
+    {
+      "number": 11,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-9358b247-8a6f-4960-8583-bc8668dff571.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_11_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_11_locked.png"
+    },
+    {
+      "number": 11,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-2745c1cc-01d1-4910-a2a0-e8cc46490318.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: An Unexpected Star\nSubject: One gleaming golden game key tied with a vivid purple award ribbon, floating above a small gold star-shaped award pedestal. Small bright gold and cyan confetti, surprise bonus reward feeling. Key retains reference silhouette.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png"
+      ],
+      "file": "unlocked/MP_ACH_11_unlocked.png"
+    },
+    {
+      "number": 12,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-fe356a19-6983-45bf-9b6a-7fdd758510ec.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_12_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_12_locked.png"
+    },
+    {
+      "number": 12,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-693a8357-50c6-4b6a-807d-028d6d60a9bb.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Strategic Shopping\nSubject: A small open wooden item-shop crate containing the real green segmented grenade and the gray two-button position swapper with lime and red buttons, with one bright thick gold coin in front. Items rendered as friendly low-poly toy game props.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Grenade.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/PositionSwapper.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png"
+      ],
+      "file": "unlocked/MP_ACH_12_unlocked.png"
+    },
+    {
+      "number": 13,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-bf39dd22-c42d-4537-ace1-53cfa5b44345.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon. Preserve the exact regular dodecahedral D12 dice with pentagonal faces and black engraved numbers.",
+      "references": [
+        "unlocked/MP_ACH_13_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_13_locked.png"
+    },
+    {
+      "number": 13,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-771c7300-8feb-44c7-a12f-46112f9d2600.png",
+      "prompt": "Precise object edit of this exact achievement icon. Replace ONLY the two yellow CUBIC dice at upper left/back with two matching golden-yellow regular DODECAHEDRAL D12 dice: twelve flat PENTAGONAL faces, gently beveled edges, black engraved numerals (12, 7, 4) centered one per visible face. Clearly rounded polyhedral silhouette with pentagonal faces, never cubes, no dot pips. Preserve every other object (purple cloak, button device, coins, wooden basket), composition, palette, lighting, low-poly style and background. Keep the two new D12 dice large enough to identify. USER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.",
+      "references": [
+        "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e73d1599-7d0c-4d7d-825c-2dd8349891c0.png"
+      ],
+      "file": "unlocked/MP_ACH_13_unlocked.png"
+    },
+    {
+      "number": 14,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-a595fb3b-c329-4a2a-aacd-bb11d3451373.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_14_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_14_locked.png"
+    },
+    {
+      "number": 14,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-5cb3466b-65fb-4499-8c06-ae37407b403c.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: This Space Is Mine\nSubject: Two chunky detached blue game-character fists raised triumphantly over a single square grass-topped board tile, a small gold winner star floating between them. Red comic impact rays behind the tile. No arms, bodies or realistic violence.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_14_unlocked.png"
+    },
+    {
+      "number": 15,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-3b85e2f9-f449-4122-9c22-d00501f15c48.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_15_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_15_locked.png"
+    },
+    {
+      "number": 15,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-3fcfd868-fc37-45e6-8381-ec2ef5b5b62d.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Three Hits, All Mine\nSubject: EXACTLY THREE chunky blue detached cartoon fists arranged along one sweeping rising motion arc. The final rightmost fist is largest with a clean gold and coral comic impact burst. Distinct first-second-third combo silhouettes, no numerals or text.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_15_unlocked.png"
+    },
+    {
+      "number": 16,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-b56fa258-3a64-4d3e-9522-70462daa4256.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_16_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_16_locked.png"
+    },
+    {
+      "number": 16,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-73f42c7c-aa5d-41ca-bb45-3215fc3b169c.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nAchievement: Let's Swap Places\nSubject: The actual squat gray polygonal position swapper with one lime green button and one red button is centered large. Two tiny smiling capsule pawns, one red and one blue, on opposite sides, with two clean curved arrows exchanging their positions.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/PositionSwapper.png"
+      ],
+      "file": "unlocked/MP_ACH_16_unlocked.png"
+    },
+    {
+      "number": 17,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-d37a3641-0418-41ca-beb4-2be5a60fd414.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_17_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_17_locked.png"
+    },
+    {
+      "number": 17,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-28bb1805-5f3d-44dc-9406-960ffa417119.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: The Quiet Regular\nSubject: A purple low-poly invisibility cloak with golden round clasp draped around a translucent ghostlike blue capsule character, holding one solid bright golden round-bow key. Character remains friendly, invisible body is shown as faint blue transparent facets, cloak and key stay readable.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Cloak.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventKey.png"
+      ],
+      "file": "unlocked/MP_ACH_17_unlocked.png"
+    },
+    {
+      "number": 18,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-a87b2c4a-3fae-40fa-8962-620668015b62.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_18_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_18_locked.png"
+    },
+    {
+      "number": 18,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-04b17797-2576-4621-a86e-71faeee653cd.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Sniper\nSubject: The actual long low-poly sniper rifle with brown wooden stock, black long barrel and compact black scope, laid on a rising diagonal. A small coral target disk with gold bullseye sits behind the muzzle, one gold spark. Friendly collectible prop, no people being shot.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Sniper.png"
+      ],
+      "file": "unlocked/MP_ACH_18_unlocked.png"
+    },
+    {
+      "number": 19,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-055aa408-d09d-4664-86ef-feebca58d736.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_19_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_19_locked.png"
+    },
+    {
+      "number": 19,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-5ae1c09a-49d8-4406-944b-a6f82dda300b.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Wild West Gunslinger\nSubject: The actual dark metal revolver with short barrel, visible cylinder and brown curved grip, shown large in three-quarter view on a diagonal. A small gold sheriff-star badge behind it creates a casual western reward motif. No lettering, no realistic violence.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Pistol.png"
+      ],
+      "file": "unlocked/MP_ACH_19_unlocked.png"
+    },
+    {
+      "number": 20,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-13c87b05-e09b-43f7-bf76-6711b89c3f1c.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_20_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_20_locked.png"
+    },
+    {
+      "number": 20,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-5c056f17-3b18-443f-bb9e-fa2e1af6aa4b.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Watch for Mines\nSubject: The actual board mine: a red bundle of chunky dynamite sticks held by a dark central strap with a little round silver pressure trigger on top. It sits on a small grass board tile, with a clean gold/coral comic explosion burst behind and one small distant blue startled opponent pawn. NOT a round disc mine.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Mine.png"
+      ],
+      "file": "unlocked/MP_ACH_20_unlocked.png"
+    },
+    {
+      "number": 21,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-909bf56c-c6f9-4ad4-a8f3-85270c9cada7.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_21_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_21_locked.png"
+    },
+    {
+      "number": 21,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-603f15f5-ab73-4943-9cbc-dc3b6b9534b5.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Darwin Award\nSubject: A surprised red capsule player looking down at its OWN actual red dynamite-bundle mine directly underneath; a small playful gold comic blast lifts the player slightly, spiral cartoon eyes and floating hands, no gore or injury. Mine has dark strap and silver trigger. Clear self-inflicted mishap.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Mine.png"
+      ],
+      "file": "unlocked/MP_ACH_21_unlocked.png"
+    },
+    {
+      "number": 22,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-c877a0f8-b5a0-49ec-8cb3-178769495e8e.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_22_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_22_locked.png"
+    },
+    {
+      "number": 22,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-20b529f5-582e-403c-a45c-e086d70e3739.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Fire in the Hole\nSubject: The actual dark green segmented hand grenade with black cap and safety lever, large and diagonal in foreground, trailing a cyan curved throwing arc into a bright gold/coral comic blast behind. No human weapon use or gore, just the toy-like game item in action.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Grenade.png"
+      ],
+      "file": "unlocked/MP_ACH_22_unlocked.png"
+    },
+    {
+      "number": 23,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-7c3edab2-229a-4da0-a8bd-9be21e41af1a.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_23_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_23_locked.png"
+    },
+    {
+      "number": 23,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-35b3a334-6a05-417b-bf97-9e0d8cea4e89.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Grenade at My Feet\nSubject: A wide-eyed blue capsule player with hands raised, looking at the actual green segmented grenade right at its own base. A compact gold/coral cartoon blast underneath makes the self-grenade mishap clear. No red dynamite bundle, no gore.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/Grenade.png"
+      ],
+      "file": "unlocked/MP_ACH_23_unlocked.png"
+    },
+    {
+      "number": 24,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e58dcced-38d2-40ca-9838-45d00e3bf690.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon. Preserve the exact two regular dodecahedral D12 dice with pentagonal faces and black engraved numbers.",
+      "references": [
+        "unlocked/MP_ACH_24_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_24_locked.png"
+    },
+    {
+      "number": 24,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-9247a4cf-03b2-437f-92be-1b5b6759d7f5.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Racehorse\nSubject: EXACTLY TWO golden-yellow regular D12 dodecahedral dice, with broad pentagonal faces and engraved black numerals, racing forward together on a sweeping cyan path of small square board tiles. White and gold speed streaks, strong fast diagonal motion, no horse. Keep both D12 dice unmistakable and large. USER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "unlocked/MP_ACH_13_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_24_unlocked.png"
+    },
+    {
+      "number": 25,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-56081f6b-e788-461f-af4b-d137ffcca6f5.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_25_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_25_locked.png"
+    },
+    {
+      "number": 25,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-c8b0015c-7d84-465e-b516-6b68b2db853a.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: First Minigame Victory\nSubject: One chunky gold trophy cup with a faceted five-point star on its bowl, mounted on a small four-color game arena tile divided into blue red green yellow quadrants. A tiny cyan victory ribbon, first minigame triumph, no characters.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_25_unlocked.png"
+    },
+    {
+      "number": 26,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-dc6dc8bc-705e-4ba9-bc47-219967fc59e3.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_26_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_26_locked.png"
+    },
+    {
+      "number": 26,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-de917282-594f-46e8-81ac-cb45cd3ddd2f.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: This Is My Stage\nSubject: EXACTLY FIVE compact gold trophy cups arranged in a clear stepped fan, two behind and three in front, over one small four-color game arena base. Each cup must be distinct and countable. Festive but uncluttered.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_26_unlocked.png"
+    },
+    {
+      "number": 27,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-d5081793-9f23-464c-b9e9-d9edcaf20370.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_27_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_27_locked.png"
+    },
+    {
+      "number": 27,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-5c7ccddf-51df-4247-8a64-3f78c58b2224.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Three in a Row\nSubject: EXACTLY THREE gold trophy cups on a rising sequence of three blue blocks, linked by two small clean cyan forward arrows. Three consecutive victories, all three trophies clearly visible, no numerals.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_27_unlocked.png"
+    },
+    {
+      "number": 28,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-15e9a6d5-6212-4c5f-a00f-7f89ace28c3e.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon. Preserve the exact regular dodecahedral D12 die with pentagonal faces and black engraved numbers.",
+      "references": [
+        "unlocked/MP_ACH_28_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_28_locked.png"
+    },
+    {
+      "number": 28,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-f55a9e0d-0727-4df8-8475-cedd037cc28f.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Been There Played That\nSubject: A compact circular collection of six miniature low-poly game symbols: a red balloon, violet staircase, gold coin, yellow dice, green safe tile and blue musical note. A bright gold check mark in the center signals having played every minigame. Spacious readable radial layout. USER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png",
+        "unlocked/MP_ACH_13_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_28_unlocked.png"
+    },
+    {
+      "number": 29,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-159c4c32-a7da-441d-80e2-775c4774e082.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_29_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_29_locked.png"
+    },
+    {
+      "number": 29,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-0bc60f1a-68ff-4e5d-8e39-696b5fdb43e3.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Unshakable Memory\nSubject: A large faceted lavender brain floating above three chunky blue coral and gold piano-like memory keys, with a clean gold check mark and two small floating musical notes. Represents perfect Sequence Memory, no letters A S D, no text.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_29_unlocked.png"
+    },
+    {
+      "number": 30,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-e6517333-ba19-4566-8d9f-b6849f723456.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_30_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_30_locked.png"
+    },
+    {
+      "number": 30,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-86758a89-0bf0-4ec9-9dd1-f60709a1a199.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Fifty Steps Zero Mistakes\nSubject: A clean rising zigzag staircase made of chunky violet and cyan steps, ending at a small gold finish flag and gold check mark. A tiny blue capsule pawn confidently on the top step. Clear upward motion and a flawless finish, no numbers.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_30_unlocked.png"
+    },
+    {
+      "number": 31,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-731d2cef-0f25-4aa9-a722-22ac57b6129f.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_31_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_31_locked.png"
+    },
+    {
+      "number": 31,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-0a7abf19-ab37-4723-a1b3-c842269b590d.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Flawless Footwork\nSubject: A compact isometric green minefield tile path with a bright cyan safe route reaching a little gold finish flag. Two small red hazard mines kept outside the safe route, a blue sonar ring on the path, and a large gold check mark. Clear safe traversal, uncluttered.\nIf a reference shows a basket with dice, use ONLY its golden D12 dice design, not the basket or other items.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_31_unlocked.png"
+    },
+    {
+      "number": 32,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-ce0d8137-46cc-4a51-957a-a94a18d53a0e.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_32_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_32_locked.png"
+    },
+    {
+      "number": 32,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-91e422b9-a62a-4a0a-a91b-c3f2aa97a451.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: Master of Breath\nSubject: One large fully inflated bright coral red faceted balloon with a short tied neck, above two smooth cyan breath-flow swooshes and a small gold completion sparkle. Controlled breathing and fully inflated balloon, no face on balloon, no lungs or real anatomy.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_32_unlocked.png"
+    },
+    {
+      "number": 33,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-a74770db-b61f-435f-b9c9-9bff701963b1.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_33_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_33_locked.png"
+    },
+    {
+      "number": 33,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-416f831e-fb17-462b-99ce-2bf58c6baa96.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: No One Gets Away\nSubject: Exactly FOUR friendly capsule game players: one larger blue tagger in the center catching three smaller red green and yellow runners gathered around it. A single sweeping cyan catch arc and small gold stars shows all three were caught. Floating hands, no legs.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png"
+      ],
+      "file": "unlocked/MP_ACH_33_unlocked.png"
+    },
+    {
+      "number": 34,
+      "state": "locked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-de47f12e-32b7-46d6-af28-eaa22f473f2d.png",
+      "prompt": "Use case: lighting-weather / precise-object-edit. Create the LOCKED / NOT YET ACHIEVED state of this exact game achievement icon. Preserve the exact composition, objects, character poses, shapes, scale, camera, margins and full square background. Change ONLY the color and lighting: entirely desaturate all subject colors to neutral slate gray and cool silver, reduce brightness and sparkle intensity for a quiet unearned state. Keep the subject clearly legible with soft gray highlights against deep dark charcoal-navy background. No gold, red, green or cyan saturation. Do NOT add a padlock, chains, question marks, badges, new objects, text or frames. Do not remove existing objects. Same square size and same faithful low-poly facets. One single full-square icon.",
+      "references": [
+        "unlocked/MP_ACH_34_unlocked.png"
+      ],
+      "file": "locked/MP_ACH_34_locked.png"
+    },
+    {
+      "number": 34,
+      "state": "unlocked",
+      "path": "C:\\Users\\hwang\\.codex\\generated_images\\01a16818-2096-7871-9afc-ab98aefbb200\\exec-48c9b121-5f6b-45c6-941d-2a0e83272421.png",
+      "prompt": "Use case: stylized-concept. Asset type: ONE square achievement icon for MazeParty, unlocked state. First input image is the approved STYLE reference ONLY: match its polished casual low-poly toy-like 3D aesthetic, large crisp polygon facets, matte surfaces, warm upper-left lighting, soft ambient occlusion, vivid cyan/coral/green/gold palette and deep midnight navy #142335 full-square background. Replace the subject entirely with the requested subject, do not reuse the podium unless specified. Other input images, when present, are actual in-game MODEL references: faithfully keep those objects' distinctive shapes and colors while polishing. Centered large readable silhouette, 75-80% canvas coverage, at least 9% safe margin, isometric three-quarter composition. Render at square 1024x1024. All characters are cheerful round-headed capsule-bodied faceted toy players with black shiny oval eyes, open smiles, tiny detached floating hands, and NO legs. No frame, no text, no numerals, no labels, no watermark, no UI, no collage or contact sheet. Single finished icon.\nUSER-REQUIRED DICE DESIGN: Every die is a regular DODECAHEDRON (D12) with TWELVE PENTAGONAL faces, never a cube or six-sided die. Consistent golden-yellow body, gently beveled edges, broad flat pentagonal faces with one simple black engraved numeral per visible face (such as 12, 7, 4). Numerals on die faces only are allowed; no other text. Never dot pips on dice.\nAchievement: That Gold Is Mine Now\nSubject: A cheerful blue capsule player carrying an actual in-game wrapped treasure gift box (white box, red-orange ribbon, simple blue snowflake-like pattern as in model reference) and a few thick gold coins from a small red opponent base toward a small blue home base. One short clear cyan transfer arrow. The gift-box and shiny coin reward connect the game's stealing minigame to the achievement's 'that gold is mine now' theme. No text.",
+      "references": [
+        "unlocked/MP_ACH_01_unlocked.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/GiftGold.png",
+        "C:/Users/hwang/Documents/ChatGPT/재밌을것같은 주사위게임만들기/output/achievement-icons/references/BoardEventCoin.png"
+      ],
+      "file": "unlocked/MP_ACH_34_unlocked.png"
+    }
+  ]
+}

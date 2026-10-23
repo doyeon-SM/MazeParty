@@ -84,6 +84,7 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(player.CooldownEndsAtSeconds, Is.EqualTo(3.5d));
             Assert.That(player.RequiresReleaseToRearm, Is.True);
             Assert.That(player.IsRecoveringFromOverhold, Is.True);
+            Assert.That(player.ForcedStopCount, Is.EqualTo(1));
 
             round.SetInflateHeld(1, false, 2.25d);
             var releasedDuringPenalty = round.GetPlayer(1);
@@ -113,6 +114,7 @@ namespace MazeParty.Gameplay.Tests
                 player.Phase,
                 Is.EqualTo(BalloonBlowPlayerPhase.AwaitingRelease));
 
+            Assert.That(player.ForcedStopCount, Is.EqualTo(1), "Penalty history survives cooldown expiry.");
             round.SetInflateHeld(0, false, 4d);
             round.SetInflateHeld(0, true, 4d);
             round.AdvanceTo(5d);

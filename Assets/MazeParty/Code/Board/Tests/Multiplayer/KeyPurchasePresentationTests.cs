@@ -77,16 +77,23 @@ namespace MazeParty.Multiplayer.Tests
         [Test]
         public void Purchase_RejectsClientAndStaleRevision_CommitsOnceAndDelaysRelocationUntilAcquisition()
         {
+            var progress = new AchievementMatchProgress();
+            Field("_achievementMatchId").SetValue(_match, Guid.NewGuid().ToString("N"));
+            ((AchievementMatchProgress[])Field("_achievementPlayers").GetValue(_match))[0] = progress;
+            Set(_buyer, "_cloaked", true);
             var revision = _match.KeyShopRevision;
             Authority(_match, false);
             Assert.That(_match.TryPurchaseKeyOnServer(_buyer, revision), Is.False);
             Authority(_match, true);
             Assert.That(_match.TryPurchaseKeyOnServer(_buyer, revision - 1), Is.False);
             Assert.That(_buyer.Gold, Is.EqualTo(100));
+            Assert.That(progress.keysBought, Is.Zero);
             Assert.That(_match.TryPurchaseKeyOnServer(_buyer, revision), Is.True);
             Assert.That(_buyer.Gold, Is.EqualTo(80));
             Assert.That(_buyer.KeyCount, Is.EqualTo(1));
             Assert.That(_match.KeyShopBuyerSlot, Is.Zero);
+            Assert.That(progress.keysBought, Is.EqualTo(1));
+            Assert.That(progress.flags & PartyAchievements.Bit(PartyAchievement.InvisibleCustomer), Is.Not.Zero);
             Assert.That(_match.CanAcceptActionInput, Is.False);
             Assert.That(_flow.IsPaused, Is.True);
             Assert.That(_match.TryPurchaseKeyOnServer(_buyer, revision), Is.False);
@@ -107,6 +114,7 @@ namespace MazeParty.Multiplayer.Tests
             Invoke("AdvanceKeyShopRevealOnServer", end);
             Assert.That(_match.IsKeyShopRevealActive, Is.False);
             Assert.That(_flow.IsPaused, Is.False);
+            Assert.That(progress.keysBought, Is.EqualTo(1));
             Assert.That(_flow.GetActionRemaining(end), Is.EqualTo(remaining).Within(0.000001d));
             Assert.That(_buyer.KeyCount, Is.EqualTo(1));
         }

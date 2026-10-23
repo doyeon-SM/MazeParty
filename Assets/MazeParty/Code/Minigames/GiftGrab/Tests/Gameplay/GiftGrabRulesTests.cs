@@ -141,6 +141,22 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void StolenDelivery_CountsOnlyDirectOpponentBaseToOwnBase_AndCanRepeatAfterResteal()
+        {
+            var round = new GiftGrabRoundState(1);
+            round.ResolvePickup(0, 0, 0); round.ResolveDeposit(0, 1);
+            Assert.That(round.GetPlayer(0).StolenDeliveries, Is.Zero);
+            round.ResolvePickup(1, 0, 2); round.ResolveDeposit(1, 3); round.ResolveDeposit(1, 3);
+            Assert.That(round.GetPlayer(1).StolenDeliveries, Is.EqualTo(1));
+            round.ResolvePickup(0, 0, 4); round.ResolveDeposit(0, 5);
+            round.ResolvePickup(1, 0, 6); round.ResolveDeposit(1, 7);
+            Assert.That(round.GetPlayer(1).StolenDeliveries, Is.EqualTo(2));
+            round.ResolvePickup(0, 0, 8); round.ResolveThrow(0, 9); round.ResolveGiftLanded(0, 9.1);
+            round.ResolvePickup(0, 0, 11); round.ResolveDeposit(0, 12);
+            Assert.That(round.GetPlayer(0).StolenDeliveries, Is.EqualTo(1), "Dropping/throwing clears stolen provenance.");
+        }
+
+        [Test]
         public void ThrowAndPush_ApplyExactImmunityCooldownStunAndDrops()
         {
             var landingRound = new GiftGrabRoundState(1);

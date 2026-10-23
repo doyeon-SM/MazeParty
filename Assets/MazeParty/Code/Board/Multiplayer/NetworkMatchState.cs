@@ -603,6 +603,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            TickAchievementDelivery();
             TickBoardItemWorld();
             if (_boardEffectRevision.Value <= 0)
             {
@@ -689,6 +690,7 @@ namespace MazeParty.Multiplayer
             InitializeAllAvatarsOnBoard();
             ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
             RefreshItemShopsForTurnOnServer(1);
+            BeginAchievementsOnServer();
             SyncFlowSnapshot(now);
             SaveMatchRecoveryCheckpoint(MatchRecoveryCheckpoint.TurnOverview);
             return true;
@@ -2135,6 +2137,7 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
+                if (standing.Rank == 1) RecordAchievementOnServer(standing.Slot, PartyAchievement.BoardWinner);
                 avatar.ApplyCombatRetreatOnServer(standing.RetreatDistance);
                 if (avatar.HasLogicalBoardTile &&
                     !possibleChainTiles.Contains(avatar.LogicalBoardTileCoordinate))
@@ -2376,6 +2379,7 @@ namespace MazeParty.Multiplayer
         public double ItemCooldownRemaining;
         public bool DoubleDice;
         public bool Cloaked;
+        public int AchievementDoubleDiceSteps;
         public byte RangeDieItem;
         public int SwapTargetSlot;
         public double SwapRemaining;

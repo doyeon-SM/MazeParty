@@ -351,6 +351,9 @@ namespace MazeParty.Multiplayer
                     TaggerSlot,
                     _caughtMask.Value))
             {
+                if (now < _phaseEndsAt.Value)
+                    NetworkMatchState.Instance?.RecordMinigameAchievementOnServer(TaggerSlot,
+                        ScheduledMinigameId.TagChase, PartyAchievement.CatchEveryone);
                 CompleteRoundOnServer(now);
             }
             return true;

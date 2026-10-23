@@ -29,6 +29,9 @@ namespace MazeParty.Multiplayer.Tests
                     try
                     {
                         var match = root.AddComponent<NetworkMatchState>();
+                        typeof(NetworkMatchState).GetField("_achievementMatchId", Private).SetValue(match, Guid.NewGuid().ToString("N"));
+                        var progress = (AchievementMatchProgress[])typeof(NetworkMatchState).GetField("_achievementPlayers", Private).GetValue(match);
+                        for (var slot = 0; slot < 4; slot++) progress[slot] = new AchievementMatchProgress();
                         var old = MatchGameSettings.Default.Get(id);
                         MatchGameSettings.Default.TryChangeGame(id, new MinigameSetting(true, 2, old.Seconds), out var settings);
                         typeof(NetworkMatchState).GetProperty("GameSettings").SetValue(match, settings);
@@ -65,6 +68,7 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(submit(first), Is.True, "A repeated callback while waiting must not pay or count twice.");
                         Assert.That(flow.State, Is.EqualTo(BoardFlowState.MinigamePlaying));
                         foreach (var avatar in players) Assert.That(avatar.Gold, Is.EqualTo(10));
+                        foreach (var record in progress) Assert.That(record.gamesPlayed, Is.Zero, "Internal rounds cannot grant participation or wins.");
                         SetNetwork(match, "_configuredSeriesRound", 2);
                         typeof(NetworkMatchState).GetField("_nextConfiguredRoundPending", Private).SetValue(match, false);
                         Assert.That(submit(second), Is.True);
@@ -76,6 +80,11 @@ namespace MazeParty.Multiplayer.Tests
                             Assert.That(players[slot].Gold, Is.EqualTo(10 + MinigameRewardRules.GetFinalPlacementGold(ranks[slot])));
                         }
                         Assert.That(submit(second), Is.False, "The already settled turn cannot pay again.");
+                        for (var slot = 0; slot < 4; slot++)
+                        {
+                            Assert.That(progress[slot].minigameWins, Is.EqualTo(slot < 2 ? 1 : 0));
+                            Assert.That(progress[slot].gamesPlayed, Is.EqualTo(1 << ((int)id - 1)));
+                        }
                     }
                     finally { UnityEngine.Object.DestroyImmediate(root); }
                 }

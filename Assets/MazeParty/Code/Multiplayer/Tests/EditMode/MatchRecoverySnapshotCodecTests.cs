@@ -369,6 +369,34 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(restored.chests[0].Active, Is.False);
         }
 
+        [Test]
+        public void AchievementCheckpoint_PreservesMatchIdentityAndRollsBackUncommittedProgress_RejectsMalformedHistory()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.achievementMatchId = System.Guid.NewGuid().ToString("N");
+            foreach (var player in snapshot.players) player.achievementProgress = JsonUtility.ToJson(new AchievementMatchProgress());
+            var progress = new AchievementMatchProgress();
+            progress.PurchaseKey(1, true);
+            progress.CompleteMinigame(1, ScheduledMinigameId.Minefield, 1, false);
+            snapshot.players[2].achievementProgress = JsonUtility.ToJson(progress);
+            var payload = codec.Encode(snapshot);
+            progress.PurchaseKey(2, false);
+            snapshot.players[2].achievementProgress = JsonUtility.ToJson(progress);
+            Assert.That(codec.TryDecode(payload, out var restored), Is.True);
+            Assert.That(restored.achievementMatchId, Is.EqualTo(snapshot.achievementMatchId));
+            Assert.That(AchievementMatchProgress.TryDecode(restored.players[2].achievementProgress, out var saved), Is.True);
+            Assert.That(saved.keysBought, Is.EqualTo(1));
+            Assert.That(saved.minigameWins, Is.EqualTo(1));
+            saved.keysBought = -1;
+            restored.players[2].achievementProgress = JsonUtility.ToJson(saved);
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(restored), out _), Is.False);
+            restored.players[2].achievementProgress = null;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(restored), out _), Is.False);
+            restored.achievementMatchId = null;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(restored), out _), Is.True, "Legacy recovery stays playable without achievement credit.");
+        }
+
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(
             params string[] playerKeys)
         {

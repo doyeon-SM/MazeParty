@@ -1,0 +1,30 @@
+stat_id,stat_operation,stat_name_ko,stat_value_source,linked_achievement_numbers,linked_unlock_values
+MP_ACH_01,MAX,누적 정상 완주 횟수,matches,1;2,1;5
+MP_ACH_03,MAX,누적 종합 우승 횟수,wins,3;4,1;5
+MP_ACH_05,MAX,숲 탐험가,earned_flag,5,1
+MP_ACH_06,MAX,미로 탐험가,earned_flag,6,1
+MP_ACH_07,MAX,열쇠 상점 누적 유료 구매 횟수,keysBought,7;8,1;10
+MP_ACH_09,MAX,이사 가도 찾아간다,earned_flag,9,1
+MP_ACH_10,MAX,묵직한 열쇠꾸러미,earned_flag,10,1
+MP_ACH_11,MAX,뜻밖의 주인공,earned_flag,11,1
+MP_ACH_12,MAX,아이템 상점 누적 유료 구매 횟수,itemsBought,12;13,1;10
+MP_ACH_14,MAX,내가 이 칸의 주인,earned_flag,14,1
+MP_ACH_15,MAX,셋까지는 내 차례,earned_flag,15,1
+MP_ACH_16,MAX,자리를 바꿔볼까,earned_flag,16,1
+MP_ACH_17,MAX,조용한 단골,earned_flag,17,1
+MP_ACH_18,MAX,스나이퍼,earned_flag,18,1
+MP_ACH_19,MAX,서부의 총잡이,earned_flag,19,1
+MP_ACH_20,MAX,지뢰조심,earned_flag,20,1
+MP_ACH_21,MAX,다윈상,earned_flag,21,1
+MP_ACH_22,MAX,파이어인더 홀,earned_flag,22,1
+MP_ACH_23,MAX,호안에 수류탄,earned_flag,23,1
+MP_ACH_24,MAX,경주마,earned_flag,24,1
+MP_ACH_25,MAX,한 경기 미니게임 최고 우승 횟수,bestMinigameWins,25;26,1;5
+MP_ACH_27,MAX,세 게임 연속,earned_flag,27,1
+MP_ACH_28,MAX,경험자,earned_flag,28,1
+MP_ACH_29,MAX,흔들림 없는 기억,earned_flag,29,1
+MP_ACH_30,MAX,"쉰 계단, 한 번도 안 틀리고",earned_flag,30,1
+MP_ACH_31,MAX,발밑까지 완벽하게,earned_flag,31,1
+MP_ACH_32,MAX,호흡의 달인,earned_flag,32,1
+MP_ACH_33,MAX,한 명도 놓치지 않는다,earned_flag,33,1
+MP_ACH_34,MAX,그 금더미는 이제 제 겁니다,earned_flag,34,1

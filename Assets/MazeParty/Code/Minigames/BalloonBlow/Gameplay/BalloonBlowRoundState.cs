@@ -81,6 +81,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
         public bool IsPopped => Phase == BalloonBlowPlayerPhase.Popped;
         public bool RequiresReleaseToRearm =>
             _requiresReleaseToRearm;
+        public int ForcedStopCount { get; private set; }
         public bool IsRecoveringFromOverhold =>
             _isRecoveringFromOverhold;
         public double ContinuousInflateSeconds =>
@@ -234,6 +235,7 @@ namespace MazeParty.Gameplay.Minigames.BalloonBlow
 
         private void ForceStopForOverhold()
         {
+            ForcedStopCount++;
             _continuousInflateSeconds = 0d;
             _requiresReleaseToRearm = true;
             _isRecoveringFromOverhold = true;

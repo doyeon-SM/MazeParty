@@ -17,6 +17,7 @@ namespace MazeParty.Multiplayer.Tests
         private NetworkMatchState _previousMatch;
         private NetworkPlayerAvatar[] _players;
         private bool _previousWarning;
+        private AchievementMatchProgress[] _achievements;
 
         [SetUp]
         public void SetUp()
@@ -33,6 +34,9 @@ namespace MazeParty.Multiplayer.Tests
             Authority(_match, true);
             typeof(NetworkMatchState).GetProperty(nameof(NetworkMatchState.Instance)).SetValue(null, _match);
             Set(_match, "_gameplayEnabled", true);
+            typeof(NetworkMatchState).GetField("_achievementMatchId", Private).SetValue(_match, Guid.NewGuid().ToString("N"));
+            _achievements = (AchievementMatchProgress[])typeof(NetworkMatchState).GetField("_achievementPlayers", Private).GetValue(_match);
+            for (var slot = 0; slot < 4; slot++) _achievements[slot] = new AchievementMatchProgress();
             _players = new NetworkPlayerAvatar[4];
             for (var slot = 0; slot < 4; slot++)
             {
@@ -69,20 +73,22 @@ namespace MazeParty.Multiplayer.Tests
             Set(victim, "_gold", 99);
             Authority(victim, false);
             Assert.That(victim.ApplyDamage(new DamageRequest(100, DamageKind.Item,
-                _players[1].gameObject)), Is.EqualTo(DamageResult.Ignored));
+                _players[1].gameObject, itemId: PrototypeItemId.Sniper)), Is.EqualTo(DamageResult.Ignored));
             Assert.That(_match.DeathGoldTransfers.Count, Is.Zero);
+            Assert.That(_achievements[1].flags, Is.Zero);
             Assert.That(victim.Gold, Is.EqualTo(99));
 
             Authority(victim, true);
             ExpectPresentationRpcs(2);
             Assert.That(victim.ApplyDamage(new DamageRequest(100, DamageKind.Item,
-                _players[1].gameObject)), Is.EqualTo(DamageResult.Applied));
+                _players[1].gameObject, itemId: PrototypeItemId.Sniper)), Is.EqualTo(DamageResult.Applied));
             Assert.That(victim.Gold, Is.EqualTo(70));
             Assert.That(_players[1].Gold, Is.EqualTo(39));
             Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(1));
             Assert.That(_match.DeathGoldTransfers[0].Amount, Is.EqualTo(29));
+            Assert.That(_achievements[1].flags, Is.EqualTo(PartyAchievements.Bit(PartyAchievement.Sniper)));
             Assert.That(victim.ApplyDamage(new DamageRequest(100, DamageKind.Item,
-                _players[1].gameObject)), Is.EqualTo(DamageResult.Ignored));
+                _players[1].gameObject, itemId: PrototypeItemId.Sniper)), Is.EqualTo(DamageResult.Ignored));
             Assert.That(_players[1].Gold, Is.EqualTo(39));
             Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(1));
         }
@@ -102,10 +108,12 @@ namespace MazeParty.Multiplayer.Tests
                 ExpectPresentationRpcs(1);
                 victim.ApplyDamage(new DamageRequest(100,
                     selfHit ? DamageKind.Item : DamageKind.Environment,
-                    selfHit ? victim.gameObject : null));
+                    selfHit ? victim.gameObject : null, itemId: PrototypeItemId.Mine));
                 Assert.That(_players.Select(player => player.Gold).ToArray(),
                     Is.EqualTo(new[] { 4, 12, 12, 12 }));
                 Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(3));
+                Assert.That(_achievements[0].flags,
+                    Is.EqualTo(selfHit ? PartyAchievements.Bit(PartyAchievement.OwnMine) : 0L));
                 for (var index = 0; index < 3; index++)
                     Assert.That(_match.DeathGoldTransfers[index].Amount, Is.EqualTo(2));
             }

@@ -120,6 +120,7 @@ namespace MazeParty.Multiplayer
             NotifyUtilityOnServer(BoardUtilityNotice.SwapComplete, target.AssignedSlot);
             RelocateForSwap(theirPosition, theirTile);
             target.RelocateForSwap(myPosition, myTile);
+            NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.Swap);
             NetworkWorldDiceCoordinator.Instance?.RelocatePendingDiceOnServer(this);
             NetworkWorldDiceCoordinator.Instance?.RelocatePendingDiceOnServer(target);
             return true;

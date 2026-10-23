@@ -29,6 +29,7 @@ namespace MazeParty.Multiplayer
                 ChoiceResolution = (ItemChoiceResolution)_choiceResolution.Value,
                 SelectedItemSlot = _selectedItemSlot.Value,
                 EquippedItem = _equippedItem.Value, ItemCharges = _itemCharges.Value,
+                AchievementDoubleDiceSteps = _achievementDoubleDiceSteps,
                 Cloaked = _cloaked.Value, RangeDieItem = _rangeDieItem.Value,
                 SwapTargetSlot = _swapChannel.TargetSlot, SwapRemaining = _swapChannel.Remaining,
                 ItemCooldownRemaining = _itemCooldownRemaining, DoubleDice = _doubleDice.Value,
@@ -115,6 +116,7 @@ namespace MazeParty.Multiplayer
             _choiceResolution.Value = (byte)snapshot.ChoiceResolution;
             _selectedItemSlot.Value = snapshot.SelectedItemSlot;
             _equippedItem.Value = snapshot.EquippedItem; _itemCharges.Value = snapshot.ItemCharges;
+            _achievementDoubleDiceSteps = snapshot.AchievementDoubleDiceSteps;
             _cloaked.Value = snapshot.Cloaked; _rangeDieItem.Value = snapshot.RangeDieItem;
             _swapChannel.Clear();
             if (snapshot.SwapRemaining > 0) _swapChannel.Begin(AssignedSlot, snapshot.SwapTargetSlot, snapshot.SwapRemaining);

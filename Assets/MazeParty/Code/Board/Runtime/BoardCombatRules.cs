@@ -212,14 +212,18 @@ namespace MazeParty.Gameplay
         private double _pausedRemaining;
         private bool _paused;
 
+        public int LastStrike { get; private set; }
+
         public int Resolve(bool hit, double now, int attackerHealth)
         {
+            LastStrike = 0;
             if (_paused) return 0;
             if (!hit || now >= _expiresAt)
                 _nextStrike = 0;
             _expiresAt = now + BoardCombatRules.ComboTimeoutSeconds;
             if (!hit) return 0;
 
+            LastStrike = _nextStrike + 1;
             var damage = BoardCombatRules.GetPunchDamage(_nextStrike, attackerHealth);
             _nextStrike = (_nextStrike + 1) % 3;
             return damage;

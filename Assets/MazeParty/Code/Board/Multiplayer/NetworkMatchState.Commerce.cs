@@ -44,6 +44,8 @@ namespace MazeParty.Multiplayer
                     "A validated key purchase failed after reserving its relocation.");
             }
 
+            AchievementFor(avatar.AssignedSlot)?.PurchaseKey(Turn, avatar.IsCloaked);
+
             // Reserve the destination with the purchase, but keep the old
             // replicated shop visible until the acquisition shot has finished.
             _keyShopAppearanceEndsAt = 0d;
@@ -92,6 +94,8 @@ namespace MazeParty.Multiplayer
                     "A validated item-shop transaction failed after reserving its stock.");
             }
 
+            var progress = AchievementFor(avatar.AssignedSlot);
+            if (progress != null) progress.itemsBought++;
             SetItemShopSnapshot(shopIndex, snapshot.WithSoldMask(stock.SoldMask));
             return true;
         }

@@ -784,6 +784,8 @@ namespace MazeParty.Multiplayer
             SyncSnapshotsOnServer();
             var result = _roundState.Result;
             _roundResults.Add(result);
+            for (var slot = 0; slot < 4; slot++)
+                NetworkMatchState.Instance?.RecordStolenGiftsOnServer(slot, _roundState.GetPlayer(slot).StolenDeliveries);
             uint roundPoints = 0U;
             uint roundRanks = 0U;
             uint roundStored = 0U;
