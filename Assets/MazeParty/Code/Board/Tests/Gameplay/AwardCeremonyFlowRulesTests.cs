@@ -153,24 +153,24 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
-        public void FinalResultsAutoReturn_UsesExactSixtyActiveSecondBoundary()
+        public void FinalResultsAutoReturn_UsesExactFiveMinuteActiveBoundary()
         {
             var endsAt = AwardCeremonyFlowRules.
                 GetFinalResultsAutoReturnEndsAt(100d);
-            Assert.That(endsAt, Is.EqualTo(160d));
+            Assert.That(endsAt, Is.EqualTo(400d));
             Assert.That(AwardCeremonyFlowRules.HasFinalResultsAutoReturnEnded(
                 endsAt,
-                159.999d), Is.False);
+                399.999d), Is.False);
             Assert.That(AwardCeremonyFlowRules.HasFinalResultsAutoReturnEnded(
                 endsAt,
-                160d), Is.True);
+                400d), Is.True);
 
             var held = AwardCeremonyFlowRules.
                 GetFinalResultsAutoReturnPauseRemaining(endsAt, 125d);
-            Assert.That(held, Is.EqualTo(35d));
+            Assert.That(held, Is.EqualTo(275d));
             Assert.That(AwardCeremonyFlowRules.
                 GetResumedFinalResultsAutoReturnEndsAt(500d, held),
-                Is.EqualTo(535d));
+                Is.EqualTo(775d));
         }
 
         [Test]

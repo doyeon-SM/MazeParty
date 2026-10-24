@@ -261,6 +261,27 @@ namespace MazeParty.Multiplayer.Tests
                     requiredReferences.GetValue(binding),
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
+                if (binding is OnlineLobbyView lobby)
+                    AssertLobbyEmoteHint(lobby, false);
+            }
+        }
+
+        private static void AssertLobbyEmoteHint(OnlineLobbyView lobby, bool sceneInstance)
+        {
+            var actions = (GameObject)new SerializedObject(lobby)
+                .FindProperty("sessionActionsRoot").objectReferenceValue;
+            var hint = actions.transform.Find("Emote Hint");
+            Assert.That(hint, Is.Not.Null, "Emote guidance must belong to the bound lobby-only container.");
+            Assert.That(hint.GetComponentsInChildren<Selectable>(true), Is.Empty);
+            Assert.That(hint.GetComponentsInChildren<Image>(true).All(image => image.sprite != null), Is.True,
+                "Every emote-hint image must reference an imported sprite.");
+            Assert.That(hint.GetComponentsInChildren<Graphic>(true).All(graphic => !graphic.raycastTarget), Is.True,
+                "The informational emote hint must not intercept pointer input.");
+            if (sceneInstance)
+            {
+                Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(hint), Is.Not.Null);
+                Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(hint.gameObject),
+                    Is.EqualTo(LobbyCanvasPrefabPath));
             }
         }
 
@@ -315,7 +336,7 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void PlayerFacingCanvasText_UsesNormalFontStyle()
+        public void PlayerFacingCanvasText_UsesNormalStyleExceptAuthoredEmphasis()
         {
             var prefabPaths = AssetDatabase.FindAssets(
                     "t:Prefab",
@@ -357,6 +378,15 @@ namespace MazeParty.Multiplayer.Tests
                         continue;
                     }
 
+                    var hud = text.GetComponentInParent<BoardHudCanvasBindings>(true);
+                    if (hud != null &&
+                        (hud.TurnText == text || hud.PhaseTimerText == text))
+                    {
+                        Assert.That(text.fontStyle, Is.EqualTo(FontStyle.Bold),
+                            path + " :: Board turn and time are intentionally bold.");
+                        continue;
+                    }
+
                     if (text.fontStyle != FontStyle.Normal)
                     {
                         violations.Add(
@@ -393,7 +423,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(
                 violations,
                 Is.Empty,
-                "Player-facing Canvas text must use Normal/Regular style:\n" +
+                "Player-facing Canvas text must use Normal/Regular style except explicitly authored emphasis:\n" +
                 string.Join("\n", violations));
         }
 
@@ -431,6 +461,121 @@ namespace MazeParty.Multiplayer.Tests
                     expected.Name + " must retain its LocalizedText binding.");
                 Assert.That(text.text, Is.EqualTo(expected.Source));
                 Assert.That(localized.SourceText, Is.EqualTo(expected.Source));
+            }
+        }
+
+        [Test]
+        public void SceneOverridePolicy_AllowsBoundControlOutputButRejectsAuthoredDesignChanges()
+        {
+            var scene = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var root = (GameObject)PrefabUtility.InstantiatePrefab(
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"), scene);
+                var bindings = root.GetComponent<GameMenuBindings>();
+                var slider = bindings.MasterSlider;
+                var scroll = bindings.LanguageDropdown.template.GetComponent<ScrollRect>();
+                var scrollbar = scroll.verticalScrollbar;
+                var handle = slider.handleRect;
+                var fill = slider.fillRect;
+
+                void Check(Component target, string propertyPath, bool allowed)
+                {
+                    var serialized = new SerializedObject(target);
+                    var property = serialized.FindProperty(propertyPath);
+                    var original = property.floatValue;
+                    property.floatValue = original + .12345f;
+                    serialized.ApplyModifiedPropertiesWithoutUndo();
+                    try
+                    {
+                        var modification = new PropertyModification
+                        {
+                            target = PrefabUtility.GetCorrespondingObjectFromSource(target),
+                            propertyPath = propertyPath,
+                            value = property.floatValue.ToString("R", CultureInfo.InvariantCulture)
+                        };
+                        Assert.That(IsAllowedSceneOverride(root, modification), Is.EqualTo(allowed),
+                            target.name + " :: " + propertyPath + " :: active=" + target.gameObject.activeInHierarchy);
+                    }
+                    finally
+                    {
+                        property.floatValue = original;
+                        serialized.ApplyModifiedPropertiesWithoutUndo();
+                    }
+                }
+
+                foreach (var open in new[] { false, true })
+                {
+                    bindings.MenuRoot.SetActive(open);
+                    bindings.LanguageDropdown.template.gameObject.SetActive(open);
+                    Canvas.ForceUpdateCanvases();
+                    Check(handle, "m_AnchorMax.x", true);
+                    Check(fill, "m_AnchorMax.y", true);
+                    Check(scrollbar.handleRect, "m_AnchorMin.y", true);
+                    Check(scroll.viewport, "m_SizeDelta.x", true);
+                    Check(scroll.viewport, "m_AnchorMax.y", true);
+                    Check(handle, "m_SizeDelta.x", false);
+                    Check(fill, "m_Pivot.x", false);
+                    Check(scrollbar.handleRect, "m_LocalScale.x", false);
+                    Check(scroll.viewport, "m_Pivot.y", false);
+                    Check(handle.GetComponent<Image>(), "m_Color.r", false);
+                }
+
+                bindings.MenuRoot.SetActive(false);
+                slider.enabled = false;
+                Check(handle, "m_AnchorMax.x", false);
+                slider.enabled = true;
+                slider.handleRect = null;
+                Check(handle, "m_AnchorMax.x", false);
+                scrollbar.handleRect = null;
+                Check(scrollbar.transform.Find("Sliding Area/Handle"), "m_AnchorMin.y", false);
+                scroll.verticalScrollbarVisibility = ScrollRect.ScrollbarVisibility.Permanent;
+                Check(scroll.viewport, "m_SizeDelta.x", false);
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
+            }
+        }
+
+        [Test]
+        public void TmpRenderChildren_RequireAnAuthoredOwnerAndTemporaryRendererIdentity()
+        {
+            var scene = EditorSceneManager.NewPreviewScene();
+            try
+            {
+                var root = (GameObject)PrefabUtility.InstantiatePrefab(
+                    AssetDatabase.LoadAssetAtPath<GameObject>(
+                        "Assets/MazeParty/Prefabs/Board/UI/Modules/MinigameReadyPanel.prefab"), scene);
+                var label = root.GetComponentsInChildren<TextMeshProUGUI>(true)
+                    .First(text => text.font != null && text.fontSharedMaterial != null);
+                var subMesh = TMP_SubMeshUI.AddSubTextObject(label,
+                    new MaterialReference(1, label.font, null, label.fontSharedMaterial, 1f));
+                foreach (var component in new Component[]
+                         { subMesh, subMesh.rectTransform, subMesh.GetComponent<LayoutElement>() })
+                    Assert.That(IsVisualCanvasUiComponent(component), Is.False,
+                        "TMP render internals must not be treated as separately authored UI.");
+
+                var flags = subMesh.gameObject.hideFlags;
+                subMesh.gameObject.hideFlags = HideFlags.None;
+                Assert.That(IsVisualCanvasUiComponent(subMesh.rectTransform), Is.True,
+                    "A saved child still needs a prefab source.");
+                subMesh.gameObject.hideFlags = flags;
+                subMesh.transform.SetParent(root.transform, false);
+                Assert.That(IsVisualCanvasUiComponent(subMesh.rectTransform), Is.True,
+                    "An unowned renderer is not a TMP-generated child of authored text.");
+
+                var unboundUi = new GameObject("Unbound UI", typeof(RectTransform), typeof(Image));
+                unboundUi.transform.SetParent(label.transform, false);
+                unboundUi.hideFlags = HideFlags.DontSave;
+                Assert.That(IsVisualCanvasUiComponent(unboundUi.transform), Is.True);
+                Assert.That(IsVisualCanvasUiComponent(unboundUi.GetComponent<Image>()), Is.True,
+                    "DontSave alone must not exempt procedural UI.");
+            }
+            finally
+            {
+                EditorSceneManager.ClosePreviewScene(scene);
             }
         }
 
@@ -491,6 +636,7 @@ namespace MazeParty.Multiplayer.Tests
                         var lobby = scene.GetRootGameObjects()
                             .SelectMany(root => root.GetComponentsInChildren<OnlineLobbyView>(true)).Single();
                         Assert.That(lobby.HasRequiredReferences, Is.True);
+                        AssertLobbyEmoteHint(lobby, true);
                         var steamInvite = (Button)new SerializedObject(lobby).FindProperty("steamInviteButton").objectReferenceValue;
                         Assert.That(steamInvite, Is.Not.Null);
                         Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(steamInvite), Is.Not.Null,
@@ -850,6 +996,8 @@ namespace MazeParty.Multiplayer.Tests
                 // Their authored settings remain on the prefab, so these
                 // driven RectTransform values are not scene design overrides.
                 return IsLayoutControlled(instanceRectTransform) ||
+                       IsControlDrivenRectProperty(
+                           instanceRectTransform, modification.propertyPath) ||
                        MatchesPrefabSourceValue(
                            modification,
                            instanceRectTransform);
@@ -882,10 +1030,54 @@ namespace MazeParty.Multiplayer.Tests
 
         private static bool IsLayoutControlled(RectTransform transform)
         {
-            return transform.drivenByObject != null ||
+            // Selectable controls and ScrollRect drive only specific fields.
+            // Their other RectTransform fields remain authored design.
+            return (transform.drivenByObject is ILayoutController &&
+                    !(transform.drivenByObject is ScrollRect)) ||
                    transform.GetComponent<ContentSizeFitter>() != null ||
                    (transform.parent != null &&
                     transform.parent.GetComponent<LayoutGroup>() != null);
+        }
+
+        private static bool IsControlDrivenRectProperty(
+            RectTransform transform, string propertyPath)
+        {
+            var anchors = propertyPath == "m_AnchorMin.x" ||
+                          propertyPath == "m_AnchorMin.y" ||
+                          propertyPath == "m_AnchorMax.x" ||
+                          propertyPath == "m_AnchorMax.y";
+            if (anchors)
+            {
+                // Hidden controls clear their DrivenRectTransformTracker. Use
+                // the actual serialized bindings, never object names, to retain
+                // the same policy while a menu or dropdown is closed.
+                var slider = transform.GetComponentInParent<Slider>(true);
+                if (slider != null && slider.enabled &&
+                    (slider.handleRect == transform || slider.fillRect == transform))
+                    return true;
+                var scrollbar = transform.GetComponentInParent<Scrollbar>(true);
+                if (scrollbar != null && scrollbar.enabled &&
+                    scrollbar.handleRect == transform)
+                    return true;
+            }
+
+            var scroll = transform.GetComponentInParent<ScrollRect>(true);
+            if (scroll == null || !scroll.enabled || scroll.viewport != transform ||
+                transform.parent != scroll.transform)
+                return false;
+            var horizontal = scroll.horizontalScrollbar;
+            var vertical = scroll.verticalScrollbar;
+            // Match uGUI's AutoHideAndExpandViewport ownership conditions.
+            if ((horizontal != null && horizontal.transform.parent != scroll.transform) ||
+                (vertical != null && vertical.transform.parent != scroll.transform))
+                return false;
+            var expands = (horizontal != null && scroll.horizontalScrollbarVisibility ==
+                           ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport) ||
+                          (vertical != null && scroll.verticalScrollbarVisibility ==
+                           ScrollRect.ScrollbarVisibility.AutoHideAndExpandViewport);
+            return expands && (anchors ||
+                propertyPath == "m_SizeDelta.x" || propertyPath == "m_SizeDelta.y" ||
+                propertyPath == "m_AnchoredPosition.x" || propertyPath == "m_AnchoredPosition.y");
         }
 
         private static bool IsExternalSceneObjectReference(
@@ -1220,6 +1412,18 @@ namespace MazeParty.Multiplayer.Tests
 
         private static bool IsVisualCanvasUiComponent(Component component)
         {
+            // TMP creates a transient child renderer for sprite/fallback-font
+            // material slots. The owning text remains covered by the policy.
+            if (component is RectTransform || component is LayoutElement || component is TMP_SubMeshUI)
+            {
+                var renderer = component.GetComponent<TMP_SubMeshUI>();
+                var owner = renderer != null ? renderer.textComponent : null;
+                if (owner != null && renderer.transform.parent == owner.transform &&
+                    (renderer.gameObject.hideFlags & HideFlags.DontSave) == HideFlags.DontSave &&
+                    PrefabUtility.GetCorrespondingObjectFromSource(owner) != null)
+                    return false;
+            }
+
             return component is RectTransform ||
                    component is Canvas ||
                    component is CanvasScaler ||

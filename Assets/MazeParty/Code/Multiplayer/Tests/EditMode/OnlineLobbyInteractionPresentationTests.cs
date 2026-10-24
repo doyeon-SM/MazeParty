@@ -43,6 +43,9 @@ namespace MazeParty.Multiplayer.Tests
                 var background = connectionPanel.transform.Find(
                     "Pre-Lobby Gameplay Background");
 
+                var emoteHint = GetField<GameObject>(view, "sessionActionsRoot")
+                    .transform.Find("Emote Hint").gameObject;
+
                 Assert.That(background, Is.Not.Null,
                     "The pre-session gameplay art must be authored directly under Connection Panel.");
                 Assert.That(background.parent, Is.SameAs(connectionPanel.transform));
@@ -64,6 +67,7 @@ namespace MazeParty.Multiplayer.Tests
                     string.Empty);
                 Assert.That(connectionPanel.activeSelf, Is.True);
                 Assert.That(sessionHeader.activeSelf, Is.False);
+                Assert.That(emoteHint.activeInHierarchy, Is.False);
                 Assert.That(background.gameObject.activeInHierarchy, Is.True,
                     "The gameplay background must be visible before joining a session.");
 
@@ -76,6 +80,10 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(sessionHeader.activeSelf, Is.True);
                 Assert.That(background.gameObject.activeInHierarchy, Is.False,
                     "The gameplay background must be hidden once the session UI is active.");
+                Assert.That(emoteHint.activeInHierarchy, Is.True);
+                view.Render(CreateSnapshot(MultiplayerConstants.PlayingPhase), true, false, string.Empty);
+                Assert.That(emoteHint.activeInHierarchy, Is.False,
+                    "Emote guidance is exclusive to the waiting lobby.");
             }
             finally
             {

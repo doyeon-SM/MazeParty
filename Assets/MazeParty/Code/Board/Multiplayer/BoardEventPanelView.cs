@@ -36,7 +36,7 @@ namespace MazeParty.Multiplayer
             if (result)
             {
                 var transfer = format.Contains("GIVES") || format.Contains("STEALS");
-                values[0].text = transfer ? arg(0) + " / " + arg(1) : arg(0);
+                values[0].text = transfer ? arg(0) + " → " + arg(1) : arg(0);
                 values[1].text = arg(transfer ? 2 : 1);
                 values[2].text = GameText.T(format.Contains("GIVES") ? "GIVE" :
                     format.Contains("STEALS") ? "STEAL" :

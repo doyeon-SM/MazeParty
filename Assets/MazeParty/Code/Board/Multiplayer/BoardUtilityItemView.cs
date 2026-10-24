@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button cancelButton;
         [SerializeField] private Text statusText;
         [SerializeField] private Text noticeText;
-        [SerializeField] private string playerFormat = GameText.N("P{0}  {1}");
+
         [SerializeField] private string castingFormat = GameText.N("POSITION SWAP  {0:0.0}s / ACTION LOCKED");
         [SerializeField] private string cloakText = GameText.N("CLOAK ACTIVE / ENDS BEFORE COMBAT");
         [SerializeField] private string[] noticeFormats = { "", GameText.N("Position exchanged with P{0}."), GameText.N("P{0} exchanged positions with you!"), GameText.N("Hit! Position swap cancelled; item consumed."), GameText.N("Position swap cancelled; item consumed."), GameText.N("That player is unavailable.") };
@@ -100,7 +100,8 @@ namespace MazeParty.Multiplayer
                 var target = match.GetAvatarForSlot(slot);
                 targetButtons[slot].gameObject.SetActive(slot != _local.AssignedSlot);
                 targetButtons[slot].interactable = !_awaitOpeningRelease && NetworkPlayerAvatar.IsValidSwapTarget(target);
-                targetLabels[slot].text = GameText.F(playerFormat, slot + 1, target != null ? target.DisplayName : "--");
+                targetLabels[slot].text = target != null ? target.DisplayName : "--";
+                targetLabels[slot].color = target != null ? target.Appearance.BodyColor : Color.white;
             }
         }
     }

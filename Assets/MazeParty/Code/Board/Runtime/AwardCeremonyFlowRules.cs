@@ -20,7 +20,7 @@ namespace MazeParty.Gameplay
         public const double BonusAwardReadySeconds = 2d;
         public const double BonusAwardPresentationSeconds = 4d;
         public const double FinalPodiumInputLockSeconds = 3d;
-        public const double FinalResultsAutoReturnSeconds = 60d;
+        public const double FinalResultsAutoReturnSeconds = 300d;
 
         public static bool CanMoveOnStage(AwardCeremonyPhase phase, bool suspended,
             bool returnQueued, byte remainingMask, byte readyMask, int slot)

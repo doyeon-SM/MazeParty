@@ -232,3 +232,30 @@
 - 원본과 저장본 SHA256 일치 및 PNG 해상도 확인. 이미지 시각 확인 완료. 타이틀 적용은 프리팹 Sprite 참조와 기존 OnlineBootstrap 씬의 프리팹 출처·해당 Image의 덮어쓰기 유무를 파일 기준으로 검증했다. 현재 Unity Editor MCP 연결이 없어 실제 UI 렌더와 기존 표적 EditMode 테스트는 실행하지 못했다. Notion 수정·커밋·병합은 수행하지 않았다.
 - 후속 사용자 요청으로 실제 PlayerExpressions 카탈로그가 참조하는 Pack_PartyCharacters 얼굴을 적용: 빨강 Face10 놀람, 파랑 Face2 화남, 초록 Face8 윙크, 노랑 Face14 능청스러운 미소. 구도·플레이어 색·아이템·미로·주사위는 유지했다. 최종본을 시각 확인하고 저장본 해시 일치를 검증했다.
 - 생성/편집 프롬프트: 보조 작업 폴더의 `output/title-screen-2026-10-25/final-prompt.txt`, `output/title-screen-2026-10-25/expressions-prompt.txt`.
+
+## 빌드 플레이 피드백 반영 (2026-10-25)
+
+- 사용자 확인 3건을 포함해 요청한 변경을 프로젝트 코드·프리팹·설정에 적용했다. 신규 전체 Player 빌드 및 실제 4클라이언트 통합 플레이는 이번 작업에서 실행하지 않았다.
+- 보드 이벤트칸: 대상 표기를 `플레이어 → 플레이어`로 변경. 팝업 너비 960, 대상 칸 440으로 확장하고 줄바꿈을 금지했다. 긴 이름은 글자 크기 자동 조절. BoardHudCanvas 안의 중첩 팝업 인스턴스가 유지하던 기존 760 너비도 960으로 수정해 실제 Board 씬에서 확인했다.
+- 날기: 첫 장애물 거리를 3.5→5.25(1.5배)로 변경. 이후 장애물 간격 5.5 유지.
+- 위치변환기 대상 선택: P번호 없이 실제 닉네임을 플레이어 색으로 표시. 본인을 제외한 세 버튼이 VerticalLayoutGroup에서 빈 자리 없이 위로 정렬된다. 버튼별 슬롯 바인딩 유지.
+- 대기실 Steam 초대: 복사 버튼 바로 오른쪽에 48×48 원형 버튼. 텍스트 없이 Modern UI Pack Add 아이콘 사용. 헤더 자동 배치의 최소·권장 크기를 맞춰 기존 보기/복사 버튼과 같은 크기로 표시한다.
+- 대기실 감정표현 안내: 원 안의 얼굴 하나와 T키 표시를 대기실 전용 Session Actions 아래에 추가. 입력 기능과 레이캐스트 없음. 시작/준비 버튼 자동 배치에서 제외해 화면 밖으로 밀리지 않도록 했다.
+- 보드 HUD: 원형 지도 바로 위에 TURN과 시간만 표시. 배경 패널과 상태 문구는 숨김. 모든 언어의 TURN 표기를 영어로 통일했고 도착 유예 중에도 시간만 표시한다.
+- 지도: 원형 지도 바깥 네모 패널과 제목·장식 이미지를 숨김. 원형 지도와 내부 표시 및 바인딩 유지.
+- 시상식: 최종 결과 자동 복귀를 60→300초로 변경. 서버가 MatchComplete에서 매 프레임 모든 이동 입력을 지우던 호출을 제거했다. 기존 플레이어별 이동 허용·일시정지·복귀 선택 제한과 중력·바닥 충돌·무대 경계를 유지한다. 실제 NetworkPlayer/시상식 무대 프리팹으로 서버 Update→FixedUpdate 흐름에서 시상대를 내려와 바닥을 걷는 검증을 통과했다.
+- 기본 새 경기 맵: 카탈로그의 첫 항목을 미로로 변경. 저장 복원은 기존 맵 ID를 그대로 사용한다. 에디터에서 새 선택 결과 `maze-graybox` 확인.
+- 시작 아이콘 배경: PlayerSettings SplashScreen 배경 검정. 에디터 설정에서도 RGBA(0,0,0,1) 확인.
+- 추가 요청 길 안내 밝기: 노란 상점 경로·파란 이동 경로 파티클에 전용 RouteMarkerGlow.mat를 연결하고 발광 강도를 3→6으로 높였다. 공용 AllIn1Vfx 재질은 수정하지 않았다. 실제 미로 바닥·밤 조명·경로 프리팹을 사용해 수정 전후 렌더 비교 확인.
+- 검증: 관련 표적 EditMode 최초 56건에서 이동 테스트의 음향 RPC 로그와 기존 GameMenu 씬 디자인 오버라이드 검사 2건 실패. 이동 테스트의 전송 없는 음향 호출을 격리한 뒤 해당 이동 검증 1/1 통과. 대기실 수정 및 필수 프리팹 바인딩 재검증 9/9 통과. 첫 실행의 나머지 관련 시간 경계·Flight·맵 로딩·현지화·UI 검증 통과.
+- 후속 공통 검사 수정 완료: 메뉴 컨트롤 자동 계산 좌표와 TMP 임시 렌더 요소를 실제 디자인 오버라이드로 판정하던 오탐을 수정했다. 사용자가 직접 수정한 메뉴 디자인과 TURN·시간 볼드를 유지하며 UiPrefabPolicyTests·GameMenuContractTests 23/23 통과. 상세는 아래 공통 UI 검사 항목 참조.
+- 확인 자료: Logs/BuildFeedbackPreview의 lobby.png, board-hud.png, swap-targets.png, event-target.png, route-before.png, route-after.png, applied-checks.json. 전체 EditMode·Notion 수정·커밋·병합은 수행하지 않았다.
+
+### 공통 UI 검사 오탐 수정 완료 (2026-10-25)
+- 사용자 요청으로 남은 공통 검사 실패를 확인했다. 메뉴가 닫히면 Slider/Scrollbar의 driven tracker가 해제되어, Unity가 직렬화한 자동 계산 앵커와 ScrollRect 뷰포트 값이 실제 디자인 변경으로 잘못 판정됐다.
+- 실제 직렬화된 handle/fill/viewport 바인딩과 해당 컨트롤이 구동하는 속성만 판별하도록 검사 규칙을 수정했다. 메뉴 활성/비활성 상태에서 자동 값은 허용하고, 원본 프리팹과 다른 씬 인스턴스의 크기·색·pivot·scale은 계속 검출하는 것을 실제 GameMenuCanvas 프리팹으로 검증했다. 기존 메뉴 프리팹 디자인은 유지했다.
+- 사용자 최종 확인: 보드 TURN·시간의 볼드와 메뉴 Slider·Scrollbar 디자인은 사용자가 직접 수정한 의도된 디자인이다. 해당 프리팹 디자인을 유지하며, 검사 통과를 위해 스타일을 초기화하지 않는다. TURN·시간은 실제 BoardHudCanvasBindings 참조로 식별해 공통 폰트 규칙의 명시적 볼드 예외에 포함한다.
+
+- TMP가 원본 프리팹 Text 아래에 생성하는 DontSave 임시 submesh만 별도 UI 출처 검사에서 제외했다. 저장되는 자식·다른 부모의 renderer·일반 DontSave Image는 계속 검사하며, 실제 MinigameReadyPanel 프리팹으로 양쪽 조건을 검증했다.
+- 대기실 감정표현 안내의 사용자 수정 T 이미지 디자인을 유지하며 실제 입력 Sprite t 참조 및 raycastTarget=false를 확인했다. 필수 이미지 참조/입력 비차단 실패 메시지를 구체화했다.
+- 최종 검증: UiPrefabPolicyTests 및 GameMenuContractTests EditMode 23/23 통과(실패·건너뜀 0), 컴파일 오류 0. 전체 EditMode·신규 Player 빌드·Notion·커밋·병합은 수행하지 않았다. 근거: Logs/BuildFeedbackPreview/common-ui-policy-tests.json.

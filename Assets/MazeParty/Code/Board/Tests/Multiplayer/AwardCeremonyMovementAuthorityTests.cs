@@ -38,9 +38,10 @@ namespace MazeParty.Multiplayer.Tests
                 Set(match, "_flowState", (byte)BoardFlowState.MatchComplete);
                 Set(match, "_awardCeremonyPhase", (byte)AwardCeremonyPhase.FinalPodiumLocked);
                 Set(match, "_awardCeremonyRemainingMask", (byte)15);
-                var playerObject = new GameObject("Player", typeof(NetworkObject));
+                var playerObject = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Multiplayer/NetworkPlayer.prefab"));
                 playerObject.transform.SetParent(root.transform);
-                var player = playerObject.AddComponent<NetworkPlayerAvatar>();
+                var player = playerObject.GetComponent<NetworkPlayerAvatar>();
                 // EditMode does not run the normal Awake lifecycle for this fixture.
                 typeof(NetworkPlayerAvatar).GetField("_characterController", Private).SetValue(player,
                     playerObject.GetComponent<CharacterController>());
@@ -75,6 +76,48 @@ namespace MazeParty.Multiplayer.Tests
                     typeof(NetworkPlayerAvatar).GetMethod("SimulateAwardCeremonyOnServer", Private).Invoke(player, null);
                     Assert.That(player.transform.position.x > before.x, Is.EqualTo(state.Item5));
                 }
+                // Exercise the real server Update -> avatar FixedUpdate sequence.
+                // Rotation could work even while Update cleared every movement RPC.
+                var managerObject = new GameObject("Ceremony server fixture");
+                managerObject.transform.SetParent(root.transform);
+                var manager = managerObject.AddComponent<NetworkManager>();
+                var spawnManager = (NetworkSpawnManager)System.Activator.CreateInstance(
+                    typeof(NetworkSpawnManager), Private, null, new object[] { manager }, null);
+                typeof(NetworkManager).GetProperty("SpawnManager").SetValue(manager, spawnManager);
+                var connections = typeof(NetworkManager).GetField("ConnectionManager", Private).GetValue(manager);
+                ((System.Collections.Generic.List<ulong>)connections.GetType()
+                    .GetField("ConnectedClientIds", Private).GetValue(connections)).Add(0);
+                ((System.Collections.Generic.Dictionary<ulong, System.Collections.Generic.List<NetworkObject>>)
+                    typeof(NetworkSpawnManager).GetField("m_PlayerObjectsTable", Private).GetValue(spawnManager))
+                    .Add(0, new System.Collections.Generic.List<NetworkObject> { playerObject.GetComponent<NetworkObject>() });
+                typeof(NetworkBehaviour).GetField("m_NetworkManager", Private).SetValue(match, manager);
+                var flow = new BoardFlowStateMachine();
+                flow.RestoreCheckpoint(BoardFlowState.MatchComplete, flow.TotalTurns, 0);
+                typeof(NetworkMatchState).GetField("_flow", Private).SetValue(match, flow);
+                Set(match, "_awardCeremonyPhase", (byte)AwardCeremonyPhase.AwaitingReturn);
+                Set(match, "_awardCeremonyRemainingMask", (byte)15);
+                Set(match, "_awardCeremonyReturnReadyMask", (byte)0);
+                Set(match, "_awardCeremonyAutoReturnEndsAt", double.MaxValue);
+                var podiumStart = stage.GetPlayerPosition(1, 0, 1);
+                player.PrepareForAwardCeremonyOnServer(podiumStart, Quaternion.identity);
+                Physics.SyncTransforms();
+                // This fixture has no transport: reset audio cadence while testing movement.
+                var cadence = typeof(NetworkPlayerAvatar).GetField("_footstepCadence", Private).GetValue(player);
+                for (var frame = 0; frame < 100; frame++)
+                {
+                    cadence.GetType().GetMethod("Reset").Invoke(cadence, null);
+                    typeof(NetworkPlayerAvatar).GetField("_serverInput", Private).SetValue(player, Vector2.down);
+                    typeof(NetworkMatchState).GetMethod("TickBoardFlowOnServer", Private)
+                        .Invoke(match, new object[] { frame * .02d });
+                    typeof(NetworkPlayerAvatar).GetMethod("SimulateAwardCeremonyOnServer", Private).Invoke(player, null);
+                }
+                Assert.That(player.transform.position.z, Is.LessThan(podiumStart.z - 2f),
+                    "Server frame updates must preserve ceremony walking input.");
+                Assert.That(player.transform.position.y, Is.LessThan(podiumStart.y - 1f),
+                    "The authored player must be able to leave the podium and land on the stage.");
+                Assert.That(player.transform.position.y, Is.GreaterThan(.5f),
+                    "Walking off the podium must retain floor collision.");
+
                 var clamped = stage.ClampPosition(target + new Vector3(100,0,100), .5f);
                 Assert.That(stage.StageFloor.bounds.Contains(new Vector3(clamped.x,
                     stage.StageFloor.bounds.center.y, clamped.z)), Is.True);

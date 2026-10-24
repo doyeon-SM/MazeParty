@@ -46355,7 +46355,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1670125180757397365}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -60545,10 +60545,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   outlineWidth: 1.5
-  wallWidth: 2.5
-  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
   outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
+  wallWidth: 2.5
+  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
 --- !u!1 &2256547655907003779
 GameObject:
   m_ObjectHideFlags: 0
@@ -75899,7 +75899,6 @@ MonoBehaviour:
   visionGraphic: {fileID: 8016299093725133281}
   circularMask: {fileID: 337828874792897713}
   radiusInTiles: 2
-  rememberedPlayerDarken: 0.6
   followHeading: 1
   localPlayerOnly: 0
   showKeyShopDetails: 0
@@ -77909,6 +77908,7 @@ MonoBehaviour:
   - {fileID: 8352975064487781973}
   - {fileID: 8731154121564706264}
   - {fileID: 2352336560954638895}
+  rememberedPlayerDarken: 0.6
   localHighlights:
   - {fileID: 8507440207828255328}
   - {fileID: 7221290687740664236}
@@ -84377,7 +84377,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &4782122755335820659
 RectTransform:
   m_ObjectHideFlags: 0
@@ -100724,10 +100724,10 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   outlineWidth: 1.5
-  wallWidth: 2.5
-  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
   outlineColor: {r: 0.62, g: 0.73, b: 0.82, a: 0.92}
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
+  wallWidth: 2.5
+  wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
 --- !u!1 &3521052782146599325
 GameObject:
   m_ObjectHideFlags: 0
@@ -147838,7 +147838,6 @@ MonoBehaviour:
   visionGraphic: {fileID: 0}
   circularMask: {fileID: 0}
   radiusInTiles: 0
-  rememberedPlayerDarken: 0.6
   followHeading: 0
   localPlayerOnly: 1
   showKeyShopDetails: 0
@@ -149848,6 +149847,7 @@ MonoBehaviour:
   - {fileID: 9798702179873548}
   - {fileID: 1935812448278740880}
   - {fileID: 3508171391231877056}
+  rememberedPlayerDarken: 0.6
   localHighlights:
   - {fileID: 7907543658948430461}
   - {fileID: 1230139318588693410}
@@ -234670,7 +234670,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &3506629839788376897
 RectTransform:
   m_ObjectHideFlags: 0

@@ -10,7 +10,7 @@ namespace MazeParty.Gameplay.Minigames.Flight
         public const double CountdownSeconds = 3, ResultSeconds = 2;
         public const double RunSeconds = 120;
         public const double Step = 1d / 120, Gravity = 12, FlapVelocity = 4.5, MaxFallSpeed = 4.5;
-        public const double BodyHeight = 2, HalfWidth = .42, GateWidth = .9, Spacing = 5.5, FirstGate = 3.5;
+        public const double BodyHeight = 2, HalfWidth = .42, GateWidth = .9, Spacing = 5.5, FirstGate = 5.25;
         public const double ViewHalfHeight = 7.4, CameraOffsetX = 2.7, RecycleX = -11.1;
         public const double Ceiling = ViewHalfHeight - BodyHeight / 2, Bottom = -ViewHalfHeight - BodyHeight / 2;
         public const double CollisionRadiusX = (GateWidth / 2) + HalfWidth;

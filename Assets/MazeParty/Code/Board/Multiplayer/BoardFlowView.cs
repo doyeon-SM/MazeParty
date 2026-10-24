@@ -773,7 +773,7 @@ namespace MazeParty.Multiplayer
             string timerLabel;
             if (match.IsArrivalGraceActive)
             {
-                timerLabel = GameText.F("TOP VIEW  {0:0.0}s",
+                timerLabel = MinigameDisplayFormatter.FormatClock(
                              match.ArrivalGraceRemaining);
             }
             else if (match.IsKeyShopRevealActive)

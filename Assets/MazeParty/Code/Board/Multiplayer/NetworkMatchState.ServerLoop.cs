@@ -82,7 +82,8 @@ namespace MazeParty.Multiplayer
                     boardDeathInProgress));
             if (_flow.State == BoardFlowState.MatchComplete)
             {
-                StopAllAvatarInputOnServer();
+                // Ceremony simulation gates movement per seat; clearing input here
+                // would cancel walking every server frame after final results.
                 AdvanceAwardCeremonyOnServer(now);
                 return;
             }
