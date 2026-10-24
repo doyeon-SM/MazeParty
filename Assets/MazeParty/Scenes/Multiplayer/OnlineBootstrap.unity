@@ -373,7 +373,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 219442259902808019, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: af9c440a02937e24eb1c6a7f69141aeb, type: 2}
     - target: {fileID: 2480401461602876905, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: m_LocalPosition.x
@@ -421,7 +421,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4073327668993335970, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: 33a934a9a082bd44787b5922a0063f86, type: 2}
     - target: {fileID: 6038573933271284404, guid: 3af1f9be3ce824f4abc97a44a11240fb, type: 3}
       propertyPath: m_Mesh
@@ -1915,6 +1915,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1387870513483113465, guid: ac63541e128478f46abf395044e73e45, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 1387870513483113465, guid: ac63541e128478f46abf395044e73e45, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
       objectReference: {fileID: 0}
@@ -2012,7 +2016,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8ae651020d620484cade7d3301584654, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.OnlineLoadingView
 --- !u!114 &1223083660
 MonoBehaviour:

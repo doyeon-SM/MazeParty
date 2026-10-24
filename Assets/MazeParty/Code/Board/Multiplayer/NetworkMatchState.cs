@@ -538,6 +538,7 @@ namespace MazeParty.Multiplayer
         public override void OnNetworkSpawn()
         {
             Instance = this;
+            InitializeStatisticsReplication();
             InitializeGameSettings();
             InitializeBoardMapRuntime();
             PrewarmBoardItemVfx();
@@ -557,6 +558,7 @@ namespace MazeParty.Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            ReleaseStatisticsReplication();
             ReleaseGameSettings();
             ClearBoardItemWorld();
             ShutdownBoardMapRuntime();
@@ -696,6 +698,7 @@ namespace MazeParty.Multiplayer
             _lastActionEndReason.Value = (byte)BoardActionEndReason.None;
             ResetArrivalTimes();
             InitializeAllAvatarsOnBoard();
+            BeginStatisticsOnServer();
             ForEachAvatar(avatar => avatar.PrepareForOverviewOnServer());
             RefreshItemShopsForTurnOnServer(1);
             BeginAchievementsOnServer();

@@ -12,32 +12,35 @@ namespace MazeParty.Multiplayer.Tests
         public void CustomSettingsRoundTrip_RejectsMismatchedScheduleAndMissingPayload()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            var snapshot = CreateValidSnapshot();
-            var settings = MatchGameSettings.Default;
-            settings.TryChangeTurns(10, out settings);
-            settings.TryChangeGame(ScheduledMinigameId.Minefield, new MinigameSetting(false, 1, 30), out settings);
-            settings.TryChangeGame(ScheduledMinigameId.Flight, new MinigameSetting(true, 5, 180), out settings);
-            snapshot.gameSettings = settings.Encode();
-            snapshot.scheduleTurnCount = 10;
-            snapshot.remainingMinigameSlots = 9;
-            var schedule = HostMinigameSchedule.Create(123, 10, settings.IncludedGames());
-            snapshot.scheduleEntries = new int[10];
-            for (var i = 0; i < 10; i++) snapshot.scheduleEntries[i] = (int)schedule.GetMinigameForTurn(i + 1);
-            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
-            Assert.That(restored.gameSettings, Is.EqualTo(settings.Encode()));
-            var entries = (int[])snapshot.scheduleEntries.Clone();
-            snapshot.scheduleEntries[0] = (int)ScheduledMinigameId.Minefield;
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
-            snapshot.scheduleEntries = entries;
-            snapshot.gameSettings = MatchGameSettings.Default.Encode();
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
-            snapshot.gameSettings = string.Empty;
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
-            snapshot = CreateValidSnapshot();
-            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings;
-            snapshot.gameSettings = string.Empty;
-            Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out restored), Is.True);
-            Assert.That(restored.gameSettings, Is.EqualTo(MatchGameSettings.Default.Encode()));
+            foreach (var turns in new[] { 5, 10 })
+            {
+                var snapshot = CreateValidSnapshot();
+                var settings = MatchGameSettings.Default;
+                Assert.That(settings.TryChangeTurns(turns, out settings), Is.True);
+                settings.TryChangeGame(ScheduledMinigameId.Minefield, new MinigameSetting(false, 1, 30), out settings);
+                settings.TryChangeGame(ScheduledMinigameId.Flight, new MinigameSetting(true, 5, 180), out settings);
+                snapshot.gameSettings = settings.Encode();
+                snapshot.scheduleTurnCount = turns;
+                snapshot.remainingMinigameSlots = turns - 1;
+                var schedule = HostMinigameSchedule.Create(123, turns, settings.IncludedGames());
+                snapshot.scheduleEntries = new int[turns];
+                for (var i = 0; i < turns; i++) snapshot.scheduleEntries[i] = (int)schedule.GetMinigameForTurn(i + 1);
+                Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+                Assert.That(restored.gameSettings, Is.EqualTo(settings.Encode()));
+                var entries = (int[])snapshot.scheduleEntries.Clone();
+                snapshot.scheduleEntries[0] = (int)ScheduledMinigameId.Minefield;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+                snapshot.scheduleEntries = entries;
+                snapshot.gameSettings = MatchGameSettings.Default.Encode();
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+                snapshot.gameSettings = string.Empty;
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False);
+            }
+            var legacySnapshot = CreateValidSnapshot();
+            legacySnapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutGameSettings;
+            legacySnapshot.gameSettings = string.Empty;
+            Assert.That(codec.TryDecode(JsonUtility.ToJson(legacySnapshot), out var legacyRestored), Is.True);
+            Assert.That(legacyRestored.gameSettings, Is.EqualTo(MatchGameSettings.Default.Encode()));
         }
 
         [Test]

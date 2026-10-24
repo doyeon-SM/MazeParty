@@ -124,6 +124,7 @@ namespace MazeParty.Multiplayer
                 }
                 RestoreBoardMines(snapshot.mines, mineOwnerSlots);
                 RestoreAchievements(snapshot, playerSnapshots);
+                RestoreStatistics(snapshot, playerSnapshots);
 
                 _settledMinigameTurn = snapshot.settledMinigameTurn;
                 _remainingMinigameSlots.Value = snapshot.remainingMinigameSlots;
@@ -607,6 +608,7 @@ namespace MazeParty.Multiplayer
                 originalHostPlayerKey = players[0].playerKey,
                 sessionId = controller.RecoverySessionId,
                 achievementMatchId = _achievementMatchId,
+                statistics = _statistics == null ? string.Empty : JsonUtility.ToJson(_statistics),
                 checkpoint = checkpoint,
                 turn = Turn,
                 settledMinigameTurn = _settledMinigameTurn,

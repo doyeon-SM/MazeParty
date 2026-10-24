@@ -44,10 +44,19 @@ namespace MazeParty.Gameplay.Minigames
             MinigameCatalog.TryGetDefinition(id, out var definition) && definition.HasRoundTimeLimit;
         public static int MaximumSeconds(ScheduledMinigameId id) =>
             MinigameCatalog.TryGetDefinition(id, out var definition) ? definition.MaximumOnlineSeconds : 0;
+        private static bool IsSupportedTurnCount(int turns)
+        {
+            if (turns == 10 || turns == 15 || turns == 20) return true;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            return turns == 5;
+#else
+            return false;
+#endif
+        }
         public bool TryChangeTurns(int turns, out MatchGameSettings updated)
         {
             updated = this;
-            if ((turns != 10 && turns != 15 && turns != 20) || IncludedCount < turns) return false;
+            if (!IsSupportedTurnCount(turns) || IncludedCount < turns) return false;
             updated = new MatchGameSettings(turns, _games); return true;
         }
         public bool TryChangeGame(ScheduledMinigameId id, MinigameSetting value, out MatchGameSettings updated)
@@ -83,7 +92,7 @@ namespace MazeParty.Gameplay.Minigames
             if (string.IsNullOrEmpty(text) || text.Length > 128) return false;
             var parts = text.Split(':');
             if (parts.Length != 3 || parts[0] != "1" || !int.TryParse(parts[1], NumberStyles.None,
-                    CultureInfo.InvariantCulture, out var turns) || (turns != 10 && turns != 15 && turns != 20)) return false;
+                    CultureInfo.InvariantCulture, out var turns) || !IsSupportedTurnCount(turns)) return false;
             byte[] bytes;
             try { bytes = Convert.FromBase64String(parts[2]); } catch (FormatException) { return false; }
             if (bytes.Length != GameCount * 3) return false;

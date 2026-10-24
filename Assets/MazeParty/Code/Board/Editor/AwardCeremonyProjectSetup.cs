@@ -122,6 +122,8 @@ namespace MazeParty.Editor
             }
             EnsureAssets();
 
+            CeremonyStatisticsProjectSetup.EnsureSceneInstance(scene);
+
             var canvasBindings = scene.GetRootGameObjects()
                 .SelectMany(root => root.GetComponentsInChildren<
                     AwardCeremonyCanvasBindings>(true))

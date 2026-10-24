@@ -1,5 +1,8 @@
 using System.Collections.Generic;
+using System.Reflection;
+using MazeParty.Gameplay;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace MazeParty.Multiplayer.Tests
@@ -262,6 +265,79 @@ namespace MazeParty.Multiplayer.Tests
             finally
             {
                 Object.DestroyImmediate(dieObject);
+            }
+        }
+
+        [Test]
+        public void SpawnClearance_IgnoresAuthoredLightingVolumeButKeepsPhysicalObstacles()
+        {
+            var diePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/Dice/NetworkWorldDie.prefab");
+            var lightingPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/World/BoardNightLighting.prefab");
+            Assert.That(diePrefab, Is.Not.Null);
+            Assert.That(lightingPrefab, Is.Not.Null);
+            var fixture = new GameObject("Die Spawn Clearance Regression");
+            fixture.transform.position = new Vector3(10000f, 10000f, 10000f);
+            try
+            {
+                var tile = fixture.AddComponent<BoardTile>();
+                var die = Object.Instantiate(diePrefab, fixture.transform)
+                    .GetComponent<NetworkWorldDie>();
+                var lighting = Object.Instantiate(lightingPrefab, fixture.transform);
+                lighting.transform.localPosition = Vector3.zero;
+                var volumeCollider = lighting.GetComponent<BoxCollider>();
+                Assert.That(volumeCollider, Is.Not.Null);
+                Assert.That(volumeCollider.isTrigger, Is.True);
+                // Keep the volume outside the tile hierarchy: tile-owned colliders
+                // are already excluded for a separate gameplay reason.
+                lighting.transform.SetParent(null, true);
+                var obstacle = new GameObject("Gameplay Obstacle");
+                obstacle.transform.position = fixture.transform.position + Vector3.up;
+                var obstacleCollider = obstacle.AddComponent<BoxCollider>();
+                try
+                {
+                    var clearance = typeof(NetworkWorldDie).GetMethod(
+                        "IsSpawnPositionClear", BindingFlags.Instance | BindingFlags.NonPublic);
+                    Assert.That(clearance, Is.Not.Null);
+                    Assert.That(WorldDieColliderGeometry.TryGetRotationIndependentWorldRadius(
+                        die.GetComponent<Collider>(), out var radius), Is.True);
+                    var position = obstacle.transform.position;
+                    var cases = new[]
+                    {
+                        (Name: "Lighting trigger only", VolumeTrigger: true,
+                            ObstacleEnabled: false, ObstacleTrigger: false, Clear: true),
+                        (Name: "Solid volume collider", VolumeTrigger: false,
+                            ObstacleEnabled: false, ObstacleTrigger: false, Clear: false),
+                        (Name: "Gameplay solid collider", VolumeTrigger: true,
+                            ObstacleEnabled: true, ObstacleTrigger: false, Clear: false),
+                        (Name: "Gameplay trigger collider", VolumeTrigger: true,
+                            ObstacleEnabled: true, ObstacleTrigger: true, Clear: false)
+                    };
+                    foreach (var item in cases)
+                    {
+                        volumeCollider.isTrigger = item.VolumeTrigger;
+                        obstacleCollider.enabled = item.ObstacleEnabled;
+                        obstacleCollider.isTrigger = item.ObstacleTrigger;
+                        Physics.SyncTransforms();
+                        Assert.That(volumeCollider.bounds.Contains(position), Is.True);
+                        foreach (var ignoreShopTargets in new[] { false, true })
+                        {
+                            Assert.That((bool)clearance.Invoke(die, new object[]
+                                { position, radius, tile, ignoreShopTargets }),
+                                Is.EqualTo(item.Clear), item.Name + " / " + ignoreShopTargets);
+                        }
+                    }
+                }
+                finally
+                {
+                    Object.DestroyImmediate(obstacle);
+                    Object.DestroyImmediate(lighting);
+                }
+            }
+            finally
+            {
+                Object.DestroyImmediate(fixture);
             }
         }
 

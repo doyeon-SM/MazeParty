@@ -37,7 +37,7 @@ namespace MazeParty.Multiplayer.Tests
                 journal = new AchievementJournal(_path, "stove-account-a");
                 Assert.That(journal.Commit(receipt, "player"), Is.False);
             }
-            foreach (var turns in new[] { 0, 9, 11, 14, 16, 21 }) Assert.That(journal.Commit(Receipt(turns), "player"), Is.False);
+            foreach (var turns in new[] { 0, 5, 9, 11, 14, 16, 21 }) Assert.That(journal.Commit(Receipt(turns), "player"), Is.False);
             var invalid = Receipt(); invalid.rank = 0;
             Assert.That(journal.Commit(invalid, "player"), Is.False);
             Assert.That(journal.Snapshot.matches, Is.EqualTo(3));

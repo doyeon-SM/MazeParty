@@ -35,6 +35,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredPrefabPaths =
         {
+            "Assets/MazeParty/Prefabs/Board/UI/CeremonyStatisticsCanvas.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/OnlineLoadingCanvas.prefab",
             "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHealthBar.prefab",
             "Assets/MazeParty/Prefabs/Multiplayer/UI/MatchSettingsPanel.prefab",
@@ -73,6 +74,7 @@ namespace MazeParty.Multiplayer.Tests
 
         private static readonly string[] RequiredBindingTypeNames =
         {
+            "MazeParty.Multiplayer.CeremonyStatisticsBindings",
             "MazeParty.Multiplayer.OnlineLoadingView",
             "MazeParty.Multiplayer.ArenaCombatHealthBarView",
             "MazeParty.Multiplayer.MatchSettingsPanelBindings",
@@ -139,6 +141,7 @@ namespace MazeParty.Multiplayer.Tests
                 "Assets/MazeParty/Prefabs/Multiplayer/UI/GameMenuCanvas.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Board/Board.unity",
+                "Assets/MazeParty/Prefabs/Board/UI/CeremonyStatisticsCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigamePlayerMarkers.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab",
                 "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab",

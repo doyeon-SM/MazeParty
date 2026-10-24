@@ -895,3 +895,37 @@ This Steam account cannot run this app. Check the App ID and game license.,이 S
 The Steam SDK is missing. Verify the game installation.,Steam SDK가 없습니다. 게임 설치 파일을 확인하세요.,Steam SDKがありません。ゲームのインストールを確認してください。,缺少 Steam SDK。请验证游戏安装文件。,缺少 Steam SDK。請驗證遊戲安裝檔案。
 The Steam account changed or disconnected. Restart the game.,Steam 계정이 변경되었거나 연결이 끊겼습니다. 게임을 다시 실행하세요.,Steamアカウントが変更されたか切断されました。ゲームを再起動してください。,Steam 账户已更改或断开连接。请重启游戏。,Steam 帳戶已更改或斷開連線。請重新啟動遊戲。
 The saved match settings do not match this lobby.,저장된 경기 설정이 현재 대기실과 일치하지 않습니다.,保存された試合設定が現在のロビーと一致しません。,已保存的比赛设置与当前大厅不一致。,已儲存的比賽設定與當前大廳不一致。
+Match statistics,경기 통계,試合の統計,对局统计,對局統計
+Statistics,통계,統計,统计,統計
+Results,최종결과,最終結果,最终结果,最終結果
+Gold,골드,ゴールド,金币,金幣
+Minigames,미니게임,ミニゲーム,小游戏,小遊戲
+Items & combat,아이템 및 전투,アイテム・戦闘,道具与战斗,道具與戰鬥
+Return to lobby in {0}s,대기실 복귀까지 {0}초,ロビーへ戻るまで {0}秒,{0}秒后返回大厅,{0}秒後返回大廳
+Show gold balance,보유 골드 보기,所持ゴールドを表示,查看持有金币,查看持有金幣
+Show total earned,총 획득량 보기,総獲得量を表示,查看累计获得,查看累計獲得
+Keys held · changes within each turn,보유 열쇠 · 턴 내 변화 순서,所持する鍵 · ターン内の変化順,持有钥匙 · 回合内变化顺序,持有鑰匙 · 回合內變化順序
+Total gold earned · excludes starting gold,총 획득 골드 · 시작 골드 제외,総獲得ゴールド · 初期所持分を除く,累计获得金币 · 不含初始金币,累計獲得金幣 · 不含初始金幣
+Gold held · changes within each turn,보유 골드 · 턴 내 변화 순서,所持ゴールド · ターン内の変化順,持有金币 · 回合内变化顺序,持有金幣 · 回合內變化順序
+Minigame finishing places,미니게임 최종 순위별 횟수,ミニゲームの最終順位別回数,小游戏最终名次次数,小遊戲最終名次次數
+Damage & movement · grouped by player,피해량과 이동 수 · 플레이어별 비교,ダメージ・移動数 · プレイヤー別,伤害与移动格数 · 按玩家比较,傷害與移動格數 · 按玩家比較
+Loading match records…,경기 기록을 불러오는 중…,試合記録を読み込み中…,正在加载对局记录…,正在載入對局紀錄…
+Some history is unavailable in this save. Only recorded data is shown.,이전 저장에는 일부 이력이 없습니다. 확인 가능한 기록만 표시합니다.,このセーブには一部の履歴がありません。記録済みのデータのみ表示します。,此存档部分历史缺失，仅显示已有记录。,此存檔部分歷史缺失，僅顯示已有紀錄。
+Horizontal axis: turns. Changes within a turn appear in event order.,가로축은 턴입니다. 같은 턴 안의 변화는 발생 순서대로 펼쳐집니다.,横軸はターンです。同じターン内の変化を発生順に表示します。,横轴为回合，同回合变化按发生顺序展开。,橫軸為回合，同回合變化按發生順序展開。
+Tied players each count toward their shared finishing place.,공동순위는 각 플레이어에게 해당 순위로 집계합니다.,同順位は各プレイヤーにその順位として集計します。,并列玩家分别计入对应名次。,並列玩家分別計入對應名次。
+Hover a bar for details. Movement counts completed board steps.,막대 위에 마우스를 올려 상세 기록을 확인하세요. 이동수는 실제 이동 완료 칸입니다.,バーにマウスを重ねると詳細を表示。移動数は実際に進んだマス数です。,悬停查看详情。移动数为实际走完的格数。,懸停查看詳情。移動數為實際走完的格數。
+Rank {0}  |  Keys {1}  |  Gold {2},최종 {0}위  |  열쇠 {1}  |  골드 {2},最終{0}位  |  鍵 {1}  |  ゴールド {2},第{0}名  |  钥匙 {1}  |  金币 {2},第{0}名  |  鑰匙 {1}  |  金幣 {2}
+Bonus ({0}): {1},보너스 {0}회: {1},ボーナス {0}回: {1},奖励 {0}次: {1},獎勵 {0}次: {1}
+Final balance {0}\nPeak {1}  |  Total earned {2},최종 보유 {0}\n최대 보유 {1}  |  총 획득 {2},最終所持 {0}\n最大所持 {1}  |  総獲得 {2},最终持有 {0}\n最高持有 {1}  |  累计获得 {2},最終持有 {0}\n最高持有 {1}  |  累計獲得 {2}
+1st {0}  ·  2nd {1}\n3rd {2}  ·  4th {3},1위 {0}회  ·  2위 {1}회\n3위 {2}회  ·  4위 {3}회,1位 {0}回  ·  2位 {1}回\n3位 {2}回  ·  4位 {3}回,第1名 {0}次 · 第2名 {1}次\n第3名 {2}次 · 第4名 {3}次,第1名 {0}次 · 第2名 {1}次\n第3名 {2}次 · 第4名 {3}次
+Items used {0}\nDealt {1}  ·  Received {2}\nMoved {3} tiles,아이템 사용 {0}회\n준 피해 {1}  ·  받은 피해 {2}\n이동 {3}칸,アイテム使用 {0}回\n与ダメ {1}  ·  被ダメ {2}\n移動 {3}マス,使用道具 {0}次\n造成 {1} · 承受 {2}\n移动 {3}格,使用道具 {0}次\n造成 {1} · 承受 {2}\n移動 {3}格
+Start,시작,開始,开始,開始
+Place {0},{0}위,{0}位,第{0}名,第{0}名
+Damage dealt,준 피해,与えたダメージ,造成伤害,造成傷害
+Damage received,받은 피해,受けたダメージ,承受伤害,承受傷害
+Tiles moved,이동 칸 수,移動マス数,移动格数,移動格數
+Environment / self,환경 / 자해,環境・自傷,环境 / 自伤,環境 / 自傷
+Turn {0} | {1} | -{2} | {3},{0}턴 | {1} | -{2} | {3},{0}ターン | {1} | -{2} | {3},第{0}回合 | {1} | -{2} | {3},第{0}回合 | {1} | -{2} | {3}
+Completed board steps: {0}\nSwaps and teleports are excluded.,실제 이동 완료: {0}칸\n위치 교환·순간이동은 제외합니다.,実際の移動: {0}マス\n位置交換・瞬間移動を除きます。,实际完成移动: {0}格\n不含位置交换和传送。,實際完成移動: {0}格\n不含位置交換和傳送。
+No detailed records,상세 기록 없음,詳細記録なし,暂无详细记录,暫無詳細紀錄
+Damage,피해량,ダメージ,伤害,傷害

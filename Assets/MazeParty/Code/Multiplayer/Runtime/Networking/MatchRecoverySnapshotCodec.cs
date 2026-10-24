@@ -141,6 +141,9 @@ namespace MazeParty.Multiplayer
                     snapshot.boardMapContentVersion,
                     out _) ||
                 snapshot.settledMinigameTurn < -1 ||
+                (!string.IsNullOrEmpty(snapshot.statistics) &&
+                 (!MatchStatistics.TryDecode(snapshot.statistics, out var statistics) ||
+                  !statistics.FitsCheckpoint(snapshot.turn, snapshot.scheduleTurnCount))) ||
                 snapshot.players == null ||
                 snapshot.players.Length != MultiplayerConstants.MaxPlayers ||
                 snapshot.itemShops == null ||

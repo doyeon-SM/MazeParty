@@ -30,6 +30,7 @@ namespace MazeParty.Multiplayer
         public string originalHostPlayerKey = string.Empty;
         public string sessionId = string.Empty;
         public string achievementMatchId = string.Empty;
+        public string statistics = string.Empty;
         public MatchRecoveryCheckpoint checkpoint;
         public int turn;
         public int settledMinigameTurn;

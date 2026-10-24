@@ -46,8 +46,8 @@ namespace MazeParty.Multiplayer
             }
             turns.text=GameText.F("{0} turns",settings.Turns);
             selectedCount.text=GameText.F("Selected {0} / {1} required",settings.IncludedCount,settings.Turns);
-            lessTurns.interactable=editable && settings.Turns>10;
-            moreTurns.interactable=editable && settings.Turns<20 && settings.IncludedCount>=settings.Turns+5;
+            lessTurns.interactable=editable && settings.TryChangeTurns(settings.Turns-5,out _);
+            moreTurns.interactable=editable && settings.TryChangeTurns(settings.Turns+5,out _);
             foreach(var row in rows)row.Present(settings,editable,changed);
         }
         private void ChangeTurns(int delta)

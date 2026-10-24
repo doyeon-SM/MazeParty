@@ -129,3 +129,10 @@ Build.zip
 
 # Steam local launch testing; never distribute this file.
 /steam_appid.txt
+
+# Required developer startup logo; other local Resources remain ignored.
+!Assets/Ignore/Resources/
+!Assets/Ignore/Resources.meta
+Assets/Ignore/Resources/*
+!Assets/Ignore/Resources/Icon.png
+!Assets/Ignore/Resources/Icon.png.meta

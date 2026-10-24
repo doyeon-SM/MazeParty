@@ -25,6 +25,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            NetworkMatchState.Instance?.RecordStatisticsPlacementOnServer(this, rank);
             if (rank == 1)
             {
                 AddMinigameWinOnServer();

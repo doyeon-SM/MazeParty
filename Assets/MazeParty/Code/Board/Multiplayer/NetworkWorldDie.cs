@@ -1877,6 +1877,14 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
+                // Local post-processing volumes use trigger colliders to define
+                // their visual influence, not physical obstacles for the die.
+                if (candidate.isTrigger &&
+                    candidate.GetComponent<UnityEngine.Rendering.Volume>() != null)
+                {
+                    continue;
+                }
+
                 if (ignoreShopInteractionTargets && candidate.isTrigger &&
                     (candidate.GetComponent<KeyShopWorldTarget>() != null ||
                      candidate.GetComponent<ItemShopWorldTarget>() != null))

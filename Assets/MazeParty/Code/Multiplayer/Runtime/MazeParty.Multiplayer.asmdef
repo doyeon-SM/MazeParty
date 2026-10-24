@@ -10,6 +10,7 @@
     "Unity.Services.Multiplayer",
     "Unity.InputSystem",
     "UnityEngine.UI",
+    "Unity.RenderPipelines.Core.Runtime",
     "MazeParty.Gameplay",
     "Unity.Cinemachine",
     "Unity.Collections",

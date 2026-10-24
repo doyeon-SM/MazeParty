@@ -146,7 +146,7 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void ConfiguredMapLengths_EndOnlyAfterTheirLastMinigameResult()
         {
-            foreach (var turns in new[] { 10, 15, 20 })
+            foreach (var turns in new[] { 5, 10, 15, 20 })
             {
                 var flow = new BoardFlowStateMachine(totalTurns: turns);
                 flow.RestoreCheckpoint(BoardFlowState.MinigameIntroReady, turns - 1, 0d);

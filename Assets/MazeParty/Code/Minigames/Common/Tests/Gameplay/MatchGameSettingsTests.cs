@@ -19,10 +19,17 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void SelectionEnforcesTurnMinimum_AndScheduleSurvivesSerializationWithoutExcludedGames()
         {
-            foreach (var turns in new[] { 10, 15, 20 })
+            foreach (var turns in new[] { 5, 10, 15, 20 })
             {
                 var settings = MatchGameSettings.Default;
-                Assert.That(settings.TryChangeTurns(turns, out settings), Is.True);
+                var allowed = turns != 5;
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                allowed = true;
+#endif
+                Assert.That(settings.TryChangeTurns(turns, out settings), Is.EqualTo(allowed));
+                var payload = MatchGameSettings.Default.Encode().Replace("1:15:", "1:" + turns + ":");
+                Assert.That(MatchGameSettings.TryDecode(payload, out _), Is.EqualTo(allowed));
+                if (!allowed) continue;
                 for (var id = 20; id > turns; id--)
                 {
                     var game = (ScheduledMinigameId)id;
@@ -44,7 +51,7 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(entries, Is.EqualTo(Enumerable.Range(1, turns).Select(saved.GetMinigameForTurn)));
                 if (turns < 20) Assert.That(settings.TryChangeTurns(turns + 5, out _), Is.False);
             }
-            foreach (var turns in new[] { 0, 9, 11, 14, 16, 21 })
+            foreach (var turns in new[] { 0, 4, 6, 9, 11, 14, 16, 21, 25 })
                 Assert.That(MatchGameSettings.Default.TryChangeTurns(turns, out _), Is.False);
         }
 

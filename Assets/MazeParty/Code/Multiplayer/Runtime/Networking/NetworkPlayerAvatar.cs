@@ -901,6 +901,7 @@ namespace MazeParty.Multiplayer
                 ? sourceAvatar
                 : null;
             RecordDamageOnServer(appliedDamage, attacker);
+            match?.RecordStatisticsDamageOnServer(this, attacker, appliedDamage, (int)request.ItemId);
             BeginBoardKnockdownOnServer(appliedDamage, _currentHealth.Value > 0);
             PresentHitRpc(
                 (byte)request.HitRegion,
@@ -1045,6 +1046,7 @@ namespace MazeParty.Multiplayer
             var previous = _gold.Value;
             _gold.Value = PlayerStatRules.ApplyGoldDelta(previous, delta);
             _matchAwardProgress.RecordGoldBalance(previous, _gold.Value);
+            NetworkMatchState.Instance?.RecordStatisticsBalanceOnServer(this);
             return _gold.Value - previous;
         }
 
@@ -1067,6 +1069,7 @@ namespace MazeParty.Multiplayer
 
             var previous = _keyCount.Value;
             _keyCount.Value = PlayerStatRules.ApplyKeyDelta(previous, delta);
+            NetworkMatchState.Instance?.RecordStatisticsBalanceOnServer(this);
             return _keyCount.Value - previous;
         }
 
@@ -1078,10 +1081,8 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _gold.Value = PlayerStatRules.ApplyGoldDelta(
-                _gold.Value,
-                -PlayerStatRules.KeyShopGoldPrice);
-            _keyCount.Value = PlayerStatRules.AddKeys(_keyCount.Value, 1);
+            ApplyGoldDeltaOnServer(-PlayerStatRules.KeyShopGoldPrice);
+            AddKeysOnServer(1);
             return true;
         }
 
@@ -1097,7 +1098,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _gold.Value = PlayerStatRules.ApplyGoldDelta(_gold.Value, -amount);
+            ApplyGoldDeltaOnServer(-amount);
             return true;
         }
 
@@ -1227,6 +1228,7 @@ namespace MazeParty.Multiplayer
                 damage);
             _combatHealth.Value -= appliedDamage;
             RecordDamageOnServer(appliedDamage, attacker);
+            NetworkMatchState.Instance?.RecordStatisticsDamageOnServer(this, attacker, appliedDamage, -1);
             BeginBoardKnockdownOnServer(appliedDamage, _combatHealth.Value > 0);
             PresentHitRpc((byte)PlayerHitRegion.Body, true, damage);
             if (_combatHealth.Value > 0)
@@ -1634,6 +1636,7 @@ namespace MazeParty.Multiplayer
                     1f);
                 if (outcome == BoardGateTraversalOutcome.Committed)
                 {
+                    NetworkMatchState.Instance?.RecordStatisticsMoveOnServer(this);
                     if (_doubleDice.Value && ++_achievementDoubleDiceSteps == 24)
                         NetworkMatchState.Instance?.RecordAchievementOnServer(AssignedSlot, PartyAchievement.TwentyFourSteps);
                     RecordBoardRouteChoiceOnServer(

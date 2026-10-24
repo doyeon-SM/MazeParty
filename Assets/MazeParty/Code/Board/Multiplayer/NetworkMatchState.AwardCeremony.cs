@@ -305,6 +305,7 @@ namespace MazeParty.Multiplayer
 
             SetFinalCeremonyRanks(PlayerRankingRules.Calculate(rankingStats));
             FinalizeAchievementsOnServer();
+            FinalizeStatisticsOnServer();
             _awardCeremonyAutoReturnEndsAt.Value =
                 AwardCeremonyFlowRules.GetFinalResultsAutoReturnEndsAt(now);
             _pausedAwardCeremonyAutoReturnRemaining.Value = 0d;
