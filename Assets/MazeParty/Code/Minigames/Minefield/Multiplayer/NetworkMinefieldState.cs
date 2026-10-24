@@ -24,6 +24,25 @@ namespace MazeParty.Multiplayer
         Crusher
     }
 
+    public struct MinefieldSonarWaveSnapshot : INetworkSerializable, IEquatable<MinefieldSonarWaveSnapshot>
+    {
+        public Vector3 Origin;
+        public double StartedAt, PausedElapsed;
+
+        public double ElapsedAt(double now, bool paused) =>
+            Math.Max(0d, paused ? PausedElapsed : now - StartedAt);
+
+        public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+        {
+            serializer.SerializeValue(ref Origin);
+            serializer.SerializeValue(ref StartedAt);
+            serializer.SerializeValue(ref PausedElapsed);
+        }
+
+        public bool Equals(MinefieldSonarWaveSnapshot other) =>
+            Origin == other.Origin && StartedAt == other.StartedAt && PausedElapsed == other.PausedElapsed;
+    }
+
     /// <summary>
     /// Server-authoritative Minefield simulation. Board avatars remain in place;
     /// this in-scene object replicates four logical runners instead.
@@ -121,6 +140,8 @@ namespace MazeParty.Multiplayer
             CreateByteVariable();
         private readonly NetworkVariable<byte> _sonarMask =
             CreateByteVariable();
+        private readonly NetworkList<MinefieldSonarWaveSnapshot> _sonarWaves =
+            new NetworkList<MinefieldSonarWaveSnapshot>();
         private ulong _detonatedMineMask;
         private readonly NetworkList<Vector3> _revealedMinePositions =
             new NetworkList<Vector3>(
@@ -293,7 +314,7 @@ namespace MazeParty.Multiplayer
             FreezeBoardAvatarsOnServer();
             var now = ServerNow;
             UpdateSonarOnServer(now);
-            RefreshSensorReplicationOnServer();
+            RefreshSensorReplicationOnServer(now);
 
             if (_phaseEndsAt.Value <= 0d || now < _phaseEndsAt.Value)
             {
@@ -418,9 +439,14 @@ namespace MazeParty.Multiplayer
             _serverInputs[slot] = Vector2.ClampMagnitude(currentInput, 1f);
             _avatars[slot] = avatar;
             avatar.StopServerInputOnServer();
-            _sonarEndsAt[slot] = ServerNow + SonarDetectionSeconds;
+            var now = ServerNow;
+            _sonarEndsAt[slot] = now + SonarDetectionSeconds;
+            SetSonarWave(slot, new MinefieldSonarWaveSnapshot
+            {
+                Origin = GetRunnerPosition(slot), StartedAt = now
+            });
             _sonarMask.Value = SetMaskBit(_sonarMask.Value, slot, true);
-            RefreshSensorReplicationOnServer();
+            RefreshSensorReplicationOnServer(now);
             PlaySonarPresentationRpc(
                 (byte)slot,
                 GetRunnerPosition(slot));
@@ -446,6 +472,12 @@ namespace MazeParty.Multiplayer
                     ? Math.Max(0d, _sonarEndsAt[slot] - now)
                     : 0d;
                 _sonarEndsAt[slot] = 0d;
+                if (IsSonarActive(slot))
+                {
+                    var wave = GetSonarWave(slot);
+                    wave.PausedElapsed = wave.ElapsedAt(now, false);
+                    SetSonarWave(slot, wave);
+                }
             }
 
             _paused.Value = true;
@@ -469,6 +501,9 @@ namespace MazeParty.Multiplayer
                 if (remaining > 0d)
                 {
                     _sonarEndsAt[slot] = now + remaining;
+                    var wave = GetSonarWave(slot);
+                    wave.StartedAt = now - wave.PausedElapsed;
+                    SetSonarWave(slot, wave);
                 }
                 else
                 {
@@ -605,6 +640,18 @@ namespace MazeParty.Multiplayer
                 : 0f;
         }
 
+        public MinefieldSonarWaveSnapshot GetSonarWave(int slot) =>
+            MinefieldRules.IsValidPlayerSlot(slot) && slot < _sonarWaves.Count
+                ? _sonarWaves[slot] : default;
+
+        public double GetSonarElapsed(int slot) => GetSonarWave(slot).ElapsedAt(ServerNow, IsPaused);
+
+        private void SetSonarWave(int slot, MinefieldSonarWaveSnapshot wave)
+        {
+            while (_sonarWaves.Count < MinefieldRules.PlayerCount) _sonarWaves.Add(default);
+            _sonarWaves[slot] = wave;
+        }
+
         public bool IsSonarActive(int slot)
         {
             return MinefieldRules.IsValidPlayerSlot(slot) &&
@@ -641,6 +688,7 @@ namespace MazeParty.Multiplayer
             _eliminationCauses.Value = 0U;
             _sirenIntensities.Value = 0U;
             _revealedMinePositions.Clear();
+            _sonarWaves.Clear();
             _roundPoints.Value = 0U;
             _eventSequence = 0UL;
 
@@ -1102,7 +1150,7 @@ namespace MazeParty.Multiplayer
             }
         }
 
-        private void RefreshSensorReplicationOnServer()
+        private void RefreshSensorReplicationOnServer(double now = double.NaN)
         {
             if (!IsServer)
             {
@@ -1111,7 +1159,7 @@ namespace MazeParty.Multiplayer
 
             EnsureLayoutCache();
             var packedSirenIntensities = 0U;
-            var sonarRadiusSqr = SonarRadius * SonarRadius;
+            if (double.IsNaN(now)) now = ServerNow;
             for (var slot = 0; slot < MinefieldRules.PlayerCount; slot++)
             {
                 var playerState = GetPlayerState(slot);
@@ -1157,9 +1205,10 @@ namespace MazeParty.Multiplayer
                         continue;
                     }
 
-                    var delta = minePosition - GetRunnerPosition(slot);
-                    delta.y = 0f;
-                    revealed = delta.sqrMagnitude <= sonarRadiusSqr;
+                    if (slot >= _sonarWaves.Count) continue;
+                    var wave = _sonarWaves[slot];
+                    revealed = MinefieldSonarWave.HasReached(wave.Origin, minePosition,
+                        wave.ElapsedAt(now, IsPaused), SonarRadius);
                 }
 
                 if (revealed)
@@ -1448,6 +1497,7 @@ namespace MazeParty.Multiplayer
             _sirenIntensities.Value = 0U;
             _eliminationCauses.Value = 0U;
             _revealedMinePositions.Clear();
+            _sonarWaves.Clear();
             _scores.Value = 0U;
             _roundPoints.Value = 0U;
             _finalRanks.Value = 0U;

@@ -443,8 +443,8 @@ namespace MazeParty.Multiplayer
                     ? 0f
                     : state.GetSirenIntensity(slot);
                 ApplySiren(view, intensity);
-                var sonarActive = state.IsSonarActive(slot);
-                view.SonarPulse.enabled = sonarActive;
+                MinefieldSonarWave.Present(view.SonarPulse, state.GetSonarWave(slot).Origin,
+                    state.GetSonarElapsed(slot), state.IsSonarActive(slot));
             }
         }
 
@@ -461,23 +461,8 @@ namespace MazeParty.Multiplayer
             for (var mineIndex = 0; mineIndex < _mines.Count; mineIndex++)
             {
                 var mine = _mines[mineIndex];
-                var detected = false;
-                for (var slot = 0; slot < _runners.Length && !detected; slot++)
-                {
-                    if (!state.IsSonarActive(slot))
-                    {
-                        continue;
-                    }
-
-                    var runnerPosition = state.GetRunnerPosition(slot);
-                    var delta = mine.Position - runnerPosition;
-                    delta.y = 0f;
-                    detected = delta.sqrMagnitude <=
-                               NetworkMinefieldState.SonarRadius *
-                               NetworkMinefieldState.SonarRadius;
-                }
-
-                mine.Root.SetActive(detected);
+                // The server sends a position only after a wave reaches it.
+                mine.Root.SetActive(true);
             }
         }
 

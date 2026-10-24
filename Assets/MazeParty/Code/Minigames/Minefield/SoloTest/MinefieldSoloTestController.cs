@@ -159,9 +159,10 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             if (_sonarPulse != null)
             {
-                _sonarPulse.enabled =
+                MinefieldSonarWave.Present(_sonarPulse, _sonar.LastResult.Origin,
+                    Time.unscaledTime - (_sonarPulseUntil - SonarVisualSeconds),
                     Time.unscaledTime < _sonarPulseUntil &&
-                    _session.Phase == MinefieldSoloPhase.Running;
+                    _session.Phase == MinefieldSoloPhase.Running);
             }
             UpdateHud();
         }

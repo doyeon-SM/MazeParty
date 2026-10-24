@@ -11,7 +11,7 @@ namespace MazeParty.Gameplay.Tests
     public sealed class CoinCollectRulesTests
     {
         [Test]
-        public void Rain_IsSeededAndSuppliesExactQuantitiesInBothRounds()
+        public void Rain_PlanPreservesSeededQuantitiesAcrossRoundsUnderTheLiveObjectLimit()
         {
             var first = new CoinCollectMatchState(783UL);
             var second = new CoinCollectMatchState(783UL);
@@ -33,7 +33,9 @@ namespace MazeParty.Gameplay.Tests
                 }
                 Assert.That(counts, Is.EqualTo(new[] { 50, 10, 10 }));
                 first.AdvanceTo(60d); second.AdvanceTo(60d);
-                Assert.That(first.RainSpawnedCount, Is.EqualTo(70));
+                Assert.That(first.RainSpawnedCount, Is.EqualTo(second.RainSpawnedCount));
+                Assert.That(Items(first).Count(item => item.Active),
+                    Is.LessThanOrEqualTo(CoinCollectRules.MaximumUncollectedItems));
                 Assert.That(first.IsRoundComplete, Is.True);
                 Assert.That(first.BeginNextRound(), Is.EqualTo(round == 1));
                 Assert.That(second.BeginNextRound(), Is.EqualTo(round == 1));
@@ -168,6 +170,100 @@ namespace MazeParty.Gameplay.Tests
             foreach (var slot in Enumerable.Range(0, 4)) SetPlayer(match, slot, "Score", 0);
             Assert.That(Enumerable.Range(0, 4).Select(match.GetRank), Is.EqualTo(new[] { 1, 1, 1, 1 }));
         }
+        [Test]
+        public void Rain_FullArenaSkipsDropsAndResumesWithoutBacklogAfterCollection()
+        {
+            foreach (var activeCount in new[] { 19, 20, 21 })
+            {
+                var match = new CoinCollectMatchState(123);
+                var items = Items(match);
+                for (var i = 0; i < activeCount; i++)
+                    items.Add(new CoinCollectItemSnapshot((CoinCollectItemKind)(i % 3),
+                        new Vector2(700, 0), 0d, i % 2 == 0 ? 8f : .55f));
+                // Historical, collected objects must not consume a spawn slot.
+                for (var i = 0; i < 7; i++)
+                    items.Add(new CoinCollectItemSnapshot(CoinCollectItemKind.Coin,
+                        new Vector2(700, 0), 0d, .55f, false));
+                match.AdvanceTo(0d);
+                Assert.That(match.RainSpawnedCount, Is.EqualTo(activeCount < 20 ? 1 : 0));
+                match.AdvanceTo(match.GetScheduledItem(3).BornAt);
+                Assert.That(items.Count(item => item.Active), Is.EqualTo(Math.Max(20, activeCount)));
+                var spawnedBefore = match.RainSpawnedCount;
+                // A bomb drop may have temporarily taken the live count above 20.
+                // Free exactly one slot; the next scheduled drop is the only one released.
+                for (var i = 0; i < Math.Max(1, activeCount - 19); i++) items[i] = items[i].Consumed();
+                match.AdvanceTo(match.GetScheduledItem(4).BornAt - .001d);
+                Assert.That(match.RainSpawnedCount, Is.EqualTo(spawnedBefore));
+                match.AdvanceTo(match.GetScheduledItem(4).BornAt);
+                Assert.That(match.RainSpawnedCount, Is.EqualTo(spawnedBefore + 1));
+                Assert.That(items.Count(item => item.Active), Is.EqualTo(20));
+                Assert.That(items.Last().BornAt, Is.EqualTo(match.GetScheduledItem(4).BornAt));
+            }
+        }
+
+        [Test]
+        public void Players_BlockHeadOnAndStationaryBodiesAndSlideAlongThem()
+        {
+            foreach (var bothMoving in new[] { false, true })
+            {
+                var match = EmptyRound();
+                SetPlayer(match, 0, "Position", new Vector2(699, 0));
+                SetPlayer(match, 1, "Position", new Vector2(701, 0));
+                match.SetMovementInput(0, Vector2.right);
+                if (bothMoving) match.SetMovementInput(1, Vector2.left);
+                for (var step = 1; step <= 100; step++)
+                {
+                    match.AdvanceTo(step * .02d);
+                    var left = match.GetPlayer(0).Position;
+                    var right = match.GetPlayer(1).Position;
+                    Assert.That(right.x - left.x, Is.GreaterThanOrEqualTo(.9f - .001f));
+                }
+                if (!bothMoving) Assert.That(match.GetPlayer(1).Position, Is.EqualTo(new Vector2(701, 0)));
+                match.SetMovementInput(1, Vector2.zero);
+                var before = match.GetPlayer(0).Position;
+                match.SetMovementInput(0, new Vector2(1, 1));
+                match.AdvanceTo(2.3d);
+                Assert.That(match.GetPlayer(0).Position.y, Is.GreaterThan(before.y));
+                Assert.That(Vector2.Distance(match.GetPlayer(0).Position, match.GetPlayer(1).Position),
+                    Is.GreaterThanOrEqualTo(.9f - .001f));
+            }
+
+            var crowded = EmptyRound();
+            var positions = new[] { new Vector2(698, 0), new Vector2(702, 0),
+                new Vector2(700, -2), new Vector2(700, 2) };
+            for (var slot = 0; slot < 4; slot++)
+            {
+                SetPlayer(crowded, slot, "Position", positions[slot]);
+                crowded.SetMovementInput(slot, new Vector2(700, 0) - positions[slot]);
+            }
+            crowded.AdvanceTo(3d);
+            for (var first = 0; first < 4; first++)
+                for (var second = first + 1; second < 4; second++)
+                    Assert.That(Vector2.Distance(crowded.GetPlayer(first).Position, crowded.GetPlayer(second).Position),
+                        Is.GreaterThanOrEqualTo(.9f - .001f));
+        }
+
+        [Test]
+        public void Push_CannotTunnelThroughAThirdPlayerOrMoveThemOutsideTheArena()
+        {
+            foreach (var nearWall in new[] { false, true })
+            {
+                var match = EmptyRound();
+                var x = nearWall ? 704.5f : 699f;
+                SetPlayer(match, 0, "Position", new Vector2(x, 0));
+                SetPlayer(match, 0, "Facing", Vector2.right);
+                SetPlayer(match, 1, "Position", new Vector2(x + 1, 0));
+                SetPlayer(match, 2, "Position", new Vector2(x + 2, 0));
+                Assert.That(match.TryPush(0), Is.True);
+                match.AdvanceTo(.1d);
+                Assert.That(match.GetPlayer(2).Position.x - match.GetPlayer(1).Position.x,
+                    Is.GreaterThanOrEqualTo(.9f - .001f));
+                Assert.That(match.GetPlayer(1).StunRemaining, Is.EqualTo(.5d).Within(1e-8));
+                Assert.That(match.GetPlayer(1).Position.x,
+                    Is.LessThanOrEqualTo(CoinCollectRules.ArenaCenterX + CoinCollectRules.PlayerLimit));
+            }
+        }
+
         private static CoinCollectMatchState EmptyRound()
         {
             var match = new CoinCollectMatchState(123);

@@ -38,6 +38,32 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         public bool HasDetection => DetectedMineCount > 0;
     }
 
+    public static class MinefieldSonarWave
+    {
+        public const double TravelSeconds = 0.75d;
+
+        public static float RadiusAt(double elapsed, float maximumRadius) =>
+            Mathf.Max(0f, maximumRadius) * Mathf.Clamp01((float)(elapsed / TravelSeconds));
+
+        public static bool HasReached(Vector3 origin, Vector3 position, double elapsed, float maximumRadius)
+        {
+            if (elapsed < 0d) return false;
+            var offset = position - origin;
+            offset.y = 0f;
+            var radius = RadiusAt(elapsed, maximumRadius);
+            return offset.sqrMagnitude <= radius * radius;
+        }
+
+        public static void Present(LineRenderer pulse, Vector3 origin, double elapsed, bool active)
+        {
+            pulse.enabled = active && elapsed > 0d && elapsed < TravelSeconds;
+            if (!pulse.enabled) return;
+            var progress = Mathf.Clamp01((float)(elapsed / TravelSeconds));
+            pulse.transform.position = origin + Vector3.up * 0.06f;
+            pulse.transform.localScale = new Vector3(progress, 1f, progress);
+        }
+    }
+
     /// <summary>
     /// Stationary-only sonar request and local presentation resolver. Online play
     /// can disable autoResolveLocally, forward PulseRequested to the server, then
@@ -65,6 +91,8 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         private float _nextPulseTime;
         private int _nextPulseId;
         private int _lastResolvedPulseId;
+        private float _pulseStartedAt = float.NegativeInfinity;
+        private Vector3 _pulseOrigin;
 
         public event Action<MinefieldSonar, int> PulseRequested;
         public event Action<MinefieldSonar, MinefieldSonarResult> PulseResolved;
@@ -83,6 +111,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         private void Update()
         {
             ResolveReferences();
+            RevealReachedMines(Time.unscaledTime - _pulseStartedAt);
             if (motor != null &&
                 IsStationaryForPulse(
                     motor.PlanarSpeed,
@@ -101,6 +130,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
         private void OnDisable()
         {
             _stationarySeconds = 0f;
+            _detectedMines.Clear();
         }
 
         public void Configure(
@@ -132,6 +162,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
             if (!enabled)
             {
                 _stationarySeconds = 0f;
+                _detectedMines.Clear();
             }
         }
 
@@ -179,6 +210,8 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                     _detectedMines);
             }
 
+            _pulseStartedAt = Time.unscaledTime;
+            _pulseOrigin = transform.position;
             var nearestDistance = float.PositiveInfinity;
             for (var index = 0; index < _detectedMines.Count; index++)
             {
@@ -191,7 +224,7 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 var delta = mine.transform.position - transform.position;
                 delta.y = 0f;
                 nearestDistance = Mathf.Min(nearestDistance, delta.magnitude);
-                mine.RevealFor(revealSeconds);
+
             }
 
             var result = new MinefieldSonarResult(
@@ -201,6 +234,26 @@ namespace MazeParty.Gameplay.Minigames.Minefield
                 nearestDistance);
             ApplyAuthoritativeResult(result);
             return result;
+        }
+
+        private void RevealReachedMines(double elapsed)
+        {
+            if (elapsed >= revealSeconds)
+            {
+                _detectedMines.Clear();
+                return;
+            }
+            for (var index = _detectedMines.Count - 1; index >= 0; index--)
+            {
+                var mine = _detectedMines[index];
+                if (mine == null || !mine.IsArmed)
+                    _detectedMines.RemoveAt(index);
+                else if (MinefieldSonarWave.HasReached(_pulseOrigin, mine.transform.position, elapsed, pulseRadius))
+                {
+                    mine.RevealFor(Mathf.Max(0f, revealSeconds - (float)elapsed));
+                    _detectedMines.RemoveAt(index);
+                }
+            }
         }
 
         public void ApplyAuthoritativeResult(MinefieldSonarResult result)

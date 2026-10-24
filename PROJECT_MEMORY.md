@@ -5,7 +5,7 @@
 ## 기준 자료
 
 - Git·Unity 루트: `C:/Unity/MazeParty`. 현재 브랜치 `development`, 안정 기준 `main`.
-- 현재 작업 시작 HEAD: `318451c5fb19abed8173a852870d9acb46c06220` (`26.10.24`). 이번 번체·법률문서 작업은 미커밋이다. 이전 구현: `a133836a2deaede16bf937b190ed693193f39e30` (`26.10.24` / `격투 카운트 다운 추가`). 도전과제 연결·ID 검증 자료는 `78102620279ff0e0d1dfbb05e9e1a4c0134fbb34` (`26.10.24` / `스토브 도전과제 연결`)에 포함됐다. 보드 야간 조명은 `3c6890452ed26b732baa89c9459e323f9fc30b37` (`26.10.23` / `씬 라이팅 점검 및 수정`)에 반영됐다. 기획 v0.56·런타임 0.0.56 유지.
+- 최신 확인 HEAD: `e220a9dd57848a131ba70ed9cb55547a68aa65ec` (`26.10.25`). 오늘 성공 커밋 `866e5893bc677915e4a18bbf00709bc4094311be`와 `e220a9dd57848a131ba70ed9cb55547a68aa65ec`에 로고·통계·개발 5턴·타이틀 참조·빌드 피드백·공통 검사 수정이 반영됐다. 선행 Steam 연결은 `318451c5fb19abed8173a852870d9acb46c06220`, 번체는 `9890ac5c37f9bc52fd0f736380836ccd091ea522`에 포함됐다. 기획 v0.56·런타임 0.0.56 유지. 커밋 이후 폰트 atlas·PlayerSettings·성능 테스트 산출물은 별도 작업 트리 변경이며 검증 완료로 추정하지 않는다.
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026) · [10/23 회의록](https://app.notion.com/p/402c227fda03818c8e90d7095b274675).
 - 리팩토링 요약: [기술문서](Docs/REFACTORING_2026-10-21.md). 상세 설계·단계별 근거는 [Notion 기술문서](https://app.notion.com/p/400c227fda038101b398fcd871aa766a)에 보관했다.
 - 실행·배포는 `README.md`, `Docs/STOVE_SETUP.md`, `Docs/STOVE_LAUNCHER_TEST.md`. 번역은 `Docs/LOCALIZATION_GOOGLE_SHEETS.md`를 따르며 요청받았을 때만 시트를 동기화한다.
@@ -259,3 +259,20 @@
 - TMP가 원본 프리팹 Text 아래에 생성하는 DontSave 임시 submesh만 별도 UI 출처 검사에서 제외했다. 저장되는 자식·다른 부모의 renderer·일반 DontSave Image는 계속 검사하며, 실제 MinigameReadyPanel 프리팹으로 양쪽 조건을 검증했다.
 - 대기실 감정표현 안내의 사용자 수정 T 이미지 디자인을 유지하며 실제 입력 Sprite t 참조 및 raycastTarget=false를 확인했다. 필수 이미지 참조/입력 비차단 실패 메시지를 구체화했다.
 - 최종 검증: UiPrefabPolicyTests 및 GameMenuContractTests EditMode 23/23 통과(실패·건너뜀 0), 컴파일 오류 0. 전체 EditMode·신규 Player 빌드·Notion·커밋·병합은 수행하지 않았다. 근거: Logs/BuildFeedbackPreview/common-ui-policy-tests.json.
+
+## Notion 최신화·일일 회의록 완료 (2026-10-25)
+
+- 사용자 명시적 요청으로 실제 저장소의 성공 커밋 해시·제목·본문·diff와 최종 기획·검증 기록을 대조했다. 사용자 디자인인 TURN·시간 Bold 및 메뉴 Slider/Scrollbar 수정을 보존하는 기준을 명시했다.
+- [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0)와 세부 룰·날기·미니게임·게임 완성 TODO·Steam 출시준비·공통준비사항·출시 안내·구현 이력, 총 9개 기존 문서의 관련 부분을 갱신했다. 타이틀·로고 검정 배경·기본 미로·시상식 300초/이동/통계·보드/대기실 UI·개발 5턴·안내 밝기·공통 UI 검사 및 선행 Steam/번체 현황을 반영했다.
+- 프로젝트 회의록 데이터 소스에서 오늘 날짜 문서가 없는 것을 확인하고 [2026-10-25 회의록](https://app.notion.com/p/403c227fda03815ebfd3c5938e08ad67)을 하나 생성했다. 날짜 2026-10-25, 유형 기획 변경/Git 커밋, 오늘 커밋 2개의 전체 해시·제목·본문·실제 변경과 검증 결과를 기록했다. 10/24 Steam/번체 커밋은 선행 구현으로 구분했다.
+- 저장 후 본문·날짜·커밋 속성·필수 변경과 중복 없는 단일 회의록을 재조회했다. 기존 기획서/출시/미니게임의 하위 페이지·데이터베이스 링크도 보존 확인했다.
+- 전체 Player 재빌드·실제 4인 최신 통합 검증·플랫폼 등록/게시·실계정 업적/초대는 완료로 처리하지 않았다. Google Sheets·스토어 설정·추가 Git 커밋·병합은 수행하지 않았다.
+
+## 동전줍기·지뢰찾기 피드백 반영 완료 (2026-10-25)
+
+- 동전줍기: 미수집 동전·돈·폭탄이 20개 이상이면 신규 정기 낙하를 중단한다. 낙하 중인 오브젝트도 자리를 예약해 착지 뒤 한도를 넘지 않게 하며, 막힌 시점의 생성은 건너뛰어 재개 때 몰아서 떨어지지 않게 한다. 폭탄 피격으로 이미 얻은 점수를 바닥에 돌려놓는 기존 손실·재획득 규칙은 유지한다. 서버 공통 모델에서 플레이어 몸 충돌 및 밀치기의 다른 플레이어 관통 방지를 적용한다.
+- 지뢰찾기: 기존 반경 3m와 탐지/이동 잠금 1.25초를 유지한다. 0.75초 동안 발동 위치 중심에서 확장하는 물결로 탐지하고 닿은 지뢰만 서버가 공개한다. 기존의 고정 반경 원은 표시하지 않고 확장하는 파문만 잠깐 표시한다. 일시정지/재접속 중 진행률 보존, Solo 동일 표현을 적용한다.
+- 이번 변경의 Notion·추가 커밋·전체 EditMode·Player 빌드는 별도 요청 없이 수행하지 않는다.
+
+- 최종 검증: CoinCollectRulesTests·CoinCollectAuthorityTests·MinefieldSceneContractTests·MinefieldRuntimeComponentsTests 표적 EditMode 22/22 통과(실패·건너뜀 0). 19/20/21개 생성 경계·수집 후 재개·정면/대각선/4인 충돌·밀치기 관통·서버 권한·파동 도달 직전/정확한 시각·일시정지/재개·네트워크 직렬화를 확인했다. 전체 EditMode 및 Player 빌드는 실행하지 않았다.
+- 실제 SonarPulse·DetectedMine·PlayerAvatarPresentation 프리팹을 별도 프리뷰 씬에서 렌더해 0.2초 반경 0.8m/표시 0개 → 0.5초 반경 2m/표시 2개 → 0.8초 반경 3m/파문 숨김·표시 3개를 확인했다. 확인 자료: Logs/MinigameFeedbackPreview/sonar-200.png, sonar-500.png, sonar-800.png, sonar-preview.json, targeted-tests.json. 기존 사용자 HUD·메뉴 프리팹 디자인은 수정하지 않았다.

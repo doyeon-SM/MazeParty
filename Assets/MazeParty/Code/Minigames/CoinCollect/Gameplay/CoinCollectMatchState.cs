@@ -13,6 +13,8 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         public const double RoundSeconds = 60d;
         public const int CoinCount = 50, MoneyCount = 10, BombCount = 10;
         public const int RainCount = CoinCount + MoneyCount + BombCount;
+        public const int MaximumUncollectedItems = 20;
+        public const float PlayerCollisionRadius = 0.45f;
         public const float MoveSpeed = 5f, FallSpeed = 6f;
         public const float SpawnHeight = 8f, GroundHeight = 0.55f;
         public const float PickupHeight = 2.1f, PickupRadius = 0.9f;
@@ -80,13 +82,13 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         private readonly CoinCollectItemSnapshot[] _rain = new CoinCollectItemSnapshot[CoinCollectRules.RainCount];
         private readonly int[] _tieOrder = { 0, 1, 2, 3 };
         private readonly ulong _seed;
-        private int _spawned;
+        private int _spawned, _rainSpawned;
         public int RoundNumber { get; private set; }
         public double Elapsed { get; private set; }
         public bool IsRoundComplete => Elapsed >= _rules.Seconds;
         public bool IsComplete => IsRoundComplete && RoundNumber == _rules.Rounds;
         public int ItemCount => _items.Count;
-        public int RainSpawnedCount => _spawned;
+        public int RainSpawnedCount => _rainSpawned;
         public event Action<CoinCollectItemKind, int> ItemCollected;
         public event Action<int> PushStarted;
 
@@ -168,12 +170,15 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                     if (p.StunnedUntil > Elapsed) next = Math.Min(next, p.StunnedUntil);
                 }
                 var dt = (float)(next - Elapsed);
-                foreach (var p in _players)
+                foreach (var slot in _tieOrder)
+                {
+                    var p = _players[slot];
                     if (CanMove(p) && p.Input.sqrMagnitude > 0f)
                     {
                         p.Facing = p.Input.normalized;
-                        p.Position = CoinCollectRules.Clamp(p.Position + p.Input * (CoinCollectRules.MoveSpeed * dt));
+                        MovePlayer(slot, p.Input * (CoinCollectRules.MoveSpeed * dt));
                     }
+                }
                 Elapsed = next;
                 SpawnDue();
                 if (IsRoundComplete) { InterruptInputs(); break; }
@@ -228,7 +233,7 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                     var forward = Vector2.Dot(offset, actor.PushFacing);
                     var lateral = offset - actor.PushFacing * forward;
                     if (forward < 0f || forward > 1.36f || lateral.sqrMagnitude > 0.7f * 0.7f) continue;
-                    victim.Position = CoinCollectRules.Clamp(victim.Position + actor.PushFacing * 1.25f);
+                    MovePlayer(target, actor.PushFacing * 1.25f);
                     Stun(victim, CoinCollectRules.PushStunSeconds);
                 }
             }
@@ -238,13 +243,59 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
             player.StunnedUntil = Math.Max(player.StunnedUntil, Elapsed + seconds);
             player.Input = Vector2.zero; player.CastAt = -1d;
         }
+        private void MovePlayer(int slot, Vector2 displacement)
+        {
+            // Substeps also prevent the push action from crossing another body.
+            var steps = Math.Max(1, Mathf.CeilToInt(displacement.magnitude /
+                (CoinCollectRules.PlayerCollisionRadius * 0.5f)));
+            var step = displacement / steps;
+            var player = _players[slot];
+            for (var i = 0; i < steps; i++)
+            {
+                var origin = player.Position;
+                var proposed = CoinCollectRules.Clamp(origin + step);
+                if (CanOccupy(slot, origin, proposed)) player.Position = proposed;
+                else
+                {
+                    var xOnly = CoinCollectRules.Clamp(origin + new Vector2(step.x, 0f));
+                    if (CanOccupy(slot, origin, xOnly)) player.Position = xOnly;
+                    origin = player.Position;
+                    var yOnly = CoinCollectRules.Clamp(origin + new Vector2(0f, step.y));
+                    if (CanOccupy(slot, origin, yOnly)) player.Position = yOnly;
+                }
+            }
+        }
+        private bool CanOccupy(int slot, Vector2 origin, Vector2 position)
+        {
+            var diameter = CoinCollectRules.PlayerCollisionRadius * 2f;
+            for (var other = 0; other < _players.Length; other++)
+            {
+                if (other == slot) continue;
+                var distance = (position - _players[other].Position).sqrMagnitude;
+                if (distance < diameter * diameter &&
+                    distance <= (origin - _players[other].Position).sqrMagnitude)
+                    return false;
+            }
+            return true;
+        }
         private void SpawnDue()
         {
-            while (_spawned < _rain.Length && _rain[_spawned].BornAt <= Elapsed) _items.Add(_rain[_spawned++]);
+            // Include airborne objects so rain already in flight reserves space.
+            // Missed rain slots are skipped, never released as a catch-up burst.
+            var active = 0;
+            foreach (var item in _items) if (item.Active) active++;
+            while (_spawned < _rain.Length && _rain[_spawned].BornAt <= Elapsed)
+            {
+                var item = _rain[_spawned++];
+                if (active >= CoinCollectRules.MaximumUncollectedItems) continue;
+                _items.Add(item);
+                _rainSpawned++;
+                active++;
+            }
         }
         private void BeginRound()
         {
-            RoundNumber++; Elapsed = 0d; _spawned = 0; _items.Clear();
+            RoundNumber++; Elapsed = 0d; _spawned = 0; _rainSpawned = 0; _items.Clear();
             for (var slot = 0; slot < 4; slot++)
             {
                 var p = _players[slot];

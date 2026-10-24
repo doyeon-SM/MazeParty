@@ -147,6 +147,90 @@ namespace MazeParty.Multiplayer.Tests
             finally { Object.DestroyImmediate(root); }
         }
 
+        [Test]
+        public void Sonar_ReplicatesMinesOnlyAfterWaveArrivalAndPreservesProgressAcrossPause()
+        {
+            var root = new GameObject("Sonar wave authority contract");
+            var warning = typeof(NetworkVariableBase).GetField("IgnoreInitializeWarning",
+                BindingFlags.Static | BindingFlags.NonPublic);
+            var previous = warning.GetValue(null);
+            warning.SetValue(null, true);
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.NonPublic;
+            try
+            {
+                var state = root.AddComponent<NetworkMinefieldState>();
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_matchActive", true);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phase", (byte)NetworkMinefieldPhase.Running);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_roundNumber", 1);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phaseEndsAt", 50d);
+                NetworkCountdownTestAccess.SetPrivateField(state, "_serverSeed", 123UL);
+                var mines = NetworkMinefieldState.GenerateMineWorldPositions(123UL, 1);
+                var origin = mines[0] - Vector3.right * NetworkMinefieldState.SonarRadius;
+                typeof(NetworkMinefieldState).GetMethod("SetSonarWave", flags).Invoke(state, new object[]
+                {
+                    0, new MinefieldSonarWaveSnapshot { Origin = origin, StartedAt = 10d }
+                });
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_sonarMask", (byte)1);
+                var ends = (double[])typeof(NetworkMinefieldState).GetField("_sonarEndsAt", flags).GetValue(state);
+                ends[0] = 11.25d;
+                var refresh = typeof(NetworkMinefieldState).GetMethod("RefreshSensorReplicationOnServer", flags);
+                refresh.Invoke(state, new object[] { 11d });
+                Assert.That(state.GetMineWorldPositions(), Is.Empty, "Clients cannot reveal the hidden layout.");
+                typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(state, true);
+                foreach (var time in new[] { 10d, 10.375d, 10.74999d })
+                {
+                    refresh.Invoke(state, new object[] { time });
+                    Assert.That(state.GetMineWorldPositions(), Has.No.Member(mines[0]), "Wave has not reached the boundary mine.");
+                }
+                state.PauseOnServer(10.375d);
+                refresh.Invoke(state, new object[] { 99d });
+                Assert.That(state.GetMineWorldPositions(), Has.No.Member(mines[0]));
+                Assert.That(state.GetSonarWave(0).ElapsedAt(99d, true), Is.EqualTo(.375d));
+                state.ResumeOnServer(100d);
+                Assert.That(ends[0], Is.EqualTo(100.875d));
+                refresh.Invoke(state, new object[] { 100.37499d });
+                Assert.That(state.GetMineWorldPositions(), Has.No.Member(mines[0]));
+                refresh.Invoke(state, new object[] { 100.375d });
+                Assert.That(state.GetMineWorldPositions(), Has.Member(mines[0]));
+                foreach (var position in state.GetMineWorldPositions())
+                    Assert.That(new Vector2(position.x - origin.x, position.z - origin.z).magnitude,
+                        Is.LessThanOrEqualTo(3f));
+                // The visual wave vanishes at full range, but revealed mines remain
+                // until the existing 1.25-second detection deadline.
+                refresh.Invoke(state, new object[] { 100.87499d });
+                Assert.That(state.GetMineWorldPositions(), Has.Member(mines[0]));
+                typeof(NetworkMinefieldState).GetMethod("UpdateSonarOnServer", flags)
+                    .Invoke(state, new object[] { 100.875d });
+                refresh.Invoke(state, new object[] { 100.875d });
+                Assert.That(state.GetMineWorldPositions(), Is.Empty);
+            }
+            finally
+            {
+                Object.DestroyImmediate(root);
+                warning.SetValue(null, previous);
+            }
+        }
+
+        [Test]
+        public void SonarWaveSnapshot_RetainsOriginAndPausedProgressAcrossSerialization()
+        {
+            var original = new MinefieldSonarWaveSnapshot
+            {
+                Origin = new Vector3(300f, 0f, -5f), StartedAt = 123456.125d, PausedElapsed = .375d
+            };
+            using (var writer = new FastBufferWriter(128, Unity.Collections.Allocator.Temp))
+            {
+                writer.WriteNetworkSerializable(original);
+                using (var reader = new FastBufferReader(writer, Unity.Collections.Allocator.Temp))
+                {
+                    reader.ReadNetworkSerializable(out MinefieldSonarWaveSnapshot copy);
+                    Assert.That(copy.Equals(original), Is.True);
+                    Assert.That(copy.ElapsedAt(999999d, true), Is.EqualTo(.375d));
+                    Assert.That(copy.ElapsedAt(123456.875d, false), Is.EqualTo(.75d));
+                }
+            }
+        }
+
         private static void AssertAuthoritativeLayoutContract()
         {
             Assert.That(NetworkMinefieldState.GridWidth, Is.EqualTo(2));
