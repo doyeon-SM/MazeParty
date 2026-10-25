@@ -15,8 +15,8 @@ MonoBehaviour:
   key: bgm.minigame
   channel: 1
   clips:
-  - {fileID: 8300000, guid: aa01d0785036a97469897c3e25656b79, type: 3}
-  - {fileID: 8300000, guid: 1f28dc6be91755e44a35d4e8687debc5, type: 3}
+  - {fileID: 8300000, guid: 3f7a8a2f6836e3347b124a918cbaac9a, type: 3}
+  - {fileID: 8300000, guid: b1a6f076054b6f045bf6d63c1f23fe4c, type: 3}
   variationMode: 1
   volume: 0.7
   volumeVariance: 0
@@ -26,6 +26,7 @@ MonoBehaviour:
   maxDistance: 30
   rolloff: 1
   loop: 1
+  startOffsetSeconds: 0
   maxInstances: 0
   minInterval: 0
   priority: 100

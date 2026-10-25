@@ -13,7 +13,7 @@ namespace MazeParty.Multiplayer
             string progressSource,
             SessionLifecycleState operationState)
         {
-            if (_destroyed || _applicationQuitting)
+            if (_destroyed || _applicationQuitting || PrivacyDeletionBusy || PrivacyOnlinePaused)
             {
                 return;
             }
@@ -74,6 +74,10 @@ namespace MazeParty.Multiplayer
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
                 // OnDestroy owns cancellation; no destroyed UI may be updated.
+            }
+            catch (Exception) when (PrivacyOnlinePaused)
+            {
+                SetLocalizedStatus(GameText.N("Online access is paused after a deletion request. Open Settings > Privacy & Support to continue."));
             }
             catch (Exception exception)
             {

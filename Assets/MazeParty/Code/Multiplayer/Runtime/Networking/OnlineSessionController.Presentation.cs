@@ -129,7 +129,7 @@ namespace MazeParty.Multiplayer
             }
 
             ApplyMatchRecoveryPresentation();
-            lobbyView.Render(snapshot, inSession, IsBusy, _status);
+            lobbyView.Render(snapshot, inSession, IsBusy || PrivacyOnlinePaused, _status);
             RenderRecoveryEntry(inSession);
         }
 

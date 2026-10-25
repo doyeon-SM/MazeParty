@@ -38,6 +38,13 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(view, Is.Not.Null);
             Assert.That(bindings.HasRequiredReferences, Is.True);
             Assert.That(view.Bindings, Is.SameAs(bindings));
+            var privacy = prefab.GetComponent<PrivacyMenuBindings>();
+            Assert.That(privacy, Is.Not.Null);
+            Assert.That(privacy.HasRequiredReferences, Is.True);
+            Assert.That(prefab.GetComponent<PrivacyMenuView>().Bindings, Is.SameAs(privacy));
+            Assert.That(privacy.OpenButton.transform.IsChildOf(bindings.MenuRoot.transform), Is.True);
+            Assert.That(privacy.PanelRoot.activeSelf, Is.False);
+            Assert.That(privacy.ConfirmRoot.activeSelf, Is.False);
             Assert.That(prefab.GetComponentsInChildren<Canvas>(true), Has.Length.EqualTo(1));
             Assert.That(bindings.RootCanvas.sortingOrder, Is.GreaterThanOrEqualTo(1000),
                 "The menu must draw above every gameplay Canvas.");
@@ -75,6 +82,9 @@ namespace MazeParty.Multiplayer.Tests
                     .ToArray();
                 Assert.That(views, Has.Length.EqualTo(1));
                 Assert.That(views[0].transform.parent, Is.Null);
+            Assert.That(views[0].GetComponent<PrivacyMenuBindings>().HasRequiredReferences, Is.True);
+            Assert.That(views[0].GetComponent<PrivacyMenuView>().Bindings,
+                Is.SameAs(views[0].GetComponent<PrivacyMenuBindings>()));
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(views[0].gameObject),
                     Is.EqualTo(MenuPrefabPath));

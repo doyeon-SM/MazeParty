@@ -118,6 +118,8 @@ namespace MazeParty.Editor
                 }
             }
 
+            PrivacyMenuProjectSetup.EnsureAdded();
+            prefab = AssetDatabase.LoadAssetAtPath<GameObject>(CanvasPrefabPath);
             ValidateCanvasPrefab(prefab);
             return prefab;
         }

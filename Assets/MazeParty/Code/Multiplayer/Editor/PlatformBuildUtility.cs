@@ -44,6 +44,7 @@ namespace MazeParty.Multiplayer.Editor
             var serialized = new SerializedObject(profile);
             serialized.FindProperty("m_HasScriptingDefines").boolValue = true;
             serialized.FindProperty("m_Subtarget").intValue = (int)StandaloneBuildSubtarget.Player;
+            RequireDiagnosticsSetting(serialized).intValue = 0; // Disabled, including future store profiles.
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
         }
@@ -135,6 +136,9 @@ namespace MazeParty.Multiplayer.Editor
             if (report.summary.platform != BuildTarget.StandaloneWindows64 ||
                 PlayerSettings.GetScriptingBackend(NamedBuildTarget.Standalone) != ScriptingImplementation.IL2CPP)
                 throw new BuildFailedException("Store builds require Windows x64 / IL2CPP.");
+            var profile = BuildProfile.GetActiveBuildProfile();
+            if (profile == null) throw new BuildFailedException("Select a store build profile first.");
+            ValidateDiagnostics(new SerializedObject(profile));
             if (!_validationBuild) ReadLocalSettings().Validate(PlatformContext.Channel);
             if (PlatformContext.Channel == "stove")
             {
@@ -163,6 +167,8 @@ namespace MazeParty.Multiplayer.Editor
                 throw new BuildFailedException("The Steam x64 native SDK is missing from the output.");
             if (File.Exists(Path.Combine(root, "steam_appid.txt")))
                 throw new BuildFailedException("Do not ship steam_appid.txt. Use a fresh output directory.");
+            if (report.summary.platform == BuildTarget.StandaloneWindows64)
+                CopyThirdPartyNotices(root);
             if (!PlatformContext.IsStoreBuild) return;
             var sdkFiles = Directory.GetFiles(data, "BaseSDK*.dll", SearchOption.AllDirectories);
             if (PlatformContext.Channel == "steam" && sdkFiles.Length != 0)
@@ -178,6 +184,47 @@ namespace MazeParty.Multiplayer.Editor
             var streaming = Path.Combine(data, "StreamingAssets");
             Directory.CreateDirectory(streaming);
             File.WriteAllText(Path.Combine(streaming, PlatformContext.SettingsFileName), ReadLocalSettings().ToClientJson(PlatformContext.Channel));
+        }
+
+        internal static void ValidateDiagnostics(SerializedObject profile)
+        {
+            if (RequireDiagnosticsSetting(profile).intValue != 0)
+                throw new BuildFailedException("Store builds require Engine Diagnostics = Disabled in the active build profile.");
+        }
+
+        private static SerializedProperty RequireDiagnosticsSetting(SerializedObject profile)
+        {
+            var setting = profile.FindProperty(
+                "m_PlatformBuildProfile.m_InsightsSettingsContainer.m_BuildProfileEngineDiagnosticsState");
+            if (setting == null)
+                throw new BuildFailedException("Cannot verify Engine Diagnostics. Review the build profile after updating Unity.");
+            return setting;
+        }
+
+        internal static void CopyThirdPartyNotices(string outputRoot)
+        {
+            var projectRoot = Directory.GetParent(Application.dataPath).FullName;
+            var source = Path.Combine(projectRoot, "ThirdPartyLicenses");
+            var notice = Path.Combine(projectRoot, "THIRD_PARTY_NOTICES.md");
+            if (!File.Exists(notice) || !Directory.Exists(source))
+                throw new BuildFailedException("THIRD_PARTY_NOTICES.md and ThirdPartyLicenses are required for Windows builds.");
+            var files = Directory.GetFiles(source, "*", SearchOption.AllDirectories)
+                .Where(file => string.Equals(Path.GetExtension(file), ".txt", StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(Path.GetExtension(file), ".md", StringComparison.OrdinalIgnoreCase)).ToArray();
+            if (files.Length == 0)
+                throw new BuildFailedException("ThirdPartyLicenses contains no license texts.");
+            if (string.Equals(Path.GetFullPath(outputRoot).TrimEnd(Path.DirectorySeparatorChar),
+                    projectRoot.TrimEnd(Path.DirectorySeparatorChar), StringComparison.OrdinalIgnoreCase))
+                throw new BuildFailedException("Use a separate build output directory, not the project root.");
+            Directory.CreateDirectory(outputRoot);
+            File.Copy(notice, Path.Combine(outputRoot, "THIRD_PARTY_NOTICES.md"), true);
+            foreach (var file in files)
+            {
+                var relative = file.Substring(source.Length + 1);
+                var destination = Path.Combine(outputRoot, "ThirdPartyLicenses", relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination));
+                File.Copy(file, destination, true);
+            }
         }
 
         private static PlatformLaunchSettings ReadLocalSettings()

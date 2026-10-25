@@ -99,7 +99,7 @@ namespace MazeParty.Multiplayer
                     string.Join("\n", _savedEntry.players.Select((p, i) => string.IsNullOrWhiteSpace(p.displayName)
                         ? GameText.F("Player {0}", i + 1) : p.displayName));
             }
-            lobbyView.RecoveryView.Render(inSession, IsBusy, TryGetPlayingReconnectTicket(out _),
+            lobbyView.RecoveryView.Render(inSession, IsBusy || PrivacyOnlinePaused, TryGetPlayingReconnectTicket(out _),
                 CanRestartSavedGame, details, _status);
         }
 

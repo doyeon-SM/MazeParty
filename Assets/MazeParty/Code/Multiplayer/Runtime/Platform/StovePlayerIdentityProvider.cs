@@ -51,6 +51,7 @@ namespace MazeParty.Multiplayer
                 AuthenticationService.Instance.Profile != profile)
                 throw new InvalidOperationException("UGS was initialized for another account or environment. Restart the game.");
 
+            PrivacyDeletionHoldStore.EnsureSignInAllowed();
             var auth = AuthenticationService.Instance;
             if (!auth.IsAuthorized)
             {

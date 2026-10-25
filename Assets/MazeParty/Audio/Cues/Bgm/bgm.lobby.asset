@@ -15,7 +15,7 @@ MonoBehaviour:
   key: bgm.lobby
   channel: 1
   clips:
-  - {fileID: 8300000, guid: e107c094942c60c4ca15d4455cda899a, type: 3}
+  - {fileID: 8300000, guid: 1d2169e9dc33b6748941d9f7e717b000, type: 3}
   variationMode: 1
   volume: 0.7
   volumeVariance: 0
@@ -25,6 +25,7 @@ MonoBehaviour:
   maxDistance: 30
   rolloff: 1
   loop: 1
+  startOffsetSeconds: 0
   maxInstances: 0
   minInterval: 0
   priority: 100

@@ -114,7 +114,7 @@ namespace MazeParty.Multiplayer
             _sessions != null ? _sessions.Current : SessionSnapshot.Empty;
         public PlayerAppearanceState LocalAppearance => _localProfile.Appearance;
         public bool IsInSession => _sessions != null && _sessions.IsInSession;
-        public bool IsBusy => _sessionOperations.IsBusy;
+        public bool IsBusy => _sessionOperations.IsBusy || PrivacyDeletionBusy;
         public SessionLifecycleState LifecycleState => _sessionOperations.State;
         public bool IsVoluntaryLeavePending => _voluntaryLeavePending;
         public bool IsBoardMapSelectionLocked =>

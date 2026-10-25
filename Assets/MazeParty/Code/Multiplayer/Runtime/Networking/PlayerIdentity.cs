@@ -41,6 +41,7 @@ namespace MazeParty.Multiplayer
                 await UnityServices.InitializeAsync(options);
             }
 
+            PrivacyDeletionHoldStore.EnsureSignInAllowed();
             if (!AuthenticationService.Instance.IsSignedIn)
             {
                 await AuthenticationService.Instance.SignInAnonymouslyAsync();
