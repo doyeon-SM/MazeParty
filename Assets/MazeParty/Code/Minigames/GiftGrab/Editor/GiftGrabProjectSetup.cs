@@ -164,6 +164,13 @@ namespace MazeParty.Editor
                 arenaPresentation,
                 audioSource);
 
+            var hudPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab");
+            if (hudPrefab == null) throw new InvalidOperationException("Shared score HUD prefab is missing.");
+            var hud = (GameObject)PrefabUtility.InstantiatePrefab(hudPrefab, scene);
+            hud.name = "Gift Grab Shared Gift HUD";
+            view.ConfigureHud(hud.GetComponent<BouncingBallsHudBindings>());
+
             ValidateSceneContract(root);
             EditorSceneManager.SaveScene(scene, GiftGrabScenePath);
             EnsureGiftGrabInBuildSettings();

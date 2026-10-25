@@ -165,7 +165,8 @@ namespace MazeParty.Multiplayer.Tests
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/BalloonBlow/BalloonBlow.unity"),
             new SceneUiContract(
-                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity"),
+                "Assets/MazeParty/Scenes/Minigames/GiftGrab/GiftGrab.unity",
+                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
             new SceneUiContract(
                 "Assets/MazeParty/Scenes/Minigames/TerritoryPaint/TerritoryPaint.unity",
                 "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"),
@@ -700,6 +701,14 @@ namespace MazeParty.Multiplayer.Tests
                             Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                                 director.CloudTransition.gameObject), Is.EqualTo(
                                 "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab"));
+                        }
+                        if (component is GiftGrabNetworkView giftView)
+                        {
+                            Assert.That(giftView.GiftHud, Is.Not.Null);
+                            Assert.That(giftView.GiftHud.HasRequiredReferences, Is.True);
+                            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                                giftView.GiftHud.gameObject), Is.EqualTo(
+                                "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"));
                         }
                         if (component is BoardFlowCameraPresenter presenter)
                         {

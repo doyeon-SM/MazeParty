@@ -159,6 +159,7 @@ MonoBehaviour:
   healthy: {r: 0.2, g: 0.82, b: 0.38, a: 1}
   wounded: {r: 1, g: 0.7, b: 0.16, a: 1}
   critical: {r: 0.95, g: 0.2, b: 0.2, a: 1}
+  headClearance: 0.25
 --- !u!114 &6366251465877424062
 MonoBehaviour:
   m_ObjectHideFlags: 0

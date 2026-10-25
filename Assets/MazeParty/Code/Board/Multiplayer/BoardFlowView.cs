@@ -1463,11 +1463,10 @@ namespace MazeParty.Multiplayer
                 }
 
                 var isReady = match.IsMinigameReady(slot);
-                SetText(
-                    playerState,
-                    isReady
-                        ? GameText.F("P{0}  READY", slot + 1)
-                        : GameText.F("P{0}  WAITING", slot + 1));
+                var playerName = ResolveBoardPlayerName(match.GetAvatarForSlot(slot), slot)
+                    .Replace("<", "＜").Replace(">", "＞");
+                SetText(playerState, playerName + "  " +
+                    GameText.T(isReady ? "READY" : "WAITING"));
                 playerState.color = isReady
                     ? uiBindings.Hud.ReadyPlayerCompleteColor
                     : uiBindings.Hud.ReadyPlayerWaitingColor;

@@ -164,6 +164,7 @@ namespace MazeParty.Multiplayer
                 match.CurrentMinigame == ScheduledMinigameId.ArenaCombat;
             var showWorld = state != null && state.IsSpawned && selected;
             SetWorldPresentationActive(showWorld);
+            if (showWorld) ResolveLocalAvatar(match);
             RefreshHealthBars(match, showWorld);
             if (!showWorld)
             {
@@ -176,17 +177,15 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            ResolveLocalAvatar(match);
             var localSlot = _localAvatar != null
                 ? _localAvatar.AssignedSlot
                 : -1;
             var isAlive = localSlot >= 0 && localSlot < 4 &&
                           !state.IsEliminated(localSlot);
-            var showingCountdown = match.IsMinigameRoundCountdown ||
-                                   state.Phase == NetworkArenaCombatPhase.Countdown;
+
             var playing = match.FlowState ==
                           BoardFlowState.MinigamePlaying;
-            var useFirstPerson = isAlive && playing && !showingCountdown;
+            var useFirstPerson = isAlive && playing;
             var showAim = useFirstPerson &&
                           state.Phase == NetworkArenaCombatPhase.Playing &&
                           !state.IsPaused;
@@ -221,24 +220,21 @@ namespace MazeParty.Multiplayer
                 var avatar = showWorld && match != null
                     ? match.GetAvatarForSlot(slot)
                     : null;
-                var anchor = avatar?.AvatarVisual?.Bindings?.NameplateAnchor;
+                var visual = avatar != null ? avatar.AvatarVisual : null;
                 var bar = _healthBars[slot];
-                if (bar != null && bar.transform.parent != anchor)
+                if (visual != null && bar == null && healthBarPrefab != null)
                 {
-                    Destroy(bar.gameObject);
-                    _healthBars[slot] = bar = null;
-                }
-                if (anchor != null && bar == null && healthBarPrefab != null)
-                {
-                    bar = Instantiate(healthBarPrefab, anchor, false);
-                    bar.transform.localRotation = Quaternion.identity;
+                    // A nameplate can be hidden or animated independently of combat HP.
+                    bar = Instantiate(healthBarPrefab, transform, false);
                     _healthBars[slot] = bar;
                 }
                 if (bar == null)
                 {
                     continue;
                 }
-                var visible = showWorld && !state.IsEliminated(slot);
+                bar.SetTarget(visual, _cameraDirector != null ? _cameraDirector.OutputCamera : null);
+                var visible = showWorld && visual != null && avatar != _localAvatar &&
+                              !state.IsEliminated(slot);
                 if (bar.gameObject.activeSelf != visible)
                 {
                     bar.gameObject.SetActive(visible);

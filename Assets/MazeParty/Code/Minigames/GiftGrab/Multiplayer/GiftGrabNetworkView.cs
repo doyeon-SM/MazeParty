@@ -31,6 +31,9 @@ namespace MazeParty.Multiplayer
         };
 
         [SerializeField] private NetworkGiftGrabState state;
+        [SerializeField] private BouncingBallsHudBindings giftHud;
+        public BouncingBallsHudBindings GiftHud => giftHud;
+        public void ConfigureHud(BouncingBallsHudBindings hud) => giftHud = hud;
         [SerializeField] private CinemachineCamera sharedCamera;
         [SerializeField] private Transform playerRoot;
         [SerializeField] private Transform giftRoot;
@@ -171,9 +174,24 @@ namespace MazeParty.Multiplayer
             // MinigameLocalPlayerHighlight owns the brief shared countdown
             // marker; this view does not keep a persistent local-player mark.
             RefreshPlayers(match);
+            RefreshGiftHud(match);
             RefreshGifts(match);
             RefreshBaseColors(match);
             RefreshActionVfx();
+        }
+
+        private void RefreshGiftHud(NetworkMatchState match)
+        {
+            if (giftHud == null || !giftHud.HasRequiredReferences) return;
+            for (var slot = 0; slot < PlayerCount; slot++)
+            {
+                var avatar = match.GetAvatarForSlot(slot);
+                var name = avatar != null && !string.IsNullOrWhiteSpace(avatar.DisplayName)
+                    ? avatar.DisplayName : GameText.F("Player {0}", slot + 1);
+                giftHud.SetPlayer(slot, name.Replace("<", "＜").Replace(">", "＞"),
+                    state.GetDepositedGiftCount(slot),
+                    avatar != null ? avatar.Appearance.BodyColor : FallbackPlayerColors[slot]);
+            }
         }
 
         private void ConfigureCamera()
@@ -565,6 +583,7 @@ namespace MazeParty.Multiplayer
 
         private void SetWorldPresentationActive(bool active)
         {
+            if (giftHud != null) giftHud.RootCanvas.gameObject.SetActive(active);
             if (_worldVisibilityInitialized && _worldVisible == active)
             {
                 return;

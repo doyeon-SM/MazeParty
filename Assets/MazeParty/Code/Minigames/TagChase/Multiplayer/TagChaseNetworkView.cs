@@ -254,15 +254,12 @@ namespace MazeParty.Multiplayer
 
         private void RefreshPlayers(NetworkMatchState match)
         {
-            var showingRoundCountdown =
-                match.IsMinigameRoundCountdown;
             var localUsesFirstPerson =
                 TagChaseRules.CanUseFirstPersonControls(
                     _localSlot,
                     state.IsMatchActive,
                     state.IsCaught(_localSlot)) &&
-                state.IsTagger(_localSlot) &&
-                !showingRoundCountdown;
+                state.IsTagger(_localSlot);
             for (var slot = 0;
                  slot < _players.Length;
                  slot++)
@@ -385,15 +382,12 @@ namespace MazeParty.Multiplayer
 
         private void RefreshCamera(NetworkMatchState match)
         {
-            var showingRoundCountdown =
-                match.IsMinigameRoundCountdown;
             var useFirstPersonCamera =
                 TagChaseRules.CanUseFirstPersonControls(
                     _localSlot,
                     state.IsMatchActive,
                     state.IsCaught(_localSlot)) &&
-                state.IsTagger(_localSlot) &&
-                !showingRoundCountdown;
+                state.IsTagger(_localSlot);
             var desiredCamera =
                 useFirstPersonCamera
                     ? taggerCamera

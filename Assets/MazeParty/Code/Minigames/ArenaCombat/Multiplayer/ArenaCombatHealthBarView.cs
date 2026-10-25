@@ -1,8 +1,10 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
 
 namespace MazeParty.Multiplayer
 {
+    [DefaultExecutionOrder(1000)]
     [DisallowMultipleComponent]
     public sealed class ArenaCombatHealthBarView : MonoBehaviour
     {
@@ -15,9 +17,18 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Color wounded = new Color(1f, 0.7f, 0.16f);
         [SerializeField] private Color critical = new Color(0.95f, 0.2f, 0.2f);
 
+        [SerializeField, Min(0f)] private float headClearance = 0.25f;
+        private PlayerAvatarVisual _target;
+        private Camera _outputCamera;
         private int _current;
         private int _maximum;
         private bool _initialized;
+
+        public void SetTarget(PlayerAvatarVisual target, Camera outputCamera = null)
+        {
+            _target = target;
+            _outputCamera = outputCamera;
+        }
 
         public bool HasRequiredReferences =>
             worldCanvas != null && slider != null && fill != null &&
@@ -71,6 +82,16 @@ namespace MazeParty.Multiplayer
         private void LateUpdate()
         {
             if (_initialized) feedback.Tick(Time.unscaledTimeAsDouble);
+            var camera = _outputCamera != null ? _outputCamera : Camera.main;
+            if (_target == null || camera == null) return;
+            // Follow the actual player after animation and face the output camera,
+            // independently of the nameplate's visibility, rotation and hierarchy.
+            var position = _target.transform.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            if (_target.TryGetHeadBounds(out var bounds))
+                position.y = bounds.max.y;
+            transform.SetPositionAndRotation(position + Vector3.up * headClearance,
+                camera.transform.rotation);
+            worldCanvas.worldCamera = camera;
         }
 
         private void OnDisable() => _initialized = false;

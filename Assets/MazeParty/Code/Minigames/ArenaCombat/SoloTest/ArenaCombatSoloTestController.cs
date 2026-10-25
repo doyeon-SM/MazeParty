@@ -155,8 +155,8 @@ namespace MazeParty.Dev.MinigameSoloTest
                     ? "SOLO DEV"
                     : "PRACTICE " + (slot + 1));
                 DisableGeneratedHitColliders(body);
-                var healthBar = Instantiate(_productionView.HealthBarPrefab,
-                    visual.Bindings.NameplateAnchor, false);
+                var healthBar = Instantiate(_productionView.HealthBarPrefab, body.transform, false);
+                healthBar.SetTarget(visual);
                 _fighters[slot] = new Fighter(body.transform, eye, visual) { HealthBar = healthBar };
             }
         }
@@ -412,7 +412,9 @@ namespace MazeParty.Dev.MinigameSoloTest
             foreach (var fighter in _fighters)
             {
                 fighter.Visual.SetBoardNameplateCamera(_camera);
-                fighter.HealthBar.gameObject.SetActive(fighter.IsAlive);
+                fighter.HealthBar.SetTarget(fighter.Visual, _camera);
+                fighter.HealthBar.gameObject.SetActive(fighter.IsAlive &&
+                    (fighter != _fighters[LocalPlayerSlot] || _phase != PracticePhase.Playing));
                 if (fighter.IsAlive) fighter.HealthBar.SetHealth(fighter.Health, BoardCombatRules.TemporaryHealth);
             }
             var local = _fighters[LocalPlayerSlot];
