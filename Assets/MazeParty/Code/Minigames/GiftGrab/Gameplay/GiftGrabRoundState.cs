@@ -68,7 +68,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         Hit,
         IgnoredRoundComplete,
         IgnoredNotThrown,
-        IgnoredThrowerImmunity
+        IgnoredThrowerImmunity,
+        IgnoredStunProtection
     }
 
     public enum GiftGrabPushStatus : byte
@@ -82,7 +83,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         CastStarted,
         IgnoredCastInProgress,
         IgnoredNotCasting,
-        IgnoredThrowRecovery
+        IgnoredThrowRecovery,
+        IgnoredStunProtection
     }
 
     public enum GiftGrabOutOfBoundsStatus : byte
@@ -292,6 +294,11 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         private bool _carriedFromOpponent;
         public double CumulativeStoredGiftSeconds { get; private set; }
         public double StunnedUntilSeconds { get; private set; }
+        private double _stunStartedAtSeconds;
+        public double StunProtectionUntilSeconds { get; private set; }
+        public bool IsStunProtectedAt(double activeElapsedSeconds) =>
+            activeElapsedSeconds + TimeEpsilon >= _stunStartedAtSeconds &&
+            activeElapsedSeconds + TimeEpsilon < StunProtectionUntilSeconds;
         public double ThrowRecoveryEndsAtSeconds { get; private set; }
         public double PushCooldownEndsAtSeconds { get; private set; }
         public double PushCastEndsAtSeconds { get; private set; }
@@ -359,11 +366,11 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             StoredGiftCount--;
         }
 
-        internal void ApplyStun(double stunnedUntilSeconds)
+        internal void ApplyStun(double activeElapsedSeconds, double durationSeconds)
         {
-            StunnedUntilSeconds = Math.Max(
-                StunnedUntilSeconds,
-                stunnedUntilSeconds);
+            _stunStartedAtSeconds = activeElapsedSeconds;
+            StunnedUntilSeconds = Math.Max(StunnedUntilSeconds, activeElapsedSeconds + durationSeconds);
+            StunProtectionUntilSeconds = StunnedUntilSeconds + GiftGrabRules.StunProtectionSeconds;
         }
 
         internal void BeginThrowRecovery(double activeElapsedSeconds)
@@ -948,12 +955,16 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
                     GiftGrabRules.NoGiftId);
             }
 
+            if (victim.IsStunProtectedAt(impactElapsedSeconds))
+                return ThrownHitResolution(gift, victim,
+                    GiftGrabThrownHitStatus.IgnoredStunProtection, GiftGrabRules.NoGiftId);
+
             gift.LandFromThrow(impactElapsedSeconds);
             var droppedGiftId = DropHeldGift(
                 victim,
                 impactElapsedSeconds);
             victim.ApplyStun(
-                impactElapsedSeconds + GiftGrabRules.ThrowStunSeconds);
+                impactElapsedSeconds, GiftGrabRules.ThrowStunSeconds);
             return ThrownHitResolution(
                 gift,
                 victim,
@@ -1103,9 +1114,13 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
             }
 
             var victim = _players[victimSlot];
+            if (victim.IsStunProtectedAt(completedAtSeconds))
+                return PushResolution(attacker, victimSlot,
+                    GiftGrabPushStatus.IgnoredStunProtection, GiftGrabRules.NoGiftId,
+                    victim.StunnedUntilSeconds);
             var droppedGiftId = DropHeldGift(victim, completedAtSeconds);
             victim.ApplyStun(
-                completedAtSeconds + GiftGrabRules.PushStunSeconds);
+                completedAtSeconds, GiftGrabRules.PushStunSeconds);
             return PushResolution(
                 attacker,
                 victimSlot,

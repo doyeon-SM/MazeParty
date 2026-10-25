@@ -19,6 +19,8 @@ namespace MazeParty.Editor
         public const string HudPath=Folder+"/UI/ShellGameHud.prefab";
         public const string BoxPath=Folder+"/ShellGameBox.prefab";
         public const string CoinPath=Folder+"/ShellGameCoin.prefab";
+        public const string GoldBarPath=Folder+"/ShellGameGoldBar.prefab";
+        public const string MoneyPath=Folder+"/ShellGameMoney.prefab";
         private const string CommonHudPath="Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab";
         private const string ScoreHudPath="Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab";
         [MenuItem("MazeParty/Minigames/Build Shell Game")]
@@ -109,9 +111,11 @@ namespace MazeParty.Editor
                     var common=(GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(CommonHudPath),scene);
                     EditorSceneManager.SaveScene(scene,ScenePath);
                     root.AddComponent<NetworkObject>(); var state=root.AddComponent<NetworkShellGameState>();
-                    root.AddComponent<ShellGameNetworkView>().Configure(state,camera,arena,players,anchors,boxes,colliders,coinObject,
+                    var presentation=root.AddComponent<ShellGameNetworkView>();
+                    presentation.Configure(state,camera,arena,players,anchors,boxes,colliders,
                         marker.transform,AssetDatabase.LoadAssetAtPath<GameObject>(MinigameVfxProjectSetup.ArrivalFireworksPrefabPath),scores.GetComponent<BouncingBallsHudBindings>(),selection.GetComponent<ShellGameHudBindings>(),
                         common.GetComponent<MinigameStartCountdownView>(),common.GetComponent<MinigameCommonHudView>(),center+Vector3.up*.05f);
+                    CreateItemPresentation(presentation,coinObject);
                     EditorSceneManager.SaveScene(scene,ScenePath);
                 }
                 var view=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<ShellGameNetworkView>(true)).Single();
@@ -127,13 +131,35 @@ namespace MazeParty.Editor
             EnsurePreviewSlot();
             SoundSystemProjectSetup.EnsureCues(); SoundSystemProjectSetup.RefreshLibraryMenu(); AssetDatabase.SaveAssets();
         }
+        // Initial authoring only. Setup validates existing scenes without rebuilding their presentation.
+        private static void CreateItemPresentation(ShellGameNetworkView view, Transform existingCoin)
+        {
+            var prefabs=new[] {
+                EnsureModel(CoinPath,"Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Coin.prefab",.9f,true),
+                EnsureModel(GoldBarPath,"Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/GoldBar.prefab",.9f,true),
+                EnsureModel(MoneyPath,"Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/Money.prefab",.9f,true) };
+            var contents=new GameObject("Shell Items").transform; contents.SetParent(view.transform,false);
+            var items=new Transform[3]; var targets=new Transform[3];
+            var targetAnchor=new GameObject("Target Item Anchor").transform; targetAnchor.SetParent(view.transform,false);
+            targetAnchor.position=new SerializedObject(view).FindProperty("boxCenter").vector3Value+new Vector3(0f,.8f,-3.5f);
+            for(var item=0;item<3;item++)
+            {
+                items[item]=item==0 && existingCoin!=null ? existingCoin :
+                    ((GameObject)PrefabUtility.InstantiatePrefab(prefabs[item],contents)).transform;
+                items[item].SetParent(contents,true); items[item].gameObject.SetActive(false);
+                targets[item]=((GameObject)PrefabUtility.InstantiatePrefab(prefabs[item],targetAnchor)).transform;
+                targets[item].name="Target "+prefabs[item].name;
+                targets[item].gameObject.SetActive(false);
+            }
+            view.ConfigureItems(items,targets,targetAnchor); EditorUtility.SetDirty(view);
+        }
         private static GameObject EnsureModel(string path,string source,float width,bool isCoin)
         {
             var existing=AssetDatabase.LoadAssetAtPath<GameObject>(path);
             if(existing!=null) return existing;
             var template=AssetDatabase.LoadAssetAtPath<GameObject>(source);
             if(template==null) throw new InvalidOperationException("Missing "+source);
-            var root=new GameObject(isCoin ? "Shell Game Coin" : "Shell Game Box");
+            var root=new GameObject(System.IO.Path.GetFileNameWithoutExtension(path));
             try
             {
                 var model=UnityEngine.Object.Instantiate(template,root.transform);

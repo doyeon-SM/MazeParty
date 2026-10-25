@@ -60,9 +60,12 @@ namespace MazeParty.Gameplay.Tests
         {
             var settings = MatchGameSettings.Default;
             const string savedDefault = "1:15:AQMDAQIEAQMEAQMEAQMCAQIEAQEEAQQEAQMEAQUAAQIEAQEAAQMEAQEEAQMEAQIEAQUAAQMIAQUAAQEI";
-            Assert.That(settings.Encode(), Is.EqualTo(savedDefault));
+            Assert.That(settings.Get(ScheduledMinigameId.Race2).Rounds, Is.EqualTo(1));
+            Assert.That(settings.Get(ScheduledMinigameId.Race2).Seconds, Is.EqualTo(60));
             Assert.That(MatchGameSettings.TryDecode(savedDefault, out var saved), Is.True);
             Assert.That(saved.Encode(), Is.EqualTo(savedDefault));
+            Assert.That(saved.Get(ScheduledMinigameId.Race2).Rounds, Is.EqualTo(3));
+            Assert.That(saved.Get(ScheduledMinigameId.Race2).Seconds, Is.EqualTo(120));
             foreach (ScheduledMinigameId id in settings.IncludedGames())
             {
                 var timed = MatchGameSettings.HasTimeLimit(id);
@@ -133,7 +136,7 @@ namespace MazeParty.Gameplay.Tests
                     Assert.That(Race2Rules.TimeAtDistance(Race2Rules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
                     Assert.That(FlightRules.TimeAtDistance(FlightRules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
                 }
-                Assert.That(Race2Rules.Speed(seconds, seconds), Is.EqualTo(15d).Within(1e-8));
+                Assert.That(Race2Rules.Speed(seconds, seconds), Is.EqualTo(22.5d).Within(1e-8));
                 var match = new FlightMatchState(417, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Flight, settings));
                 for (var tick = 0; tick < seconds * 120; tick++)
                 {

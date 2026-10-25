@@ -401,6 +401,89 @@ namespace MazeParty.Multiplayer.Tests
             return null;
         }
 
+        [Test]
+        public void StunProtection_ReplicatesWithoutFreezingMovement_SurvivesPauseAndClearsNextRound()
+        {
+            var root = new GameObject("Gift protection replication");
+            var warning = typeof(NetworkVariableBase).GetField("IgnoreInitializeWarning", BindingFlags.Static | BindingFlags.NonPublic);
+            var old = warning.GetValue(null); warning.SetValue(null, true);
+            var state = root.AddComponent<NetworkGiftGrabState>();
+            try
+            {
+                typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(state, true);
+                typeof(NetworkBehaviour).GetProperty("IsServer").SetValue(state, true);
+                var round = new GiftGrabRoundState(1);
+                round.ResolvePickup(1, 0, 0d); round.ResolveThrow(1, 0d);
+                Assert.That(round.ResolveThrownHit(0, 0, 0d).WasHit, Is.True);
+                NetworkCountdownTestAccess.SetPrivateField(state, "_roundState", round);
+                NetworkCountdownTestAccess.SetPrivateField(state, "_runningStartedAt", 100d);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_matchActive", true);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phase", (byte)NetworkGiftGrabPhase.Running);
+                NetworkCountdownTestAccess.SetNetworkValue(state, "_phaseEndsAt", 160d);
+                NetworkCountdownTestAccess.InvokePrivate(state, "EnsureSnapshotCountsOnServer");
+                var positions = GetPrivateField<Vector2[]>(state, "_playerPositions");
+                for (var slot = 0; slot < 4; slot++) positions[slot] = NetworkGiftGrabState.GetPlayerStartPosition(slot);
+                GetPrivateField<Vector2[]>(state, "_serverInputs")[0] = Vector2.right;
+                var start = positions[0];
+                state.PauseOnServer(100.65d);
+                Assert.That(state.GetPlayerStunRemaining(0), Is.Zero);
+                Assert.That(state.GetPlayerStunProtectionRemaining(0), Is.EqualTo(.35d).Within(1e-6));
+                Assert.That(positions[0].x, Is.EqualTo(start.x + GiftGrabRules.NormalMoveSpeed * .15f).Within(.001f));
+                var snapshot = GetPrivateField<NetworkList<GiftGrabPlayerNetworkSnapshot>>(state, "_playerSnapshots")[0];
+                using (var writer = new FastBufferWriter(256, Unity.Collections.Allocator.Temp))
+                {
+                    writer.WriteNetworkSerializable(snapshot);
+                    using (var reader = new FastBufferReader(writer, Unity.Collections.Allocator.Temp))
+                    {
+                        reader.ReadNetworkSerializable(out GiftGrabPlayerNetworkSnapshot restored);
+                        Assert.That(restored.Equals(snapshot), Is.True);
+                        Assert.That(restored.StunProtectionRemainingSeconds, Is.EqualTo(.35f).Within(1e-6));
+                        restored.StunProtectionRemainingSeconds = 0f;
+                        Assert.That(restored.Equals(snapshot), Is.False);
+                    }
+                }
+                NetworkCountdownTestAccess.InvokePrivate(state, "Update");
+                Assert.That(state.GetPlayerStunProtectionRemaining(0), Is.EqualTo(snapshot.StunProtectionRemainingSeconds));
+                state.ResumeOnServer(1000d);
+                Assert.That(GetPrivateField<double>(state, "_runningStartedAt"), Is.EqualTo(999.35d).Within(1e-8));
+                NetworkCountdownTestAccess.InvokePrivate(state, "SimulateToOnServer", 1d);
+                NetworkCountdownTestAccess.InvokePrivate(state, "SyncSnapshotsOnServer");
+                Assert.That(state.GetPlayerStunProtectionRemaining(0), Is.Zero);
+                NetworkCountdownTestAccess.InvokePrivate(state, "BeginRoundOnServer", 2, 1001d);
+                Assert.That(state.GetPlayerStunProtectionRemaining(0), Is.Zero);
+            }
+            finally
+            {
+                typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(state, false);
+                Object.DestroyImmediate(root); warning.SetValue(null, old);
+            }
+        }
+
+        [Test]
+        public void ThrownGift_SkipsProtectedPlayerAndCanHitTheNextPlayerOnItsPath()
+        {
+            var root = new GameObject("Gift protected projectile path");
+            try
+            {
+                var state = root.AddComponent<NetworkGiftGrabState>();
+                var round = new GiftGrabRoundState(1);
+                round.ResolvePickup(1, 0, 0d); round.ResolveThrow(1, 0d); round.ResolveThrownHit(0, 0, 0d);
+                round.ResolvePickup(3, 1, 0d); round.ResolveThrow(3, 0d);
+                NetworkCountdownTestAccess.SetPrivateField(state, "_roundState", round);
+                var positions = GetPrivateField<Vector2[]>(state, "_playerPositions");
+                positions[0] = new Vector2(5f, 0f); positions[1] = new Vector2(20f, 20f);
+                positions[2] = new Vector2(10f, 0f); positions[3] = new Vector2(20f, -20f);
+                var args = new object[] { round.GetGift(1), Vector2.zero, new Vector2(15f, 0f), 0d, .5f, 0f };
+                var victim = typeof(NetworkGiftGrabState).GetMethod("FindFirstThrownVictim",
+                    BindingFlags.Instance | BindingFlags.NonPublic).Invoke(state, args);
+                Assert.That(victim, Is.EqualTo(2));
+                var impact = .5d * (float)args[5];
+                Assert.That(round.ResolveThrownHit(1, 2, impact, .5d).WasHit, Is.True);
+            }
+            finally { Object.DestroyImmediate(root); }
+        }
+
+
         private static T GetPrivateField<T>(
             object target,
             string fieldName)

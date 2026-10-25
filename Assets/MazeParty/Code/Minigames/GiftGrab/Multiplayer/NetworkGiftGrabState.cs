@@ -38,6 +38,7 @@ namespace MazeParty.Multiplayer
         public Vector2 Position;
         public Vector2 Facing;
         public float StunRemainingSeconds;
+        public float StunProtectionRemainingSeconds;
         public float ThrowRecoveryRemainingSeconds;
         public float PushCastRemainingSeconds;
         public float ActionCooldownRemainingSeconds;
@@ -50,6 +51,7 @@ namespace MazeParty.Multiplayer
             serializer.SerializeValue(ref Position);
             serializer.SerializeValue(ref Facing);
             serializer.SerializeValue(ref StunRemainingSeconds);
+            serializer.SerializeValue(ref StunProtectionRemainingSeconds);
             serializer.SerializeValue(ref ThrowRecoveryRemainingSeconds);
             serializer.SerializeValue(ref PushCastRemainingSeconds);
             serializer.SerializeValue(ref ActionCooldownRemainingSeconds);
@@ -63,6 +65,7 @@ namespace MazeParty.Multiplayer
                    Facing == other.Facing &&
                    StunRemainingSeconds.Equals(
                        other.StunRemainingSeconds) &&
+                   StunProtectionRemainingSeconds.Equals(other.StunProtectionRemainingSeconds) &&
                    ThrowRecoveryRemainingSeconds.Equals(
                        other.ThrowRecoveryRemainingSeconds) &&
                    PushCastRemainingSeconds.Equals(
@@ -85,6 +88,7 @@ namespace MazeParty.Multiplayer
             hash.Add(Position);
             hash.Add(Facing);
             hash.Add(StunRemainingSeconds);
+            hash.Add(StunProtectionRemainingSeconds);
             hash.Add(ThrowRecoveryRemainingSeconds);
             hash.Add(PushCastRemainingSeconds);
             hash.Add(ActionCooldownRemainingSeconds);
@@ -497,6 +501,9 @@ namespace MazeParty.Multiplayer
                 ? snapshot.StunRemainingSeconds
                 : 0d;
         }
+
+        public double GetPlayerStunProtectionRemaining(int slot) =>
+            TryGetPlayerSnapshot(slot, out var snapshot) ? snapshot.StunProtectionRemainingSeconds : 0d;
 
         public double GetPlayerStunRemainingSeconds(int slot)
         {
@@ -1416,6 +1423,8 @@ namespace MazeParty.Multiplayer
                     continue;
                 }
 
+                if (_roundState.GetPlayer(slot).IsStunProtectedAt(impactElapsed)) continue;
+
                 if (fraction < collisionFraction ||
                     Mathf.Approximately(fraction, collisionFraction) &&
                     slot < result)
@@ -1654,6 +1663,8 @@ namespace MazeParty.Multiplayer
                             0d,
                             player.StunnedUntilSeconds - elapsed)
                         : 0f,
+                    StunProtectionRemainingSeconds = player != null
+                        ? (float)Math.Max(0d, player.StunProtectionUntilSeconds - elapsed) : 0f,
                     ThrowRecoveryRemainingSeconds = player != null
                         ? (float)Math.Max(
                             0d,

@@ -26,6 +26,8 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
         public const float ThrowSpeed = 11f;
         public const double ThrowRecoverySeconds = 0.5d;
         public const double ThrowStunSeconds = 0.5d;
+        public const double StunProtectionSeconds = 0.5d;
+
         public const double ThrowSelfHitImmunitySeconds = 0.25d;
         public const float PushRange = 1.36f;
         public const float PushRadius = 0.7f;
@@ -41,6 +43,13 @@ namespace MazeParty.Gameplay.Minigames.GiftGrab
 
         public const int NoPlayerSlot = -1;
         public const int NoGiftId = -1;
+
+        public static bool IsStunProtectionBlinkVisible(double remainingSeconds)
+        {
+            if (remainingSeconds <= 0d || remainingSeconds > StunProtectionSeconds) return true;
+            var elapsed = StunProtectionSeconds - remainingSeconds;
+            return ((int)Math.Floor((elapsed + 0.000001d) / 0.1d) & 1) == 0;
+        }
 
         // The dropped gift is visible, hidden, visible, hidden, then visible
         // again at unlock: two complete blinks over the one-second lock.

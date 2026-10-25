@@ -30,7 +30,8 @@ namespace MazeParty.Gameplay.Minigames
             string sceneName,
             Color towerColor,
             int recoveryCompatibilityVersion = 1,
-            bool hasRoundTimeLimit = true)
+            bool hasRoundTimeLimit = true,
+            int maximumOnlineSeconds = 0)
         {
             if (string.IsNullOrWhiteSpace(displayName))
             {
@@ -70,7 +71,9 @@ namespace MazeParty.Gameplay.Minigames
             var authoredSeconds = (int)phaseDurationSeconds;
             DefaultOnlineSetting = new MinigameSetting(true, Math.Min(5, roundCount),
                 hasRoundTimeLimit ? Math.Max(30, ((authoredSeconds + 7) / 15) * 15) : 0);
-            MaximumOnlineSeconds = hasRoundTimeLimit ? ((authoredSeconds + 60) / 15) * 15 : 0;
+            // A lower default must not invalidate previously saved explicit settings.
+            MaximumOnlineSeconds = hasRoundTimeLimit
+                ? Math.Max(((authoredSeconds + 60) / 15) * 15, maximumOnlineSeconds) : 0;
         }
 
         public int AuthoredRoundCount => _authoredRoundCount;
@@ -208,9 +211,9 @@ namespace MazeParty.Gameplay.Minigames
                 2, 60f, "CoinCollect",
                 new Color(1f, 0.78f, 0.16f, 1f)),
             new MinigameDefinition(ScheduledMinigameId.OddOneOut, GameText.N("ODD ONE OUT"),
-                10, 3f, "OddOneOut", new Color(.65f, .38f, .95f, 1f), hasRoundTimeLimit: false),
+                10, (float)OddOneOut.OddOneOutMatchState.SelectionSeconds, "OddOneOut", new Color(.65f, .38f, .95f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(ScheduledMinigameId.Race2, GameText.N("RACE 2"),
-                3, 120f, "Race2", new Color(.25f, .7f, .95f, 1f)),
+                Race2.Race2Rules.RoundCount, (float)Race2.Race2Rules.RoundSeconds, "Race2", new Color(.25f, .7f, .95f, 1f), maximumOnlineSeconds: 180),
             new MinigameDefinition(ScheduledMinigameId.ShellGame, GameText.N("SHELL GAME"),
                 5, 10f, "ShellGame", new Color(1f, .7f, .2f, 1f), hasRoundTimeLimit: false),
             new MinigameDefinition(ScheduledMinigameId.Flight, GameText.N("FLIGHT"),
@@ -283,7 +286,7 @@ namespace MazeParty.Gameplay.Minigames
                 case ScheduledMinigameId.Flight:
                     return GameText.N("Click to flap and glide through the gaps. Obstacles speed up. Hitting an obstacle or falling below the screen eliminates you.");
                 case ScheduledMinigameId.ShellGame:
-                    return GameText.N("Follow the coin and click the correct box.");
+                    return GameText.N("Remember the items and find the target shown after the shuffle.");
                 case ScheduledMinigameId.Race2:
                     return GameText.N("Choose left with A or right with D to dodge boxes. Boxes speed up; one collision eliminates you.");
                 case ScheduledMinigameId.OddOneOut:

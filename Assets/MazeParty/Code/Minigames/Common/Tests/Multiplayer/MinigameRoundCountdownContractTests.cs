@@ -5,6 +5,7 @@ using MazeParty.Gameplay;
 using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 using MazeParty.Gameplay.Minigames.Race2;
+using MazeParty.Gameplay.Minigames.OddOneOut;
 using MazeParty.Gameplay.Minigames.ShellGame;
 using Unity.Netcode;
 using UnityEngine;
@@ -120,6 +121,81 @@ namespace MazeParty.Multiplayer.Tests
                 if (hudRoot != null) UnityEngine.Object.DestroyImmediate(hudRoot);
                 UnityEngine.Object.DestroyImmediate(root);
                 warning.SetValue(null, previousWarning);
+            }
+        }
+
+
+        [Test]
+        public void OddOneOutHud_SeparatesInitialCountdownFromEverySelection_AndRestoresPausedTime()
+        {
+            var previousMatch = NetworkMatchState.Instance;
+            var previousOdd = NetworkOddOneOutState.Instance;
+            var warning = typeof(NetworkVariableBase).GetField("IgnoreInitializeWarning", BindingFlags.Static | BindingFlags.NonPublic);
+            var previousWarning = warning.GetValue(null);
+            var root = new GameObject("OddOneOut timer contract");
+            try
+            {
+                warning.SetValue(null, true);
+                var match = root.AddComponent<NetworkMatchState>();
+                var state = root.AddComponent<NetworkOddOneOutState>();
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkMatchState), match);
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkOddOneOutState), state);
+                NetworkCountdownTestAccess.SetNetworkValue(match, "_gameplayEnabled", true);
+                NetworkCountdownTestAccess.SetNetworkValue(match, "_flowState", (byte)BoardFlowState.MinigamePlaying);
+                NetworkCountdownTestAccess.SetNetworkValue(match, "_currentMinigame", (byte)ScheduledMinigameId.OddOneOut);
+                var common = UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/Common/UI/MinigameCommonHud.prefab"), root.transform).GetComponent<MinigameCommonHudView>();
+                var action = UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab"), root.transform).GetComponent<OddOneOutHudBindings>();
+                var score = UnityEngine.Object.Instantiate(UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                    "Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab"), root.transform).GetComponent<BouncingBallsHudBindings>();
+                var presentation = new GameObject("Presentation"); presentation.transform.SetParent(root.transform);
+                var anchors = new Transform[4];
+                for (var i = 0; i < 4; i++) { anchors[i] = new GameObject("Anchor " + i).transform; anchors[i].SetParent(root.transform); }
+                var view = root.AddComponent<OddOneOutNetworkView>();
+                view.Configure(state, null, presentation, presentation.transform, anchors, score, action, null);
+                var timerRoot = (GameObject)new UnityEditor.SerializedObject(action).FindProperty("selectionTimerRoot").objectReferenceValue;
+                var bar = (UnityEngine.UI.Slider)new UnityEditor.SerializedObject(action).FindProperty("selectionTimeBar").objectReferenceValue;
+                var adapter = new OddOneOutRuntimeAdapter();
+                foreach (var sample in new[] {
+                    (OddOneOutPhase.Countdown, 1, 3d, false, 0f),
+                    (OddOneOutPhase.Choosing, 1, 5d, true, 1f),
+                    (OddOneOutPhase.Choosing, 1, 2.5d, true, .5f),
+                    (OddOneOutPhase.Choosing, 1, 0d, true, 0f),
+                    (OddOneOutPhase.Reveal, 1, 2d, false, 0f),
+                    (OddOneOutPhase.Choosing, 2, 5d, true, 1f),
+                    (OddOneOutPhase.Complete, 2, 0d, false, 0f) })
+                {
+                    // A reconnect snapshot must restore its frozen clock without a local timer restart.
+                    NetworkCountdownTestAccess.SetNetworkValue(state, "_snapshot", new OddOneOutPublicSnapshot {
+                        Phase = sample.Item1, Round = (byte)sample.Item2, Winner = -1,
+                        Paused = true, PausedRemaining = sample.Item3 });
+                    Assert.That(adapter.TryGetRoundCountdown(out var countdown),
+                        Is.EqualTo(sample.Item1 == OddOneOutPhase.Countdown));
+                    Assert.That(match.IsMinigameRoundCountdown, Is.EqualTo(sample.Item1 == OddOneOutPhase.Countdown));
+                    NetworkCountdownTestAccess.InvokePrivate(common, "Update");
+                    Assert.That(common.TimerDial.gameObject.activeSelf, Is.False);
+                    var overlay = common.GetComponent<MinigameStartCountdownView>();
+                    overlay.RefreshForPlayer(match, 0);
+                    Assert.That(overlay.IsVisible, Is.EqualTo(sample.Item1 == OddOneOutPhase.Countdown));
+                    NetworkCountdownTestAccess.InvokePrivate(view, "Render", state.Phase, state.RoundNumber, -1,
+                        (Func<int, bool>)(slot => false), (Func<int, int>)(slot => 0),
+                        0, false, state.Remaining, null);
+                    Assert.That(timerRoot.activeSelf, Is.EqualTo(sample.Item4), sample.ToString());
+                    if (sample.Item4) Assert.That(bar.value, Is.EqualTo(sample.Item5).Within(1e-6), sample.ToString());
+                    if (sample.Item1 == OddOneOutPhase.Choosing)
+                    {
+                        Assert.That(adapter.TryGetClock(0d, out var remaining, out var total, out var round), Is.True);
+                        Assert.That(total, Is.EqualTo(5d)); Assert.That(remaining, Is.EqualTo(sample.Item3));
+                        Assert.That(round, Is.EqualTo(sample.Item2));
+                    }
+                }
+            }
+            finally
+            {
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkMatchState), previousMatch);
+                NetworkCountdownTestAccess.SetInstance(typeof(NetworkOddOneOutState), previousOdd);
+                UnityEngine.Object.DestroyImmediate(root); warning.SetValue(null, previousWarning);
             }
         }
 

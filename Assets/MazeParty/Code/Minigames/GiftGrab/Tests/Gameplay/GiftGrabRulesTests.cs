@@ -301,6 +301,31 @@ namespace MazeParty.Gameplay.Tests
         }
 
         [Test]
+        public void StunProtection_RejectsBothHitSourcesUntilExactEnd_WhileRecoveredPlayerMovesAndKeepsGift()
+        {
+            foreach (var push in new[] { false, true })
+            foreach (var impact in new[] { .25d, .5d, .999d, 1d })
+            {
+                var round = new GiftGrabRoundState(1);
+                round.ResolvePickup(1, 0, 0d); round.ResolveThrow(1, 0d);
+                Assert.That(round.ResolveThrownHit(0, 0, 0d).WasHit, Is.True);
+                round.ResolvePickup(2, 1, 0d); round.ResolveThrow(2, 0d);
+                if (push) Assert.That(round.BeginPushCast(3, impact - GiftGrabRules.PushCastSeconds).WasStarted, Is.True);
+                round.AdvanceTo(impact);
+                var player = round.GetPlayer(0);
+                Assert.That(player.CanMove, Is.EqualTo(impact >= .5d));
+                if (impact >= .5d) Assert.That(round.ResolvePickup(0, 2, impact).WasPickedUp, Is.True);
+                // Observe late: protection must use impact/cast completion time, not receipt time.
+                var hit = push ? round.ResolvePush(3, 0, 1.1d).WasHit :
+                    round.ResolveThrownHit(1, 0, impact, 1.1d).WasHit;
+                Assert.That(hit, Is.EqualTo(impact >= 1d), push + " at " + impact);
+                Assert.That(player.StunnedUntilSeconds, Is.EqualTo(impact >= 1d ? 1.5d : .5d).Within(1e-9));
+                Assert.That(player.HeldGiftId, Is.EqualTo(impact >= .5d && impact < 1d ? 2 : -1));
+                Assert.That(player.StunProtectionUntilSeconds, Is.EqualTo(impact >= 1d ? 2d : 1d).Within(1e-9));
+            }
+        }
+
+        [Test]
         public void ThrownHit_UsesImpactTimeForImmunityAndStunBoundary()
         {
             var round = new GiftGrabRoundState(1);

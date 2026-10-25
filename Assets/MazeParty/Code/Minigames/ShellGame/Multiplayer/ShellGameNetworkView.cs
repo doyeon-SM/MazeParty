@@ -17,7 +17,9 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Transform[] playerAnchors;
         [SerializeField] private Transform[] boxes;
         [SerializeField] private Collider[] boxColliders;
-        [SerializeField] private Transform coin;
+        [SerializeField] private Transform[] boxItems;
+        [SerializeField] private Transform[] targetItems;
+        [SerializeField] private Transform targetItemAnchor;
         [SerializeField] private Transform selectionMarker;
         [SerializeField] private GameObject arrivalVfxPrefab;
         [SerializeField] private BouncingBallsHudBindings scoreHud;
@@ -45,21 +47,23 @@ namespace MazeParty.Multiplayer
         public Quaternion CameraRotation => sharedCamera.transform.rotation;
         public float CameraSize => sharedCamera.Lens.OrthographicSize;
         public bool HasRequiredReferences => state != null && sharedCamera != null && arenaPresentation != null &&
-            playerRoot != null && Valid(playerAnchors,4) && Valid(boxes,3) && coin != null && selectionMarker != null &&
+            playerRoot != null && Valid(playerAnchors,4) && Valid(boxes,3) && Valid(boxItems,3) && Valid(targetItems,3) && targetItemAnchor != null && selectionMarker != null &&
             boxColliders != null && boxColliders.Length == 3 && Array.TrueForAll(boxColliders,c=>c!=null) &&
             arrivalVfxPrefab != null &&
             scoreHud != null && scoreHud.HasRequiredReferences && selectionHud != null && selectionHud.HasRequiredReferences &&
             practiceCountdown != null && practiceCountdown.HasRequiredReferences && practiceHud != null && practiceHud.HasRequiredReferences;
         private static bool Valid(Transform[] values,int length) => values!=null && values.Length==length && Array.TrueForAll(values,v=>v!=null);
         public void Configure(NetworkShellGameState authority, CinemachineCamera camera, GameObject arena, Transform players,
-            Transform[] anchors, Transform[] boxObjects, Collider[] colliders, Transform coinObject, Transform marker, GameObject arrivalVfx,
+            Transform[] anchors, Transform[] boxObjects, Collider[] colliders, Transform marker, GameObject arrivalVfx,
             BouncingBallsHudBindings scores, ShellGameHudBindings selection, MinigameStartCountdownView countdown,
             MinigameCommonHudView common, Vector3 center)
         {
             state=authority; sharedCamera=camera; arenaPresentation=arena; playerRoot=players; playerAnchors=anchors;
-            boxes=boxObjects; boxColliders=colliders; coin=coinObject; selectionMarker=marker; scoreHud=scores;
+            boxes=boxObjects; boxColliders=colliders; selectionMarker=marker; scoreHud=scores;
             arrivalVfxPrefab=arrivalVfx; selectionHud=selection; practiceCountdown=countdown; practiceHud=common; boxCenter=center;
         }
+        public void ConfigureItems(Transform[] items, Transform[] targets, Transform targetAnchor)
+        { boxItems=items; targetItems=targets; targetItemAnchor=targetAnchor; }
         private void Awake()
         {
             Instance=this;
@@ -97,7 +101,7 @@ namespace MazeParty.Multiplayer
             _cameraDirector?.SetUiPointerVisible(true);
             var local=-1;
             for(var i=0;i<4;i++) if(match.GetAvatarForSlot(i)?.IsOwner==true) local=i;
-            Render(state.Seed,state.Phase,state.RoundNumber,state.Remaining,
+            Render(state.Seed,state.Phase,state.RoundNumber,state.Remaining,state.TargetItem,
                 i=>state.GetVisibleChoice(i,local),state.GetScore,local,state.IsPaused,match);
         }
         public void RenderPractice(ShellGameMatchState simulation)
@@ -107,10 +111,10 @@ namespace MazeParty.Multiplayer
             practiceCountdown.SetCountdown((int)Math.Ceiling(simulation.Remaining),
                 simulation.Phase==ShellGamePhase.Countdown && simulation.Remaining>0);
             practiceHud.ShowPracticeRoundOnly(simulation.RoundNumber,5);
-            Render(simulation.Seed,simulation.Phase,simulation.RoundNumber,simulation.Remaining,
+            Render(simulation.Seed,simulation.Phase,simulation.RoundNumber,simulation.Remaining,simulation.VisibleTargetItem,
                 i=>simulation.GetVisibleChoice(i,0),simulation.GetScore,0,false,null);
         }
-        private void Render(ulong seed, ShellGamePhase phase, int round, double remaining, Func<int,int> choice,
+        private void Render(ulong seed, ShellGamePhase phase, int round, double remaining, ShellGameItem targetItem, Func<int,int> choice,
             Func<int,int> score, int local, bool paused, NetworkMatchState match)
         {
             if(round<1) return;
@@ -150,10 +154,19 @@ namespace MazeParty.Multiplayer
                 }
                 boxes[box].position=position;
             }
-            // Keep the coin hidden throughout shuffle/selection, including oblique camera views.
-            coin.gameObject.SetActive(phase==ShellGamePhase.Preview || phase==ShellGamePhase.Hiding ||
-                phase==ShellGamePhase.Reveal || phase==ShellGamePhase.Complete);
-            coin.position=boxCenter+Vector3.right*((_plan.Position(_plan.CoinBox,completed)-1)*boxSpacing)+Vector3.up*.55f;
+            // Box contents stay hidden during shuffle/selection, including oblique views.
+            var showContents=phase==ShellGamePhase.Preview || phase==ShellGamePhase.Hiding ||
+                phase==ShellGamePhase.Reveal || phase==ShellGamePhase.Complete;
+            var showTarget=phase==ShellGamePhase.Choosing || phase==ShellGamePhase.Reveal || phase==ShellGamePhase.Complete;
+            for(var item=0;item<3;item++)
+            {
+                boxItems[item].gameObject.SetActive(showContents);
+                var box=_plan.BoxForItem((ShellGameItem)item);
+                boxItems[item].position=boxCenter+Vector3.right*((_plan.Position(box,completed)-1)*boxSpacing)+Vector3.up*.55f;
+                targetItems[item].SetPositionAndRotation(targetItemAnchor.position,targetItemAnchor.rotation);
+                targetItems[item].gameObject.SetActive(showTarget && targetItem==(ShellGameItem)item);
+            }
+            var targetBox=_plan.BoxForItem(targetItem);
             _choosing=phase==ShellGamePhase.Choosing && remaining>0 && !paused;
             var selected=local>=0 ? choice(local) : -1;
             selectionMarker.gameObject.SetActive(selected>=0 && (phase==ShellGamePhase.Choosing || phase==ShellGamePhase.Reveal));
@@ -165,14 +178,14 @@ namespace MazeParty.Multiplayer
             if(phase!=ShellGamePhase.Reveal || paused) ClearResultFeedback();
             // The public reveal contains every choice; render each correct player on every client.
             // A repeated snapshot or joining during a result must not replay past celebrations.
-            if(_observed && !paused && phase==ShellGamePhase.Reveal && (_lastRound!=round || _lastPhase!=phase))
+            if(_observed && !paused && targetBox>=0 && phase==ShellGamePhase.Reveal && (_lastRound!=round || _lastPhase!=phase))
             {
                 ClearResultFeedback();
                 var correctCount=0;
-                for(var slot=0;slot<4;slot++) if(choice(slot)==_plan.CoinBox) correctCount++;
+                for(var slot=0;slot<4;slot++) if(choice(slot)==targetBox) correctCount++;
                 for(var slot=0;slot<4;slot++)
                 {
-                    if(choice(slot)!=_plan.CoinBox) continue;
+                    if(choice(slot)!=targetBox) continue;
                     var position=_players[slot].transform.position+Vector3.up*.65f;
                     var effect=OneShotVfxPool.Play(arrivalVfxPrefab,position,Quaternion.identity,1.1f);
                     _resultEffects[slot]=effect;
@@ -180,7 +193,7 @@ namespace MazeParty.Multiplayer
                     // Keep a simultaneous four-player win at the same overall sound level.
                     _resultSounds[slot]=GameSound.PlayAt(SoundKeys.MinigameShellCorrect,position,1f/correctCount);
                 }
-                if(local>=0 && selected!=_plan.CoinBox)
+                if(local>=0 && selected!=targetBox)
                     _wrongSound=GameSound.Play(SoundKeys.MinigameShellWrong);
             }
             _observed=true; _lastRound=round; _lastPhase=phase; _lastSwap=completed;
@@ -215,7 +228,8 @@ namespace MazeParty.Multiplayer
             if(!value)
             {
                 ClearResultFeedback();
-                if(coin!=null) coin.gameObject.SetActive(false);
+                if(boxItems!=null) foreach(var item in boxItems) if(item!=null) item.gameObject.SetActive(false);
+                if(targetItems!=null) foreach(var item in targetItems) if(item!=null) item.gameObject.SetActive(false);
                 if(selectionMarker!=null) selectionMarker.gameObject.SetActive(false);
             }
             if(scoreHud!=null) scoreHud.RootCanvas.gameObject.SetActive(value);

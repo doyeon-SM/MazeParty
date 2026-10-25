@@ -4,22 +4,33 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
 {
     public enum ShellGamePhase : byte { Inactive, Countdown, Preview, Hiding, Shuffling, Choosing, Reveal, Complete }
 
+    public enum ShellGameItem : byte { Coin, GoldBar, Money, None = 255 }
+
     // Explicit PRNG and identity permutations keep presentation and authority identical on every peer.
     public sealed class ShellGameRoundPlan
     {
         private readonly int[,] _positions;
         private readonly int[] _a, _b;
         public int ShuffleCount { get; }
-        public int CoinBox { get; }
+        private readonly ShellGameItem[] _items = { ShellGameItem.Coin, ShellGameItem.GoldBar, ShellGameItem.Money };
+        public ShellGameItem TargetItem { get; }
+        public int TargetBox => BoxForItem(TargetItem);
         public double SwapSeconds { get; }
         public double ShuffleSeconds => ShuffleCount * SwapSeconds;
         public ShellGameRoundPlan(ulong seed, int round)
         {
             if (round < 1 || round > 5) throw new ArgumentOutOfRangeException(nameof(round));
             var random = seed ^ (0x9E3779B97F4A7C15UL * (ulong)round);
-            ShuffleCount = 5 + (int)(Next(ref random) % 4);
-            CoinBox = (int)(Next(ref random) % 3);
-            SwapSeconds = .8d - (round - 1) * .125d;
+            ShuffleCount = 10 + (int)(Next(ref random) % 3);
+            for (var i = _items.Length - 1; i > 0; i--)
+            {
+                var other = (int)(Next(ref random) % (ulong)(i + 1));
+                var item = _items[i]; _items[i] = _items[other]; _items[other] = item;
+            }
+            TargetItem = (ShellGameItem)(Next(ref random) % 3);
+            // Add half the original starting speed; preserve each later round's speed increase.
+            var originalSwapSeconds = .8d - (round - 1) * .125d;
+            SwapSeconds = 1d / (1d / originalSwapSeconds + .5d / .8d);
             _positions = new int[ShuffleCount + 1, 3];
             _a = new int[ShuffleCount]; _b = new int[ShuffleCount];
             for (var box = 0; box < 3; box++) _positions[0,box] = box;
@@ -44,6 +55,8 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
                 return z ^ (z >> 31);
             }
         }
+        public ShellGameItem ItemInBox(int box) => _items[box];
+        public int BoxForItem(ShellGameItem item) => Array.IndexOf(_items, item);
         public int Position(int box, int completedSwaps) => _positions[Math.Max(0, Math.Min(ShuffleCount, completedSwaps)),box];
         public int FirstBox(int step) => _a[step];
         public int SecondBox(int step) => _b[step];
@@ -64,6 +77,8 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
         public double Elapsed { get; private set; }
         public double PhaseEndsAt { get; private set; } = CountdownSeconds;
         public double Remaining => Math.Max(0d, PhaseEndsAt - Elapsed);
+        public ShellGameItem VisibleTargetItem => Phase == ShellGamePhase.Choosing ||
+            Phase == ShellGamePhase.Reveal || Phase == ShellGamePhase.Complete ? Plan.TargetItem : ShellGameItem.None;
         public ShellGameMatchState(ulong seed, MinigameRulesConfig? rules = null) {
             _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.ShellGame, rules); Seed = seed; Plan = new ShellGameRoundPlan(seed,1); }
         public static bool IsValidSlot(int slot) => slot >= 0 && slot < 4;
@@ -98,7 +113,7 @@ namespace MazeParty.Gameplay.Minigames.ShellGame
         }
         private void Reveal(double at)
         {
-            for (var i=0;i<4;i++) if (_choices[i]==Plan.CoinBox) _scores[i]++;
+            for (var i=0;i<4;i++) if (_choices[i]==Plan.TargetBox) _scores[i]++;
             Phase=ShellGamePhase.Reveal; PhaseEndsAt=at+ResultSeconds;
         }
         public void AdvanceTo(double elapsed)

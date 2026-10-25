@@ -2,9 +2,9 @@ using System;
 
 namespace MazeParty.Gameplay.Minigames.OddOneOut
 {
-    public enum OddOneOutPhase : byte { Inactive, Choosing, Reveal, Complete }
+    public enum OddOneOutPhase : byte { Inactive, Choosing, Reveal, Complete, Countdown }
 
-    /// <summary>Server-owned choices stay private until the exact countdown boundary.</summary>
+    /// <summary>Server-owned choices stay private until the exact selection deadline.</summary>
     public sealed class OddOneOutMatchState
     {
         private readonly MinigameRulesConfig _rules;
@@ -12,11 +12,11 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
         { _rules = MinigameRulesConfig.Resolve(ScheduledMinigameId.OddOneOut, rules); }
         public const int PlayerCount = 4;
         public const int RoundCount = 10;
-        public const double CountdownSeconds = 3d, ResultSeconds = 2d;
+        public const double CountdownSeconds = 3d, SelectionSeconds = 5d, ResultSeconds = 2d;
         private readonly bool[] _choices = new bool[PlayerCount];
         private readonly int[] _scores = new int[PlayerCount];
         public int RoundNumber { get; private set; } = 1;
-        public OddOneOutPhase Phase { get; private set; } = OddOneOutPhase.Choosing;
+        public OddOneOutPhase Phase { get; private set; } = OddOneOutPhase.Countdown;
         public int WinnerSlot { get; private set; } = -1;
         public double Elapsed { get; private set; }
         public double PhaseEndsAt { get; private set; } = CountdownSeconds;
@@ -24,12 +24,13 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
         public static bool IsValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
         public bool GetChoice(int slot) => IsValidSlot(slot) && _choices[slot];
         public bool GetVisibleChoice(int slot, int viewerSlot) =>
-            IsValidSlot(slot) && (Phase != OddOneOutPhase.Choosing || slot == viewerSlot) && _choices[slot];
+            IsValidSlot(slot) && (Phase == OddOneOutPhase.Reveal || Phase == OddOneOutPhase.Complete ||
+                Phase == OddOneOutPhase.Choosing && slot == viewerSlot) && _choices[slot];
         public byte RevealedMask
         {
             get
             {
-                if (Phase == OddOneOutPhase.Choosing) return 0;
+                if (Phase != OddOneOutPhase.Reveal && Phase != OddOneOutPhase.Complete) return 0;
                 byte mask = 0;
                 for (var i = 0; i < PlayerCount; i++) if (_choices[i]) mask |= (byte)(1 << i);
                 return mask;
@@ -54,7 +55,12 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
             if (double.IsNaN(elapsed) || double.IsInfinity(elapsed) || elapsed < Elapsed) return;
             while (Phase != OddOneOutPhase.Complete && elapsed >= PhaseEndsAt)
             {
-                if (Phase == OddOneOutPhase.Choosing)
+                if (Phase == OddOneOutPhase.Countdown)
+                {
+                    Phase = OddOneOutPhase.Choosing;
+                    PhaseEndsAt += SelectionSeconds;
+                }
+                else if (Phase == OddOneOutPhase.Choosing)
                 {
                     var count = 0;
                     for (var i = 0; i < PlayerCount; i++) if (_choices[i]) count++;
@@ -72,7 +78,7 @@ namespace MazeParty.Gameplay.Minigames.OddOneOut
                     Array.Clear(_choices, 0, _choices.Length);
                     WinnerSlot = -1;
                     Phase = OddOneOutPhase.Choosing;
-                    PhaseEndsAt += CountdownSeconds;
+                    PhaseEndsAt += SelectionSeconds;
                 }
             }
             Elapsed = Math.Min(elapsed, PhaseEndsAt);

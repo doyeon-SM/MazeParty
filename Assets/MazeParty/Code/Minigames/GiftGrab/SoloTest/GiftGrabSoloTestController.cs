@@ -431,6 +431,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 _playerVisuals[slot].SetKnockedDown(
                     _session.Phase == GiftGrabSoloPhase.Running && _session.GetPlayer(slot).StunRemaining > 0d);
+                _playerVisuals[slot].SetHiddenFromViewer(_session.Phase == GiftGrabSoloPhase.Running &&
+                    !GiftGrabRules.IsStunProtectionBlinkVisible(_session.GetPlayer(slot).StunProtectionRemaining));
             }
         }
 

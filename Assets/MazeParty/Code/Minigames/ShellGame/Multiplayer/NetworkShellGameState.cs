@@ -13,6 +13,7 @@ namespace MazeParty.Multiplayer
         public ShellGamePhase Phase;
         public byte Round, RevealedChoices;
         public ulong Seed;
+        public ShellGameItem TargetItem;
         public int Score0, Score1, Score2, Score3;
         public uint Epoch;
         public bool Paused;
@@ -21,12 +22,12 @@ namespace MazeParty.Multiplayer
         public void NetworkSerialize<T>(BufferSerializer<T> s) where T : IReaderWriter
         {
             s.SerializeValue(ref Phase); s.SerializeValue(ref Round); s.SerializeValue(ref RevealedChoices);
-            s.SerializeValue(ref Seed); s.SerializeValue(ref Score0); s.SerializeValue(ref Score1);
+            s.SerializeValue(ref Seed); s.SerializeValue(ref TargetItem); s.SerializeValue(ref Score0); s.SerializeValue(ref Score1);
             s.SerializeValue(ref Score2); s.SerializeValue(ref Score3); s.SerializeValue(ref Epoch);
             s.SerializeValue(ref Paused); s.SerializeValue(ref EndsAt); s.SerializeValue(ref PausedRemaining);
         }
         public bool Equals(ShellGamePublicSnapshot o) => Phase == o.Phase && Round == o.Round &&
-            RevealedChoices == o.RevealedChoices && Seed == o.Seed && Score0 == o.Score0 && Score1 == o.Score1 &&
+            RevealedChoices == o.RevealedChoices && Seed == o.Seed && TargetItem == o.TargetItem && Score0 == o.Score0 && Score1 == o.Score1 &&
             Score2 == o.Score2 && Score3 == o.Score3 && Epoch == o.Epoch && Paused == o.Paused &&
             EndsAt == o.EndsAt && PausedRemaining == o.PausedRemaining;
     }
@@ -60,6 +61,8 @@ namespace MazeParty.Multiplayer
         public uint InputEpoch => _snapshot.Value.Epoch;
         public bool IsPaused => _snapshot.Value.Paused;
         public ulong Seed => _snapshot.Value.Seed;
+        public ShellGameItem TargetItem => Phase == ShellGamePhase.Choosing || Phase == ShellGamePhase.Reveal ||
+            Phase == ShellGamePhase.Complete ? _snapshot.Value.TargetItem : ShellGameItem.None;
         public double Remaining => Phase == ShellGamePhase.Inactive || Phase == ShellGamePhase.Complete ? 0d :
             Math.Max(0d, IsPaused ? _snapshot.Value.PausedRemaining : _snapshot.Value.EndsAt - ServerNow);
         private double ServerNow => NetworkManager != null && NetworkManager.IsListening ? NetworkManager.ServerTime.Time : Time.unscaledTimeAsDouble;
@@ -104,7 +107,11 @@ namespace MazeParty.Multiplayer
         private void Advance(double now)
         {
             var phase = _simulation.Phase; var round = _simulation.RoundNumber;
-            _simulation.AdvanceTo(now - _startedAt);
+            var elapsed = now - _startedAt;
+            // Subtraction after a pause can round just below the published absolute deadline.
+            if (now >= _startedAt + _simulation.PhaseEndsAt)
+                elapsed = Math.Max(elapsed, _simulation.PhaseEndsAt);
+            _simulation.AdvanceTo(elapsed);
             if (phase != _simulation.Phase || round != _simulation.RoundNumber) Publish(false, true);
         }
         private bool ValidateEnvelope(int round, uint epoch, uint sequence, int slot) =>
@@ -157,7 +164,7 @@ namespace MazeParty.Multiplayer
             if (newEpoch) Array.Clear(_sequences, 0, _sequences.Length);
             _snapshot.Value = new ShellGamePublicSnapshot {
                 Phase = _simulation.Phase, Round = (byte)_simulation.RoundNumber, Epoch = epoch,
-                RevealedChoices = _simulation.RevealedChoices, Seed = _simulation.Seed,
+                RevealedChoices = _simulation.RevealedChoices, Seed = _simulation.Seed, TargetItem = _simulation.VisibleTargetItem,
                 Score0 = _simulation.GetScore(0), Score1 = _simulation.GetScore(1), Score2 = _simulation.GetScore(2), Score3 = _simulation.GetScore(3),
                 Paused = paused, EndsAt = _startedAt + _simulation.PhaseEndsAt, PausedRemaining = _simulation.Remaining };
             for (var i = 0; i < 4; i++) SyncPrivateChoice(NetworkMatchState.Instance?.GetAvatarForSlot(i), i);

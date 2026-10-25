@@ -8,21 +8,21 @@ namespace MazeParty.Gameplay.Minigames.Race2
     public static class Race2Rules
     {
         public const int PlayerCount = 4, BoxCount = 7, PreviewBoxCount = 5;
-        public const int RoundCount = 3;
+        public const int RoundCount = 1;
         public const double CountdownSeconds = 3d, ResultSeconds = 4d;
-        public const double RoundSeconds = 120d;
-        public const double BaseSpeed = 5d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
+        public const double RoundSeconds = 60d;
+        public const double BaseSpeed = 10d, MaximumSpeed = 22.5d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
         // Behind the rear camera as well as below its view, so recycling is never visible.
         public const double RecycleZ = -12d, CollisionHalfDepth = .85d;
         public static bool ValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
-        public static double Speed(double time, double duration = 120d) => BaseSpeed * (1d + 2d * Math.Max(0d, Math.Min(duration, time)) / duration);
-        public static double Distance(double time, double duration = 120d)
+        public static double Speed(double time, double duration = Race2Rules.RoundSeconds) => BaseSpeed + (MaximumSpeed - BaseSpeed) * Math.Max(0d, Math.Min(duration, time)) / duration;
+        public static double Distance(double time, double duration = Race2Rules.RoundSeconds)
         {
             var t = Math.Max(0d, Math.Min(duration, time));
-            return BaseSpeed * (t + t * t / duration);
+            return BaseSpeed * t + 0.5d * (MaximumSpeed - BaseSpeed) * t * t / duration;
         }
-        public static double TimeAtDistance(double distance, double duration = 120d) => distance <= 0d ? 0d :
-            2d * distance / (BaseSpeed + Math.Sqrt(BaseSpeed * BaseSpeed + 4d * BaseSpeed * distance / duration));
+        public static double TimeAtDistance(double distance, double duration = Race2Rules.RoundSeconds) => distance <= 0d ? 0d :
+            2d * distance / (BaseSpeed + Math.Sqrt(BaseSpeed * BaseSpeed + 2d * (MaximumSpeed - BaseSpeed) * distance / duration));
         public static int NextSpectator(int current, Func<int, bool> alive)
         {
             for (var offset = 1; offset <= PlayerCount; offset++)
@@ -40,7 +40,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
         private readonly double _duration;
         private readonly List<byte> _lanes = new List<byte>();
         private ulong _random;
-        public Race2BoxStream(ulong seed, int round, double duration = 120d) { _duration = duration; _random = seed ^ (0xD1B54A32D192ED03UL * (ulong)round); }
+        public Race2BoxStream(ulong seed, int round, double duration = Race2Rules.RoundSeconds) { _duration = duration; _random = seed ^ (0xD1B54A32D192ED03UL * (ulong)round); }
         public byte Lane(int sequence)
         {
             if (sequence < 0) throw new ArgumentOutOfRangeException(nameof(sequence));

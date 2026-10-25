@@ -145,10 +145,45 @@ namespace MazeParty.Editor
                 text.transform.SetParent(action.transform,false); text.rectTransform.anchoredPosition = new Vector2(40,0);
                 text.rectTransform.sizeDelta = new Vector2(180,84); text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
                 text.fontSize = 38; text.alignment = TextAnchor.MiddleCenter; text.color = Color.white; text.raycastTarget = false; text.text = "Sit";
-                root.AddComponent<OddOneOutHudBindings>().Configure(canvas,action,icon,text);
+                var bindings = root.AddComponent<OddOneOutHudBindings>();
+                bindings.Configure(canvas,action,icon,text);
+                CreateSelectionTimer(bindings);
                 return PrefabUtility.SaveAsPrefabAsset(root,HudPath);
             }
             finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+        // Only called when authoring a new HUD. Existing prefab designs are never rebuilt by setup.
+        private static void CreateSelectionTimer(OddOneOutHudBindings bindings)
+        {
+            var timer = new GameObject("Selection Timer", typeof(RectTransform));
+            timer.transform.SetParent(bindings.transform, false);
+            var rect = (RectTransform)timer.transform;
+            rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+            rect.anchoredPosition = new Vector2(0f, -90f); rect.sizeDelta = new Vector2(680f, 72f);
+            var barRoot = new GameObject("Time Bar", typeof(RectTransform), typeof(Image), typeof(Slider));
+            barRoot.transform.SetParent(timer.transform, false);
+            var barRect = (RectTransform)barRoot.transform;
+            barRect.anchoredPosition = new Vector2(0f, -16f); barRect.sizeDelta = new Vector2(640f, 20f);
+            var background = barRoot.GetComponent<Image>();
+            background.color = new Color(.35f, .35f, .38f, 1f); background.raycastTarget = false;
+            var fill = new GameObject("Remaining", typeof(RectTransform), typeof(Image)).GetComponent<Image>();
+            fill.transform.SetParent(barRoot.transform, false);
+            fill.rectTransform.anchorMin = Vector2.zero; fill.rectTransform.anchorMax = Vector2.one;
+            fill.rectTransform.offsetMin = fill.rectTransform.offsetMax = Vector2.zero;
+            fill.color = new Color(.93f, .18f, .2f, 1f); fill.raycastTarget = false;
+            var bar = barRoot.GetComponent<Slider>();
+            bar.interactable = false; bar.transition = Selectable.Transition.None;
+            bar.navigation = new Navigation { mode = Navigation.Mode.None };
+            bar.direction = Slider.Direction.LeftToRight; bar.minValue = 0f; bar.maxValue = 1f;
+            bar.fillRect = fill.rectTransform; bar.SetValueWithoutNotify(1f);
+            var text = new GameObject("Seconds", typeof(RectTransform), typeof(Text)).GetComponent<Text>();
+            text.transform.SetParent(timer.transform, false);
+            text.rectTransform.anchoredPosition = new Vector2(0f, 18f); text.rectTransform.sizeDelta = new Vector2(100f, 36f);
+            text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            text.fontSize = 28; text.alignment = TextAnchor.MiddleCenter; text.color = Color.white;
+            text.raycastTarget = false; text.text = "5";
+            bindings.ConfigureSelectionTimer(timer, bar, text);
+            timer.SetActive(false);
         }
         private static void EnsureFolder(string path)
         {

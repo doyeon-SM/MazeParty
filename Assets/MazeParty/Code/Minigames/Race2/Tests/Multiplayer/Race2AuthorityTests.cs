@@ -82,7 +82,7 @@ namespace MazeParty.Multiplayer.Tests
                 state.PauseOnServer(103.2);var elapsed=game.RoundElapsed;var seed=state.Seed;epoch=state.InputEpoch;
                 Assert.That(state.CanAcceptInputForSlot(0),Is.False);Assert.That(state.RoundElapsed,Is.EqualTo(elapsed));
                 state.ResumeOnServer(503.2);Assert.That(game.RoundElapsed,Is.EqualTo(elapsed));Assert.That(state.Seed,Is.EqualTo(seed));
-                Assert.That(state.InputEpoch,Is.Not.EqualTo(epoch));Assert.That(snapshot.Value.EndsAt,Is.EqualTo(623).Within(1e-7));
+                Assert.That(state.InputEpoch,Is.Not.EqualTo(epoch));Assert.That(snapshot.Value.EndsAt,Is.EqualTo(563).Within(1e-7));
             }
             finally{typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(state,false);Object.DestroyImmediate(root);warning.SetValue(null,old);}
         }

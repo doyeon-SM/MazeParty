@@ -452,8 +452,11 @@ namespace MazeParty.Multiplayer
 
             for (var slot = 0; slot < PlayerCount; slot++)
             {
-                _players[slot]?.Visual.SetKnockedDown(
-                    state.Phase == NetworkGiftGrabPhase.Running && state.GetPlayerStunRemaining(slot) > 0d);
+                var visual = _players[slot]?.Visual;
+                var running = state.Phase == NetworkGiftGrabPhase.Running;
+                visual?.SetKnockedDown(running && state.GetPlayerStunRemaining(slot) > 0d);
+                visual?.SetHiddenFromViewer(running &&
+                    !GiftGrabRules.IsStunProtectionBlinkVisible(state.GetPlayerStunProtectionRemaining(slot)));
             }
         }
 

@@ -39,7 +39,7 @@ namespace MazeParty.Gameplay.Tests
             var tagger = TagChaseRules.CalculateFirstPersonMovement(
                 Vector2.up, 0f, 1f);
             Assert.That(runner.x, Is.Zero.Within(0.0001f));
-            Assert.That(runner.y, Is.EqualTo(2.75f).Within(0.0001f));
+            Assert.That(runner.y, Is.EqualTo(4.5f).Within(0.0001f));
             Assert.That(tagger.y, Is.GreaterThan(runner.y));
         }
 

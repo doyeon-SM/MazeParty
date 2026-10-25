@@ -25,7 +25,8 @@ namespace MazeParty.Multiplayer
             if (state == null || state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Inactive ||
                 state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete) return false;
             remaining = state.Remaining; round = state.RoundNumber;
-            total = state.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Choosing ? 3d : 2d;
+            total = state.Phase == OddOneOutPhase.Countdown ? OddOneOutMatchState.CountdownSeconds :
+                state.Phase == OddOneOutPhase.Choosing ? OddOneOutMatchState.SelectionSeconds : OddOneOutMatchState.ResultSeconds;
             return true;
         }
 
@@ -39,7 +40,7 @@ namespace MazeParty.Multiplayer
         {
             var state = CurrentState;
             remainingSeconds = state != null &&
-                               state.Phase == OddOneOutPhase.Choosing
+                               state.Phase == OddOneOutPhase.Countdown
                 ? state.Remaining
                 : 0d;
             return remainingSeconds > 0d;

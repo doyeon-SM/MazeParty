@@ -107,9 +107,12 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            if (match.CurrentMinigame == ScheduledMinigameId.OddOneOut && match.IsMinigameRoundCountdown)
+            if (match.CurrentMinigame == ScheduledMinigameId.OddOneOut)
             {
-                ShowRoundOnly(GameText.F("ROUND {0} / {1}", NetworkOddOneOutState.Instance.RoundNumber, match.GameSettings.Get(match.CurrentMinigame).Rounds));
+                var odd = NetworkOddOneOutState.Instance;
+                if (odd == null || odd.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Inactive ||
+                    odd.Phase == MazeParty.Gameplay.Minigames.OddOneOut.OddOneOutPhase.Complete) HideClock();
+                else ShowRoundOnly(GameText.F("ROUND {0} / {1}", odd.RoundNumber, match.GameSettings.Get(match.CurrentMinigame).Rounds));
                 return;
             }
 

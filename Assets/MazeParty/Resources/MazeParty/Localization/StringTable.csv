@@ -853,7 +853,7 @@ RACE 2 RESULTS,레이스2 결과,レース2の結果,竞速2结果,競速2結果
 "Choose left with A or right with D to dodge boxes. Three rounds, up to two minutes each. Boxes speed up; one collision eliminates you.","A는 왼쪽, D는 오른쪽으로 박스를 피하세요. 라운드당 최대 2분, 총 3라운드입니다. 박스는 점점 빨라지며 한 번 부딪히면 탈락합니다.",Aで左、Dで右へ移動して箱を避けよう。各ラウンド最大2分、全3ラウンド。箱は加速し、一度当たると脱落。,按A向左、D向右躲避箱子。共3轮，每轮最多2分钟。箱子逐渐加速，碰撞一次即淘汰。,按A向左、D向右躲避箱子。共3輪，每輪最多2分鐘。箱子逐漸加速，碰撞一次即淘汰。
 SHELL GAME,야바위,カップシャッフル,猜金币,猜金幣
 SHELL GAME RESULTS,야바위 결과,カップシャッフルの結果,猜金币结果,猜金幣結果
-Follow the coin and click the correct box.,코인의 위치를 기억하고 섞기가 끝나면 상자를 클릭하세요.,コインを追いかけ、シャッフル後に正しい箱をクリックしよう。,记住金币位置，打乱后点击正确的箱子。,記住金幣位置，打亂後點選正確的箱子。
+Remember the items and find the target shown after the shuffle.,아이템 위치를 기억하고 섞기가 끝난 뒤 제시된 아이템이 든 상자를 찾으세요.,アイテムの位置を覚え、シャッフル後に示されるアイテムの箱を選ぼう。,记住物品的位置，打乱后选择装有目标物品的箱子。,記住物品的位置，打亂後選擇裝有目標物品的箱子。
 "<sprite name=""ml"">  CHOOSE BOX","<sprite name=""ml"">  상자 선택","<sprite name=""ml"">  箱を選ぶ","<sprite name=""ml"">  选择箱子","<sprite name=""ml"">  選擇箱子"
 FLIGHT,날기,フライト,飞行,飛行
 FLIGHT RESULTS,날기 결과,フライト結果,飞行结果,飛行結果

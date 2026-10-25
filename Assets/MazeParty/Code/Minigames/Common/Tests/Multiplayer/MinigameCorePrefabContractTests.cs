@@ -161,6 +161,30 @@ namespace MazeParty.Multiplayer.Tests
                         Assert.That(obstacle.GetComponentInChildren<MeshFilter>(true).sharedMesh,
                             Is.SameAs(original.GetComponentInChildren<MeshFilter>(true).sharedMesh));
                     }
+                    if (game == "ShellGame")
+                    {
+                        var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<ShellGameNetworkView>(true)).Single();
+                        Assert.That(view.HasRequiredReferences, Is.True);
+                        var data = new SerializedObject(view);
+                        var names = new[] { "Coin", "GoldBar", "Money" };
+                        foreach (var field in new[] { "boxItems", "targetItems" })
+                        {
+                            var items = data.FindProperty(field);
+                            Assert.That(items.arraySize, Is.EqualTo(3));
+                            for (var item = 0; item < 3; item++)
+                            {
+                                var model = (Transform)items.GetArrayElementAtIndex(item).objectReferenceValue;
+                                Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(model.gameObject),
+                                    Is.EqualTo(prefabPrefix + "ShellGame" + names[item] + ".prefab"));
+                                var original = AssetDatabase.LoadAssetAtPath<GameObject>(
+                                    "Assets/Ignore/BTM_Assets/BTM_Items_Gems/Prefabs/" + names[item] + ".prefab");
+                                Assert.That(model.GetComponentInChildren<MeshFilter>(true).sharedMesh,
+                                    Is.SameAs(original.GetComponentInChildren<MeshFilter>(true).sharedMesh));
+                                Assert.That(model.GetComponentsInChildren<Collider>(true), Is.Empty);
+                            }
+                        }
+                        Assert.That(data.FindProperty("targetItemAnchor").objectReferenceValue, Is.Not.Null);
+                    }
                     if (game == "Race2")
                     {
                         var view = scene.GetRootGameObjects().SelectMany(root => root.GetComponentsInChildren<Race2NetworkView>(true)).Single();

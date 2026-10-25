@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using MazeParty.Gameplay.Minigames.Race2;
+using MazeParty.Gameplay.Minigames;
 using NUnit.Framework;
 
 namespace MazeParty.Gameplay.Tests
@@ -19,7 +20,7 @@ namespace MazeParty.Gameplay.Tests
                 if (i >= 3) Assert.That(Enumerable.Range(i - 3, 4).Select(first.Lane).Distinct().Count(), Is.EqualTo(2));
             }
             Assert.That(differences, Is.GreaterThan(0));
-            for (var t = 0d; t <= 120d; t += .25d)
+            for (var t = 0d; t <= Race2Rules.RoundSeconds; t += .25d)
             {
                 var sequences = new int[Race2Rules.BoxCount]; var positions = new double[Race2Rules.BoxCount];
                 for (var b = 0; b < Race2Rules.BoxCount; b++)
@@ -42,10 +43,11 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(afterSequence, Is.EqualTo(b + Race2Rules.BoxCount));
                 Assert.That(afterZ - beforeZ, Is.EqualTo(Race2Rules.BoxCount * Race2Rules.BoxSpacing).Within(.001));
             }
-            foreach (var t in new[]{0d,60d,120d})
+            foreach (var sample in new[]{(0d,10d,0d),(30d,16.25d,393.75d),(60d,22.5d,975d)})
             {
-                Assert.That(Race2Rules.Speed(t), Is.EqualTo(5d + t / 12d).Within(1e-8));
-                Assert.That(Race2Rules.TimeAtDistance(Race2Rules.Distance(t)), Is.EqualTo(t).Within(1e-8));
+                Assert.That(Race2Rules.Speed(sample.Item1), Is.EqualTo(sample.Item2).Within(1e-8));
+                Assert.That(Race2Rules.Distance(sample.Item1), Is.EqualTo(sample.Item3).Within(1e-8));
+                Assert.That(Race2Rules.TimeAtDistance(sample.Item3), Is.EqualTo(sample.Item1).Within(1e-8));
             }
         }
         [Test]
@@ -53,7 +55,7 @@ namespace MazeParty.Gameplay.Tests
         {
             foreach (var safePlayers in new[]{0,1})
             {
-                var game = new Race2MatchState(417);
+                var game = new Race2MatchState(417, Rules(2, 60));
                 Assert.That(game.TrySetLane(0,1), Is.False);
                 game.AdvanceTo(2.99999); Assert.That(game.Phase, Is.EqualTo(Race2Phase.Countdown));
                 Assert.That(game.RoundElapsed, Is.Zero);
@@ -95,32 +97,43 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(game.Elapsed,Is.EqualTo(elapsed));
         }
         [Test]
-        public void ThreeTimeoutRounds_PreservePoints_AndTieAllSurvivors()
+        public void DefaultAndSavedTimeoutRounds_PreservePoints_AndTieAllSurvivors()
         {
-            var game=new Race2MatchState(8991);
-            for(var round=1;round<=3;round++)
+            foreach(var setting in new[]{(1,60),(3,120),(5,180)})
             {
-                game.AdvanceTo(game.PhaseEndsAt);
-                var start=game.Elapsed;
-                while(game.Phase==Race2Phase.Running)
+                var game=setting.Item1==1 ? new Race2MatchState(8991) : new Race2MatchState(8991,Rules(setting.Item1,setting.Item2));
+                for(var round=1;round<=setting.Item1;round++)
                 {
-                    var sequence=-1;var nearest=double.MaxValue;
-                    for(var b=0;b<Race2Rules.BoxCount;b++)
+                    game.AdvanceTo(game.PhaseEndsAt);
+                    var start=game.Elapsed;
+                    while(game.Phase==Race2Phase.Running)
                     {
-                        game.Boxes.Box(b,game.RoundElapsed,out var current,out var z);
-                        if(z >= -Race2Rules.CollisionHalfDepth && z<nearest){nearest=z;sequence=current;}
+                        var sequence=-1;var nearest=double.MaxValue;
+                        for(var b=0;b<Race2Rules.BoxCount;b++)
+                        {
+                            game.Boxes.Box(b,game.RoundElapsed,out var current,out var z);
+                            if(z >= -Race2Rules.CollisionHalfDepth && z<nearest){nearest=z;sequence=current;}
+                        }
+                        Assert.That(sequence,Is.GreaterThanOrEqualTo(0));
+                        for(var i=0;i<4;i++)game.TrySetLane(i,(byte)(1-game.Boxes.Lane(sequence)));
+                        game.AdvanceTo(Math.Min(start+setting.Item2,game.Elapsed+.02));
                     }
-                    Assert.That(sequence,Is.GreaterThanOrEqualTo(0));
-                    for(var i=0;i<4;i++)game.TrySetLane(i,(byte)(1-game.Boxes.Lane(sequence)));
-                    game.AdvanceTo(Math.Min(start+120,game.Elapsed+.02));
+                    Assert.That(game.RoundElapsed,Is.EqualTo(setting.Item2).Within(1e-7));
+                    for(var i=0;i<4;i++){Assert.That(game.IsAlive(i),Is.True);Assert.That(game.GetRoundRank(i),Is.EqualTo(1));Assert.That(game.GetScore(i),Is.EqualTo(round*3));}
+                    game.AdvanceTo(game.PhaseEndsAt);
                 }
-                Assert.That(game.RoundElapsed,Is.EqualTo(120).Within(1e-7));
-                for(var i=0;i<4;i++){Assert.That(game.IsAlive(i),Is.True);Assert.That(game.GetRoundRank(i),Is.EqualTo(1));Assert.That(game.GetScore(i),Is.EqualTo(round*3));}
-                game.AdvanceTo(game.PhaseEndsAt);
+                Assert.That(game.Phase,Is.EqualTo(Race2Phase.Complete));
+                Assert.That(game.Elapsed,Is.EqualTo(setting.Item1*(setting.Item2+7)).Within(1e-7));
+                for(var i=0;i<4;i++)Assert.That(game.GetRank(i),Is.EqualTo(1));
             }
-            Assert.That(game.Phase,Is.EqualTo(Race2Phase.Complete));
-            Assert.That(game.Elapsed,Is.EqualTo(381).Within(1e-7));
-            for(var i=0;i<4;i++)Assert.That(game.GetRank(i),Is.EqualTo(1));
+        }
+
+        private static MinigameRulesConfig Rules(int rounds, int seconds)
+        {
+            Assert.That(MatchGameSettings.Default.TryChangeGame(ScheduledMinigameId.Race2,
+                new MinigameSetting(true, rounds, seconds), out var settings), Is.True);
+            Assert.That(MatchGameSettings.TryDecode(settings.Encode(), out var restored), Is.True);
+            return MinigameRulesConfig.FromMatch(ScheduledMinigameId.Race2, restored);
         }
         [Test]
         public void Spectator_CyclesForward_SkipsEliminatedPlayers_AndHandlesNoSurvivors()

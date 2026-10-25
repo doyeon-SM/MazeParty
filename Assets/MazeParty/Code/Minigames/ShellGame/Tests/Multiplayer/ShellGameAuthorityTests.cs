@@ -19,15 +19,23 @@ namespace MazeParty.Multiplayer.Tests
                 var choice=(NetworkVariableBase)typeof(NetworkPlayerAvatar).GetField("_shellGameChoice",Flags).GetValue(avatar);
                 Assert.That(choice.ReadPerm,Is.EqualTo(NetworkVariableReadPermission.Owner));
                 Assert.That(choice.WritePerm,Is.EqualTo(NetworkVariableWritePermission.Server));
-                foreach(var phase in new[]{ShellGamePhase.Choosing,ShellGamePhase.Reveal})
+                foreach(var phase in new[]{ShellGamePhase.Shuffling,ShellGamePhase.Choosing,ShellGamePhase.Reveal})
+                foreach(var item in new[]{ShellGameItem.Coin,ShellGameItem.GoldBar,ShellGameItem.Money})
                 {
                     var source=new ShellGamePublicSnapshot {Phase=phase,Round=3,Epoch=4,Seed=ulong.MaxValue,
+                        TargetItem=phase==ShellGamePhase.Shuffling?ShellGameItem.None:item,
                         RevealedChoices=phase==ShellGamePhase.Reveal?(byte)79:(byte)0,Score0=2,Score1=3,Paused=true,PausedRemaining=4.5,EndsAt=100};
                     using(var writer=new FastBufferWriter(128,Unity.Collections.Allocator.Temp))
                     {
                         writer.WriteNetworkSerializable(source);
                         using(var reader=new FastBufferReader(writer,Unity.Collections.Allocator.Temp))
-                        { reader.ReadNetworkSerializable(out ShellGamePublicSnapshot copy); Assert.That(copy.Equals(source),Is.True); }
+                        {
+                            reader.ReadNetworkSerializable(out ShellGamePublicSnapshot copy);
+                            Assert.That(copy.Equals(source),Is.True);
+                            Assert.That(copy.TargetItem,Is.EqualTo(source.TargetItem));
+                            copy.TargetItem=source.TargetItem==ShellGameItem.None?ShellGameItem.Coin:ShellGameItem.None;
+                            Assert.That(copy.Equals(source),Is.False);
+                        }
                     }
                 }
             }
@@ -51,6 +59,7 @@ namespace MazeParty.Multiplayer.Tests
                 var advance=typeof(NetworkShellGameState).GetMethod("Advance",Flags);
                 publish.Invoke(state,new object[]{false,true});
                 while(sim.Phase!=ShellGamePhase.Shuffling) advance.Invoke(state,new object[]{sim.PhaseEndsAt});
+                Assert.That(state.TargetItem,Is.EqualTo(ShellGameItem.None));
                 var at=sim.Elapsed+.4;
                 var epoch=state.InputEpoch; state.PauseOnServer(at);
                 var remaining=state.Remaining;
@@ -60,19 +69,32 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(state.InputEpoch,Is.Not.EqualTo(epoch));
                 var snapshot=(NetworkVariable<ShellGamePublicSnapshot>)typeof(NetworkShellGameState).GetField("_snapshot",Flags).GetValue(state);
                 Assert.That(snapshot.Value.EndsAt,Is.EqualTo(at+100+remaining).Within(1e-9));
+                advance.Invoke(state,new object[]{snapshot.Value.EndsAt-1e-7});
+                Assert.That(sim.Phase,Is.EqualTo(ShellGamePhase.Shuffling));
+                Assert.That(state.TargetItem,Is.EqualTo(ShellGameItem.None));
                 advance.Invoke(state,new object[]{snapshot.Value.EndsAt});
                 Assert.That(sim.Phase,Is.EqualTo(ShellGamePhase.Choosing));
-                Assert.That(sim.TryChoose(0,sim.Plan.CoinBox),Is.True);
+                Assert.That(state.TargetItem,Is.EqualTo(sim.Plan.TargetItem));
+                Assert.That(snapshot.Value.TargetItem,Is.EqualTo(sim.Plan.TargetItem));
+                Assert.That(sim.TryChoose(0,sim.Plan.TargetBox),Is.True);
                 publish.Invoke(state,new object[]{false,false});
                 at=sim.Elapsed+100+1;
                 state.PauseOnServer(at);
                 Assert.That(state.Remaining,Is.EqualTo(9).Within(1e-9));
                 state.ResumeOnServer(at+100);
-                Assert.That(sim.GetChoice(0),Is.EqualTo(sim.Plan.CoinBox));
+                Assert.That(sim.GetChoice(0),Is.EqualTo(sim.Plan.TargetBox));
+                Assert.That(state.TargetItem,Is.EqualTo(sim.Plan.TargetItem));
+                var restoredPlan=new ShellGameRoundPlan(snapshot.Value.Seed,snapshot.Value.Round);
+                Assert.That(restoredPlan.BoxForItem(snapshot.Value.TargetItem),Is.EqualTo(sim.Plan.TargetBox));
                 Assert.That(snapshot.Value.RevealedChoices,Is.Zero);
                 advance.Invoke(state,new object[]{snapshot.Value.EndsAt});
                 Assert.That(state.Phase,Is.EqualTo(ShellGamePhase.Reveal));
                 Assert.That(state.GetScore(0),Is.EqualTo(1));
+                Assert.That(state.TargetItem,Is.EqualTo(sim.Plan.TargetItem));
+                advance.Invoke(state,new object[]{snapshot.Value.EndsAt});
+                Assert.That(state.Phase,Is.EqualTo(ShellGamePhase.Countdown));
+                Assert.That(state.TargetItem,Is.EqualTo(ShellGameItem.None));
+                Assert.That(snapshot.Value.TargetItem,Is.EqualTo(ShellGameItem.None));
             }
             finally
             {

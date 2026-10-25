@@ -52,11 +52,11 @@ namespace MazeParty.Dev.MinigameSoloTest
         }
         private void PlanBots()
         {
-            if (_plannedRound == _match.RoundNumber) return;
+            if (_match.Phase != OddOneOutPhase.Choosing || _plannedRound == _match.RoundNumber) return;
             _plannedRound = _match.RoundNumber;
             for (var slot = 1; slot < 4; slot++)
             {
-                _botTimes[slot] = _match.Elapsed + .3d + _random.NextDouble() * 2.3d;
+                _botTimes[slot] = _match.Elapsed + .3d + _random.NextDouble() * (OddOneOutMatchState.SelectionSeconds - .6d);
                 _botChoices[slot] = _random.Next(2) == 1;
             }
         }

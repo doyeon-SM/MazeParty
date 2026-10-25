@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using MazeParty.Gameplay.Minigames.ShellGame;
 using NUnit.Framework;
 
@@ -17,6 +18,7 @@ namespace MazeParty.Gameplay.Tests
             {
                 var match=new ShellGameMatchState((ulong)mask);
                 ChoosePhase(match);
+                Assert.That(match.VisibleTargetItem,Is.EqualTo(match.Plan.TargetItem));
                 for(var i=0;i<4;i++)
                 {
                     var choice=((mask>>(i*2))&3)-1;
@@ -32,7 +34,7 @@ namespace MazeParty.Gameplay.Tests
                 for(var i=0;i<4;i++)
                 {
                     var selected=((mask>>(i*2))&3)-1;
-                    Assert.That(match.GetScore(i),Is.EqualTo(selected==match.Plan.CoinBox ? 1 : 0),mask+"/"+i);
+                    Assert.That(match.GetScore(i),Is.EqualTo(selected==match.Plan.TargetBox ? 1 : 0),mask+"/"+i);
                     Assert.That(match.GetVisibleChoice(i,(i+1)%4),Is.EqualTo(selected));
                 }
             }
@@ -47,8 +49,8 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(match.TryChoose(pair.Item1,pair.Item2),Is.False);
             for(var i=0;i<4;i++)
             {
-                Assert.That(match.TryChoose(i,match.Plan.CoinBox),Is.True);
-                Assert.That(match.TryChoose(i,(match.Plan.CoinBox+1)%3),Is.False);
+                Assert.That(match.TryChoose(i,match.Plan.TargetBox),Is.True);
+                Assert.That(match.TryChoose(i,(match.Plan.TargetBox+1)%3),Is.False);
             }
             Assert.That(match.Phase,Is.EqualTo(ShellGamePhase.Reveal));
             Assert.That(match.PhaseEndsAt,Is.EqualTo(at+2));
@@ -74,12 +76,15 @@ namespace MazeParty.Gameplay.Tests
                 {
                     Assert.That(match.Phase,Is.EqualTo(phase));
                     if(phase==ShellGamePhase.Shuffling)
-                        Assert.That(match.Remaining,Is.EqualTo(match.Plan.ShuffleCount*(.8-(round-1)*.125)).Within(1e-9));
+                        Assert.That(match.Remaining,Is.EqualTo(match.Plan.ShuffleCount/
+                            (1d/(.8d-(round-1)*.125d)+.625d)).Within(1e-9));
+                    Assert.That(match.VisibleTargetItem,Is.EqualTo(
+                        phase==ShellGamePhase.Choosing || phase==ShellGamePhase.Reveal ? match.Plan.TargetItem : ShellGameItem.None));
                     if(phase==ShellGamePhase.Choosing) Assert.That(match.Remaining,Is.EqualTo(10).Within(1e-9));
                     var deadline=match.PhaseEndsAt;
                     match.AdvanceTo(deadline-.000001); Assert.That(match.Phase,Is.EqualTo(phase));
                     match.AdvanceTo(deadline); Assert.That(match.Phase,Is.Not.EqualTo(phase));
-                    if(phase==ShellGamePhase.Choosing) Assert.That(match.TryChoose(0,match.Plan.CoinBox),Is.False);
+                    if(phase==ShellGamePhase.Choosing) Assert.That(match.TryChoose(0,match.Plan.TargetBox),Is.False);
                 }
             }
             Assert.That(match.Phase,Is.EqualTo(ShellGamePhase.Complete));
@@ -89,15 +94,23 @@ namespace MazeParty.Gameplay.Tests
             for(var i=0;i<4;i++) Assert.That(match.GetScore(i),Is.Zero);
         }
         [Test]
-        public void SeedReplay_PreservesAllSwapPermutationsAndCoinIdentity()
+        public void SeedReplay_PreservesAllSwapPermutationsItemIdentitiesAndTarget()
         {
-            var counts=new bool[4];
+            var counts=new bool[3]; var targets=new bool[3];
+            var assignments=new System.Collections.Generic.HashSet<string>();
             for(ulong seed=0;seed<250;seed++)
                 for(var round=1;round<=5;round++)
                 {
                     var plan=new ShellGameRoundPlan(seed,round); var restored=new ShellGameRoundPlan(seed,round);
-                    Assert.That(plan.ShuffleCount,Is.InRange(5,8)); counts[plan.ShuffleCount-5]=true;
-                    Assert.That(restored.CoinBox,Is.EqualTo(plan.CoinBox));
+                    Assert.That(plan.ShuffleCount,Is.InRange(10,12)); counts[plan.ShuffleCount-10]=true;
+                    targets[(int)plan.TargetItem]=true;
+                    CollectionAssert.AreEquivalent(new[]{ShellGameItem.Coin,ShellGameItem.GoldBar,ShellGameItem.Money},
+                        Enumerable.Range(0,3).Select(plan.ItemInBox));
+                    assignments.Add(string.Join(",",Enumerable.Range(0,3).Select(plan.ItemInBox)));
+                    Assert.That(restored.TargetItem,Is.EqualTo(plan.TargetItem));
+                    Assert.That(plan.ItemInBox(plan.TargetBox),Is.EqualTo(plan.TargetItem));
+                    for(var box=0;box<3;box++) Assert.That(restored.ItemInBox(box),Is.EqualTo(plan.ItemInBox(box)));
+                    Assert.That(restored.TargetBox,Is.EqualTo(plan.TargetBox));
                     for(var step=0;step<plan.ShuffleCount;step++)
                     {
                         var a=plan.FirstBox(step); var b=plan.SecondBox(step);
@@ -108,6 +121,8 @@ namespace MazeParty.Gameplay.Tests
                     }
                 }
             Assert.That(Array.TrueForAll(counts,v=>v),Is.True);
+            Assert.That(Array.TrueForAll(targets,v=>v),Is.True);
+            Assert.That(assignments.Count,Is.EqualTo(6));
         }
         [Test]
         public void FiveRounds_AccumulateScoresAndCompetitionRanks()
@@ -117,7 +132,7 @@ namespace MazeParty.Gameplay.Tests
             {
                 ChoosePhase(match);
                 for(var slot=0;slot<4;slot++)
-                    match.TryChoose(slot,slot==3 || slot==0 && round>3 ? (match.Plan.CoinBox+1)%3 : match.Plan.CoinBox);
+                    match.TryChoose(slot,slot==3 || slot==0 && round>3 ? (match.Plan.TargetBox+1)%3 : match.Plan.TargetBox);
                 match.AdvanceTo(match.PhaseEndsAt);
             }
             Assert.That(match.Phase,Is.EqualTo(ShellGamePhase.Complete));

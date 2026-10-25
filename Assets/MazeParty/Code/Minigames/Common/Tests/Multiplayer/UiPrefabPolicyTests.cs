@@ -262,9 +262,27 @@ namespace MazeParty.Multiplayer.Tests
                     requiredReferences.GetValue(binding),
                     Is.EqualTo(true),
                     path + " has an incomplete serialized binding contract.");
+                if (binding is OddOneOutHudBindings oddHud) AssertOddOneOutSelectionTimer(oddHud);
                 if (binding is OnlineLobbyView lobby)
                     AssertLobbyEmoteHint(lobby, false);
             }
+        }
+
+        private static void AssertOddOneOutSelectionTimer(OddOneOutHudBindings hud)
+        {
+            var binding = new SerializedObject(hud);
+            var timer = (GameObject)binding.FindProperty("selectionTimerRoot").objectReferenceValue;
+            var bar = (Slider)binding.FindProperty("selectionTimeBar").objectReferenceValue;
+            Assert.That(timer, Is.Not.Null);
+            Assert.That(bar, Is.Not.Null);
+            Assert.That(bar.direction, Is.EqualTo(Slider.Direction.LeftToRight),
+                "Decreasing remaining time must retract the right edge toward the left.");
+            Assert.That(bar.minValue, Is.Zero); Assert.That(bar.maxValue, Is.EqualTo(1f));
+            Assert.That(bar.interactable, Is.False);
+            Assert.That(bar.handleRect, Is.Null);
+            Assert.That(bar.GetComponent<Image>().color, Is.EqualTo(new Color(.35f, .35f, .38f, 1f)));
+            Assert.That(bar.fillRect.GetComponent<Image>().color, Is.EqualTo(new Color(.93f, .18f, .2f, 1f)));
+            Assert.That(timer.GetComponentsInChildren<Graphic>(true).All(graphic => !graphic.raycastTarget), Is.True);
         }
 
         private static void AssertLobbyEmoteHint(OnlineLobbyView lobby, bool sceneInstance)
@@ -701,6 +719,16 @@ namespace MazeParty.Multiplayer.Tests
                             Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                                 director.CloudTransition.gameObject), Is.EqualTo(
                                 "Assets/MazeParty/Prefabs/Board/UI/BoardCameraCloudCanvas.prefab"));
+                        }
+                        if (component is OddOneOutNetworkView oddView)
+                        {
+                            Assert.That(oddView.HasRequiredReferences, Is.True);
+                            var hud = (OddOneOutHudBindings)new SerializedObject(oddView).FindProperty("actionHud").objectReferenceValue;
+                            Assert.That(hud.HasRequiredReferences, Is.True);
+                            Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(hud.gameObject),
+                                Is.EqualTo("Assets/MazeParty/Prefabs/Minigames/OddOneOut/UI/OddOneOutHud.prefab"));
+                            var bar = (Slider)new SerializedObject(hud).FindProperty("selectionTimeBar").objectReferenceValue;
+                            Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(bar), Is.Not.Null);
                         }
                         if (component is GiftGrabNetworkView giftView)
                         {

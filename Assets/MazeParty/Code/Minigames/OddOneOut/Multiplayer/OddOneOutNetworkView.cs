@@ -76,19 +76,19 @@ namespace MazeParty.Multiplayer
             var localSlot = -1;
             for (var i = 0; i < 4; i++) if (match.GetAvatarForSlot(i) != null && match.GetAvatarForSlot(i).IsOwner) localSlot = i;
             Render(state.Phase, state.RoundNumber, state.WinnerSlot, i => state.GetVisibleChoice(i, localSlot), state.GetScore,
-                localSlot, !state.IsPaused && state.Remaining > 0d, match);
+                localSlot, !state.IsPaused && state.Remaining > 0d, state.Remaining, match);
         }
         public void RenderPractice(OddOneOutMatchState simulation)
         {
             _practice = true; SetVisible(true);
             // The online match uses the Board's shared HUD; standalone practice owns this authored instance.
             practiceCountdown.SetCountdown(Mathf.Clamp((int)Math.Ceiling(simulation.Remaining), 1, 3),
-                simulation.Phase == OddOneOutPhase.Choosing && simulation.Remaining > 0d);
+                simulation.Phase == OddOneOutPhase.Countdown && simulation.Remaining > 0d);
             Render(simulation.Phase, simulation.RoundNumber, simulation.WinnerSlot,
-                i => simulation.GetVisibleChoice(i, 0), simulation.GetScore, 0, true, null);
+                i => simulation.GetVisibleChoice(i, 0), simulation.GetScore, 0, true, simulation.Remaining, null);
         }
         private void Render(OddOneOutPhase phase, int round, int winner, Func<int,bool> choice, Func<int,int> score,
-            int localSlot, bool inputAllowed, NetworkMatchState match)
+            int localSlot, bool inputAllowed, double remaining, NetworkMatchState match)
         {
             EnsurePlayers();
             for (var slot = 0; slot < 4; slot++)
@@ -105,6 +105,7 @@ namespace MazeParty.Multiplayer
                 visual.SetCrouchingImmediate(choice(slot));
                 scoreHud.SetPlayer(slot, name, score(slot), color);
             }
+            actionHud.SetSelectionTime(phase, remaining);
             actionHud.SetAction(phase == OddOneOutPhase.Choosing && localSlot >= 0 && inputAllowed,
                 localSlot >= 0 && choice(localSlot));
             // Late joiners receive the current result without replaying a historical win effect.

@@ -375,6 +375,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 player.StunRemaining = Math.Max(
                     0d,
                     player.StunRemaining - deltaTime);
+                player.StunProtectionRemaining = Math.Max(0d, player.StunProtectionRemaining - deltaTime);
                 player.ThrowRecoveryRemaining = Math.Max(
                     0d,
                     player.ThrowRecoveryRemaining - deltaTime);
@@ -488,6 +489,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                         continue;
                     }
 
+                    if (_players[slot].IsStunProtectedAt(hitElapsed)) continue;
                     if (hitFraction < earliestFraction ||
                         (Mathf.Approximately(hitFraction, earliestFraction) &&
                          slot < hitSlot))
@@ -765,7 +767,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 player.PushCastRemaining = 0d;
                 player.PushCastFacing = Vector2.zero;
                 var selected = FindPushTarget(slot, frozenFacing);
-                if (selected < 0)
+                if (selected < 0 || _players[selected].IsStunProtectedAt(_roundElapsed))
                 {
                     continue;
                 }
@@ -858,9 +860,11 @@ namespace MazeParty.Dev.MinigameSoloTest
             var elapsedSinceEvent = Math.Max(
                 0d,
                 _roundElapsed - eventElapsed);
-            player.StunRemaining = Math.Max(
-                player.StunRemaining,
-                Math.Max(0d, seconds - elapsedSinceEvent));
+            if (player.IsStunProtectedAt(eventElapsed)) return GiftGrabRules.NoGiftId;
+            player.StunRemaining = Math.Max(player.StunRemaining, Math.Max(0d, seconds - elapsedSinceEvent));
+            player.StunStartedAt = eventElapsed;
+            player.StunProtectionUntil = eventElapsed + seconds + GiftGrabRules.StunProtectionSeconds;
+            player.StunProtectionRemaining = Math.Max(0d, player.StunProtectionUntil - _roundElapsed);
             var dropped = player.CarriedGiftId;
             if (dropped >= 0)
             {
@@ -923,6 +927,8 @@ namespace MazeParty.Dev.MinigameSoloTest
             foreach (var player in _players)
             {
                 player.StunRemaining = 0d;
+                player.StunProtectionRemaining = 0d;
+                player.StunProtectionUntil = 0d;
                 player.ThrowRecoveryRemaining = 0d;
                 player.ActionCooldownRemaining = 0d;
                 player.IsPushCasting = false;
@@ -1136,6 +1142,11 @@ namespace MazeParty.Dev.MinigameSoloTest
         public int CarriedGiftId { get; internal set; }
         public int StoredGiftCount { get; internal set; }
         public double StunRemaining { get; internal set; }
+        public double StunProtectionRemaining { get; internal set; }
+        internal double StunStartedAt { get; set; }
+        internal double StunProtectionUntil { get; set; }
+        internal bool IsStunProtectedAt(double elapsed) =>
+            elapsed + 0.000000001d >= StunStartedAt && elapsed + 0.000000001d < StunProtectionUntil;
         public double ThrowRecoveryRemaining { get; internal set; }
         public double ActionCooldownRemaining { get; internal set; }
         public bool IsPushCasting { get; internal set; }

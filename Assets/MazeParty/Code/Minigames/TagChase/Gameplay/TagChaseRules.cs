@@ -33,7 +33,7 @@ namespace MazeParty.Gameplay.Minigames.TagChase
         public const int RunnerCaughtPoints = 1;
         public const float PlayerMoveSpeed = 5f;
         public const float RunnerMoveSpeed =
-            PlayerMoveSpeed * FootstepRules.WalkSpeedMultiplier;
+            PlayerMoveSpeed * 0.9f;
 
         public static bool IsValidPlayerSlot(int slot)
         {
