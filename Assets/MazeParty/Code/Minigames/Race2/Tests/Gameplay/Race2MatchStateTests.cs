@@ -43,7 +43,7 @@ namespace MazeParty.Gameplay.Tests
                 Assert.That(afterSequence, Is.EqualTo(b + Race2Rules.BoxCount));
                 Assert.That(afterZ - beforeZ, Is.EqualTo(Race2Rules.BoxCount * Race2Rules.BoxSpacing).Within(.001));
             }
-            foreach (var sample in new[]{(0d,10d,0d),(30d,16.25d,393.75d),(60d,22.5d,975d)})
+            foreach (var sample in new[]{(0d,15d,0d),(30d,24.375d,590.625d),(60d,33.75d,1462.5d)})
             {
                 Assert.That(Race2Rules.Speed(sample.Item1), Is.EqualTo(sample.Item2).Within(1e-8));
                 Assert.That(Race2Rules.Distance(sample.Item1), Is.EqualTo(sample.Item3).Within(1e-8));

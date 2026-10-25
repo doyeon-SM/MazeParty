@@ -11,7 +11,7 @@ namespace MazeParty.Gameplay.Minigames.Race2
         public const int RoundCount = 1;
         public const double CountdownSeconds = 3d, ResultSeconds = 4d;
         public const double RoundSeconds = 60d;
-        public const double BaseSpeed = 10d, MaximumSpeed = 22.5d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
+        public const double BaseSpeed = 15d, MaximumSpeed = 33.75d, BoxSpacing = 10.5d, FirstBoxDistance = 6.5d;
         // Behind the rear camera as well as below its view, so recycling is never visible.
         public const double RecycleZ = -12d, CollisionHalfDepth = .85d;
         public static bool ValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
