@@ -333,6 +333,37 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(_player.CurrentHealth, Is.EqualTo(100));
             Assert.That(_match.GameplayEnabled, Is.True);
         }
+        [Test]
+        public void EmptyResourceTransfer_KeepsBothParticipantsAndFullPresentationWithoutChangingBalances()
+        {
+            var opponent = Child("Opponent").AddComponent<NetworkPlayerAvatar>();
+            Authority(opponent, true);
+            Set(opponent, "_slot", 1); Set(opponent, "_boardReady", true);
+            Set(_player, "_gold", 0); Set(opponent, "_gold", 0);
+            Set(_player, "_keyCount", 0); Set(opponent, "_keyCount", 0);
+            foreach (var resource in new[] { BoardSpecialEventResource.Gold, BoardSpecialEventResource.Key })
+            foreach (var operation in new[] { BoardSpecialEventOperation.OpponentGivesToActor, BoardSpecialEventOperation.OpponentStealsFromActor })
+            {
+                var beforeGold = _player.Gold + opponent.Gold;
+                var beforeKeys = _player.KeyCount + opponent.KeyCount;
+                var durations = (double[])typeof(NetworkMatchState).GetField("_landingEffectDurations", Private).GetValue(_match);
+                durations[0] = BoardEffectShotTiming.Duration + BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
+                    BoardResourceTransferPresentationRules.TotalDurationSeconds;
+                var fullDuration = durations[0];
+                Invoke("ResolveSpecialEventTransferOnServer", 0, null,
+                    new BoardSpecialEventRules.Resolution(BoardSpecialEventFamily.Transfer, BoardSpecialEventAudience.OneOpponent,
+                        operation, resource, 1, 20));
+                var snapshot = _match.ResourceTransferPresentation;
+                Assert.That(snapshot.Active, Is.True);
+                Assert.That(snapshot.Amount, Is.Zero);
+                Assert.That(new[] { snapshot.SourceSlot, snapshot.DestinationSlot }, Is.EquivalentTo(new[] { 0, 1 }));
+                Assert.That(durations[0], Is.EqualTo(fullDuration));
+                Assert.That(BoardResourceTransferPresentationRules.GetPhase(snapshot, snapshot.StartedAt + 3d,
+                    out _, out _), Is.EqualTo(BoardResourceTransferPhase.Source));
+                Assert.That(_player.Gold + opponent.Gold, Is.EqualTo(beforeGold));
+                Assert.That(_player.KeyCount + opponent.KeyCount, Is.EqualTo(beforeKeys));
+            }
+        }
         private BoardChestSnapshot Chest(int x) => new BoardChestSnapshot
             { Active = true, Location = new Vector2Int(x, 0), Revision = 1, AppearedTurn = 2 };
         private GameObject Child(string name)

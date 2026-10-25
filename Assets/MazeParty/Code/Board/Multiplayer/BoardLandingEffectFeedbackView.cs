@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -16,6 +17,9 @@ namespace MazeParty.Multiplayer
             new Color(1f, 0.3f, 0.28f, 1f);
         [SerializeField] private Color itemColor = Color.white;
 
+        [SerializeField, Min(0f)] private float minimumHeadGapPixels = 10f;
+        private readonly Vector3[] _labelCorners = new Vector3[4];
+        private PlayerAvatarVisual _avatarVisual;
         private Transform _head;
         private Camera _camera;
         private float _expiresAt;
@@ -36,6 +40,7 @@ namespace MazeParty.Multiplayer
             float remainingSeconds)
         {
             _head = head;
+            _avatarVisual = head != null ? head.GetComponentInParent<PlayerAvatarVisual>() : null;
             _camera = outputCamera;
             _expiresAt = Time.unscaledTime + Mathf.Max(0f, remainingSeconds);
             _presenting = HasRequiredReferences && _head != null &&
@@ -87,6 +92,26 @@ namespace MazeParty.Multiplayer
                 transform.rotation = Quaternion.LookRotation(
                     awayFromCamera.normalized,
                     _camera.transform.up);
+            }
+            // Keep the entire authored label above the projected head and hat,
+            // including perspective views where a world-height offset is insufficient.
+            if (_avatarVisual == null || !_avatarVisual.TryGetHeadViewportTop(_camera, out var top)) return;
+            label.rectTransform.GetWorldCorners(_labelCorners);
+            var bottom = float.PositiveInfinity;
+            var bottomDepth = 0f;
+            foreach (var corner in _labelCorners)
+            {
+                var projected = _camera.WorldToViewportPoint(corner);
+                if (projected.z > _camera.nearClipPlane && projected.y < bottom)
+                { bottom = projected.y; bottomDepth = projected.z; }
+            }
+            var anchor = _camera.WorldToViewportPoint(transform.position);
+            if (anchor.z <= _camera.nearClipPlane || float.IsPositiveInfinity(bottom)) return;
+            var gap = minimumHeadGapPixels / Mathf.Max(1f, _camera.pixelHeight);
+            if (top + gap > bottom)
+            {
+                anchor.y += (top + gap - bottom) * bottomDepth / anchor.z;
+                transform.position = _camera.ViewportToWorldPoint(anchor);
             }
         }
 

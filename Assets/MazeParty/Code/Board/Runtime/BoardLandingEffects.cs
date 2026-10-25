@@ -96,7 +96,7 @@ namespace MazeParty.Gameplay
         public const double SpecialEventTargetDurationSeconds = 1d;
         public const double SpecialEventResourceDurationSeconds = 1d;
         public const double SpecialEventOperationDurationSeconds = 1d;
-        public const double SpecialEventResultDurationSeconds = 2d;
+        public const double SpecialEventResultDurationSeconds = 3d;
         public const double SpecialEventPanelLeadSeconds = 0.5d;
         public const double SpecialEventRouletteDurationSeconds =
             SpecialEventPanelLeadSeconds + SpecialEventTargetDurationSeconds +

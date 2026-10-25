@@ -192,6 +192,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardLandingEffectFeedbackView
   label: {fileID: 5462314961552987308}
   headOffset: 0.55
+  minimumHeadGapPixels: 10
   goldColor: {r: 1, g: 0.82, b: 0.16, a: 1}
   healingColor: {r: 0.3, g: 1, b: 0.48, a: 1}
   damageColor: {r: 1, g: 0.3, b: 0.28, a: 1}

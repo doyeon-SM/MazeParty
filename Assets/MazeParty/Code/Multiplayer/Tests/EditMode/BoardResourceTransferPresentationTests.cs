@@ -44,15 +44,15 @@ namespace MazeParty.Multiplayer.Tests
             var cases = new[]
             {
                 (99.5d, BoardResourceTransferPhase.Result, 0f),
-                (101.999d, BoardResourceTransferPhase.Result, 0f),
-                (102d, BoardResourceTransferPhase.Source, 0f),
-                (102.499d, BoardResourceTransferPhase.Source, 0f),
-                (102.5d, BoardResourceTransferPhase.Source, 0f),
-                (103.499d, BoardResourceTransferPhase.Source, 0.99f),
-                (103.5d, BoardResourceTransferPhase.Destination, 0f),
-                (104.499d, BoardResourceTransferPhase.Destination, 0.99f),
-                (104.5d, BoardResourceTransferPhase.Destination, 1f),
-                (105d, BoardResourceTransferPhase.Complete, 1f)
+                (102.999d, BoardResourceTransferPhase.Result, 0f),
+                (103d, BoardResourceTransferPhase.Source, 0f),
+                (103.499d, BoardResourceTransferPhase.Source, 0f),
+                (103.5d, BoardResourceTransferPhase.Source, 0f),
+                (104.499d, BoardResourceTransferPhase.Source, 0.99f),
+                (104.5d, BoardResourceTransferPhase.Destination, 0f),
+                (105.499d, BoardResourceTransferPhase.Destination, 0.99f),
+                (105.5d, BoardResourceTransferPhase.Destination, 1f),
+                (106d, BoardResourceTransferPhase.Complete, 1f)
             };
 
             foreach (var testCase in cases)
@@ -85,8 +85,8 @@ namespace MazeParty.Multiplayer.Tests
                     103d,
                     out _,
                     out _),
-                Is.EqualTo(BoardResourceTransferPhase.None),
-                "A zero-value result must never create a resource or camera shot.");
+                Is.EqualTo(BoardResourceTransferPhase.Source),
+                "Zero movement still keeps the participant camera shot.");
         }
 
         [Test]
@@ -174,12 +174,12 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
                         eventWindow,
-                        101.999999d),
+                        102.999999d),
                     Is.True);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.IsVisible(
                         eventWindow,
-                        102d),
+                        103d),
                     Is.False);
                 Assert.That(
                     BoardLandingEffectFeedbackRules.GetRemainingSeconds(

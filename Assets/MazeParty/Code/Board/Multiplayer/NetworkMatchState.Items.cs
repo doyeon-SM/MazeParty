@@ -447,7 +447,7 @@ namespace MazeParty.Multiplayer
                 item.ExplosionPrefab,
                 position,
                 Quaternion.identity,
-                ResolveBoardExplosionVisualScale(item.BlastRadius));
+                ResolveBoardExplosionVisualScale(item.BlastRadius) * item.ExplosionScaleMultiplier);
         }
 
         [Rpc(SendTo.ClientsAndHost)]

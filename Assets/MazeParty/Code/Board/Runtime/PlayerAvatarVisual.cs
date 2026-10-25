@@ -633,17 +633,7 @@ namespace MazeParty.Gameplay
             var anchor = camera.WorldToViewportPoint(_nameplate.position);
             if (anchor.z <= camera.nearClipPlane) return;
 
-            var top = float.NegativeInfinity;
-            IncludeRendererViewportTop(camera, _headRenderer, ref top);
-            if (_hatId > 0 && _hatRenderers != null &&
-                _hatId <= _hatRenderers.Length)
-            {
-                var renderers = _hatRenderers[_hatId - 1];
-                if (renderers != null)
-                    foreach (var renderer in renderers)
-                        IncludeRendererViewportTop(camera, renderer, ref top);
-            }
-            if (float.IsNegativeInfinity(top)) return;
+            if (!TryGetHeadViewportTop(camera, out var top)) return;
 
             // Compare projected bounds, not a fixed world height: tall/wide hats
             // and perspective/top-down views need different amounts of clearance.
@@ -654,6 +644,41 @@ namespace MazeParty.Gameplay
                 anchor.y += top + gap - bottom;
                 _nameplate.position = camera.ViewportToWorldPoint(anchor);
             }
+        }
+
+        public bool TryGetHeadBounds(out Bounds bounds)
+        {
+            bounds = default;
+            var found = false;
+            IncludeHeadBounds(_headRenderer, ref bounds, ref found);
+            if (_hatId > 0 && _hatRenderers != null && _hatId <= _hatRenderers.Length)
+            {
+                var renderers = _hatRenderers[_hatId - 1];
+                if (renderers != null)
+                    foreach (var renderer in renderers) IncludeHeadBounds(renderer, ref bounds, ref found);
+            }
+            return found;
+        }
+
+        private static void IncludeHeadBounds(Renderer renderer, ref Bounds bounds, ref bool found)
+        {
+            if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy) return;
+            if (found) bounds.Encapsulate(renderer.bounds);
+            else { bounds = renderer.bounds; found = true; }
+        }
+        public bool TryGetHeadViewportTop(Camera camera, out float top)
+        {
+            top = float.NegativeInfinity;
+            if (camera == null) return false;
+            IncludeRendererViewportTop(camera, _headRenderer, ref top);
+            if (_hatId > 0 && _hatRenderers != null && _hatId <= _hatRenderers.Length)
+            {
+                var renderers = _hatRenderers[_hatId - 1];
+                if (renderers != null)
+                    foreach (var renderer in renderers)
+                        IncludeRendererViewportTop(camera, renderer, ref top);
+            }
+            return !float.IsNegativeInfinity(top);
         }
 
         private static void IncludeRendererViewportTop(

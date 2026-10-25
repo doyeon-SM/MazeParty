@@ -92,15 +92,15 @@ namespace MazeParty.Multiplayer.Tests
                     Kind = (byte)BoardLandingEffectFeedbackKind.Event,
                     AffectedMask = (byte)mask, StartedAt = 10d
                 };
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 11.999d), Is.Zero);
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 12d), Is.EqualTo(mask));
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 12.499d), Is.False);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 12.5d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.499d), Is.True);
-                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.5d), Is.False);
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 13.999d), Is.EqualTo(mask));
-                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 14d), Is.Zero);
-                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(4d));
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 12.999d), Is.Zero);
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 13d), Is.EqualTo(mask));
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.499d), Is.False);
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 13.5d), Is.True);
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.499d), Is.True);
+                Assert.That(BoardLandingEffectFeedbackRules.IsEffectVisible(snapshot, 14.5d), Is.False);
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 14.999d), Is.EqualTo(mask));
+                Assert.That(BoardLandingEffectFeedbackRules.GetEventFocusMask(snapshot, 15d), Is.Zero);
+                Assert.That(BoardLandingEffectFeedbackRules.GetDurationSeconds(snapshot), Is.EqualTo(5d));
             }
         }
 

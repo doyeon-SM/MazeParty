@@ -588,6 +588,11 @@ namespace MazeParty.Multiplayer
             Transform head,
             GameObject prefabOverride = null)
         {
+            if (snapshot.Amount <= 0)
+            {
+                ClearResourceTransferVisual();
+                return;
+            }
             var prefab = prefabOverride != null ? prefabOverride :
                 snapshot.ResourceKind == BoardSpecialEventResource.Key
                     ? resourceTransferKeyPrefab : resourceTransferCoinPrefab;

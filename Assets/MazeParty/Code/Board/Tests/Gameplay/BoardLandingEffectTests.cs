@@ -179,7 +179,7 @@ namespace MazeParty.Gameplay.Tests
             };
             var duration = BoardLandingEffectLayout
                 .GetTotalDurationSeconds(turnEffects);
-            Assert.That(duration, Is.EqualTo(15.5d));
+            Assert.That(duration, Is.EqualTo(16.5d));
             Assert.That(
                 BoardLandingEffectLayout.GetTotalDurationSeconds(
                     turnEffects.Length,

@@ -297,7 +297,9 @@ namespace MazeParty.Multiplayer
                         tile,
                         BoardLandingEffectType.SpecialEvent,
                         GameText.N("SPECIAL EVENT  {0}  {1}  ACTION > {2}"),
-                        GetSpecialEventTargetLabel(resolution, slot),
+                        resolution.Family == BoardSpecialEventFamily.Transfer
+                            ? GetTransferTargetLabel(slot, resolution.OpponentSlot, previewTick % 2 == 0)
+                            : GetSpecialEventTargetLabel(resolution, slot),
                         GetSpecialEventResourceLabel(resolution),
                         GetPreviewOperationLabel(resolution, previewTick));
                     break;
@@ -544,18 +546,10 @@ namespace MazeParty.Multiplayer
             var destinationSlot = opponentGives
                 ? actorSlot
                 : resolution.OpponentSlot;
-            if (transferred > 0)
-            {
-                PublishResourceTransferPresentationOnServer(
-                    sourceSlot,
-                    destinationSlot,
-                    resolution.Resource,
-                    transferred);
-            }
-            else
-            {
-                ShortenEmptyTransferPresentationOnServer(actorSlot);
-            }
+            // A zero transfer still shows both participants for the full shot.
+            // The presenter suppresses resource models when there is no movement.
+            PublishResourceTransferPresentationOnServer(
+                sourceSlot, destinationSlot, resolution.Resource, transferred);
             PublishLandingEffectOnServer(
                 actorSlot,
                 tile,
@@ -586,25 +580,6 @@ namespace MazeParty.Multiplayer
                 : avatar.KeyCount;
         }
 
-        private void ShortenEmptyTransferPresentationOnServer(int actorSlot)
-        {
-            var resultOnlyDuration =
-                BoardEffectShotTiming.Duration + BoardLandingEffectLayout.SpecialEventRouletteDurationSeconds +
-                BoardResourceTransferPresentationRules.ResultDurationSeconds;
-            var reduction = Math.Max(
-                0d,
-                _landingEffectDurations[actorSlot] - resultOnlyDuration);
-            _landingEffectDurations[actorSlot] = resultOnlyDuration;
-            var now = ServerNow;
-            if (reduction <= 0d ||
-                !_flow.TryShortenLandingEffectResolve(now, reduction))
-            {
-                return;
-            }
-
-            SyncFlowSnapshot(now);
-        }
-
         private static int ApplySpecialEventResourceDeltaOnServer(
             NetworkPlayerAvatar avatar,
             BoardSpecialEventResource resource,
@@ -628,7 +603,7 @@ namespace MazeParty.Multiplayer
             var opponentSlot = GetPreviewOpponentSlot(actorSlot, previewTick);
             if (resolution.Family == BoardSpecialEventFamily.Transfer)
             {
-                return LandingEffectMessage.PlayerToken(opponentSlot) + " / " + LandingEffectMessage.PlayerToken(actorSlot);
+                return GetTransferTargetLabel(actorSlot, opponentSlot, previewTick % 2 == 0);
             }
 
             switch (previewTick % 4)
@@ -650,8 +625,8 @@ namespace MazeParty.Multiplayer
         {
             if (resolution.Family == BoardSpecialEventFamily.Transfer)
             {
-                return LandingEffectMessage.PlayerToken(resolution.OpponentSlot) +
-                       " / " + LandingEffectMessage.PlayerToken(actorSlot);
+                return GetTransferTargetLabel(actorSlot, resolution.OpponentSlot,
+                    resolution.Operation == BoardSpecialEventOperation.OpponentGivesToActor);
             }
 
             switch (resolution.Audience)
@@ -668,6 +643,10 @@ namespace MazeParty.Multiplayer
                     return LandingEffectMessage.PlayerToken(actorSlot);
             }
         }
+
+        private static string GetTransferTargetLabel(int actorSlot, int opponentSlot, bool opponentGives) =>
+            LandingEffectMessage.PlayerToken(actorSlot) + (opponentGives ? " ← " : " → ") +
+            LandingEffectMessage.PlayerToken(opponentSlot);
 
         private static string GetPreviewResourceLabel(int previewTick)
         {

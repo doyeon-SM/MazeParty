@@ -96,7 +96,7 @@ namespace MazeParty.Multiplayer
             phaseProgress = 0f;
             motionProgress = 0f;
             if (!snapshot.Active ||
-                snapshot.Amount <= 0 ||
+                snapshot.Amount < 0 ||
                 snapshot.SourceSlot < 0 ||
                 snapshot.SourceSlot >= MultiplayerConstants.MaxPlayers ||
                 snapshot.DestinationSlot < 0 ||

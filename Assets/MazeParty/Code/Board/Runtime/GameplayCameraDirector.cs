@@ -66,6 +66,9 @@ namespace MazeParty.Gameplay
         [SerializeField, Range(10f, 120f)]
         private float boardResourceEventFieldOfView = 60f;
 
+        [SerializeField, Min(0f)] private float boardResourceEventTextClearance = 1.1f;
+        private readonly System.Collections.Generic.Dictionary<Transform, float> _eventShotFieldsOfView =
+            new System.Collections.Generic.Dictionary<Transform, float>();
         private readonly BoardEventCameraOcclusion _eventOcclusion = new BoardEventCameraOcclusion();
         private CinemachineBrain _brain;
         private Coroutine _transitionCoroutine;
@@ -172,6 +175,7 @@ namespace MazeParty.Gameplay
             Transform head,
             float focusHeight)
         {
+            if (facing == null) _eventShotFieldsOfView.Clear();
             _boardResourceEventFacing = facing;
             _boardResourceEventHead = head;
             _boardResourceEventFocusHeight = Mathf.Max(0f, focusHeight);
@@ -326,6 +330,7 @@ namespace MazeParty.Gameplay
 
             var showEvent = activeMode == GameplayMode.BoardResourceEvent ||
                 (_isTransitioning && _transitionFrom == GameplayMode.BoardResourceEvent);
+            if (!showEvent) _eventShotFieldsOfView.Clear();
             _eventOcclusion.SetFocus(outputCamera, showEvent ? _boardResourceEventFacing : null);
 
             // The first-person virtual camera has no procedural body component.
@@ -742,7 +747,21 @@ namespace MazeParty.Gameplay
             rotation = direction.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(direction.normalized, Vector3.up)
                 : Quaternion.identity;
-            fieldOfView = Mathf.Clamp(boardResourceEventFieldOfView, 10f, 120f);
+            if (!_eventShotFieldsOfView.TryGetValue(facing, out fieldOfView))
+            {
+                fieldOfView = Mathf.Clamp(boardResourceEventFieldOfView, 10f, 120f);
+                var visual = facing.GetComponent<PlayerAvatarVisual>();
+                if (visual != null && visual.TryGetHeadBounds(out var headBounds))
+                {
+                    var upperPoint = new Vector3(headBounds.center.x,
+                        headBounds.max.y + boardResourceEventTextClearance, headBounds.center.z);
+                    var inView = Quaternion.Inverse(rotation) * (upperPoint - position);
+                    var requiredField = 2f * Mathf.Atan2(Mathf.Max(0f, inView.y), Mathf.Max(.1f, inView.z)) * Mathf.Rad2Deg;
+                    fieldOfView = Mathf.Clamp(Mathf.Max(fieldOfView, requiredField), 10f, 120f);
+                    // Hold framing only after the body becomes visible on entry to the shot.
+                    _eventShotFieldsOfView[facing] = fieldOfView;
+                }
+            }
         }
 
         private float GetOutputAspect()

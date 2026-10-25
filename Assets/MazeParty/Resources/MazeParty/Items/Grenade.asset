@@ -35,4 +35,5 @@ MonoBehaviour:
   HeldPrefab: {fileID: 7111415211140872543, guid: e7f76545a42172349a4f60344ab96b74, type: 3}
   WorldPrefab: {fileID: 7111415211140872543, guid: e7f76545a42172349a4f60344ab96b74, type: 3}
   ExplosionPrefab: {fileID: 2554087144805948595, guid: 8034d4fc3fa00494db89239605d658d5, type: 3}
+  ExplosionScaleMultiplier: 1.5
   ImpactPrefab: {fileID: 0}

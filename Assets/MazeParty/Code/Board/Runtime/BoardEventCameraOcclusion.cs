@@ -5,19 +5,15 @@ using UnityEngine.Rendering;
 
 namespace MazeParty.Gameplay
 {
-    /// <summary>
-    /// Makes scenery between an event camera and its player transparent for that
-    /// camera's render only. Colliders, shared assets and other views are untouched.
-    /// </summary>
+    /// <summary>Hides obstructing scenery only while an event camera renders.</summary>
     public sealed class BoardEventCameraOcclusion : IDisposable
     {
-        private const float Opacity = 0.12f;
-        private static readonly int[] ColorProperties =
-            { Shader.PropertyToID("_BaseColor"), Shader.PropertyToID("_Color") };
         private readonly Dictionary<Camera, Transform> _focus = new Dictionary<Camera, Transform>();
-        private readonly Dictionary<Material, Material> _transparent = new Dictionary<Material, Material>();
-        private readonly List<RendererState> _changed = new List<RendererState>();
+        private readonly List<Renderer> _hidden = new List<Renderer>();
+        private readonly List<TerrainState> _terrainChanges = new List<TerrainState>();
+        private readonly Vector3[] _targets = new Vector3[7];
         private Renderer[] _scenery;
+        private Terrain[] _terrains;
         private double _nextScan;
         private Camera _renderingCamera;
         private bool _subscribed;
@@ -40,59 +36,94 @@ namespace MazeParty.Gameplay
 
         private void BeginCameraRendering(ScriptableRenderContext context, Camera camera)
         {
-            // Also recovers the state if a camera render was interrupted.
-            Restore();
+            Restore(); // Also restores a render interrupted before its end callback.
             if (!_focus.TryGetValue(camera, out var player) || player == null) return;
             _renderingCamera = camera;
             if (_scenery == null || Time.unscaledTimeAsDouble >= _nextScan)
             {
                 _scenery = UnityEngine.Object.FindObjectsByType<Renderer>(
                     FindObjectsInactive.Include, FindObjectsSortMode.None);
+                _terrains = Terrain.activeTerrains;
                 _nextScan = Time.unscaledTimeAsDouble + 0.5d;
             }
             var origin = camera.transform.position;
             var center = player.position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+            _targets[0] = center;
+            _targets[1] = center - Vector3.up * 0.45f;
+            _targets[2] = center - Vector3.up * 1.25f;
+            _targets[3] = center + Vector3.up * 0.45f;
+            _targets[4] = center + camera.transform.right * 0.45f;
+            _targets[5] = center - camera.transform.right * 0.45f;
+            _targets[6] = center + Vector3.up * 1.1f;
+            var visual = player.GetComponent<PlayerAvatarVisual>();
+            if (visual != null && visual.TryGetHeadViewportTop(camera, out var top))
+            {
+                var viewport = camera.WorldToViewportPoint(center);
+                if (viewport.z > camera.nearClipPlane)
+                {
+                    viewport.y = top + 0.1f;
+                    _targets[6] = camera.ViewportToWorldPoint(viewport);
+                }
+            }
             foreach (var renderer in _scenery)
             {
                 if (renderer == null || !renderer.enabled || renderer.forceRenderingOff ||
                     !renderer.gameObject.activeInHierarchy ||
                     (camera.cullingMask & (1 << renderer.gameObject.layer)) == 0 ||
                     (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))) continue;
+                if (renderer.GetComponentInParent<PlayerAvatarVisual>() != null ||
+                    renderer.transform.IsChildOf(player) || renderer.GetComponent<TextMesh>() != null) continue;
                 var bounds = renderer.bounds;
-                // Flat ground and scenery behind the player cannot hide the portrait.
                 if (bounds.max.y < player.position.y - 0.65f) continue;
                 bounds.Expand(0.16f);
-                if (!Blocks(bounds, origin, center) &&
-                    !Blocks(bounds, origin, center - Vector3.up * 0.45f) &&
-                    !Blocks(bounds, origin, center - Vector3.up * 1.25f) &&
-                    !Blocks(bounds, origin, center + Vector3.up * 0.45f) &&
-                    !Blocks(bounds, origin, center + camera.transform.right * 0.3f) &&
-                    !Blocks(bounds, origin, center - camera.transform.right * 0.3f)) continue;
-                if (renderer.GetComponentInParent<PlayerAvatarVisual>() != null ||
-                    renderer.transform.IsChildOf(player) ||
-                    renderer.GetComponent<TextMesh>() != null) continue;
-                var saved = new RendererState(renderer);
-                _changed.Add(saved);
-                var materials = (Material[])saved.Materials.Clone();
-                var supported = true;
-                for (var index = 0; index < materials.Length; index++)
-                {
-                    if (materials[index] == null) continue;
-                    var ghost = TransparentMaterial(materials[index]);
-                    if (ghost == null) { supported = false; break; }
-                    materials[index] = ghost;
-                }
-                if (!supported)
-                {
-                    // Unknown opaque shaders still must not cover the player.
-                    renderer.forceRenderingOff = true;
-                    continue;
-                }
-                renderer.sharedMaterials = materials;
-                renderer.shadowCastingMode = ShadowCastingMode.Off;
-                ApplyAlpha(renderer, -1);
-                for (var index = 0; index < materials.Length; index++) ApplyAlpha(renderer, index);
+                if (!BlocksPortrait(bounds, origin)) continue;
+                // Opaque, alpha-clipped and custom foliage shaders all obey this.
+                // Materials, colliders and the other cameras retain their normal state.
+                _hidden.Add(renderer);
+                renderer.forceRenderingOff = true;
             }
+            foreach (var terrain in _terrains)
+            {
+                if (terrain == null || !terrain.enabled || !terrain.gameObject.activeInHierarchy ||
+                    terrain.terrainData == null || (camera.cullingMask & (1 << terrain.gameObject.layer)) == 0) continue;
+                var size = terrain.terrainData.size;
+                var footprint = new Bounds(terrain.transform.position + size * 0.5f,
+                    new Vector3(size.x, 20000f, size.z));
+                if (!BlocksPortrait(footprint, origin)) continue;
+                // Terrain vegetation is batched internally and has no Renderer to
+                // hide individually. Suppress it only in this close-up camera.
+                _terrainChanges.Add(new TerrainState(terrain));
+                terrain.drawTreesAndFoliage = false;
+                if (TerrainBlocksPortrait(terrain, origin)) terrain.drawHeightmap = false;
+            }
+        }
+
+        private bool BlocksPortrait(Bounds bounds, Vector3 origin)
+        {
+            foreach (var target in _targets) if (Blocks(bounds, origin, target)) return true;
+            return false;
+        }
+
+        private bool TerrainBlocksPortrait(Terrain terrain, Vector3 origin)
+        {
+            var collider = terrain.GetComponent<TerrainCollider>();
+            var basePosition = terrain.transform.position;
+            var size = terrain.terrainData.size;
+            foreach (var target in _targets)
+            {
+                var offset = target - origin;
+                if (collider != null && collider.enabled && offset.sqrMagnitude > 0.0001f &&
+                    collider.Raycast(new Ray(origin, offset.normalized), out _, Mathf.Max(0f, offset.magnitude - 0.05f))) return true;
+                // Raycasts cannot detect a camera already inside the hillside.
+                // Height samples also cover authored Terrain without a collider.
+                for (var step = 0; step < 16; step++)
+                {
+                    var point = Vector3.Lerp(origin, target, step / 16f) - basePosition;
+                    if (point.x < 0f || point.z < 0f || point.x > size.x || point.z > size.z) continue;
+                    if (point.y < terrain.terrainData.GetInterpolatedHeight(point.x / size.x, point.z / size.z)) return true;
+                }
+            }
+            return false;
         }
 
         private static bool Blocks(Bounds bounds, Vector3 origin, Vector3 target)
@@ -103,58 +134,6 @@ namespace MazeParty.Gameplay
                 distance < offset.magnitude - 0.05f;
         }
 
-        private Material TransparentMaterial(Material source)
-        {
-            if (_transparent.TryGetValue(source, out var result)) return result;
-            if (!source.HasProperty("_SrcBlend") || !source.HasProperty("_DstBlend") ||
-                !source.HasProperty("_ZWrite") ||
-                (!source.HasProperty("_BaseColor") && !source.HasProperty("_Color"))) return null;
-            result = new Material(source)
-            {
-                name = source.name + " (Event camera transparency)",
-                hideFlags = HideFlags.HideAndDontSave,
-                renderQueue = (int)RenderQueue.Transparent
-            };
-            if (result.HasProperty("_Surface")) result.SetFloat("_Surface", 1f);
-            if (result.HasProperty("_AlphaClip")) result.SetFloat("_AlphaClip", 0f);
-            result.SetFloat("_SrcBlend", (float)BlendMode.SrcAlpha);
-            result.SetFloat("_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
-            result.SetFloat("_ZWrite", 0f);
-            result.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
-            result.DisableKeyword("_ALPHATEST_ON");
-            result.DisableKeyword("_ALPHAPREMULTIPLY_ON");
-            result.SetOverrideTag("RenderType", "Transparent");
-            result.SetShaderPassEnabled("ShadowCaster", false);
-            result.SetShaderPassEnabled("DepthOnly", false);
-            result.SetShaderPassEnabled("DepthNormals", false);
-            foreach (var property in ColorProperties)
-            {
-                if (!result.HasProperty(property)) continue;
-                var color = result.GetColor(property);
-                color.a *= Opacity;
-                result.SetColor(property, color);
-            }
-            _transparent.Add(source, result);
-            return result;
-        }
-
-        private static void ApplyAlpha(Renderer renderer, int materialIndex)
-        {
-            var block = new MaterialPropertyBlock();
-            if (materialIndex < 0) renderer.GetPropertyBlock(block);
-            else renderer.GetPropertyBlock(block, materialIndex);
-            if (block.isEmpty) return;
-            foreach (var property in ColorProperties)
-            {
-                if (!block.HasColor(property)) continue;
-                var color = block.GetColor(property);
-                color.a *= Opacity;
-                block.SetColor(property, color);
-            }
-            if (materialIndex < 0) renderer.SetPropertyBlock(block);
-            else renderer.SetPropertyBlock(block, materialIndex);
-        }
-
         private void EndCameraRendering(ScriptableRenderContext context, Camera camera)
         {
             if (_renderingCamera == camera) Restore();
@@ -162,8 +141,10 @@ namespace MazeParty.Gameplay
 
         private void Restore()
         {
-            foreach (var state in _changed) state.Restore();
-            _changed.Clear();
+            foreach (var renderer in _hidden) if (renderer != null) renderer.forceRenderingOff = false;
+            _hidden.Clear();
+            foreach (var state in _terrainChanges) state.Restore();
+            _terrainChanges.Clear();
             _renderingCamera = null;
         }
 
@@ -178,47 +159,24 @@ namespace MazeParty.Gameplay
             Restore();
             _focus.Clear();
             _scenery = null;
-            foreach (var material in _transparent.Values)
-            {
-                if (Application.isPlaying) UnityEngine.Object.Destroy(material);
-                else UnityEngine.Object.DestroyImmediate(material);
-            }
-            _transparent.Clear();
+            _terrains = null;
         }
 
-        private sealed class RendererState
+        private readonly struct TerrainState
         {
-            private readonly Renderer _renderer;
-            public readonly Material[] Materials;
-            private readonly ShadowCastingMode _shadows;
-            private readonly bool _renderingOff;
-            private readonly MaterialPropertyBlock _block = new MaterialPropertyBlock();
-            private readonly MaterialPropertyBlock[] _materialBlocks;
-
-            public RendererState(Renderer renderer)
+            private readonly Terrain _terrain;
+            private readonly bool _heightmap, _foliage;
+            public TerrainState(Terrain terrain)
             {
-                _renderer = renderer;
-                Materials = renderer.sharedMaterials;
-                _shadows = renderer.shadowCastingMode;
-                _renderingOff = renderer.forceRenderingOff;
-                renderer.GetPropertyBlock(_block);
-                _materialBlocks = new MaterialPropertyBlock[Materials.Length];
-                for (var index = 0; index < Materials.Length; index++)
-                {
-                    _materialBlocks[index] = new MaterialPropertyBlock();
-                    renderer.GetPropertyBlock(_materialBlocks[index], index);
-                }
+                _terrain = terrain;
+                _heightmap = terrain.drawHeightmap;
+                _foliage = terrain.drawTreesAndFoliage;
             }
-
             public void Restore()
             {
-                if (_renderer == null) return;
-                _renderer.sharedMaterials = Materials;
-                _renderer.shadowCastingMode = _shadows;
-                _renderer.forceRenderingOff = _renderingOff;
-                _renderer.SetPropertyBlock(_block.isEmpty ? null : _block);
-                for (var index = 0; index < _materialBlocks.Length; index++)
-                    _renderer.SetPropertyBlock(_materialBlocks[index].isEmpty ? null : _materialBlocks[index], index);
+                if (_terrain == null) return;
+                _terrain.drawHeightmap = _heightmap;
+                _terrain.drawTreesAndFoliage = _foliage;
             }
         }
     }

@@ -9,6 +9,50 @@ namespace MazeParty.Gameplay.Tests
     public sealed class BoardEventCameraOcclusionTests
     {
         [Test]
+        public void EventTerrain_InsideHillAndBatchedFoliageRestoreForEveryCameraAndCancellation()
+        {
+            var root = new GameObject("Terrain camera contract");
+            var data = new TerrainData { heightmapResolution = 33, size = new Vector3(8, 4, 8) };
+            var heights = new float[33, 33];
+            for (var z = 0; z < 33; z++) for (var x = 0; x < 33; x++) heights[z, x] = .5f;
+            data.SetHeights(0, 0, heights);
+            var terrainObject = Terrain.CreateTerrainGameObject(data);
+            terrainObject.transform.SetParent(root.transform);
+            terrainObject.transform.position = new Vector3(10000, 10000, 10000);
+            var terrain = terrainObject.GetComponent<Terrain>();
+            using var occlusion = new BoardEventCameraOcclusion();
+            try
+            {
+                var camera = new GameObject("Event camera", typeof(Camera)).GetComponent<Camera>();
+                camera.transform.SetParent(root.transform); camera.enabled = false;
+                camera.transform.position = terrainObject.transform.position + new Vector3(4, 1, 3);
+                var player = new GameObject("Player").transform;
+                player.SetParent(root.transform);
+                player.position = terrainObject.transform.position + new Vector3(4, 3, 7);
+                var other = new GameObject("Other camera", typeof(Camera)).GetComponent<Camera>();
+                other.transform.SetParent(root.transform); other.enabled = false;
+                void Render(string phase, Camera view) => typeof(BoardEventCameraOcclusion)
+                    .GetMethod(phase + "CameraRendering", BindingFlags.Instance | BindingFlags.NonPublic)
+                    .Invoke(occlusion, new object[] { default(ScriptableRenderContext), view });
+                foreach (var foliage in new[] { true, false })
+                foreach (var finish in new[] { "End", "Cancel", "Dispose", "NextCamera" })
+                {
+                    terrain.drawHeightmap = true; terrain.drawTreesAndFoliage = foliage;
+                    occlusion.SetFocus(camera, player); Render("Begin", camera);
+                    Assert.That(terrain.drawHeightmap, Is.False);
+                    Assert.That(terrain.drawTreesAndFoliage, Is.False);
+                    Assert.That(terrainObject.GetComponent<TerrainCollider>().enabled, Is.True);
+                    if (finish == "End") Render("End", camera);
+                    else if (finish == "Cancel") occlusion.SetFocus(camera, null);
+                    else if (finish == "Dispose") occlusion.Dispose();
+                    else Render("Begin", other);
+                    Assert.That(terrain.drawHeightmap, Is.True);
+                    Assert.That(terrain.drawTreesAndFoliage, Is.EqualTo(foliage));
+                }
+            }
+            finally { occlusion.Dispose(); Object.DestroyImmediate(root); Object.DestroyImmediate(data); }
+        }
+        [Test]
         public void EventViews_RestoreSceneryAfterRenderCancellationAndDisposal()
         {
             var root = new GameObject("Event occlusion contract");
@@ -72,7 +116,8 @@ namespace MazeParty.Gameplay.Tests
                 {
                     occlusion.SetFocus(camera, player);
                     Render("Begin", camera);
-                    Assert.That(renderer.sharedMaterial, Is.Not.SameAs(material));
+                    Assert.That(renderer.forceRenderingOff, Is.True);
+                    Assert.That(renderer.sharedMaterial, Is.SameAs(material));
                     Assert.That(body.GetComponent<Renderer>().sharedMaterial, Is.SameAs(material));
                     Assert.That(blocker.GetComponent<Collider>().enabled, Is.True);
                     if (finish == "End") Render("End", camera);

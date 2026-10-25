@@ -5661,6 +5661,7 @@ MonoBehaviour:
   boardResourceEventDistance: 3.4
   boardResourceEventHeightOffset: -0.15
   boardResourceEventFieldOfView: 60
+  boardResourceEventTextClearance: 1.1
 --- !u!4 &1548230741
 Transform:
   m_ObjectHideFlags: 0
