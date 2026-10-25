@@ -70,7 +70,7 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer || HasRolled) return 0;
             int missing = BoardDiceProgress.MissingDieOnTimeout(UsesDoubleDice, _firstDieResult.Value, _secondDieResult.Value);
-            return missing < 0 ? 0 : RecordDieResultOnServer(missing, UnityEngine.Random.Range(1, 13));
+            return missing < 0 ? 0 : RecordDieResultOnServer(missing, RollBoardFaceOnServer(missing));
         }
 
         private void TickBoardItems()

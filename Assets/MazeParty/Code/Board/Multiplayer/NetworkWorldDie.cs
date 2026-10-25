@@ -991,7 +991,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            _targetFace = requester.RollBoardFaceOnServer();
+            _targetFace = requester.RollBoardFaceOnServer(dieIndex);
             _rollPresentationPhase = WorldDieRollPresentationPhase.Tumbling;
             _physicalTumbleStartedAt = now;
             _landingStartedAt = -1d;

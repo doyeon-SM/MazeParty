@@ -280,6 +280,59 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void DiceRoll_RestartAndTimeoutPreserveFaces_AndClientsCannotChooseResults()
+        {
+            Set(_match, "_boardEffectSeed", 82519);
+            Set(_match, "_turn", 4);
+            Set(_player, "_doubleDice", true);
+            var first = _player.RollBoardFaceOnServer(0);
+            var second = _player.RollBoardFaceOnServer(1);
+            var randomState = UnityEngine.Random.state;
+            try
+            {
+                UnityEngine.Random.InitState(9104);
+                Assert.That(_player.RollBoardFaceOnServer(1), Is.EqualTo(second));
+                Assert.That(_player.RollBoardFaceOnServer(0), Is.EqualTo(first));
+                Assert.That(_player.RecordDieResultOnServer(1, second), Is.Zero);
+                Assert.That(_player.CompletePartialDiceOnTimeout(), Is.EqualTo(first + second));
+                Set(_player, "_firstDieResult", 0); Set(_player, "_secondDieResult", 0);
+                Assert.That(_player.RollBoardFaceOnServer(0), Is.EqualTo(first));
+                Assert.That(_player.RollBoardFaceOnServer(1), Is.EqualTo(second));
+                foreach (var id in new[] { PrototypeItemId.LowDice, PrototypeItemId.HighDice })
+                {
+                    Set(_player, "_rangeDieItem", (byte)id);
+                    var definition = PrototypeItemCatalog.Get(id);
+                    Assert.That(_player.RollBoardFaceOnServer(0), Is.InRange(definition.DiceMinimum, definition.DiceMaximum));
+                }
+                Authority(_player, false);
+                Assert.That(_player.RollBoardFaceOnServer(0), Is.Zero);
+                Assert.That(_player.CompletePartialDiceOnTimeout(), Is.Zero);
+            }
+            finally { UnityEngine.Random.state = randomState; }
+        }
+
+        [Test]
+        public void Grenade_OffBoardThrowConsumesOnce_AndSettlesWithoutFloorOrDisconnectingOwner()
+        {
+            _player.transform.position = new Vector3(1000, 10, 1000);
+            _player.EyePivot.position = _player.transform.position + Vector3.up;
+            Assert.That(_topology.FindContainingTile(_player.transform.position), Is.Null);
+            Set(_player, "_equippedItem", (byte)PrototypeItemId.Grenade);
+            Set(_player, "_itemCharges", 1);
+            LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+            Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, _player.EyePivot.forward), Is.True);
+            var projectiles = (System.Collections.IList)typeof(NetworkMatchState).GetField("_boardGrenades", Private).GetValue(_match);
+            Assert.That(projectiles.Count, Is.EqualTo(1));
+            Assert.That(_player.GetSelectedItemOnServer(), Is.EqualTo(PrototypeItemId.None));
+            Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, _player.EyePivot.forward), Is.False);
+            LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+            Invoke("TickBoardGrenades", 2f);
+            Assert.That(projectiles.Count, Is.Zero);
+            Assert.That(_player.IsSpawned && _player.IsBoardReady, Is.True);
+            Assert.That(_player.CurrentHealth, Is.EqualTo(100));
+            Assert.That(_match.GameplayEnabled, Is.True);
+        }
         private BoardChestSnapshot Chest(int x) => new BoardChestSnapshot
             { Active = true, Location = new Vector2Int(x, 0), Revision = 1, AppearedTurn = 2 };
         private GameObject Child(string name)

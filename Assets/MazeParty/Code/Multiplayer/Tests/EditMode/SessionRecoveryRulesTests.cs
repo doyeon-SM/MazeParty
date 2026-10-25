@@ -1,9 +1,38 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace MazeParty.Multiplayer.Tests
 {
     public sealed class SessionRecoveryRulesTests
     {
+        [Test]
+        public async Task Recovery_RetiresStaleHandlerBeforeReady_AndDoesNotReleaseChangedOrCancelledNetwork()
+        {
+            foreach (var outcome in new[] { "success", "active", "cancel", "failed" })
+            {
+                var stopped = true;
+                var released = false;
+                var stop = new TaskCompletionSource<bool>();
+                using (var token = new CancellationTokenSource())
+                {
+                    var retirement = SessionRecoveryRules.RetireStoppedNetworkHandlerAsync(
+                        () => stopped, () => stop.Task, () => released = true, token.Token);
+                    Assert.That(released, Is.False);
+                    if (outcome == "active") stopped = false;
+                    if (outcome == "cancel") token.Cancel();
+                    if (outcome == "failed") stop.SetException(new InvalidOperationException("stop failed"));
+                    else stop.SetResult(true);
+                    if (outcome == "success") await retirement;
+                    else if (outcome == "cancel") Assert.ThrowsAsync(Is.InstanceOf<OperationCanceledException>(), async () => await retirement);
+                    else Assert.ThrowsAsync<InvalidOperationException>(async () => await retirement);
+                    Assert.That(released, Is.EqualTo(outcome == "success"));
+                }
+            }
+            Assert.ThrowsAsync<InvalidOperationException>(async () => await SessionRecoveryRules.RetireStoppedNetworkHandlerAsync(
+                () => false, () => throw new AssertionException("Must not stop an active network"), () => Assert.Fail("Must not release")));
+        }
         [Test]
         public void ExplicitLeave_OnlyTheOriginalHostMayDeleteTheRoom()
         {

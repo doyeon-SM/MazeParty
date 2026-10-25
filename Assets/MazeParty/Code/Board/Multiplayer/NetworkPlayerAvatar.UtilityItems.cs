@@ -22,13 +22,20 @@ namespace MazeParty.Multiplayer
         public int LocalUtilityNoticeSlot { get; private set; }
         public float LocalUtilityNoticeUntil { get; private set; }
 
-        public int RollBoardFaceOnServer()
+        public int RollBoardFaceOnServer(int dieIndex)
         {
-            if (!IsServer) return 0;
-            if (!HasRangeDie) return Random.Range(1, 13);
-            var definition = PrototypeItemCatalog.Get((PrototypeItemId)_rangeDieItem.Value);
-            return Random.Range(Mathf.Clamp(definition.DiceMinimum, 1, 12),
-                Mathf.Clamp(definition.DiceMaximum, Mathf.Clamp(definition.DiceMinimum, 1, 12), 12) + 1);
+            var match = NetworkMatchState.Instance;
+            if (!IsServer || match == null || match.Turn < 1 || AssignedSlot < 0 || AssignedSlot >= 4 ||
+                dieIndex < 0 || dieIndex > 1 || (!UsesDoubleDice && dieIndex != 0)) return 0;
+            var minimum = 1;
+            var maximum = 12;
+            if (HasRangeDie)
+            {
+                var definition = PrototypeItemCatalog.Get((PrototypeItemId)_rangeDieItem.Value);
+                minimum = Mathf.Clamp(definition.DiceMinimum, 1, 12);
+                maximum = Mathf.Clamp(definition.DiceMaximum, minimum, 12);
+            }
+            return BoardDiceProgress.RollFace(match.BoardEffectSeed, match.Turn, AssignedSlot, dieIndex, minimum, maximum);
         }
 
         public void ActivateCloakOnServer()

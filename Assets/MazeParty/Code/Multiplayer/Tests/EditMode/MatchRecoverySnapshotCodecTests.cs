@@ -9,6 +9,31 @@ namespace MazeParty.Multiplayer.Tests
     {
 
         [Test]
+        public void SavedTurn_PreservesBothDiceForEverySlotRegardlessOfRollOrderAndGlobalRandom()
+        {
+            var snapshot = CreateValidSnapshot();
+            var codec = new MatchRecoverySnapshotCodec();
+            var before = new int[8];
+            for (var slot = 0; slot < 4; slot++)
+                for (var die = 0; die < 2; die++)
+                    before[slot * 2 + die] = BoardDiceProgress.RollFace(snapshot.boardEffectSeed, snapshot.turn, slot, die);
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            var randomState = Random.state;
+            try
+            {
+                Random.InitState(19471);
+                for (var slot = 3; slot >= 0; slot--)
+                    for (var die = 1; die >= 0; die--)
+                        Assert.That(BoardDiceProgress.RollFace(restored.boardEffectSeed, restored.turn, slot, die), Is.EqualTo(before[slot * 2 + die]));
+                var nextTurn = new int[8];
+                for (var slot = 0; slot < 4; slot++)
+                    for (var die = 0; die < 2; die++)
+                        nextTurn[slot * 2 + die] = BoardDiceProgress.RollFace(restored.boardEffectSeed, restored.turn + 1, slot, die);
+                Assert.That(nextTurn, Is.Not.EqualTo(before));
+            }
+            finally { Random.state = randomState; }
+        }
+        [Test]
         public void CustomSettingsRoundTrip_RejectsMismatchedScheduleAndMissingPayload()
         {
             var codec = new MatchRecoverySnapshotCodec();

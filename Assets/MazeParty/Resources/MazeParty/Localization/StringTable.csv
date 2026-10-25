@@ -949,3 +949,7 @@ Describe your request and which records you want deleted:,문의 내용과 삭�
 "If no email app opens, copy the support details and email the address shown above.",메일 앱이 열리지 않으면 문의 정보를 복사해 위 주소로 이메일을 보내주세요.,メールアプリが開かない場合は、問い合わせ情報をコピーし、上記のアドレスへ送信してください。,若邮件应用未打开，请复制支持信息并发送至上方邮箱。,若郵件應用程式未開啟，請複製支援資訊並寄至上方信箱。
 "Deletion could not be confirmed. Keep your support details and contact us, or retry if the account is still available.","삭제 결과를 확인하지 못했습니다. 문의 정보를 보관해 연락해 주시거나, 계정이 남아 있으면 다시 시도해 주세요.",削除結果を確認できませんでした。問い合わせ情報を控えてご連絡いただくか、アカウントがまだ利用可能な場合は再試行してください。,无法确认删除结果。请保留支持信息并联系我们；若账户仍可用，也可重试。,無法確認刪除結果。請保留支援資訊並聯絡我們；若帳戶仍可用，也可重試。
 Player ID: {0},플레이어 ID: {0},プレイヤーID：{0},玩家 ID：{0},玩家 ID：{0}
+
+Connection timed out. The previous attempt is being cleaned up. Please try again shortly.,연결 시간이 초과되었습니다. 이전 접속을 정리 중입니다. 잠시 후 다시 시도해 주세요.,接続がタイムアウトしました。前の接続を終了しています。しばらくしてから再試行してください。,连接超时。正在清理上一次连接。请稍后重试。,連線逾時。正在清理上一次連線。請稍後重試。
+The previous connection attempt is still finishing. Please wait and retry. Restart the game if this persists.,이전 접속 요청을 정리 중입니다. 잠시 후 다시 시도해 주세요. 계속되면 게임을 재시작해 주세요.,前の接続を終了しています。しばらくしてから再試行してください。続く場合はゲームを再起動してください。,上一次连接请求仍在结束中。请稍后重试。若持续出现请重启游戏。,上一次連線請求仍在結束中。請稍後重試。若持續出現請重新啟動遊戲。
+The previous connection could not be cleaned up. Please restart the game before reconnecting.,이전 접속을 정리하지 못했습니다. 게임을 재시작한 뒤 다시 접속해 주세요.,前の接続を終了できませんでした。ゲームを再起動してから再接続してください。,无法清理上一次连接。请重启游戏后重新连接。,無法清理上一次連線。請重新啟動遊戲後重新連線。

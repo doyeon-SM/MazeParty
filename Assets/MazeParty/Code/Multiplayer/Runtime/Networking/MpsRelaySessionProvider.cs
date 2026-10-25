@@ -16,6 +16,7 @@ namespace MazeParty.Multiplayer
         private readonly IPlayerIdentityProvider _identity;
         private readonly SemaphoreSlim _hostMutationGate = new SemaphoreSlim(1, 1);
 
+        private readonly SessionJoinAttempt<ISession> _joinAttempt = new SessionJoinAttempt<ISession>();
         private ISession _session;
         private string _originalHostId = string.Empty;
         private bool _ending;
@@ -114,23 +115,42 @@ namespace MazeParty.Multiplayer
                 throw new ArgumentException(GameText.T("Enter an invite code."), nameof(code));
             }
 
-            await _identity.SignInAsync(displayName);
-
-            var options = new JoinSessionOptions
+            ISession joinedSession;
+            using (var deadline = new CancellationTokenSource())
             {
-                Type = MultiplayerConstants.SessionType,
-                PlayerProperties = BuildPlayerProperties(_identity.DisplayName)
+                var attemptToken = deadline.Token;
+                try
+                {
+                    joinedSession = await _joinAttempt.RunAsync(async () =>
+                    {
+                        await _identity.SignInAsync(displayName);
+                        attemptToken.ThrowIfCancellationRequested();
+                        var options = new JoinSessionOptions
+                        {
+                            Type = MultiplayerConstants.SessionType,
+                            PlayerProperties = BuildPlayerProperties(_identity.DisplayName)
+                        }.WithNetworkOptions(new NetworkOptions { RelayProtocol = RelayProtocol.DTLS });
+                        PrepareConnectionPayload("code:" + normalizedCode);
+                        // MPS owns Relay/NGO startup. The deadline must not start a competing connection.
+                        return await RetryRateLimitedSessionOperationAsync(() =>
+                        {
+                            attemptToken.ThrowIfCancellationRequested();
+                            return MultiplayerService.Instance.JoinSessionByCodeAsync(normalizedCode, options);
+                        });
+                    }, async lateSession =>
+                    {
+                        // A timed-out join must never publish identity or enter the lobby later.
+                        // Leave membership only: even if elected host, do not delete the room.
+                        await lateSession.LeaveAsync();
+                        await WaitForSessionUnregistrationAsync(lateSession);
+                    }, Task.Delay(TimeSpan.FromSeconds(45), deadline.Token));
+                }
+                catch (TimeoutException exception)
+                {
+                    throw new TimeoutException(GameText.T("Connection timed out. The previous attempt is being cleaned up. Please try again shortly."), exception);
+                }
+                finally { deadline.Cancel(); }
             }
-            .WithNetworkOptions(new NetworkOptions
-            {
-                RelayProtocol = RelayProtocol.DTLS
-            });
-
-            PrepareConnectionPayload("code:" + normalizedCode);
-            // MPS applies Relay connection data and calls NetworkManager.StartClient.
-            var joinedSession = await RetryRateLimitedSessionOperationAsync(() =>
-                MultiplayerService.Instance.JoinSessionByCodeAsync(normalizedCode, options));
-
             if (!HasCompatibleBuild(joinedSession))
             {
                 // Take ownership before cleanup. If service/network cleanup still fails
@@ -1140,6 +1160,10 @@ namespace MazeParty.Multiplayer
 
         private void ThrowIfAlreadyInSession()
         {
+            if (_joinAttempt.IsPending)
+                throw new InvalidOperationException(GameText.T(_joinAttempt.CleanupError == null
+                    ? "The previous connection attempt is still finishing. Please wait and retry. Restart the game if this persists."
+                    : "The previous connection could not be cleaned up. Please restart the game before reconnecting."));
             if (_session != null)
             {
                 throw new InvalidOperationException(

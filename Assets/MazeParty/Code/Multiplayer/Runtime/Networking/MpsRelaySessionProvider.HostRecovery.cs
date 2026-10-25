@@ -126,6 +126,7 @@ namespace MazeParty.Multiplayer
                             if (preparedEpoch != epoch)
                             {
                                 if (PrepareHostRecoveryAsync != null) await PrepareHostRecoveryAsync();
+                                await ResetStoppedNetworkHandlerAsync(session.Network, token);
                                 await _identity.SignInAsync(_identity.DisplayName);
                                 PrepareConnectionPayload("id:" + session.Id);
                                 token.ThrowIfCancellationRequested();
@@ -189,6 +190,7 @@ namespace MazeParty.Multiplayer
                 if (!OwnsSession(session) || !session.IsHost) return;
                 var host = session.AsHost();
                 if (host.Network.State == NetworkState.Started) await host.Network.StopNetworkAsync();
+                await ResetStoppedNetworkHandlerAsync(session.Network, token);
                 token.ThrowIfCancellationRequested();
                 if (!OwnsSession(session) || !session.IsHost) return;
                 host.SetProperty(NetworkMetadataProperty, null);
@@ -213,8 +215,18 @@ namespace MazeParty.Multiplayer
             {
                 if (!OwnsSession(session) || !session.IsHost || session.Host != _originalHostId) return;
                 var host = session.AsHost();
+                var manager = Unity.Netcode.NetworkManager.Singleton;
+                if (host.Network.State == NetworkState.Started &&
+                    (manager == null || !manager.IsListening || !manager.IsHost))
+                    await host.Network.StopNetworkAsync();
                 if (host.Network.State != NetworkState.Started)
+                {
+                    await ResetStoppedNetworkHandlerAsync(session.Network, token);
                     await host.Network.StartRelayNetworkAsync(new RelayNetworkOptions(RelayProtocol.DTLS));
+                }
+                manager = Unity.Netcode.NetworkManager.Singleton;
+                if (manager == null || !manager.IsListening || !manager.IsHost)
+                    throw new InvalidOperationException("Relay recovery did not start the original host network.");
                 token.ThrowIfCancellationRequested();
                 if (!OwnsSession(session) || !session.IsHost) return;
                 host.SetProperty(MultiplayerConstants.PhaseProperty,
@@ -226,6 +238,22 @@ namespace MazeParty.Multiplayer
                 HostNetworkRestored?.Invoke();
             }
             finally { _hostMutationGate.Release(); }
+        }
+
+        private static Task ResetStoppedNetworkHandlerAsync(IClientSessionNetwork network, CancellationToken token)
+        {
+            // A stopped MPS module may still retain a disposed NGO session.
+            // Retire that handler on every peer before publishing recovery readiness.
+            var handler = network.NetworkHandler;
+            return SessionRecoveryRules.RetireStoppedNetworkHandlerAsync(
+                () => network.State == NetworkState.Stopped,
+                () => handler != null ? handler.StopAsync() : Task.CompletedTask,
+                () =>
+                {
+                    if (!ReferenceEquals(network.NetworkHandler, handler))
+                        throw new InvalidOperationException("The network handler changed during recovery.");
+                    network.NetworkHandler = null;
+                }, token);
         }
 
         private static bool HasReservedSeat(ISession session, string playerId)
