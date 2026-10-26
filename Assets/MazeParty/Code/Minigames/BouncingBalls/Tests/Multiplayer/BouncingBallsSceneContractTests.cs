@@ -1,5 +1,6 @@
 using System.Linq;
 using System.Reflection;
+using MazeParty.Gameplay.Minigames.BouncingBalls;
 using NUnit.Framework;
 using Unity.Netcode;
 using UnityEditor;
@@ -69,6 +70,23 @@ namespace MazeParty.Multiplayer.Tests
                 AssertArray(serialized, "shieldRenderers", 4);
                 AssertArray(serialized, "ballTransforms", 7);
                 AssertArray(serialized, "ballRenderers", 7);
+                var ballTransforms = Enumerable.Range(0, BouncingBallsRules.BallCount)
+                    .Select(view.GetBallTransform).ToArray();
+                Assert.That(ballTransforms.Distinct().Count(),
+                    Is.EqualTo(BouncingBallsRules.BallCount),
+                    "Every simulated ball must have its own scene instance.");
+                for (var id = 0; id < ballTransforms.Length; id++)
+                {
+                    var ball = ballTransforms[id];
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
+                        ball.gameObject), Is.EqualTo(
+                        "Assets/MazeParty/Prefabs/Minigames/BouncingBalls/Ball.prefab"),
+                        "Initial and wave balls must share the authored ball prefab.");
+                    Assert.That(view.GetBallRenderer(id).transform, Is.EqualTo(ball));
+                    Assert.That(ball.gameObject.activeSelf,
+                        Is.EqualTo(id < BouncingBallsRules.InitialBallCount),
+                        "Wave balls must stay hidden until the simulation activates them.");
+                }
 
                 var arena = FindDescendant(state.transform, "Arena Presentation");
                 Assert.That(arena, Is.Not.Null);

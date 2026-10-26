@@ -259,7 +259,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             var shieldFace =
                 BouncingBallsRules.ShieldRailDistance -
                 BouncingBallsRules.BallRadius;
-            for (var id = 0; id < BouncingBallsRules.BallCount; id++)
+            for (var id = 0; id < _match.ActiveBallCount; id++)
             {
                 var ball = _match.GetBall(id);
                 var radial = GetRadial(ball.X, ball.Y, slot);
@@ -369,8 +369,19 @@ namespace MazeParty.Dev.MinigameSoloTest
 
             for (var id = 0; id < BouncingBallsRules.BallCount; id++)
             {
+                var ballTransform = _productionView.GetBallTransform(id);
+                var active = id < _match.ActiveBallCount;
+                if (ballTransform.gameObject.activeSelf != active)
+                {
+                    ballTransform.gameObject.SetActive(active);
+                }
+                if (!active)
+                {
+                    continue;
+                }
+
                 var ball = _match.GetBall(id);
-                _productionView.GetBallTransform(id).position =
+                ballTransform.position =
                     _arenaOrigin.TransformPoint(
                         new Vector3((float)ball.X,
                             (float)ball.Y, 0.12f));

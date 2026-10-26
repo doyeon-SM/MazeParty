@@ -242,6 +242,7 @@ namespace MazeParty.Editor
                     materials.NeutralBall);
                 ball = MinigameCorePrefabUtility.Connect(ball,
                     CorePrefabFolder + "/Ball.prefab");
+                ball.SetActive(index < BouncingBallsRules.InitialBallCount);
                 balls[index] = ball.transform;
                 ballRenderers[index] = ball.GetComponent<Renderer>();
             }
