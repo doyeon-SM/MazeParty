@@ -110,7 +110,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(BoardChestRules.DrawItem(PrototypeItemCatalog.All, seed), Is.EqualTo(id));
             }
             Assert.That(PrototypeItemCatalog.All.Where(i => i.UseTiming == BoardItemUseTiming.TurnStart).Select(i => i.Id),
-                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.LowDice, PrototypeItemId.HighDice }));
+                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.HighDice }));
         }
         [Test]
         public void Opening_RejectsUnauthorizedStaleRemoteDeadPausedUnchosenOrOccludedRequests_AndCommitsOnce()
@@ -299,17 +299,64 @@ namespace MazeParty.Multiplayer.Tests
                 Set(_player, "_firstDieResult", 0); Set(_player, "_secondDieResult", 0);
                 Assert.That(_player.RollBoardFaceOnServer(0), Is.EqualTo(first));
                 Assert.That(_player.RollBoardFaceOnServer(1), Is.EqualTo(second));
-                foreach (var id in new[] { PrototypeItemId.LowDice, PrototypeItemId.HighDice })
+                foreach (var id in new[] { PrototypeItemId.HighDice })
                 {
                     Set(_player, "_rangeDieItem", (byte)id);
                     var definition = PrototypeItemCatalog.Get(id);
                     Assert.That(_player.RollBoardFaceOnServer(0), Is.InRange(definition.DiceMinimum, definition.DiceMaximum));
                 }
+                Set(_player, "_rangeDieItem", (byte)9);
+                Assert.That(_player.HasRangeDie, Is.False, "A retired item must not select a deleted definition.");
+                Assert.That(_player.RollBoardFaceOnServer(0), Is.InRange(1, 12));
                 Authority(_player, false);
                 Assert.That(_player.RollBoardFaceOnServer(0), Is.Zero);
                 Assert.That(_player.CompletePartialDiceOnTimeout(), Is.Zero);
             }
             finally { UnityEngine.Random.state = randomState; }
+        }
+
+        [Test]
+        public void Grenade_PlayerAndWorldContacts_KeepExplosionAtImpactIncludingInitialOverlap()
+        {
+            var projectiles = (System.Collections.IList)typeof(NetworkMatchState)
+                .GetField("_boardGrenades", Private).GetValue(_match);
+            var grenadeType = typeof(NetworkMatchState).GetNestedType("Grenade", BindingFlags.NonPublic);
+            var radius = PrototypeItemCatalog.Get(PrototypeItemId.Grenade).ProjectileRadius;
+            foreach (var playerContact in new[] { false, true })
+            foreach (var overlapping in new[] { false, true })
+            {
+                var obstacle = Child("Grenade contact");
+                var target = new Vector3(1000, 100, 1000);
+                obstacle.transform.position = target;
+                var collider = obstacle.AddComponent<BoxCollider>();
+                collider.size = new Vector3(1f, 1.5f, 1f);
+                collider.isTrigger = playerContact;
+                if (playerContact) obstacle.AddComponent<PlayerHitZoneOwner>();
+                Physics.SyncTransforms();
+                var origin = overlapping ? target : target - Vector3.forward * 2f;
+                Assert.That(BoardItemPhysics.Cast(origin, Vector3.forward, 3f, null,
+                    out _, radius), Is.True, "Both solid surfaces and player triggers must stop the grenade.");
+                var grenade = Activator.CreateInstance(grenadeType, true);
+                grenadeType.GetField("OwnerSlot").SetValue(grenade, 0);
+                grenadeType.GetField("Position").SetValue(grenade, origin);
+                grenadeType.GetField("Velocity").SetValue(grenade, Vector3.forward * 10f);
+                grenadeType.GetField("FlightDuration").SetValue(grenade, 1f);
+                projectiles.Add(grenade);
+                // The single explosion RPC uses the authoritative grenade position.
+                LogAssert.Expect(LogType.Error, "Rpc methods can only be invoked after starting the NetworkManager!");
+                Invoke("TickBoardGrenades", .4f);
+                var impact = (Vector3)grenadeType.GetField("Position").GetValue(grenade);
+                Assert.That(projectiles.Count, Is.Zero);
+                Assert.That(Vector3.Distance(impact, target), Is.LessThan(1f),
+                    "An overlap hit must not relocate the explosion to the world origin.");
+                if (overlapping)
+                    Assert.That(impact, Is.EqualTo(origin));
+                else
+                    Assert.That(impact.z, Is.EqualTo(target.z - .5f - radius).Within(.01f),
+                        "Use the projectile center at first contact, just outside the hit surface.");
+                Invoke("TickBoardGrenades", .4f); // An already exploded grenade must not present twice.
+                UnityEngine.Object.DestroyImmediate(obstacle);
+            }
         }
 
         [Test]

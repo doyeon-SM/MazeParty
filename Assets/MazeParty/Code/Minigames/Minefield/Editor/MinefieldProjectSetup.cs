@@ -197,6 +197,7 @@ namespace MazeParty.Editor
                 sonarPulsePrefab,
                 mineMarkerPrefab);
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, MinefieldScenePath);
 
             if (previousActivePath == MinefieldScenePath)

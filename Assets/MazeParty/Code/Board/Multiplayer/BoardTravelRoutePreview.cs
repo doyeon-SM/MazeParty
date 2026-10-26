@@ -78,144 +78,65 @@ namespace MazeParty.Multiplayer
     }
 
     /// <summary>
-    /// Precomputes every directed walk that can be taken from the tile
-    /// where a turn's dice result was committed. The origin is normally step
-    /// zero; after an authoritative relocation it can resume at the number of
-    /// already-consumed moves. No route extends beyond the committed result. A
-    /// route becomes a branch when it leaves the optional preferred route (or
-    /// takes any exit after the first authored outgoing gate when no preferred
-    /// route is available). After a fork is committed, the compatible route
-    /// whose remaining prefix follows the shortest path to the destination is
-    /// promoted to primary.
+    /// Represents directed walks as shared (tile, step, matched-choice) states.
+    /// Cycles and return trips remain valid without materializing exponentially
+    /// many paths. Authored gate order still breaks ties for the preferred route.
     /// </summary>
     public sealed class BoardTravelRoutePreview
     {
-        private sealed class CandidateRoute
+        private readonly struct RouteState : IEquatable<RouteState>
         {
-            public CandidateRoute(RouteNode[] nodes)
-            {
-                Nodes = nodes;
-            }
-
-            public RouteNode[] Nodes { get; }
-        }
-
-        private readonly struct RouteNode
-        {
-            public RouteNode(BoardTile tile, bool isBranch)
-            {
-                Tile = tile;
-                IsBranch = isBranch;
-            }
-
+            public RouteState(BoardTile tile, int step, int choice)
+            { Tile = tile; Step = step; Choice = choice; }
             public BoardTile Tile { get; }
-            public bool IsBranch { get; }
-        }
-
-        private readonly struct StepKey : IEquatable<StepKey>
-        {
-            public StepKey(Vector2Int coordinate, int step)
-            {
-                Coordinate = coordinate;
-                Step = step;
-            }
-
-            public Vector2Int Coordinate { get; }
             public int Step { get; }
-
-            public bool Equals(StepKey other)
-            {
-                return Coordinate == other.Coordinate && Step == other.Step;
-            }
-
-            public override bool Equals(object obj)
-            {
-                return obj is StepKey other && Equals(other);
-            }
-
-            public override int GetHashCode()
-            {
-                return HashCode.Combine(Coordinate, Step);
-            }
+            public int Choice { get; }
+            public bool Equals(RouteState other) =>
+                Tile == other.Tile && Step == other.Step && Choice == other.Choice;
+            public override bool Equals(object obj) => obj is RouteState other && Equals(other);
+            public override int GetHashCode() => HashCode.Combine(Tile, Step, Choice);
         }
 
-        private readonly List<CandidateRoute> _routes =
-            new List<CandidateRoute>();
-        private readonly Dictionary<StepKey, bool> _visibleSteps =
-            new Dictionary<StepKey, bool>();
-        private readonly List<BoardTile> _primaryRoute =
-            new List<BoardTile>();
-        private readonly List<BoardTile> _choicePrimaryRoute =
-            new List<BoardTile>();
+        private readonly BoardTopology _topology;
+        private readonly BoardTile _origin, _primaryDestination;
         private readonly BoardMapRoute.DestinationIndex _routesToDestination;
-        private readonly List<BoardTile> _preferredReturn = new List<BoardTile>();
         private readonly Dictionary<BoardTile, BoardTile[]> _destinations =
             new Dictionary<BoardTile, BoardTile[]>();
-        private readonly HashSet<BoardRouteChoice> _visibleEdges = new HashSet<BoardRouteChoice>();
+        private readonly List<BoardTile> _primaryRoute = new List<BoardTile>();
+        private readonly List<BoardTile> _choicePrimaryRoute = new List<BoardTile>();
+        private readonly List<BoardTile> _preferredReturn = new List<BoardTile>();
+        private readonly List<BoardTile> _selectedPrimaryRoute = new List<BoardTile>();
         private readonly List<BoardRouteChoice> _cachedChoices = new List<BoardRouteChoice>();
-        private readonly List<CandidateRoute> _compatibleRoutes = new List<CandidateRoute>();
-        private readonly List<int> _choiceEndNodes = new List<int>();
-        private bool _choiceCacheValid;
-        private CandidateRoute _cachedPrimaryRoute;
-        private readonly BoardTopology _topology;
-        private readonly BoardTile _primaryDestination;
+        private readonly Dictionary<RouteState, int> _counts = new Dictionary<RouteState, int>();
+        private readonly Dictionary<RouteState, int> _preferenceScores = new Dictionary<RouteState, int>();
+        private readonly List<RouteState> _reachable = new List<RouteState>();
+        private readonly Dictionary<RouteState, bool> _branches = new Dictionary<RouteState, bool>();
+        private readonly Dictionary<(Vector2Int Coordinate, int Step), bool> _visibleSteps =
+            new Dictionary<(Vector2Int Coordinate, int Step), bool>();
+        private readonly HashSet<BoardRouteChoice> _visibleEdges = new HashSet<BoardRouteChoice>();
+        private bool _choiceCacheValid, _hasPrimaryRoute;
+        private int _compatibleRouteCount;
 
-        public BoardTravelRoutePreview(
-            BoardTopology topology,
-            BoardTile turnOrigin,
-            int maximumStep)
-            : this(topology, turnOrigin, 0, maximumStep, null)
-        {
-        }
-
-        public BoardTravelRoutePreview(
-            BoardTopology topology,
-            BoardTile turnOrigin,
-            int maximumStep,
+        public BoardTravelRoutePreview(BoardTopology topology, BoardTile turnOrigin, int maximumStep)
+            : this(topology, turnOrigin, 0, maximumStep, null) { }
+        public BoardTravelRoutePreview(BoardTopology topology, BoardTile turnOrigin, int maximumStep,
             BoardTile primaryDestination)
-            : this(
-                topology,
-                turnOrigin,
-                0,
-                maximumStep,
-                primaryDestination)
-        {
-        }
-
-        public BoardTravelRoutePreview(
-            BoardTopology topology,
-            BoardTile turnOrigin,
-            int startingStep,
+            : this(topology, turnOrigin, 0, maximumStep, primaryDestination) { }
+        public BoardTravelRoutePreview(BoardTopology topology, BoardTile turnOrigin, int startingStep,
             int maximumStep)
-            : this(
-                topology,
-                turnOrigin,
-                startingStep,
-                maximumStep,
-                null)
+            : this(topology, turnOrigin, startingStep, maximumStep, null) { }
+        public BoardTravelRoutePreview(BoardTopology topology, BoardTile turnOrigin, int startingStep,
+            int maximumStep, BoardTile primaryDestination)
         {
-        }
-
-        public BoardTravelRoutePreview(
-            BoardTopology topology,
-            BoardTile turnOrigin,
-            int startingStep,
-            int maximumStep,
-            BoardTile primaryDestination)
-        {
-            if (topology == null)
-                throw new ArgumentNullException(nameof(topology));
-            if (turnOrigin == null)
-                throw new ArgumentNullException(nameof(turnOrigin));
-            if (startingStep < 0)
-                throw new ArgumentOutOfRangeException(nameof(startingStep));
-            if (maximumStep < startingStep)
-                throw new ArgumentOutOfRangeException(nameof(maximumStep));
-
+            if (topology == null) throw new ArgumentNullException(nameof(topology));
+            if (turnOrigin == null) throw new ArgumentNullException(nameof(turnOrigin));
+            if (startingStep < 0) throw new ArgumentOutOfRangeException(nameof(startingStep));
+            if (maximumStep < startingStep) throw new ArgumentOutOfRangeException(nameof(maximumStep));
             StartCoordinate = turnOrigin.Coordinate;
             StartingStep = startingStep;
             MaximumStep = maximumStep;
             _topology = topology;
+            _origin = turnOrigin;
             _primaryDestination = primaryDestination;
             if (primaryDestination != null)
             {
@@ -224,85 +145,44 @@ namespace MazeParty.Multiplayer
                 _routesToDestination.TryFind(turnOrigin, _primaryRoute);
                 ExtendPreferredRoute(_primaryRoute);
             }
-            var path = new List<RouteNode>
-            {
-                new RouteNode(turnOrigin, false)
-            };
-            Enumerate(topology, turnOrigin, false, path);
+            EnsureChoiceCache(null);
+            RouteCount = _compatibleRouteCount;
         }
 
         public Vector2Int StartCoordinate { get; }
         public int StartingStep { get; }
         public int MaximumStep { get; }
-        public int RouteCount => _routes.Count;
+        // Counts saturate for huge walks; reachability and presentation remain exact.
+        public int RouteCount { get; }
+        private int RemainingSteps => MaximumStep - StartingStep;
+        public static bool ShouldDisplayForTurn(bool isActionPhase, int turnRoll, bool hasValidOrigin) =>
+            isActionPhase && turnRoll > 0 && hasValidOrigin;
 
-        public static bool ShouldDisplayForTurn(
-            bool isActionPhase,
-            int turnRoll,
-            bool hasValidOrigin)
-        {
-            return isActionPhase && turnRoll > 0 && hasValidOrigin;
-        }
+        public int GetCompatibleRouteCount(IReadOnlyList<BoardRouteChoice> choices)
+        { EnsureChoiceCache(choices); return _compatibleRouteCount; }
 
-        public int GetCompatibleRouteCount(
-            IReadOnlyList<BoardRouteChoice> choices)
-        {
-            EnsureChoiceCache(choices);
-            return _compatibleRoutes.Count;
-        }
-
-        /// <summary>
-        /// Writes unique visible route numbers ordered by coordinate (x, then y)
-        /// and step. If the same coordinate and number are reachable as both a
-        /// primary and branch step, primary wins so the number is emitted once.
-        /// </summary>
-        public int GetVisibleSteps(
-            IReadOnlyList<BoardRouteChoice> choices,
+        public int GetVisibleSteps(IReadOnlyList<BoardRouteChoice> choices,
             List<BoardTravelRouteStep> destination)
         {
-            if (destination == null)
-                throw new ArgumentNullException(nameof(destination));
-
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
             destination.Clear();
-            _visibleSteps.Clear();
             EnsureChoiceCache(choices);
-            var choicePrimaryRoute = _cachedPrimaryRoute;
-            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
+            _visibleSteps.Clear();
+            foreach (var state in _reachable)
             {
-                var route = _compatibleRoutes[routeIndex];
-
-                for (var step = 0; step < route.Nodes.Length; step++)
-                {
-                    var node = route.Nodes[step];
-                    var key = new StepKey(
-                        node.Tile.Coordinate,
-                        StartingStep + step);
-                    var isBranch = choicePrimaryRoute != null
-                        ? !ReferenceEquals(route, choicePrimaryRoute)
-                        : node.IsBranch;
-                    if (_visibleSteps.TryGetValue(key, out var existingBranch))
-                    {
-                        _visibleSteps[key] = existingBranch && isBranch;
-                    }
-                    else
-                    {
-                        _visibleSteps.Add(key, isBranch);
-                    }
-                }
+                var key = (state.Tile.Coordinate, StartingStep + state.Step);
+                var branch = _hasPrimaryRoute || _branches[state];
+                if (_visibleSteps.TryGetValue(key, out var existing)) branch &= existing;
+                _visibleSteps[key] = branch;
             }
-
+            if (_hasPrimaryRoute)
+                for (var step = 0; step < _selectedPrimaryRoute.Count; step++)
+                    _visibleSteps[(_selectedPrimaryRoute[step].Coordinate, StartingStep + step)] = false;
             foreach (var pair in _visibleSteps)
-            {
-                destination.Add(new BoardTravelRouteStep(
-                    pair.Key.Coordinate,
-                    pair.Key.Step,
-                    pair.Value));
-            }
-
+                destination.Add(new BoardTravelRouteStep(pair.Key.Coordinate, pair.Key.Step, pair.Value));
             destination.Sort(CompareSteps);
             return destination.Count;
         }
-
         public IReadOnlyList<BoardTravelRouteStep> GetVisibleSteps(
             IReadOnlyList<BoardRouteChoice> choices = null)
         {
@@ -311,107 +191,178 @@ namespace MazeParty.Multiplayer
             return result;
         }
 
-        /// <summary>Unique directed edges still reachable after the committed
-        /// fork choices and already consumed moves.</summary>
-        public int GetVisibleEdges(
-            IReadOnlyList<BoardRouteChoice> choices,
-            int consumedStep,
+        public int GetVisibleEdges(IReadOnlyList<BoardRouteChoice> choices, int consumedStep,
             List<BoardRouteChoice> destination)
         {
-            if (destination == null)
-                throw new ArgumentNullException(nameof(destination));
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
             destination.Clear();
             EnsureChoiceCache(choices);
             _visibleEdges.Clear();
-            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
+            foreach (var state in _reachable)
             {
-                var route = _compatibleRoutes[routeIndex];
-                for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
-                {
-                    if (StartingStep + edge < consumedStep)
-                        continue;
-                    var choice = new BoardRouteChoice(
-                        route.Nodes[edge].Tile.Coordinate,
-                        route.Nodes[edge + 1].Tile.Coordinate);
-                    if (_visibleEdges.Add(choice))
-                        destination.Add(choice);
-                }
+                if (state.Step >= RemainingSteps || StartingStep + state.Step < consumedStep) continue;
+                foreach (var tile in GetDestinations(state.Tile))
+                    if (TryNext(state, tile, out var next) && Count(next) > 0)
+                    {
+                        var edge = new BoardRouteChoice(state.Tile.Coordinate, tile.Coordinate);
+                        if (_visibleEdges.Add(edge)) destination.Add(edge);
+                    }
             }
             destination.Sort((a, b) =>
             {
-                var result = a.Source.x.CompareTo(b.Source.x);
-                if (result != 0) return result;
-                result = a.Source.y.CompareTo(b.Source.y);
-                if (result != 0) return result;
-                result = a.Destination.x.CompareTo(b.Destination.x);
-                return result != 0 ? result :
-                    a.Destination.y.CompareTo(b.Destination.y);
+                var value = a.Source.x.CompareTo(b.Source.x);
+                if (value != 0) return value;
+                value = a.Source.y.CompareTo(b.Source.y);
+                if (value != 0) return value;
+                value = a.Destination.x.CompareTo(b.Destination.x);
+                return value != 0 ? value : a.Destination.y.CompareTo(b.Destination.y);
             });
             return destination.Count;
         }
 
-        public int GetPreferredEdges(
-            IReadOnlyList<BoardRouteChoice> choices,
-            int consumedStep,
+        public int GetPreferredEdges(IReadOnlyList<BoardRouteChoice> choices, int consumedStep,
             List<BoardRouteChoice> destination)
         {
-            if (destination == null)
-                throw new ArgumentNullException(nameof(destination));
+            if (destination == null) throw new ArgumentNullException(nameof(destination));
             destination.Clear();
             EnsureChoiceCache(choices);
-            var route = _cachedPrimaryRoute;
-            if (route == null) return 0;
-            for (var edge = 0; edge + 1 < route.Nodes.Length; edge++)
-            {
-                if (StartingStep + edge < consumedStep) continue;
-                destination.Add(new BoardRouteChoice(
-                    route.Nodes[edge].Tile.Coordinate,
-                    route.Nodes[edge + 1].Tile.Coordinate));
-            }
+            if (!_hasPrimaryRoute) return 0;
+            for (var edge = 0; edge + 1 < _selectedPrimaryRoute.Count; edge++)
+                if (StartingStep + edge >= consumedStep)
+                    destination.Add(new BoardRouteChoice(_selectedPrimaryRoute[edge].Coordinate,
+                        _selectedPrimaryRoute[edge + 1].Coordinate));
             return destination.Count;
         }
 
-        private CandidateRoute ResolveChoicePrimaryRoute(
-            IReadOnlyList<BoardRouteChoice> choices)
+        private void EnsureChoiceCache(IReadOnlyList<BoardRouteChoice> choices)
         {
-            if (_primaryDestination == null)
-                return null;
-            var choiceCount = choices != null ? choices.Count : 0;
-            var preferred = _primaryRoute;
-            if (choiceCount > 0)
+            var count = choices != null ? choices.Count : 0;
+            var unchanged = _choiceCacheValid && count == _cachedChoices.Count;
+            for (var i = 0; unchanged && i < count; i++) unchanged = choices[i].Equals(_cachedChoices[i]);
+            if (unchanged) return;
+            _cachedChoices.Clear();
+            for (var i = 0; i < count; i++) _cachedChoices.Add(choices[i]);
+            _counts.Clear();
+            _preferenceScores.Clear();
+            _reachable.Clear();
+            _branches.Clear();
+            _selectedPrimaryRoute.Clear();
+            _hasPrimaryRoute = false;
+            var origin = new RouteState(_origin, 0, 0);
+            _compatibleRouteCount = Count(origin);
+            if (_compatibleRouteCount > 0)
             {
-                if (!_topology.TryGetTile(
-                        choices[choiceCount - 1].Destination,
-                        out var current) || current == null ||
-                    !_routesToDestination.TryFind(current, _choicePrimaryRoute))
-                    return null;
+                BuildReachableStates(origin);
+                BuildPreferredRoute(origin);
+            }
+            _choiceCacheValid = true;
+        }
+
+        private bool TryNext(RouteState current, BoardTile destination, out RouteState next)
+        {
+            var matched = current.Choice;
+            if (matched < _cachedChoices.Count && current.Tile.Coordinate == _cachedChoices[matched].Source)
+            {
+                // The first encounter after the previous choice must use this exit.
+                // Repeated visits consume repeated choices in traversal order.
+                if (destination.Coordinate != _cachedChoices[matched].Destination)
+                { next = default; return false; }
+                matched++;
+            }
+            next = new RouteState(destination, current.Step + 1, matched);
+            return true;
+        }
+
+        private int Count(RouteState state)
+        {
+            if (_counts.TryGetValue(state, out var cached)) return cached;
+            var exits = GetDestinations(state.Tile);
+            var total = 0;
+            if (state.Step >= RemainingSteps || exits.Length == 0)
+                total = state.Choice == _cachedChoices.Count ? 1 : 0;
+            else
+                foreach (var tile in exits)
+                    if (TryNext(state, tile, out var next))
+                        total = (int)Math.Min(int.MaxValue, (long)total + Count(next));
+            _counts.Add(state, total);
+            return total;
+        }
+
+        private void BuildReachableStates(RouteState origin)
+        {
+            _reachable.Add(origin);
+            _branches.Add(origin, false);
+            // Breadth first order ensures all incoming branch flags are merged
+            // before a state's next layer is visited.
+            for (var index = 0; index < _reachable.Count; index++)
+            {
+                var state = _reachable[index];
+                if (state.Step >= RemainingSteps) continue;
+                var exits = GetDestinations(state.Tile);
+                var preferred = state.Step + 1 < _primaryRoute.Count && _primaryRoute[state.Step] == state.Tile
+                    ? _primaryRoute[state.Step + 1] : null;
+                for (var exit = 0; exit < exits.Length; exit++)
+                {
+                    if (!TryNext(state, exits[exit], out var next) || Count(next) == 0) continue;
+                    var branch = _branches[state] || (preferred != null ? exits[exit] != preferred : exit > 0);
+                    if (_branches.TryGetValue(next, out var existing)) _branches[next] = existing && branch;
+                    else { _reachable.Add(next); _branches.Add(next, branch); }
+                }
+            }
+        }
+
+        private void BuildPreferredRoute(RouteState origin)
+        {
+            if (_primaryDestination == null) return;
+            var preferred = _primaryRoute;
+            if (_cachedChoices.Count > 0)
+            {
+                if (!_topology.TryGetTile(_cachedChoices[_cachedChoices.Count - 1].Destination, out var current) ||
+                    !_routesToDestination.TryFind(current, _choicePrimaryRoute)) return;
                 ExtendPreferredRoute(_choicePrimaryRoute);
                 preferred = _choicePrimaryRoute;
             }
-            CandidateRoute best = null;
-            var bestPrefixLength = -1;
-            for (var routeIndex = 0; routeIndex < _compatibleRoutes.Count; routeIndex++)
+            _hasPrimaryRoute = true;
+            var state = origin;
+            var preferredIndex = 0;
+            while (true)
             {
-                var route = _compatibleRoutes[routeIndex];
-                var choiceEndNode = _choiceEndNodes[routeIndex];
-
-                var prefixLength = 0;
-                while (choiceEndNode + prefixLength < route.Nodes.Length &&
-                       prefixLength < preferred.Count &&
-                       route.Nodes[choiceEndNode + prefixLength].Tile ==
-                       preferred[prefixLength])
+                _selectedPrimaryRoute.Add(state.Tile);
+                if (state.Step >= RemainingSteps) break;
+                var found = false;
+                var selected = default(RouteState);
+                var bestScore = -1;
+                foreach (var tile in GetDestinations(state.Tile))
                 {
-                    prefixLength++;
+                    if (!TryNext(state, tile, out var next) || Count(next) == 0) continue;
+                    var score = state.Choice < _cachedChoices.Count
+                        ? PreferenceScore(next, preferred)
+                        : preferredIndex + 1 < preferred.Count && tile == preferred[preferredIndex + 1] ? 1 : 0;
+                    if (score <= bestScore) continue;
+                    found = true; selected = next; bestScore = score;
                 }
-
-                if (prefixLength <= bestPrefixLength)
-                    continue;
-
-                best = route;
-                bestPrefixLength = prefixLength;
+                if (!found) break;
+                if (state.Choice == _cachedChoices.Count)
+                    preferredIndex = bestScore > 0 ? preferredIndex + 1 : preferred.Count;
+                state = selected;
             }
+        }
 
-            return best;
+        // Maximize the preferred suffix after the final committed choice, then
+        // choose the first authored walk on ties, matching the original preview.
+        private int PreferenceScore(RouteState state, List<BoardTile> preferred)
+        {
+            if (_preferenceScores.TryGetValue(state, out var cached)) return cached;
+            var score = 0;
+            if (state.Choice == _cachedChoices.Count)
+                score = preferred.Count > 0 && state.Tile == preferred[0]
+                    ? Math.Min(preferred.Count, RemainingSteps - state.Step + 1) : 0;
+            else if (state.Step < RemainingSteps)
+                foreach (var tile in GetDestinations(state.Tile))
+                    if (TryNext(state, tile, out var next) && Count(next) > 0)
+                        score = Math.Max(score, PreferenceScore(next, preferred));
+            _preferenceScores.Add(state, score);
+            return score;
         }
 
         private void FindPreferredReturn()
@@ -421,148 +372,38 @@ namespace MazeParty.Multiplayer
             {
                 if (!_routesToDestination.TryFind(next, candidate) || candidate.Count == 0) continue;
                 if (_preferredReturn.Count > 0 && candidate.Count >= _preferredReturn.Count) continue;
-                _preferredReturn.Clear();
-                _preferredReturn.AddRange(candidate);
+                _preferredReturn.Clear(); _preferredReturn.AddRange(candidate);
             }
         }
-
         private void ExtendPreferredRoute(List<BoardTile> route)
         {
             if (route.Count == 0 || _preferredReturn.Count == 0) return;
-            var maximumNodes = MaximumStep - StartingStep + 1;
-            while (route.Count < maximumNodes && route[route.Count - 1] == _primaryDestination)
-                for (var index = 0; index < _preferredReturn.Count && route.Count < maximumNodes; index++)
-                    route.Add(_preferredReturn[index]);
+            while (route.Count < RemainingSteps + 1 && route[route.Count - 1] == _primaryDestination)
+                for (var i = 0; i < _preferredReturn.Count && route.Count < RemainingSteps + 1; i++)
+                    route.Add(_preferredReturn[i]);
         }
-
-        private void EnsureChoiceCache(IReadOnlyList<BoardRouteChoice> choices)
-        {
-            var count = choices != null ? choices.Count : 0;
-            var unchanged = _choiceCacheValid && count == _cachedChoices.Count;
-            for (var i = 0; unchanged && i < count; i++)
-                unchanged = choices[i].Equals(_cachedChoices[i]);
-            if (unchanged) return;
-
-            // Copy values: callers can append, replace or clear the same list in place.
-            _cachedChoices.Clear();
-            for (var i = 0; i < count; i++) _cachedChoices.Add(choices[i]);
-            _compatibleRoutes.Clear();
-            _choiceEndNodes.Clear();
-            foreach (var route in _routes)
-            {
-                if (!TryGetChoiceEndNodeIndex(route, _cachedChoices, out var end)) continue;
-                _compatibleRoutes.Add(route);
-                _choiceEndNodes.Add(end);
-            }
-            _cachedPrimaryRoute = ResolveChoicePrimaryRoute(_cachedChoices);
-            _choiceCacheValid = true;
-        }
-
         private BoardTile[] GetDestinations(BoardTile tile)
         {
             if (_destinations.TryGetValue(tile, out var cached)) return cached;
             var destinations = new List<BoardTile>();
-            var outgoing = _topology.GetOutgoingGates(tile);
-            for (var i = 0; i < outgoing.Count; i++)
+            foreach (var gate in _topology.GetOutgoingGates(tile))
             {
-                var next = outgoing[i]?.Destination;
+                var next = gate?.Destination;
                 if (next != null && !destinations.Contains(next)) destinations.Add(next);
             }
             cached = destinations.ToArray();
             _destinations.Add(tile, cached);
             return cached;
         }
-
-        private void Enumerate(
-            BoardTopology topology,
-            BoardTile current,
-            bool isBranch,
-            List<RouteNode> path)
-        {
-            if (path.Count - 1 >= MaximumStep - StartingStep)
-            {
-                _routes.Add(new CandidateRoute(path.ToArray()));
-                return;
-            }
-
-            var destinations = GetDestinations(current);
-            var extended = false;
-            var routeStep = path.Count - 1;
-            var preferredDestination = routeStep < _primaryRoute.Count - 1 &&
-                                       _primaryRoute[routeStep] == current
-                ? _primaryRoute[routeStep + 1]
-                : null;
-            for (var gateIndex = 0; gateIndex < destinations.Length; gateIndex++)
-            {
-                var destination = destinations[gateIndex];
-
-                extended = true;
-                var destinationIsBranch = isBranch ||
-                    (preferredDestination != null
-                        ? destination != preferredDestination
-                        : gateIndex > 0);
-                path.Add(new RouteNode(destination, destinationIsBranch));
-                Enumerate(
-                    topology,
-                    destination,
-                    destinationIsBranch,
-                    path);
-                path.RemoveAt(path.Count - 1);
-            }
-
-            if (!extended)
-                _routes.Add(new CandidateRoute(path.ToArray()));
-        }
-
-
-
-        private static bool TryGetChoiceEndNodeIndex(
-            CandidateRoute route,
-            IReadOnlyList<BoardRouteChoice> choices,
-            out int choiceEndNode)
-        {
-            choiceEndNode = 0;
-            if (choices == null || choices.Count == 0)
-                return true;
-
-            var nextEdge = 0;
-            for (var choiceIndex = 0; choiceIndex < choices.Count; choiceIndex++)
-            {
-                var choice = choices[choiceIndex];
-                var matched = false;
-                for (var edge = nextEdge; edge < route.Nodes.Length - 1; edge++)
-                {
-                    if (route.Nodes[edge].Tile.Coordinate != choice.Source)
-                        continue;
-
-                    if (route.Nodes[edge + 1].Tile.Coordinate == choice.Destination)
-                    {
-                        matched = true;
-                        nextEdge = edge + 1;
-                        choiceEndNode = edge + 1;
-                    }
-
-                    break;
-                }
-
-                if (!matched)
-                    return false;
-            }
-
-            return true;
-        }
-
-        private static int CompareSteps(
-            BoardTravelRouteStep left,
-            BoardTravelRouteStep right)
+        private static int CompareSteps(BoardTravelRouteStep left, BoardTravelRouteStep right)
         {
             var x = left.Coordinate.x.CompareTo(right.Coordinate.x);
-            if (x != 0)
-                return x;
+            if (x != 0) return x;
             var y = left.Coordinate.y.CompareTo(right.Coordinate.y);
             return y != 0 ? y : left.Step.CompareTo(right.Step);
         }
     }
+
 
     internal readonly struct RestoredBoardTravelRouteState
     {

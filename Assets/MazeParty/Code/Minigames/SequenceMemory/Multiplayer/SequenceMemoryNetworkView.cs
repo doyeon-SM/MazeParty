@@ -290,14 +290,12 @@ namespace MazeParty.Multiplayer
                     ? avatar.DisplayName
                     : GameText.F("PLAYER {0}", slot + 1);
                 hud.PlayerNameTexts[slot].text = name;
+                hud.PlayerNameTexts[slot].color = avatar != null
+                    ? avatar.Appearance.BodyColor
+                    : FallbackPlayerColors[slot];
                 var input = state.GetPlayerInput(slot);
                 hud.PlayerInputTexts[slot].text =
                     string.IsNullOrEmpty(input) ? "—" : input;
-                hud.PlayerStatusTexts[slot].text =
-                    GetPlayerStatusLabel(slot);
-                hud.PlayerRows[slot].color = slot == _localSlot
-                    ? new Color(1f, 0.88f, 0.25f, 1f)
-                    : hud.GetDefaultPlayerRowColor(slot);
             }
         }
 
@@ -311,42 +309,6 @@ namespace MazeParty.Multiplayer
 
             var visible = state.VisibleProblem;
             return string.IsNullOrEmpty(visible) ? "—" : visible;
-        }
-
-        private string GetPlayerStatusLabel(int slot)
-        {
-            if (state.IsPlayerEliminated(slot))
-            {
-                return GameText.T("OUT · 2 MISSES");
-            }
-            if (state.GetMistakeCount(slot) > 0)
-            {
-                var turnStatus = state.GetPlayerTurnStatus(slot);
-                if (turnStatus == SequenceMemoryPlayerTurnStatus.Correct)
-                {
-                    return GameText.T("CORRECT · TORSO LOST");
-                }
-                if (turnStatus == SequenceMemoryPlayerTurnStatus.Failed)
-                {
-                    return GameText.T("WRONG · TORSO LOST");
-                }
-            }
-
-            switch (state.GetPlayerTurnStatus(slot))
-            {
-                case SequenceMemoryPlayerTurnStatus.Entering:
-                    return GameText.T("INPUTTING");
-                case SequenceMemoryPlayerTurnStatus.Correct:
-                    return GameText.T("CORRECT · WAITING");
-                case SequenceMemoryPlayerTurnStatus.Failed:
-                    return GameText.T("WRONG · LOCKED");
-                case SequenceMemoryPlayerTurnStatus.LockedForMatchEnd:
-                    return GameText.T("SURVIVED");
-                case SequenceMemoryPlayerTurnStatus.Eliminated:
-                    return GameText.T("OUT");
-                default:
-                    return GameText.T("WATCHING");
-            }
         }
 
         private void HandleToneRequested(

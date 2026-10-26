@@ -19,6 +19,57 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void BidirectionalMaze_MaximumRollAndRepeatedReturnChoices_PreserveReachabilityAndRecovery()
+        {
+            var prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Resources/MazeParty/Board/Maps/MazeGrayboxMapRoot.prefab");
+            var instance = Object.Instantiate(prefab);
+            _objects.Add(instance);
+            var topology = instance.GetComponent<BoardMapRoot>().Topology;
+            topology.RebuildIndex();
+            var shop = topology.Tiles.Single(tile => tile.Coordinate == new Vector2Int(7, 7));
+            foreach (var origin in topology.Tiles)
+                foreach (var roll in new[] { 12, 24 })
+                {
+                    var preview = new BoardTravelRoutePreview(topology, origin, roll, shop);
+                    var steps = preview.GetVisibleSteps();
+                    Assert.That(preview.RouteCount, Is.GreaterThan(0));
+                    Assert.That(steps.Max(step => step.Step), Is.EqualTo(roll));
+                    Assert.That(steps.Count, Is.LessThanOrEqualTo(64 * (roll + 1)));
+                    var edges = new List<BoardRouteChoice>();
+                    preview.GetVisibleEdges(null, 0, edges);
+                    Assert.That(edges.Distinct().Count(), Is.EqualTo(edges.Count));
+                    Assert.That(edges.Count, Is.LessThanOrEqualTo(topology.Gates.Count));
+                    foreach (var edge in edges)
+                    {
+                        Assert.That(topology.TryGetTile(edge.Source, out var from), Is.True);
+                        Assert.That(topology.GetOutgoingGates(from).Any(gate => gate.Destination.Coordinate == edge.Destination), Is.True);
+                    }
+                }
+
+            var first = new Vector2Int(1, 1);
+            var second = new Vector2Int(1, 2);
+            topology.TryGetTile(first, out var start);
+            var constrained = new BoardTravelRoutePreview(topology, start, 24, shop);
+            var choices = Enumerable.Range(0, 24).Select(step => step % 2 == 0
+                ? new BoardRouteChoice(first, second) : new BoardRouteChoice(second, first)).ToList();
+            Assert.That(constrained.GetCompatibleRouteCount(choices), Is.EqualTo(1));
+            var selected = constrained.GetVisibleSteps(choices);
+            Assert.That(selected.Count, Is.EqualTo(25));
+            foreach (var step in selected)
+                Assert.That(step.Coordinate, Is.EqualTo(step.Step % 2 == 0 ? first : second));
+            var restored = BoardTravelRouteStatePolicy.Restore(topology, 24, 0, true, first, 0, choices);
+            Assert.That(restored.Active, Is.True);
+            Assert.That(restored.Choices, Is.EqualTo(choices));
+            var edgesAfterEnd = new List<BoardRouteChoice>();
+            Assert.That(constrained.GetVisibleEdges(choices, 24, edgesAfterEnd), Is.Zero);
+            choices[0] = new BoardRouteChoice(first, shop.Coordinate);
+            Assert.That(constrained.GetCompatibleRouteCount(choices), Is.Zero);
+            Assert.That(constrained.GetVisibleSteps(choices), Is.Empty);
+        }
+
+
+        [Test]
         public void Preview_StopsEveryRouteAtTheCommittedDiceResult()
         {
             var start = CreateTile("Start", 0, 0);

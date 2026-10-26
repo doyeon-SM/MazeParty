@@ -159,13 +159,18 @@ namespace MazeParty.Multiplayer
         {
             state ??= GetComponent<NetworkArenaCombatState>();
             var match = NetworkMatchState.Instance;
-            var selected =
-                match != null &&
-                match.CurrentMinigame == ScheduledMinigameId.ArenaCombat;
-            var showWorld = state != null && state.IsSpawned && selected;
+            var showWorld = state != null && state.IsSpawned &&
+                match != null && match.IsArenaCombatPhase &&
+                match.FlowState != BoardFlowState.MinigameLoading;
             SetWorldPresentationActive(showWorld);
             if (showWorld) ResolveLocalAvatar(match);
-            RefreshHealthBars(match, showWorld);
+            // The selected minigame ID survives into the ceremony/next turn.
+            // HP belongs only to the countdown and the active fight, not its result hold.
+            var showHealthBars = showWorld && match.IsArenaCombatPlaying &&
+                state.IsMatchActive &&
+                (state.Phase == NetworkArenaCombatPhase.Countdown ||
+                 state.Phase == NetworkArenaCombatPhase.Playing);
+            RefreshHealthBars(match, showHealthBars);
             if (!showWorld)
             {
                 SetAimVisible(false);

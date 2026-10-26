@@ -25,8 +25,8 @@ complete gameplay/customization seams. Art can replace these fixed anchors later
 - Held/used items: only `Pistol`, `Sniper`, `Mine`, and `Grenade` require local
   +Z-facing held models. Use a centred pivot, baked transforms, no
   collider/Rigidbody, and keep each item within roughly a 0.7-metre cube so the
-  same model fits the world and first-person item anchors. `DoubleDice`, `LowDice`,
-  and `HighDice` use the existing spawned D12 presentation; `PositionSwapper` and
+  same model fits the world and first-person item anchors. `DoubleDice` and
+  `HighDice` use the existing spawned D12 presentation; `PositionSwapper` and
   `Cloak` do not require held 3D models.
 
 Recommended source format is FBX for meshes and PNG/TGA for optional masks. Use one

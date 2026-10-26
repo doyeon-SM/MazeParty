@@ -185,7 +185,6 @@ namespace MazeParty.Editor
             Create(PrototypeItemId.Sniper, "Sniper", "5 rounds / 50 damage / 7 tiles. LMB fires.", 15, 5, 50, 56, 1, 0, 0, 0, null);
             Create(PrototypeItemId.Grenade, "Grenade", "Throw up to 2 tiles. 80 damage within 4m, including yourself.", 8, 1, 80, 16, .25f, 4, 0, 0, explosion);
             Create(PrototypeItemId.Mine, "Mine", "Place on ground within 4m. Arms after 1s; 2m trigger / 4m blast / 50 damage.", 6, 1, 50, 4, .25f, 4, 2, 1, explosion);
-            Create(PrototypeItemId.LowDice, "Low Dice (1-6)", "One D12 rolls only 1-6, each equally likely. Applied automatically.", 5, 1, 0, 0, .25f, 0, 0, 0, null, 1, 6);
             Create(PrototypeItemId.HighDice, "High Dice (7-12)", "One D12 rolls only 7-12, each equally likely. Applied automatically.", 8, 1, 0, 0, .25f, 0, 0, 0, null, 7, 12);
             Create(PrototypeItemId.PositionSwapper, "Position Swapper", "LMB: select a player. Channel for 2s; damage interrupts. Swap positions without spending moves.", 12, 1, 0, 0, .25f, 0, 0, 0, null);
             Create(PrototypeItemId.Cloak, "Invisibility Cloak", "Automatically activates when selected or obtained from a chest. Hidden from opponents and minimaps until action ends. Ends before combat or on death.", 10, 1, 0, 0, .25f, 0, 0, 0, null);
@@ -210,7 +209,7 @@ namespace MazeParty.Editor
                 return;
             }
             var item = ScriptableObject.CreateInstance<BoardItemDefinition>();
-            item.UseTiming = id == PrototypeItemId.DoubleDice || id == PrototypeItemId.LowDice ||
+            item.UseTiming = id == PrototypeItemId.DoubleDice ||
                 id == PrototypeItemId.HighDice ? BoardItemUseTiming.TurnStart : BoardItemUseTiming.Immediate;
             item.Id = id; item.DisplayName = title; item.Description = description; item.Price = price;
             item.Charges = charges; item.Damage = damage; item.Range = range; item.FireInterval = interval;

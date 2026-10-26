@@ -307,6 +307,7 @@ namespace MazeParty.Editor
                     lasers.WarningBeams, lasers.FiringBeams);
 
                 ValidateScene(root, view);
+                MinigameNightLightingProjectSetup.ApplyToScene(scene);
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
             finally

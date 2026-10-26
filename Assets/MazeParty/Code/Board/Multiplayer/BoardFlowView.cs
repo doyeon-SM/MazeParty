@@ -533,7 +533,7 @@ namespace MazeParty.Multiplayer
             _phaseText = hud.PhaseText;
             _phaseTimerText = hud.PhaseTimerText;
             _movesText = map.MovesText;
-            _ammoText = item.AmmoText;
+            _ammoText = map.ItemUsesText;
             _interactionPrompt = item.InteractionPrompt;
             _tooltipText = item.TooltipText;
             _reconnectText = hud.ReconnectText;
@@ -654,19 +654,7 @@ namespace MazeParty.Multiplayer
                 match.FlowState == BoardFlowState.MinigameResult &&
                 !match.IsGlobalSimulationPaused);
             SetActive(_reconnectOverlay, match.IsReconnectPaused);
-            var landingEffectMessage = match.LastLandingEffectMessage;
-            var showBoardEventPopup = ShouldShowBoardEventPopup(
-                match.FlowState,
-                match.IsGlobalSimulationPaused,
-                match.LastLandingEffectType,
-                landingEffectMessage,
-                match.ResourceTransferPresentationPhase);
-            var landingFeedback = match.LandingEffectFeedback;
-            showBoardEventPopup &= !(landingFeedback.FeedbackKind == BoardLandingEffectFeedbackKind.EventIntro &&
-                BoardLandingEffectFeedbackRules.IsVisible(landingFeedback, match.LandingFeedbackPresentationNow)) &&
-                !(landingFeedback.FeedbackKind == BoardLandingEffectFeedbackKind.Event &&
-                  match.LandingFeedbackPresentationNow >= landingFeedback.StartedAt +
-                  BoardLandingEffectFeedbackRules.EventDurationSeconds);
+            var showBoardEventPopup = ShouldShowBoardEventPopup(match);
             SetText(
                 _boardEventPopupMessage,
                 showBoardEventPopup
@@ -942,16 +930,13 @@ namespace MazeParty.Multiplayer
                 }
             }
 
-            var firearmSelected = _localAvatar != null &&
-                                  _localAvatar.LocalEquippedItem != PrototypeItemId.None &&
-                                  BoardItemPresentationRules.IsFirearm(
-                                      _localAvatar.LocalEquippedItem);
+            var hasItemUses = _localAvatar != null &&
+                              PrototypeItemCatalog.IsValid(_localAvatar.LocalEquippedItem) &&
+                              _localAvatar.LocalItemCharges > 0;
             SetTextVisible(
                 _ammoText,
-                firearmSelected
-                    ? Mathf.Max(0, _localAvatar.LocalItemCharges).ToString()
-                    : string.Empty,
-                firearmSelected);
+                hasItemUses ? _localAvatar.LocalItemCharges.ToString() : string.Empty,
+                hasItemUses);
         }
 
         private void RefreshInteractionPrompt()
@@ -2486,6 +2471,26 @@ namespace MazeParty.Multiplayer
             public string BeforeItem { get; }
             public string ItemName { get; }
             public string AfterItem { get; }
+        }
+
+        // Keep the popup and top-view marker visibility on the same timeline,
+        // regardless of which presenter updates first.
+        internal static bool ShouldShowBoardEventPopup(NetworkMatchState match)
+        {
+            if (match == null || !ShouldShowBoardEventPopup(
+                    match.FlowState,
+                    match.IsGlobalSimulationPaused,
+                    match.LastLandingEffectType,
+                    match.LastLandingEffectMessage,
+                    match.ResourceTransferPresentationPhase))
+                return false;
+
+            var feedback = match.LandingEffectFeedback;
+            var now = match.LandingFeedbackPresentationNow;
+            return !(feedback.FeedbackKind == BoardLandingEffectFeedbackKind.EventIntro &&
+                     BoardLandingEffectFeedbackRules.IsVisible(feedback, now)) &&
+                   !(feedback.FeedbackKind == BoardLandingEffectFeedbackKind.Event &&
+                     now >= feedback.StartedAt + BoardLandingEffectFeedbackRules.EventDurationSeconds);
         }
 
         internal static bool ShouldShowBoardEventPopup(

@@ -425,6 +425,39 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(codec.TryDecode(JsonUtility.ToJson(restored), out _), Is.True, "Legacy recovery stays playable without achievement credit.");
         }
 
+        [Test]
+        public void Decode_ItemIdsPreserveActiveItemsAndRejectRetiredOrUnknownInventoryAndOffers()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            foreach (var raw in new byte[] { 1, 2, 3, 9, 13, 255, 4, 10, 12 })
+            foreach (var inShop in new[] { false, true })
+            {
+                var snapshot = CreateValidSnapshot();
+                var valid = raw == 4 || raw == 10 || raw == 12;
+                if (inShop)
+                    snapshot.itemShops[0] = new MatchRecoveryItemShopSnapshot
+                    {
+                        active = true, revision = 1, appearedTurn = 1,
+                        offers = new[] { (int)raw, 5, 6, 7, 8 }
+                    };
+                else
+                {
+                    snapshot.players[0].occupiedItemMask = 1;
+                    snapshot.players[0].itemSlot0 = raw;
+                }
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out var restored), Is.EqualTo(valid),
+                    "item=" + raw + ", inShop=" + inShop);
+                if (valid)
+                    Assert.That(inShop ? restored.itemShops[0].offers[0] : restored.players[0].itemSlot0,
+                        Is.EqualTo(raw), "Surviving item IDs must not be renumbered.");
+                else
+                {
+                    Assert.That(restored, Is.Null);
+                    Assert.Throws<System.ArgumentException>(() => codec.Encode(snapshot));
+                }
+            }
+        }
+
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(
             params string[] playerKeys)
         {

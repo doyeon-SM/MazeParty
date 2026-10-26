@@ -40,7 +40,7 @@ namespace MazeParty.Multiplayer
                 !IsFinite(claimedOrigin) || !IsFinite(claimedDirection) || claimedDirection.sqrMagnitude < .0001f)
                 return false;
             var id = avatar.GetSelectedItemOnServer();
-            if (!PrototypeItemCatalog.IsValid(id) || id == PrototypeItemId.DoubleDice || id == PrototypeItemId.LowDice || id == PrototypeItemId.HighDice ||
+            if (!PrototypeItemCatalog.IsValid(id) || id == PrototypeItemId.DoubleDice || id == PrototypeItemId.HighDice ||
                 id == PrototypeItemId.PositionSwapper) return false;
             var item = PrototypeItemCatalog.Get(id);
             var origin = avatar.EyePivot != null ? avatar.EyePivot.position : avatar.transform.position + Vector3.up * .75f;
@@ -225,9 +225,12 @@ namespace MazeParty.Multiplayer
                         owner != null ? owner.gameObject : null,
                         out var collision,
                         bomb.ProjectileRadius);
-                    grenade.Position = hit
-                        ? collision.point + collision.normal * .08f
-                        : grenade.Position + delta;
+                    // SphereCastAll reports a zero hit point when the sweep starts
+                    // inside a player or wall. Its distance still locates the
+                    // projectile center, including distance zero for overlaps.
+                    grenade.Position += hit
+                        ? delta.normalized * Mathf.Clamp(collision.distance, 0f, delta.magnitude)
+                        : delta;
                     grenade.Velocity += Physics.gravity * step;
                     grenade.Life += step;
 #if UNITY_EDITOR || DEBUG

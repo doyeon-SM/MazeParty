@@ -18,7 +18,7 @@ namespace MazeParty.Editor
         public const string EnvironmentPath = Folder + "/FlightEnvironment.prefab";
         public const string ObstaclePath = Folder + "/FlightObstacle.prefab";
         public const string ObstacleSourcePath = "Assets/Ignore/FreeLowpolyScifiObjects/Prefabs/Objects/object_012.prefab";
-        public const string SkyboxPath = "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Day_01.mat";
+        public const string SkyboxPath = "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
         [MenuItem("MazeParty/Minigames/Build Flight")]
         public static void BuildFlightAssets()
         {
@@ -88,6 +88,7 @@ namespace MazeParty.Editor
                         AssetDatabase.LoadAssetAtPath<GameObject>(MinigameVfxProjectSetup.CartoonExplosionPrefabPath),
                         AssetDatabase.LoadAssetAtPath<Material>(SkyboxPath), common.GetComponent<MinigameCommonHudView>(),
                         common.GetComponent<MinigameStartCountdownView>());
+                    MinigameNightLightingProjectSetup.ApplyToScene(scene);
                     EditorSceneManager.SaveScene(scene, ScenePath);
                 }
                 if (!scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<FlightNetworkView>(true)).Single().HasRequiredReferences)

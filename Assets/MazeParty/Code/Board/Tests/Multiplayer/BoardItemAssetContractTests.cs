@@ -66,7 +66,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(PrefabUtility.IsPartOfPrefabAsset(world.Chest), Is.True);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
-                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.LowDice, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak }));
+                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak }));
             var expectedWeaponModels = new Dictionary<PrototypeItemId, string>
             {
                 {
@@ -131,7 +131,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(meshPaths, Does.Contain(expectedModelPath),
                     definition.Id + " must use its approved source model.");
             }
-            Assert.That(itemIcons.Count, Is.EqualTo(9));
+            Assert.That(itemIcons.Count, Is.EqualTo(8));
             var first = new System.Random(901);
             var second = new System.Random(901);
             var found = new System.Collections.Generic.HashSet<PrototypeItemId>();
@@ -141,7 +141,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(id, Is.EqualTo(PrototypeItemCatalog.GetRandomId(second)));
                 found.Add(id);
             }
-            Assert.That(found.Count, Is.EqualTo(9));
+            Assert.That(found.Count, Is.EqualTo(8));
         }
 
         [Test]

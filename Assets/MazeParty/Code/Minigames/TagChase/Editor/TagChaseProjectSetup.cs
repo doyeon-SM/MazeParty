@@ -188,6 +188,7 @@ namespace MazeParty.Editor
                 arenaPresentation);
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(
                 scene,
                 TagChaseScenePath);

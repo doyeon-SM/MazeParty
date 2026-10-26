@@ -172,6 +172,7 @@ namespace MazeParty.Editor
             view.ConfigureHud(hud.GetComponent<BouncingBallsHudBindings>());
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, GiftGrabScenePath);
             EnsureGiftGrabInBuildSettings();
 

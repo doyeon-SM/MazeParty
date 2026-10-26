@@ -116,6 +116,7 @@ namespace MazeParty.Editor
                         marker.transform,AssetDatabase.LoadAssetAtPath<GameObject>(MinigameVfxProjectSetup.ArrivalFireworksPrefabPath),scores.GetComponent<BouncingBallsHudBindings>(),selection.GetComponent<ShellGameHudBindings>(),
                         common.GetComponent<MinigameStartCountdownView>(),common.GetComponent<MinigameCommonHudView>(),center+Vector3.up*.05f);
                     CreateItemPresentation(presentation,coinObject);
+                    MinigameNightLightingProjectSetup.ApplyToScene(scene);
                     EditorSceneManager.SaveScene(scene,ScenePath);
                 }
                 var view=scene.GetRootGameObjects().SelectMany(r=>r.GetComponentsInChildren<ShellGameNetworkView>(true)).Single();

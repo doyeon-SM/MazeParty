@@ -87,6 +87,7 @@ namespace MazeParty.Editor
                     root.AddComponent<OddOneOutNetworkView>().Configure(state, camera, arena, players, anchors,
                         score.GetComponent<BouncingBallsHudBindings>(), hud.GetComponent<OddOneOutHudBindings>(),
                         AssetDatabase.LoadAssetAtPath<GameObject>(MinigameVfxProjectSetup.ArrivalFireworksPrefabPath));
+                    MinigameNightLightingProjectSetup.ApplyToScene(scene);
                     EditorSceneManager.SaveScene(scene, ScenePath);
                 }
                 var view = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<OddOneOutNetworkView>(true)).Single();

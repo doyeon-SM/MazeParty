@@ -861,7 +861,8 @@ namespace MazeParty.Multiplayer
                 (match.FlowState == BoardFlowState.MinigameIntroReady ||
                  match.FlowState == BoardFlowState.MinigameLoading);
             var showingTopView = targetMode == GameplayMode.BoardTopDown &&
-                                 !transitioning && !preparingMinigame;
+                                 !transitioning && !preparingMinigame &&
+                                 !BoardFlowView.ShouldShowBoardEventPopup(match);
             var visual = _localAvatar.AvatarVisual;
             if (visual != null)
             {

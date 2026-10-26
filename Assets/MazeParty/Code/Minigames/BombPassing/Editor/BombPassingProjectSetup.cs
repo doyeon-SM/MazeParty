@@ -130,6 +130,7 @@ namespace MazeParty.Editor
                 explosionVfx);
 
             ValidateScene(root, view, references);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EnsureInBuildSettings();
 

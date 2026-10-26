@@ -130,6 +130,7 @@ namespace MazeParty.Editor
                     references.PlayerBalls, references.BallRenderers);
 
                 ValidateScene(root, references);
+                MinigameNightLightingProjectSetup.ApplyToScene(scene);
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
             finally

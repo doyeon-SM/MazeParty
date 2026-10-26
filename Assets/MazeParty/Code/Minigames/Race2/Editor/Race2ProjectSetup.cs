@@ -82,6 +82,7 @@ namespace MazeParty.Editor
                     root.AddComponent<Race2NetworkView>().Configure(state, camera, arena, players, boxes, box,
                         AssetDatabase.LoadAssetAtPath<GameObject>(MinigameVfxProjectSetup.CartoonExplosionPrefabPath),
                         common.GetComponent<MinigameCommonHudView>(), common.GetComponent<MinigameStartCountdownView>());
+                    MinigameNightLightingProjectSetup.ApplyToScene(scene);
                     EditorSceneManager.SaveScene(scene, ScenePath);
                 }
                 if (!scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<Race2NetworkView>(true)).Single().HasRequiredReferences)

@@ -141,6 +141,7 @@ namespace MazeParty.Editor
 
             view.Configure(state, camera, playerRoot.transform, arena);
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, RaceScenePath);
             EnsureInBuildSettings();
 

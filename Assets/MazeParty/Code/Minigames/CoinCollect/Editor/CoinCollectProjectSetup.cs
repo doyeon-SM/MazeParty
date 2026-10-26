@@ -70,6 +70,7 @@ namespace MazeParty.Editor
                     var state = root.AddComponent<NetworkCoinCollectState>();
                     root.AddComponent<CoinCollectNetworkView>().Configure(state, camera, arena, players, items,
                         coin, money, bomb, shadow, hud.GetComponent<BouncingBallsHudBindings>());
+                    MinigameNightLightingProjectSetup.ApplyToScene(scene);
                     EditorSceneManager.SaveScene(scene, ScenePath);
                 }
                 var view = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<CoinCollectNetworkView>(true)).Single();

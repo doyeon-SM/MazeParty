@@ -439,7 +439,7 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bindings.AmmoText.name, Is.EqualTo("BoardAmmoText"));
             Assert.That(
                 bindings.AmmoText.transform.IsChildOf(
-                    bindings.Item.transform),
+                    bindings.MovesText.transform),
                 Is.True);
 
             var prompt = bindings.Item.InteractionPrompt;

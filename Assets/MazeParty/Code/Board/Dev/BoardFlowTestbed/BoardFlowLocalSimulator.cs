@@ -3171,7 +3171,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
                                _selectedSlot < _itemSlots.Length
                 ? _itemSlots[_selectedSlot]
                 : PrototypeItemId.None;
-            var showAmmo = BoardItemPresentationRules.IsFirearm(selectedItem);
+            var showAmmo = PrototypeItemCatalog.IsValid(selectedItem) && _selectedItemCharges > 0;
             SetTextVisible(
                 _ammoText,
                 showAmmo
@@ -3315,7 +3315,7 @@ namespace MazeParty.Gameplay.BoardFlowTestbed
             _phaseText = hud.PhaseText;
             _phaseTimerText = hud.PhaseTimerText;
             _movesText = map.MovesText;
-            _ammoText = item.AmmoText;
+            _ammoText = map.ItemUsesText;
             _tooltipText = item.TooltipText;
             _itemShopTitle = item.ItemShopTitle;
             _itemShopTooltip = item.ItemShopTooltip;

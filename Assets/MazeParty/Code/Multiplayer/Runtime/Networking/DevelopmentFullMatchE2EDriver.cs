@@ -38,7 +38,7 @@ namespace MazeParty.Multiplayer
         private const string ForestMapId = "forest-graybox";
         private const int ForestContentVersion = 4;
         private const string MazeMapId = "maze-graybox";
-        private const int MazeContentVersion = 1;
+        private const int MazeContentVersion = 2;
         private const int PollMilliseconds = 100;
 
         private enum RecoveryTarget

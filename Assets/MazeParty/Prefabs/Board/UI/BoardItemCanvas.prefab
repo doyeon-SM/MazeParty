@@ -1403,7 +1403,6 @@ RectTransform:
   - {fileID: 729743101030052188}
   - {fileID: 5969362080537541102}
   - {fileID: 9103717312199091690}
-  - {fileID: 623481142630862270}
   - {fileID: 6100342251398457484}
   m_Father: {fileID: 6788671789804501079}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -2131,7 +2130,6 @@ MonoBehaviour:
     InventoryPanel: {fileID: 1809359192652373407}
     ItemSelectionPanel: {fileID: 1621994921237849244}
     ItemShopPanel: {fileID: 2058008268472203909}
-    AmmoText: {fileID: 6714939632395465505}
     TooltipText: {fileID: 7434240417400583269}
     InteractionPrompt: {fileID: 2197755530246576457}
     ItemShopTitle: {fileID: 8497461664479516279}
@@ -2924,85 +2922,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
   hoverKey: ui.hover
   clickKey: ui.click
---- !u!1 &3930290234656622836
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 623481142630862270}
-  - component: {fileID: 5899674095171258931}
-  - component: {fileID: 6714939632395465505}
-  m_Layer: 5
-  m_Name: BoardAmmoText
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &623481142630862270
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3930290234656622836}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5118072036598799918}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 1, y: 1}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -12, y: -8}
-  m_SizeDelta: {x: 96, y: 48}
-  m_Pivot: {x: 1, y: 1}
---- !u!222 &5899674095171258931
-CanvasRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3930290234656622836}
-  m_CullTransparentMesh: 1
---- !u!114 &6714939632395465505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3930290234656622836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Text
-  m_Material: {fileID: 0}
-  m_Color: {r: 0.72156864, g: 1, b: 0.8156863, a: 1}
-  m_RaycastTarget: 0
-  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
-  m_Maskable: 1
-  m_OnCullStateChanged:
-    m_PersistentCalls:
-      m_Calls: []
-  m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 30
-    m_FontStyle: 0
-    m_BestFit: 0
-    m_MinSize: 3
-    m_MaxSize: 50
-    m_Alignment: 4
-    m_AlignByGeometry: 0
-    m_RichText: 1
-    m_HorizontalOverflow: 0
-    m_VerticalOverflow: 1
-    m_LineSpacing: 1
-  m_Text: 00
 --- !u!1 &4445557178499245589
 GameObject:
   m_ObjectHideFlags: 0

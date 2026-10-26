@@ -139,6 +139,7 @@ namespace MazeParty.Editor
                 view.ConfigureHealthBar(healthBar);
 
                 ValidateScene(root, view);
+                MinigameNightLightingProjectSetup.ApplyToScene(scene);
                 EditorSceneManager.SaveScene(scene, ScenePath);
             }
             finally

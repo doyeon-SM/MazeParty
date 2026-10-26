@@ -28,7 +28,7 @@ namespace MazeParty.Editor
             ": YOU / FACING", ": OTHER PLAYER", ": RESPAWN",
             ": KEY SHOP", ": GOLD GAIN", ": GOLD LOSS",
             ": ITEM REWARD", ": HEALING", ": DAMAGE",
-            ": SPECIAL EVENT", ": ONE-WAY PATH", ": YOUR MINE",
+            ": SPECIAL EVENT", ": TRAVEL DIRECTION", ": YOUR MINE",
             ": ROUTE TO KEY SHOP", ": REACHABLE THIS TURN"
         };
 

@@ -24,6 +24,8 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         public const float BombDropRadius = 2.3f;
         public const double PushCastSeconds = 0.1d, PushStunSeconds = 0.5d;
         public const double PushCooldownSeconds = 1d;
+        public const double PushKnockbackSeconds = 0.2d;
+        public const float PushKnockbackDistance = 1.25f;
         public static bool IsValidSlot(int slot) => slot >= 0 && slot < PlayerCount;
         public static bool IsFinite(double value) => !double.IsNaN(value) && !double.IsInfinity(value);
         public static Vector2 StartPosition(int slot) => new Vector2(
@@ -73,9 +75,9 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
         private readonly MinigameRulesConfig _rules;
         private sealed class Player
         {
-            public Vector2 Position, Facing, Input, PushFacing;
+            public Vector2 Position, Facing, Input, PushFacing, KnockbackDirection;
             public int Score;
-            public double StunnedUntil, CastAt = -1d, CooldownUntil;
+            public double StunnedUntil, CastAt = -1d, CooldownUntil, KnockbackUntil;
         }
         private readonly Player[] _players = new Player[4];
         private readonly List<CoinCollectItemSnapshot> _items = new List<CoinCollectItemSnapshot>();
@@ -168,11 +170,21 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                 {
                     if (p.CastAt > Elapsed) next = Math.Min(next, p.CastAt);
                     if (p.StunnedUntil > Elapsed) next = Math.Min(next, p.StunnedUntil);
+                    if (p.KnockbackUntil > Elapsed) next = Math.Min(next, p.KnockbackUntil);
                 }
                 var dt = (float)(next - Elapsed);
                 foreach (var slot in _tieOrder)
                 {
                     var p = _players[slot];
+                    if (p.KnockbackUntil > Elapsed)
+                    {
+                        // Integrate an easing push over simulation time, including while stunned.
+                        // Differences of the curve preserve the total distance across frame sizes.
+                        var before = (p.KnockbackUntil - Elapsed) / CoinCollectRules.PushKnockbackSeconds;
+                        var after = Math.Max(0d, p.KnockbackUntil - next) / CoinCollectRules.PushKnockbackSeconds;
+                        MovePlayer(slot, p.KnockbackDirection * (CoinCollectRules.PushKnockbackDistance *
+                            (float)(before * before - after * after)));
+                    }
                     if (CanMove(p) && p.Input.sqrMagnitude > 0f)
                     {
                         p.Facing = p.Input.normalized;
@@ -233,8 +245,9 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                     var forward = Vector2.Dot(offset, actor.PushFacing);
                     var lateral = offset - actor.PushFacing * forward;
                     if (forward < 0f || forward > 1.36f || lateral.sqrMagnitude > 0.7f * 0.7f) continue;
-                    MovePlayer(target, actor.PushFacing * 1.25f);
                     Stun(victim, CoinCollectRules.PushStunSeconds);
+                    victim.KnockbackDirection = actor.PushFacing;
+                    victim.KnockbackUntil = Elapsed + CoinCollectRules.PushKnockbackSeconds;
                 }
             }
         }
@@ -302,6 +315,7 @@ namespace MazeParty.Gameplay.Minigames.CoinCollect
                 p.Position = CoinCollectRules.StartPosition(slot);
                 p.Facing = (new Vector2(CoinCollectRules.ArenaCenterX, 0f) - p.Position).normalized;
                 p.Input = Vector2.zero; p.CastAt = -1d; p.StunnedUntil = p.CooldownUntil = 0d;
+                p.KnockbackDirection = Vector2.zero; p.KnockbackUntil = 0d;
             }
             var random = new StableRandom(_seed ^ ((ulong)RoundNumber * 0x9E3779B97F4A7C15UL));
             var kinds = new CoinCollectItemKind[CoinCollectRules.RainCount];

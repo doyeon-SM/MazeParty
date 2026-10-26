@@ -194,6 +194,7 @@ namespace MazeParty.Editor
                 cueAudioSource);
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, BalloonBlowScenePath);
             EnsureBalloonBlowInBuildSettings();
 

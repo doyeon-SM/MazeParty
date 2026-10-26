@@ -11,6 +11,65 @@ namespace MazeParty.Multiplayer.Tests
     public sealed class BoardMinimapProjectionTests
     {
         [Test]
+        public void MazeGuidance_BlueUsesOuterRing_WhileYellowCanCrossInterior()
+        {
+            var map = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Resources/MazeParty/Board/Maps/MazeGrayboxMapRoot.prefab"));
+            var ui = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"));
+            try
+            {
+                var root = map.GetComponent<BoardMapRoot>();
+                Assert.That(root.Definition.OuterRingTravelGuideOnly, Is.True);
+                var topology = root.Topology;
+                topology.RebuildIndex();
+                var layout = new BoardRouteDotLayout();
+                var points = new System.Collections.Generic.List<Vector3>();
+                var visiblePassages = 0;
+                foreach (var gate in topology.Gates)
+                {
+                    var a = gate.Source.Coordinate;
+                    var b = gate.Destination.Coordinate;
+                    var outer = (a.x == 0 || a.x == 7 || a.y == 0 || a.y == 7) &&
+                                (b.x == 0 || b.x == 7 || b.y == 0 || b.y == 7);
+                    layout.SampleEdges(topology, new[] { new BoardRouteChoice(a, b) }, .8f, 0f, points);
+                    Assert.That(points.Count > 0, Is.EqualTo(outer), a + " -> " + b);
+                    if (points.Count > 0) visiblePassages++;
+                }
+                Assert.That(visiblePassages, Is.EqualTo(28));
+                topology.TryGetTile(new Vector2Int(1, 2), out var from);
+                topology.TryGetTile(new Vector2Int(1, 1), out var shop);
+                var route = new System.Collections.Generic.List<BoardTile>();
+                Assert.That(BoardMapRoute.TryFind(topology, from, shop, route), Is.True);
+                Assert.That(route.Count, Is.EqualTo(2));
+                BoardShopRouteView.SampleRoute(route, .8f, 0f, points);
+                Assert.That(points.Count, Is.GreaterThan(2), "Yellow must still cross internal and entrance passages.");
+                foreach (var view in ui.GetComponentsInChildren<BoardMinimapView>(true))
+                {
+                    view.PrepareMap(topology, from.Coordinate, 24, shop.Coordinate, from.WorldCenter);
+                    var data = new SerializedObject(view);
+                    var yellow = (BoardMapRouteGraphic)data.FindProperty("shopRouteGraphic").objectReferenceValue;
+                    Assert.That(yellow.PointCount, Is.GreaterThan(2));
+                    var rooms = data.FindProperty("rooms");
+                    for (var tile = 0; tile < topology.Tiles.Count; tile++)
+                    {
+                        var arrows = rooms.GetArrayElementAtIndex(tile).FindPropertyRelative("ProgressArrows");
+                        var active = 0;
+                        for (var arrow = 0; arrow < arrows.arraySize; arrow++)
+                            if (((BoardMapIcon)arrows.GetArrayElementAtIndex(arrow).objectReferenceValue).enabled) active++;
+                        var exits = topology.GetOutgoingGates(topology.Tiles[tile]).Count;
+                        Assert.That(active, Is.EqualTo(exits > 1 ? exits : 0), topology.Tiles[tile].name);
+                    }
+                }
+                var forest = AssetDatabase.LoadAssetAtPath<BoardMapDefinition>(
+                    "Assets/MazeParty/Resources/MazeParty/Board/Maps/ForestGrayboxMap.asset");
+                Assert.That(forest.OuterRingTravelGuideOnly, Is.False);
+            }
+            finally { Object.DestroyImmediate(ui); Object.DestroyImmediate(map); }
+        }
+
+
+        [Test]
         public void TileMarkers_ReflowWithVisibleOccupants_AndRemainInsideRotatedFootprints()
         {
             var ui = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(

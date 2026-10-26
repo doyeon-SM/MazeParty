@@ -37,6 +37,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             new int[SequenceMemoryRules.PlayerCount];
 
         private SequenceMemoryMatchState _match;
+        private PlayerLocalProfile _localProfile;
         private MinigameSoloHudView _developerHud;
         private NetworkSequenceMemoryState _productionState;
         private SequenceMemoryNetworkView _productionView;
@@ -82,6 +83,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                 RestartMatch,
                 StartNextSeed,
                 StopSoloTest);
+            _localProfile = PlayerProfilePreferences.Load();
             ResolveAndDisableProduction();
             CreateRuntimeCamera();
             ConfigurePlayers();
@@ -186,10 +188,12 @@ namespace MazeParty.Dev.MinigameSoloTest
 
                 _playerPresentations[slot] = presentation;
                 _visuals[slot] = visual;
-                visual.SetBodyColor(PlayerColors[slot]);
+                visual.SetBodyColor(slot == LocalPlayerSlot
+                    ? _localProfile.Appearance.BodyColor
+                    : (Color)PlayerColors[slot]);
                 visual.SetDisplayName(
                     slot == LocalPlayerSlot
-                        ? "SOLO DEV"
+                        ? _localProfile.DisplayName
                         : "PRACTICE " + (slot + 1));
                 visual.SetOwnerFirstPerson(false);
                 visual.SetTopViewHighlight(slot == LocalPlayerSlot);
@@ -471,19 +475,14 @@ namespace MazeParty.Dev.MinigameSoloTest
                 var player = _match.GetPlayer(slot);
                 _productionHud.PlayerNameTexts[slot].text =
                     slot == LocalPlayerSlot
-                        ? "SOLO DEV"
+                        ? _localProfile.DisplayName
                         : "PRACTICE " + (slot + 1);
+                _productionHud.PlayerNameTexts[slot].color = slot == LocalPlayerSlot
+                    ? _localProfile.Appearance.BodyColor
+                    : (Color)PlayerColors[slot];
                 var input = BuildInputString(player.CurrentInput);
                 _productionHud.PlayerInputTexts[slot].text =
                     string.IsNullOrEmpty(input) ? "—" : input;
-                _productionHud.PlayerStatusTexts[slot].text =
-                    GetPlayerStatusLabel(slot);
-                _productionHud.PlayerRows[slot].color =
-                    slot == LocalPlayerSlot
-                        ? new Color(1f, 0.88f, 0.25f, 1f)
-                        : _productionHud.GetDefaultPlayerRowColor(slot);
-                _productionHud.PlayerStatusTexts[slot].color =
-                    GetPlayerStatusColor(slot);
             }
         }
 
@@ -590,26 +589,6 @@ namespace MazeParty.Dev.MinigameSoloTest
                         ? "WATCHING · TORSO LOST"
                         : "WATCHING";
             }
-        }
-
-        private Color GetPlayerStatusColor(int slot)
-        {
-            var player = _match.GetPlayer(slot);
-            if (player.IsEliminated)
-            {
-                return new Color(1f, 0.36f, 0.28f, 1f);
-            }
-            if (GetFinalRank(slot) > 0 ||
-                player.TurnStatus ==
-                    SequenceMemoryPlayerTurnStatus.Correct)
-            {
-                return new Color(0.35f, 1f, 0.55f, 1f);
-            }
-            if (player.MistakeCount > 0)
-            {
-                return new Color(1f, 0.72f, 0.15f, 1f);
-            }
-            return _productionHud.GetDefaultStatusColor(slot);
         }
 
         private string BuildFinalLabel()

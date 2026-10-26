@@ -156,7 +156,6 @@ namespace MazeParty.Gameplay.Tests
                          PrototypeItemId.DoubleDice,
                          PrototypeItemId.Pistol,
                          PrototypeItemId.Sniper,
-                         PrototypeItemId.LowDice,
                          PrototypeItemId.HighDice,
                          PrototypeItemId.PositionSwapper,
                          PrototypeItemId.Cloak
@@ -173,7 +172,6 @@ namespace MazeParty.Gameplay.Tests
                          PrototypeItemId.DoubleDice,
                          PrototypeItemId.Grenade,
                          PrototypeItemId.Mine,
-                         PrototypeItemId.LowDice,
                          PrototypeItemId.HighDice,
                          PrototypeItemId.PositionSwapper,
                          PrototypeItemId.Cloak

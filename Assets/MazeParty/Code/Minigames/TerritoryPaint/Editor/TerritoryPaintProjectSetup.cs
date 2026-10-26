@@ -189,6 +189,7 @@ namespace MazeParty.Editor
                 hud);
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(
                 scene,
                 TerritoryPaintScenePath);

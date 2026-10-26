@@ -165,6 +165,7 @@ namespace MazeParty.Editor
             ConfigureNetworkView(networkView, hud);
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(
                 scene,
                 WrongWayScenePath);

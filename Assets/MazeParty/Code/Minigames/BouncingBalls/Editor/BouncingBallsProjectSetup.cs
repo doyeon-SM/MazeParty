@@ -149,6 +149,7 @@ namespace MazeParty.Editor
                 references.Shields, references.Balls,
                 references.ShieldRenderers, references.BallRenderers, hud);
             ValidateScene(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EnsureInBuildSettings();
 

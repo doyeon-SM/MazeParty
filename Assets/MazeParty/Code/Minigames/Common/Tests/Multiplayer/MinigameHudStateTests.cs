@@ -81,6 +81,7 @@ namespace MazeParty.Multiplayer.Tests
             var spectator = Child("Spectator").AddComponent<CinemachineCamera>();
             view.Configure(state, first, spectator, Child("World"), new Transform[4]);
             Field(view, "_cameraDirector", Child("Director").AddComponent<GameplayCameraDirector>());
+            Set(_match, "_gameplayEnabled", true);
             Set(_match, "_currentMinigame", (byte)ScheduledMinigameId.ArenaCombat);
             Set(state, "_matchActive", true);
             Set(state, "_phaseEndsAt", Time.unscaledTimeAsDouble + 30d);
@@ -127,10 +128,19 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
-        public void OpponentHealth_UpdatesWhileNameplateHidden_AndRebindsAfterAvatarReplacement()
+        public void OpponentHealth_TracksAvatarAndHidesAfterCombatIncludingCeremony()
         {
             var state = Child("Arena").AddComponent<NetworkArenaCombatState>();
+            typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(state, true);
+            Set(state, "_matchActive", true);
+            Set(state, "_phase", (byte)NetworkArenaCombatPhase.Playing);
+            Set(_match, "_gameplayEnabled", true);
+            Set(_match, "_currentMinigame", (byte)ScheduledMinigameId.ArenaCombat);
+            Avatar(0, true);
             var view = state.gameObject.AddComponent<ArenaCombatNetworkView>(); Field(view, "state", state);
+            var world = Child("Arena World");
+            Field(view, "arenaPresentation", world);
+            Field(view, "_cameraDirector", Child("Director").AddComponent<GameplayCameraDirector>());
             view.ConfigureHealthBar(AssetDatabase.LoadAssetAtPath<ArenaCombatHealthBarView>(
                 "Assets/MazeParty/Prefabs/Minigames/ArenaCombat/UI/ArenaCombatHealthBar.prefab"));
             var opponent = Avatar(1, false);
@@ -138,7 +148,7 @@ namespace MazeParty.Multiplayer.Tests
             {
                 opponent.AvatarVisual.SetNameplateVisible(false);
                 Set(opponent, "_combatHealth", health);
-                Call(view, "RefreshHealthBars", _match, true);
+                Call(view, "Update");
                 var bar = Get<ArenaCombatHealthBarView[]>(view, "_healthBars")[1];
                 Assert.That(bar.gameObject.activeInHierarchy, Is.True);
                 Assert.That(Get<Text>(bar, "healthText").text, Is.EqualTo(health + "/" + BoardCombatRules.TemporaryHealth));
@@ -147,11 +157,44 @@ namespace MazeParty.Multiplayer.Tests
             typeof(NetworkBehaviour).GetProperty("IsSpawned").SetValue(opponent, false);
             var replacement = Avatar(1, false);
             Set(replacement, "_combatHealth", 60);
-            Call(view, "RefreshHealthBars", _match, true);
+            Call(view, "Update");
             Assert.That(Get<ArenaCombatHealthBarView[]>(view, "_healthBars")[1], Is.SameAs(original));
             Assert.That(Get<PlayerAvatarVisual>(original, "_target"), Is.SameAs(replacement.AvatarVisual));
             Set(state, "_eliminatedMask", (byte)2);
-            Call(view, "RefreshHealthBars", _match, true);
+            Call(view, "Update");
+            Assert.That(original.gameObject.activeSelf, Is.False);
+            Set(state, "_eliminatedMask", (byte)0);
+
+            // The selected ID intentionally remains ArenaCombat after the final
+            // round, including through the award ceremony and the next board turn.
+            foreach (var sample in new[] {
+                (BoardFlowState.MinigamePlaying, NetworkArenaCombatPhase.Playing, true, true),
+                (BoardFlowState.MinigamePlaying, NetworkArenaCombatPhase.Complete, false, true),
+                (BoardFlowState.MinigameResult, NetworkArenaCombatPhase.Complete, false, true),
+                (BoardFlowState.MatchComplete, NetworkArenaCombatPhase.Complete, false, false),
+                (BoardFlowState.TurnOverview, NetworkArenaCombatPhase.Complete, false, false),
+                (BoardFlowState.Action, NetworkArenaCombatPhase.Playing, false, false),
+                (BoardFlowState.MinigameLoading, NetworkArenaCombatPhase.Countdown, false, false),
+                (BoardFlowState.MinigamePlaying, NetworkArenaCombatPhase.Countdown, true, true),
+                (BoardFlowState.MinigamePlaying, NetworkArenaCombatPhase.Playing, true, true) })
+            {
+                Set(_match, "_flowState", (byte)sample.Item1);
+                Set(state, "_phase", (byte)sample.Item2);
+                Call(view, "Update");
+                var context = sample.Item1 + " / " + sample.Item2;
+                Assert.That(original.gameObject.activeSelf, Is.EqualTo(sample.Item3), context);
+                Assert.That(world.activeSelf, Is.EqualTo(sample.Item4), context);
+                Assert.That(Get<ArenaCombatHealthBarView[]>(view, "_healthBars")[0].gameObject.activeSelf,
+                    Is.False, "The owner's first-person bar remains hidden.");
+            }
+            Set(_match, "_gameplayEnabled", false);
+            Call(view, "Update");
+            Assert.That(original.gameObject.activeSelf, Is.False);
+            Assert.That(world.activeSelf, Is.False);
+            Set(_match, "_gameplayEnabled", true);
+            Call(view, "Update");
+            Assert.That(original.gameObject.activeSelf, Is.True);
+            Call(view, "OnDisable");
             Assert.That(original.gameObject.activeSelf, Is.False);
         }
 

@@ -143,9 +143,25 @@ namespace MazeParty.Gameplay.Tests
             Assert.That(attemptedSlots.Count, Is.EqualTo(1), "Rejected repeats must not replay the animation.");
             match.AdvanceTo(.099d); Assert.That(match.GetPlayer(1).StunRemaining, Is.Zero);
             match.AdvanceTo(.1d); Assert.That(match.GetPlayer(1).StunRemaining, Is.EqualTo(.5d).Within(1e-8));
-            Assert.That(match.GetPlayer(1).Position.x, Is.GreaterThan(701f));
-            Assert.That(match.GetPlayer(1).Score, Is.EqualTo(25)); Assert.That(match.ItemCount, Is.Zero);
+            Assert.That(match.GetPlayer(1).Position.x, Is.EqualTo(701f), "The hit starts a slide instead of teleporting.");
+            match.SetMovementInput(1, Vector2.left);
+            Assert.That(match.TryPush(1), Is.False);
+            Items(match).Add(new CoinCollectItemSnapshot(CoinCollectItemKind.Coin, new Vector2(702, 0), .1d, .55f));
+            match.AdvanceTo(.15d);
+            var firstSlide = match.GetPlayer(1).Position.x;
+            Assert.That(firstSlide, Is.GreaterThan(701f).And.LessThan(702.25f));
+            Assert.That(match.TryCollect(1, 0), Is.False, "A sliding stunned player cannot collect.");
+            match.AdvanceTo(.2d);
+            var secondSlide = match.GetPlayer(1).Position.x;
+            Assert.That(secondSlide - firstSlide, Is.GreaterThan(0f).And.LessThan(firstSlide - 701f),
+                "The victim visibly slows down.");
+            match.AdvanceTo(.3d);
+            Assert.That(match.GetPlayer(1).Position.x, Is.EqualTo(702.25f).Within(.001f));
+            Assert.That(match.GetPlayer(1).Score, Is.EqualTo(25)); Assert.That(Items(match)[0].Active, Is.True);
+            Items(match).Clear();
             match.AdvanceTo(.599d); Assert.That(match.GetPlayer(1).StunRemaining, Is.GreaterThan(0d));
+            Assert.That(match.GetPlayer(1).Position.x, Is.EqualTo(702.25f).Within(.001f),
+                "Sliding ends before stun recovery; rejected input must not move the victim.");
             match.AdvanceTo(.6d); Assert.That(match.GetPlayer(1).StunRemaining, Is.Zero);
             match.AdvanceTo(.999d); Assert.That(match.TryPush(0), Is.False);
             match.AdvanceTo(1d); Assert.That(match.TryPush(0), Is.True);
@@ -246,21 +262,59 @@ namespace MazeParty.Gameplay.Tests
         [Test]
         public void Push_CannotTunnelThroughAThirdPlayerOrMoveThemOutsideTheArena()
         {
-            foreach (var nearWall in new[] { false, true })
+            foreach (var wallOnly in new[] { false, true })
             {
                 var match = EmptyRound();
-                var x = nearWall ? 704.5f : 699f;
+                var x = wallOnly ? 705.9f : 699f;
                 SetPlayer(match, 0, "Position", new Vector2(x, 0));
                 SetPlayer(match, 0, "Facing", Vector2.right);
                 SetPlayer(match, 1, "Position", new Vector2(x + 1, 0));
-                SetPlayer(match, 2, "Position", new Vector2(x + 2, 0));
+                if (!wallOnly) SetPlayer(match, 2, "Position", new Vector2(x + 2, 0));
                 Assert.That(match.TryPush(0), Is.True);
                 match.AdvanceTo(.1d);
-                Assert.That(match.GetPlayer(2).Position.x - match.GetPlayer(1).Position.x,
-                    Is.GreaterThanOrEqualTo(.9f - .001f));
                 Assert.That(match.GetPlayer(1).StunRemaining, Is.EqualTo(.5d).Within(1e-8));
-                Assert.That(match.GetPlayer(1).Position.x,
-                    Is.LessThanOrEqualTo(CoinCollectRules.ArenaCenterX + CoinCollectRules.PlayerLimit));
+                foreach (var time in new[] { .15d, .2d, .3d, .6d })
+                {
+                    match.AdvanceTo(time);
+                    if (!wallOnly)
+                        Assert.That(match.GetPlayer(2).Position.x - match.GetPlayer(1).Position.x,
+                            Is.GreaterThanOrEqualTo(.9f - .001f), "Each slide step must respect the blocking body.");
+                    Assert.That(match.GetPlayer(1).Position.x,
+                        Is.LessThanOrEqualTo(CoinCollectRules.ArenaCenterX + CoinCollectRules.PlayerLimit));
+                }
+                if (wallOnly)
+                    Assert.That(match.GetPlayer(1).Position.x,
+                        Is.EqualTo(CoinCollectRules.ArenaCenterX + CoinCollectRules.PlayerLimit).Within(.001f));
+            }
+        }
+
+        [Test]
+        public void Push_SlideSurvivesInputInterruptionAndFramePartitioningWithoutLeakingIntoNextRound()
+        {
+            foreach (var partitioned in new[] { false, true })
+            {
+                var match = EmptyRound();
+                SetPlayer(match, 0, "Position", new Vector2(700, 0));
+                SetPlayer(match, 0, "Facing", Vector2.right);
+                SetPlayer(match, 1, "Position", new Vector2(701, 0));
+                Assert.That(match.TryPush(0), Is.True);
+                match.AdvanceTo(.15d);
+                var beforePause = match.GetPlayer(1);
+                match.InterruptInputs();
+                match.AdvanceTo(.15d);
+                Assert.That(match.GetPlayer(1).Position, Is.EqualTo(beforePause.Position));
+                Assert.That(match.GetPlayer(1).StunRemaining, Is.EqualTo(beforePause.StunRemaining));
+                if (partitioned)
+                    foreach (var time in new[] { .157d, .181d, .207d, .231d, .269d, .299d })
+                        match.AdvanceTo(time);
+                match.AdvanceTo(.3d);
+                Assert.That(match.GetPlayer(1).Position.x, Is.EqualTo(702.25f).Within(.001f));
+                match.AdvanceTo(60d);
+                Assert.That(match.BeginNextRound(), Is.True);
+                var start = match.GetPlayer(1).Position;
+                match.AdvanceTo(.3d);
+                Assert.That(match.GetPlayer(1).Position, Is.EqualTo(start));
+                Assert.That(match.GetPlayer(1).StunRemaining, Is.Zero);
             }
         }
 

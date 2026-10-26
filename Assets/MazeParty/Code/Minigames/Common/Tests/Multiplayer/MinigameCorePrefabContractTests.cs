@@ -119,6 +119,24 @@ namespace MazeParty.Multiplayer.Tests
 
                 try
                 {
+                    SceneManager.SetActiveScene(scene);
+                    var night = scene.GetRootGameObjects().SelectMany(root =>
+                        root.GetComponentsInChildren<MinigameNightLighting>(true)).Single();
+                    Assert.That(night.HasRequiredReferences, Is.True, scenePath);
+                    Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(night.gameObject),
+                        Is.EqualTo(PrefabFolder + "Common/Environment/MinigameNightLighting.prefab"));
+                    Assert.That(night.Moonlight.gameObject.scene, Is.EqualTo(scene));
+                    Assert.That(night.transform.IsChildOf(night.Moonlight.transform.parent), Is.True);
+                    Assert.That(RenderSettings.skybox, Is.SameAs(night.Skybox));
+                    Assert.That(RenderSettings.sun, Is.SameAs(night.Moonlight));
+                    var grade = new SerializedObject(night).FindProperty("colorGrade").objectReferenceValue;
+                    Assert.That(new SerializedObject(grade).FindProperty("sharedProfile").objectReferenceValue,
+                        Is.SameAs(AssetDatabase.LoadAssetAtPath<UnityEngine.Object>("Assets/MazeParty/Art/Board/BoardNightColor.asset")));
+                    foreach (var flight in scene.GetRootGameObjects().SelectMany(root =>
+                                 root.GetComponentsInChildren<FlightNetworkView>(true)))
+                        Assert.That(new SerializedObject(flight).FindProperty("skyboxMaterial").objectReferenceValue,
+                            Is.SameAs(night.Skybox));
+
                     var instances = scene.GetRootGameObjects()
                         .SelectMany(root =>
                             root.GetComponentsInChildren<Transform>(true))

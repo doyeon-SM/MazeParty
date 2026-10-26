@@ -7,7 +7,7 @@ namespace MazeParty.Multiplayer
 {
     /// <summary>
     /// Serialized contract owned by BoardItemCanvas.prefab. It contains item
-    /// selection, inventory, ammunition, utility-item and shop presentation.
+    /// selection, inventory, utility-item and shop presentation.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class BoardItemCanvasBindings : MonoBehaviour
@@ -22,7 +22,6 @@ namespace MazeParty.Multiplayer
             public GameObject ItemSelectionPanel;
             public GameObject ItemShopPanel;
 
-            public Text AmmoText;
             public Text TooltipText;
             public Text InteractionPrompt;
             public Text ItemShopTitle;
@@ -65,7 +64,6 @@ namespace MazeParty.Multiplayer
         public GameObject InventoryPanel => references.InventoryPanel;
         public GameObject ItemSelectionPanel => references.ItemSelectionPanel;
         public GameObject ItemShopPanel => references.ItemShopPanel;
-        public Text AmmoText => references.AmmoText;
         public Text TooltipText => references.TooltipText;
         public Text InteractionPrompt => references.InteractionPrompt;
         public Text ItemShopTitle => references.ItemShopTitle;
@@ -99,7 +97,6 @@ namespace MazeParty.Multiplayer
             references.InventoryPanel != null &&
             references.ItemSelectionPanel != null &&
             references.ItemShopPanel != null &&
-            references.AmmoText != null &&
             references.TooltipText != null &&
             references.InteractionPrompt != null &&
             references.ItemShopTitle != null &&

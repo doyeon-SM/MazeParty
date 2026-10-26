@@ -30,7 +30,7 @@ namespace MazeParty.Multiplayer
             _equippedItem.Value = (byte)id;
             _itemCharges.Value = PrototypeItemCatalog.Get(id).Charges;
             _doubleDice.Value = id == PrototypeItemId.DoubleDice;
-            _rangeDieItem.Value = id == PrototypeItemId.LowDice || id == PrototypeItemId.HighDice ? (byte)id : (byte)0;
+            _rangeDieItem.Value = id == PrototypeItemId.HighDice ? (byte)id : (byte)0;
             _itemCooldownRemaining = 0;
         }
 

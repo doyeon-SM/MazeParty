@@ -24,10 +24,31 @@ namespace MazeParty.Multiplayer
             points.Clear();
             if (topology == null || edges == null) return;
             _seen.Clear();
+            var perimeterOnly = BoardMapRuntimeLoader.ResolveActiveMapRoot(topology)?
+                .Definition?.OuterRingTravelGuideOnly == true;
+            var min = new Vector2Int(int.MaxValue, int.MaxValue);
+            var max = new Vector2Int(int.MinValue, int.MinValue);
+            if (perimeterOnly)
+                foreach (var tile in topology.Tiles)
+                    if (tile != null)
+                    {
+                        min = Vector2Int.Min(min, tile.Coordinate);
+                        max = Vector2Int.Max(max, tile.Coordinate);
+                    }
             for (var index = 0; index < edges.Count; index++)
             {
                 if (!topology.TryGetTile(edges[index].Source, out _pair[0]) ||
                     !topology.TryGetTile(edges[index].Destination, out _pair[1]))
+                    continue;
+                var from = edges[index].Source;
+                var to = edges[index].Destination;
+                // Apply the same authored blue-guide policy to floor, full map,
+                // and minimap. Yellow shortest routes use SampleRoute separately.
+                if (perimeterOnly &&
+                    !(from.x == min.x && to.x == min.x) &&
+                    !(from.x == max.x && to.x == max.x) &&
+                    !(from.y == min.y && to.y == min.y) &&
+                    !(from.y == max.y && to.y == max.y))
                     continue;
                 BoardShopRouteView.SampleRoute(_pair, spacing, lift, _segment);
                 for (var dot = 0; dot < _segment.Count; dot++)

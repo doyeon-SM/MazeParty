@@ -16,7 +16,7 @@ namespace MazeParty.Multiplayer
         public bool IsCloaked => _cloaked.Value;
         public bool IsSwapping => IsServer ? _swapChannel.Active : IsOwner && _swapSeconds.Value > 0;
         public float LocalSwapRemaining => IsOwner ? _swapSeconds.Value : 0f;
-        public bool HasRangeDie => (IsServer || IsOwner) && _rangeDieItem.Value != 0;
+        public bool HasRangeDie => (IsServer || IsOwner) && _rangeDieItem.Value == (byte)PrototypeItemId.HighDice;
         public PrototypeItemId LocalEquippedItem => IsOwner ? (PrototypeItemId)_equippedItem.Value : PrototypeItemId.None;
         public BoardUtilityNotice LocalUtilityNotice { get; private set; }
         public int LocalUtilityNoticeSlot { get; private set; }

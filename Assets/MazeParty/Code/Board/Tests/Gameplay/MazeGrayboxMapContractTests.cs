@@ -25,6 +25,68 @@ namespace MazeParty.Gameplay.Tests
         private const float Tolerance = 0.001f;
 
         [Test]
+        public void MazeGraybox_InteriorAndEntrancesTraverseBothWays_OuterRingRemainsDirected()
+        {
+            var instance = Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+            var player = new GameObject("Maze traversal probe");
+            try
+            {
+                var topology = instance.GetComponent<BoardMapRoot>().Topology;
+                topology.RebuildIndex();
+                Assert.That(topology.Tiles.Count, Is.EqualTo(64));
+                Assert.That(topology.Gates.Count, Is.EqualTo(132));
+                Assert.That(BoardTopologyValidator.Validate(topology.Tiles, topology.Gates).IsValid, Is.True);
+                var controller = player.AddComponent<CharacterController>();
+                controller.radius = .5f;
+                controller.height = 1.8f;
+                controller.center = Vector3.up * .9f;
+                var directedOuter = 0;
+                var reciprocal = 0;
+                var route = new List<BoardTile>();
+                var portals = new List<BoardBoundaryPortal>();
+                foreach (var gate in topology.Gates)
+                {
+                    var a = gate.Source.Coordinate;
+                    var b = gate.Destination.Coordinate;
+                    var touchesInterior = a.x > 0 && a.x < 7 && a.y > 0 && a.y < 7 ||
+                                          b.x > 0 && b.x < 7 && b.y > 0 && b.y < 7;
+                    var reverse = topology.GetOutgoingGates(gate.Destination)
+                        .SingleOrDefault(other => other.Destination == gate.Source);
+                    if (touchesInterior)
+                    {
+                        reciprocal++;
+                        Assert.That(reverse, Is.Not.Null, a + " -> " + b);
+                        Assert.That(BoardMapRoute.TryFind(topology, gate.Destination, gate.Source, route), Is.True);
+                        Assert.That(route.Count, Is.EqualTo(2), "Reverse travel is a direct passage, not a detour.");
+                    }
+                    else
+                    {
+                        directedOuter++;
+                        var delta = a.y == 0 && a.x < 7 ? Vector2Int.right :
+                            a.x == 7 && a.y < 7 ? Vector2Int.up :
+                            a.y == 7 && a.x > 0 ? Vector2Int.left : Vector2Int.down;
+                        Assert.That(b, Is.EqualTo(a + delta));
+                        Assert.That(reverse, Is.Null, "Outer circulation must keep its authored direction.");
+                    }
+                    BoardBoundaryWallPolicy.EvaluatePortals(topology, gate.Source, 1, portals);
+                    Assert.That(portals.Single(portal => portal.ConnectedTile == gate.Destination).IsPassable, Is.True);
+                    using (var traversal = new BoardTraversalState())
+                    {
+                        traversal.Begin(gate.Source, 1);
+                        controller.transform.position = gate.PlanePoint + gate.ForwardNormal * .6f;
+                        Assert.That(gate.TryTraverse(traversal, controller), Is.EqualTo(BoardGateTraversalOutcome.Committed), a + " -> " + b);
+                        Assert.That(traversal.CurrentTile, Is.SameAs(gate.Destination));
+                        Assert.That(traversal.RemainingMoves, Is.Zero);
+                    }
+                }
+                Assert.That(reciprocal, Is.EqualTo(104));
+                Assert.That(directedOuter, Is.EqualTo(28));
+            }
+            finally { Object.DestroyImmediate(player); Object.DestroyImmediate(instance); }
+        }
+
+
+        [Test]
         public void MazeGraybox_CameraFramingCoversPlayableTiles()
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath);

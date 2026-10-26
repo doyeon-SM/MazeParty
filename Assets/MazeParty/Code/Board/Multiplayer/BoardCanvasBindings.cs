@@ -46,7 +46,7 @@ namespace MazeParty.Multiplayer
         public Text PhaseText => hud != null ? hud.PhaseText : null;
         public Text PhaseTimerText => hud != null ? hud.PhaseTimerText : null;
         public Text MovesText => map != null ? map.MovesText : null;
-        public Text AmmoText => item != null ? item.AmmoText : null;
+        public Text AmmoText => map != null ? map.ItemUsesText : null;
         public Text StatusText => hud != null ? hud.StatusText : null;
         public Text TooltipText => item != null ? item.TooltipText : null;
         public Text InteractionPrompt =>

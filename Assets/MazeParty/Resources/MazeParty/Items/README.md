@@ -1,6 +1,6 @@
 # 보드 아이템 밸런스
 
-이 폴더의 9개 `BoardItemDefinition` SO를 Inspector에서 편집합니다.
+이 폴더의 8개 `BoardItemDefinition` SO를 Inspector에서 편집합니다.
 
 - Price: 골드 가격 / Spawn Weight: 상점·랜덤 보상 상대 가중치 (0이면 제외)
 - Charges: 턴 시작 장착 시 탄약·수량 / Damage: 고정 피해
@@ -27,11 +27,10 @@ Pistol·Sniper·Mine·Grenade 래퍼는 `Assets/Ignore/nappin/WeaponStylizedPack
 ## 추가 유틸리티 아이템
 
 시각 모델 기준: DoubleDice는 실제로 생성되는 두 D12 외 별도 전용 모델을 요구하지 않습니다.
-LowDice·HighDice는 기존 D12 모델을 활용하며, PositionSwapper·Cloak도 추가 3D 모델링을 요구하지 않습니다.
+HighDice는 기존 D12 모델을 활용하며, PositionSwapper·Cloak도 추가 3D 모델링을 요구하지 않습니다.
 
 | SO | 초기 가격 | 동작 |
 |---|---:|---|
-| LowDice | 5G | 기존 D12 결과를 1~6 균등 확률로 변경 |
 | HighDice | 8G | 기존 D12 결과를 7~12 균등 확률로 변경 |
 | PositionSwapper | 12G | 좌클릭 → 대상 목록 → 2초 시전 후 현재 위치 교환 |
 | Cloak | 10G | 좌클릭 → 행동 종료/사망까지 상대 시야·미니맵에서 숨김 |

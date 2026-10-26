@@ -14,11 +14,13 @@ namespace MazeParty.Gameplay
         [SerializeField] private string displayName = "New Map";
         [SerializeField, Min(1)] private int contentVersion = 1;
         [SerializeField] private GameObject mapRootPrefab;
+        [SerializeField] private bool outerRingTravelGuideOnly;
 
         public string MapId => mapId;
         public string DisplayName => displayName;
         public int ContentVersion => Mathf.Max(1, contentVersion);
         public GameObject MapRootPrefab => mapRootPrefab;
+        public bool OuterRingTravelGuideOnly => outerRingTravelGuideOnly;
 
         public bool HasValidIdentity => IsValidMapId(mapId) &&
                                         !string.IsNullOrWhiteSpace(displayName);

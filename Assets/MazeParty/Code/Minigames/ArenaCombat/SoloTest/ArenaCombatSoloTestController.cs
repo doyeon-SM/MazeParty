@@ -413,7 +413,7 @@ namespace MazeParty.Dev.MinigameSoloTest
             {
                 fighter.Visual.SetBoardNameplateCamera(_camera);
                 fighter.HealthBar.SetTarget(fighter.Visual, _camera);
-                fighter.HealthBar.gameObject.SetActive(fighter.IsAlive &&
+                fighter.HealthBar.gameObject.SetActive(_phase != PracticePhase.Complete && fighter.IsAlive &&
                     (fighter != _fighters[LocalPlayerSlot] || _phase != PracticePhase.Playing));
                 if (fighter.IsAlive) fighter.HealthBar.SetHealth(fighter.Health, BoardCombatRules.TemporaryHealth);
             }

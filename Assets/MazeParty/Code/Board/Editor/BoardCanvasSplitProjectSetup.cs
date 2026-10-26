@@ -51,13 +51,13 @@ namespace MazeParty.Editor
         {
             "Board Action Minimap",
             "Board Full Map",
-            "MovesText"
+            "MovesText",
+            "BoardAmmoText"
         };
 
         private static readonly string[] ItemChildren =
         {
             "Inventory Panel",
-            "BoardAmmoText",
             "ItemSelectionPanel",
             "ItemShopPanel",
             "Position Swap Targets",
@@ -438,6 +438,9 @@ namespace MazeParty.Editor
             moves.raycastTarget = false;
             moves.gameObject.SetActive(false);
 
+            var uses = Require<Text>(root, "BoardAmmoText");
+            ConfigureItemUsesLabel(moves, uses);
+
             var mapView = root.GetComponent<BoardMapView>();
             if (mapView == null || !mapView.HasRequiredReferences)
             {
@@ -451,23 +454,36 @@ namespace MazeParty.Editor
                 root.GetComponent<Canvas>(),
                 root.GetComponent<GraphicRaycaster>(),
                 mapView,
-                moves);
+                moves,
+                uses);
+        }
+
+        private static void ConfigureItemUsesLabel(Text moves, Text uses)
+        {
+            var fitter = moves.GetComponent<ContentSizeFitter>() ??
+                         moves.gameObject.AddComponent<ContentSizeFitter>();
+            fitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            fitter.verticalFit = ContentSizeFitter.FitMode.Unconstrained;
+            var rect = uses.rectTransform;
+            rect.SetParent(moves.transform, false);
+            rect.anchorMin = rect.anchorMax = Vector2.one;
+            rect.pivot = new Vector2(0f, 1f);
+            rect.anchoredPosition = new Vector2(2f, -38f);
+            rect.sizeDelta = new Vector2(56f, 36f);
+            uses.font = moves.font;
+            uses.fontSize = 20;
+            uses.fontStyle = FontStyle.Bold;
+            uses.color = new Color(1f, 0.85f, 0f, 1f);
+            uses.alignment = TextAnchor.UpperLeft;
+            uses.resizeTextForBestFit = false;
+            uses.text = string.Empty;
+            uses.raycastTarget = false;
+            uses.gameObject.SetActive(false);
         }
 
         private static void ConfigureItem(GameObject root)
         {
             var inventory = RequireObject(root, "Inventory Panel");
-            var ammo = Require<Text>(root, "BoardAmmoText");
-            var ammoRect = ammo.rectTransform;
-            ammoRect.SetParent(inventory.transform, false);
-            ammoRect.anchorMin = ammoRect.anchorMax = Vector2.one;
-            ammoRect.pivot = Vector2.one;
-            ammoRect.anchoredPosition = new Vector2(-12f, -8f);
-            ammoRect.sizeDelta = new Vector2(96f, 48f);
-            ammo.alignment = TextAnchor.UpperRight;
-            ammo.text = string.Empty;
-            ammo.raycastTarget = false;
-            ammo.gameObject.SetActive(false);
 
             var prompt = FindDescendant(root.transform, "BoardInteractionPrompt")
                 ?.GetComponent<Text>();
@@ -486,7 +502,7 @@ namespace MazeParty.Editor
                 rect.anchoredPosition = new Vector2(0f, 8f);
                 rect.sizeDelta = new Vector2(760f, 42f);
                 prompt = promptObject.GetComponent<Text>();
-                prompt.font = ammo.font;
+                prompt.font = Require<Text>(root, "ItemChoiceLabel0").font;
                 prompt.fontSize = 20;
                 prompt.fontStyle = FontStyle.Normal;
                 prompt.color = Color.white;
@@ -547,7 +563,6 @@ namespace MazeParty.Editor
                 InventoryPanel = RequireObject(root, "Inventory Panel"),
                 ItemSelectionPanel = RequireObject(root, "ItemSelectionPanel"),
                 ItemShopPanel = RequireObject(root, "ItemShopPanel"),
-                AmmoText = ammo,
                 TooltipText = Require<Text>(root, "BoardTooltipText"),
                 InteractionPrompt = prompt,
                 ItemShopTitle = Require<Text>(root, "ItemShopTitle"),

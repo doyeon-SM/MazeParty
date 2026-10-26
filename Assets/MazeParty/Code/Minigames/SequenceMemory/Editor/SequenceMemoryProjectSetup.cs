@@ -188,6 +188,7 @@ namespace MazeParty.Editor
                 hud);
 
             ValidateSceneContract(root);
+            MinigameNightLightingProjectSetup.ApplyToScene(scene);
             EditorSceneManager.SaveScene(scene, ScenePath);
             EnsureInBuildSettings();
 
@@ -594,7 +595,6 @@ namespace MazeParty.Editor
                 new Image[SequenceMemoryRules.PlayerCount];
             var playerNames = new Text[SequenceMemoryRules.PlayerCount];
             var playerInputs = new Text[SequenceMemoryRules.PlayerCount];
-            var playerStatuses = new Text[SequenceMemoryRules.PlayerCount];
             for (var slot = 0;
                  slot < SequenceMemoryRules.PlayerCount;
                  slot++)
@@ -605,7 +605,7 @@ namespace MazeParty.Editor
                     new Vector2(0.5f, 0f),
                     new Vector2(0f, 24f),
                     new Vector2(720f, 82f),
-                    new Color(0.025f, 0.032f, 0.07f, 0.94f));
+                    problemPanel.GetComponent<Image>().color);
                 playerRows[slot] = row.GetComponent<Image>();
                 row.SetActive(false);
                 var accent = CreatePanel(
@@ -626,6 +626,7 @@ namespace MazeParty.Editor
                     16,
                     "PLAYER " + (slot + 1));
                 playerNames[slot].color = PlayerColors[slot];
+                playerNames[slot].supportRichText = false;
                 playerInputs[slot] = CreateHudText(
                     "Player Input",
                     row.transform,
@@ -634,16 +635,6 @@ namespace MazeParty.Editor
                     new Vector2(320f, 48f),
                     26,
                     "A S D");
-                playerStatuses[slot] = CreateHudText(
-                    "Player Status",
-                    row.transform,
-                    font,
-                    new Vector2(245f, -8f),
-                    new Vector2(190f, 28f),
-                    15,
-                    "ENTERING");
-                playerStatuses[slot].color =
-                    new Color(0.72f, 0.8f, 0.94f);
             }
 
             canvasObject.GetComponent<SequenceMemoryHudBindings>().Configure(
@@ -652,8 +643,7 @@ namespace MazeParty.Editor
                 npcSequenceText,
                 playerRows,
                 playerNames,
-                playerInputs,
-                playerStatuses);
+                playerInputs);
             SetUiLayer(canvasObject);
             return canvasObject;
         }
