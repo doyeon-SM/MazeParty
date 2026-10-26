@@ -447,6 +447,7 @@ GameObject:
   - component: {fileID: 1770320701029041487}
   - component: {fileID: 5866749762837374574}
   - component: {fileID: 7138031909664137760}
+  - component: {fileID: 6825780375063172185}
   m_Layer: 0
   m_Name: Time Bar
   m_TagString: Untagged
@@ -563,6 +564,20 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!114 &6825780375063172185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9002412374391014959}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8262b85e9193a5e4f83b478998c30959, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
+  hoverKey: ui.hover
+  clickKey: ui.click
 --- !u!1 &9074054697042465319
 GameObject:
   m_ObjectHideFlags: 0

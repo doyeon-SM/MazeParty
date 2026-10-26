@@ -136,7 +136,7 @@ namespace MazeParty.Gameplay.Tests
                     Assert.That(Race2Rules.TimeAtDistance(Race2Rules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
                     Assert.That(FlightRules.TimeAtDistance(FlightRules.Distance(t, seconds), seconds), Is.EqualTo(t).Within(1e-8));
                 }
-                Assert.That(Race2Rules.Speed(seconds, seconds), Is.EqualTo(22.5d).Within(1e-8));
+                Assert.That(Race2Rules.Speed(seconds, seconds), Is.EqualTo(Race2Rules.MaximumSpeed).Within(1e-8));
                 var match = new FlightMatchState(417, MinigameRulesConfig.FromMatch(ScheduledMinigameId.Flight, settings));
                 for (var tick = 0; tick < seconds * 120; tick++)
                 {

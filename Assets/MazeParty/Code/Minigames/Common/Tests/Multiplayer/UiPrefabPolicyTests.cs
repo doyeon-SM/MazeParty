@@ -388,12 +388,11 @@ namespace MazeParty.Multiplayer.Tests
                             "ME and P1-P4 are intentionally identical in every language.");
                         continue;
                     }
-                    if (text.name == "MovesText" &&
-                        (path == "Assets/MazeParty/Prefabs/Board/UI/BoardCanvas.prefab" ||
-                         path == "Assets/MazeParty/Prefabs/Board/UI/BoardMapCanvas.prefab"))
+                    var map = text.GetComponentInParent<BoardMapCanvasBindings>(true);
+                    if (map != null && (map.MovesText == text || map.ItemUsesText == text))
                     {
                         Assert.That(text.fontStyle, Is.EqualTo(FontStyle.Bold),
-                            path + " :: MovesText is an intentionally bold number.");
+                            path + " :: Board movement and remaining uses are intentionally bold.");
                         continue;
                     }
 
