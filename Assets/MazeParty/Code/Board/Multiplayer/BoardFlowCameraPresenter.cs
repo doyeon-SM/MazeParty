@@ -8,7 +8,7 @@ namespace MazeParty.Multiplayer
     /// Maps replicated flow state to the local-only Cinemachine presentation.
     /// Camera completion never blocks or advances the authoritative server timeline.
     /// </summary>
-    public sealed class BoardFlowCameraPresenter : MonoBehaviour
+    public sealed partial class BoardFlowCameraPresenter : MonoBehaviour
     {
         private const int NameplateOcclusionHitCapacity = 64;
 
@@ -97,6 +97,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearLocalPresentation()
         {
+            ClearForestGhostPresentation();
             ClearEventPresentation();
             if (_localAvatar != null && _localAvatar.AvatarVisual != null)
             {
@@ -205,7 +206,10 @@ namespace MazeParty.Multiplayer
                                resourceTransferPhase !=
                                BoardResourceTransferPhase.Destination &&
                                RefreshLandingCameraFocus(match);
-            var targetMode = splitEvent ? GameplayMode.BoardResourceEvent : match.IsKeyShopRevealActive
+            var ghostFocus = RefreshForestGhostPresentation(match);
+            var targetMode = ghostFocus
+                ? (match.ForestGhost.Slot >= 0 ? GameplayMode.BoardResourceEvent : GameplayMode.CombatSpectator)
+                : splitEvent ? GameplayMode.BoardResourceEvent : match.IsKeyShopRevealActive
                 ? purchasePhase == KeyPurchasePresentationPhase.AcquireKey
                     ? GameplayMode.BoardResourceEvent
                     : purchasePhase >= KeyPurchasePresentationPhase.ReturnToFirstPerson
@@ -230,7 +234,7 @@ namespace MazeParty.Multiplayer
                 _observedRevision = match.StateRevision;
                 if (cameraDirector.ActiveMode != targetMode)
                 {
-                    if (targetMode == GameplayMode.BoardResourceEvent ||
+                    if (ghostFocus || targetMode == GameplayMode.BoardResourceEvent ||
                         cameraDirector.ActiveMode == GameplayMode.BoardResourceEvent ||
                         purchasePhase == KeyPurchasePresentationPhase.RevealShop &&
                         _observedKeyPurchasePhase != KeyPurchasePresentationPhase.RevealShop)

@@ -183,6 +183,125 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+        [Test]
+        public void ForestGhost_VisitsOnlyForestAndNonRespawnTilesIncludingTheFinalTurn()
+        {
+            var tiles = PrepareGhostBoard();
+            foreach (var map in new[] { "maze", BoardForestGhostRules.MapId })
+            {
+                Set(_match, "_boardMapId", new Unity.Collections.FixedString64Bytes(map));
+                foreach (var target in new[] { 0, 1, 4 })
+                {
+                    // Seat zero is on the respawn tile; both it and the empty bucket must miss.
+                    var seed = Enumerable.Range(1, 10000).First(s =>
+                        BoardForestGhostRules.Resolve(s, 20, 15, 2).Slot == (target == 4 ? -1 : target));
+                    Set(_match, "_boardEffectSeed", seed);
+                    typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+                    Invoke("AdvanceForestGhostOnServer", 100d);
+                    var shot = _match.ForestGhost;
+                    Assert.That(shot.Active, Is.EqualTo(map == BoardForestGhostRules.MapId));
+                    if (!shot.Active) continue;
+                    Assert.That(shot.Strong, Is.True);
+                    Assert.That(shot.Slot, Is.EqualTo(target == 1 ? 1 : -1));
+                    Assert.That(shot.Position, Is.Not.EqualTo(tiles[0].WorldCenter));
+                    Assert.That(shot.Position, Is.Not.EqualTo(tiles[6].WorldCenter));
+                    if (shot.Slot < 0)
+                        Assert.That(shot.Position, Is.EqualTo(tiles[4].WorldCenter).Or.EqualTo(tiles[5].WorldCenter));
+                }
+            }
+        }
+
+        [Test]
+        public void ForestGhost_ServerAppliesOnceAtBoundaryAndPausePreservesThreeSecondShot()
+        {
+            PrepareGhostBoard();
+            Set(_match, "_forestGhost", new BoardForestGhostSnapshot { Active = true, Slot = 1,
+                Revision = 1, Amount = 20, StartedAt = 100d, Resource = (byte)ForestGhostResource.Gold });
+            Authority(_match, false);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(10));
+            Authority(_match, true);
+            Invoke("AdvanceForestGhostOnServer", 101.249999d);
+            Assert.That(_players[1].Gold, Is.EqualTo(10));
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Invoke("AdvanceForestGhostOnServer", 101.25d);
+            Assert.That(_players[1].Gold, Is.EqualTo(30));
+            Assert.That(_match.ForestGhost.Applied, Is.True);
+            Invoke("PauseForestGhostOnServer", 101.4d);
+            Invoke("AdvanceForestGhostOnServer", 201d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("ResumeForestGhostOnServer", 201.4d);
+            Invoke("AdvanceForestGhostOnServer", 202.999999d);
+            Assert.That(_match.ForestGhost.Active, Is.True);
+            Invoke("AdvanceForestGhostOnServer", 203d);
+            Assert.That(_match.ForestGhost.Active, Is.False);
+            Assert.That(_players[1].Gold, Is.EqualTo(30));
+            var defer = (bool)typeof(NetworkMatchState).GetMethod("ShouldDeferLandingEffectResolutionOnServer", Private)
+                .Invoke(_match, new object[] { false });
+            Assert.That(defer, Is.False);
+        }
+
+        [Test]
+        public void ForestGhost_ClampsResourcesAndLethalHealthLossUsesEnvironmentDeathOnce()
+        {
+            PrepareGhostBoard();
+            foreach (var entry in new[] { (ForestGhostResource.Gold, -20, 10, -10),
+                (ForestGhostResource.Key, -1, 0, 0), (ForestGhostResource.Key, 1, 0, 1),
+                (ForestGhostResource.Health, 50, 90, 10), (ForestGhostResource.Health, -50, 30, -30) })
+            {
+                var player = _players[1];
+                if (entry.Item1 == ForestGhostResource.Gold) Set(player, "_gold", entry.Item3);
+                if (entry.Item1 == ForestGhostResource.Key) Set(player, "_keyCount", entry.Item3);
+                if (entry.Item1 == ForestGhostResource.Health) Set(player, "_currentHealth", entry.Item3);
+                Set(_match, "_forestGhost", new BoardForestGhostSnapshot { Active = true, Slot = 1,
+                    Revision = 1, Amount = entry.Item2, StartedAt = 100d, Resource = (byte)entry.Item1 });
+                if (entry.Item2 == -50)
+                {
+                    foreach (var other in _players) Set(other, "_gold", 10);
+                    ExpectPresentationRpcs(1);
+                }
+                Invoke("AdvanceForestGhostOnServer", 101.25d);
+                Invoke("AdvanceForestGhostOnServer", 101.25d);
+                Assert.That(_match.ForestGhost.ActualAmount, Is.EqualTo(entry.Item4));
+                if (entry.Item2 == -50)
+                {
+                    Assert.That(player.CurrentHealth, Is.Zero);
+                    Assert.That(_players.Select(p => p.Gold), Is.EqualTo(new[] { 12, 4, 12, 12 }));
+                    Assert.That(_match.DeathGoldTransfers.Count, Is.EqualTo(3));
+                }
+            }
+        }
+
+        private BoardTile[] PrepareGhostBoard()
+        {
+            Set(_match, "_boardMapId", new Unity.Collections.FixedString64Bytes(BoardForestGhostRules.MapId));
+            Set(_match, "_turn", 20);
+            Set(_match, "_flowState", (byte)BoardFlowState.LandingEffectResolve);
+            var flow = new BoardFlowStateMachine(totalTurns: 20);
+            flow.Start(0d, 20); flow.Tick(7d);
+            for (var slot = 0; slot < 4; slot++) flow.TryReportPlayerArrived(slot, 10d);
+            flow.Tick(15d); flow.TryCompleteCombat(15d, 3d);
+            typeof(NetworkMatchState).GetField("_flow", Private).SetValue(_match, flow);
+            typeof(NetworkMatchState).GetField("_nextLandingEffectSlot", Private).SetValue(_match, 4);
+            var tiles = new BoardTile[7];
+            for (var i = 0; i < tiles.Length; i++)
+            {
+                var go = new GameObject("Ghost test tile " + i); go.transform.SetParent(_root.transform);
+                go.transform.position = new Vector3(i * 8f, 0, 0);
+                tiles[i] = go.AddComponent<BoardTile>();
+                tiles[i].Configure(new Vector2Int(i, 0), i == 0 || i == 6 ? BoardTileType.Respawn : BoardTileType.Normal);
+            }
+            var topology = _root.AddComponent<BoardTopology>(); topology.Configure(tiles, Array.Empty<BoardGate>());
+            typeof(NetworkMatchState).GetField("_boardTopology", Private).SetValue(_match, topology);
+            for (var i = 0; i < 4; i++)
+            {
+                ((BoardTraversalState)typeof(NetworkPlayerAvatar).GetField("_traversal", Private).GetValue(_players[i])).Begin(tiles[i], 0);
+                _players[i].transform.position = tiles[i].WorldCenter;
+            }
+            typeof(NetworkMatchState).GetMethod("ResetForestGhostOnServer", Private).Invoke(_match, null);
+            return tiles;
+        }
+
         private static void ExpectPresentationRpcs(int count)
         {
             // This EditMode fixture exercises authority without opening a network session.

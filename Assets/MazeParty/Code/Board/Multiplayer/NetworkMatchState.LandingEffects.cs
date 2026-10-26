@@ -73,7 +73,7 @@ namespace MazeParty.Multiplayer
             Array.Copy(order, _landingEffectOrder, order.Length);
 
             _landingEffectPlanReady = true;
-            return totalDuration;
+            return totalDuration + (HasForestGhost ? BoardForestGhostRules.Duration : 0d);
         }
 
         private void BeginLandingEffectsOnServer()
@@ -88,6 +88,7 @@ namespace MazeParty.Multiplayer
                 PrepareLandingEffectPlanOnServer();
             }
 
+            ResetForestGhostOnServer();
             _nextLandingEffectSlot = 0;
             _landingEffectAppliedMask = 0;
             _landingEffectSlotStartsAt = 0d;
@@ -184,6 +185,7 @@ namespace MazeParty.Multiplayer
                 _nextLandingEffectSlot++;
                 _lastLandingEffectPreviewKey = -1;
             }
+            AdvanceForestGhostOnServer(now);
         }
 
         private bool ShouldDeferLandingEffectResolutionOnServer(
@@ -192,7 +194,8 @@ namespace MazeParty.Multiplayer
             return _flow != null &&
                    _flow.State == BoardFlowState.LandingEffectResolve &&
                    (boardDeathInProgress ||
-                    _nextLandingEffectSlot < MultiplayerConstants.MaxPlayers);
+                    _nextLandingEffectSlot < MultiplayerConstants.MaxPlayers ||
+                    HasForestGhost && !_forestGhostComplete);
         }
 
         private void ResolveAllRemainingLandingEffectsOnServer()
@@ -740,6 +743,7 @@ namespace MazeParty.Multiplayer
 
         private void ResetLandingEffectRuntimeOnServer(bool clearMessage)
         {
+            ResetForestGhostOnServer();
             _landingEffectPlanReady = false;
             _landingCameraSlot = -1;
             _nextLandingEffectSlot = 0;

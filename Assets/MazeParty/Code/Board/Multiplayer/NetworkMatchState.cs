@@ -936,6 +936,7 @@ namespace MazeParty.Multiplayer
         /// </summary>
         private void SuspendSimulationOnServer(double now)
         {
+            PauseForestGhostOnServer(now);
             PauseResourceTransferPresentationOnServer(now);
             if (_flow.State == BoardFlowState.MinigameIntroReady &&
                 CurrentMinigame == ScheduledMinigameId.Skip &&
@@ -1395,6 +1396,7 @@ namespace MazeParty.Multiplayer
         /// <summary>Restores every clock frozen by <see cref="SuspendSimulationOnServer"/>.</summary>
         private void ResumeSimulationOnServer(double now)
         {
+            ResumeForestGhostOnServer(now);
             ResumeResourceTransferPresentationOnServer(now);
             if (_keyShopRevealActive.Value)
             {

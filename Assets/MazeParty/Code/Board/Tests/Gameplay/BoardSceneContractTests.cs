@@ -133,6 +133,17 @@ namespace MazeParty.Gameplay.Tests
                         BoardMapRuntimeLoader.CatalogResourcesPath),
                     Is.Not.Null,
                     "The production runtime map catalog must stay at its stable Resources path.");
+                var presenter = scene.GetRootGameObjects()
+                    .SelectMany(go => go.GetComponentsInChildren<MonoBehaviour>(true))
+                    .Single(c => c != null && c.GetType().FullName == "MazeParty.Multiplayer.BoardFlowCameraPresenter");
+                var ghost = (Component)new SerializedObject(presenter).FindProperty("forestGhostPrefab").objectReferenceValue;
+                Assert.That(ghost, Is.Not.Null);
+                Assert.That(AssetDatabase.GetAssetPath(ghost),
+                    Is.EqualTo("Assets/MazeParty/Prefabs/Board/World/ForestGhost.prefab"));
+                Assert.That(ghost.GetType().GetProperty("HasRequiredReferences").GetValue(ghost), Is.EqualTo(true));
+                Assert.That(ghost.GetComponentsInChildren<MonoBehaviour>(true)
+                    .Any(c => c != null && c.GetType().FullName == "Sample.GhostScript"), Is.False,
+                    "The ghost presentation must not run the asset demo's keyboard/UI controller.");
                 var deathGoldView = topology.GetComponents<MonoBehaviour>()
                     .SingleOrDefault(component => component != null &&
                         component.GetType().FullName == "MazeParty.Multiplayer.BoardKillGoldWorldView");
