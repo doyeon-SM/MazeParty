@@ -110,9 +110,17 @@ namespace MazeParty.Multiplayer
             RenderLobby();
         }
 
+        private void RefreshPlatformDisplayName()
+        {
+            if (!(_identity is IPlatformIdentityProvider platform) || !platform.IsSignedIn) return;
+            if (_localProfile.DisplayName != platform.DisplayName)
+                SaveLocalProfile(platform.DisplayName, _localProfile.Appearance);
+            lobbyView?.SetDisplayName(platform.DisplayName, true);
+        }
+
         private void RenderLobby()
         {
-            RefreshSteamDisplayName();
+            RefreshPlatformDisplayName();
             RefreshLoadingPresentation();
             if (_statusUsesLocalization)
             {

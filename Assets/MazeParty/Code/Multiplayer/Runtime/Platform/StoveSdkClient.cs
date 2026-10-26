@@ -17,6 +17,7 @@ namespace MazeParty.Multiplayer
         private OnRestartAppIfNecessaryCallback _restartCallback;
         private OnOwnershipListCallback _ownershipCallback;
         public ulong UserId { get; private set; }
+        public string DisplayName { get; private set; } = "Player";
 
         public Task InitializeAsync(PlatformLaunchSettings settings) =>
             _initialization ?? (_initialization = InitializeCoreAsync(settings));
@@ -74,6 +75,7 @@ namespace MazeParty.Multiplayer
             var result = Stove_GetUser(ref user);
             if (!result.IsSuccessful || user.UserId == 0) throw Failure("user lookup", result.ResultCode);
             UserId = user.UserId;
+            DisplayName = PlayerProfilePreferences.SanitizeDisplayName(user.NickName);
             return UserId;
         }
 

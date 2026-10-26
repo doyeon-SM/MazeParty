@@ -27,7 +27,6 @@ namespace MazeParty.Multiplayer
         public async Task SignInAsync(string requestedDisplayName)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(StovePlayerIdentityProvider));
-            DisplayName = PlayerProfilePreferences.SanitizeDisplayName(requestedDisplayName);
             if (_signIn != null) { await _signIn; return; }
             _signIn = SignInCoreAsync();
             try { await _signIn; }
@@ -62,6 +61,9 @@ namespace MazeParty.Multiplayer
             if (_disposed) throw new ObjectDisposedException(nameof(StovePlayerIdentityProvider));
             if (_sdk.RefreshUser() != stoveUser)
                 throw new InvalidOperationException("The STOVE account changed during sign-in. Restart the game.");
+            // Use the nickname from the same SDK user verified after sign-in.
+            // Local/manual profile names must not replace the STOVE nickname.
+            DisplayName = _sdk.DisplayName;
             _profile = profile;
             _signedInStoveUser = stoveUser;
             if (_achievements == null && !UnityEngine.Application.isEditor && !UnityEngine.Debug.isDebugBuild)

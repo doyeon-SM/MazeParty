@@ -10,7 +10,15 @@ STOVE 빌드의 순서는 런처 확인 → SDK 초기화 → 게임 소유권 �
 
 UGS는 자체 익명 계정을 인증한다. STOVE ID는 해당 PC의 계정 캐시를 선택하는 데만 사용하며, 서버에서 검증된 STOVE↔UGS 계정 연결이 아니다. 같은 PC의 같은 프로필은 캐시된 UGS 계정을 재사용한다. 개발 계정이나 이전 서버 연동 프로필을 가져오지 않는다. PC 변경·인증 캐시 삭제·재설치 후의 계정/경기 복구는 보장하지 않는다. 같은 STOVE 계정의 다른 PC 복원은 별도 계정 연동 과제다.
 
-Steam은 별도 컴파일 정의와 방 구분을 유지한다. Steam SDK 인증은 아직 구현하지 않아 Steam 프로필의 온라인 로그인과 Release 빌드는 차단되어 있으며 Integration Check만 가능하다.
+Steam은 별도 컴파일 정의와 방 구분을 유지하며 구현·빌드 기준은 `Docs/STEAM_SETUP.md`를 따른다.
+
+## 닉네임
+
+- STOVE SDK의 `Stove_GetUser(ref IStoveUser)`가 반환한 `NickName`을 사용한다. 인증 완료 후 같은 계정인지 다시 확인한 사용자 정보에서 이름을 확정하며, 로컬 입력/이전 프로필 닉네임으로 덮어쓰지 않는다.
+- 게임 시작·방 생성·코드 참가·재접속 때 SDK에서 이름을 다시 읽는다. 로비의 기존 닉네임 입력 필드는 STOVE/Steam에서 읽기 전용이고 로컬 프로필도 인증된 표시 이름과 맞춘다. 개발 프로필은 수동 입력을 유지한다.
+- 세션 멤버 → 서버 아바타 → 로비·보드·미니게임·시상식·통계의 공통 이름 전달 경로를 사용한다. 재접속 전에 기존 멤버 이름을 갱신하고 저장된 이름보다 현재 세션 이름을 우선한다.
+- 기존 UTF-16 16자·UTF-8 60바이트 제한, 줄바꿈 제거, 이모지 경계 보존, 꺾쇠의 전각 문자 표시를 적용한다. 실행 중 플랫폼에서 바꾼 이름은 다음 인증/방 입장 때 SDK가 반환하는 값으로 반영한다.
+- API 기준: [STOVE Unity SDK 3.5+ 사용자 정보](https://developers.onstove.com/docs/stove/reference/pc-sdk/pc-sdk-reference-unity-pc).
 
 ## SDK와 로컬 파일
 
@@ -76,7 +84,7 @@ Studio의 **상품 No.**와 **Application Secret**은 입력하지 않는다. Ap
 2. 키를 입력하고 `MazeParty > Build > Selected Store - Release (IL2CPP x64)`를 실행한다.
 3. `Builds/stove-release-날짜시각/MazeParty.exe`가 생성된다. Windows x64/IL2CPP와 유효한 클라이언트 설정을 검사한다.
 4. 키 입력 전 컴파일·패키징만 확인하려면 `Selected Store - Integration Check (IL2CPP x64)`를 사용한다. 이 출력에는 설정을 넣지 않으므로 STOVE 로그인·출시·업로드 용도가 아니다.
-5. Steam 검증은 `Select Steam`에서 Integration Check를 사용한다. STOVE DLL을 제외한다.
+5. Steam 빌드는 `Docs/STEAM_SETUP.md`를 따른다. STOVE DLL은 제외한다.
 
 Unity 6000.6.0f1 Windows IL2CPP 모듈과 Visual Studio C++ 도구가 필요하다. 현재 PC에는 설치되어 있다. 실제 STOVE 실행은 Studio의 빌드 등록·실행 경로·테스터 권한을 설정한 뒤 런처를 통해 검증한다.
 
