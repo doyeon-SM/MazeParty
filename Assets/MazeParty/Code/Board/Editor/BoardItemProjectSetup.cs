@@ -16,7 +16,7 @@ namespace MazeParty.Editor
         public const string VisualFolder = "Assets/MazeParty/Prefabs/Board/Items";
         public const string MineWorldIconPrefabPath =
             VisualFolder + "/MineWorldIcon.prefab";
-        private const string IconFolder = "Assets/Ignore/AIImage/Icons";
+        private const string IconFolder = "Assets/Ignore/AIImage/Icons/TitleStyle";
         private const string HelpFilledIconPath =
             "Assets/Ignore/Modern UI Pack/Textures/Icon/Navigation/Help Filled.png";
         [MenuItem("MazeParty/Board/Upgrade Board Items")]

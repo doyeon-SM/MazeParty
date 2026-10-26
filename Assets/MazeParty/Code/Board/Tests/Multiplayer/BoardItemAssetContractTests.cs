@@ -97,7 +97,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(
                     AssetDatabase.GetAssetPath(definition.Icon),
                     Is.EqualTo(
-                        "Assets/Ignore/AIImage/Icons/" + definition.Id + ".png"),
+                        "Assets/Ignore/AIImage/Icons/TitleStyle/" + definition.Id + ".png"),
                     definition.Id.ToString());
                 Assert.That(itemIcons.Add(definition.Icon), Is.True,
                     definition.Id + " must use a unique icon sprite.");
