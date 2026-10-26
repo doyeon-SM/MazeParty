@@ -164,8 +164,8 @@ namespace MazeParty.Multiplayer
                 ? now + snapshot.DeathPresentationRemaining
                 : 0d;
             _appearance.Value = snapshot.Appearance.Sanitized();
-            _displayName.Value = new FixedString64Bytes(
-                PlayerProfilePreferences.SanitizeDisplayName(snapshot.DisplayName));
+            // Saved gameplay must not overwrite the returning account's current nickname.
+            ApplyAuthoritativeDisplayNameOnServer(snapshot.DisplayName);
             _serverYaw = snapshot.Rotation.eulerAngles.y;
             TeleportController(snapshot.Position, snapshot.Rotation);
             var networkTransform = GetComponent<NetworkTransform>();

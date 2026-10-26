@@ -37,7 +37,6 @@ namespace MazeParty.Multiplayer
         public async Task SignInAsync(string requestedDisplayName)
         {
             if (_disposed) throw new ObjectDisposedException(nameof(SteamPlayerIdentityProvider));
-            DisplayName = PlayerProfilePreferences.SanitizeDisplayName(requestedDisplayName);
             if (_signIn != null) { await _signIn; return; }
             _signIn = SignInCoreAsync();
             try { await _signIn; } finally { _signIn = null; }
@@ -47,6 +46,8 @@ namespace MazeParty.Multiplayer
             var settings = PlatformContext.Settings;
             Initialize(settings);
             RequireCurrentUser();
+            // Steam owns the nickname. Never reuse a locally saved/manual name.
+            DisplayName = PlayerProfilePreferences.SanitizeDisplayName(SteamFriends.GetPersonaName());
             var profile = PlatformAccountScope.AuthenticationProfile("steam", settings, _user);
             if (UnityServices.State == ServicesInitializationState.Uninitialized)
                 await UnityServices.InitializeAsync(new InitializationOptions()

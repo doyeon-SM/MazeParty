@@ -248,10 +248,11 @@ namespace MazeParty.Multiplayer
             closeCustomizationButton = configuredCloseCustomizationButton;
         }
 
-        public void SetDisplayName(string displayName)
+        public void SetDisplayName(string displayName, bool readOnly = false)
         {
             if (displayNameInput != null)
             {
+                displayNameInput.readOnly = readOnly;
                 displayNameInput.SetTextWithoutNotify(displayName ?? string.Empty);
             }
         }

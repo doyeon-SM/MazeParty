@@ -1914,15 +1914,7 @@ namespace MazeParty.Multiplayer
             // TODO(STEAM-SESSION): keep this server validation, but resolve the slot
             // from the authenticated Steam lobby member when that provider is enabled.
             _slot.Value = candidate;
-            var controller = OnlineSessionController.Instance;
-            var resolvedName = controller != null &&
-                               controller.TryResolveAuthoritativeDisplayName(
-                                   OwnerClientId,
-                                   out var displayName)
-                ? displayName
-                : "Player " + (candidate + 1);
-            _displayName.Value = new FixedString64Bytes(
-                PlayerProfilePreferences.SanitizeDisplayName(resolvedName));
+            ApplyAuthoritativeDisplayNameOnServer("Player " + (candidate + 1));
             AssignFirstAvailableLobbyColorOnServer();
             // Setting the slot invokes OnSlotChanged synchronously. A board-ready
             // reconnect can restore its snapshot there, so do not overwrite the
@@ -2171,6 +2163,16 @@ namespace MazeParty.Multiplayer
         private void OnDisplayNameChanged(FixedString64Bytes _, FixedString64Bytes current)
         {
             ApplyDisplayName(current);
+        }
+
+        private void ApplyAuthoritativeDisplayNameOnServer(string fallback)
+        {
+            var controller = OnlineSessionController.Instance;
+            var name = controller != null &&
+                       controller.TryResolveAuthoritativeDisplayName(OwnerClientId, out var current)
+                ? current : fallback;
+            _displayName.Value = new FixedString64Bytes(
+                PlayerProfilePreferences.SanitizeDisplayName(name));
         }
 
         private void ApplyAppearance(PlayerAppearanceState appearance)

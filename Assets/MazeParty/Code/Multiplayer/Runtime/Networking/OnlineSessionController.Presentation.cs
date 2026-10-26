@@ -112,6 +112,7 @@ namespace MazeParty.Multiplayer
 
         private void RenderLobby()
         {
+            RefreshSteamDisplayName();
             RefreshLoadingPresentation();
             if (_statusUsesLocalization)
             {

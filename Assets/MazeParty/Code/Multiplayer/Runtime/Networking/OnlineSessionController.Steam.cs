@@ -15,6 +15,16 @@ namespace MazeParty.Multiplayer
             if (SteamIdentity != null) SteamIdentity.InviteAccepted += OnSteamInviteAccepted;
 #endif
         }
+        private void RefreshSteamDisplayName()
+        {
+#if MAZEPARTY_STEAM
+            var steam = SteamIdentity;
+            if (steam == null || !steam.IsSignedIn) return;
+            if (_localProfile.DisplayName != steam.DisplayName)
+                SaveLocalProfile(steam.DisplayName, _localProfile.Appearance);
+            lobbyView?.SetDisplayName(steam.DisplayName, true);
+#endif
+        }
         private void TickSteamInvites()
         {
 #if MAZEPARTY_STEAM

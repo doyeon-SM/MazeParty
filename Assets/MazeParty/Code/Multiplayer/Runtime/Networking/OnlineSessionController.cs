@@ -285,10 +285,11 @@ namespace MazeParty.Multiplayer
 
             _playingReconnectTicketKey = BuildPlayingReconnectTicketKey();
             _localProfile = PlayerProfilePreferences.Load();
-            var displayName = _localProfile.DisplayName;
+            var steamNickname = PlatformContext.Channel == "steam";
+            var displayName = steamNickname ? string.Empty : _localProfile.DisplayName;
             LobbyArena.EnsureRuntimeCreated(lobbyCamera);
 
-            lobbyView?.SetDisplayName(displayName);
+            lobbyView?.SetDisplayName(displayName, steamNickname);
             lobbyView?.SetAppearance(_localProfile.Appearance);
 
             _identity = PlatformContext.CreateIdentity();
@@ -559,6 +560,10 @@ namespace MazeParty.Multiplayer
             PlayerAppearanceState appearance,
             HandEmoteFaceSelections emoteFaces)
         {
+#if MAZEPARTY_STEAM
+            if (SteamIdentity != null && SteamIdentity.IsSignedIn)
+                displayName = SteamIdentity.DisplayName;
+#endif
             var safeName = PlayerProfilePreferences.SanitizeDisplayName(displayName);
             _localProfile = new PlayerLocalProfile(
                 safeName,

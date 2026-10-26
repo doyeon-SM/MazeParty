@@ -523,6 +523,17 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(displayName, Does.StartWith("미로파티"));
             Assert.That(displayName.Length, Is.EqualTo(16));
 
+            // A Steam persona may contain emoji exactly at the network-name limit.
+            foreach (var value in new[] { new string('a', 15) + "\U0001F600", new string('a', 14) + "\U0001F600", "한글\U0001F600\r\nPlayer", "<b>Steam</b>" })
+            {
+                var safe = PlayerProfilePreferences.SanitizeDisplayName(value);
+                var utf8 = new System.Text.UTF8Encoding(false, true);
+                Assert.That(utf8.GetString(utf8.GetBytes(safe)), Is.EqualTo(safe));
+                Assert.That(utf8.GetByteCount(safe), Is.LessThanOrEqualTo(60));
+                Assert.That(safe, Does.Not.Contain("\n").And.Not.Contain("\r"));
+                Assert.That(safe, Does.Not.Contain("<").And.Not.Contain(">"));
+            }
+
             var appearance = PlayerAppearanceState.FromColor(
                 Color.cyan,
                 5,

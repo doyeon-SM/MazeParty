@@ -47,13 +47,15 @@ namespace MazeParty.Multiplayer
             var identity = RequirePlatformIdentity();
             // MPS 2.3.1 sessions use Lobby IDs. ReconnectSessionOptions has no
             // PlayerProperties and starts networking before returning a session.
-            // Update only OUR authenticated member key before that handshake;
+            // Update OUR authenticated member key and nickname before that handshake;
             // a new process intentionally has a new in-memory private key.
             var lobby = await LobbyService.Instance.UpdatePlayerAsync(sessionId, identity.PlayerId,
                 new UpdatePlayerOptions { Data = new Dictionary<string, PlayerDataObject>
                 {
                     [AdmissionProof.PlayerKeyProperty] = new PlayerDataObject(
-                        PlayerDataObject.VisibilityOptions.Member, identity.Proof.PublicKey)
+                        PlayerDataObject.VisibilityOptions.Member, identity.Proof.PublicKey),
+                    [MultiplayerConstants.DisplayNameProperty] = new PlayerDataObject(
+                        PlayerDataObject.VisibilityOptions.Member, identity.DisplayName)
                 }});
             if (lobby == null || lobby.Id != sessionId || lobby.Data == null ||
                 !lobby.Data.TryGetValue(PlatformSessionAdmission.Property, out var scope) || scope == null ||

@@ -298,7 +298,13 @@ namespace MazeParty.Multiplayer
         {
             var candidate = string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
             candidate = candidate.Replace("\n", string.Empty).Replace("\r", string.Empty);
-            candidate = candidate.Substring(0, Math.Min(candidate.Length, 16));
+            // Names are also embedded in rich-text notices and world nameplates.
+            candidate = candidate.Replace('<', '＜').Replace('>', '＞');
+            var length = Math.Min(candidate.Length, 16);
+            if (length > 0 && length < candidate.Length &&
+                char.IsHighSurrogate(candidate[length - 1]) && char.IsLowSurrogate(candidate[length]))
+                length--;
+            candidate = candidate.Substring(0, length);
             while (Encoding.UTF8.GetByteCount(candidate) > 60 && candidate.Length > 0)
             {
                 var newLength = candidate.Length - 1;
