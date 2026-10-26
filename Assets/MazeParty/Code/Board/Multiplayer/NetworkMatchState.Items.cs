@@ -343,7 +343,7 @@ namespace MazeParty.Multiplayer
                 var target = GetAvatarForSlot(slot);
                 if (target == null || target.CurrentHealth <= 0 ||
                     Vector3.Distance(position, target.transform.position) > item.BlastRadius ||
-                    !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position)) continue;
+                    !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position, target.gameObject)) continue;
                 target.ApplyDamage(new DamageRequest(
                     item.Damage, DamageKind.Item,
                     owner != null ? owner.gameObject : null,

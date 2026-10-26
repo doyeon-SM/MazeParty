@@ -582,6 +582,7 @@ namespace MazeParty.Editor
                 ShopOfferLabels = shopLabels,
                 ShopOfferHovers = shopHovers
             });
+            GameplayPresentationAssetSetup.EnsureUseHint(root);
         }
 
         private static void RebuildAggregateReferences()

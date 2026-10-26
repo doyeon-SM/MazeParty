@@ -78098,6 +78098,11 @@ MonoBehaviour:
   mapView: {fileID: 5181134963181566086}
   movesText: {fileID: 3342097385190222411}
   itemUsesText: {fileID: 2830937015880740290}
+  numberSizeThrough10: 50
+  numberSizeThrough20: 60
+  numberSizeThrough24: 70
+  mergeBounceSeconds: 0.5
+  mergeBounceAmount: 0.32
 --- !u!1 &2770554844138078579
 GameObject:
   m_ObjectHideFlags: 0
@@ -90346,7 +90351,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
   m_AnchoredPosition: {x: 0, y: -132}
-  m_SizeDelta: {x: 220, y: 100}
+  m_SizeDelta: {x: 240, y: 120}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &6621702277459734574
 CanvasRenderer:

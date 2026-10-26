@@ -415,10 +415,15 @@ namespace MazeParty.Multiplayer
                         target,
                         1f - Mathf.Exp(-InterpolationSpeed *
                             Time.unscaledDeltaTime));
+                if (shouldSnap)
+                {
+                    foreach (var trail in shell.GetComponentsInChildren<TrailRenderer>(true)) trail.Clear();
+                    foreach (var particles in shell.GetComponentsInChildren<ParticleSystem>(true)) particles.Clear();
+                }
                 _wasProjectileActive[index] = true;
-                shell.Rotate(Vector3.up,
-                    240f * Time.unscaledDeltaTime,
-                    Space.Self);
+                if (snapshot.Velocity.sqrMagnitude > 0.0001f)
+                    shell.localRotation = Quaternion.LookRotation(
+                        new Vector3(snapshot.Velocity.x, 0f, snapshot.Velocity.y));
             }
         }
 
@@ -536,28 +541,8 @@ namespace MazeParty.Multiplayer
                     direction.sqrMagnitude > 0.0001f
                         ? Quaternion.LookRotation(direction, Vector3.up)
                         : Quaternion.identity;
-                SetBeam(warningBeams[index], warning,
-                    LaserWarningWidth, 0.08f, length);
-                SetBeam(firingBeams[index], firing,
-                    LaserFiringWidth, 1.5f, length);
+                root.GetComponent<CliffBarrageLaserVisual>().Present(snapshot.Phase, length);
             }
-        }
-
-        private static void SetBeam(
-            Transform beam, bool active, float width,
-            float height, float length)
-        {
-            if (beam == null)
-            {
-                return;
-            }
-            if (beam.gameObject.activeSelf != active)
-            {
-                beam.gameObject.SetActive(active);
-            }
-            beam.localPosition = new Vector3(0f, height * 0.5f, 0f);
-            beam.localRotation = Quaternion.identity;
-            beam.localScale = new Vector3(width, height, length);
         }
 
         private void RegisterCamera()

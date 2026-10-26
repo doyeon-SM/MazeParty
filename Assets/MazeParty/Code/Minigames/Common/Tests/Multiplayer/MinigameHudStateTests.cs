@@ -42,6 +42,24 @@ namespace MazeParty.Multiplayer.Tests
         }
 
         [Test]
+        public void SharedScoreHud_TracksTiedLeadersAndClearsPreviousRound()
+        {
+            var prefab = AssetDatabase.LoadAssetAtPath<GameObject>("Assets/MazeParty/Prefabs/Minigames/Common/UI/BouncingBallsHud.prefab");
+            var instance = Object.Instantiate(prefab, _root.transform);
+            var hud = instance.GetComponent<BouncingBallsHudBindings>();
+            var outlines = Get<Outline[]>(hud, "leaderOutlines");
+            foreach (var scores in new[] { new[] { 1, 3, 3, 2 }, new[] { 5, 3, 3, 2 }, new[] { 0, 0, 0, 0 } })
+            {
+                for (var slot = 0; slot < 4; slot++) hud.SetPlayer(slot, "P" + slot, scores[slot], Color.white);
+                for (var slot = 0; slot < 4; slot++)
+                    Assert.That(outlines[slot].enabled, Is.EqualTo(CompetitionRanking.Rank(scores, slot) == 1));
+            }
+            // EditMode does not run ordinary MonoBehaviour disable callbacks.
+            Call(hud, "OnDisable");
+            for (var slot = 0; slot < 4; slot++) Assert.That(outlines[slot].enabled, Is.False);
+        }
+
+        [Test]
         public void TaggerCountdown_KeepsFirstPersonAndRejectsInput_ThenNextTaggerOwnsCamera()
         {
             var state = Child("Tag").AddComponent<NetworkTagChaseState>();

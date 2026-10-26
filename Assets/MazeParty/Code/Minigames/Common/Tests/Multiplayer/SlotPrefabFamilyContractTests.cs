@@ -48,6 +48,8 @@ namespace MazeParty.Multiplayer.Tests
         {
             var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             Assert.That(prefab, Is.Not.Null, prefabPath);
+            if (prefabPath.EndsWith("/LaserRig.prefab"))
+                Assert.That(prefab.GetComponent<CliffBarrageLaserVisual>()?.HasRequiredReferences, Is.True);
             Assert.That(
                 prefab.GetComponentsInChildren<Transform>(true)
                     .Sum(child =>

@@ -247,7 +247,8 @@ namespace MazeParty.Multiplayer
                     return 0;
                 }
 
-                if (UsesDoubleDice) return _privateRoll.Value;
+                if (UsesDoubleDice) return _privateRoll.Value > 0
+                    ? _privateRoll.Value : _firstDieResult.Value + _secondDieResult.Value;
                 var slot = _slot.Value;
                 var die = ResolveLocalWorldDie(slot);
                 var match = NetworkMatchState.Instance;

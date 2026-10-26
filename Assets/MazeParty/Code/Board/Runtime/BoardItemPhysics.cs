@@ -163,11 +163,13 @@ namespace MazeParty.Gameplay
             return false;
         }
 
-        public static bool HasBlastLineOfSight(Vector3 origin, Vector3 target)
+        public static bool HasBlastLineOfSight(Vector3 origin, Vector3 target, GameObject targetRoot = null)
         {
             var delta = target - origin;
             return delta.sqrMagnitude < .0001f ||
-                !Cast(origin, delta.normalized, delta.magnitude, null, out _, 0f, true);
+                // The victim's own movement collider is not blast cover, including
+                // when the victim threw the grenade.
+                !Cast(origin, delta.normalized, delta.magnitude, targetRoot, out _, 0f, true);
         }
     }
 }

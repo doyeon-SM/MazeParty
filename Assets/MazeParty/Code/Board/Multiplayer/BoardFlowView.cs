@@ -888,10 +888,10 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            SetTextVisible(
-                _movesText,
-                Mathf.Max(0, _localAvatar.LocalRemainingMoves).ToString(),
-                true);
+            SetTextVisible(_movesText, _movesText.text, true);
+            uiBindings.Map.PresentMoves(
+                _localAvatar.HasRolled ? _localAvatar.LocalRemainingMoves : _localAvatar.LocalVisibleRoll,
+                _localAvatar.UsesDoubleDice, match.Turn, match.IsGlobalSimulationPaused);
         }
 
         private void RefreshInventory()
@@ -937,6 +937,13 @@ namespace MazeParty.Multiplayer
                 _ammoText,
                 hasItemUses ? _localAvatar.LocalItemCharges.ToString() : string.Empty,
                 hasItemUses);
+            var match = NetworkMatchState.Instance;
+            var item = _localAvatar != null ? _localAvatar.LocalEquippedItem : PrototypeItemId.None;
+            uiBindings.Item.SetUseHint(hasItemUses && match != null &&
+                match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
+                _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
+                !BoardUtilityItemView.IsTargetPickerOpen &&
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine));
         }
 
         private void RefreshInteractionPrompt()

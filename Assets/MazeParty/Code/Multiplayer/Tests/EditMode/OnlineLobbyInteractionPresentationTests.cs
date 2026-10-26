@@ -677,6 +677,32 @@ namespace MazeParty.Multiplayer.Tests
             return view;
         }
 
+        [Test]
+        public void MapPreviewTurns_RefreshForSameMapAndEveryLanguage()
+        {
+            var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
+            var previousLanguage = GameText.Language;
+            try
+            {
+                var view = GetLobbyView(root);
+                var label = GetField<Text>(view, "boardMapPreviewTurnsText");
+                foreach (GameLanguage language in System.Enum.GetValues(typeof(GameLanguage)))
+                {
+                    GameText.SetLanguage(language);
+                    foreach (var turns in new[] { 10, 20, 15 })
+                    {
+                        Assert.That(MazeParty.Gameplay.Minigames.MatchGameSettings.Default.TryChangeTurns(turns, out var settings), Is.True);
+                        var snapshot = new SessionSnapshot("ABCD", false, MultiplayerConstants.LobbyPhase, "guest",
+                            new[] { new OnlinePlayerSnapshot("guest", "Guest", 1, true, false) },
+                            new BoardMapSelection("forest-graybox", 4), gameSettingsPayload: settings.Encode());
+                        view.Render(snapshot, true, false, string.Empty);
+                        Assert.That(label.text, Is.EqualTo("Turn: " + turns.ToString("00")));
+                    }
+                }
+            }
+            finally { GameText.SetLanguage(previousLanguage); PrefabUtility.UnloadPrefabContents(root); }
+        }
+
         private static SessionSnapshot CreateSnapshot(
             string phase,
             bool isHost = true)

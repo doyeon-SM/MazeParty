@@ -423,6 +423,9 @@ namespace MazeParty.Dev.MinigameSoloTest
                         CliffBarrageNetworkView
                             .ProjectilePresentationHeight,
                         (float)projectile.Z);
+                    var velocity = new Vector3((float)projectile.VelocityX, 0f, (float)projectile.VelocityZ);
+                    if (velocity.sqrMagnitude > 0.0001f)
+                        _projectiles[index].localRotation = Quaternion.LookRotation(velocity);
                 }
             }
 
@@ -451,12 +454,7 @@ namespace MazeParty.Dev.MinigameSoloTest
                     ? Quaternion.LookRotation(
                         new Vector3(dx, 0f, dz), Vector3.up)
                     : Quaternion.identity;
-                _warnings[index].gameObject.SetActive(warning);
-                _beams[index].gameObject.SetActive(firing);
-                _warnings[index].localScale =
-                    new Vector3(0.14f, 0.08f, length);
-                _beams[index].localScale =
-                    new Vector3(0.65f, 1.5f, length);
+                root.GetComponent<CliffBarrageLaserVisual>().Present(laser.Phase, length);
             }
 
             RefreshDeveloperHud();

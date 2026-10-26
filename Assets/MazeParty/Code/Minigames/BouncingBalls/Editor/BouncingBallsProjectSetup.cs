@@ -493,6 +493,7 @@ namespace MazeParty.Editor
 
             canvasObject.GetComponent<BouncingBallsHudBindings>().Configure(
                 canvas, visibleRoot, names, scores);
+            GameplayPresentationAssetSetup.EnsureScoreOutlines(canvasObject);
             SetUiLayer(canvasObject);
             return canvasObject;
         }

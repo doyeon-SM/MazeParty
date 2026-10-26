@@ -159,6 +159,30 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(flow.GetStateRemaining(130d), Is.EqualTo(60d));
         }
 
+        [Test]
+        public void GrenadeBlast_DamagesThrowerWithoutSelfCredit_AndHonorsWallCover()
+        {
+            var owner = _players[0];
+            owner.transform.position = new Vector3(0f, 100f, 2f);
+            owner.gameObject.AddComponent<CharacterController>();
+            for (var i = 1; i < 4; i++) _players[i].transform.position = new Vector3(100f, 100f, i * 10f);
+            var wall = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            wall.transform.SetParent(_root.transform);
+            wall.transform.position = new Vector3(0f, 100f, 1f);
+            var grenade = PrototypeItemCatalog.Get(PrototypeItemId.Grenade);
+            var explode = typeof(NetworkMatchState).GetMethod("ExplodeBoardItem", Private);
+            foreach (var covered in new[] { true, false })
+            {
+                wall.SetActive(covered);
+                Physics.SyncTransforms();
+                ExpectPresentationRpcs(covered ? 1 : 2);
+                explode.Invoke(_match, new object[] { new Vector3(0f, 100f, 0f), 0, grenade });
+                Assert.That(owner.CurrentHealth, Is.EqualTo(covered ? 100 : 100 - grenade.Damage));
+                Assert.That(_match.DeathGoldTransfers.Count, Is.Zero);
+                Assert.That(_achievements[0].flags, Is.Zero);
+            }
+        }
+
         private static void ExpectPresentationRpcs(int count)
         {
             // This EditMode fixture exercises authority without opening a network session.

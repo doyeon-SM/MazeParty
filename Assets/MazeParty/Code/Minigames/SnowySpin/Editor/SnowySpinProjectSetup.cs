@@ -193,16 +193,6 @@ namespace MazeParty.Editor
                     spawn + Vector3.up * BallRadius,
                     Vector3.one * BallRadius * 2f,
                     materials.Balls[slot]);
-                // The asymmetric white marks make actual rolling readable
-                // from the shared top-down camera without a gameplay HUD.
-                CreatePrimitive("Roll Cap", PrimitiveType.Sphere,
-                    ball.transform, new Vector3(0f, 0.49f, 0f),
-                    new Vector3(0.32f, 0.045f, 0.32f),
-                    materials.RollMark);
-                CreatePrimitive("Roll Spot", PrimitiveType.Sphere,
-                    ball.transform, new Vector3(0.46f, 0.07f, 0f),
-                    new Vector3(0.16f, 0.09f, 0.16f),
-                    materials.RollMark);
                 ball = MinigameCorePrefabUtility.Connect(ball,
                     CorePrefabFolder + "/PlayerBall" + (slot + 1) + ".prefab");
                 references.PlayerBalls[slot] = ball.transform;

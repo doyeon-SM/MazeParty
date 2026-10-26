@@ -24,6 +24,9 @@ namespace MazeParty.Multiplayer
 
             public Text TooltipText;
             public Text InteractionPrompt;
+            public GameObject UseHintRoot;
+            public RawImage UseHintIcon;
+            public Text UseHintText;
             public Text ItemShopTitle;
             public Text ItemShopTooltip;
             public Text ItemShopStatus;
@@ -99,6 +102,8 @@ namespace MazeParty.Multiplayer
             references.ItemShopPanel != null &&
             references.TooltipText != null &&
             references.InteractionPrompt != null &&
+            references.UseHintRoot != null && references.UseHintIcon != null &&
+            references.UseHintIcon.texture != null && references.UseHintText != null &&
             references.ItemShopTitle != null &&
             references.ItemShopTooltip != null &&
             references.ItemShopStatus != null &&
@@ -123,6 +128,12 @@ namespace MazeParty.Multiplayer
             HasArray(references.ShopOfferIcons, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferLabels, ItemShopRules.OfferCount) &&
             HasArray(references.ShopOfferHovers, ItemShopRules.OfferCount);
+
+        public void SetUseHint(bool visible)
+        {
+            references.UseHintRoot.SetActive(visible);
+            if (visible) references.UseHintText.text = GameText.T("Use");
+        }
 
         public void SetInventoryVisible(bool visible)
         {
