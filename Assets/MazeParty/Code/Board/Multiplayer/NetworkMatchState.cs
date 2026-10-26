@@ -1798,7 +1798,7 @@ namespace MazeParty.Multiplayer
 
         private void BeginNextCombatOrFinishOnServer(double now)
         {
-            if (!AreBoardResolutionPlayersAvailableOnServer()) return;
+            if (!IsServer || _combatRetreat.Value.Mask != 0 || !AreBoardResolutionPlayersAvailableOnServer()) return;
             while (_combatQueue.Count > 0 &&
                    _fightsResolvedThisTurn < BoardCombatRules.MaximumFightsPerTurn)
             {
@@ -2101,6 +2101,11 @@ namespace MazeParty.Multiplayer
                 !AreBoardResolutionPlayersAvailableOnServer())
                 return;
 
+            if (_combatRetreat.Value.Mask != 0)
+            {
+                AdvanceCombatRetreatOnServer(now);
+                return;
+            }
             if (!_combatActive.Value)
             {
                 if (_combatSequenceIndex.Value == 0)
@@ -2140,6 +2145,7 @@ namespace MazeParty.Multiplayer
             }
 
             var standings = BoardCombatRules.ResolveStandings(entries);
+            var retreat = new BoardCombatRetreatSnapshot { StartedAt = now };
             var possibleChainTiles = new List<Vector2Int>(standings.Length);
             for (var index = 0; index < standings.Length; index++)
             {
@@ -2151,7 +2157,11 @@ namespace MazeParty.Multiplayer
                 }
 
                 if (standing.Rank == 1) RecordAchievementOnServer(standing.Slot, PartyAchievement.BoardWinner);
-                avatar.ApplyCombatRetreatOnServer(standing.RetreatDistance);
+                if (standing.RetreatDistance > 0)
+                {
+                    avatar.PrepareCombatRetreatOnServer(standing.RetreatDistance, out var path);
+                    retreat.SetPath(standing.Slot, path);
+                }
                 if (avatar.HasLogicalBoardTile &&
                     !possibleChainTiles.Contains(avatar.LogicalBoardTileCoordinate))
                 {
@@ -2167,7 +2177,9 @@ namespace MazeParty.Multiplayer
                 EnqueueChainFightIfNeeded(possibleChainTiles[i], now);
             }
             _combatQueueCount.Value = _combatQueue.Count;
-            BeginNextCombatOrFinishOnServer(now);
+            _combatRetreat.Value = retreat;
+            _stateRevision.Value++;
+            if (retreat.Mask == 0) BeginNextCombatOrFinishOnServer(now);
         }
 
         private void EnqueueChainFightIfNeeded(Vector2Int coordinate, double formedAt)
@@ -2228,6 +2240,7 @@ namespace MazeParty.Multiplayer
 
         private void ResetCombatRuntimeOnServer()
         {
+            _combatRetreat.Value = default;
             _combatQueue.Clear();
             _fightsResolvedThisTurn = 0;
             _combatSequenceIndex.Value = 0;
@@ -2253,6 +2266,7 @@ namespace MazeParty.Multiplayer
         private void PauseCombatAndPersonalProtectionOnServer(double now)
         {
             PauseDeathGoldPresentationOnServer(now);
+            PauseCombatRetreatOnServer(now);
             if (_combatActive.Value && _combatEndsAt.Value > 0d)
             {
                 _pausedCombatRemaining.Value = Math.Max(
@@ -2270,6 +2284,7 @@ namespace MazeParty.Multiplayer
         private void ResumeCombatAndPersonalProtectionOnServer(double now)
         {
             ResumeDeathGoldPresentationOnServer(now);
+            ResumeCombatRetreatOnServer(now);
             if (_combatActive.Value && _pausedCombatRemaining.Value > 0d)
             {
                 _combatEndsAt.Value = now + _pausedCombatRemaining.Value;

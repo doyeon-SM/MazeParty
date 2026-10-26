@@ -5,6 +5,7 @@
     "MazeParty.Multiplayer",
     "MazeParty.Gameplay",
     "Unity.Netcode.Runtime",
+    "Unity.Collections",
     "Unity.Networking.Transport",
     "UnityEngine.UI",
     "Unity.TextMeshPro",

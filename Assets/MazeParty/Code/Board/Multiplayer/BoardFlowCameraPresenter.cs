@@ -21,6 +21,7 @@ namespace MazeParty.Multiplayer
         private BoardEventSplitView _eventSplitView;
         private readonly Transform[] _eventRoots = new Transform[4];
         private readonly Transform[] _eventHeads = new Transform[4];
+        private readonly int[] _retreatSlots = new int[4];
         private readonly GameObject[] _eventVisuals = new GameObject[4];
         private int _eventVisualRevision = -1;
         private byte _landingEventPlayedMask;
@@ -181,7 +182,7 @@ namespace MazeParty.Multiplayer
                 cameraDirector.SetLocalPlayerEye(_localAvatar.EyePivot);
             }
 
-            if (match.IsReconnectPaused)
+            if (match.IsReconnectPaused && !match.IsCombatRetreatActive)
             {
                 _wasReconnectPaused = true;
                 ApplyLocalBodyVisibility(cameraDirector.ActiveMode);
@@ -192,7 +193,9 @@ namespace MazeParty.Multiplayer
             }
 
             RefreshCombatSpectatorFocus(match);
-            var splitEvent = RefreshSplitEventPresentation(match);
+            var splitEvent = match.IsCombatRetreatActive
+                ? RefreshCombatRetreatPresentation(match)
+                : RefreshSplitEventPresentation(match);
             var purchasePhase = match.KeyPurchasePhase;
             var resourceTransferPhase = match.IsKeyShopRevealActive
                 ? RefreshKeyPurchasePresentation(match)
@@ -251,6 +254,33 @@ namespace MazeParty.Multiplayer
         }
 
         public void ConfigureEventSplitView(BoardEventSplitView prefab) => eventSplitViewPrefab = prefab;
+
+        private bool RefreshCombatRetreatPresentation(NetworkMatchState match)
+        {
+            ClearEventVisuals();
+            if (match.CombatRetreat.HasReached(match.SynchronizedNow, BoardCombatRetreatTiming.TopViewAt) || eventSplitViewPrefab == null)
+            { ClearEventPresentation(); return false; }
+            var count = 0;
+            for (var slot = 0; slot < MultiplayerConstants.MaxPlayers; slot++)
+            {
+                if (!match.CombatRetreat.Contains(slot)) continue;
+                var avatar = match.GetAvatarForSlot(slot);
+                if (avatar == null) continue;
+                _eventRoots[count] = avatar.transform;
+                _eventHeads[count] = ResolveHeadAnchor(avatar);
+                _retreatSlots[count++] = slot;
+            }
+            if (count == 0) { ClearEventPresentation(); return false; }
+            if (_eventSplitView == null)
+            {
+                _eventSplitView = Instantiate(eventSplitViewPrefab);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(_eventSplitView.gameObject, gameObject.scene);
+            }
+            _eventSplitView.PresentCombatRetreat(cameraDirector, _eventRoots, _eventHeads,
+                _retreatSlots, count, match);
+            cameraDirector.SetBoardResourceEventFocus(_eventRoots[0], _eventHeads[0], 0f);
+            return true;
+        }
 
         private bool RefreshSplitEventPresentation(NetworkMatchState match)
         {

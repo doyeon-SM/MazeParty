@@ -84,6 +84,14 @@ namespace MazeParty.Gameplay.Tests
                 body.transform.SetParent(player, false);
                 body.transform.localPosition = Vector3.up * .75f;
                 body.GetComponent<Renderer>().sharedMaterial = material;
+                var otherPlayer = Child("Other player");
+                otherPlayer.AddComponent<PlayerAvatarVisual>();
+                var otherBody = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                otherBody.transform.SetParent(otherPlayer.transform, false);
+                var otherBodyRenderer = otherBody.GetComponent<Renderer>();
+                var otherFace = Child("Other face sprite");
+                otherFace.transform.SetParent(otherPlayer.transform);
+                var otherFaceRenderer = otherFace.AddComponent<SpriteRenderer>();
                 var originalColor = new Color(.3f, .7f, .9f, .8f);
                 var block = new MaterialPropertyBlock();
                 block.SetColor("_BaseColor", originalColor);
@@ -112,10 +120,17 @@ namespace MazeParty.Gameplay.Tests
                 Render("Begin", otherCamera);
                 AssertRestored();
                 Render("End", otherCamera);
+                foreach (var isolatePlayers in new[] { false, true })
+                foreach (var alreadyHidden in new[] { false, true })
                 foreach (var finish in new[] { "End", "Cancel", "Dispose", "NextCamera" })
                 {
-                    occlusion.SetFocus(camera, player);
+                    otherBodyRenderer.forceRenderingOff = alreadyHidden;
+                    otherFaceRenderer.forceRenderingOff = alreadyHidden;
+                    occlusion.SetFocus(camera, player, isolatePlayers);
                     Render("Begin", camera);
+                    Assert.That(otherBodyRenderer.forceRenderingOff, Is.EqualTo(alreadyHidden || isolatePlayers));
+                    Assert.That(otherFaceRenderer.forceRenderingOff, Is.EqualTo(alreadyHidden || isolatePlayers));
+                    Assert.That(body.GetComponent<Renderer>().forceRenderingOff, Is.False);
                     Assert.That(renderer.forceRenderingOff, Is.True);
                     Assert.That(renderer.sharedMaterial, Is.SameAs(material));
                     Assert.That(body.GetComponent<Renderer>().sharedMaterial, Is.SameAs(material));
@@ -125,6 +140,8 @@ namespace MazeParty.Gameplay.Tests
                     else if (finish == "Dispose") occlusion.Dispose();
                     else Render("Begin", otherCamera);
                     AssertRestored();
+                    Assert.That(otherBodyRenderer.forceRenderingOff, Is.EqualTo(alreadyHidden), "Player render state must restore");
+                    Assert.That(otherFaceRenderer.forceRenderingOff, Is.EqualTo(alreadyHidden), "Face sprite state must restore");
                 }
             }
             finally

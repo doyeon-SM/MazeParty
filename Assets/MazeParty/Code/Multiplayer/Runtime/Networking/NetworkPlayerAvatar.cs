@@ -451,7 +451,8 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
-            _avatarVisual?.SetKnockedDown(IsKnockedDown);
+            _avatarVisual?.SetKnockedDown(IsKnockedDown ||
+                (NetworkMatchState.Instance != null && NetworkMatchState.Instance.IsCombatRetreatKnockedDown(AssignedSlot)));
             TickBoardItems();
             TickHandGestures();
             if (IsServer && _slot.Value < 0 && Time.unscaledTime >= _nextSlotResolveAttempt)
@@ -553,6 +554,7 @@ namespace MazeParty.Multiplayer
 
         private void LateUpdate()
         {
+            TickCombatRetreatPresentation();
             if (IsSpawned && IsOwner)
             {
                 // The server-authoritative body yaw can arrive after input was
@@ -606,6 +608,8 @@ namespace MazeParty.Multiplayer
             }
 
             var match = NetworkMatchState.Instance;
+            if (match != null && match.IsCombatRetreatActive)
+            { StopServerInputOnServer(); return; }
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
                                   HasResolvedItemChoice && !IsSwapping &&
                                   !IsBoardDeathInProgressOnServer && !IsKnockedDown &&
@@ -1248,16 +1252,26 @@ namespace MazeParty.Multiplayer
             return true;
         }
 
-        public int ApplyCombatRetreatOnServer(int requestedDistance)
+        public int PrepareCombatRetreatOnServer(int requestedDistance, out BoardCombatRetreatPath path)
         {
+            path = new BoardCombatRetreatPath { Facing = transform.rotation };
+            path.Add(transform.position);
             if (!IsServer || requestedDistance <= 0 || !_traversal.IsInitialized)
             {
                 return 0;
             }
 
+            requestedDistance = Math.Min(3, requestedDistance);
+            ResolveTopology();
+            var previousTile = _traversal.CurrentTile;
             var retreatPath = _traversal.Retreat(requestedDistance);
             var actualDistance = retreatPath.Length;
-            ResolveTopology();
+            if (actualDistance > 0) path.Add(previousTile.GetRecoveryCenter(1f));
+            foreach (var tile in retreatPath)
+            {
+                AppendCombatRetreatStep(ref path, previousTile, tile);
+                previousTile = tile;
+            }
             while (actualDistance < requestedDistance && _topology != null)
             {
                 var incoming = _topology.GetIncomingGates(_traversal.CurrentTile);
@@ -1278,15 +1292,19 @@ namespace MazeParty.Multiplayer
                     break;
                 }
 
+                if (actualDistance == 0) path.Add(_traversal.CurrentTile.GetRecoveryCenter(1f));
+                AppendCombatRetreatStep(ref path, _traversal.CurrentTile, fallback);
                 _traversal.Relocate(fallback);
                 actualDistance++;
             }
 
-            // TODO(COMBAT-PRESENTATION): replace this authoritative center snap
-            // with authored retreat locomotion while keeping the same path result.
-            TeleportController(
-                _traversal.CurrentTile.GetRecoveryCenter(1f),
-                transform.rotation);
+            // Face away from the retreat so the frontal camera trails ahead of
+            // the sliding body, rather than being overtaken on a long straight.
+            var travel = Vector3.ProjectOnPlane(path.Points[path.Points.Length - 1] - path.Points[0], Vector3.up);
+            if (travel.sqrMagnitude > 0.0001f)
+                path.Facing = Quaternion.LookRotation(-travel.normalized, Vector3.up);
+            // Logical occupancy is committed once; the visible body follows the
+            // replicated path during the shared aftermath instead of snapping here.
             SyncLogicalTileOnServer();
             return actualDistance;
         }

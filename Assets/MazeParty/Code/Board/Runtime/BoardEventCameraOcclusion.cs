@@ -9,6 +9,7 @@ namespace MazeParty.Gameplay
     public sealed class BoardEventCameraOcclusion : IDisposable
     {
         private readonly Dictionary<Camera, Transform> _focus = new Dictionary<Camera, Transform>();
+        private readonly HashSet<Camera> _isolatedPlayers = new HashSet<Camera>();
         private readonly List<Renderer> _hidden = new List<Renderer>();
         private readonly List<TerrainState> _terrainChanges = new List<TerrainState>();
         private readonly Vector3[] _targets = new Vector3[7];
@@ -18,16 +19,19 @@ namespace MazeParty.Gameplay
         private Camera _renderingCamera;
         private bool _subscribed;
 
-        public void SetFocus(Camera camera, Transform player)
+        public void SetFocus(Camera camera, Transform player, bool isolatePlayers = false)
         {
             if (camera == null) return;
             if (player == null)
             {
                 _focus.Remove(camera);
+                _isolatedPlayers.Remove(camera);
                 if (_renderingCamera == camera) Restore();
                 return;
             }
             _focus[camera] = player;
+            if (isolatePlayers) _isolatedPlayers.Add(camera);
+            else _isolatedPlayers.Remove(camera);
             if (_subscribed) return;
             RenderPipelineManager.beginCameraRendering += BeginCameraRendering;
             RenderPipelineManager.endCameraRendering += EndCameraRendering;
@@ -69,10 +73,21 @@ namespace MazeParty.Gameplay
             {
                 if (renderer == null || !renderer.enabled || renderer.forceRenderingOff ||
                     !renderer.gameObject.activeInHierarchy ||
-                    (camera.cullingMask & (1 << renderer.gameObject.layer)) == 0 ||
-                    (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer))) continue;
-                if (renderer.GetComponentInParent<PlayerAvatarVisual>() != null ||
-                    renderer.transform.IsChildOf(player) || renderer.GetComponent<TextMesh>() != null) continue;
+                    (camera.cullingMask & (1 << renderer.gameObject.layer)) == 0) continue;
+                var avatar = renderer.GetComponentInParent<PlayerAvatarVisual>();
+                if (avatar != null)
+                {
+                    // During simultaneous retreats each panel identifies one loser.
+                    // Other players must not block that portrait along a shared route.
+                    if (_isolatedPlayers.Contains(camera) && !renderer.transform.IsChildOf(player))
+                    {
+                        _hidden.Add(renderer);
+                        renderer.forceRenderingOff = true;
+                    }
+                    continue;
+                }
+                if (!(renderer is MeshRenderer) && !(renderer is SkinnedMeshRenderer)) continue;
+                if (renderer.transform.IsChildOf(player) || renderer.GetComponent<TextMesh>() != null) continue;
                 var bounds = renderer.bounds;
                 if (bounds.max.y < player.position.y - 0.65f) continue;
                 bounds.Expand(0.16f);
@@ -158,6 +173,7 @@ namespace MazeParty.Gameplay
             _subscribed = false;
             Restore();
             _focus.Clear();
+            _isolatedPlayers.Clear();
             _scenery = null;
             _terrains = null;
         }
