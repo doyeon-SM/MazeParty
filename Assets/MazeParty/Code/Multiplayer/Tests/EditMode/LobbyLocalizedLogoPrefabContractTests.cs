@@ -33,6 +33,27 @@ namespace MazeParty.Multiplayer.Tests
             var root = PrefabUtility.LoadPrefabContents(LobbyPrefabPath);
             try
             {
+                var intro = root.GetComponent<LobbyIntroPresentation>();
+                Assert.That(intro, Is.Not.Null);
+                Assert.That(intro.HasRequiredReferences, Is.True);
+                var introBindings = new SerializedObject(intro);
+                var introVideo = (UnityEngine.Video.VideoPlayer)introBindings
+                    .FindProperty("introPlayer").objectReferenceValue;
+                var loopVideo = (UnityEngine.Video.VideoPlayer)introBindings
+                    .FindProperty("loopPlayer").objectReferenceValue;
+                Assert.That(introVideo.playOnAwake || loopVideo.playOnAwake, Is.False,
+                    "Only the presentation lifecycle may start video and audio.");
+                Assert.That(introVideo.isLooping, Is.False);
+                Assert.That(loopVideo.isLooping, Is.True);
+                foreach (var video in new[] { introVideo, loopVideo })
+                {
+                    Assert.That(video.transform.IsChildOf(root.transform), Is.True);
+                    Assert.That(video.sendFrameReadyEvents, Is.True);
+                    Assert.That(video.GetTargetAudioSource(0).GetComponent<AudioChannelSource>().Channel,
+                        Is.EqualTo(AudioChannel.Sfx));
+                    Assert.That(AssetDatabase.GetAssetPath(video.clip),
+                        Does.StartWith("Assets/MazeParty/Media/Lobby/"));
+                }
                 var localizedLogos =
                     root.GetComponentsInChildren<LocalizedLogo>(true);
                 Assert.That(localizedLogos, Has.Length.EqualTo(1),

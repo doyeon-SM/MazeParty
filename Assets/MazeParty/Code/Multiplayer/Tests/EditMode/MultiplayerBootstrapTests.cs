@@ -295,6 +295,11 @@ namespace MazeParty.Multiplayer.Tests
                     .SingleOrDefault();
                 Assert.That(lobby, Is.Not.Null);
                 Assert.That(lobby.HasRequiredReferences, Is.True);
+                var intro = lobby.GetComponent<LobbyIntroPresentation>();
+                Assert.That(intro, Is.Not.Null);
+                Assert.That(intro.HasRequiredReferences, Is.True);
+                Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(intro), Is.Not.Null,
+                    "The lobby intro must originate in the lobby UI prefab.");
                 Assert.That(
                     PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(
                         lobby.gameObject),

@@ -4,7 +4,7 @@
 
 ## 기준과 기록 위치
 
-- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, 확인 HEAD `b547671fdea54175ce84a5efebe5f04b29453244`(제목 `26.10.27`, 본문 `프리뷰 임시 완성.`). 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`. 기획 v0.56·런타임 0.0.56, 표시 버전 출처는 `Application.version`이다.
+- 실제 Git·Unity 루트: `C:/Unity/MazeParty`. 브랜치 `development`, 확인 HEAD `6cb486c1ddf4cacc182923f22d569317f6542b77`(제목 `Update PROJECT_MEMORY.md`; 직전 게임 구현 `b547671`, `프리뷰 임시 완성.`). 안정 기준 `main`, 새 기능 브랜치 `dev/<기능명>`. 기획 v0.56·런타임 0.0.56, 표시 버전 출처는 `Application.version`이다.
 - [기획서](https://app.notion.com/p/3d3c227fda0380f6a34df09eff208ac0) · [세부 룰](https://app.notion.com/p/3e0c227fda0381a58571d2571da1a8dc) · [미니게임](https://app.notion.com/p/3e0c227fda0381cca293dec8aaca74a0) · [구현 이력](https://app.notion.com/p/3e0c227fda038115b396f1f04a7db026).
 - [10/27 회의록](https://app.notion.com/p/405c227fda0381a782fdcf6ca5fa8d91)에 `24f01b0`(핀볼·프리뷰 테스트), `aa56aeb`(숲 유령), `b547671`(나머지 19종 프리뷰)의 전체 해시·제목·본문·실제 변경과 검증 범위를 누적했다. 기획서·미니게임·핀볼·구현 이력의 저장본을 확인했다. 앞선 개선은 [10/26 회의록](https://app.notion.com/p/404c227fda0381be82c8d946b8d46e0e)을 참조한다. 작업 중에는 이 MD만 갱신하며 Notion은 명시적 회의록 요청 때 수정한다.
 - 실행·배포: `README.md`, `Docs/STOVE_SETUP.md`, `Docs/STOVE_LAUNCHER_TEST.md`, `Docs/STEAM_SETUP.md`. 구조: `Docs/REFACTORING_2026-10-21.md`, [기술문서](https://app.notion.com/p/400c227fda038101b398fcd871aa766a).
@@ -14,11 +14,12 @@
 - 사용자가 조정한 Forest Terrain·식생·환경, 미니게임 배치·카메라·조명, LobbyArena·UI 앵커와 디자인을 임의 재생성하지 않는다. Forest Terrain은 80×10×73m·원점 Y -0.12다. 미니게임은 밤 skybox·달 0.10·ambient 0.08·reflection 0.12·노출 -1.6EV를 사용하며 보드/로비 조명은 복원한다. ForestStreetLamp는 수동 배치용이며 잔디 바람은 추가하지 않았다.
 - 플레이 Canvas는 허용된 UI 프리팹·직렬화 바인딩을 사용한다. 런타임 대체 UI와 setup의 기존 디자인 덮어쓰기를 금지한다. 일반 서체 설정과 명시된 TURN·시간·이동 수·잔량·ME/P Bold 예외, 메뉴 Slider/Scrollbar·로비 T키 이미지를 유지한다. 새 UI는 실제 씬·프리팹 계약을 검증하며 전체 EditMode는 별도 요청 시 실행한다.
 - `Assets/Ignore` 원본·파생 에셋은 Git 비추적이다. 같은 GUID·메타를 다른 개발/빌드 환경에 별도 전달해야 한다. 이미지 교체를 PNG 원본까지 커밋한 것으로 기록하지 않는다. 외부 importer의 Editor API는 `UNITY_EDITOR`로 제한한다.
-- 활성 8종 아이콘은 `Assets/Ignore/AIImage/Icons/TitleStyle`, 타이틀·입장 배경은 `TitleScreen_MazeRivals_v2.png`다. 기존 GUID·아이템/UI 연결을 유지한다. 한글 로고는 KO, 영어·일본어·중국어는 EN이며 한글 장식도 왼쪽 미로·오른쪽 주사위로 통일했다. 현재 AI 이미지는 모두 임시다.
+- 활성 8종 아이콘은 `Assets/Ignore/AIImage/Icons/TitleStyle`, 입장 로딩·영상 준비/실패 시 정지 배경은 `TitleScreen_MazeRivals_v2.png`이며 로비 메인은 아래 인트로 영상이다. 기존 GUID·아이템/UI 연결을 유지한다. 한글 로고는 KO, 영어·일본어·중국어는 EN이며 한글 장식도 왼쪽 미로·오른쪽 주사위로 통일했다. 현재 AI 이미지는 모두 임시다.
 - 호스트 크래시 우회인 **GPU Resident Drawer OFF**를 재현·검증 없이 켜지 않는다. Frame Timing OFF·Standalone IL2CPP, Steam/STOVE 출시 프로필 Engine Diagnostics Disabled를 유지한다. UnityConnectSettings `m_Enabled=0`의 새 빌드 실제 통신 검증은 남았다.
 
 ## 현재 게임 계약과 최근 반영
 
+- 로비 인트로(10/27 구현): 실행당 한 번 UI 없이 8초 영상 재생 → 후반 6~8초의 별도 2초 MP4 반복 → 기존 KO/EN 로고가 위에서 낙하·두 번 튕긴 뒤 1.2초에 정착 → 방 생성·코드 입장·시스템 안내 표시. Esc로 인트로를 건너뛰면 로고 연출부터 진행하며 안내 문구는 없다. 영상 효과음(Sfx 설정 적용)과 BGM을 혼용한다. 로비 복귀는 반복 배경·UI를 바로 표시하고, 로비 숨김/방 입장 시 영상·효과음을 정지한다. `LobbyCanvas.prefab`의 직렬화 바인딩과 `LobbyIntroPresentation`/`LobbyIntroSequence`가 제어하며 기존 UI 디자인·언어별 로고 연결을 보존한다. 사용자 원본 MP4/GIF(`Assets/Ignore/AIImage/video`)는 보존, 실제 재생 파일은 `Assets/MazeParty/Media/Lobby`다. Editor 정상 재생·Esc·복귀·메뉴 복원·BGM 혼용과 표적 EditMode 15/15 통과, Player 검증은 남았다. 임시 검증 코드는 제거했고 확인 화면 3장·재생/파일 보고서는 보조 폴더 `output/lobby-intro/verification`에 보존했다. 이전 타이틀 생성/권리 자료와 시작 프레임 `output/maze-rivals-video/MazeRivals_StartFrame_v1.png`도 유지한다.
 - 4인 온라인 개인전, 기본 미로·15턴. Release는 10/15/20턴, Editor/Development의 5턴은 도전과제·누적 실적에서 제외한다. 호스트만 대기실에서 맵·턴·미니게임 포함/라운드/시간을 바꾸며 경기·저장 재개 중에는 잠근다. 지도 제목 아래 `Turn: 00`은 모든 언어에서 영어이며 설정 변경을 즉시 반영한다.
 - 미니게임 20종, 선택 풀은 턴 수 이상·중복 없는 추첨이다. 새 경기 SKIP은 없고 저장 호환만 유지한다. 라운드 1~5, 제한시간 최소 30초·15초 단위·기존 +60초, 레이스2 최대 180초 호환 및 특수 타이머를 유지한다. 탑은 10개씩 표시·휠/드래그 스크롤·스크롤바 없음·미래 이름 비공개다.
 - Forest v4는 42칸/49링크, Maze v2는 64칸/물리 통로 80개·방향 경로 132개다. v1 저장은 삭제하지 않고 재개를 거부한다. 지도는 마지막 관측·검정 60% 가림·은신 비공개를 유지한다. 이동 가능 경로 연두/파랑, 열쇠 상점 최단 경로 황금색, 미로 파란 안내는 외곽만 표시한다. 미니맵·전체 지도는 보드 1인칭에서만 연다.
@@ -49,12 +50,22 @@
 ## 검증 상태와 남은 작업
 
 - 프리뷰 제작 당시 19종 파일·GUID·4인 구성 감사, 핀볼 포함 20종 준비 UI 재생/표시/반복/숨김 시 정지·해제, 관련 프리팹·씬 계약 EditMode 1/1 통과. 과거 전체 785/785 등은 최신 HEAD 전체 검증이 아니다. 임시 촬영/검증 코드는 제거했고 OnlineBootstrap·Game View를 복원했다. 이번 문서 정리에서 게임 테스트를 다시 실행하지 않았다.
-- 최종 영상은 `Assets/MazeParty/Media/MinigamePreviews`에 보존한다. 보조 폴더 `output/minigame-previews-19/network`에는 최종 확인 이미지·준비 화면 예시 각 1장, 파일/재생/표적 테스트 보고서와 편집 메타데이터만 남겼다. 중간 원본·폐기 Solo 영상·중복 스크린샷·임시 도구 780개(571,224,171바이트)를 정리했다. 다른 작업의 생성/권리 기록과 미완료 타이틀 영상 자료는 보존했다.
+- 최종 영상은 `Assets/MazeParty/Media/MinigamePreviews`에 보존한다. 보조 폴더 `output/minigame-previews-19/network`에는 최종 확인 이미지·준비 화면 예시 각 1장, 파일/재생/표적 테스트 보고서와 편집 메타데이터만 남겼다. 중간 원본·폐기 Solo 영상·중복 스크린샷·임시 도구 780개(571,224,171바이트)를 정리했다. 다른 작업의 생성/권리 기록과 타이틀 영상 원본 자료는 보존했다.
 1. 최신 Player 후보로 별도 PC 4인 STOVE 호스트+3명·10/15/20턴을 검증한다. [3차 QA](https://app.notion.com/p/404c227fda0381dc901aecb9586491b3) 24건 중 22건 구현 반영, QA-1025-01 수류탄 직후 강퇴·QA-1025-03 영어→한국어 변경 후 STOVE 참가 실패는 원인 미확정이며 전체 24건 재테스트 대기다.
-2. 후퇴 0.2초 추격 체감·연쇄 격투·수류탄 자해/차폐·숲 유령 일반/강한/마지막 턴·부활칸 전환·환경 사망·재접속·정지 중 단일 적용, 핀볼 소환·20종 프리뷰의 실제 Player 준비 화면을 확인한다. UI/VFX·로딩/로고·시상식 300초 복귀도 포함한다.
+2. 후퇴 0.2초 추격 체감·연쇄 격투·수류탄 자해/차폐·숲 유령 일반/강한/마지막 턴·부활칸 전환·환경 사망·재접속·정지 중 단일 적용, 핀볼 소환·20종 프리뷰의 실제 Player 준비 화면을 확인한다. UI/VFX·로딩/로고·로비 인트로의 실제 Player 재생·시상식 300초 복귀도 포함한다.
 3. 원 호스트 복귀·플랫폼/계정 경계·보상 중복·고지연/패킷 손실·장시간·TagChase CPU/GPU·최종 청음, 외부 번역 최신 키·번체 E열, Race 하단 여백·Arena/보드 관전·설정창/탑 스크롤을 점검한다. 한 PC 4프로세스 결과를 별도 PC 실기로 대신하지 않는다.
 4. Steam 실계정 이름/초대/해제는 사용자 보류 결정에 따라 추후 검증한다. 실제 Steam 초기화 성공은 미확인이다. 양 플랫폼 도전과제/스탯 등록(실제 ID 07~34 포함)·실계정 해제·STOVE 검토 회신·제출 버전 확인이 남았다.
 5. [출시 계획](https://app.notion.com/p/3fbc227fda0381edbfa1d43003e1b92f)은 약 7,000원·2026년 12월 초 내부 목표이며 확정 출시일이 아니다. 11/06 Coming Soon·11/13 기능 중단·11/20 방식 결정·11/27 진행 판단은 참고 일정이다. 5언어 상점 원고·장르/태그·최종 이미지/영상·실제 등록/공개·사업자/등급/권리/정산을 마무리해야 한다.
 6. EULA/처리방침의 공개 URL·버전·공고/시행일·이전 버전·동의/재동의와 처리 국가·보존·근거를 확정한다. 최종 후보로 진단 통신, 깨끗한 Windows의 Steam 재배포 잠정안, 실제 4인 최고 부하·해상도/품질별 최소/권장 사양을 검증한다. 기존 대기실 측정은 공개 사양 근거가 아니다.
-7. 타이틀 영상은 미완료: 빨강 주사위→파랑 권총+노랑 은신 해제 동시→초록 벽 위 저격. 시작 프레임은 `output/maze-rivals-video/MazeRivals_StartFrame_v1.png`다. Runway Free의 사용 가능 모델이 없어 영상 생성은 못 했으며 고정 카메라·16:9·약 8초/무음은 제안일 뿐 미확정이다.
-8. 흙길 갱신 도구·상점 충돌 사전 조리·열쇠 가격/골드 설정 확장·추가 통계 항목은 보류다. 외부 번역 시트·플랫폼 변경·전체 EditMode는 각각 사용자 요청 범위에서 진행한다.
+7. 흙길 갱신 도구·상점 충돌 사전 조리·열쇠 가격/골드 설정 확장·추가 통계 항목은 보류다. 외부 번역 시트·플랫폼 변경·전체 EditMode는 각각 사용자 요청 범위에서 진행한다.
+
+## Steam·STOVE 아이콘 시안 · 2026-10-27
+
+- 사용자 요청: 현재 타이틀/로고를 이용한 Steam·STOVE용 아이콘을 샘플부터 제작하고 사용자 피드백으로 수정한다.
+- 시안 구성: A 미로·주사위 심볼형, B 타이틀의 4색 캐릭터·금색 D12형, C 한글 미로파티 타이틀형. 정사각형 디자인 비교안이며 플랫폼별 최종 등록 크기/포맷은 확정하지 않았다.
+- 상태: 내장 image_gen으로 A_Symbol.png·B_Characters.png·C_KoreanTitle.png 3개 시안을 생성·시각 검토하고 보조 작업 폴더 output/store-icon-samples-2026-10-27에 저장했다. 모두 1254×1254 불투명 배경 PNG다. generation-prompts.json에 입력 참조/프롬프트, manifest.json·validation.json에 생성 원본·파일명·크기·해시를 기록했다. 최초 시안 단계에서는 Unity 로고·게임 아이콘·플랫폼 등록을 변경하지 않았다. 이후 사용자가 A의 D12 변경과 EN·KO 로고 적용을 요청했으며 결과는 다음 항목에 기록한다. 최종 플랫폼 규격 내보내기는 미실행이다.
+## A 심볼·타이틀 로고 D12 수정 · 2026-10-27
+
+- 사용자 요청: A 심볼 시안과 EN·KO 타이틀 로고의 주사위를 인게임 주사위로 바꾸고 Unity 로고에 적용한다.
+- 완료: 인게임 D12 모델·검은 숫자·노란색(D12Player4)을 참조해 A와 EN·KO 로고의 주사위를 금색 D12로 수정했다. A 수정 시안은 보조 작업 폴더 output/branding-d12-2026-10-27/A_Symbol_D12_v2.png(1254×1254), EN·KO 수정본은 기존 Assets/Ignore/AIImage/MazePartyLogo_EN.png·MazePartyLogo_KO.png(2172×724, 투명 PNG)에 교체했다. 기존 .meta/GUID와 LobbyCanvas의 언어별 연결을 유지하고 Unity 재임포트를 완료했다.
+- 검증: 원본 크기·알파·교체 파일 해시·메타 불변 확인, 기존 LobbyLocalizedLogoPrefabContractTests 표적 EditMode 1/1 통과. UnityEditor.Graphs 내부 예외 1건이 콘솔에 있었으며 로고 테스트는 통과했다. 기존 로고 백업, 실제 인게임 D12 참조 렌더, final-prompts.json·manifest.json·validation.json·unity-validation.json을 같은 보조 출력 폴더에 보존했다. 플랫폼 게시·플레이어 아이콘 설정은 변경하지 않았다.
