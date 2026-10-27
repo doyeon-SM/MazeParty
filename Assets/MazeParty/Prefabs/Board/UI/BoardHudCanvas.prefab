@@ -4611,26 +4611,26 @@ MonoBehaviour:
     ActionHidden: {r: 0, g: 0, b: 0, a: 0}
   minigamePreviewClips:
   - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 32900000, guid: d9a34b01230ac284eadec4cedfc17b87, type: 3}
+  - {fileID: 32900000, guid: 9cb57b3bb91b6ed47a31df1cc9b8fa46, type: 3}
+  - {fileID: 32900000, guid: 5c493f13983f46b469883a224e77287b, type: 3}
+  - {fileID: 32900000, guid: 1c6413bab84f6404fa825bd8376895b0, type: 3}
+  - {fileID: 32900000, guid: 53c1232ca5a302d42982bcb593a177cb, type: 3}
+  - {fileID: 32900000, guid: ea8199245f346b940bce758829fcb4d2, type: 3}
+  - {fileID: 32900000, guid: eef54d4122becef4eb74b7e3755313b7, type: 3}
+  - {fileID: 32900000, guid: 85c50ac2453c89f4c8a9f7763cd2d33d, type: 3}
+  - {fileID: 32900000, guid: 5be448c8876e74b46b1d721e933054cd, type: 3}
+  - {fileID: 32900000, guid: 75a719761f90d3c44b82917825d0c362, type: 3}
   - {fileID: 32900000, guid: 8485acba8ca0a0d46bd4fa38b20abdab, type: 3}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 32900000, guid: c5a8281f8837b3444bfd038bee89f3e6, type: 3}
+  - {fileID: 32900000, guid: 2449cf489ac6c8c4890b54032f9e1d5a, type: 3}
+  - {fileID: 32900000, guid: de979bc0ff6c1fc4ca038df2d9fe4c59, type: 3}
+  - {fileID: 32900000, guid: a091002d5a2322f468af1f53b01993f6, type: 3}
+  - {fileID: 32900000, guid: b22f4f331bf1e9848bdca8b18555b427, type: 3}
+  - {fileID: 32900000, guid: cc4f1ad3467eb1f4c92738c087a9d2ff, type: 3}
+  - {fileID: 32900000, guid: 25a34adbef22b6a47a27753074a66792, type: 3}
+  - {fileID: 32900000, guid: ddee884fe2ce6554cb30e11c1c60a7a8, type: 3}
+  - {fileID: 32900000, guid: 7ed664afa07f07346b2571461e05abd6, type: 3}
 --- !u!1 &2806563915062768437
 GameObject:
   m_ObjectHideFlags: 0
