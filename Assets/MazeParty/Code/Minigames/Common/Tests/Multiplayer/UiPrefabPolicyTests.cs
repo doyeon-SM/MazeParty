@@ -264,7 +264,10 @@ namespace MazeParty.Multiplayer.Tests
                     path + " has an incomplete serialized binding contract.");
                 if (binding is OddOneOutHudBindings oddHud) AssertOddOneOutSelectionTimer(oddHud);
                 if (binding is OnlineLobbyView lobby)
+                {
                     AssertLobbyEmoteHint(lobby, false);
+                    AssertLobbyCopyright(lobby, false);
+                }
             }
         }
 
@@ -283,6 +286,43 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(bar.GetComponent<Image>().color, Is.EqualTo(new Color(.35f, .35f, .38f, 1f)));
             Assert.That(bar.fillRect.GetComponent<Image>().color, Is.EqualTo(new Color(.93f, .18f, .2f, 1f)));
             Assert.That(timer.GetComponentsInChildren<Graphic>(true).All(graphic => !graphic.raycastTarget), Is.True);
+        }
+
+        private static void AssertLobbyCopyright(OnlineLobbyView lobby, bool sceneInstance)
+        {
+            var panel = (GameObject)new SerializedObject(lobby)
+                .FindProperty("connectionPanel").objectReferenceValue;
+            var notice = panel.transform.Find("Copyright Notice");
+            Assert.That(notice, Is.Not.Null,
+                "The copyright notice must belong to the authored title-only panel.");
+            var label = notice.GetComponent<Text>();
+            Assert.That(label, Is.Not.Null);
+            Assert.That(label.text, Is.Not.Null.And.Not.Empty);
+            Assert.That(label.font, Is.Not.Null);
+            Assert.That(label.raycastTarget, Is.False,
+                "The informational footer must not intercept pointer input.");
+            Assert.That(notice.GetComponentsInChildren<Selectable>(true), Is.Empty);
+            var layout = notice.GetComponent<LayoutElement>();
+            Assert.That(layout, Is.Not.Null);
+            Assert.That(layout.ignoreLayout, Is.True,
+                "The footer must not participate in the title button layout.");
+
+            var group = notice.GetComponent<CanvasGroup>();
+            Assert.That(group, Is.Not.Null);
+            var intro = lobby.GetComponent<LobbyIntroPresentation>();
+            Assert.That(intro, Is.Not.Null);
+            var controls = new SerializedObject(intro).FindProperty("controls");
+            Assert.That(Enumerable.Range(0, controls.arraySize)
+                .Any(index => controls.GetArrayElementAtIndex(index)
+                    .objectReferenceValue == group), Is.True,
+                "The footer must use the existing intro visibility binding.");
+
+            if (sceneInstance)
+            {
+                Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(notice), Is.Not.Null);
+                Assert.That(PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(notice.gameObject),
+                    Is.EqualTo(LobbyCanvasPrefabPath));
+            }
         }
 
         private static void AssertLobbyEmoteHint(OnlineLobbyView lobby, bool sceneInstance)
@@ -655,6 +695,7 @@ namespace MazeParty.Multiplayer.Tests
                             .SelectMany(root => root.GetComponentsInChildren<OnlineLobbyView>(true)).Single();
                         Assert.That(lobby.HasRequiredReferences, Is.True);
                         AssertLobbyEmoteHint(lobby, true);
+                        AssertLobbyCopyright(lobby, true);
                         var steamInvite = (Button)new SerializedObject(lobby).FindProperty("steamInviteButton").objectReferenceValue;
                         Assert.That(steamInvite, Is.Not.Null);
                         Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(steamInvite), Is.Not.Null,
