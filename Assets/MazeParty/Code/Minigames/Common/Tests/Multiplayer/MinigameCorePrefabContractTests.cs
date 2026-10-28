@@ -281,9 +281,11 @@ namespace MazeParty.Multiplayer.Tests
                             Is.EqualTo(PrefabInstanceStatus.Connected),
                             scenePath + " :: " + item.Instance.name);
 
+                        // Resolve the asset that owns this instance root even
+                        // when it is nested inside an environment prefab.
                         var source = PrefabUtility
-                            .GetCorrespondingObjectFromSource(
-                                item.Instance);
+                            .GetCorrespondingObjectFromSourceAtPath(
+                                item.Instance, item.Path);
                         Assert.That(
                             source,
                             Is.Not.Null,
@@ -293,6 +295,15 @@ namespace MazeParty.Multiplayer.Tests
                             Is.EqualTo(item.Path),
                             scenePath + " :: " + item.Instance.name);
 
+                        if (item.Path.EndsWith("Exterior.prefab", StringComparison.Ordinal))
+                        {
+                            Assert.That(item.Instance.GetComponentsInChildren<Collider>(true),
+                                Is.Empty, item.Path + " must not change gameplay collision.");
+                            Assert.That(item.Instance.GetComponentsInChildren<Rigidbody>(true),
+                                Is.Empty, item.Path + " must remain static presentation.");
+                            Assert.That(item.Instance.GetComponentsInChildren<NetworkBehaviour>(true),
+                                Is.Empty, item.Path + " must not own authoritative state.");
+                        }
                         AssertNoMissingScripts(prefab, item.Path);
                         AssertNoMissingScripts(
                             item.Instance,

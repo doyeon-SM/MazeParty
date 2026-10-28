@@ -303,18 +303,18 @@ PrefabInstance:
     - target: {fileID: 3302990532168574361, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
-      objectReference: {fileID: 2100000, guid: 59573b088aaea0442bf29e0a0e9d1339, type: 2}
+      objectReference: {fileID: 2100000, guid: d6e814fdaecdf4a4bb877a72d6a287d6, type: 2}
     - target: {fileID: 7303652420358235008, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: m_Name
       value: Wrong Way Environment
       objectReference: {fileID: 0}
     - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: m_LocalScale.x
-      value: 200
+      value: 512
       objectReference: {fileID: 0}
     - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: m_LocalScale.z
-      value: 200
+      value: 512
       objectReference: {fileID: 0}
     - target: {fileID: 8202959447616037691, guid: 60567b1bc6069aa44947918a8a560703, type: 3}
       propertyPath: m_LocalPosition.z
