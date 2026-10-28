@@ -981,7 +981,7 @@ namespace MazeParty.Multiplayer
             var context = new WorldDiePushContext(
                 requester.AssignedSlot,
                 match.CanAcceptActionInput,
-                requester.HasResolvedItemChoice && !requester.IsSwapping,
+                requester.HasResolvedItemChoice && !requester.IsSwapping && !requester.IsSettingBombardment,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
                 match.IsSimulationSuspended,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));
@@ -1135,7 +1135,7 @@ namespace MazeParty.Multiplayer
             context = new WorldDiePushContext(
                 requester.AssignedSlot,
                 match.CanAcceptActionInput,
-                requester.HasResolvedItemChoice && !requester.IsSwapping,
+                requester.HasResolvedItemChoice && !requester.IsSwapping && !requester.IsSettingBombardment,
                 requester.HasRolled || match.HasRolled(requester.AssignedSlot),
                 match.IsSimulationSuspended,
                 _assignedTile.ContainsHorizontalPoint(requester.transform.position, 0.25f));

@@ -101,6 +101,22 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Sprite locationMarkFilledIcon;
         [SerializeField] private Sprite helpFilledIcon;
         private Bounds _mineBounds;
+        private readonly List<Vector3> _dangerPositions = new List<Vector3>();
+
+        public bool TryGetGroundPoint(BoardTopology topology, Vector2 screen, Camera camera, out Vector3 point)
+        {
+            point = default;
+            var rect = projection.otherDotCanvas;
+            if (!RectTransformUtility.RectangleContainsScreenPoint(rect, screen, camera) ||
+                !RectTransformUtility.ScreenPointToLocalPointInRectangle(rect, screen, camera, out var local)) return false;
+            var area = rect.rect;
+            if (area.width <= 0f || area.height <= 0f) return false;
+            var requested = new Vector3(
+                Mathf.Lerp(_mineBounds.min.x, _mineBounds.max.x, Mathf.InverseLerp(area.xMin, area.xMax, local.x)),
+                _mineBounds.center.y,
+                Mathf.Lerp(_mineBounds.min.z, _mineBounds.max.z, Mathf.InverseLerp(area.yMin, area.yMax, local.y)));
+            return BoardBombardmentRules.TryGetGroundPosition(topology, requested, out point);
+        }
         private readonly List<BoardTile> _shopRoute = new List<BoardTile>();
         private readonly List<BoardTile> _orderedTiles = new List<BoardTile>(MaxRoomCount);
         private readonly List<Vector3> _footprintVertices = new List<Vector3>(BoardTileFootprint.MaxVertexCount);
@@ -284,8 +300,14 @@ namespace MazeParty.Multiplayer
                     isLocal,
                     displayContext);
             }
-            mineGraphic.Present(local != null ? local.LocalMinePositions : null, _mineBounds,
-                _visibleWorldRadius);
+            _dangerPositions.Clear();
+            if (local != null)
+            {
+                _dangerPositions.AddRange(local.LocalMinePositions);
+                _dangerPositions.AddRange(local.CaptureBombardmentTargets());
+            }
+            _dangerPositions.AddRange(match.BombardmentWarnings);
+            mineGraphic.Present(_dangerPositions, _mineBounds, _visibleWorldRadius);
             var eye = local != null ? local.EyePivot : null;
             _localFacingYaw = eye != null ? eye.eulerAngles.y :
                 local != null ? local.transform.eulerAngles.y : 0f;

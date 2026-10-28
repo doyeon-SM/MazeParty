@@ -951,3 +951,7 @@ Player ID: {0},플레이어 ID: {0},プレイヤーID：{0},玩家 ID：{0},玩�
 Connection timed out. The previous attempt is being cleaned up. Please try again shortly.,연결 시간이 초과되었습니다. 이전 접속을 정리 중입니다. 잠시 후 다시 시도해 주세요.,接続がタイムアウトしました。前の接続を終了しています。しばらくしてから再試行してください。,连接超时。正在清理上一次连接。请稍后重试。,連線逾時。正在清理上一次連線。請稍後重試。
 The previous connection attempt is still finishing. Please wait and retry. Restart the game if this persists.,이전 접속 요청을 정리 중입니다. 잠시 후 다시 시도해 주세요. 계속되면 게임을 재시작해 주세요.,前の接続を終了しています。しばらくしてから再試行してください。続く場合はゲームを再起動してください。,上一次连接请求仍在结束中。请稍后重试。若持续出现请重启游戏。,上一次連線請求仍在結束中。請稍後重試。若持續出現請重新啟動遊戲。
 The previous connection could not be cleaned up. Please restart the game before reconnecting.,이전 접속을 정리하지 못했습니다. 게임을 재시작한 뒤 다시 접속해 주세요.,前の接続を終了できませんでした。ゲームを再起動してから再接続してください。,无法清理上一次连接。请重启游戏后重新连接。,無法清理上一次連線。請重新啟動遊戲後重新連線。
+"Bombardment","폭격","爆撃","轰炸","轟炸"
+"Set Bombardment","폭격 설정","爆撃を設定","设置轰炸","設定轟炸"
+"{0}/3","{0}/3","{0}/3","{0}/3","{0}/3"
+"Select 3 ground positions on the map. After a 1s warning, strike every 0.5s: 80 damage within 3m, 50 within 7m, 20 within 10m. Consumed on start; cannot cancel. Incomplete targeting ends on death or timeout.","지도에서 바닥 3곳을 지정합니다. 1초 경고 후 0.5초 간격으로 폭격: 3m 이내 80, 7m 이내 50, 10m 이내 20 피해. 시작 시 소모되며 취소할 수 없습니다. 지정 완료 전 사망하거나 시간이 끝나면 발동하지 않습니다.","マップの地面を3か所指定。1秒の警告後、0.5秒間隔で爆撃。3m以内80、7m以内50、10m以内20ダメージ。開始時に消費し、キャンセル不可。指定完了前に死亡または時間切れになると不発。","在地图上指定3处地面。警告1秒后，每隔0.5秒轰炸：3米内80、7米内50、10米内20伤害。开始时消耗，无法取消。指定完成前死亡或超时则不发动。","在地圖上指定3處地面。警告1秒後，每隔0.5秒轟炸：3公尺內80、7公尺內50、10公尺內20傷害。開始時消耗，無法取消。指定完成前死亡或逾時則不發動。"

@@ -2016,7 +2016,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 1
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\xA9 HYGY Games. All rights reserved."
+  m_Text: "\xA9 2026 HYGY Games. All rights reserved."
 --- !u!114 &6543347279260890823
 MonoBehaviour:
   m_ObjectHideFlags: 0

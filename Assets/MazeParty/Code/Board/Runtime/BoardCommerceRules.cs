@@ -7,7 +7,7 @@ namespace MazeParty.Gameplay
     // Values 1-3 and 9 (retired Low Dice) must never be reused as serialized IDs.
     public enum PrototypeItemId : byte
     {
-        None = 0, DoubleDice = 4, Pistol = 5, Sniper = 6, Grenade = 7, Mine = 8, HighDice = 10, PositionSwapper = 11, Cloak = 12
+        None = 0, DoubleDice = 4, Pistol = 5, Sniper = 6, Grenade = 7, Mine = 8, HighDice = 10, PositionSwapper = 11, Cloak = 12, Bombardment = 13
     }
 
     public static class PrototypeItemCatalog
@@ -22,7 +22,7 @@ namespace MazeParty.Gameplay
                 {
                     _definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
                     Array.Sort(_definitions, (a, b) => a.Id.CompareTo(b.Id));
-                    if (_definitions.Length != 8) throw new InvalidOperationException("Expected eight board item SOs in Resources/MazeParty/Items.");
+                    if (_definitions.Length != 9) throw new InvalidOperationException("Expected nine board item SOs in Resources/MazeParty/Items.");
                 }
                 return _definitions;
             }
@@ -49,7 +49,7 @@ namespace MazeParty.Gameplay
         }
         public static bool IsValid(PrototypeItemId id) =>
             (id >= PrototypeItemId.DoubleDice && id <= PrototypeItemId.Mine) ||
-            (id >= PrototypeItemId.HighDice && id <= PrototypeItemId.Cloak);
+            (id >= PrototypeItemId.HighDice && id <= PrototypeItemId.Bombardment);
     }
 
     public static class ItemShopRules

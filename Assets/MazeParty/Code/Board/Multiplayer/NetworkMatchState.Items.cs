@@ -41,7 +41,7 @@ namespace MazeParty.Multiplayer
                 return false;
             var id = avatar.GetSelectedItemOnServer();
             if (!PrototypeItemCatalog.IsValid(id) || id == PrototypeItemId.DoubleDice || id == PrototypeItemId.HighDice ||
-                id == PrototypeItemId.PositionSwapper) return false;
+                id == PrototypeItemId.PositionSwapper || id == PrototypeItemId.Bombardment) return false;
             var item = PrototypeItemCatalog.Get(id);
             var origin = avatar.EyePivot != null ? avatar.EyePivot.position : avatar.transform.position + Vector3.up * .75f;
             var direction = avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward;
@@ -122,6 +122,7 @@ namespace MazeParty.Multiplayer
         private void TickBoardItemWorld()
         {
             if (!GameplayEnabled) return;
+            TickBoardBombardments();
             for (int slot = 0; slot < 4; slot++)
             {
                 var avatar = GetAvatarForSlot(slot);
@@ -345,7 +346,9 @@ namespace MazeParty.Multiplayer
                     Vector3.Distance(position, target.transform.position) > item.BlastRadius ||
                     !BoardItemPhysics.HasBlastLineOfSight(position + Vector3.up * .15f, target.transform.position, target.gameObject)) continue;
                 target.ApplyDamage(new DamageRequest(
-                    item.Damage, DamageKind.Item,
+                    item.Id == PrototypeItemId.Bombardment
+                        ? BoardBombardmentRules.DamageAtDistance(Vector3.Distance(position, target.transform.position))
+                        : item.Damage, DamageKind.Item,
                     owner != null ? owner.gameObject : null,
                     itemId: item.Id));
             }
@@ -512,6 +515,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearBoardItemWorld()
         {
+            ClearBoardBombardments();
             _boardMines.Clear(); _boardGrenades.Clear();
             foreach (var pair in _grenadeViews)
             {

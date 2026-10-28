@@ -90,12 +90,44 @@ namespace MazeParty.Multiplayer.Tests
             }
         }
 
+
+        [Test]
+        public void BombardmentMap_StaysOpenThroughCloseRequests_UntilSelectionEnds()
+        {
+            var root = UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
+            try
+            {
+                var view = root.GetComponent<BoardMapView>();
+                var selecting = typeof(BoardMapView).GetField("_bombardmentTargeting",
+                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                selecting.SetValue(view, true);
+                view.UpdateFullMapState(true, false);
+                view.CloseFullMap();
+                view.UpdateFullMapState(true, true);
+                Assert.That(view.FullMapOpen, Is.True);
+                var close = (UnityEngine.UI.Button)new SerializedObject(view).FindProperty("fullMapCloseButton").objectReferenceValue;
+                Assert.That(close.gameObject.activeSelf, Is.False);
+                selecting.SetValue(view, false);
+                view.CloseFullMap();
+                Assert.That(view.FullMapOpen, Is.False);
+            }
+            finally { UnityEngine.Object.DestroyImmediate(root); }
+        }
+
         private static void AssertBound(GameObject root)
         {
             var binding = root.GetComponent<BoardMapCanvasBindings>();
             var map = root.GetComponent<BoardMapView>();
             Assert.That(binding, Is.Not.Null);
             Assert.That(binding.HasRequiredReferences, Is.True);
+            var bombardment = new SerializedObject(binding);
+            foreach (var name in new[] { "bombardmentHintRoot", "bombardmentHintIcon", "bombardmentHintText", "bombardmentProgressText" })
+            {
+                var reference = bombardment.FindProperty(name).objectReferenceValue;
+                Assert.That(reference, Is.Not.Null, name);
+                var target = reference as GameObject ?? ((Component)reference).gameObject;
+                Assert.That(target.transform.IsChildOf(root.transform), Is.True, name);
+            }
             Assert.That(binding.MapView, Is.SameAs(map));
             Assert.That(binding.RootCanvas, Is.SameAs(
                 root.GetComponent<UnityEngine.Canvas>()));

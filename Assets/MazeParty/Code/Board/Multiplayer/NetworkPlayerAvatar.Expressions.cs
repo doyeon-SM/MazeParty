@@ -17,7 +17,7 @@ namespace MazeParty.Multiplayer
         {
             get
             {
-                if (!IsSpawned || CurrentHealth <= 0 || IsSwapping || _equippedItem.Value != 0 || IsBoardDeathInProgressOnServer) return false;
+                if (!IsSpawned || CurrentHealth <= 0 || IsSwapping || IsSettingBombardment || _equippedItem.Value != 0 || IsBoardDeathInProgressOnServer) return false;
                 if (CanUseLobbyInput()) return true;
                 var match = NetworkMatchState.Instance;
                 return match != null && match.CanAcceptActionInput && HasResolvedItemChoice && IsBoardReady;

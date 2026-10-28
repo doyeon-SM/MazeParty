@@ -45,7 +45,7 @@ namespace MazeParty.Multiplayer
         {
             if (!IsServer || index < 0 || index >= BoardChestRules.Count ||
                 !CanProcessAvatarRequest(avatar) || FlowState != BoardFlowState.Action ||
-                ActionRemaining <= 0d || avatar.IsBoardDeathInProgressOnServer ||
+                ActionRemaining <= 0d || avatar.IsBoardDeathInProgressOnServer || avatar.IsSettingBombardment ||
                 !avatar.HasResolvedItemChoice || avatar.CurrentHealth <= 0) return false;
             var state = GetChestSnapshot(index);
             if (!state.Active || state.Consumed || state.Revision != expectedRevision ||

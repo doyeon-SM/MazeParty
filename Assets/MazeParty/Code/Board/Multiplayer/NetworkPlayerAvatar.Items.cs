@@ -76,6 +76,7 @@ namespace MazeParty.Multiplayer
         private void TickBoardItems()
         {
             TickUtilityItems();
+            TickBombardmentSelection();
             var match = NetworkMatchState.Instance;
             if (IsServer && match != null && match.IsActionPhase && !match.IsGlobalSimulationPaused)
                 _itemCooldownRemaining = Math.Max(0d, _itemCooldownRemaining - Time.unscaledDeltaTime);

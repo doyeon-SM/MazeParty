@@ -54,7 +54,7 @@ namespace MazeParty.Gameplay.Tests
                 PrototypeItemId.Pistol,
                 PrototypeItemId.Sniper,
                 PrototypeItemId.Grenade,
-                PrototypeItemId.Cloak
+                PrototypeItemId.Bombardment
             };
 
             var restored = ItemShopStock.Restore(offers, 0b10101);

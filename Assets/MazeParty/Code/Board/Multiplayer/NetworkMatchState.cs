@@ -1568,7 +1568,7 @@ namespace MazeParty.Multiplayer
             var accepted = CanProcessAvatarRequest(avatar) &&
                            FlowState == BoardFlowState.Action &&
                            ActionRemaining > 0d &&
-                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping && !avatar.IsKnockedDown;
+                           !avatar.IsBoardDeathInProgressOnServer && !avatar.IsSwapping && !avatar.IsSettingBombardment && !avatar.IsKnockedDown;
             if (!accepted)
             {
                 ServerEventTrace.Record(
@@ -2413,6 +2413,9 @@ namespace MazeParty.Multiplayer
         public byte RangeDieItem;
         public int SwapTargetSlot;
         public double SwapRemaining;
+        public bool BombardmentSelecting;
+        public uint BombardmentRevision;
+        public Vector3[] BombardmentTargets;
         public byte OccupiedItemMask;
         public byte ItemSlot0;
         public byte ItemSlot1;

@@ -1,3 +1,4 @@
+using MazeParty.Gameplay;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -14,6 +15,20 @@ namespace MazeParty.Multiplayer
         [SerializeField] private BoardMapView mapView;
         [SerializeField] private Text movesText;
         [SerializeField] private Text itemUsesText;
+        [SerializeField] private GameObject bombardmentHintRoot;
+        [SerializeField] private RawImage bombardmentHintIcon;
+        [SerializeField] private Text bombardmentHintText;
+        [SerializeField] private Text bombardmentProgressText;
+        [SerializeField] private string bombardmentHint = "Set Bombardment";
+        [SerializeField] private string bombardmentProgress = "{0}/3";
+
+        public void PresentBombardment(bool visible, int count)
+        {
+            bombardmentHintRoot.SetActive(visible);
+            if (!visible) return;
+            bombardmentHintText.text = GameText.T(bombardmentHint);
+            bombardmentProgressText.text = GameText.F(bombardmentProgress, count);
+        }
 
         [SerializeField] private int numberSizeThrough10 = 50;
         [SerializeField] private int numberSizeThrough20 = 60;
@@ -53,6 +68,9 @@ namespace MazeParty.Multiplayer
         public Text ItemUsesText => itemUsesText;
 
         public bool HasRequiredReferences =>
+            bombardmentHintRoot != null && bombardmentHintIcon != null &&
+            bombardmentHintIcon.texture != null && bombardmentHintText != null &&
+            bombardmentProgressText != null &&
             rootCanvas != null &&
             rootRaycaster != null &&
             mapView != null &&

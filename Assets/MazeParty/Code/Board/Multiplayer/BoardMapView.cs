@@ -60,6 +60,8 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Button fullMapCloseButton;
         [SerializeField, HideInInspector] private int mapPresentationVersion;
         private bool _fullMapOpen;
+        private bool _bombardmentTargeting;
+        private BoardMapCanvasBindings _bindings;
         private bool _fullMapBoardAvailable;
         private bool _fullMapCloseButtonWired;
         private Canvas _mapCanvas;
@@ -88,6 +90,7 @@ namespace MazeParty.Multiplayer
         private void OnEnable()
         {
             CaptureSortingOrder();
+            _bindings = GetComponent<BoardMapCanvasBindings>();
             WireFullMapCloseButton(true);
         }
 
@@ -98,6 +101,14 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            var manager = NetworkManager.Singleton;
+            var localObject = manager != null && manager.SpawnManager != null
+                ? manager.SpawnManager.GetLocalPlayerObject() : null;
+            var localAvatar = localObject != null ? localObject.GetComponent<NetworkPlayerAvatar>() : null;
+            var wasTargeting = _bombardmentTargeting;
+            _bombardmentTargeting = localAvatar != null && localAvatar.IsSettingBombardment && localAvatar.CurrentHealth > 0;
+            if (wasTargeting && !_bombardmentTargeting) CloseFullMap();
+            _bindings?.PresentBombardment(_bombardmentTargeting, localAvatar != null ? localAvatar.LocalBombardmentTargetCount : 0);
             var match = NetworkMatchState.Instance;
             var isReady = match != null && match.IsSpawned && match.GameplayEnabled;
             var action = isReady && (match.FlowState == BoardFlowState.Descending ||
@@ -120,7 +131,7 @@ namespace MazeParty.Multiplayer
             var typing = selected != null && selected.TryGetComponent<InputField>(out var input) && input.isFocused;
             var rawToggleRequested = !typing && keyboard != null &&
                                      keyboard.mKey.wasPressedThisFrame;
-            var toggleRequested = rawToggleRequested &&
+            var toggleRequested = !_bombardmentTargeting && rawToggleRequested &&
                 (!LocalInputGate.BlocksGameplayInput ||
                  (_fullMapOpen && UiPopupStack.IsTop(fullMapPanel)));
             if (!typing && _fullMapOpen &&
@@ -158,13 +169,6 @@ namespace MazeParty.Multiplayer
             UpdateFullMapState(true, toggleRequested);
             SetActive(minimapPanel, !_fullMapOpen);
 
-            var manager = NetworkManager.Singleton;
-            var localObject = manager != null && manager.SpawnManager != null
-                ? manager.SpawnManager.GetLocalPlayerObject()
-                : null;
-            var localAvatar = localObject != null
-                ? localObject.GetComponent<NetworkPlayerAvatar>()
-                : null;
             RefreshPlayerKnowledge(match, localAvatar);
             if (_fullMapOpen)
             {
@@ -174,6 +178,16 @@ namespace MazeParty.Multiplayer
                     localAvatar,
                     BoardMinimapDisplayContext.FullMap,
                     _playerKnowledge);
+                var mouse = Mouse.current;
+                if (wasTargeting && _bombardmentTargeting && match.CanAcceptActionInput &&
+                    UiPopupStack.IsTop(fullMapPanel) && mouse != null && mouse.leftButton.wasPressedThisFrame)
+                {
+                    if (fullMap.TryGetGroundPoint(_topology, mouse.position.ReadValue(),
+                        _mapCanvas != null && _mapCanvas.renderMode != RenderMode.ScreenSpaceOverlay
+                            ? _mapCanvas.worldCamera : null, out var point))
+                        localAvatar.ChooseBombardmentTarget(point);
+                    else GameSound.Play(SoundKeys.UiError);
+                }
             }
             else
             {
@@ -193,6 +207,10 @@ namespace MazeParty.Multiplayer
             {
                 SetFullMapOpen(false);
             }
+            else if (_bombardmentTargeting)
+            {
+                SetFullMapOpen(true);
+            }
             else if (toggleRequested)
             {
                 SetFullMapOpen(!_fullMapOpen);
@@ -208,6 +226,11 @@ namespace MazeParty.Multiplayer
 
         public void CloseFullMap()
         {
+            if (_bombardmentTargeting)
+            {
+                UiPopupStack.Push(fullMapPanel, CloseFullMap);
+                return;
+            }
             SetFullMapOpen(false);
             RefreshFullMapVisibility();
         }
@@ -252,7 +275,7 @@ namespace MazeParty.Multiplayer
             if (fullMapCloseButton != null)
             {
                 fullMapCloseButton.gameObject.SetActive(
-                    _fullMapBoardAvailable && _fullMapOpen);
+                    _fullMapBoardAvailable && _fullMapOpen && !_bombardmentTargeting);
             }
         }
 
@@ -261,6 +284,7 @@ namespace MazeParty.Multiplayer
             SuspendPlayerObservation();
             WireFullMapCloseButton(false);
             _fullMapBoardAvailable = false;
+            _bombardmentTargeting = false;
             CloseFullMap();
             RestoreMapSortingOrder();
         }

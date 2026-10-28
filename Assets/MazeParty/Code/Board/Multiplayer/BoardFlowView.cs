@@ -943,7 +943,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
                 _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
                 !BoardUtilityItemView.IsTargetPickerOpen &&
-                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine));
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment));
         }
 
         private void RefreshInteractionPrompt()
@@ -1319,7 +1319,8 @@ namespace MazeParty.Multiplayer
                                  match.IsKeyShopRevealActive ||
                                  (match.FlowState != BoardFlowState.Action &&
                                   !localCombatActive) ||
-                                 choicePending || IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen;
+                                 choicePending || IsItemShopOpen || BoardUtilityItemView.IsTargetPickerOpen ||
+                                 (_localAvatar != null && _localAvatar.IsSettingBombardment);
             cameraDirector?.SetUiPointerVisible(pointerVisible);
         }
 

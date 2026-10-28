@@ -144,6 +144,7 @@ namespace MazeParty.Gameplay.Tests
 
             Assert.That(grenade.ExplosionPrefab, Is.SameAs(explosion));
             Assert.That(mine.ExplosionPrefab, Is.SameAs(explosion));
+            Assert.That(PrototypeItemCatalog.Get(PrototypeItemId.Bombardment).ExplosionPrefab, Is.SameAs(explosion));
             Assert.That(pistol.ImpactPrefab, Is.SameAs(hitSpark));
             Assert.That(sniper.ImpactPrefab, Is.SameAs(hitSpark));
             var playerImpact = AssetDatabase.LoadAssetAtPath<GameObject>(FireImpactPath);

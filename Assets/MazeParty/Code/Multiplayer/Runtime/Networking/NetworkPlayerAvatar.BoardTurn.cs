@@ -169,7 +169,8 @@ namespace MazeParty.Multiplayer
             InitializeSelectedItem();
             _choiceResolution.Value = (byte)ItemChoiceResolution.ItemSelected;
             var itemId = GetSelectedItemOnServer();
-            if (PrototypeItemCatalog.Get(itemId).UseTiming == BoardItemUseTiming.TurnStart)
+            if (PrototypeItemCatalog.Get(itemId).UseTiming == BoardItemUseTiming.TurnStart &&
+                itemId != PrototypeItemId.Bombardment)
                 PresentItemUseOnServer(itemId, animate: false);
             ActivateSelectedCloakOnServer();
             return true;

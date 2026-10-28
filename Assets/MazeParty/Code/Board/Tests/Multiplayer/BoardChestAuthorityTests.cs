@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
-    public sealed class BoardChestAuthorityTests
+    public sealed partial class BoardChestAuthorityTests
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private GameObject _root;
@@ -110,7 +110,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(BoardChestRules.DrawItem(PrototypeItemCatalog.All, seed), Is.EqualTo(id));
             }
             Assert.That(PrototypeItemCatalog.All.Where(i => i.UseTiming == BoardItemUseTiming.TurnStart).Select(i => i.Id),
-                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.HighDice }));
+                Is.EquivalentTo(new[] { PrototypeItemId.DoubleDice, PrototypeItemId.HighDice, PrototypeItemId.Bombardment }));
         }
         [Test]
         public void Opening_RejectsUnauthorizedStaleRemoteDeadPausedUnchosenOrOccludedRequests_AndCommitsOnce()

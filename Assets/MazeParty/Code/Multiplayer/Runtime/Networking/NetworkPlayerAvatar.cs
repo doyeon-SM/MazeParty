@@ -612,7 +612,7 @@ namespace MazeParty.Multiplayer
             if (match != null && match.IsCombatRetreatActive)
             { StopServerInputOnServer(); return; }
             var canMoveInAction = match != null && match.CanAcceptActionInput &&
-                                  HasResolvedItemChoice && !IsSwapping &&
+                                  HasResolvedItemChoice && !IsSwapping && !IsSettingBombardment &&
                                   !IsBoardDeathInProgressOnServer && !IsKnockedDown &&
                                   ActiveHandGesture == 0;
             var canMoveInCombat = match != null && match.CanAvatarUseCombatInput(this);
@@ -2522,7 +2522,7 @@ namespace MazeParty.Multiplayer
             var match = NetworkMatchState.Instance;
             var canUseLobbyInput = CanUseLobbyInput() || CanUseCeremonyInput();
             var canUseActionInput = match != null && match.CanAcceptActionInput &&
-                                    HasResolvedItemChoice && !IsSwapping &&
+                                    HasResolvedItemChoice && !IsSwapping && !IsSettingBombardment &&
                                     !IsBoardDeathInProgressOnServer && !IsKnockedDown;
             var canUseCombatInput = match != null && match.CanAvatarUseCombatInput(this);
             if (ActiveHandGesture != 0 ||
