@@ -270,6 +270,11 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
+            if (!ValidateRecoveryItemMaps(snapshot))
+            {
+                error = GameText.T("The saved items are not valid for this map.");
+                return false;
+            }
             if (!ValidateRecoveryShopCoordinates(snapshot))
             {
                 error = GameText.T("A saved shop location is no longer available.");
@@ -370,6 +375,31 @@ namespace MazeParty.Multiplayer
                 }
             }
 
+            return true;
+        }
+
+        // Validate before ResetTransientMatchStateForRecovery so rejected saves never mutate a live match.
+        private bool ValidateRecoveryItemMaps(MatchRecoverySnapshot snapshot)
+        {
+            if (snapshot.itemShops == null || snapshot.players == null) return false;
+            foreach (var shop in snapshot.itemShops)
+            {
+                if (!shop.active) continue;
+                if (shop.offers == null) return false;
+                foreach (var value in shop.offers)
+                    if (value < 0 || value > byte.MaxValue ||
+                        !PrototypeItemCatalog.IsValid((PrototypeItemId)value) ||
+                        !PrototypeItemCatalog.Get((PrototypeItemId)value).IsAvailableOnMap(snapshot.boardMapId)) return false;
+            }
+            foreach (var player in snapshot.players)
+            {
+                if (player == null) return false;
+                var items = new[] { player.itemSlot0, player.itemSlot1, player.itemSlot2 };
+                for (var slot = 0; slot < items.Length; slot++)
+                    if ((player.occupiedItemMask & (1 << slot)) != 0 &&
+                        (!PrototypeItemCatalog.IsValid((PrototypeItemId)items[slot]) ||
+                         !PrototypeItemCatalog.Get((PrototypeItemId)items[slot]).IsAvailableOnMap(snapshot.boardMapId))) return false;
+            }
             return true;
         }
 
@@ -782,7 +812,7 @@ namespace MazeParty.Multiplayer
                     offers[offer] = (PrototypeItemId)snapshot.offers[offer];
                 }
 
-                var stock = ItemShopStock.Restore(offers, snapshot.soldMask);
+                var stock = ItemShopStock.Restore(offers, snapshot.soldMask, mapId: BoardMapId);
                 _itemShopStocks[index] = stock;
                 SetItemShopSnapshot(
                     index,

@@ -52,7 +52,7 @@ namespace MazeParty.Multiplayer
                 !CanAccessCoordinateOnServer(avatar, state.Location) ||
                 !avatar.IsAimingAtChestOnServer(index)) return false;
             var id = BoardChestRules.DrawItem(PrototypeItemCatalog.All,
-                unchecked(_boardEffectSeed.Value * 397 ^ state.AppearedTurn * 31 ^ index));
+                unchecked(_boardEffectSeed.Value * 397 ^ state.AppearedTurn * 31 ^ index), BoardMapId);
             if (!avatar.EquipChestItemOnServer(id)) return false;
             state.Consumed = true;
             state.Revision++;

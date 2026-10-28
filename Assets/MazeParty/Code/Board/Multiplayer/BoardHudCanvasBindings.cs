@@ -249,6 +249,7 @@ namespace MazeParty.Multiplayer
         }
 
         public bool HasRequiredReferences =>
+            HasGhostPassReferences &&
             references != null &&
             statePalette != null &&
             references.RootCanvas != null &&

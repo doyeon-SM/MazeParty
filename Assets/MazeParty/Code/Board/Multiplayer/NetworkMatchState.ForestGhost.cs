@@ -42,9 +42,12 @@ namespace MazeParty.Multiplayer
                 var empty = _boardTopology.Tiles.Where(t => t != null &&
                     t.TileType != BoardTileType.Respawn && !occupied.Contains(t))
                     .OrderBy(t => t.Coordinate.x).ThenBy(t => t.Coordinate.y).ToArray();
-                var choice = BoardForestGhostRules.Resolve(_boardEffectSeed.Value, Turn, eligible, empty.Length);
+                var beneficiary = GhostPassBeneficiary;
+                var choice = beneficiary >= 0
+                    ? BoardForestGhostRules.ResolveSteal(_boardEffectSeed.Value, Turn, eligible, beneficiary)
+                    : BoardForestGhostRules.Resolve(_boardEffectSeed.Value, Turn, eligible, empty.Length);
                 if (choice.Slot < 0 && choice.EmptyIndex < 0)
-                { _forestGhostComplete = true; return; }
+                { _forestGhostComplete = true; FinishGhostPassOnServer(); return; }
                 var target = choice.Slot >= 0 ? GetAvatarForSlot(choice.Slot) : null;
                 ClearLandingEffectPresentationOnServer();
                 ClearLandingEffectFeedbackOnServer();
@@ -52,6 +55,7 @@ namespace MazeParty.Multiplayer
                 _forestGhost.Value = new BoardForestGhostSnapshot
                 {
                     Active = true, Revision = ForestGhost.Revision + 1, Slot = choice.Slot,
+                    Beneficiary = (byte)(beneficiary + 1),
                     Strong = choice.Strong, Resource = (byte)choice.Resource, Amount = choice.Amount,
                     Position = target != null ? target.transform.position : empty[choice.EmptyIndex].WorldCenter,
                     Facing = target != null ? target.transform.rotation : Quaternion.identity, StartedAt = now
@@ -69,9 +73,24 @@ namespace MazeParty.Multiplayer
                 return;
             }
             if (!snapshot.HasReached(now, BoardForestGhostRules.Duration)) return;
+            if (snapshot.Beneficiary > 0 && !snapshot.IsDelivery && snapshot.ActualAmount < 0)
+            {
+                if (HasBoardDeathInProgressOnServer()) return;
+                var recipient = GetAvatarForSlot(snapshot.Beneficiary - 1);
+                if (recipient == null) return; // Reconnection must not drop the pending payment.
+                _forestGhost.Value = new BoardForestGhostSnapshot
+                {
+                    Active = true, IsDelivery = true, Beneficiary = snapshot.Beneficiary,
+                    Revision = snapshot.Revision + 1, Slot = snapshot.Beneficiary - 1,
+                    Strong = snapshot.Strong, Resource = snapshot.Resource, Amount = -snapshot.ActualAmount,
+                    Position = recipient.transform.position, Facing = recipient.transform.rotation, StartedAt = now
+                };
+                return;
+            }
             snapshot.Active = false;
             _forestGhost.Value = snapshot;
             _forestGhostComplete = true;
+            FinishGhostPassOnServer();
         }
 
         private bool ApplyForestGhostOnServer()
@@ -91,7 +110,9 @@ namespace MazeParty.Multiplayer
                     case ForestGhostResource.Key:
                         snapshot.ActualAmount = avatar.ApplyKeyDeltaOnServer(snapshot.Amount); break;
                     case ForestGhostResource.Health:
-                        if (snapshot.Amount >= 0) snapshot.ActualAmount = avatar.HealOnServer(snapshot.Amount);
+                        if (snapshot.Amount >= 0)
+                            snapshot.ActualAmount = !snapshot.IsDelivery || avatar.CurrentHealth > 0
+                                ? avatar.HealOnServer(snapshot.Amount) : 0;
                         else
                         {
                             var before = avatar.CurrentHealth;

@@ -43,6 +43,8 @@ namespace MazeParty.Multiplayer
             if (!PrototypeItemCatalog.IsValid(id) || id == PrototypeItemId.DoubleDice || id == PrototypeItemId.HighDice ||
                 id == PrototypeItemId.PositionSwapper || id == PrototypeItemId.Bombardment) return false;
             var item = PrototypeItemCatalog.Get(id);
+            if (!item.IsAvailableOnMap(BoardMapId) ||
+                id == PrototypeItemId.GhostPass && avatar.CurrentHealth <= 0) return false;
             var origin = avatar.EyePivot != null ? avatar.EyePivot.position : avatar.transform.position + Vector3.up * .75f;
             var direction = avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward;
             if (Vector3.Distance(origin, claimedOrigin) > 1.5f || Vector3.Dot(direction, claimedDirection.normalized) < .94f)
@@ -60,6 +62,7 @@ namespace MazeParty.Multiplayer
                      out minePosition))) return false;
             if (!avatar.SpendItemChargeOnServer(item)) return false;
             if (id == PrototypeItemId.Cloak) avatar.ActivateCloakOnServer();
+            if (id == PrototypeItemId.GhostPass) RegisterGhostPassOnServer(avatar.AssignedSlot);
             avatar.PresentItemUseOnServer(id);
             if (id == PrototypeItemId.Pistol || id == PrototypeItemId.Sniper)
             {
@@ -516,6 +519,7 @@ namespace MazeParty.Multiplayer
         private void ClearBoardItemWorld()
         {
             ClearBoardBombardments();
+            ResetGhostPassOnServer();
             _boardMines.Clear(); _boardGrenades.Clear();
             foreach (var pair in _grenadeViews)
             {

@@ -9,7 +9,7 @@ using UnityEngine.TestTools;
 
 namespace MazeParty.Multiplayer.Tests
 {
-    public sealed class BoardDeathGoldAuthorityTests
+    public sealed partial class BoardDeathGoldAuthorityTests
     {
         private const BindingFlags Private = BindingFlags.Instance | BindingFlags.NonPublic;
         private GameObject _root;

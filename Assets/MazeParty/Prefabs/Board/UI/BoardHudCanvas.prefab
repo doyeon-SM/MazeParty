@@ -1397,6 +1397,7 @@ GameObject:
   - component: {fileID: 7118292596605567308}
   - component: {fileID: 6303396994828395269}
   - component: {fileID: 9012839066858507075}
+  - component: {fileID: 284249143674603699}
   m_Layer: 5
   m_Name: PlayerHealthBar1
   m_TagString: Untagged
@@ -1548,6 +1549,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
   hoverKey: 
   clickKey: 
+--- !u!114 &284249143674603699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1125894408818714143}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 0.68, g: 0.2, b: 1, a: 1}
+  m_EffectDistance: {x: 4, y: -4}
+  m_UseGraphicAlpha: 1
 --- !u!1 &1152412725633822039
 GameObject:
   m_ObjectHideFlags: 0
@@ -3072,6 +3088,7 @@ GameObject:
   - component: {fileID: 4768279887236023128}
   - component: {fileID: 1249647362103746413}
   - component: {fileID: 1890091183829558461}
+  - component: {fileID: 6234272102032221569}
   m_Layer: 5
   m_Name: PlayerHealthBar3
   m_TagString: Untagged
@@ -3223,6 +3240,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
   hoverKey: 
   clickKey: 
+--- !u!114 &6234272102032221569
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2358805778642066102}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 0.68, g: 0.2, b: 1, a: 1}
+  m_EffectDistance: {x: 4, y: -4}
+  m_UseGraphicAlpha: 1
 --- !u!1 &2378915228825165550
 GameObject:
   m_ObjectHideFlags: 0
@@ -3939,6 +3971,7 @@ GameObject:
   - component: {fileID: 1234230091867250254}
   - component: {fileID: 2739030411628848034}
   - component: {fileID: 7262122336798767130}
+  - component: {fileID: 3472388413186364448}
   m_Layer: 5
   m_Name: PlayerHealthBar0
   m_TagString: Untagged
@@ -4090,6 +4123,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
   hoverKey: 
   clickKey: 
+--- !u!114 &3472388413186364448
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2574405037373613906}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 0.68, g: 0.2, b: 1, a: 1}
+  m_EffectDistance: {x: 4, y: -4}
+  m_UseGraphicAlpha: 1
 --- !u!1 &2598944763518414347
 GameObject:
   m_ObjectHideFlags: 0
@@ -4470,6 +4518,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c5353c26ad1477747ab2b082a6c03003, type: 3}
   m_Name: 
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.BoardHudCanvasBindings
+  ghostPassOutlines:
+  - {fileID: 3472388413186364448}
+  - {fileID: 284249143674603699}
+  - {fileID: 2835722321583461490}
+  - {fileID: 6234272102032221569}
+  ghostPassPulsePeriod: 1.6
+  ghostPassPulseMinimumAlpha: 0.45
+  ghostPassPulseMinimumBrightness: 0.75
+  ghostPassPulseMaximumWidth: 1.2
   rankSwapDuration: 0.65
   rankSwapArc: 38
   rankSwapStagger: 0.12
@@ -8375,6 +8432,7 @@ GameObject:
   - component: {fileID: 479328921358370182}
   - component: {fileID: 1222907391626129324}
   - component: {fileID: 3521280839205299565}
+  - component: {fileID: 2835722321583461490}
   m_Layer: 5
   m_Name: PlayerHealthBar2
   m_TagString: Untagged
@@ -8526,6 +8584,21 @@ MonoBehaviour:
   m_EditorClassIdentifier: MazeParty.Multiplayer::MazeParty.Multiplayer.UiSoundEmitter
   hoverKey: 
   clickKey: 
+--- !u!114 &2835722321583461490
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5581337652127870211}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e19747de3f5aca642ab2be37e372fb86, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Outline
+  m_EffectColor: {r: 0.68, g: 0.2, b: 1, a: 1}
+  m_EffectDistance: {x: 4, y: -4}
+  m_UseGraphicAlpha: 1
 --- !u!1 &5590300700727577040
 GameObject:
   m_ObjectHideFlags: 0

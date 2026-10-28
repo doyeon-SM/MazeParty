@@ -429,11 +429,11 @@ namespace MazeParty.Multiplayer.Tests
         public void Decode_ItemIdsPreserveActiveItemsAndRejectRetiredOrUnknownInventoryAndOffers()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            foreach (var raw in new byte[] { 1, 2, 3, 9, 13, 255, 4, 10, 12 })
+            foreach (var raw in new byte[] { 1, 2, 3, 9, 15, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14 })
             foreach (var inShop in new[] { false, true })
             {
                 var snapshot = CreateValidSnapshot();
-                var valid = raw == 4 || raw == 10 || raw == 12;
+                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 14;
                 if (inShop)
                     snapshot.itemShops[0] = new MatchRecoveryItemShopSnapshot
                     {

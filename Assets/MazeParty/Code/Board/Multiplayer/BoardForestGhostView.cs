@@ -10,7 +10,7 @@ namespace MazeParty.Multiplayer
         [SerializeField] private Renderer[] ghostRenderers;
         [SerializeField] private Material normalMaterial, strongMaterial;
         [SerializeField] private AnimationClip idleClip, attackClip, dissolveClip;
-        [SerializeField] private GameObject coin, key, healing;
+        [SerializeField] private GameObject coin, key, healing, damageShield;
         [SerializeField] private Vector3 playerOffset = new Vector3(1.05f, 0.45f, 0.65f);
         [SerializeField] private float modelScale = 0.75f;
         [SerializeField] private float emptyTileScale = 1.5f;
@@ -19,9 +19,9 @@ namespace MazeParty.Multiplayer
         public Transform Focus => transform;
         public bool HasRequiredReferences => model != null && ghostRenderers != null && ghostRenderers.Length > 0 &&
             normalMaterial != null && strongMaterial != null && idleClip != null && attackClip != null &&
-            dissolveClip != null && coin != null && key != null && healing != null;
+            dissolveClip != null && coin != null && key != null && healing != null && damageShield != null;
 
-        public void Present(BoardForestGhostSnapshot snapshot, double now, GameplayCameraDirector director)
+        public void Present(BoardForestGhostSnapshot snapshot, double now, GameplayCameraDirector director, PlayerAvatarVisual targetVisual = null)
         {
             transform.SetPositionAndRotation(snapshot.Position, snapshot.Facing);
             var elapsed = (float)snapshot.Elapsed(now);
@@ -64,8 +64,11 @@ namespace MazeParty.Multiplayer
             var prop = resource == ForestGhostResource.Gold ? coin.transform : key.transform;
             if (prop.gameObject.activeSelf)
             {
-                var playerPoint = snapshot.Position + Vector3.up * 1.15f;
-                var ghostPoint = model.position + Vector3.up * 0.35f;
+                var playerHead = targetVisual != null && targetVisual.Bindings != null
+                    ? targetVisual.Bindings.HeadAnchor : null;
+                var playerPoint = playerHead != null ? playerHead.position
+                    : snapshot.Position + Vector3.up * PlayerAvatarVisual.StandingEyeHeight;
+                var ghostPoint = ghostRenderers[0].bounds.center;
                 var from = snapshot.Amount > 0 ? ghostPoint : playerPoint;
                 var to = snapshot.Amount > 0 ? playerPoint : ghostPoint;
                 var progress = Mathf.Clamp01((elapsed - 0.6f) / ((float)BoardForestGhostRules.ApplyAt - 0.6f));
@@ -73,14 +76,18 @@ namespace MazeParty.Multiplayer
                 prop.rotation = Quaternion.Euler(0f, elapsed * 180f, 0f);
                 prop.gameObject.SetActive(progress < 1f);
             }
-            var healVisible = motion && resource == ForestGhostResource.Health && snapshot.Amount > 0;
-            healing.SetActive(healVisible);
-            if (healVisible)
-            {
-                healing.transform.position = snapshot.Position + Vector3.up;
-                foreach (var particle in healing.GetComponentsInChildren<ParticleSystem>(true))
-                    particle.Simulate(elapsed - 0.6f, false, true);
-            }
+            var healthEffect = motion && resource == ForestGhostResource.Health;
+            PresentShield(healing, healthEffect && snapshot.Amount > 0, snapshot.Position, elapsed);
+            PresentShield(damageShield, healthEffect && snapshot.Amount < 0, snapshot.Position, elapsed);
+        }
+
+        private static void PresentShield(GameObject shield, bool visible, Vector3 playerPosition, float elapsed)
+        {
+            shield.SetActive(visible);
+            if (!visible) return;
+            shield.transform.position = playerPosition + Vector3.up;
+            foreach (var particle in shield.GetComponentsInChildren<ParticleSystem>(true))
+                particle.Simulate(elapsed - 0.6f, false, true);
         }
     }
 }

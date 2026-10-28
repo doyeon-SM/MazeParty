@@ -108,6 +108,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            ResetGhostPassPresentation();
             _rankingInitialized = false;
             if (references?.PlayerRankingLayout != null)
                 references.PlayerRankingLayout.enabled = true;

@@ -296,6 +296,7 @@ namespace MazeParty.Multiplayer
 
         private void OnDisable()
         {
+            uiBindings?.Hud?.ResetGhostPassPresentation();
             for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
                 for (var kind = 0; kind < 3; kind++)
@@ -943,7 +944,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
                 _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
                 !BoardUtilityItemView.IsTargetPickerOpen &&
-                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment));
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass));
         }
 
         private void RefreshInteractionPrompt()
@@ -1087,6 +1088,7 @@ namespace MazeParty.Multiplayer
 
             for (var slot = 0; slot < _playerHudRows.Length; slot++)
             {
+                uiBindings.Hud.PresentGhostPass(slot, match.HasUsedGhostPass(slot), _hudFeedbackNow);
                 var isPresent = match.IsPlayerPresent(slot);
                 var avatar = match.GetAvatarForSlot(slot);
                 SetText(_playerHudRows[slot].Name, ResolveBoardPlayerName(avatar, slot));
@@ -2143,6 +2145,7 @@ namespace MazeParty.Multiplayer
 
         private void SetWaitingState()
         {
+            uiBindings?.Hud?.ResetGhostPassPresentation();
             StopMinigamePreview();
             SetBoardUiVisible(true);
             SetActive(_selectionPanel, false);

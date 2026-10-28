@@ -252,6 +252,9 @@ namespace MazeParty.Multiplayer.Tests
                         component.GetType().FullName == bindingTypeName);
                 Assert.That(binding, Is.Not.Null, path + " :: " + bindingTypeName);
 
+                if (binding is BoardHudCanvasBindings boardHud)
+                    AssertGhostPassBindings(boardHud, false);
+
                 var requiredReferences = binding.GetType().GetProperty(
                     "HasRequiredReferences");
                 Assert.That(
@@ -268,6 +271,23 @@ namespace MazeParty.Multiplayer.Tests
                     AssertLobbyEmoteHint(lobby, false);
                     AssertLobbyCopyright(lobby, false);
                 }
+            }
+        }
+
+        private static void AssertGhostPassBindings(BoardHudCanvasBindings hud, bool sceneInstance)
+        {
+            Assert.That(hud.HasGhostPassReferences, Is.True);
+            var data = new SerializedObject(hud);
+            var outlines = data.FindProperty("ghostPassOutlines");
+            var sliders = data.FindProperty("references.PlayerHealthSliders");
+            Assert.That(outlines.arraySize, Is.EqualTo(MultiplayerConstants.MaxPlayers));
+            for (var slot = 0; slot < outlines.arraySize; slot++)
+            {
+                var outline = (Outline)outlines.GetArrayElementAtIndex(slot).objectReferenceValue;
+                var slider = (Slider)sliders.GetArrayElementAtIndex(slot).objectReferenceValue;
+                Assert.That(outline, Is.Not.Null);
+                Assert.That(outline.gameObject, Is.SameAs(slider.gameObject));
+                if (sceneInstance) Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(outline), Is.Not.Null);
             }
         }
 
@@ -786,6 +806,8 @@ namespace MazeParty.Multiplayer.Tests
                                 presenter.LocalPlayerMarker.gameObject), Is.EqualTo(
                                 "Assets/MazeParty/Prefabs/Board/UI/BoardLocalPlayerMarker.prefab"));
                         }
+                        if (component is BoardHudCanvasBindings boardHud)
+                            AssertGhostPassBindings(boardHud, true);
                         if (component is HandEmoteWheelView wheel)
                         { Assert.That(wheel.HasRequiredReferences, Is.True); Assert.That(PrefabUtility.GetCorrespondingObjectFromSource(wheel), Is.Not.Null); }
                         if (component is LobbyExpressionView faces)

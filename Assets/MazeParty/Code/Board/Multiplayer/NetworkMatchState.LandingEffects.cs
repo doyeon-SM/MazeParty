@@ -422,7 +422,7 @@ namespace MazeParty.Multiplayer
             var random = new System.Random(unchecked(
                 _boardEffectSeed.Value ^ (_turn.Value * 486187739) ^
                 (slot * 16777619)));
-            var reward = PrototypeItemCatalog.GetRandomId(random);
+            var reward = PrototypeItemCatalog.GetRandomId(random, BoardMapId);
             if (avatar.TryAddItemOnServer(reward))
             {
                 PublishLandingEffectOnServer(

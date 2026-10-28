@@ -19,7 +19,8 @@ namespace MazeParty.Multiplayer
                 UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(_forestGhostView.gameObject, gameObject.scene);
             }
             _forestGhostView.gameObject.SetActive(true);
-            _forestGhostView.Present(match.ForestGhost, match.SynchronizedNow, cameraDirector);
+            _forestGhostView.Present(match.ForestGhost, match.SynchronizedNow, cameraDirector,
+                match.GetAvatarForSlot(match.ForestGhost.Slot)?.AvatarVisual);
             if (match.ForestGhost.Slot >= 0)
                 cameraDirector.SetBoardResourceEventFocus(_forestGhostView.Focus, null, 0f);
             else

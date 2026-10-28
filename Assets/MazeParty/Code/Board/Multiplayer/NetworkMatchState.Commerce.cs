@@ -77,7 +77,8 @@ namespace MazeParty.Multiplayer
             }
 
             var itemId = snapshot.GetOffer(offerIndex);
-            if (!PrototypeItemCatalog.IsValid(itemId))
+            if (!PrototypeItemCatalog.IsValid(itemId) ||
+                !PrototypeItemCatalog.Get(itemId).IsAvailableOnMap(BoardMapId))
             {
                 return false;
             }
@@ -189,7 +190,7 @@ namespace MazeParty.Multiplayer
                 return false;
             }
 
-            var stock = new ItemShopStock(UnityEngine.Random.Range(1, int.MaxValue));
+            var stock = new ItemShopStock(UnityEngine.Random.Range(1, int.MaxValue), BoardMapId);
             _itemShopStocks[shopIndex] = stock;
             SetItemShopSnapshot(
                 shopIndex,

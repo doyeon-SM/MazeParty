@@ -52,6 +52,28 @@ namespace MazeParty.Gameplay
             return new ForestGhostChoice(slot, strong, resource, gain ? amount : -amount, -1);
         }
 
+        public static ForestGhostChoice ResolveSteal(int seed, int turn, byte eligibleMask, int beneficiarySlot)
+        {
+            if (beneficiarySlot < 0 || beneficiarySlot >= 4)
+                throw new ArgumentOutOfRangeException(nameof(beneficiarySlot));
+            var original = Resolve(seed, turn, eligibleMask, 0);
+            var mask = eligibleMask & ~(1 << beneficiarySlot) & 15;
+            var count = 0;
+            for (var slot = 0; slot < 4; slot++) if ((mask & (1 << slot)) != 0) count++;
+            var chosen = -1;
+            if (count > 0)
+            {
+                uint state = unchecked((uint)seed ^ (uint)turn * 0x9E3779B9u ^
+                    (uint)(beneficiarySlot + 1) * 0x85EBCA6Bu ^ 0x50415353u);
+                if (state == 0) state = 1;
+                var index = Next(ref state, count);
+                for (var slot = 0; slot < 4; slot++)
+                    if ((mask & (1 << slot)) != 0 && index-- == 0) { chosen = slot; break; }
+            }
+            return new ForestGhostChoice(chosen, original.Strong, original.Resource,
+                -Math.Abs(original.Amount), -1);
+        }
+
         private static int Next(ref uint state, int maximum)
         {
             // Rejection sampling avoids changing the documented bucket weights.
