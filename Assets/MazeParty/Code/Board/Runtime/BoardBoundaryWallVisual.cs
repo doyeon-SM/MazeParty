@@ -5,19 +5,16 @@ namespace MazeParty.Gameplay
 {
     public sealed class BoardBoundaryWallVisual : MonoBehaviour
     {
-        public const float RequiredFlameTopHeight = 1f;
+        public const float RequiredFlameTopHeight = 1.2f;
 
         [SerializeField] private BoxCollider blockingCollider;
         [SerializeField] private Transform flameWidthRoot;
-        [SerializeField] private GameObject passableFlameRoot;
         [SerializeField] private GameObject blockedFlameRoot;
         [SerializeField] private Renderer[] stateRenderers;
         [SerializeField] private ParticleSystem[] stateParticles;
-        [SerializeField] private Color passableColor = new Color(.28f, .78f, 1f, .48f);
         [SerializeField] private Color blockedColor = new Color(1f, .12f, .12f, .55f);
         [SerializeField, Min(.01f)] private float authoredFlameWidth = 1f;
         [SerializeField, Min(.1f)] private float flameTopHeight = RequiredFlameTopHeight;
-        [SerializeField, Range(.05f, 1f)] private float passableEmissionDensity = .45f;
         [SerializeField, Min(1f)] private float blockedEmissionDensity = 2f;
 
         private MaterialPropertyBlock _properties;
@@ -30,24 +27,17 @@ namespace MazeParty.Gameplay
 
         public BoxCollider BlockingCollider => blockingCollider;
         public Transform FlameWidthRoot => flameWidthRoot;
-        public GameObject PassableFlameRoot => passableFlameRoot;
         public GameObject BlockedFlameRoot => blockedFlameRoot;
         public float FlameTopHeight => flameTopHeight;
-        public float PassableEmissionDensity => passableEmissionDensity;
         public float BlockedEmissionDensity => blockedEmissionDensity;
         public bool IsVisible => _visible;
-        public bool HasStateDensityContrast =>
-            passableEmissionDensity > 0f &&
-            blockedEmissionDensity > passableEmissionDensity;
         public int StateParticleCount => stateParticles?.Length ?? 0;
         public bool HasRequiredReferences => blockingCollider != null && stateRenderers != null &&
             stateRenderers.Length > 0 &&
             System.Array.TrueForAll(stateRenderers, renderer => renderer != null) &&
             stateParticles != null && stateParticles.Length > 0 &&
             System.Array.TrueForAll(stateParticles, particle => particle != null) &&
-            flameWidthRoot != null && passableFlameRoot != null &&
-            blockedFlameRoot != null &&
-            passableFlameRoot.transform.IsChildOf(flameWidthRoot) &&
+            flameWidthRoot != null && blockedFlameRoot != null &&
             blockedFlameRoot.transform.IsChildOf(flameWidthRoot);
 
         private void Awake()
@@ -107,20 +97,16 @@ namespace MazeParty.Gameplay
         public void SetPassable(bool passable)
         {
             blockingCollider.enabled = !passable;
-            passableFlameRoot.SetActive(passable);
             blockedFlameRoot.SetActive(!passable);
             _properties ??= new MaterialPropertyBlock();
             foreach (var renderer in stateRenderers)
             {
                 renderer.GetPropertyBlock(_properties);
-                _properties.SetColor("_BaseColor", passable ? passableColor : blockedColor);
-                _properties.SetColor("_Color", passable ? passableColor : blockedColor);
+                _properties.SetColor("_BaseColor", blockedColor);
+                _properties.SetColor("_Color", blockedColor);
                 renderer.SetPropertyBlock(_properties);
             }
 
-            ApplyParticleTint(
-                passableFlameRoot,
-                passableColor);
             ApplyParticleTint(
                 blockedFlameRoot,
                 blockedColor);
@@ -166,9 +152,8 @@ namespace MazeParty.Gameplay
                     continue;
 
                 var baseline = _authoredEmissions[index];
-                var stateMultiplier = ResolveStateDensity(particle);
                 var emissionMultiplier = widthMultiplier *
-                                         stateMultiplier *
+                                         blockedEmissionDensity *
                                          accessibilityMultiplier;
                 var emission = particle.emission;
                 emission.rateOverTimeMultiplier =
@@ -202,7 +187,7 @@ namespace MazeParty.Gameplay
         }
 
         /// <summary>
-        /// Keeps the complete rendered particle billboard below the authored one-metre
+        /// Keeps the complete rendered particle billboard below the authored
         /// curtain top. The clamp is evaluated in this wall's local space, so rotated
         /// board gates and every ParticleSystem simulation space share the same limit.
         /// </summary>
@@ -295,17 +280,6 @@ namespace MazeParty.Gameplay
                     emission.rateOverDistanceMultiplier,
                     bursts);
             }
-        }
-
-        private float ResolveStateDensity(ParticleSystem particle)
-        {
-            if (passableFlameRoot != null &&
-                particle.transform.IsChildOf(passableFlameRoot.transform))
-            {
-                return passableEmissionDensity;
-            }
-
-            return blockedEmissionDensity;
         }
 
         private static short ScaleBurstCount(short count, float scale)

@@ -18,13 +18,12 @@ namespace MazeParty.Editor
         private const string BoundaryWallPath = Folder + "/PlayerBoundaryWall.prefab";
         private const string ToolkitPrefabFolder =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/";
-        private const string BlueFirePath = ToolkitPrefabFolder + "Blue Fire.prefab";
         private const string RealFirePath = ToolkitPrefabFolder + "Real Fire.prefab";
         private const float BoundaryFlamePrefabScale = .65f;
-        private const float PassableFlameDensity = .45f;
+        private const float BoundaryFlameVisualScale = 1.2f;
         private const float BlockedFlameDensity = 2f;
-        private const float MaximumBoundaryParticleDiameter = .72f;
-        private const float MaximumBoundaryParticleTravel = .65f;
+        private const float MaximumBoundaryParticleDiameter = .72f * BoundaryFlameVisualScale;
+        private const float MaximumBoundaryParticleTravel = .65f * BoundaryFlameVisualScale;
         private const string ShopPhysicalFootprintName =
             "Physical Footprint";
 
@@ -794,18 +793,16 @@ namespace MazeParty.Editor
 
                 var serializedBinding = new SerializedObject(binding);
                 if (serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue != null &&
-                    serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue != null &&
                     serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue != null)
                 {
-                    var changed = ApplyBoundaryFlameSettings(serializedBinding);
                     if (!binding.HasRequiredReferences)
                     {
                         throw new InvalidOperationException(
                             BoundaryWallPath +
                             " has authored flame roots but incomplete renderer or particle bindings. Repair it manually so setup does not overwrite the design.");
                     }
-                    changed |= EnsureBoundaryFlameUrpCompatibility(contents);
-                    changed |= EnsureBoundaryFlameEnvelope(binding);
+                    // Preserve the authored VFX dimensions when setup is rerun.
+                    var changed = EnsureBoundaryFlameUrpCompatibility(contents);
                     if (changed)
                         PrefabUtility.SaveAsPrefabAsset(contents, BoundaryWallPath);
                     return;
@@ -818,9 +815,8 @@ namespace MazeParty.Editor
                         " has authored children but no complete flame bindings. Repair it manually so setup does not overwrite the design.");
                 }
 
-                var blueFire = AssetDatabase.LoadAssetAtPath<GameObject>(BlueFirePath);
                 var redFire = AssetDatabase.LoadAssetAtPath<GameObject>(RealFirePath);
-                if (blueFire == null || redFire == null)
+                if (redFire == null)
                 {
                     throw new InvalidOperationException(
                         "AllIn1VfxToolkit v2.32 is required at Assets/Ignore/AllIn1VfxToolkit before installing boundary VFX.");
@@ -836,11 +832,6 @@ namespace MazeParty.Editor
                 var flameWidth = new GameObject("Flame Width").transform;
                 flameWidth.SetParent(contents.transform, false);
 
-                var passable = InstantiateNestedFlame(
-                    blueFire,
-                    flameWidth,
-                    "Passable Blue Flame",
-                    true);
                 var blocked = InstantiateNestedFlame(
                     redFire,
                     flameWidth,
@@ -852,16 +843,12 @@ namespace MazeParty.Editor
                     contents.GetComponent<BoxCollider>();
                 serializedBinding.FindProperty("flameWidthRoot").objectReferenceValue =
                     flameWidth;
-                serializedBinding.FindProperty("passableFlameRoot").objectReferenceValue =
-                    passable;
                 serializedBinding.FindProperty("blockedFlameRoot").objectReferenceValue =
                     blocked;
                 serializedBinding.FindProperty("authoredFlameWidth").floatValue =
                     BoundaryFlamePrefabScale;
                 serializedBinding.FindProperty("flameTopHeight").floatValue =
                     BoardBoundaryWallVisual.RequiredFlameTopHeight;
-                serializedBinding.FindProperty("passableEmissionDensity").floatValue =
-                    PassableFlameDensity;
                 serializedBinding.FindProperty("blockedEmissionDensity").floatValue =
                     BlockedFlameDensity;
                 SetObjectArray(
@@ -897,29 +884,21 @@ namespace MazeParty.Editor
             instance.transform.localScale = Vector3.one;
             instance.SetActive(active);
 
-            BakeNestedParticleScale(instance, BoundaryFlamePrefabScale);
+            BakeNestedParticleScale(
+                instance, BoundaryFlamePrefabScale * BoundaryFlameVisualScale);
+            foreach (var particle in instance.GetComponentsInChildren<ParticleSystem>(true))
+            {
+                var velocity = particle.velocityOverLifetime;
+                if (!velocity.enabled)
+                    continue;
+
+                velocity.xMultiplier *= BoundaryFlameVisualScale;
+                velocity.yMultiplier *= BoundaryFlameVisualScale;
+                velocity.zMultiplier *= BoundaryFlameVisualScale;
+            }
             EnsureBoundaryFlameUrpCompatibility(instance);
 
             return instance;
-        }
-
-        private static bool ApplyBoundaryFlameSettings(
-            SerializedObject serializedBinding)
-        {
-            serializedBinding.Update();
-            var changed = false;
-            changed |= SetFloat(
-                serializedBinding.FindProperty("flameTopHeight"),
-                BoardBoundaryWallVisual.RequiredFlameTopHeight);
-            changed |= SetFloat(
-                serializedBinding.FindProperty("passableEmissionDensity"),
-                PassableFlameDensity);
-            changed |= SetFloat(
-                serializedBinding.FindProperty("blockedEmissionDensity"),
-                BlockedFlameDensity);
-            if (changed)
-                serializedBinding.ApplyModifiedPropertiesWithoutUndo();
-            return changed;
         }
 
         private static bool EnsureBoundaryFlameEnvelope(
@@ -943,11 +922,7 @@ namespace MazeParty.Editor
                 changed = true;
             }
 
-            foreach (var stateRoot in new[]
-                     {
-                         binding.PassableFlameRoot,
-                         binding.BlockedFlameRoot
-                     })
+            foreach (var stateRoot in new[] { binding.BlockedFlameRoot })
             {
                 if (stateRoot.transform.localPosition != Vector3.zero)
                 {
@@ -1042,17 +1017,6 @@ namespace MazeParty.Editor
                     Mathf.Abs(curve.Evaluate(time, 1f)));
             }
             return maximum;
-        }
-
-        private static bool SetFloat(
-            SerializedProperty property,
-            float value)
-        {
-            if (Mathf.Approximately(property.floatValue, value))
-                return false;
-
-            property.floatValue = value;
-            return true;
         }
 
         private static void BakeNestedParticleScale(GameObject root, float scale)

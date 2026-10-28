@@ -17,8 +17,6 @@ namespace MazeParty.Gameplay.Tests
             "Assets/Ignore/Fantasy Skybox FREE/Cubemaps/Classic/FS000_Night_01.mat";
         private const string ForestTerrainDataPath =
             "Assets/MazeParty/Art/Board/Forest/ForestGroundTerrain.asset";
-        private const string BoundaryBlueFirePath =
-            "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Blue Fire.prefab";
         private const string BoundaryRedFirePath =
             "Assets/Ignore/AllIn1VfxToolkit/Demo & Assets/Demo/Prefabs/Real Fire.prefab";
 
@@ -175,11 +173,6 @@ namespace MazeParty.Gameplay.Tests
                     "Decorative wall children must not bypass owner-only collision isolation.");
                 Assert.That(wall.BlockingCollider.isTrigger, Is.False);
                 Assert.That(wall.HasRequiredReferences, Is.True);
-                Assert.That(
-                    AssetDatabase.GetAssetPath(
-                        PrefabUtility.GetCorrespondingObjectFromSource(
-                            wall.PassableFlameRoot)),
-                    Is.EqualTo(BoundaryBlueFirePath));
                 Assert.That(
                     AssetDatabase.GetAssetPath(
                         PrefabUtility.GetCorrespondingObjectFromSource(
