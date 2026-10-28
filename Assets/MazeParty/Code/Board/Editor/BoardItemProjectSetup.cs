@@ -191,6 +191,7 @@ namespace MazeParty.Editor
             Create(PrototypeItemId.Cloak, "Invisibility Cloak", "Automatically activates when selected or obtained from a chest. Hidden from opponents and minimaps until action ends. Ends before combat or on death.", 10, 1, 0, 0, .25f, 0, 0, 0, null);
             EnsureBombardmentAsset();
             EnsureGhostPassAsset();
+            EnsureWallAsset();
             SharedVfxProjectSetup.EnsureBoardItemBindings(
                 explosion,
                 impact,

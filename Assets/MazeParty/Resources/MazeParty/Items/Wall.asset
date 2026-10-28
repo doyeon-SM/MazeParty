@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b776a89c9180d414a978de024158e224, type: 3}
+  m_Name: Wall
+  m_EditorClassIdentifier: MazeParty.Gameplay::MazeParty.Gameplay.BoardItemDefinition
+  Id: 15
+  UseTiming: 0
+  DisplayName: Wall
+  RequiredMapId: maze-graybox
+  Description: Maze only. Aim at a two-way passage connected to your tile and click the blue preview to block it for 5 turns including this turn. Cannot seal off rooms or overlap players.
+  Price: 8
+  SpawnWeight: 1
+  Charges: 1
+  Damage: 0
+  Range: 0
+  FireInterval: 0.25
+  BlastRadius: 0
+  TriggerRadius: 0
+  ArmingDelay: 0
+  ThrowFlightSeconds: 1
+  ProjectileRadius: 0.12
+  ProjectileLifetime: 5
+  DiceMinimum: 1
+  DiceMaximum: 12
+  CastDuration: 2
+  Icon: {fileID: 21300000, guid: 63725b84cd2df9f4980e16f4ac63d1b8, type: 3}
+  HeldPrefab: {fileID: 2892283574790781206, guid: 76851bd73ab9510428b59f6c388b32da, type: 3}
+  WorldPrefab: {fileID: 9103655274040882831, guid: dda349ed7eaa1ef4095abd21bc78f131, type: 3}
+  PlacementPreviewPrefab: {fileID: 4074145331140736385, guid: b0c77591737b3e9439fa06b84b29427f, type: 3}
+  ExplosionPrefab: {fileID: 0}
+  ExplosionScaleMultiplier: 1
+  ImpactPrefab: {fileID: 0}
+  PlayerImpactPrefab: {fileID: 0}

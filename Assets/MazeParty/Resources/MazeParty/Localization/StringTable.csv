@@ -958,3 +958,7 @@ The previous connection could not be cleaned up. Please restart the game before 
 "Ghost Pass","유령이용권","ゴースト利用券","幽灵使用券","幽靈使用券"
 "Forest only. This turn's ghost steals from a random eligible opponent and delivers the stolen resource to the first user. Later uses are consumed without changing the recipient. Stolen health heals living users only.","숲 전용. 이번 턴 유령이 무작위 상대에게서 자원을 빼앗아 최초 사용자에게 전달합니다. 부활칸은 제외하며 대상이 없으면 효과가 없습니다. 후순위 사용도 소모됩니다. 빼앗은 체력은 생존 중일 때만 회복합니다.","森専用。このターンのゴーストがランダムな対象から資源を奪い、最初の使用者に届けます。復活マスは対象外で、対象がいなければ効果はありません。後続の使用も消費されます。奪った体力は生存中のみ回復します。","森林专用。本回合幽灵会随机从符合条件的对手处夺取资源，并交给首位使用者。复活格不作为目标，无目标则无效果。后续使用同样会消耗。夺取的生命值仅在使用者存活时恢复。","森林專用。本回合幽靈會隨機從符合條件的對手處奪取資源，並交給首位使用者。復活格不作為目標，無目標則無效果。後續使用同樣會消耗。奪取的生命值僅在使用者存活時恢復。"
 "The saved items are not valid for this map.","저장된 아이템을 이 맵에서 사용할 수 없습니다.","保存されたアイテムはこのマップでは使用できません。","此地图无法使用已保存的道具。","此地圖無法使用已儲存的道具。"
+
+"Wall","벽","壁","墙","牆"
+"Maze only. Aim at a two-way passage connected to your tile and click the blue preview to block it for 5 turns including this turn. Cannot seal off rooms or overlap players.","미로 전용. 현재 칸의 양방향 통로를 바라보고 파란 미리보기를 클릭해 벽을 설치합니다. 설치 턴 포함 5턴 유지하며 완전 고립이나 플레이어와 겹치는 설치는 불가합니다.","迷路専用。現在のマスにつながる双方向通路に青いプレビューを合わせてクリックし、設置ターンを含む5ターン封鎖します。完全な孤立やプレイヤーとの重なりは不可。","迷宫专用。瞄准当前格连接的双向通道并点击蓝色预览，封锁5回合（含当前回合）。不可完全隔离区域或与玩家重叠。","迷宮專用。瞄準目前格連接的雙向通道並點擊藍色預覽，封鎖5回合（含目前回合）。不可完全隔離區域或與玩家重疊。"
+"A saved wall location is no longer valid.","저장된 벽 위치가 올바르지 않습니다.","保存された壁の位置が無効です。","保存的墙体位置无效。","儲存的牆體位置無效。"

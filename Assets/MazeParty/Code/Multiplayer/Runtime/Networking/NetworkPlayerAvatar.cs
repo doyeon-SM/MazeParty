@@ -1265,7 +1265,8 @@ namespace MazeParty.Multiplayer
             requestedDistance = Math.Min(3, requestedDistance);
             ResolveTopology();
             var previousTile = _traversal.CurrentTile;
-            var retreatPath = _traversal.Retreat(requestedDistance);
+            var retreatPath = _traversal.Retreat(requestedDistance, (from, to) =>
+                !BoardWallRules.IsPassageBlocked(_topology, from, to));
             var actualDistance = retreatPath.Length;
             if (actualDistance > 0) path.Add(previousTile.GetRecoveryCenter(1f));
             foreach (var tile in retreatPath)
@@ -1273,14 +1274,15 @@ namespace MazeParty.Multiplayer
                 AppendCombatRetreatStep(ref path, previousTile, tile);
                 previousTile = tile;
             }
-            while (actualDistance < requestedDistance && _topology != null)
+            // Remaining history means a wall interrupted the retreat; do not reroute through it.
+            while (actualDistance < requestedDistance && _topology != null && _traversal.History.Count <= 1)
             {
                 var incoming = _topology.GetIncomingGates(_traversal.CurrentTile);
                 BoardTile fallback = null;
                 for (var i = 0; i < incoming.Count; i++)
                 {
                     var source = incoming[i] != null ? incoming[i].Source : null;
-                    if (source == null || fallback != null &&
+                    if (source == null || incoming[i].IsTemporarilyBlocked || fallback != null &&
                         CompareCoordinates(source.Coordinate, fallback.Coordinate) >= 0)
                     {
                         continue;
@@ -2570,6 +2572,7 @@ namespace MazeParty.Multiplayer
                         this,
                         claimedOrigin,
                         claimedDirection);
+                if (!accepted && GetSelectedItemOnServer() == PrototypeItemId.Wall) RejectWallPlacementRpc();
                 if (requestId != 0u)
                 {
                     ConfirmItemUseRpc(requestId, accepted);

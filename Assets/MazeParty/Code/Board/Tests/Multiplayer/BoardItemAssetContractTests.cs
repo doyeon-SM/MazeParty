@@ -66,9 +66,10 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(PrefabUtility.IsPartOfPrefabAsset(world.Chest), Is.True);
             var definitions = Resources.LoadAll<BoardItemDefinition>("MazeParty/Items");
             Assert.That(definitions.Select(x => x.Id).OrderBy(x => x), Is.EqualTo(new[] {
-                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak, PrototypeItemId.Bombardment, PrototypeItemId.GhostPass }));
+                PrototypeItemId.DoubleDice, PrototypeItemId.Pistol, PrototypeItemId.Sniper, PrototypeItemId.Grenade, PrototypeItemId.Mine, PrototypeItemId.HighDice, PrototypeItemId.PositionSwapper, PrototypeItemId.Cloak, PrototypeItemId.Bombardment, PrototypeItemId.GhostPass, PrototypeItemId.Wall }));
             var expectedWeaponModels = new Dictionary<PrototypeItemId, string>
             {
+                { PrototypeItemId.Wall, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 { PrototypeItemId.GhostPass, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 { PrototypeItemId.Bombardment, "Assets/Ignore/FreeLowpolyScifiObjects/Art/Models/switch_007.fbx" },
                 {
@@ -117,6 +118,12 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(definition.HeldPrefab, Is.Not.Null);
                 Assert.That(PrefabUtility.IsPartOfPrefabAsset(definition.HeldPrefab), Is.True);
                 Assert.That(definition.WorldPrefab, Is.Not.Null);
+                if (definition.Id == PrototypeItemId.Wall)
+                {
+                    Assert.That(definition.PlacementPreviewPrefab, Is.Not.Null);
+                    Assert.That(definition.WorldPrefab.GetComponentsInChildren<Collider>(true).Any(c => c.enabled && !c.isTrigger), Is.True);
+                    Assert.That(definition.PlacementPreviewPrefab.GetComponentsInChildren<Collider>(true).All(c => !c.enabled), Is.True);
+                }
                 Assert.That(definition.HeldPrefab.GetComponentsInChildren<Collider>(true), Is.Empty,
                     "Presentation must not obstruct authoritative item casts.");
 
@@ -133,7 +140,7 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(meshPaths, Does.Contain(expectedModelPath),
                     definition.Id + " must use its approved source model.");
             }
-            Assert.That(itemIcons.Count, Is.EqualTo(10));
+            Assert.That(itemIcons.Count, Is.EqualTo(11));
             var first = new System.Random(901);
             var second = new System.Random(901);
             var found = new System.Collections.Generic.HashSet<PrototypeItemId>();

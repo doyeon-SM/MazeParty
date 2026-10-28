@@ -17,7 +17,8 @@ namespace MazeParty.Gameplay
         SourceSide,
         PartialCrossing,
         BlockedNoMoves,
-        Committed
+        Committed,
+        BlockedByWall
     }
 
     [DisallowMultipleComponent]
@@ -33,6 +34,10 @@ namespace MazeParty.Gameplay
         [SerializeField, Min(0.1f)] private float gateWidth = DefaultWidth;
         [SerializeField, Min(0f)] private float crossingEpsilon = 0.001f;
         [SerializeField] private bool drawDebugBoundary = true;
+
+        public int TemporaryWallExpiresAtTurn { get; private set; }
+        public bool IsTemporarilyBlocked => TemporaryWallExpiresAtTurn > 0;
+        public void SetTemporaryWallExpiry(int turn) => TemporaryWallExpiresAtTurn = Mathf.Max(0, turn);
 
         public BoardTile Source => source;
         public BoardTile Destination => destination;
@@ -240,6 +245,8 @@ namespace MazeParty.Gameplay
             var relation = GetCapsuleRelation(controller);
             if (relation == BoardGateCapsuleRelation.SourceSide)
                 return BoardGateTraversalOutcome.SourceSide;
+            if (IsTemporarilyBlocked)
+                return BoardGateTraversalOutcome.BlockedByWall;
             if (relation == BoardGateCapsuleRelation.Straddling)
                 return BoardGateTraversalOutcome.PartialCrossing;
             if (!traversal.HasRemainingMoves)

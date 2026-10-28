@@ -541,6 +541,7 @@ namespace MazeParty.Multiplayer
             InitializeStatisticsReplication();
             InitializeGameSettings();
             InitializeBoardMapRuntime();
+            InitializeBoardWalls();
             PrewarmBoardItemVfx();
             if (IsServer)
             {
@@ -558,6 +559,7 @@ namespace MazeParty.Multiplayer
 
         public override void OnNetworkDespawn()
         {
+            _boardWalls.OnListChanged -= OnBoardWallsChanged;
             ReleaseStatisticsReplication();
             ReleaseGameSettings();
             ClearBoardItemWorld();
@@ -599,6 +601,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RefreshBoardWallPresentation();
             TickBoardGrenadePresentation();
             TickChestPresentation();
             if (!IsServer)
@@ -1353,6 +1356,7 @@ namespace MazeParty.Multiplayer
         {
             _flowState.Value = (byte)_flow.State;
             _turn.Value = _flow.CurrentTurn;
+            ExpireBoardWallsOnServer(Turn);
             _stateEndsAt.Value = Deadline(now, _flow.GetStateRemaining(now));
             _actionEndsAt.Value = Deadline(now, _flow.GetActionRemaining(now));
             _choiceEndsAt.Value = Deadline(now, _flow.GetChoiceRemaining(now));

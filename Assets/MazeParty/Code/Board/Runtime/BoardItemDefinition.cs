@@ -37,6 +37,7 @@ namespace MazeParty.Gameplay
         public Sprite Icon;
         public GameObject HeldPrefab;
         public GameObject WorldPrefab;
+        public GameObject PlacementPreviewPrefab;
         public GameObject ExplosionPrefab;
         [Min(0.01f)] public float ExplosionScaleMultiplier = 1f;
         public GameObject ImpactPrefab;

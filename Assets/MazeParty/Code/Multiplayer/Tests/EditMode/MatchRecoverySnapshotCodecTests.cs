@@ -429,11 +429,11 @@ namespace MazeParty.Multiplayer.Tests
         public void Decode_ItemIdsPreserveActiveItemsAndRejectRetiredOrUnknownInventoryAndOffers()
         {
             var codec = new MatchRecoverySnapshotCodec();
-            foreach (var raw in new byte[] { 1, 2, 3, 9, 15, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14 })
+            foreach (var raw in new byte[] { 1, 2, 3, 9, 16, 255, 4, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15 })
             foreach (var inShop in new[] { false, true })
             {
                 var snapshot = CreateValidSnapshot();
-                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 14;
+                var valid = raw >= 4 && raw <= 8 || raw >= 10 && raw <= 15;
                 if (inShop)
                     snapshot.itemShops[0] = new MatchRecoveryItemShopSnapshot
                     {
@@ -456,6 +456,38 @@ namespace MazeParty.Multiplayer.Tests
                     Assert.Throws<System.ArgumentException>(() => codec.Encode(snapshot));
                 }
             }
+        }
+
+        [Test]
+        public void WallSnapshots_RoundTripMigrateAndRejectCorruptLifetimeAndPassages()
+        {
+            var codec = new MatchRecoverySnapshotCodec();
+            var snapshot = CreateValidSnapshot();
+            snapshot.boardMapId = BoardWallRules.MapId; snapshot.boardMapContentVersion = 1;
+            var wall = new BoardWallSnapshot(Vector2Int.zero, Vector2Int.right, snapshot.turn + 5);
+            snapshot.walls = new[] { wall };
+            Assert.That(codec.TryDecode(codec.Encode(snapshot), out var restored), Is.True);
+            Assert.That(restored.walls, Is.EqualTo(snapshot.walls));
+            foreach (var bad in new[] { "expired", "future", "duplicate", "reversed", "self", "map", "legacy" })
+            {
+                snapshot = CreateValidSnapshot();
+                snapshot.boardMapId = bad == "map" ? BoardForestGhostRules.MapId : BoardWallRules.MapId;
+                snapshot.boardMapContentVersion = 1;
+                var invalid = wall;
+                if (bad == "expired") invalid.ExpiresAtTurn = snapshot.turn;
+                if (bad == "future") invalid.ExpiresAtTurn = snapshot.turn + 6;
+                if (bad == "reversed") { invalid.FromX = 1; invalid.ToX = 0; }
+                if (bad == "self") invalid.ToX = 0;
+                if (bad == "legacy") snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutWalls;
+                snapshot.walls = bad == "duplicate" ? new[] { invalid, invalid } : new[] { invalid };
+                Assert.That(codec.TryDecode(JsonUtility.ToJson(snapshot), out _), Is.False, bad);
+            }
+            snapshot = CreateValidSnapshot();
+            snapshot.recoveryVersion = MatchRecoverySnapshot.LegacyRecoveryVersionWithoutWalls;
+            var json = JsonUtility.ToJson(snapshot).Replace(",\"walls\":[]", string.Empty);
+            Assert.That(codec.TryDecode(json, out restored), Is.True);
+            Assert.That(restored.recoveryVersion, Is.EqualTo(MatchRecoverySnapshot.CurrentRecoveryVersion));
+            Assert.That(restored.walls, Is.Empty);
         }
 
         private static MatchRecoveryPlayerSnapshot[] CreatePlayers(

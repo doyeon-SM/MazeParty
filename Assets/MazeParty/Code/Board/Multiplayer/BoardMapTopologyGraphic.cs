@@ -26,6 +26,9 @@ namespace MazeParty.Multiplayer
         private readonly List<WallMesh> _walls = new List<WallMesh>(128);
         private BoardMapRoot _wallMap;
         private BoxCollider[] _wallColliders = Array.Empty<BoxCollider>();
+        private readonly List<(Vector2 Start, Vector2 End, int Turns)> _temporaryWalls = new List<(Vector2, Vector2, int)>();
+        [SerializeField] private Color temporaryWallColor = new Color(.3f, .65f, 1f, 1f);
+        [SerializeField, Min(3f)] private float temporaryWallDigitSize = 12f;
         private bool _tilesOnly;
         private readonly List<Vector3> _worldVertices = new List<Vector3>(5);
         private Bounds _worldBounds;
@@ -40,6 +43,7 @@ namespace MazeParty.Multiplayer
 
             _tiles.Clear();
             _walls.Clear();
+            _temporaryWalls.Clear();
             SetVerticesDirty();
         }
 
@@ -57,6 +61,7 @@ namespace MazeParty.Multiplayer
         {
             _tiles.Clear();
             _walls.Clear();
+            _temporaryWalls.Clear();
             _worldBounds = worldBounds;
             _tilesOnly = false;
 
@@ -98,6 +103,13 @@ namespace MazeParty.Multiplayer
             }
 
             PresentWalls(BoardMapRuntimeLoader.ResolveActiveMapRoot(topology));
+            foreach (var gate in topology.Gates)
+            {
+                if (gate == null || !gate.IsTemporarilyBlocked || !BoardWallRules.IsCanonical(gate)) continue;
+                var right = gate.transform.right * gate.GateWidth * .5f;
+                _temporaryWalls.Add((Project(gate.PlanePoint - right), Project(gate.PlanePoint + right),
+                    Mathf.Clamp(gate.TemporaryWallExpiresAtTurn - (NetworkMatchState.Instance != null ? NetworkMatchState.Instance.Turn : 0), 1, 5)));
+            }
 
             SetVerticesDirty();
         }
@@ -112,6 +124,7 @@ namespace MazeParty.Multiplayer
             _tilesOnly = true;
             _tiles.Clear();
             _walls.Clear();
+            _temporaryWalls.Clear();
 
             if (topology == null)
             {
@@ -200,6 +213,35 @@ namespace MazeParty.Multiplayer
                 var wall = _walls[index];
                 AddLine(vh, wall.Start, wall.End, wall.Width, wallColor);
             }
+            DrawTemporaryWalls(vh);
+        }
+
+        private void DrawTemporaryWalls(VertexHelper vh)
+        {
+            foreach (var wall in _temporaryWalls)
+            {
+                AddLine(vh, wall.Start, wall.End, wallWidth * 1.8f, temporaryWallColor);
+                var delta = (wall.End - wall.Start).normalized;
+                var center = (wall.Start + wall.End) * .5f +
+                    new Vector2(-delta.y, delta.x) * (temporaryWallDigitSize + wallWidth);
+                DrawTurnDigit(vh, center, wall.Turns);
+            }
+        }
+
+        private void DrawTurnDigit(VertexHelper vh, Vector2 center, int digit)
+        {
+            // Seven-segment marker rendered by the existing authored map graphic.
+            var mask = digit == 1 ? 6 : digit == 2 ? 91 : digit == 3 ? 79 : digit == 4 ? 102 : 109;
+            var x = Vector2.right * temporaryWallDigitSize * .3f;
+            var y = Vector2.up * temporaryWallDigitSize * .5f;
+            var width = Mathf.Max(1f, temporaryWallDigitSize * .15f);
+            if ((mask & 1) != 0) AddLine(vh, center - x + y, center + x + y, width, temporaryWallColor);
+            if ((mask & 2) != 0) AddLine(vh, center + x + y, center + x, width, temporaryWallColor);
+            if ((mask & 4) != 0) AddLine(vh, center + x, center + x - y, width, temporaryWallColor);
+            if ((mask & 8) != 0) AddLine(vh, center - x - y, center + x - y, width, temporaryWallColor);
+            if ((mask & 16) != 0) AddLine(vh, center - x, center - x - y, width, temporaryWallColor);
+            if ((mask & 32) != 0) AddLine(vh, center - x + y, center - x, width, temporaryWallColor);
+            if ((mask & 64) != 0) AddLine(vh, center - x, center + x, width, temporaryWallColor);
         }
 
         private Vector2 Project(Vector3 worldPoint)

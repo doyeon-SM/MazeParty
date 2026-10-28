@@ -60628,6 +60628,8 @@ MonoBehaviour:
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
   wallWidth: 2.5
   wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
+  temporaryWallColor: {r: 0.3, g: 0.65, b: 1, a: 1}
+  temporaryWallDigitSize: 12
 --- !u!1 &2256547655907003779
 GameObject:
   m_ObjectHideFlags: 0
@@ -100914,6 +100916,8 @@ MonoBehaviour:
   tilesOnlyColor: {r: 0.82, g: 0.9, b: 1, a: 0.94}
   wallWidth: 2.5
   wallColor: {r: 0.82, g: 0.88, b: 0.94, a: 1}
+  temporaryWallColor: {r: 0.3, g: 0.65, b: 1, a: 1}
+  temporaryWallDigitSize: 12
 --- !u!1 &3521052782146599325
 GameObject:
   m_ObjectHideFlags: 0

@@ -44,12 +44,14 @@ namespace MazeParty.Multiplayer
                 id == PrototypeItemId.PositionSwapper || id == PrototypeItemId.Bombardment) return false;
             var item = PrototypeItemCatalog.Get(id);
             if (!item.IsAvailableOnMap(BoardMapId) ||
-                id == PrototypeItemId.GhostPass && avatar.CurrentHealth <= 0) return false;
+                (id == PrototypeItemId.GhostPass || id == PrototypeItemId.Wall) && avatar.CurrentHealth <= 0) return false;
             var origin = avatar.EyePivot != null ? avatar.EyePivot.position : avatar.transform.position + Vector3.up * .75f;
             var direction = avatar.EyePivot != null ? avatar.EyePivot.forward : avatar.transform.forward;
             if (Vector3.Distance(origin, claimedOrigin) > 1.5f || Vector3.Dot(direction, claimedDirection.normalized) < .94f)
                 return false;
 
+            BoardGate wallGate = null;
+            if (id == PrototypeItemId.Wall && (!avatar.HasResolvedItemChoice || !TryGetWallPlacement(avatar, origin, direction, out wallGate))) return false;
             RaycastHit ground = default;
             var minePosition = default(Vector3);
             if (id == PrototypeItemId.Mine &&
@@ -61,6 +63,7 @@ namespace MazeParty.Multiplayer
                      ground.normal,
                      out minePosition))) return false;
             if (!avatar.SpendItemChargeOnServer(item)) return false;
+            if (id == PrototypeItemId.Wall) PlaceBoardWallOnServer(wallGate);
             if (id == PrototypeItemId.Cloak) avatar.ActivateCloakOnServer();
             if (id == PrototypeItemId.GhostPass) RegisterGhostPassOnServer(avatar.AssignedSlot);
             avatar.PresentItemUseOnServer(id);
@@ -125,6 +128,7 @@ namespace MazeParty.Multiplayer
         private void TickBoardItemWorld()
         {
             if (!GameplayEnabled) return;
+            ExpireBoardWallsOnServer(Turn);
             TickBoardBombardments();
             for (int slot = 0; slot < 4; slot++)
             {
@@ -518,6 +522,7 @@ namespace MazeParty.Multiplayer
 
         private void ClearBoardItemWorld()
         {
+            ClearBoardWalls();
             ClearBoardBombardments();
             ResetGhostPassOnServer();
             _boardMines.Clear(); _boardGrenades.Clear();

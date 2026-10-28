@@ -123,6 +123,7 @@ namespace MazeParty.Multiplayer
                     }
                 }
                 RestoreBoardMines(snapshot.mines, mineOwnerSlots);
+                RestoreBoardWalls(snapshot.walls);
                 RestoreAchievements(snapshot, playerSnapshots);
                 RestoreStatistics(snapshot, playerSnapshots);
 
@@ -278,6 +279,11 @@ namespace MazeParty.Multiplayer
             if (!ValidateRecoveryShopCoordinates(snapshot))
             {
                 error = GameText.T("A saved shop location is no longer available.");
+                return false;
+            }
+            if (!ValidateRecoveryWalls(snapshot))
+            {
+                error = GameText.T("A saved wall location is no longer valid.");
                 return false;
             }
             if (!ValidateRecoveryMines(snapshot))
@@ -673,6 +679,7 @@ namespace MazeParty.Multiplayer
                 itemShops = itemShops,
                 chests = CaptureChests(),
                 mines = mines,
+                walls = CaptureBoardWalls(checkpoint),
                 players = players
             };
         }

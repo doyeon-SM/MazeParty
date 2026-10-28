@@ -944,7 +944,7 @@ namespace MazeParty.Multiplayer
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&
                 _localAvatar.HasResolvedItemChoice && !IsItemShopOpen &&
                 !BoardUtilityItemView.IsTargetPickerOpen &&
-                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass));
+                (item == PrototypeItemId.Grenade || item == PrototypeItemId.Mine || item == PrototypeItemId.Bombardment || item == PrototypeItemId.GhostPass || item == PrototypeItemId.Wall));
         }
 
         private void RefreshInteractionPrompt()

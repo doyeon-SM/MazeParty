@@ -388,7 +388,8 @@ namespace MazeParty.Multiplayer
             var destinations = new List<BoardTile>();
             foreach (var gate in _topology.GetOutgoingGates(tile))
             {
-                var next = gate?.Destination;
+                if (gate == null || gate.IsTemporarilyBlocked) continue;
+                var next = gate.Destination;
                 if (next != null && !destinations.Contains(next)) destinations.Add(next);
             }
             cached = destinations.ToArray();
@@ -530,7 +531,8 @@ namespace MazeParty.Multiplayer
             var hasSelectedExit = false;
             for (var index = 0; index < outgoing.Count; index++)
             {
-                var gateDestination = outgoing[index]?.Destination;
+                if (outgoing[index] == null || outgoing[index].IsTemporarilyBlocked) continue;
+                var gateDestination = outgoing[index].Destination;
                 if (gateDestination == null || !destinations.Add(gateDestination))
                     continue;
 

@@ -20,6 +20,8 @@ namespace MazeParty.Gameplay
 
         public IReadOnlyList<BoardTile> Tiles => tiles;
         public IReadOnlyList<BoardGate> Gates => gates;
+        public int TraversalRevision { get; private set; }
+        public void NotifyTraversalChanged() => TraversalRevision++;
 
         private void Awake()
         {
@@ -35,6 +37,7 @@ namespace MazeParty.Gameplay
 
         public void RebuildIndex()
         {
+            NotifyTraversalChanged();
             _tilesByCoordinate.Clear();
             _outgoingGates.Clear();
             _incomingGates.Clear();
@@ -131,6 +134,7 @@ namespace MazeParty.Gameplay
                     var incoming = GetIncomingGates(current);
                     for (var index = 0; index < incoming.Count; index++)
                     {
+                        if (incoming[index] == null || incoming[index].IsTemporarilyBlocked) continue;
                         var from = incoming[index].Source;
                         if (from == null || distances.ContainsKey(from))
                         {
@@ -148,7 +152,7 @@ namespace MazeParty.Gameplay
                 for (var index = 0; index < outgoing.Count; index++)
                 {
                     var gate = outgoing[index];
-                    if (gate == null || gate.Destination == null ||
+                    if (gate == null || gate.IsTemporarilyBlocked || gate.Destination == null ||
                         !distances.TryGetValue(gate.Destination, out var distance) ||
                         distance > shortestDistance)
                     {
@@ -184,7 +188,7 @@ namespace MazeParty.Gameplay
                 for (var index = 0; index < outgoing.Count; index++)
                 {
                     var gate = outgoing[index];
-                    if (gate == null || gate.Destination == null ||
+                    if (gate == null || gate.IsTemporarilyBlocked || gate.Destination == null ||
                         gate.Destination == previousTile)
                     {
                         continue;
@@ -203,7 +207,7 @@ namespace MazeParty.Gameplay
             for (var index = 0; index < outgoing.Count; index++)
             {
                 var gate = outgoing[index];
-                if (gate != null && gate.Destination != null &&
+                if (gate != null && !gate.IsTemporarilyBlocked && gate.Destination != null &&
                     gate.Destination != previousTile)
                 {
                     return gate;
@@ -366,7 +370,8 @@ namespace MazeParty.Gameplay
                 return BoardGateTraversalOutcome.InvalidConfiguration;
 
             var outcome = gate.TryTraverse(traversal, controller);
-            if (outcome == BoardGateTraversalOutcome.BlockedNoMoves && recoverWhenBlocked)
+            if ((outcome == BoardGateTraversalOutcome.BlockedNoMoves ||
+                 outcome == BoardGateTraversalOutcome.BlockedByWall) && recoverWhenBlocked)
                 RecoverToLastValidCenter(controller, traversal, recoveryVerticalOffset);
             return outcome;
         }

@@ -24,7 +24,8 @@ namespace MazeParty.Multiplayer
         public const int LegacyRecoveryVersionWithoutMapIdentity = 2;
         public const int LegacyRecoveryVersionWithoutChests = 3;
         public const int LegacyRecoveryVersionWithoutGameSettings = 4;
-        public const int CurrentRecoveryVersion = 5;
+        public const int LegacyRecoveryVersionWithoutWalls = 5;
+        public const int CurrentRecoveryVersion = 6;
 
         public int recoveryVersion = CurrentRecoveryVersion;
         public string originalHostPlayerKey = string.Empty;
@@ -51,6 +52,7 @@ namespace MazeParty.Multiplayer
         public BoardChestSnapshot[] chests = new BoardChestSnapshot[BoardChestRules.Count];
         public MatchRecoveryItemShopSnapshot[] itemShops =
             Array.Empty<MatchRecoveryItemShopSnapshot>();
+        public BoardWallSnapshot[] walls = Array.Empty<BoardWallSnapshot>();
         public MatchRecoveryMineSnapshot[] mines =
             Array.Empty<MatchRecoveryMineSnapshot>();
         public MatchRecoveryPlayerSnapshot[] players =

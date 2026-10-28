@@ -142,7 +142,7 @@ namespace MazeParty.Multiplayer
         private BoardTile _travelStart;
         private BoardTile _travelPrimaryDestination;
         private int _travelStartingStep;
-        private int _travelMaximumStep;
+        private int _travelMaximumStep, _travelRevision;
         private BoardTopology _travelDataTopology;
         private int _travelDataSignature;
         private bool _travelDataValid, _travelDrawValid;
@@ -757,7 +757,7 @@ namespace MazeParty.Multiplayer
             var hasBranch = false;
             foreach (var gate in topology.GetOutgoingGates(tile))
             {
-                if (gate != null && gate.Destination != null &&
+                if (gate != null && !gate.IsTemporarilyBlocked && gate.Destination != null &&
                     BoardBoundaryWallPolicy.TryGetSide(
                         coordinate,
                         gate.Destination.Coordinate,
@@ -779,7 +779,7 @@ namespace MazeParty.Multiplayer
             connected = outgoing;
             foreach (var gate in topology.GetIncomingGates(tile))
             {
-                if (gate != null && gate.Source != null &&
+                if (gate != null && !gate.IsTemporarilyBlocked && gate.Source != null &&
                     BoardBoundaryWallPolicy.TryGetSide(
                         coordinate,
                         gate.Source.Coordinate,
@@ -814,7 +814,7 @@ namespace MazeParty.Multiplayer
             var destinationCount = 0;
             for (var index = 0; index < outgoing.Count; index++)
             {
-                if (outgoing[index] != null &&
+                if (outgoing[index] != null && !outgoing[index].IsTemporarilyBlocked &&
                     outgoing[index].Destination != null &&
                     IsFirstGateToDestination(outgoing, index))
                 {
@@ -832,7 +832,7 @@ namespace MazeParty.Multiplayer
                      index++)
                 {
                     var gate = outgoing[index];
-                    if (gate == null || gate.Destination == null)
+                    if (gate == null || gate.IsTemporarilyBlocked || gate.Destination == null)
                         continue;
                     if (!IsFirstGateToDestination(outgoing, index))
                         continue;
@@ -889,14 +889,14 @@ namespace MazeParty.Multiplayer
             int index)
         {
             var gate = gates[index];
-            if (gate == null || gate.Destination == null)
+            if (gate == null || gate.IsTemporarilyBlocked || gate.Destination == null)
                 return false;
 
             var coordinate = gate.Destination.Coordinate;
             for (var previous = 0; previous < index; previous++)
             {
                 var candidate = gates[previous];
-                if (candidate != null && candidate.Destination != null &&
+                if (candidate != null && !candidate.IsTemporarilyBlocked && candidate.Destination != null &&
                     candidate.Destination.Coordinate == coordinate)
                 {
                     return false;
@@ -920,7 +920,7 @@ namespace MazeParty.Multiplayer
             NetworkMatchState match,
             NetworkPlayerAvatar local)
         {
-            var signature = ComputeTravelStateSignature(match, local);
+            var signature = unchecked(ComputeTravelStateSignature(match, local) * 31 + topology.TraversalRevision);
             var dataChanged = !_travelDataValid ||
                               _travelDataTopology != topology ||
                               _travelDataSignature != signature;
@@ -962,13 +962,14 @@ namespace MazeParty.Multiplayer
                 _travelStart != start ||
                 _travelPrimaryDestination != primaryDestination ||
                 _travelStartingStep != startingStep ||
-                _travelMaximumStep != turnRoll)
+                _travelMaximumStep != turnRoll || _travelRevision != topology.TraversalRevision)
             {
                 _travelTopology = topology;
                 _travelStart = start;
                 _travelPrimaryDestination = primaryDestination;
                 _travelStartingStep = startingStep;
                 _travelMaximumStep = turnRoll;
+                _travelRevision = topology.TraversalRevision;
                 _travelPreview = start != null && turnRoll > 0
                     ? new BoardTravelRoutePreview(
                         topology,

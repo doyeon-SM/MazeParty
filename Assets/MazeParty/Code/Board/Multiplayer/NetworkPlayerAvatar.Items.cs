@@ -99,6 +99,7 @@ namespace MazeParty.Multiplayer
                 return;
             }
 
+            RefreshWallPlacementPreview(match, equippedItem);
             RefreshGrenadeRangeIndicator(match, equippedItem);
             bool visible = match != null && match.GameplayEnabled &&
                 match.FlowState <= BoardFlowState.LandingEffectResolve;
@@ -226,6 +227,7 @@ namespace MazeParty.Multiplayer
 
         private void DisposeBoardItems()
         {
+            ClearWallPlacementPreview();
             _grenadeRangeUseState.Clear();
             grenadeRangeIndicator?.Hide();
             _avatarVisual?.SetBoardProtectionVisible(false);

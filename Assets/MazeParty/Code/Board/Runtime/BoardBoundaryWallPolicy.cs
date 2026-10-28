@@ -100,7 +100,7 @@ namespace MazeParty.Gameplay
                 preferCandidate ? outwardNormal : OutwardNormal,
                 Mathf.Max(Width, width),
                 hasOutgoing,
-                hasOutgoing && remainingMoves > 0);
+                (IsPassable || outgoing && remainingMoves > 0) && !gate.IsTemporarilyBlocked);
         }
     }
 
@@ -296,7 +296,7 @@ namespace MazeParty.Gameplay
                 outwardNormal,
                 gate.GateWidth,
                 outgoing,
-                outgoing && remainingMoves > 0));
+                outgoing && remainingMoves > 0 && !gate.IsTemporarilyBlocked));
         }
 
         private static bool IsSamePhysicalPortal(
