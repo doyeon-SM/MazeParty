@@ -892,6 +892,7 @@ namespace MazeParty.Multiplayer
 
         private void RefreshInventory()
         {
+            var match = NetworkMatchState.Instance;
             for (var i = 0; i < GameplayInventory.Capacity; i++)
             {
                 var itemId = _localAvatar != null
@@ -922,7 +923,8 @@ namespace MazeParty.Multiplayer
 
                 if (_choiceButtons[i] != null)
                 {
-                    _choiceButtons[i].interactable = occupied;
+                    _choiceButtons[i].interactable = occupied &&
+                        (itemId != PrototypeItemId.GhostPass || match != null && match.Turn > 1);
                 }
             }
 
@@ -933,7 +935,6 @@ namespace MazeParty.Multiplayer
                 _ammoText,
                 hasItemUses ? _localAvatar.LocalItemCharges.ToString() : string.Empty,
                 hasItemUses);
-            var match = NetworkMatchState.Instance;
             var item = _localAvatar != null ? _localAvatar.LocalEquippedItem : PrototypeItemId.None;
             uiBindings.Item.SetUseHint(hasItemUses && match != null &&
                 match.CanAcceptActionInput && _localAvatar.CurrentHealth > 0 &&

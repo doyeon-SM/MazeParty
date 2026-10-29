@@ -43,6 +43,84 @@ namespace MazeParty.Multiplayer.Tests
             Assert.That(_match.HasUsedGhostPass(1), Is.True);
         }
 
+
+        [Test]
+        public void GhostPass_FirstTurnSelectionAndRejectedUse_PreserveInventoryUntilNextTurn()
+        {
+            Set(_match, "_boardMapId", new FixedString64Bytes(BoardForestGhostRules.MapId));
+            foreach (var staleSelection in new[] { false, true })
+            {
+                Set(_match, "_turn", 1);
+                Set(_match, "_choiceEndsAt", _match.SynchronizedNow + 30d);
+                Assert.That(_player.TryAddItemOnServer(PrototypeItemId.GhostPass), Is.True);
+                _player.BeginActionOnServer(1);
+
+                Assert.That(_match.TryResolveItemChoiceOnServer(_player, 0, false), Is.False);
+                Assert.That(Get<byte>(_player, "_choiceResolution"), Is.EqualTo((byte)ItemChoiceResolution.Pending));
+                Assert.That(_player.GetSelectedItemOnServer(), Is.EqualTo(PrototypeItemId.None));
+                if (staleSelection)
+                {
+                    // An already-equipped first-turn item must survive cleanup too.
+                    Set(_player, "_selectedItemSlot", 0);
+                    Set(_player, "_equippedItem", (byte)PrototypeItemId.GhostPass);
+                    Set(_player, "_itemCharges", 1);
+                    Set(_player, "_choiceResolution", (byte)ItemChoiceResolution.ItemSelected);
+                }
+                Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.False);
+                Assert.That(_match.HasUsedGhostPass(0), Is.False);
+                _player.EndActionOnServer();
+                _player.EndActionOnServer();
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.EqualTo(1));
+                Assert.That(Get<byte>(_player, "_itemSlot0"), Is.EqualTo((byte)PrototypeItemId.GhostPass));
+                Assert.That(_player.GetSelectedItemOnServer(), Is.EqualTo(PrototypeItemId.None));
+                Assert.That(Get<int>(_player, "_selectedItemSlot"), Is.EqualTo(-1));
+                Assert.That(Get<int>(_player, "_itemCharges"), Is.Zero);
+
+                _player.PrepareForOverviewOnServer();
+                Set(_match, "_turn", 2);
+                _player.BeginActionOnServer(2);
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.EqualTo(1));
+                Assert.That(Get<byte>(_player, "_itemSlot0"), Is.EqualTo((byte)PrototypeItemId.GhostPass));
+                Assert.That(_match.TryResolveItemChoiceOnServer(_player, 0, false), Is.True);
+                LogAssert.Expect(LogType.Error, RpcUnavailable);
+                Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.True);
+                Assert.That(_match.HasUsedGhostPass(0), Is.True);
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.Zero);
+                Assert.That(_match.TryUseSelectedItemOnServer(_player, _player.EyePivot.position, Vector3.forward), Is.False);
+                _player.EndActionOnServer();
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.Zero);
+            }
+        }
+
+        [Test]
+        public void GhostPass_RejectedFirstTurnChoice_AllowsOtherItemSkipOrTimeout_WithoutLosingPass()
+        {
+            Set(_match, "_boardMapId", new FixedString64Bytes(BoardForestGhostRules.MapId));
+            Set(_match, "_turn", 1);
+            foreach (var nextChoice in new[] { "other item", "skip", "timeout" })
+            {
+                Set(_player, "_occupiedItemMask", (byte)3);
+                Set(_player, "_itemSlot0", (byte)PrototypeItemId.GhostPass);
+                Set(_player, "_itemSlot1", (byte)PrototypeItemId.Pistol);
+                Set(_match, "_choiceEndsAt", _match.SynchronizedNow + 30d);
+                _player.BeginActionOnServer(1);
+                Assert.That(_match.TryResolveItemChoiceOnServer(_player, 0, false), Is.False);
+                if (nextChoice == "timeout")
+                {
+                    Set(_match, "_choiceEndsAt", 0d);
+                    Assert.That(_match.TryResolveItemChoiceOnServer(_player, 0, false), Is.False);
+                    Assert.That(Get<byte>(_player, "_choiceResolution"), Is.EqualTo((byte)ItemChoiceResolution.TimedOut));
+                }
+                else
+                {
+                    Assert.That(_match.TryResolveItemChoiceOnServer(_player, 1, nextChoice == "skip"), Is.True);
+                }
+                _player.EndActionOnServer();
+                Assert.That(Get<byte>(_player, "_occupiedItemMask"), Is.EqualTo(nextChoice == "other item" ? 1 : 3), nextChoice);
+                Assert.That(Get<byte>(_player, "_itemSlot0"), Is.EqualTo((byte)PrototypeItemId.GhostPass), nextChoice);
+            }
+        }
+
         [Test]
         public void MapRestrictedItems_StayInForestPools_AndShopRestoreRejectsWrongMap()
         {
