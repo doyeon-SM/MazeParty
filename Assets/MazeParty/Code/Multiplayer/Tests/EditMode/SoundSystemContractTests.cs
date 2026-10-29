@@ -19,20 +19,21 @@ namespace MazeParty.Multiplayer.Tests
             "Assets/MazeParty/Resources/" + SoundSystem.ResourcePath + ".prefab";
         private const string AudioRoot = "Assets/MazeParty/Audio";
         private const string UiPrefabRoot = "Assets/MazeParty/Prefabs";
+        private const string SourceClipRoot = "Assets/Ignore/Resources/Sound";
         private const string SequenceMemoryBellPath =
-            "Assets/Resources/sound/- Bell 7.mp3";
+            SourceClipRoot + "/- Bell 7.mp3";
         private const string BalloonClipPath =
-            "Assets/Resources/sound/balloon.mp3";
+            SourceClipRoot + "/balloon.mp3";
         private const string LightningClipPath =
-            "Assets/Resources/sound/lightning.mp3";
+            SourceClipRoot + "/lightning.mp3";
         private const string MinefieldExplosionClipPath =
-            "Assets/Resources/sound/explosion.mp3";
+            SourceClipRoot + "/explosion.mp3";
         private const string MinefieldScanClipPath =
-            "Assets/Resources/sound/mine.mp3";
+            SourceClipRoot + "/mine.mp3";
         private const string PistolClipPath =
-            "Assets/Resources/sound/pistol.mp3";
+            SourceClipRoot + "/pistol.mp3";
         private const string SniperClipPath =
-            "Assets/Resources/sound/sniper.mp3";
+            SourceClipRoot + "/sniper.mp3";
 
         [Test]
         public void SoundSystemPrefab_MixerAndLibrary_CoverEveryKey()
@@ -122,18 +123,18 @@ namespace MazeParty.Multiplayer.Tests
                 SniperClipPath);
 
             AssertSpatialCueUsesClip(library, SoundKeys.MinigameShellCorrect,
-                "Assets/Resources/sound/minigamefinish.mp3");
+                SourceClipRoot + "/minigamefinish.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameFinish,
-                "Assets/Resources/sound/minigamefinish.mp3");
+                SourceClipRoot + "/minigamefinish.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameRace2Lane,
-                "Assets/Resources/sound/clickandhover.mp3");
+                SourceClipRoot + "/clickandhover.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameOddOneOutToggle,
-                "Assets/Resources/sound/clickandhover.mp3");
+                SourceClipRoot + "/clickandhover.mp3");
             Assert.That(library.TryGet(SoundKeys.MinigameOddOneOutToggle, out var privateToggle), Is.True);
             Assert.That(privateToggle.Spatial, Is.False, "Secret choices must use local 2D feedback.");
             Assert.That(privateToggle.PitchVariance, Is.Zero);
             AssertCueUsesClip(library, SoundKeys.BoardKeyBuy,
-                "Assets/Resources/sound/keybuy 1.mp3");
+                SourceClipRoot + "/keybuy 1.mp3");
             Assert.That(library.TryGet(SoundKeys.ItemBulletImpact, out var gunHit), Is.True);
             Assert.That(gunHit.Spatial, Is.True);
             Assert.That(gunHit.VariationMode, Is.EqualTo(SoundVariationMode.RandomNoRepeat));
@@ -141,13 +142,15 @@ namespace MazeParty.Multiplayer.Tests
             var hitClips = Enumerable.Range(0, gunHit.ClipCount).Select(gunHit.GetClip).ToArray();
             Assert.That(hitClips.All(clip => clip != null), Is.True);
             Assert.That(hitClips.Distinct().Count(), Is.EqualTo(gunHit.ClipCount));
-            Assert.That(hitClips.Contains(
-                AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Resources/sound/gunhitsound.mp3")), Is.False);
+            var unsplitGunHit = AssetDatabase.LoadAssetAtPath<AudioClip>(
+                SourceClipRoot + "/gunhitsound.mp3");
+            Assert.That(unsplitGunHit, Is.Not.Null, "Original gun hit source");
+            Assert.That(hitClips.Contains(unsplitGunHit), Is.False);
 
-            AssertCueUsesClip(library, SoundKeys.MinigameBombExplosion, "Assets/Resources/sound/explosion.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameGiftPickup, "Assets/Resources/sound/goldgain.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameGiftDeposit, "Assets/Resources/sound/shopbuy.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameGiftThrow, "Assets/Resources/sound/grenade.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameBombExplosion, SourceClipRoot + "/explosion.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftPickup, SourceClipRoot + "/goldgain.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftDeposit, SourceClipRoot + "/shopbuy.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGiftThrow, SourceClipRoot + "/grenade.mp3");
             AssertCueUsesClip(library, SoundKeys.MinigameBallReflect, SequenceMemoryBellPath);
             AssertCueUsesClip(library, SoundKeys.MinigameBallGoal, SequenceMemoryBellPath);
             AssertCueUsesClip(library, SoundKeys.MinigameBallLoss, SequenceMemoryBellPath);
@@ -158,10 +161,10 @@ namespace MazeParty.Multiplayer.Tests
                 Assert.That(cue.Spatial, Is.False, key);
                 Assert.That(cue.StartOffsetSeconds, Is.EqualTo(sequenceTone.StartOffsetSeconds), key);
             }
-            AssertCueUsesClip(library, SoundKeys.MinigameGreenSignal, "Assets/Resources/sound/countdowngo.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayCorrect, "Assets/Resources/sound/confirmandpopupopen.mp3");
-            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayIncorrect, "Assets/Resources/sound/errorandnotice.mp3");
-            AssertCueUsesClip(library, SoundKeys.BoardChestAcquire, "Assets/Resources/sound/keybuy 1.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameGreenSignal, SourceClipRoot + "/countdowngo.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayCorrect, SourceClipRoot + "/confirmandpopupopen.mp3");
+            AssertCueUsesClip(library, SoundKeys.MinigameWrongWayIncorrect, SourceClipRoot + "/errorandnotice.mp3");
+            AssertCueUsesClip(library, SoundKeys.BoardChestAcquire, SourceClipRoot + "/keybuy 1.mp3");
             Assert.That(library.TryGet(SoundKeys.MinigameGiftHit, out var giftHit), Is.True);
             Assert.That(giftHit.ClipCount, Is.EqualTo(3));
             Assert.That(giftHit.VariationMode, Is.EqualTo(SoundVariationMode.RandomNoRepeat));
